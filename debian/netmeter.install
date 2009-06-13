@@ -1,0 +1,4 @@
+debian/tmp/usr/bin/netmeter
+debian/tmp/usr/bin/plot-netmeter-vectors
+debian/tmp/usr/share/netmeter/plot-netmeter-vectors.R
+debian/tmp/usr/share/netmeter/plotter.R

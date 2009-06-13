@@ -1,0 +1,78 @@
+#!/bin/bash
+# $Id$
+#
+# Network Performance Meter
+# Copyright (C) 2009 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
+
+if [ $# -lt 1 ] ; then
+   echo >&2 "Usage: $0 [Vector File] {-ownfile}"
+   exit 1
+fi
+
+# ====== Get vector name and PDF name prefix ================================
+VECTOR_FILE="$1"
+if [ ! -e "$VECTOR_FILE" ] ; then
+   echo >&2 "ERROR: Vector file $VECTOR_FILE not found!"
+   exit 1
+fi
+shift
+PDF_FILE_PREFIX="`echo "$VECTOR_FILE" | sed -e "s/.bz2$//g" -e "s/.vec$//g"`"
+
+
+# ====== Get options ========================================================
+PLOT_COLOR_MODE="cmColor"
+PLOT_OWN_FILE="FALSE"
+while [ $# -gt 0 ] ; do
+   if [ "$1" = "-ownfile" ] ; then
+      PLOT_OWN_FILE="TRUE"
+   elif [ "$1" = "-colour" -o "$1" = "-color" ] ; then
+      PLOT_COLOR_MODE="cmColor"
+   elif [ "$1" = "-greyscale" -o "$1" = "-grayscale" ] ; then
+      PLOT_COLOR_MODE="cmGrayScale"
+   elif [ "$1" = "-blackandwhite" ] ; then
+      PLOT_COLOR_MODE="cmBlackAndWhite"
+   else
+      echo >&2 "ERROR: Invalid option $1!"
+      exit 1
+   fi
+   shift
+done
+
+
+# ====== Locate plotting scripts ============================================
+SEARCH_PATHS=". /usr/share/netmeter /usr/local/share/netmeter"
+PLOT_PROGRAM_DIR=""
+PLOT_PROGRAM_SCRIPT="plot-netmeter-vectors.R"
+for searchPath in $SEARCH_PATHS ; do
+   if [ -e "$searchPath/$PLOT_PROGRAM_SCRIPT" -a -e "$searchPath/plotter.R" ] ; then
+      PLOT_PROGRAM_DIR=$searchPath
+      break
+   fi
+done
+if [ "x$PLOT_PROGRAM_DIR" = "x" ] ; then
+   echo >&2 "ERROR: Cannot find $PLOT_PROGRAM_SCRIPT and plotter.R!"
+   exit 1
+elif [ "$PLOT_PROGRAM_DIR" = "." ] ; then
+   echo "NOTE: Using $PLOT_PROGRAM_SCRIPT and plotter.R from $searchPath!"
+fi
+
+
+# ====== Call the R script for plotting =====================================
+echo "Plotting vector file $VECTOR_FILE -> $PDF_FILE_PREFIX"
+R CMD BATCH --vanilla "--args programDirectory=\"$PLOT_PROGRAM_DIR\" vectorFile=\"$VECTOR_FILE\" pdfFilePrefix=\"$PDF_FILE_PREFIX\" plotColorMode=$PLOT_COLOR_MODE plotOwnFile=$PLOT_OWN_FILE" $PLOT_PROGRAM_DIR/$PLOT_PROGRAM_SCRIPT /dev/stdout

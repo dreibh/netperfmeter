@@ -1,0 +1,18 @@
+Source: netmeter
+Section: net
+Priority: optional
+Maintainer: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Homepage: http://www.iem.uni-due.de/~dreibh/netmeter/
+Build-Depends: debhelper (>= 5), autotools-dev, libsctp-dev (>= 1.0.5), libbz2-dev (>= 1.0)
+Standards-Version: 3.8.1
+
+Package: netmeter
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, r-base, ghostscript
+Recommends: traceroute, iputils-tracepath, iputils-ping, rsplib-tools, subnetcalc (>= 2.0.2)
+Description: Network Performance Meter
+ NetMeter is a network performance meter for the UDP, TCP, SCTP and
+ DCCP transport protocols. It simultaneously transmits bidirectional
+ flows to an endpoint and measures the resulting flow bandwidths. The
+ results are written as vector and scalar files. The vector files can
+ be used to create PDF plots of the results.

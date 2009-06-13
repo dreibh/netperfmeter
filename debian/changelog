@@ -1,0 +1,6 @@
+netmeter (0.5.1-1ubuntu1) karmic; urgency=low
+
+  * Closes Debian ITP bug with wnpp (Closes: #xxxxxx).
+  * Initial Ubuntu package (LP: #xxxxxx).
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 06 Jun 2009 16:28:32 +0000

@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "valgrind $@"
+valgrind  -v --tool=memcheck --leak-check=yes --show-reachable=no --leak-resolution=high --num-callers=40 --freelist-vol=4000000 $@

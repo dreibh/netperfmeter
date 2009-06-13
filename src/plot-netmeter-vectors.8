@@ -1,0 +1,79 @@
+.\" $Id$
+.\"
+.\" Network Performance Meter
+.\" Copyright (C) 2009 by Thomas Dreibholz
+.\"
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\"
+.\" Contact: dreibh@iem.uni-due.de
+.\"
+.\" ###### Setup ############################################################
+.Dd Jun 4, 2009
+.Dt plot-plot-netmeter-vectors-vectors 8
+.Os plot-plot-netmeter-vectors-vectors
+.\" ###### Name #############################################################
+.Sh NAME
+.Nm plot-plot-netmeter-vectors-vectors
+.Nd Network Performance Meter
+.\" ###### Synopsis #########################################################
+.Sh SYNOPSIS
+.Nm plot-netmeter-vectors
+.Op Vector Name
+.Fl ownfile
+.Fl colour
+.Fl color
+.Fl greyscale
+.Fl grayscale
+.Fl blackandwhite
+.\" ###### Description ######################################################
+.Sh DESCRIPTION
+.Nm plot-netmeter-vectors
+uses GNU R to plot a vector file written by netmeter into a PDF file. Optionally, a separate PDF file can be written for each page.
+.Pp
+.\" ###### Arguments ########################################################
+.Sh ARGUMENTS
+The following arguments have to be provided:
+.Bl -tag -width indent
+.It Vector Name
+The name of the vector file. BZip2-compressed files are also supported.
+.It Fl ownfile
+Plot a separate PDF file for each page.
+.It Fl colour
+Create colour plot.
+.It Fl color
+Create colour plot.
+.It Fl greyscale
+Create grey-scale plot.
+.It Fl grayscale
+Create grey-scale plot.
+.It Fl blackandwhite
+Create black and white plot.
+.El
+.\" ###### Arguments ########################################################
+.Sh EXAMPLES
+Some plot-netmeter-vectors usage examples:
+.Bl -tag -width indent
+.It plot-netmeter-vectors output.vec.bz2
+Plot the vector file output.vec.bz2. The resulting PDF file will be named output.pdf.
+.It plot-netmeter-vectors output.vec.bz2 -ownfile
+Plot the vector file output.vec.bz2. For each page, a separate PDF file is written. The resulting PDF files will be named output-<title>.pdf, where <title> corresponds to the page title.
+.El
+.\" ###### Authors ##########################################################
+.Sh AUTHORS
+Thomas Dreibholz
+.br
+http://www.iem.uni-due.de/~dreibh/plot-netmeter-vectors
+.br
+mailto://dreibh@iem.uni-due.de
+.br
