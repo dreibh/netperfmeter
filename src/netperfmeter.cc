@@ -27,6 +27,7 @@
 #include <math.h>
 #include <assert.h>
 #include <bzlib.h>
+#include <netinet/in.h>
 
 #include <iostream>
 #include <vector>
