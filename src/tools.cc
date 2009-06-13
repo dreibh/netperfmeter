@@ -418,7 +418,7 @@ const char* getProtocolName(const uint8_t protocol)
       case IPPROTO_UDP:
          protocolName = "UDP";
          break;
-#ifdef IPPROTO_DCCP
+#ifdef HAVE_DCCP
       case IPPROTO_DCCP:
          protocolName = "DCCP";
          break;

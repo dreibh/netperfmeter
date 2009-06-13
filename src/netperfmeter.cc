@@ -41,7 +41,7 @@
 #include "statisticswriter.h"
 
 
-#ifndef IPPROTO_DCCP
+#ifndef HAVE_DCCP
 #warning DCCP is not supported by the API of this system!
 #endif
 
@@ -241,7 +241,7 @@ FlowSpec* createLocalFlow(const char*     parameters,
          case IPPROTO_UDP:
             flowSpec->SocketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_DGRAM, IPPROTO_UDP);
            break;
-#ifdef IPPROTO_DCCP
+#ifdef HAVE_DCCP
          case IPPROTO_DCCP:
             flowSpec->SocketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_DCCP, IPPROTO_DCCP);
            break;
@@ -406,7 +406,7 @@ bool mainLoop(const bool activeMode, const unsigned long long stopAt)
             gConnectedSocketsSetUpdated = true;
          }
       }
-#ifdef IPPROTO_DCCP
+#ifdef HAVE_DCCP
       if( (dccpID >= 0) && (fds[dccpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gDCCPSocket, NULL, 0);
          if(newSD >= 0) {
@@ -523,7 +523,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       exit(1);
    }
    gMessageReader.registerSocket(IPPROTO_UDP, gUDPSocket);
-#ifdef IPPROTO_DCCP
+#ifdef HAVE_DCCP
    gDCCPSocket = createAndBindSocket(SOCK_DCCP, IPPROTO_DCCP, localPort);
    if(gDCCPSocket < 0) {
       cerr << "NOTE: Your kernel does not provide DCCP support." << endl;
@@ -644,7 +644,7 @@ void activeMode(int argc, char** argv)
             protocol = IPPROTO_SCTP;
          }
          else if(strcmp(argv[i], "-dccp") == 0) {
-#ifdef IPPROTO_DCCP
+#ifdef HAVE_DCCP
             protocol = IPPROTO_DCCP;
 #else
             cerr << "ERROR: DCCP support is not compiled in!" << endl;

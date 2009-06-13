@@ -9,6 +9,8 @@ Standards-Version: 3.8.1
 Package: netperfmeter
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, r-base, ghostscript
+Replaces: netmeter (<= 0.5.1)
+Conflicts: netmeter (<= 0.5.1)
 Recommends: traceroute, iputils-tracepath, iputils-ping, rsplib-tools, subnetcalc (>= 2.0.2)
 Description: Network Performance Meter
  NetPerfMeter is a network performance meter for the UDP, TCP, SCTP and

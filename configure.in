@@ -45,6 +45,16 @@ AC_CHECK_MEMBER(struct sockaddr_in6.sin6_len,
                  #endif
                  #include <netinet/in.h>])
 
+AC_MSG_CHECKING(for DCCP support)
+AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
+                #include <sys/types.h>
+                #endif
+                #include <netinet/in.h>],
+               [socklen_t x = IPPROTO_DCCP; return 0;],
+               [AC_MSG_RESULT(yes)
+                AC_DEFINE(HAVE_DCCP, 1, "Define to 1 if DCCP is supported.")],
+               [AC_MSG_RESULT(no)])
+
 AC_CHECK_FUNCS(socket, , AC_CHECK_LIB(socket, socket))
 
 
