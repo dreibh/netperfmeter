@@ -22,7 +22,7 @@
 #include "transfer.h"
 #include "control.h"
 #include "tools.h"
-#include "netmeterpackets.h"
+#include "netperfmeterpackets.h"
 
 #include <string.h>
 #include <math.h>

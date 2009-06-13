@@ -20,15 +20,15 @@
 .\"
 .\" ###### Setup ############################################################
 .Dd Jun 4, 2009
-.Dt plot-plot-netmeter-vectors-vectors 8
-.Os plot-plot-netmeter-vectors-vectors
+.Dt plot-plot-netperfmeter-vectors-vectors 8
+.Os plot-plot-netperfmeter-vectors-vectors
 .\" ###### Name #############################################################
 .Sh NAME
-.Nm plot-plot-netmeter-vectors-vectors
+.Nm plot-plot-netperfmeter-vectors-vectors
 .Nd Network Performance Meter
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm plot-netmeter-vectors
+.Nm plot-netperfmeter-vectors
 .Op Vector Name
 .Fl ownfile
 .Fl colour
@@ -38,8 +38,8 @@
 .Fl blackandwhite
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
-.Nm plot-netmeter-vectors
-uses GNU R to plot a vector file written by netmeter into a PDF file. Optionally, a separate PDF file can be written for each page.
+.Nm plot-netperfmeter-vectors
+uses GNU R to plot a vector file written by netperfmeter into a PDF file. Optionally, a separate PDF file can be written for each page.
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
@@ -62,18 +62,18 @@ Create black and white plot.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
-Some plot-netmeter-vectors usage examples:
+Some plot-netperfmeter-vectors usage examples:
 .Bl -tag -width indent
-.It plot-netmeter-vectors output.vec.bz2
+.It plot-netperfmeter-vectors output.vec.bz2
 Plot the vector file output.vec.bz2. The resulting PDF file will be named output.pdf.
-.It plot-netmeter-vectors output.vec.bz2 -ownfile
+.It plot-netperfmeter-vectors output.vec.bz2 -ownfile
 Plot the vector file output.vec.bz2. For each page, a separate PDF file is written. The resulting PDF files will be named output-<title>.pdf, where <title> corresponds to the page title.
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz
 .br
-http://www.iem.uni-due.de/~dreibh/plot-netmeter-vectors
+http://www.iem.uni-due.de/~dreibh/plot-netperfmeter-vectors
 .br
 mailto://dreibh@iem.uni-due.de
 .br

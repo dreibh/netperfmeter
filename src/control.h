@@ -23,7 +23,7 @@
 #define CONTROL_H
 
 #include "flowspec.h"
-#include "netmeterpackets.h"
+#include "netperfmeterpackets.h"
 #include "messagereader.h"
 #include "tools.h"
 

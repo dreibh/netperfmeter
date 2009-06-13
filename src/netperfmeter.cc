@@ -34,7 +34,7 @@
 
 #include "tools.h"
 #include "flowspec.h"
-#include "netmeterpackets.h"
+#include "netperfmeterpackets.h"
 #include "control.h"
 #include "transfer.h"
 #include "statisticswriter.h"
@@ -357,7 +357,7 @@ bool mainLoop(const bool activeMode, const unsigned long long stopAt)
          if(flowSpec->NextStatusChangeEvent < nextStatusChangeEvent) {
             nextStatusChangeEvent = flowSpec->NextStatusChangeEvent;
          }
-         
+
          if( (flowSpec->Status == FlowSpec::On) &&
              (flowSpec->OutboundFrameSize > 0.0) && (flowSpec->OutboundFrameRate > 0.0000001) ) {
             flowSpec->scheduleNextTransmissionEvent();

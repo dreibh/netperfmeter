@@ -1,15 +1,15 @@
-bin_PROGRAMS = netmeter
+bin_PROGRAMS = netperfmeter
 
-netmeter_SOURCES = netmeter.cc ext_socket.h netmeterpackets.h tools.h tools.cc flowspec.h flowspec.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc statisticswriter.h statisticswriter.cc
-netmeter_LDADD   = $(bz2_LIBS)
-
-
-dist_bin_SCRIPTS = plot-netmeter-vectors
+netperfmeter_SOURCES = netperfmeter.cc ext_socket.h netperfmeterpackets.h tools.h tools.cc flowspec.h flowspec.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc statisticswriter.h statisticswriter.cc
+netperfmeter_LDADD   = $(bz2_LIBS)
 
 
-dist_man_MANS = netmeter.8 plot-netmeter-vectors.8
+dist_bin_SCRIPTS = plot-netperfmeter-vectors
 
 
-EXTRA_DIST = plotter.R plot-netmeter-vectors.R
+dist_man_MANS = netperfmeter.8 plot-netperfmeter-vectors.8
 
-pkgdata_DATA = plotter.R plot-netmeter-vectors.R
+
+EXTRA_DIST = plotter.R plot-netperfmeter-vectors.R
+
+pkgdata_DATA = plotter.R plot-netperfmeter-vectors.R

@@ -21,7 +21,6 @@
 
 #include "control.h"
 #include "tools.h"
-#include "netmeterpackets.h"
 
 #include <string.h>
 #include <math.h>

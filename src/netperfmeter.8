@@ -20,17 +20,17 @@
 .\"
 .\" ###### Setup ############################################################
 .Dd Jun 4, 2009
-.Dt netmeter 8
-.Os netmeter
+.Dt netperfmeter 8
+.Os netperfmeter
 .\" ###### Name #############################################################
 .Sh NAME
-.Nm netmeter
+.Nm netperfmeter
 .Nd Network Performance Meter
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm netmeter
+.Nm netperfmeter
 .Op Port
-.Nm netmeter
+.Nm netperfmeter
 .Op Destination:Port
 .Fl maxmsgsize=Bytes
 .Fl runtime=Seconds
@@ -44,7 +44,7 @@
 .Op ...
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
-.Nm netmeter
+.Nm netperfmeter
 is a network performance meter for the UDP, TCP, SCTP and DCCP transport protocols.
 It simultaneously transmits bidirectional flows to an endpoint and measures the
 resulting flow bandwidths. The results are written as vector and scalar files.
@@ -60,11 +60,11 @@ The netmask.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
-Some netmeter usage examples:
+Some netperfmeter usage examples:
 .Bl -tag -width indent
-.It netmeter 9000
+.It netperfmeter 9000
 Start in passive mode, i.e. accepting connections, on port 9000.
-.It netmeter 172.16.255.254:9000 -maxmsgsize=4096 -vector=output.vec.bz2 -scalar=output.sca.bz2 -sctp const5:exp1000:const3:exp500:description="Alpha":onoff=+10 const5:exp1000:const3:exp500:description="Beta":onoff=+30 -tcp const5:exp1000:const3:exp500:description="Gamma":onoff=+60 -runtime=300
+.It netperfmeter 172.16.255.254:9000 -maxmsgsize=4096 -vector=output.vec.bz2 -scalar=output.sca.bz2 -sctp const5:exp1000:const3:exp500:description="Alpha":onoff=+10 const5:exp1000:const3:exp500:description="Beta":onoff=+30 -tcp const5:exp1000:const3:exp500:description="Gamma":onoff=+60 -runtime=300
 Start in active mode, i.e. establish connection to 172.16.255.254, port 9000.
 Frames will be segmented into messages of up to 4096 bytes.
 Write vectors to output.vec.bz2 (BZip2-compressed).
@@ -80,7 +80,7 @@ At t=300s, stop the measurement.
 .Sh AUTHORS
 Thomas Dreibholz
 .br
-http://www.iem.uni-due.de/~dreibh/netmeter
+http://www.iem.uni-due.de/~dreibh/netperfmeter
 .br
 mailto://dreibh@iem.uni-due.de
 .br

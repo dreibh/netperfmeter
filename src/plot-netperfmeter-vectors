@@ -56,9 +56,9 @@ done
 
 
 # ====== Locate plotting scripts ============================================
-SEARCH_PATHS=". /usr/share/netmeter /usr/local/share/netmeter"
+SEARCH_PATHS=". /usr/share/netperfmeter /usr/local/share/netperfmeter"
 PLOT_PROGRAM_DIR=""
-PLOT_PROGRAM_SCRIPT="plot-netmeter-vectors.R"
+PLOT_PROGRAM_SCRIPT="plot-netperfmeter-vectors.R"
 for searchPath in $SEARCH_PATHS ; do
    if [ -e "$searchPath/$PLOT_PROGRAM_SCRIPT" -a -e "$searchPath/plotter.R" ] ; then
       PLOT_PROGRAM_DIR=$searchPath
