@@ -1,11 +1,11 @@
-AC_INIT([NetMeter], [0.5.1], [dreib@iem.uni-due.de])
+AC_INIT([NetPerfMeter], [0.6.0], [dreib@iem.uni-due.de])
 
 AM_INIT_AUTOMAKE
 AC_PREREQ(2.60)
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADERS([config.h:config.in])
-AC_CONFIG_SRCDIR([src/netmeter.cc])
+AC_CONFIG_SRCDIR([src/netperfmeter.cc])
 
 AC_PROG_CC
 AC_PROG_CXX
@@ -315,7 +315,7 @@ AC_OUTPUT
 
 # ###### Configuration results ##############################################
 echo ""
-echo "The NetMeter package has been configured with the following options:"
+echo "The NetPerfMeter package has been configured with the following options:"
 echo ""
 echo "   Build with Kernel SCTP          : $enable_kernel_sctp"
 echo "   sctplib Libraries               : $sctplib_LIBS"
