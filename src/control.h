@@ -35,7 +35,7 @@ bool handleControlMessage(MessageReader*           messageReader,
                           std::vector<FlowSpec*>& flowSet,
                           int                      controlSocket);
 bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec);
-FlowSpec* createRemoteFlow(const NetMeterAddFlowMessage* addFlowMsg,
+FlowSpec* createRemoteFlow(const NetPerfMeterAddFlowMessage* addFlowMsg,
                            const sctp_assoc_t            controlAssocID,
                            const char*                   description);
 bool removeFlowFromRemoteNode(int controlSocket, const FlowSpec* flowSpec);
@@ -52,7 +52,7 @@ bool waitForAcknowledgeFromRemoteNode(int            controlSocket,
                                       const uint16_t streamID,
                                       const int      timeout = -1);
 void handleIdentifyMessage(std::vector<FlowSpec*>&        flowSet,
-                           const NetMeterIdentifyMessage* identifyMsg,
+                           const NetPerfMeterIdentifyMessage* identifyMsg,
                            const int                      sd,
                            const sctp_assoc_t             assocID,
                            const sockaddr_union*          from,

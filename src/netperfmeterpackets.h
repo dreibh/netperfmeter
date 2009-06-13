@@ -27,29 +27,29 @@
 #include <sys/types.h>
 
 
-struct NetMeterHeader
+struct NetPerfMeterHeader
 {
    uint8_t  Type;
    uint8_t  Flags;
    uint16_t Length;
 } __attribute__((packed));
 
-#define PPID_NETMETER_CONTROL   0x29097605
-#define PPID_NETMETER_DATA      0x29097606
+#define PPID_NETPERFMETER_CONTROL   0x29097605
+#define PPID_NETPERFMETER_DATA      0x29097606
 
 
-#define NETMETER_ACKNOWLEDGE    0x01
-#define NETMETER_ADD_FLOW       0x02
-#define NETMETER_REMOVE_FLOW    0x03
-#define NETMETER_IDENTIFY_FLOW  0x04
-#define NETMETER_DATA           0x05
-#define NETMETER_START          0x06
-#define NETMETER_STOP           0x07
+#define NETPERFMETER_ACKNOWLEDGE    0x01
+#define NETPERFMETER_ADD_FLOW       0x02
+#define NETPERFMETER_REMOVE_FLOW    0x03
+#define NETPERFMETER_IDENTIFY_FLOW  0x04
+#define NETPERFMETER_DATA           0x05
+#define NETPERFMETER_START          0x06
+#define NETPERFMETER_STOP           0x07
 
 
-struct NetMeterAcknowledgeMessage
+struct NetPerfMeterAcknowledgeMessage
 {
-   NetMeterHeader Header;
+   NetPerfMeterHeader Header;
 
    uint32_t       FlowID;
    uint64_t       MeasurementID;
@@ -58,13 +58,13 @@ struct NetMeterAcknowledgeMessage
    uint32_t       Status;
 } __attribute__((packed));
 
-#define NETMETER_STATUS_OKAY  0
-#define NETMETER_STATUS_ERROR 1
+#define NETPERFMETER_STATUS_OKAY  0
+#define NETPERFMETER_STATUS_ERROR 1
 
 
-struct NetMeterAddFlowMessage
+struct NetPerfMeterAddFlowMessage
 {
-   NetMeterHeader   Header;
+   NetPerfMeterHeader   Header;
 
    uint32_t         FlowID;
    uint64_t         MeasurementID;
@@ -87,9 +87,9 @@ struct NetMeterAddFlowMessage
 } __attribute__((packed));
 
 
-struct NetMeterRemoveFlowMessage
+struct NetPerfMeterRemoveFlowMessage
 {
-   NetMeterHeader Header;
+   NetPerfMeterHeader Header;
 
    uint32_t       FlowID;
    uint64_t       MeasurementID;
@@ -97,21 +97,21 @@ struct NetMeterRemoveFlowMessage
 } __attribute__((packed));
 
 
-struct NetMeterIdentifyMessage
+struct NetPerfMeterIdentifyMessage
 {
-   NetMeterHeader Header;
+   NetPerfMeterHeader Header;
    uint32_t       FlowID;
    uint64_t       MagicNumber;
    uint64_t       MeasurementID;
    uint16_t       StreamID;
 } __attribute__((packed));
 
-#define NETMETER_IDENTIFY_FLOW_MAGIC_NUMBER 0x4bcdf3aa303c6774ULL
+#define NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER 0x4bcdf3aa303c6774ULL
 
 
-struct NetMeterDataMessage
+struct NetPerfMeterDataMessage
 {
-   NetMeterHeader Header;
+   NetPerfMeterHeader Header;
 
    uint32_t       FlowID;
    uint64_t       MeasurementID;
@@ -125,17 +125,17 @@ struct NetMeterDataMessage
 } __attribute__((packed));
 
 
-struct NetMeterStartMessage
+struct NetPerfMeterStartMessage
 {
-   NetMeterHeader Header;
+   NetPerfMeterHeader Header;
 
    uint64_t       MeasurementID;
 } __attribute__((packed));
 
 
-struct NetMeterStopMessage
+struct NetPerfMeterStopMessage
 {
-   NetMeterHeader Header;
+   NetPerfMeterHeader Header;
 
    uint64_t       MeasurementID;
 } __attribute__((packed));

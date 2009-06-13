@@ -30,7 +30,7 @@
 
 
 #define MAXIMUM_MESSAGE_SIZE (size_t)65536
-#define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetMeterDataMessage))
+#define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetPerfMeterDataMessage))
 
 // ###### Transmit data frame ###############################################
 ssize_t transmitFrame(StatisticsWriter*        statsWriter,
@@ -40,7 +40,7 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
 {
    static char          outputBuffer[MAXIMUM_MESSAGE_SIZE];
    static bool          outputBufferInitialized = false;
-   NetMeterDataMessage* dataMsg                 = (NetMeterDataMessage*)&outputBuffer;
+   NetPerfMeterDataMessage* dataMsg                 = (NetPerfMeterDataMessage*)&outputBuffer;
 
    // ====== Create printable data pattern ==================================
    if(outputBufferInitialized == false) {
@@ -68,12 +68,12 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
 
 
    while(bytesSent < bytesToSend) {
-      // ====== Prepare NETMETER_DATA message ===============================
+      // ====== Prepare NETPERFMETER_DATA message ===============================
       size_t chunkSize = std::min(bytesToSend, std::min(maxMsgSize, MAXIMUM_MESSAGE_SIZE));
-      if(chunkSize < sizeof(NetMeterDataMessage)) {
-         chunkSize = sizeof(NetMeterDataMessage);
+      if(chunkSize < sizeof(NetPerfMeterDataMessage)) {
+         chunkSize = sizeof(NetPerfMeterDataMessage);
       }
-      dataMsg->Header.Type   = NETMETER_DATA;
+      dataMsg->Header.Type   = NETPERFMETER_DATA;
       dataMsg->Header.Flags  = 0x00;
       dataMsg->Header.Length = htons(chunkSize);
       dataMsg->MeasurementID = hton64(flowSpec->MeasurementID);
@@ -82,14 +82,14 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
       dataMsg->SeqNumber     = htonl(flowSpec->LastOutboundSeqNumber++);
       dataMsg->TimeStamp     = hton64(now);
 
-      // ====== Send NETMETER_DATA message ==================================
+      // ====== Send NETPERFMETER_DATA message ==================================
       ssize_t sent;
       if(flowSpec->Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
          sinfo.sinfo_assoc_id = (flowSpec->RemoteAddressIsValid) ? flowSpec->RemoteDataAssocID : 0;
          sinfo.sinfo_stream   = flowSpec->StreamID;
-         sinfo.sinfo_ppid     = htonl(PPID_NETMETER_DATA);
+         sinfo.sinfo_ppid     = htonl(PPID_NETPERFMETER_DATA);
          if(flowSpec->ReliableMode < 1.0) {
             const bool sendUnreliable = (randomDouble() < flowSpec->ReliableMode);
             if(sendUnreliable) {
@@ -154,10 +154,10 @@ ssize_t handleDataMessage(const bool               activeMode,
    const ssize_t received = messageReader->receiveMessage(sd, &inputBuffer, sizeof(inputBuffer),
                                                           &from.sa, &fromlen, &sinfo, &flags);
    if( (received > 0) && (!(flags & MSG_NOTIFICATION)) ) {
-      // ====== Handle NETMETER_IDENTIFY_FLOW message ========================
-      const NetMeterIdentifyMessage* identifyMsg = (const NetMeterIdentifyMessage*)&inputBuffer;
-      if( (received >= sizeof(NetMeterIdentifyMessage)) &&
-          (ntoh64(identifyMsg->MagicNumber) == NETMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
+      // ====== Handle NETPERFMETER_IDENTIFY_FLOW message ========================
+      const NetPerfMeterIdentifyMessage* identifyMsg = (const NetPerfMeterIdentifyMessage*)&inputBuffer;
+      if( (received >= sizeof(NetPerfMeterIdentifyMessage)) &&
+          (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
          handleIdentifyMessage(flowSet, identifyMsg, sd, sinfo.sinfo_assoc_id, &from, controlSocket);
       }
 
