@@ -476,11 +476,15 @@ int createAndBindSocket(const int      type,
    char           localAddressString[32];
    sockaddr_union localAddress;
 
+   memset(&localAddress, 0, sizeof(localAddress));
    if(checkIPv6()) {
+      localAddress.in6.sin6_family = AF_UNSPEC;   // IPv4 *and* IPv6
+      localAddress.in6.sin6_port   = htons(localPort);
       snprintf((char*)&localAddressString, sizeof(localAddressString), "[::]:%u", localPort);
    }
    else {
-      snprintf((char*)&localAddressString, sizeof(localAddressString), "0.0.0.0:%u", localPort);
+      localAddress.in.sin_family = AF_INET;   // IPv4 only
+      localAddress.in.sin_port   = htons(localPort);
    }
    assert(string2address(localAddressString, &localAddress) == true);
 

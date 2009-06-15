@@ -51,11 +51,11 @@ struct NetPerfMeterAcknowledgeMessage
 {
    NetPerfMeterHeader Header;
 
-   uint32_t       FlowID;
-   uint64_t       MeasurementID;
-   uint16_t       StreamID;
+   uint32_t           FlowID;
+   uint64_t           MeasurementID;
+   uint16_t           StreamID;
 
-   uint32_t       Status;
+   uint32_t           Status;
 } __attribute__((packed));
 
 #define NETPERFMETER_STATUS_OKAY  0
@@ -66,24 +66,24 @@ struct NetPerfMeterAddFlowMessage
 {
    NetPerfMeterHeader   Header;
 
-   uint32_t         FlowID;
-   uint64_t         MeasurementID;
-   uint16_t         StreamID;
-   uint8_t          Protocol;
-   uint8_t          Flags;
+   uint32_t             FlowID;
+   uint64_t             MeasurementID;
+   uint16_t             StreamID;
+   uint8_t              Protocol;
+   uint8_t              Flags;
 
-   char             Description[32];
+   char                 Description[32];
 
-   uint32_t         ReliableMode;
-   uint32_t         OrderedMode;
+   uint32_t             ReliableMode;
+   uint32_t             OrderedMode;
 
-   network_double_t FrameRate;
-   network_double_t FrameSize;
-   uint8_t          FrameRateRng;
-   uint8_t          FrameSizeRng;
+   network_double_t     FrameRate;
+   network_double_t     FrameSize;
+   uint8_t              FrameRateRng;
+   uint8_t              FrameSizeRng;
 
-   uint16_t         OnOffEvents;
-   unsigned int     OnOffEvent[];
+   uint16_t             OnOffEvents;
+   unsigned int         OnOffEvent[];
 } __attribute__((packed));
 
 
@@ -91,19 +91,19 @@ struct NetPerfMeterRemoveFlowMessage
 {
    NetPerfMeterHeader Header;
 
-   uint32_t       FlowID;
-   uint64_t       MeasurementID;
-   uint16_t       StreamID;
+   uint32_t           FlowID;
+   uint64_t           MeasurementID;
+   uint16_t           StreamID;
 } __attribute__((packed));
 
 
 struct NetPerfMeterIdentifyMessage
 {
    NetPerfMeterHeader Header;
-   uint32_t       FlowID;
-   uint64_t       MagicNumber;
-   uint64_t       MeasurementID;
-   uint16_t       StreamID;
+   uint32_t           FlowID;
+   uint64_t           MagicNumber;
+   uint64_t           MeasurementID;
+   uint16_t           StreamID;
 } __attribute__((packed));
 
 #define NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER 0x4bcdf3aa303c6774ULL
@@ -113,23 +113,28 @@ struct NetPerfMeterDataMessage
 {
    NetPerfMeterHeader Header;
 
-   uint32_t       FlowID;
-   uint64_t       MeasurementID;
-   uint16_t       StreamID;
-   uint16_t       Padding;
+   uint32_t           FlowID;
+   uint64_t           MeasurementID;
+   uint16_t           StreamID;
+   uint16_t           Padding;
+   
+   uint32_t           FrameID;
+   uint64_t           SeqNumber;
+   uint64_t           ByteSeqNumber;
+   uint64_t           TimeStamp;
 
-   uint64_t       SeqNumber;
-   uint64_t       TimeStamp;
-
-   char           Payload[];
+   char               Payload[];
 } __attribute__((packed));
+
+#define DHF_FRAME_BEGIN (1 << 0)
+#define DHF_FRAME_END (1 << 1)
 
 
 struct NetPerfMeterStartMessage
 {
    NetPerfMeterHeader Header;
 
-   uint64_t       MeasurementID;
+   uint64_t           MeasurementID;
 } __attribute__((packed));
 
 
@@ -137,7 +142,7 @@ struct NetPerfMeterStopMessage
 {
    NetPerfMeterHeader Header;
 
-   uint64_t       MeasurementID;
+   uint64_t           MeasurementID;
 } __attribute__((packed));
 
 #endif

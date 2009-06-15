@@ -25,6 +25,7 @@
 #include "flowspec.h"
 #include "messagereader.h"
 #include "statisticswriter.h"
+#include "netperfmeterpackets.h"
 
 
 ssize_t transmitFrame(StatisticsWriter*        statsWriter,
@@ -39,6 +40,5 @@ ssize_t handleDataMessage(const bool               activeMode,
                           const int                sd,
                           const int                protocol,
                           const int                controlSocket);
-
 
 #endif

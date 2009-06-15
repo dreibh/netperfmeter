@@ -91,7 +91,8 @@ class FlowSpec
 
 
    // ====== Sequence Numbers ===============================================
-   unsigned long long      LastOutboundSeqNumber;
+   uint64_t                LastOutboundSeqNumber;
+   uint32_t                LastOutboundFrameID;
 
    // ====== Timing =========================================================
    unsigned long long      FirstTransmission;
@@ -108,6 +109,11 @@ class FlowSpec
    unsigned long long      ReceivedBytes;
    unsigned long long      ReceivedPackets;
    unsigned long long      ReceivedFrames;
+   
+   double                  Jitter;
+   unsigned long long      LostBytes;
+   unsigned long long      LostPackets;
+   unsigned long long      LostFrames;
 
 
    // ====== Last-time statistics (for bandwidth calculations) ==============
@@ -119,6 +125,11 @@ class FlowSpec
    unsigned long long      LastReceivedPackets;
    unsigned long long      LastReceivedFrames;
 
+   unsigned long long      LastLostBytes;
+   unsigned long long      LastLostPackets;
+   unsigned long long      LastLostFrames;
+
+   double                  LastTransitTime;
 
    // ====== Start/stop control =============================================
    enum FlowStatus {

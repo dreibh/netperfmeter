@@ -79,12 +79,18 @@ class StatisticsWriter
    unsigned long long TotalReceivedBytes;
    unsigned long long TotalReceivedPackets;
    unsigned long long TotalReceivedFrames;
+   unsigned long long TotalLostBytes;
+   unsigned long long TotalLostPackets;
+   unsigned long long TotalLostFrames;
    unsigned long long LastTotalTransmittedBytes;
    unsigned long long LastTotalTransmittedPackets;
    unsigned long long LastTotalTransmittedFrames;
    unsigned long long LastTotalReceivedBytes;
    unsigned long long LastTotalReceivedPackets;
    unsigned long long LastTotalReceivedFrames;
+   unsigned long long LastTotalLostBytes;
+   unsigned long long LastTotalLostPackets;
+   unsigned long long LastTotalLostFrames;
 };
 
 #endif

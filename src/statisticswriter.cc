@@ -40,12 +40,18 @@ StatisticsWriter::StatisticsWriter()
    TotalReceivedBytes          = 0;
    TotalReceivedPackets        = 0;
    TotalReceivedFrames         = 0;
+   TotalLostBytes              = 0;
+   TotalLostPackets            = 0;
+   TotalLostFrames             = 0;
    LastTotalTransmittedBytes   = 0;
    LastTotalTransmittedPackets = 0;
    LastTotalTransmittedFrames  = 0;
    LastTotalReceivedBytes      = 0;
    LastTotalReceivedPackets    = 0;
    LastTotalReceivedFrames     = 0;
+   LastTotalLostBytes          = 0;
+   LastTotalLostPackets        = 0;
+   LastTotalLostFrames         = 0;
 
    VectorLine                  = 0;
    VectorName                  = NULL;
@@ -167,7 +173,11 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
                      "TransmittedByteRate TransmittedPacketRate TransmittedFrameRate\t"
                      "AbsReceivedBytes AbsReceivedPackets AbsReceivedFrames\t"
                      "RelReceivedBytes RelReceivedPackets ToralRelReceivedFrames\t"
-                     "ReceivedByteRate ReceivedPacketRate ReceivedFrameRate\n") == false) {
+                     "ReceivedByteRate ReceivedPacketRate ReceivedFrameRate\t"
+                     "Jitter\t"
+                     "AbsLostBytes AbsLostPackets AbsLostFrames\t"
+                     "RelLostBytes RelLostPackets ToralRelLostFrames\t"
+                     "LostByteRate LostPacketRate LostFrameRate\n") == false) {
          return(false);
       }
       VectorLine = 1;
@@ -191,26 +201,44 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
       const double relReceivedByteRate               = (duration > 0.0) ? relReceivedBytes   / duration : 0.0;
       const double relReceivedPacketRate             = (duration > 0.0) ? relReceivedPackets / duration : 0.0;
       const double relReceivedFrameRate              = (duration > 0.0) ? relReceivedFrames  / duration : 0.0;
+      const unsigned long long relLostBytes          = flowSpec->LostBytes   - flowSpec->LastLostBytes;
+      const unsigned long long relLostPackets        = flowSpec->LostPackets - flowSpec->LastLostPackets;
+      const unsigned long long relLostFrames         = flowSpec->LostFrames  - flowSpec->LastLostFrames;
+      const double relLostByteRate                   = (duration > 0.0) ? relLostBytes   / duration : 0.0;
+      const double relLostPacketRate                 = (duration > 0.0) ? relLostPackets / duration : 0.0;
+      const double relLostFrameRate                  = (duration > 0.0) ? relLostFrames  / duration : 0.0;
 
       snprintf((char*)&str, sizeof(str),
                "%06llu %llu %1.6f %1.6f\t"
                "%u \"%s\"\t"
                   "%llu %llu %llu\t"
+                    "%llu %llu %llu\t"
+                    "%1.6f %1.6f %1.6f\t"
                   "%llu %llu %llu\t"
-                  "%1.6f %1.6f %1.6f\t"
+                    "%llu %llu %llu\t"
+                    "%1.6f %1.6f %1.6f\t"
+                  "%1.3f\t"
                   "%llu %llu %llu\t"
-                  "%llu %llu %llu\t"
-                  "%1.6f %1.6f %1.6f\n",
+                    "%llu %llu %llu\t"
+                    "%1.6f %1.6f %1.6f\n",
 
                VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
                flowSpec->FlowID, flowSpec->Description.c_str(),
+               
                flowSpec->TransmittedBytes, flowSpec->TransmittedPackets, flowSpec->TransmittedFrames,
                relTransmittedBytes, relTransmittedPackets, relTransmittedFrames,
                relTransmittedByteRate, relTransmittedPacketRate, relTransmittedFrameRate,
 
                flowSpec->ReceivedBytes, flowSpec->ReceivedPackets, flowSpec->ReceivedFrames,
                relReceivedBytes, relReceivedPackets, relReceivedFrames,
-               relReceivedByteRate, relReceivedPacketRate, relReceivedFrameRate);
+               relReceivedByteRate, relReceivedPacketRate, relReceivedFrameRate,
+
+               flowSpec->Jitter,
+                
+               flowSpec->LostBytes, flowSpec->LostPackets, flowSpec->LostFrames,
+               relLostBytes, relLostPackets, relLostFrames,
+               relLostByteRate, relLostPacketRate, relLostFrameRate);
+               
       if(writeString(VectorName, VectorFile, VectorBZFile, str) == false) {
          return(false);
       }
@@ -224,7 +252,7 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
    }
 
 
-   // ====== Get relTotal flow statistics  =====================================
+   // ====== Get total flow statistics  =====================================
    const unsigned long long relTotalTransmittedBytes   = TotalTransmittedBytes   - LastTotalTransmittedBytes;
    const unsigned long long relTotalTransmittedPackets = TotalTransmittedPackets - LastTotalTransmittedPackets;
    const unsigned long long relTotalTransmittedFrames  = TotalTransmittedFrames  - LastTotalTransmittedFrames;
@@ -237,26 +265,40 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
    const double relTotalReceivedByteRate               = (duration > 0.0) ? relTotalReceivedBytes   / duration : 0.0;
    const double relTotalReceivedPacketRate             = (duration > 0.0) ? relTotalReceivedPackets / duration : 0.0;
    const double relTotalReceivedFrameRate              = (duration > 0.0) ? relTotalReceivedFrames  / duration : 0.0;
+   const unsigned long long relTotalLostBytes          = TotalLostBytes   - LastTotalLostBytes;
+   const unsigned long long relTotalLostPackets        = TotalLostPackets - LastTotalLostPackets;
+   const unsigned long long relTotalLostFrames         = TotalLostFrames  - LastTotalLostFrames;
+   const double relTotalLostByteRate                   = (duration > 0.0) ? relTotalLostBytes   / duration : 0.0;
+   const double relTotalLostPacketRate                 = (duration > 0.0) ? relTotalLostPackets / duration : 0.0;
+   const double relTotalLostFrameRate                  = (duration > 0.0) ? relTotalLostFrames  / duration : 0.0;
 
    snprintf((char*)&str, sizeof(str),
             "%06llu %llu %1.6f %1.6f\t"
             "-1 \"Total\" \t"
                "%llu %llu %llu\t"
+                  "%llu %llu %llu\t"
+                  "%1.6f %1.6f %1.6f\t"
                "%llu %llu %llu\t"
-               "%1.6f %1.6f %1.6f\t"
+                  "%llu %llu %llu\t"
+                  "%1.6f %1.6f %1.6f\t"
+               "-1.0\t"
                "%llu %llu %llu\t"
-               "%llu %llu %llu\t"
-               "%1.6f %1.6f %1.6f\n",
+                  "%llu %llu %llu\t"
+                  "%1.6f %1.6f %1.6f\n",
 
-               VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
+            VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
 
-               TotalTransmittedBytes, TotalTransmittedPackets, TotalTransmittedFrames,
-               relTotalTransmittedBytes, relTotalTransmittedPackets, relTotalTransmittedFrames,
-               relTotalTransmittedByteRate, relTotalTransmittedPacketRate, relTotalTransmittedFrameRate,
+            TotalTransmittedBytes, TotalTransmittedPackets, TotalTransmittedFrames,
+            relTotalTransmittedBytes, relTotalTransmittedPackets, relTotalTransmittedFrames,
+            relTotalTransmittedByteRate, relTotalTransmittedPacketRate, relTotalTransmittedFrameRate,
 
-               TotalReceivedBytes, TotalReceivedPackets, TotalReceivedFrames,
-               relTotalReceivedBytes, relTotalReceivedPackets, relTotalReceivedFrames,
-               relTotalReceivedByteRate, relTotalReceivedPacketRate, relTotalReceivedFrameRate);
+            TotalReceivedBytes, TotalReceivedPackets, TotalReceivedFrames,
+            relTotalReceivedBytes, relTotalReceivedPackets, relTotalReceivedFrames,
+            relTotalReceivedByteRate, relTotalReceivedPacketRate, relTotalReceivedFrameRate,
+
+            TotalLostBytes, TotalLostPackets, TotalLostFrames,
+            relTotalLostBytes, relTotalLostPackets, relTotalLostFrames,
+            relTotalLostByteRate, relTotalLostPacketRate, relTotalLostFrameRate);
    if(writeString(VectorName, VectorFile, VectorBZFile, str) == false) {
       return(false);
    }
@@ -268,6 +310,9 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
    LastTotalReceivedBytes      = TotalReceivedBytes;
    LastTotalReceivedPackets    = TotalReceivedPackets;
    LastTotalReceivedFrames     = TotalReceivedFrames;
+   LastTotalLostBytes          = TotalLostBytes;
+   LastTotalLostPackets        = TotalLostPackets;
+   LastTotalLostFrames         = TotalLostFrames;
 
 
    // ====== Print bandwidth information line ===============================
@@ -348,6 +393,12 @@ bool StatisticsWriter::writeScalarStatistics(const unsigned long long now,
             "scalar \"%s.total\" \"Received Byte Rate\"      %1.6f\n"
             "scalar \"%s.total\" \"Received Packet Rate\"    %1.6f\n"
             "scalar \"%s.total\" \"Received Frame Rate\"     %1.6f\n"
+            "scalar \"%s.total\" \"Lost Bytes\"              %llu\n"
+            "scalar \"%s.total\" \"Lost Packets\"            %llu\n"
+            "scalar \"%s.total\" \"Lost Frames\"             %llu\n"
+            "scalar \"%s.total\" \"Lost Byte Rate\"          %1.6f\n"
+            "scalar \"%s.total\" \"Lost Packet Rate\"        %1.6f\n"
+            "scalar \"%s.total\" \"Lost Frame Rate\"         %1.6f\n"
             ,
             objectName, TotalTransmittedBytes,
             objectName, TotalTransmittedPackets,
@@ -355,12 +406,20 @@ bool StatisticsWriter::writeScalarStatistics(const unsigned long long now,
             objectName, (totalDuration > 0.0) ? TotalTransmittedBytes   / totalDuration : 0.0,
             objectName, (totalDuration > 0.0) ? TotalTransmittedPackets / totalDuration : 0.0,
             objectName, (totalDuration > 0.0) ? TotalTransmittedFrames  / totalDuration : 0.0,
+             
             objectName, TotalReceivedBytes,
             objectName, TotalReceivedPackets,
             objectName, TotalReceivedFrames,
             objectName, (totalDuration > 0.0) ? TotalReceivedBytes   / totalDuration : 0.0,
             objectName, (totalDuration > 0.0) ? TotalReceivedPackets / totalDuration : 0.0,
-            objectName, (totalDuration > 0.0) ? TotalReceivedFrames  / totalDuration : 0.0
+            objectName, (totalDuration > 0.0) ? TotalReceivedFrames  / totalDuration : 0.0,
+
+            objectName, TotalLostBytes,
+            objectName, TotalLostPackets,
+            objectName, TotalLostFrames,
+            objectName, (totalDuration > 0.0) ? TotalLostBytes   / totalDuration : 0.0,
+            objectName, (totalDuration > 0.0) ? TotalLostPackets / totalDuration : 0.0,
+            objectName, (totalDuration > 0.0) ? TotalLostFrames  / totalDuration : 0.0
             );
    if(writeString(ScalarName, ScalarFile, ScalarBZFile, str) == false) {
       return(false);

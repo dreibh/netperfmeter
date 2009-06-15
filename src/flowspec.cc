@@ -43,6 +43,7 @@ FlowSpec::FlowSpec()
    InboundFrameRateRng      = RANDOM_CONSTANT;
    InboundFrameSizeRng      = RANDOM_CONSTANT;
    LastOutboundSeqNumber    = 0;
+   LastOutboundFrameID      = 0;
    Index                    = -1;
    RemoteControlAssocID     = 0;
    RemoteDataAssocID        = 0;
@@ -123,18 +124,29 @@ void FlowSpec::resetStatistics()
    LastTransmission       = 0;
    FirstReception         = 0;
    LastReception          = 0;
+
    TransmittedBytes       = 0;
    TransmittedPackets     = 0;
    TransmittedFrames      = 0;
    ReceivedBytes          = 0;
    ReceivedPackets        = 0;
    ReceivedFrames         = 0;
+   
+   Jitter                 = 0.0;
+   LostBytes              = 0;
+   LostPackets            = 0;
+   LostFrames             = 0;
+
    LastTransmittedBytes   = 0;
    LastTransmittedPackets = 0;
    LastTransmittedFrames  = 0;
    LastReceivedBytes      = 0;
    LastReceivedPackets    = 0;
    LastReceivedFrames     = 0;
+   LastTransitTime        = 0.0;
+   LastLostBytes          = 0;
+   LastLostPackets        = 0;
+   LastLostFrames         = 0;
 }
 
 

@@ -29,6 +29,13 @@
 #include <iostream>
 
 
+static void updateStatistics(StatisticsWriter*              statsWriter,
+                             FlowSpec*                      flowSpec,
+                             const unsigned long long       now,
+                             const NetPerfMeterDataMessage* dataMsg,
+                             const size_t                   received);
+
+
 #define MAXIMUM_MESSAGE_SIZE (size_t)65536
 #define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetPerfMeterDataMessage))
 
@@ -38,8 +45,8 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
                       const unsigned long long now,
                       const size_t             maxMsgSize)
 {
-   static char          outputBuffer[MAXIMUM_MESSAGE_SIZE];
-   static bool          outputBufferInitialized = false;
+   static char              outputBuffer[MAXIMUM_MESSAGE_SIZE];
+   static bool              outputBufferInitialized = false;
    NetPerfMeterDataMessage* dataMsg                 = (NetPerfMeterDataMessage*)&outputBuffer;
 
    // ====== Create printable data pattern ==================================
@@ -66,7 +73,6 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
    }
    ssize_t bytesSent = 0;
 
-
    while(bytesSent < bytesToSend) {
       // ====== Prepare NETPERFMETER_DATA message ===============================
       size_t chunkSize = std::min(bytesToSend, std::min(maxMsgSize, MAXIMUM_MESSAGE_SIZE));
@@ -75,11 +81,20 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
       }
       dataMsg->Header.Type   = NETPERFMETER_DATA;
       dataMsg->Header.Flags  = 0x00;
+      if(bytesSent == 0) {
+         dataMsg->Header.Flags |= DHF_FRAME_BEGIN;
+      }
+      if(bytesSent + chunkSize >= bytesToSend) {
+         dataMsg->Header.Flags |= DHF_FRAME_END;
+      }
       dataMsg->Header.Length = htons(chunkSize);
       dataMsg->MeasurementID = hton64(flowSpec->MeasurementID);
       dataMsg->FlowID        = htonl(flowSpec->FlowID);
       dataMsg->StreamID      = htons(flowSpec->StreamID);
-      dataMsg->SeqNumber     = htonl(flowSpec->LastOutboundSeqNumber++);
+      dataMsg->Padding       = 0x0000;
+      dataMsg->FrameID       = htonl(flowSpec->LastOutboundFrameID++);
+      dataMsg->SeqNumber     = hton64(flowSpec->LastOutboundSeqNumber++);
+      dataMsg->ByteSeqNumber = hton64(flowSpec->TransmittedBytes);
       dataMsg->TimeStamp     = hton64(now);
 
       // ====== Send NETPERFMETER_DATA message ==================================
@@ -154,15 +169,20 @@ ssize_t handleDataMessage(const bool               activeMode,
    const ssize_t received = messageReader->receiveMessage(sd, &inputBuffer, sizeof(inputBuffer),
                                                           &from.sa, &fromlen, &sinfo, &flags);
    if( (received > 0) && (!(flags & MSG_NOTIFICATION)) ) {
-      // ====== Handle NETPERFMETER_IDENTIFY_FLOW message ========================
+      const NetPerfMeterDataMessage*     dataMsg     = (const NetPerfMeterDataMessage*)&inputBuffer;
       const NetPerfMeterIdentifyMessage* identifyMsg = (const NetPerfMeterIdentifyMessage*)&inputBuffer;
+
+      // ====== Handle NETPERFMETER_IDENTIFY_FLOW message ===================
       if( (received >= sizeof(NetPerfMeterIdentifyMessage)) &&
+          (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
           (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
          handleIdentifyMessage(flowSet, identifyMsg, sd, sinfo.sinfo_assoc_id, &from, controlSocket);
       }
 
-      // ====== Handle regular data message ==================================
-      else {
+      // ====== Handle NETPERFMETER_DATA message ============================
+      else if( (received >= sizeof(NetPerfMeterDataMessage)) &&
+               (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
+         // ====== Identifiy flow ===========================================
          FlowSpec* flowSpec;
          if(activeMode) {
             flowSpec = FlowSpec::findFlowSpec(flowSet, sd, (protocol == IPPROTO_SCTP) ? sinfo.sinfo_stream : 0);
@@ -179,24 +199,65 @@ ssize_t handleDataMessage(const bool               activeMode,
             }
          }
          if(flowSpec) {
-            flowSpec->LastReception = now;
-            if(flowSpec->FirstReception == 0) {
-               flowSpec->FirstReception = now;
-            }
-            flowSpec->ReceivedPackets++;
-            flowSpec->ReceivedBytes += (unsigned long long)received;
-
-            statsWriter->TotalReceivedPackets++;
-            statsWriter->TotalReceivedBytes += (unsigned long long)received;
-
-            flowSpec->ReceivedFrames++;   // ??? To be implemented ???
-            statsWriter->TotalReceivedFrames++;   // ??? To be implemented ???
+            //Update flow statistics by received NETPERFMETER_DATA message.
+            updateStatistics(statsWriter, flowSpec, now, dataMsg, received);
          }
          else {
             std::cout << "WARNING: Received data for unknown flow!" << std::endl;
          }
       }
+      else {
+         std::cout << "WARNING: Received garbage!" << std::endl;
+      }
    }
 
    return(received);
+}
+
+
+// ###### Update flow statistics with incoming NETPERFMETER_DATA message ####
+static void updateStatistics(StatisticsWriter*              statsWriter,
+                             FlowSpec*                      flowSpec,
+                             const unsigned long long       now,
+                             const NetPerfMeterDataMessage* dataMsg,
+                             const size_t                   received)
+{
+   // ====== Update reception time ==========================================
+   flowSpec->LastReception = now;
+   if(flowSpec->FirstReception == 0) {
+      flowSpec->FirstReception = now;
+   }
+
+
+   // ====== Update bandwidth statistics ====================================
+   flowSpec->ReceivedPackets++;
+   flowSpec->ReceivedBytes += (unsigned long long)received;
+
+   statsWriter->TotalReceivedPackets++;
+   statsWriter->TotalReceivedBytes += (unsigned long long)received;
+
+
+   // ====== Update QoS statistics ==========================================
+   const uint64_t seqNumber   = ntoh64(dataMsg->SeqNumber);
+   const uint64_t timeStamp   = ntoh64(dataMsg->TimeStamp);
+   const double   transitTime = ((double)now - (double)timeStamp) / 1000.0;
+
+   // ------ Jitter calculation according to RFC 3550 -----------------------
+   /* From RFC 3550:
+      int transit = arrival - r->ts;
+      int d = transit - s->transit;
+      s->transit = transit;
+      if (d < 0) d = -d;
+      s->jitter += (1./16.) * ((double)d - s->jitter);
+   */
+   const double diff = fabs(transitTime - flowSpec->LastTransitTime);
+   flowSpec->LastTransitTime = transitTime;
+   flowSpec->Jitter += (1.0/16.0) * (diff - flowSpec->Jitter);
+
+   // ------ Loss calculation -----------------------------------------------
+    
+    printf("%llu: d=%1.3f ms   j=%1.3f ms\n",seqNumber,transitTime,flowSpec->Jitter);
+
+   flowSpec->ReceivedFrames++;   // ??? To be implemented ???
+   statsWriter->TotalReceivedFrames++;   // ??? To be implemented ???
 }
