@@ -45,6 +45,7 @@ struct NetPerfMeterHeader
 #define NETPERFMETER_DATA           0x05
 #define NETPERFMETER_START          0x06
 #define NETPERFMETER_STOP           0x07
+#define NETPERFMETER_RESULTS        0x08
 
 
 struct NetPerfMeterAcknowledgeMessage
@@ -85,6 +86,8 @@ struct NetPerfMeterAddFlowMessage
    uint16_t             OnOffEvents;
    unsigned int         OnOffEvent[];
 } __attribute__((packed));
+
+#define NPAF_COMPRESS_STATS (1 << 0)
 
 
 struct NetPerfMeterRemoveFlowMessage
@@ -144,5 +147,15 @@ struct NetPerfMeterStopMessage
 
    uint64_t           MeasurementID;
 } __attribute__((packed));
+
+
+struct NetPerfMeterResults
+{
+   NetPerfMeterHeader Header;
+   char               Data[];
+} __attribute__((packed));
+
+#define RHF_EOF                              (1 << 0)
+#define NETPERFMETER_RESULTS_MAX_DATA_LENGTH 1024
 
 #endif

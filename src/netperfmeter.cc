@@ -682,6 +682,10 @@ void activeMode(int argc, char** argv)
                                     measurementID, &flows,
                                     &remoteAddress.sa, &controlAddress.sa);
          gFlowSet.push_back(lastFlow);
+         const bool success = lastFlow->initializeStatsFile();
+         if(!success) {
+            return;
+         }
 
          cout << "      - Registering flow at remote node ... ";
          cout.flush();

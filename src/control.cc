@@ -33,6 +33,57 @@
 #define IDENTIFY_TIMEOUT    2500
 
 
+// ###### Upload statistics file ############################################
+static bool uploadResults(const int          controlSocket,
+                          const sctp_assoc_t assocID,
+                          FlowSpec*          flowSpec)
+{
+   char                 messageBuffer[sizeof(NetPerfMeterResults) + NETPERFMETER_RESULTS_MAX_DATA_LENGTH];
+   NetPerfMeterResults* resultsMsg = (NetPerfMeterResults*)&messageBuffer;
+   
+   bool success = flowSpec->finishStatsFile(false);
+   if(success) {
+      success = sendAcknowledgeToRemoteNode(controlSocket, assocID,
+                                            flowSpec->MeasurementID, flowSpec->FlowID, flowSpec->StreamID,
+                                            (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
+      if(success) {
+         resultsMsg->Header.Type = NETPERFMETER_RESULTS;
+               
+         sctp_sndrcvinfo sinfo;
+         memset(&sinfo, 0, sizeof(sinfo));
+         sinfo.sinfo_assoc_id = assocID;
+         sinfo.sinfo_ppid     = PPID_NETPERFMETER_CONTROL;
+
+         puts("UPLOAD...");
+         do {
+            const size_t bytes = fread(&resultsMsg->Data, 1, NETPERFMETER_RESULTS_MAX_DATA_LENGTH, flowSpec->StatsFile);
+            resultsMsg->Header.Flags  = feof(flowSpec->StatsFile) ? RHF_EOF : 0x00;
+            resultsMsg->Header.Length = htons(bytes);
+            printf("   -> b=%d\n",(int)bytes);
+
+            if(sctp_send(controlSocket, &resultsMsg, sizeof(resultsMsg), &sinfo, 0) < 0) {
+               std::cerr << "ERROR: Failed to upload results - " << strerror(errno) << "!" << std::endl;
+               success = false;
+               break;
+            }
+
+         } while(!(resultsMsg->Header.Flags & RHF_EOF));
+      }
+   }
+   flowSpec->finishStatsFile(true);
+   return(success);
+}
+
+
+// ###### Download statistics file ##########################################
+static bool downloadResults(const int          controlSocket,
+                            const sctp_assoc_t assocID,
+                            FlowSpec*          flowSpec)
+{
+   
+}
+
+
 // ###### Handle incoming control message ###################################
 bool handleControlMessage(MessageReader*           messageReader,
                           std::vector<FlowSpec*>& flowSet,
@@ -102,11 +153,8 @@ bool handleControlMessage(MessageReader*           messageReader,
                newFlowSpec->OnOffEvents.insert(ntohl(addFlowMsg->OnOffEvent[i]));
             }
             flowSet.push_back(newFlowSpec);
-            // std::cout << std::endl;
-            // newFlowSpec->print(std::cout);
             return(sendAcknowledgeToRemoteNode(controlSocket, sinfo.sinfo_assoc_id,
-                                               measurementID, flowID, streamID,
-                                               NETPERFMETER_STATUS_OKAY));
+                                               measurementID, flowID, streamID, NETPERFMETER_STATUS_OKAY));
          }
       }
 
@@ -127,16 +175,16 @@ bool handleControlMessage(MessageReader*           messageReader,
                                                NETPERFMETER_STATUS_ERROR));
          }
          else {
+            // ------ Remove FlowSpec from set of flows ---------------------
             for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
                if(*iterator == flowSpec) {
                   flowSet.erase(iterator);
-                  delete flowSpec;
                   break;
                }
             }
-            return(sendAcknowledgeToRemoteNode(controlSocket, sinfo.sinfo_assoc_id,
-                                               measurementID, flowID, streamID,
-                                               NETPERFMETER_STATUS_OKAY));
+            // ------ Upload statistics file --------------------------------
+            uploadResults(controlSocket, sinfo.sinfo_assoc_id, flowSpec);
+            delete flowSpec;
          }
       }
 
@@ -179,20 +227,20 @@ bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec)
    // ====== Sent NETPERFMETER_ADD_FLOW to remote node =======================
    char                    addFlowMsgBuffer[1000 + sizeof(NetPerfMeterAddFlowMessage) + (sizeof(unsigned int) * flowSpec->OnOffEvents.size())];
    NetPerfMeterAddFlowMessage* addFlowMsg = (NetPerfMeterAddFlowMessage*)&addFlowMsgBuffer;
-   addFlowMsg->Header.Type     = NETPERFMETER_ADD_FLOW;
-   addFlowMsg->Header.Flags    = 0x00;
-   addFlowMsg->Header.Length   = htons(sizeof(NetPerfMeterAddFlowMessage) + (sizeof(unsigned int) * flowSpec->OnOffEvents.size()));
-   addFlowMsg->MeasurementID   = hton64(flowSpec->MeasurementID);
-   addFlowMsg->FlowID          = htonl(flowSpec->FlowID);
-   addFlowMsg->StreamID        = htons(flowSpec->StreamID);
-   addFlowMsg->Protocol        = flowSpec->Protocol;
-   addFlowMsg->Flags           = 0x00;
-   addFlowMsg->FrameRate       = doubleToNetwork(flowSpec->InboundFrameRate);
-   addFlowMsg->FrameSize       = doubleToNetwork(flowSpec->InboundFrameSize);
-   addFlowMsg->FrameRateRng    = flowSpec->InboundFrameRateRng;
-   addFlowMsg->FrameSizeRng    = flowSpec->InboundFrameSizeRng;
-   addFlowMsg->ReliableMode    = htonl((uint32_t)rint(flowSpec->ReliableMode * (double)0xffffffff));
-   addFlowMsg->OrderedMode     = htonl((uint32_t)rint(flowSpec->OrderedMode * (double)0xffffffff));
+   addFlowMsg->Header.Type    = NETPERFMETER_ADD_FLOW;
+   addFlowMsg->Header.Flags   = NPAF_COMPRESS_STATS;
+   addFlowMsg->Header.Length  = htons(sizeof(NetPerfMeterAddFlowMessage) + (sizeof(unsigned int) * flowSpec->OnOffEvents.size()));
+   addFlowMsg->MeasurementID  = hton64(flowSpec->MeasurementID);
+   addFlowMsg->FlowID         = htonl(flowSpec->FlowID);
+   addFlowMsg->StreamID       = htons(flowSpec->StreamID);
+   addFlowMsg->Protocol       = flowSpec->Protocol;
+   addFlowMsg->Flags          = 0x00;
+   addFlowMsg->FrameRate      = doubleToNetwork(flowSpec->InboundFrameRate);
+   addFlowMsg->FrameSize      = doubleToNetwork(flowSpec->InboundFrameSize);
+   addFlowMsg->FrameRateRng   = flowSpec->InboundFrameRateRng;
+   addFlowMsg->FrameSizeRng   = flowSpec->InboundFrameSizeRng;
+   addFlowMsg->ReliableMode   = htonl((uint32_t)rint(flowSpec->ReliableMode * (double)0xffffffff));
+   addFlowMsg->OrderedMode    = htonl((uint32_t)rint(flowSpec->OrderedMode * (double)0xffffffff));
    addFlowMsg->OnOffEvents = htons(flowSpec->OnOffEvents.size());
    size_t i = 0;
    for(std::set<unsigned int>::iterator iterator = flowSpec->OnOffEvents.begin();iterator != flowSpec->OnOffEvents.end();iterator++, i++) {
@@ -393,11 +441,12 @@ void handleIdentifyMessage(std::vector<FlowSpec*>&        flowSet,
       flowSpec->RemoteDataAssocID    = assocID;
       flowSpec->RemoteAddress        = *from;
       flowSpec->RemoteAddressIsValid = true;
+      const bool success = flowSpec->initializeStatsFile(true);
       sendAcknowledgeToRemoteNode(controlSocket, flowSpec->RemoteControlAssocID,
                                   ntoh64(identifyMsg->MeasurementID),
                                   ntohl(identifyMsg->FlowID),
                                   ntohs(identifyMsg->StreamID),
-                                  0);
+                                  (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
    }
    else {
       std::cerr << "WARNING: NETPERFMETER_IDENTIFY_FLOW message for unknown flow!" << std::endl;

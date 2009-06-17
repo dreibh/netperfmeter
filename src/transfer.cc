@@ -29,6 +29,8 @@
 #include <iostream>
 
 
+extern StatisticsWriter  gStatisticsWriter;
+ 
 static void updateStatistics(StatisticsWriter*              statsWriter,
                              FlowSpec*                      flowSpec,
                              const unsigned long long       now,
@@ -250,14 +252,27 @@ static void updateStatistics(StatisticsWriter*              statsWriter,
       if (d < 0) d = -d;
       s->jitter += (1./16.) * ((double)d - s->jitter);
    */
-   const double diff = fabs(transitTime - flowSpec->LastTransitTime);
+   const double diff = transitTime - flowSpec->LastTransitTime;
    flowSpec->LastTransitTime = transitTime;
-   flowSpec->Jitter += (1.0/16.0) * (diff - flowSpec->Jitter);
+   flowSpec->Jitter += (1.0/16.0) * (fabs(diff) - flowSpec->Jitter);
 
    // ------ Loss calculation -----------------------------------------------
     
-    printf("%llu: d=%1.3f ms   j=%1.3f ms\n",seqNumber,transitTime,flowSpec->Jitter);
+//     printf("%llu: d=%1.3f ms   j=%1.3f ms\n",seqNumber,transitTime,flowSpec->Jitter);
 
    flowSpec->ReceivedFrames++;   // ??? To be implemented ???
    statsWriter->TotalReceivedFrames++;   // ??? To be implemented ???
+   
+
+   // ------ Write statistics -----------------------------------------------
+   char str[512];
+   snprintf((char*)&str, sizeof(str),
+            "%06llu %llu %1.6f\t"
+            "%llu %1.3f %1.3f\n",
+            flowSpec->StatsLine++, now, (double)(now - gStatisticsWriter.FirstStatisticsEvent) / 1000000.0,
+            (unsigned long long)seqNumber, transitTime, diff, flowSpec->Jitter);
+   
+   StatisticsWriter::writeString((const char*)&flowSpec->StatsFileName,
+                                 flowSpec->StatsFile, flowSpec->StatsBZFile,
+                                 (const char*)&str);
 }

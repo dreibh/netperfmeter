@@ -20,8 +20,10 @@
  */
 
 #include "flowspec.h"
+#include "statisticswriter.h"
 
 #include <assert.h>
+#include <string.h>
 #include <math.h>
 
 
@@ -53,6 +55,10 @@ FlowSpec::FlowSpec()
    Status                   = WaitingForStartup;
    NextStatusChangeEvent    = ~0;
    BaseTime                 = getMicroTime();
+   StatsFileName[0]         = 0x00;
+   StatsLine                = 0;
+   StatsFile                = NULL;
+   StatsBZFile              = NULL;
 
    resetStatistics();
 }
@@ -333,4 +339,74 @@ void FlowSpec::printFlows(std::ostream&           os,
       const FlowSpec* flowSpec = *iterator;
       flowSpec->print(os, printStatistics);
    }
+}
+
+
+// ###### Initialize statistics file ########################################
+bool FlowSpec::initializeStatsFile(const bool compressed)
+{
+   finishStatsFile(true);
+
+   const char* prefix="out0";   // ????????????????????
+   
+   if(!RemoteAddressIsValid) {
+      snprintf((char*)&StatsFileName, sizeof(StatsFileName), "%s-local-%08x-%04x", prefix, FlowID, StreamID);
+   }
+   else {
+      snprintf((char*)&StatsFileName, sizeof(StatsFileName), "/tmp/temp-%016llx-%08x-%04x.data",
+               (unsigned long long)MeasurementID, FlowID, StreamID);
+   }
+   StatsFile = fopen(StatsFileName, "w+b");
+   if(StatsFile == NULL) {
+      std::cerr << "ERROR: Unable to create output file " << StatsFileName << " - " << strerror(errno) << "!" << std::endl;
+      return(false);
+   }
+
+printf("STRING: %s\n",StatsFileName);
+
+   if(compressed) {
+      int bzerror;
+      StatsBZFile = BZ2_bzWriteOpen(&bzerror, StatsFile, 9, 0, 30);
+      if(bzerror != BZ_OK) {
+         std::cerr << "ERROR: Unable to initialize BZip2 compression for file " << StatsFileName << "!" << std::endl
+              << "Reason: " << BZ2_bzerror(StatsBZFile, &bzerror) << std::endl;
+         BZ2_bzWriteClose(&bzerror, StatsBZFile, 0, NULL, NULL);
+         StatsBZFile = NULL;
+         fclose(StatsFile);
+         StatsFile = NULL;
+         return(false);
+      }
+   }
+   
+   StatsLine = 1;
+   return(StatisticsWriter::writeString((const char*)&StatsFileName, StatsFile, StatsBZFile,
+                                        "AbsTime RelTime SeqNumber Delay PrevPacketDelayDiff Jitter\n"));
+}
+
+
+// ###### Finish writing of statistics file #################################
+bool FlowSpec::finishStatsFile(const bool closeFile)
+{
+   bool result = true;
+   if(StatsBZFile) {
+      int bzerror;
+      BZ2_bzWriteClose(&bzerror, StatsBZFile, 0, NULL, NULL);
+      if(bzerror != BZ_OK) {
+         std::cerr << "ERROR: Unable to finish BZip2 compression for file " << StatsFileName << "!" << std::endl
+              << "Reason: " << BZ2_bzerror(StatsBZFile, &bzerror) << std::endl;
+         result = false;
+      }
+      StatsBZFile = NULL; 
+   }
+   if(StatsFile) {
+      if(closeFile) {
+         fclose(StatsFile);
+         StatsFile        = NULL;
+         StatsFileName[0] = 0x00;
+      }
+      else {
+         rewind(StatsFile);
+      }
+   }
+   return(result);
 }

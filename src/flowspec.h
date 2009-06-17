@@ -24,6 +24,7 @@
 
 #include <sys/types.h>
 
+#include <bzlib.h>
 #include <iostream>
 #include <vector>
 #include <set>
@@ -42,6 +43,9 @@ class FlowSpec
    unsigned long long scheduleNextStatusChangeEvent(const unsigned long long now);
    unsigned long long scheduleNextTransmissionEvent();
 
+   bool initializeStatsFile(const bool compressed = true);
+   bool finishStatsFile(const bool closeFile);
+   
    void resetStatistics();
    void print(std::ostream& os, const bool printStatistics = false) const;
 
@@ -151,7 +155,12 @@ class FlowSpec
    sctp_assoc_t            RemoteDataAssocID;
    sockaddr_union          RemoteAddress;
    bool                    RemoteAddressIsValid;
+   
+   // ====== Statistics file handling =======================================
+   char                    StatsFileName[256];
+   unsigned long long      StatsLine;
+   FILE*                   StatsFile;
+   BZFILE*                 StatsBZFile;
 };
-
 
 #endif
