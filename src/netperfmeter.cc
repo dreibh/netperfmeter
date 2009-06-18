@@ -626,6 +626,20 @@ void activeMode(int argc, char** argv)
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
 
+   // ====== Get vector and scalar names ====================================
+   for(int i = 2;i < argc;i++) {
+      if(strncmp(argv[i], "-vector=", 8) == 0) {
+         gStatisticsWriter.VectorName = (const char*)&argv[i][8];
+         dissectName(gStatisticsWriter.VectorName, 
+                     (char*)&gStatisticsWriter.VectorPrefix, sizeof(gStatisticsWriter.VectorPrefix),
+                     (char*)&gStatisticsWriter.VectorSuffix, sizeof(gStatisticsWriter.VectorSuffix));
+      }
+      else if(strncmp(argv[i], "-scalar=", 8) == 0) {
+         gStatisticsWriter.ScalarName = (const char*)&argv[i][8];
+      }
+   }
+
+
    // ====== Initialize flows ===============================================
    uint8_t   protocol = 0;
    FlowSpec* lastFlow      = NULL;
@@ -652,24 +666,10 @@ void activeMode(int argc, char** argv)
 #endif
          }
          else if(strncmp(argv[i], "-vector=", 8) == 0) {
-            if(gStatisticsWriter.VectorName != NULL) {
-               cerr << "ERROR: Vector file name has been specified twice!" << endl;
-               exit(1);
-            }
-            gStatisticsWriter.VectorName = (const char*)&argv[i][8];
-            if(gStatisticsWriter.openOutputFile(gStatisticsWriter.VectorName, &gStatisticsWriter.VectorFile, &gStatisticsWriter.VectorBZFile) == false) {
-               exit(1);
-            }
+            // Already processed above!
          }
          else if(strncmp(argv[i], "-scalar=", 8) == 0) {
-            if(gStatisticsWriter.ScalarName != NULL) {
-               cerr << "ERROR: Scalar file name has been specified twice!" << endl;
-               exit(1);
-            }
-            gStatisticsWriter.ScalarName = (const char*)&argv[i][8];
-            if(gStatisticsWriter.openOutputFile(gStatisticsWriter.ScalarName, &gStatisticsWriter.ScalarFile, &gStatisticsWriter.ScalarBZFile) == false) {
-               exit(1);
-            }
+            // Already processed above!
          }
       }
       else {
@@ -703,6 +703,17 @@ void activeMode(int argc, char** argv)
    }
    cout << endl;
 
+   
+   // ====== Initialize vector and scalar files =============================
+   if(gStatisticsWriter.openOutputFile(gStatisticsWriter.VectorName,
+      &gStatisticsWriter.VectorFile, &gStatisticsWriter.VectorBZFile) == false) {
+      exit(1);
+   }
+   if(gStatisticsWriter.openOutputFile(gStatisticsWriter.ScalarName,
+      &gStatisticsWriter.ScalarFile, &gStatisticsWriter.ScalarBZFile) == false) {
+      exit(1);
+   }
+   
    printGlobalParameters();
 
 
@@ -754,8 +765,8 @@ void activeMode(int argc, char** argv)
    cout << "Shutdown:" << endl;
    vector<FlowSpec*>::iterator iterator = gFlowSet.begin();
    while(iterator != gFlowSet.end()) {
-      const FlowSpec* flowSpec = *iterator;
-      cout << "   o Flow ID #" << flowSpec->FlowID << " ... ";
+      FlowSpec* flowSpec = *iterator;
+      cout << "   o Flow ID #" << flowSpec->FlowID << ": ";
       cout.flush();
       if(flowSpec->OriginalSocketDescriptor) {
          gMessageReader.deregisterSocket(flowSpec->SocketDescriptor);
@@ -763,7 +774,6 @@ void activeMode(int argc, char** argv)
       removeFlowFromRemoteNode(gControlSocket, flowSpec);
       delete flowSpec;
       gFlowSet.erase(iterator);
-      cout << "okay" << endl;
       iterator = gFlowSet.begin();
    }
    cout << endl;

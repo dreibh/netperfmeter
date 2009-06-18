@@ -21,6 +21,7 @@
 
 #include "control.h"
 #include "tools.h"
+#include "statisticswriter.h"
 
 #include <string.h>
 #include <math.h>
@@ -31,6 +32,9 @@
 
 #define IDENTIFY_MAX_TRIALS 10
 #define IDENTIFY_TIMEOUT    2500
+
+extern StatisticsWriter gStatisticsWriter;
+
 
 
 // ###### Upload statistics file ############################################
@@ -54,20 +58,24 @@ static bool uploadResults(const int          controlSocket,
          sinfo.sinfo_assoc_id = assocID;
          sinfo.sinfo_ppid     = PPID_NETPERFMETER_CONTROL;
 
-         puts("UPLOAD...");
+         std::cout << std::endl << "Uploading results ";
+         std::cout.flush();
          do {
             const size_t bytes = fread(&resultsMsg->Data, 1, NETPERFMETER_RESULTS_MAX_DATA_LENGTH, flowSpec->StatsFile);
             resultsMsg->Header.Flags  = feof(flowSpec->StatsFile) ? RHF_EOF : 0x00;
             resultsMsg->Header.Length = htons(bytes);
-            printf("   -> b=%d\n",(int)bytes);
+            // printf("   -> b=%d   snd=%d\n",(int)bytes,sizeof(NetPerfMeterResults) + bytes);
 
-            if(sctp_send(controlSocket, &resultsMsg, sizeof(resultsMsg), &sinfo, 0) < 0) {
+            std::cout << ".";
+            std::cout.flush();
+            if(sctp_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, &sinfo, 0) < 0) {
                std::cerr << "ERROR: Failed to upload results - " << strerror(errno) << "!" << std::endl;
                success = false;
                break;
             }
 
          } while(!(resultsMsg->Header.Flags & RHF_EOF));
+         std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
       }
    }
    flowSpec->finishStatsFile(true);
@@ -76,11 +84,58 @@ static bool uploadResults(const int          controlSocket,
 
 
 // ###### Download statistics file ##########################################
-static bool downloadResults(const int          controlSocket,
-                            const sctp_assoc_t assocID,
-                            FlowSpec*          flowSpec)
+static bool downloadResults(const int       controlSocket,
+                            const FlowSpec* flowSpec)
 {
-   
+   char                 messageBuffer[sizeof(NetPerfMeterResults) + NETPERFMETER_RESULTS_MAX_DATA_LENGTH];
+   NetPerfMeterResults* resultsMsg = (NetPerfMeterResults*)&messageBuffer;
+   char                 statsFileName[256];
+   snprintf((char*)&statsFileName, sizeof(statsFileName), "%s-passive-%08x-%04x%s",
+            (const char*)&gStatisticsWriter.VectorPrefix,
+            flowSpec->FlowID, flowSpec->StreamID,
+            (const char*)&gStatisticsWriter.VectorSuffix);
+
+   std::cout << "Downloading results [" << statsFileName << "] ";
+   std::cout.flush();
+   bool success = waitForAcknowledgeFromRemoteNode(controlSocket, flowSpec->MeasurementID, flowSpec->FlowID, flowSpec->StreamID);
+   if(success) {
+      FILE* fh = fopen(statsFileName, "w");
+      if(fh == NULL) {
+         std::cerr << "ERROR: Unable to create file " << statsFileName
+                   << " - " << strerror(errno) << "!" << std::endl;
+         exit(1);
+      }
+      success = false;
+      ssize_t received = ext_recv(controlSocket, resultsMsg, sizeof(messageBuffer), 0);
+      while(received >= sizeof(NetPerfMeterResults)) {
+         const size_t bytes = ntohs(resultsMsg->Header.Length);
+         if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
+            std::cerr << "ERROR: Received unexpected message type " << (unsigned int)resultsMsg->Header.Type <<  "!" << std::endl;
+            exit(1);
+         }
+         if(bytes + sizeof(NetPerfMeterResults) > received) {
+            std::cerr << "ERROR: Received malformed NETPERFMETER_RESULTS message!" << std::endl;
+            // printf("%u + %u > %u\n", bytes, sizeof(NetPerfMeterResults), received);
+            exit(1);
+         }
+         std::cout << ".";
+
+         if(fwrite((char*)&resultsMsg->Data, bytes, 1, fh) != 1) {
+            std::cerr << "ERROR: Unable to write results to file " << statsFileName
+                      << " - " << strerror(errno) << "!" << std::endl;
+            exit(1);
+         }
+      
+         if(resultsMsg->Header.Flags & RHF_EOF) {
+            success = true;
+            break;
+         }
+         received = ext_recv(controlSocket, resultsMsg, sizeof(messageBuffer), 0);
+      }
+      fclose(fh);
+   }
+   std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
+   return(success);
 }
 
 
@@ -228,7 +283,7 @@ bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec)
    char                    addFlowMsgBuffer[1000 + sizeof(NetPerfMeterAddFlowMessage) + (sizeof(unsigned int) * flowSpec->OnOffEvents.size())];
    NetPerfMeterAddFlowMessage* addFlowMsg = (NetPerfMeterAddFlowMessage*)&addFlowMsgBuffer;
    addFlowMsg->Header.Type    = NETPERFMETER_ADD_FLOW;
-   addFlowMsg->Header.Flags   = NPAF_COMPRESS_STATS;
+   addFlowMsg->Header.Flags   = 0x00;
    addFlowMsg->Header.Length  = htons(sizeof(NetPerfMeterAddFlowMessage) + (sizeof(unsigned int) * flowSpec->OnOffEvents.size()));
    addFlowMsg->MeasurementID  = hton64(flowSpec->MeasurementID);
    addFlowMsg->FlowID         = htonl(flowSpec->FlowID);
@@ -265,13 +320,13 @@ bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec)
    for(unsigned int trial = 0;trial < maxTrials;trial++) {
       NetPerfMeterIdentifyMessage identifyMsg;
       identifyMsg.Header.Type   = NETPERFMETER_IDENTIFY_FLOW;
-      identifyMsg.Header.Flags  = 0x00;
+      identifyMsg.Header.Flags  = (strstr(gStatisticsWriter.VectorSuffix, ".bz2") ? NPIF_COMPRESS_STATS : 0x00);;
       identifyMsg.Header.Length = htons(sizeof(identifyMsg));
       identifyMsg.MagicNumber   = hton64(NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER);
       identifyMsg.MeasurementID = hton64(flowSpec->MeasurementID);
       identifyMsg.FlowID        = htonl(flowSpec->FlowID);
       identifyMsg.StreamID      = htons(flowSpec->StreamID);
-
+      
       std::cout << "<R3> "; std::cout.flush();
       if(flowSpec->Protocol == IPPROTO_SCTP) {
          if(sctp_sendmsg(flowSpec->SocketDescriptor, &identifyMsg, sizeof(identifyMsg), NULL, 0, PPID_NETPERFMETER_CONTROL, 0, flowSpec->StreamID, ~0, 0) <= 0) {
@@ -319,8 +374,10 @@ FlowSpec* createRemoteFlow(const NetPerfMeterAddFlowMessage* addFlowMsg,
 
 
 // ###### Tell remote node to remove a flow #################################
-bool removeFlowFromRemoteNode(int controlSocket, const FlowSpec* flowSpec)
+bool removeFlowFromRemoteNode(int controlSocket, FlowSpec* flowSpec)
 {
+   flowSpec->finishStatsFile(true);
+   
    NetPerfMeterRemoveFlowMessage removeFlowMsg;
    removeFlowMsg.Header.Type   = NETPERFMETER_REMOVE_FLOW;
    removeFlowMsg.Header.Flags  = 0x00;
@@ -331,7 +388,7 @@ bool removeFlowFromRemoteNode(int controlSocket, const FlowSpec* flowSpec)
    if(sctp_sendmsg(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), NULL, 0, PPID_NETPERFMETER_CONTROL, 0, 0, ~0, 0) <= 0) {
       return(false);
    }
-   return(waitForAcknowledgeFromRemoteNode(controlSocket, flowSpec->MeasurementID, flowSpec->FlowID, flowSpec->StreamID));
+   return(downloadResults(controlSocket, flowSpec));
 }
 
 
@@ -425,12 +482,12 @@ bool waitForAcknowledgeFromRemoteNode(int            controlSocket,
 
 
 // ###### Handle NETPERFMETER_IDENTIFY_FLOW message #########################
-void handleIdentifyMessage(std::vector<FlowSpec*>&        flowSet,
+void handleIdentifyMessage(std::vector<FlowSpec*>&            flowSet,
                            const NetPerfMeterIdentifyMessage* identifyMsg,
-                           const int                      sd,
-                           const sctp_assoc_t             assocID,
-                           const sockaddr_union*          from,
-                           const int                      controlSocket)
+                           const int                          sd,
+                           const sctp_assoc_t                 assocID,
+                           const sockaddr_union*              from,
+                           const int                          controlSocket)
 {
    FlowSpec* flowSpec = FlowSpec::findFlowSpec(flowSet,
                                                ntoh64(identifyMsg->MeasurementID),
@@ -441,7 +498,7 @@ void handleIdentifyMessage(std::vector<FlowSpec*>&        flowSet,
       flowSpec->RemoteDataAssocID    = assocID;
       flowSpec->RemoteAddress        = *from;
       flowSpec->RemoteAddressIsValid = true;
-      const bool success = flowSpec->initializeStatsFile(true);
+      const bool success = flowSpec->initializeStatsFile((identifyMsg->Header.Flags & NPIF_COMPRESS_STATS) ? true : false);
       sendAcknowledgeToRemoteNode(controlSocket, flowSpec->RemoteControlAssocID,
                                   ntoh64(identifyMsg->MeasurementID),
                                   ntohl(identifyMsg->FlowID),

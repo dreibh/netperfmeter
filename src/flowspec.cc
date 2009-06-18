@@ -27,6 +27,10 @@
 #include <math.h>
 
 
+extern StatisticsWriter gStatisticsWriter;
+
+
+
 // ###### Constructor #######################################################
 FlowSpec::FlowSpec()
 {
@@ -188,7 +192,7 @@ void FlowSpec::print(std::ostream& os, const bool printStatistics) const
       }
    }
    if(Protocol == IPPROTO_SCTP) {
-      os << "   o Stream #" << StreamID << " \"" << Description << "\":" << std::endl;
+      os << "   o Stream #" << StreamID << " (Flow ID #" << FlowID << " \"" << Description << "\"):" << std::endl;
    }
 
    os << "      - Outbound Frame Rate: ";
@@ -346,11 +350,11 @@ void FlowSpec::printFlows(std::ostream&           os,
 bool FlowSpec::initializeStatsFile(const bool compressed)
 {
    finishStatsFile(true);
-
-   const char* prefix="out0";   // ????????????????????
-   
    if(!RemoteAddressIsValid) {
-      snprintf((char*)&StatsFileName, sizeof(StatsFileName), "%s-local-%08x-%04x", prefix, FlowID, StreamID);
+      snprintf((char*)&StatsFileName, sizeof(StatsFileName), "%s-active-%08x-%04x%s",
+               (const char*)&gStatisticsWriter.VectorPrefix,
+               FlowID, StreamID,
+               (const char*)&gStatisticsWriter.VectorSuffix);
    }
    else {
       snprintf((char*)&StatsFileName, sizeof(StatsFileName), "/tmp/temp-%016llx-%08x-%04x.data",
@@ -361,8 +365,6 @@ bool FlowSpec::initializeStatsFile(const bool compressed)
       std::cerr << "ERROR: Unable to create output file " << StatsFileName << " - " << strerror(errno) << "!" << std::endl;
       return(false);
    }
-
-printf("STRING: %s\n",StatsFileName);
 
    if(compressed) {
       int bzerror;

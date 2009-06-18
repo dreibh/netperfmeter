@@ -38,7 +38,7 @@ bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec);
 FlowSpec* createRemoteFlow(const NetPerfMeterAddFlowMessage* addFlowMsg,
                            const sctp_assoc_t            controlAssocID,
                            const char*                   description);
-bool removeFlowFromRemoteNode(int controlSocket, const FlowSpec* flowSpec);
+bool removeFlowFromRemoteNode(int controlSocket, FlowSpec* flowSpec);
 void remoteAllFlowsOwnedBy(std::vector<FlowSpec*>& flowSet, const sctp_assoc_t assocID);
 bool sendAcknowledgeToRemoteNode(int            controlSocket,
                                  sctp_assoc_t   assocID,

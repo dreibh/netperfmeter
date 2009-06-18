@@ -54,11 +54,13 @@ StatisticsWriter::StatisticsWriter()
    LastTotalLostFrames         = 0;
 
    VectorLine                  = 0;
-   VectorName                  = NULL;
+   VectorName                  = "output.vec.bz2";
+   safestrcpy((char*)&VectorPrefix, "output", sizeof(VectorPrefix));
+   safestrcpy((char*)&VectorSuffix, ".vec.bz2", sizeof(VectorSuffix));
    VectorFile                  = NULL;
    VectorBZFile                = NULL;
 
-   ScalarName                  = NULL;
+   ScalarName                  = "output.sca.bz2";
    ScalarFile                  = NULL;
    ScalarBZFile                = NULL;
 }

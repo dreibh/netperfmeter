@@ -49,6 +49,10 @@ int safestrcpy(char* dest, const char* src, const size_t size);
 int safestrcat(char* dest, const char* src, const size_t size);
 char* strindex(char* string, const char character);
 char* strrindex(char* string, const char character);
+const char* rnindex(const char* str, const char c, const unsigned int steps);
+void dissectName(const char* name,
+                 char*       prefix, const size_t prefixSize,
+                 char*       suffix, const size_t suffixSize);
 
 
 union sockaddr_union {

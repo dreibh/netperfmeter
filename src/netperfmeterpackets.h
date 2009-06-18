@@ -87,8 +87,6 @@ struct NetPerfMeterAddFlowMessage
    unsigned int         OnOffEvent[];
 } __attribute__((packed));
 
-#define NPAF_COMPRESS_STATS (1 << 0)
-
 
 struct NetPerfMeterRemoveFlowMessage
 {
@@ -110,6 +108,8 @@ struct NetPerfMeterIdentifyMessage
 } __attribute__((packed));
 
 #define NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER 0x4bcdf3aa303c6774ULL
+
+#define NPIF_COMPRESS_STATS (1 << 0)
 
 
 struct NetPerfMeterDataMessage

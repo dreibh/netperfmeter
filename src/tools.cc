@@ -116,6 +116,47 @@ char* strrindex(char* string, const char character)
 }
 
 
+// ###### Find n-th occurrence of char c in reverse direction ###############
+const char* rnindex(const char* str, const char c, const unsigned int steps)
+{
+   unsigned n = 0;
+   for(int i = strlen(str);i >= 0;i--) {
+      if(str[i] == c) {
+         n++;
+         if(n == steps) {
+            return(&str[i]);
+         }
+      }
+   }
+   return(NULL);
+}
+
+
+// ###### Dissect file name into prefix and suffix ##########################
+void dissectName(const char* name,
+                 char*       prefix, const size_t prefixSize,
+                 char*       suffix, const size_t suffixSize)
+{
+   const char* s = rindex(name, '.');
+   if((s != NULL) && (s != name) && (strcasecmp(s, ".bz2") == 0)) {
+      const char* s1 = rnindex(name, '.', 2);
+      if(s1 != NULL) {
+         s = s1;
+      }
+   }
+   safestrcpy(prefix, name, prefixSize);
+   if(s != NULL) {
+      if((long)s - (long)name < prefixSize) {
+         prefix[(long)s - (long)name] = 0x00;
+      }
+      safestrcpy(suffix, s, suffixSize);
+   }
+   else {
+      suffix[0] = 0x00;
+   }
+}
+
+
 /* ###### Check for support of IPv6 ###################################### */
 bool checkIPv6()
 {

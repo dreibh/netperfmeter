@@ -66,6 +66,8 @@ class StatisticsWriter
 
    unsigned long long VectorLine;
    const char*        VectorName;
+   char               VectorPrefix[256];
+   char               VectorSuffix[32];
    FILE*              VectorFile;
    BZFILE*            VectorBZFile;
 
