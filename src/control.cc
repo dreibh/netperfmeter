@@ -58,7 +58,7 @@ static bool uploadResults(const int          controlSocket,
          sinfo.sinfo_assoc_id = assocID;
          sinfo.sinfo_ppid     = PPID_NETPERFMETER_CONTROL;
 
-         std::cout << std::endl << "Uploading results ";
+         std::cout << std::endl << "Uploading results [" << flowSpec->StatsFileName << "] ";
          std::cout.flush();
          do {
             const size_t bytes = fread(&resultsMsg->Data, 1, NETPERFMETER_RESULTS_MAX_DATA_LENGTH, flowSpec->StatsFile);
@@ -97,7 +97,8 @@ static bool downloadResults(const int       controlSocket,
 
    std::cout << "Downloading results [" << statsFileName << "] ";
    std::cout.flush();
-   bool success = waitForAcknowledgeFromRemoteNode(controlSocket, flowSpec->MeasurementID, flowSpec->FlowID, flowSpec->StreamID);
+   bool success = waitForAcknowledgeFromRemoteNode(controlSocket, flowSpec->MeasurementID,
+                                                   flowSpec->FlowID, flowSpec->StreamID);
    if(success) {
       FILE* fh = fopen(statsFileName, "w");
       if(fh == NULL) {
@@ -241,6 +242,7 @@ bool handleControlMessage(MessageReader*           messageReader,
             uploadResults(controlSocket, sinfo.sinfo_assoc_id, flowSpec);
             delete flowSpec;
          }
+         return(true);
       }
 
       else if(header->Type == NETPERFMETER_START) {
@@ -270,7 +272,8 @@ bool handleControlMessage(MessageReader*           messageReader,
                                             NETPERFMETER_STATUS_OKAY));
       }
 
-      std::cerr << "ERROR: Received invalid control message of type " << (unsigned int)header->Type << "!" << std::endl;
+      std::cerr << "ERROR: Received invalid control message of type "
+                << (unsigned int)header->Type << "!" << std::endl;
       return(false);
    }
 }
@@ -308,7 +311,8 @@ bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec)
       return(false);
    }
    std::cout << "<R2> "; std::cout.flush();
-   if(waitForAcknowledgeFromRemoteNode(controlSocket, flowSpec->MeasurementID, flowSpec->FlowID, flowSpec->StreamID) == false) {
+   if(waitForAcknowledgeFromRemoteNode(controlSocket, flowSpec->MeasurementID,
+                                       flowSpec->FlowID, flowSpec->StreamID) == false) {
       return(false);
    }
 
@@ -329,7 +333,8 @@ bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec)
       
       std::cout << "<R3> "; std::cout.flush();
       if(flowSpec->Protocol == IPPROTO_SCTP) {
-         if(sctp_sendmsg(flowSpec->SocketDescriptor, &identifyMsg, sizeof(identifyMsg), NULL, 0, PPID_NETPERFMETER_CONTROL, 0, flowSpec->StreamID, ~0, 0) <= 0) {
+         if(sctp_sendmsg(flowSpec->SocketDescriptor, &identifyMsg, sizeof(identifyMsg),
+                         NULL, 0, PPID_NETPERFMETER_CONTROL, 0, flowSpec->StreamID, ~0, 0) <= 0) {
             return(false);
          }
       }
@@ -339,7 +344,9 @@ bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec)
          }
       }
       std::cout << "<R4> "; std::cout.flush();
-      if(waitForAcknowledgeFromRemoteNode(controlSocket, flowSpec->MeasurementID, flowSpec->FlowID, flowSpec->StreamID, IDENTIFY_TIMEOUT) == true) {
+      if(waitForAcknowledgeFromRemoteNode(controlSocket, flowSpec->MeasurementID,
+                                          flowSpec->FlowID, flowSpec->StreamID,
+                                          IDENTIFY_TIMEOUT) == true) {
          return(true);
       }
       std::cout << "<timeout> "; std::cout.flush();
@@ -385,7 +392,8 @@ bool removeFlowFromRemoteNode(int controlSocket, FlowSpec* flowSpec)
    removeFlowMsg.MeasurementID = hton64(flowSpec->MeasurementID);
    removeFlowMsg.FlowID        = htonl(flowSpec->FlowID);
    removeFlowMsg.StreamID      = htons(flowSpec->StreamID);
-   if(sctp_sendmsg(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), NULL, 0, PPID_NETPERFMETER_CONTROL, 0, 0, ~0, 0) <= 0) {
+   if(sctp_sendmsg(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), NULL, 0,
+                   PPID_NETPERFMETER_CONTROL, 0, 0, ~0, 0) <= 0) {
       return(false);
    }
    return(downloadResults(controlSocket, flowSpec));
@@ -462,7 +470,8 @@ bool waitForAcknowledgeFromRemoteNode(int            controlSocket,
       return(false);
    }
    if(ackMsg.Header.Type != NETPERFMETER_ACKNOWLEDGE) {
-      std::cerr << "ERROR: Received message type " << (unsigned int)ackMsg.Header.Type << " instead of NETPERFMETER_ACKNOWLEDGE!" << std::endl;
+      std::cerr << "ERROR: Received message type " << (unsigned int)ackMsg.Header.Type
+                << " instead of NETPERFMETER_ACKNOWLEDGE!" << std::endl;
       return(false);
    }
 
