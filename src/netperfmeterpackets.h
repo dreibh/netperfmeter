@@ -140,6 +140,8 @@ struct NetPerfMeterStartMessage
    uint64_t           MeasurementID;
 } __attribute__((packed));
 
+#define NPSF_COMPRESS_STATS (1 << 0)
+
 
 struct NetPerfMeterStopMessage
 {

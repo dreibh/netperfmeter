@@ -27,10 +27,6 @@
 #include <math.h>
 
 
-extern StatisticsWriter gStatisticsWriter;
-
-
-
 // ###### Constructor #######################################################
 FlowSpec::FlowSpec()
 {
@@ -351,10 +347,12 @@ bool FlowSpec::initializeStatsFile(const bool compressed)
 {
    finishStatsFile(true);
    if(!RemoteAddressIsValid) {
+      const StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter(MeasurementID);
+      assert(statisticsWriter != NULL);
       snprintf((char*)&StatsFileName, sizeof(StatsFileName), "%s-active-%08x-%04x%s",
-               (const char*)&gStatisticsWriter.VectorPrefix,
+               (const char*)&statisticsWriter->VectorPrefix,
                FlowID, StreamID,
-               (const char*)&gStatisticsWriter.VectorSuffix);
+               (const char*)&statisticsWriter->VectorSuffix);
    }
    else {
       snprintf((char*)&StatsFileName, sizeof(StatsFileName), "/tmp/temp-%016llx-%08x-%04x.data",

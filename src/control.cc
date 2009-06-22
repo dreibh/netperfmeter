@@ -33,8 +33,6 @@
 #define IDENTIFY_MAX_TRIALS 10
 #define IDENTIFY_TIMEOUT    2500
 
-extern StatisticsWriter gStatisticsWriter;
-
 
 
 // ###### Upload statistics file ############################################
@@ -90,10 +88,13 @@ static bool downloadResults(const int       controlSocket,
    char                 messageBuffer[sizeof(NetPerfMeterResults) + NETPERFMETER_RESULTS_MAX_DATA_LENGTH];
    NetPerfMeterResults* resultsMsg = (NetPerfMeterResults*)&messageBuffer;
    char                 statsFileName[256];
+
+   const StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
+   assert(statisticsWriter != NULL);
    snprintf((char*)&statsFileName, sizeof(statsFileName), "%s-passive-%08x-%04x%s",
-            (const char*)&gStatisticsWriter.VectorPrefix,
+            (const char*)&statisticsWriter->VectorPrefix,
             flowSpec->FlowID, flowSpec->StreamID,
-            (const char*)&gStatisticsWriter.VectorSuffix);
+            (const char*)&statisticsWriter->VectorSuffix);
 
    std::cout << "Downloading results [" << statsFileName << "] ";
    std::cout.flush();
@@ -266,12 +267,38 @@ bool handleControlMessage(MessageReader*           messageReader,
                flowSpec->print(std::cout);
             }
          }
+         
+         bool success = false;
+         StatisticsWriter* statisticsWriter = StatisticsWriter::addMeasurement(measurementID, (startMsg->Header.Flags & NPSF_COMPRESS_STATS) ? true : false);
+         if(statisticsWriter) {
+            success = statisticsWriter->openOutputFiles();
+         }
+         
+         return(sendAcknowledgeToRemoteNode(controlSocket, sinfo.sinfo_assoc_id,
+                                            measurementID, 0, 0,
+                                            (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR));
+      }
 
+      else if(header->Type == NETPERFMETER_STOP) {
+         const NetPerfMeterStopMessage* stopMsg = (const NetPerfMeterStopMessage*)&inputBuffer;
+         if(received < sizeof(NetPerfMeterStopMessage)) {
+            std::cerr << "ERROR: Received malformed NETPERFMETER_STOP control message!" << std::endl;
+            return(false);
+         }
+         const unsigned long long now = getMicroTime();
+         const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
+         char measurementIDString[64];
+         snprintf((char*)&measurementIDString, sizeof(measurementIDString), "%llx", (unsigned long long)measurementID);
+
+         std::cout << std::endl << "Stopping measurement " << measurementIDString << " ..." << std::endl;
+
+         StatisticsWriter::removeMeasurement(measurementID);
+         
          return(sendAcknowledgeToRemoteNode(controlSocket, sinfo.sinfo_assoc_id,
                                             measurementID, 0, 0,
                                             NETPERFMETER_STATUS_OKAY));
       }
-
+         
       std::cerr << "ERROR: Received invalid control message of type "
                 << (unsigned int)header->Type << "!" << std::endl;
       return(false);
@@ -321,10 +348,12 @@ bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec)
    if( (flowSpec->Protocol != IPPROTO_SCTP) || (flowSpec->Protocol != IPPROTO_TCP) ) {
       maxTrials = IDENTIFY_MAX_TRIALS;
    }
+   const StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
+   assert(statisticsWriter != NULL);
    for(unsigned int trial = 0;trial < maxTrials;trial++) {
       NetPerfMeterIdentifyMessage identifyMsg;
       identifyMsg.Header.Type   = NETPERFMETER_IDENTIFY_FLOW;
-      identifyMsg.Header.Flags  = (strstr(gStatisticsWriter.VectorSuffix, ".bz2") ? NPIF_COMPRESS_STATS : 0x00);;
+      identifyMsg.Header.Flags  = (strstr(statisticsWriter->VectorSuffix, ".bz2") ? NPIF_COMPRESS_STATS : 0x00);
       identifyMsg.Header.Length = htons(sizeof(identifyMsg));
       identifyMsg.MagicNumber   = hton64(NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER);
       identifyMsg.MeasurementID = hton64(flowSpec->MeasurementID);
@@ -524,9 +553,14 @@ void handleIdentifyMessage(std::vector<FlowSpec*>&            flowSet,
 bool startMeasurement(int            controlSocket,
                       const uint64_t measurementID)
 {
+   StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
+   if(statisticsWriter->openOutputFiles() == false) {
+      return(false);
+   }
+   
    NetPerfMeterStartMessage startMsg;
    startMsg.Header.Type   = NETPERFMETER_START;
-   startMsg.Header.Flags  = 0x00;
+   startMsg.Header.Flags  = (strstr(statisticsWriter->VectorSuffix, ".bz2") ? NPSF_COMPRESS_STATS : 0x00);
    startMsg.Header.Length = htons(sizeof(startMsg));
    startMsg.MeasurementID = hton64(measurementID);
 
@@ -551,5 +585,28 @@ bool startMeasurement(int            controlSocket,
 bool stopMeasurement(int            controlSocket,
                      const uint64_t measurementID)
 {
+   StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
+   statisticsWriter->closeOutputFiles();
+
+   NetPerfMeterStopMessage stopMsg;
+   stopMsg.Header.Type   = NETPERFMETER_STOP;
+   stopMsg.Header.Flags  = 0x00;
+   stopMsg.Header.Length = htons(sizeof(stopMsg));
+   stopMsg.MeasurementID = hton64(measurementID);
+
+   sctp_sndrcvinfo sinfo;
+   memset(&sinfo, 0, sizeof(sinfo));
+   sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
+
+   std::cout << "Stopping measurement ... <S1> "; std::cout.flush();
+   if(sctp_send(controlSocket, &stopMsg, sizeof(stopMsg), &sinfo, 0) < 0) {
+      return(false);
+   }
+   std::cout << "<S2> "; std::cout.flush();
+   if(waitForAcknowledgeFromRemoteNode(controlSocket, measurementID, 0, 0) == false) {
+      return(false);
+   }
+   std::cout << "okay" << std::endl << std::endl;
+   
    return(true);
 }

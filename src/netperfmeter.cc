@@ -61,7 +61,6 @@ size_t            gMaxMsgSize          = 16000;
 double            gRuntime             = -1.0;
 bool              gStopTimeReached     = false;
 MessageReader     gMessageReader;
-StatisticsWriter  gStatisticsWriter;
 
 
 
@@ -282,7 +281,9 @@ FlowSpec* createLocalFlow(const char*     parameters,
 
 
 // ###### Main loop #########################################################
-bool mainLoop(const bool activeMode, const unsigned long long stopAt)
+bool mainLoop(const bool               isActiveMode,
+              const unsigned long long stopAt,
+              const uint64_t           measurementID)
 {
    int                tcpConnectionIDs[gConnectedSocketsSet.size()];
    pollfd             fds[5 + gFlowSet.size() + gConnectedSocketsSet.size()];
@@ -295,6 +296,7 @@ bool mainLoop(const bool activeMode, const unsigned long long stopAt)
    unsigned long long nextStatusChangeEvent = (1ULL << 63);
    unsigned long long nextTransmissionEvent = (1ULL << 63);
    unsigned long long now                   = getMicroTime();
+   StatisticsWriter*  statisticsWriter      = StatisticsWriter::getStatisticsWriter();
 
 
    // ====== Get parameters for poll() ======================================
@@ -372,7 +374,7 @@ bool mainLoop(const bool activeMode, const unsigned long long stopAt)
 
    // ====== Use poll() to wait for events ==================================
    const long long nextEvent = (long long)std::min(std::min(nextStatusChangeEvent, nextTransmissionEvent),
-                                                   std::min(stopAt, gStatisticsWriter.getNextEvent()));
+                                                   std::min(stopAt, statisticsWriter->getNextEvent()));
    const int timeout         = (int) (std::max(0LL, nextEvent - (long long)now) / 1000LL);
 
    // printf("to=%d   txNext=%lld\n", timeout, nextEvent - (long long)now);
@@ -385,17 +387,17 @@ bool mainLoop(const bool activeMode, const unsigned long long stopAt)
       // ====== Incoming control message ====================================
       if( (controlID >= 0) && (fds[controlID].revents & POLLIN) ) {
          const bool controlOkay = handleControlMessage(&gMessageReader, gFlowSet, gControlSocket);
-         if((!controlOkay) && (activeMode)) {
+         if((!controlOkay) && (isActiveMode)) {
             return(false);
          }
       }
 
       // ====== Incoming data message =======================================
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
-         handleDataMessage(activeMode, &gMessageReader, &gStatisticsWriter, gFlowSet, now, gSCTPSocket, IPPROTO_SCTP, gControlSocket);
+         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet, now, gSCTPSocket, IPPROTO_SCTP, gControlSocket);
       }
       if( (udpID >= 0) && (fds[udpID].revents & POLLIN) ) {
-         handleDataMessage(activeMode, &gMessageReader, &gStatisticsWriter, gFlowSet, now, gUDPSocket, IPPROTO_UDP, gControlSocket);
+         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet, now, gUDPSocket, IPPROTO_UDP, gControlSocket);
       }
       bool gConnectedSocketsSetUpdated = false;
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
@@ -422,7 +424,7 @@ bool mainLoop(const bool activeMode, const unsigned long long stopAt)
       if(!gConnectedSocketsSetUpdated) {
          for(int i = 0;i < gConnectedSocketsSet.size();i++) {
             if(fds[i].revents & POLLIN) {
-               const ssize_t result = handleDataMessage(activeMode, &gMessageReader, &gStatisticsWriter, gFlowSet,
+               const ssize_t result = handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
                                                         now, fds[i].fd, IPPROTO_TCP, gControlSocket);
                if( (result < 0) && (result != MRRM_PARTIAL_READ) ) {
                   gMessageReader.deregisterSocket(fds[i].fd);
@@ -440,7 +442,7 @@ bool mainLoop(const bool activeMode, const unsigned long long stopAt)
          if(flowSpec->SocketDescriptor >= 0) {
             // ====== Incoming data =========================================
             if( (flowSpec->Index >= 0) && (fds[flowSpec->Index].revents & POLLIN) ) {
-               handleDataMessage(activeMode, &gMessageReader, &gStatisticsWriter, gFlowSet, now, fds[flowSpec->Index].fd, flowSpec->Protocol, gControlSocket);
+               handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet, now, fds[flowSpec->Index].fd, flowSpec->Protocol, gControlSocket);
             }
 
             // ====== Status change =========================================
@@ -453,7 +455,7 @@ bool mainLoop(const bool activeMode, const unsigned long long stopAt)
                // ====== Outgoing data (saturated sender) ===================
                if( (flowSpec->OutboundFrameSize > 0.0) && (flowSpec->OutboundFrameRate <= 0.0000001) ) {
                   if(fds[flowSpec->Index].revents & POLLOUT) {
-                     transmitFrame(&gStatisticsWriter, flowSpec, now, gMaxMsgSize);
+                     transmitFrame(statisticsWriter, flowSpec, now, gMaxMsgSize);
                   }
                }
 
@@ -462,7 +464,7 @@ bool mainLoop(const bool activeMode, const unsigned long long stopAt)
                   const unsigned long long lastEvent = flowSpec->LastTransmission;
                   if(flowSpec->NextTransmissionEvent <= now) {
                      do {
-                        transmitFrame(&gStatisticsWriter, flowSpec, now, gMaxMsgSize);
+                        transmitFrame(statisticsWriter, flowSpec, now, gMaxMsgSize);
                         if(now - lastEvent > 1000000) {
                            // Time gap of more than 1s -> do not try to correct
                            break;
@@ -483,8 +485,8 @@ bool mainLoop(const bool activeMode, const unsigned long long stopAt)
    }
 
    // ====== Handle statistics timer ========================================
-   if(gStatisticsWriter.getNextEvent() <= now) {
-      gStatisticsWriter.writeVectorStatistics(now, gFlowSet);
+   if(statisticsWriter->getNextEvent() <= now) {
+      statisticsWriter->writeVectorStatistics(now, gFlowSet, measurementID);
    }
 
    return(true);
@@ -561,7 +563,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    installBreakDetector();
    const unsigned long long stopAt = (gRuntime > 0) ? (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    while( (!breakDetected()) && (!gStopTimeReached) ) {
-      mainLoop(false, stopAt);
+      mainLoop(false, stopAt, 0);
    }
 
 
@@ -603,7 +605,11 @@ void activeMode(int argc, char** argv)
    // ====== Initialize IDs and print status ================================
    uint32_t flows         = 0;
    uint64_t measurementID = getMicroTime();
-   char     mIDString[32];
+   
+   StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
+   statisticsWriter->setMeasurementID(measurementID);
+
+   char mIDString[32];
    snprintf((char*)&mIDString, sizeof(mIDString), "%lx", measurementID);
    cout << "Active Mode:" << endl
         << "   - Measurement ID  = " << mIDString << endl
@@ -629,13 +635,10 @@ void activeMode(int argc, char** argv)
    // ====== Get vector and scalar names ====================================
    for(int i = 2;i < argc;i++) {
       if(strncmp(argv[i], "-vector=", 8) == 0) {
-         gStatisticsWriter.VectorName = (const char*)&argv[i][8];
-         dissectName(gStatisticsWriter.VectorName, 
-                     (char*)&gStatisticsWriter.VectorPrefix, sizeof(gStatisticsWriter.VectorPrefix),
-                     (char*)&gStatisticsWriter.VectorSuffix, sizeof(gStatisticsWriter.VectorSuffix));
+         statisticsWriter->setVectorName((const char*)&argv[i][8]);
       }
       else if(strncmp(argv[i], "-scalar=", 8) == 0) {
-         gStatisticsWriter.ScalarName = (const char*)&argv[i][8];
+         statisticsWriter->ScalarName = (const char*)&argv[i][8];
       }
    }
 
@@ -704,16 +707,6 @@ void activeMode(int argc, char** argv)
    cout << endl;
 
    
-   // ====== Initialize vector and scalar files =============================
-   if(gStatisticsWriter.openOutputFile(gStatisticsWriter.VectorName,
-      &gStatisticsWriter.VectorFile, &gStatisticsWriter.VectorBZFile) == false) {
-      exit(1);
-   }
-   if(gStatisticsWriter.openOutputFile(gStatisticsWriter.ScalarName,
-      &gStatisticsWriter.ScalarFile, &gStatisticsWriter.ScalarBZFile) == false) {
-      exit(1);
-   }
-   
    printGlobalParameters();
 
 
@@ -735,7 +728,7 @@ void activeMode(int argc, char** argv)
    bool                     aborted = false;
    installBreakDetector();
    while( (!breakDetected()) && (!gStopTimeReached) ) {
-      if(!mainLoop(true, stopAt)) {
+      if(!mainLoop(true, stopAt, measurementID)) {
          cout << endl << "*** Aborted ***" << endl;
          aborted = true;
          break;
@@ -744,18 +737,14 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Stop measurement ===============================================
+   if(!aborted) {
+      statisticsWriter->writeScalarStatistics(getMicroTime(), gFlowSet);   // Write scalar statistics first!
+   }
    if(!stopMeasurement(gControlSocket, measurementID)) {
       std::cerr << "ERROR: Failed to stop measurement!" << std::endl;
       exit(1);
    }
 
-
-   // ====== Write statistics ===============================================
-   if(!aborted) {
-      gStatisticsWriter.writeScalarStatistics(getMicroTime(), gFlowSet);   // Write scalar statistics first!
-   }
-   gStatisticsWriter.closeOutputFile(gStatisticsWriter.VectorName, &gStatisticsWriter.VectorFile, &gStatisticsWriter.VectorBZFile);
-   gStatisticsWriter.closeOutputFile(gStatisticsWriter.ScalarName, &gStatisticsWriter.ScalarFile, &gStatisticsWriter.ScalarBZFile);
    if(!aborted) {
       FlowSpec::printFlows(cout, gFlowSet, true);
    }

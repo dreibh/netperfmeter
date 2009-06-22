@@ -25,12 +25,11 @@
 #include "netperfmeterpackets.h"
 
 #include <string.h>
+#include <assert.h>
 #include <math.h>
 #include <iostream>
 
 
-extern StatisticsWriter  gStatisticsWriter;
- 
 static void updateStatistics(StatisticsWriter*              statsWriter,
                              FlowSpec*                      flowSpec,
                              const unsigned long long       now,
@@ -40,6 +39,8 @@ static void updateStatistics(StatisticsWriter*              statsWriter,
 
 #define MAXIMUM_MESSAGE_SIZE (size_t)65536
 #define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetPerfMeterDataMessage))
+
+
 
 // ###### Transmit data frame ###############################################
 ssize_t transmitFrame(StatisticsWriter*        statsWriter,
@@ -258,18 +259,20 @@ static void updateStatistics(StatisticsWriter*              statsWriter,
 
    // ------ Loss calculation -----------------------------------------------
     
-//     printf("%llu: d=%1.3f ms   j=%1.3f ms\n",seqNumber,transitTime,flowSpec->Jitter);
+   // printf("%llu: d=%1.3f ms   j=%1.3f ms\n",seqNumber,transitTime,flowSpec->Jitter);
 
    flowSpec->ReceivedFrames++;   // ??? To be implemented ???
    statsWriter->TotalReceivedFrames++;   // ??? To be implemented ???
    
 
    // ------ Write statistics -----------------------------------------------
+   const StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
+   assert(statisticsWriter != NULL);
    char str[512];
    snprintf((char*)&str, sizeof(str),
             "%06llu %llu %1.6f\t"
             "%llu %1.3f %1.3f\n",
-            flowSpec->StatsLine++, now, (double)(now - gStatisticsWriter.FirstStatisticsEvent) / 1000000.0,
+            flowSpec->StatsLine++, now, (double)(now - statisticsWriter->FirstStatisticsEvent) / 1000000.0,
             (unsigned long long)seqNumber, transitTime, diff, flowSpec->Jitter);
    
    StatisticsWriter::writeString((const char*)&flowSpec->StatsFileName,

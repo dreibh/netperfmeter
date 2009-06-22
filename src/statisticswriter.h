@@ -25,19 +25,37 @@
 #include <stdio.h>
 #include <bzlib.h>
 #include <vector>
+#include <map>
 
 #include "flowspec.h"
 
 
 class StatisticsWriter
 {
-   public:
-   StatisticsWriter();
+   protected:
+   StatisticsWriter(const uint64_t measurementID = 0);
    ~StatisticsWriter();
 
+   public:
+   static StatisticsWriter* getStatisticsWriter(const uint64_t measurementID = 0);
+   
    inline unsigned long long getNextEvent() const {
       return(NextStatisticsEvent);
    }
+   inline void setMeasurementID(const uint64_t measurementID) {
+      MeasurementID = measurementID;
+   }
+   inline void setVectorName(const char* name) {
+      VectorName = name;
+      dissectName(VectorName, 
+                  (char*)&VectorPrefix, sizeof(VectorPrefix),
+                  (char*)&VectorSuffix, sizeof(VectorSuffix));
+   }
+   bool openOutputFiles();
+   void closeOutputFiles();
+   
+   static StatisticsWriter* addMeasurement(const uint64_t measurementID, const bool compressed);
+   static void removeMeasurement(const uint64_t measurementID);
 
    static bool openOutputFile(const char* name,
                               FILE**     fh,
@@ -50,16 +68,15 @@ class StatisticsWriter
                            BZFILE*     bz,
                            const char* str);
 
-   bool writeVectorStatistics(const unsigned long long now,
-                              std::vector<FlowSpec*>& flowSet);
+   bool writeAllVectorStatistics(const unsigned long long now,
+                                 std::vector<FlowSpec*>&  flowSet,
+                                 const uint64_t           measurementID);
    bool writeScalarStatistics(const unsigned long long now,
                               std::vector<FlowSpec*>&  flowSet);
 
    public:
+   uint64_t           MeasurementID;
    unsigned long long StatisticsInterval;
-
-
-
    unsigned long long FirstStatisticsEvent;
    unsigned long long LastStatisticsEvent;
    unsigned long long NextStatisticsEvent;
@@ -93,6 +110,14 @@ class StatisticsWriter
    unsigned long long LastTotalLostBytes;
    unsigned long long LastTotalLostPackets;
    unsigned long long LastTotalLostFrames;
+   
+   private:
+   bool writeVectorStatistics(const unsigned long long now,
+                              std::vector<FlowSpec*>&  flowSet,
+                              const uint64_t           measurementID);
+
+   static StatisticsWriter                      GlobalStatisticsWriter;
+   static std::map<uint64_t, StatisticsWriter*> StatisticsSet;
 };
 
 #endif

@@ -26,9 +26,15 @@
 #include <iostream>
 
 
+StatisticsWriter                      StatisticsWriter::GlobalStatisticsWriter;
+std::map<uint64_t, StatisticsWriter*> StatisticsWriter::StatisticsSet;
+
+
+
 // ###### Constructor #######################################################
-StatisticsWriter::StatisticsWriter()
+StatisticsWriter::StatisticsWriter(const uint64_t measurementID)
 {
+   setMeasurementID(measurementID);
    StatisticsInterval          = 1000000;
    NextStatisticsEvent         = 0;
    FirstStatisticsEvent        = 0;
@@ -69,6 +75,56 @@ StatisticsWriter::StatisticsWriter()
 // ###### Destructor ########################################################
 StatisticsWriter::~StatisticsWriter()
 {
+}
+
+
+// ###### Get StatisticsWriter object #######################################
+StatisticsWriter* StatisticsWriter::getStatisticsWriter(const uint64_t measurementID)
+{
+   if( (measurementID == 0) || 
+       (GlobalStatisticsWriter.MeasurementID == measurementID) ) {
+      return(&GlobalStatisticsWriter);
+   }
+   else {
+      std::map<uint64_t, StatisticsWriter*>::iterator found = StatisticsSet.find(measurementID);
+      if(found != StatisticsSet.end()) {
+         return(found->second);
+      }
+      return(NULL);
+   }
+}
+
+
+// ###### Add measurement ###################################################
+StatisticsWriter* StatisticsWriter::addMeasurement(const uint64_t measurementID,
+                                                   const bool     compressed)
+{
+   StatisticsWriter* statisticsWriter = new StatisticsWriter(measurementID);
+   if(statisticsWriter != NULL) {
+      StatisticsSet.insert(std::pair<uint64_t, StatisticsWriter*>(measurementID, statisticsWriter));
+
+      char str[256];
+      snprintf((char*)&str, sizeof(str), "/tmp/temp-%016llx.data%s",
+               (unsigned long long)measurementID,
+               (compressed == true) ? ".bz2" : "");
+      statisticsWriter->setVectorName(str);
+      
+      return(statisticsWriter);
+   }
+   return(NULL);
+}
+
+
+// ###### Remove measurement ################################################
+void StatisticsWriter::removeMeasurement(const uint64_t measurementID)
+{
+   std::map<uint64_t, StatisticsWriter*>::iterator found = StatisticsSet.find(measurementID);
+   if(found != StatisticsSet.end()) {
+      StatisticsWriter* statisticsWriter = found->second;
+      StatisticsSet.erase(found);
+      
+      delete statisticsWriter;
+   }   
 }
 
 
@@ -124,6 +180,27 @@ bool StatisticsWriter::closeOutputFile(const char* name,
 }
 
 
+// ###### Initialize vector and scalar files ################################
+bool StatisticsWriter::openOutputFiles()
+{
+   if(openOutputFile(VectorName, &VectorFile, &VectorBZFile) == false) {
+      return(false);
+   }
+   if(openOutputFile(ScalarName, &ScalarFile, &ScalarBZFile) == false) {
+      return(false);
+   }
+   return(true);
+}
+
+
+// ###### Close vector and scalar files #####################################
+void StatisticsWriter::closeOutputFiles()
+{
+   closeOutputFile(VectorName, &VectorFile, &VectorBZFile);
+   closeOutputFile(ScalarName, &ScalarFile, &ScalarBZFile);
+}
+
+
 // ###### Write string into output file #####################################
 bool StatisticsWriter::writeString(const char* name,
                                    FILE*       fh,
@@ -150,9 +227,23 @@ bool StatisticsWriter::writeString(const char* name,
 }
 
 
+// ###### Write all vector statistics #######################################
+bool StatisticsWriter::writeAllVectorStatistics(const unsigned long long now,
+                                                std::vector<FlowSpec*>& flowSet,
+                                                const uint64_t          measurementID)
+{
+   for(std::map<uint64_t, StatisticsWriter*>::iterator iterator = StatisticsSet.begin();
+       iterator != StatisticsSet.end(); iterator++) {
+      iterator->second->writeVectorStatistics(now, flowSet, iterator->first);
+   }
+   writeVectorStatistics(now, flowSet, 0);
+}
+
+
 // ###### Write vector statistics ###########################################
 bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
-                                             std::vector<FlowSpec*>& flowSet)
+                                             std::vector<FlowSpec*>& flowSet,
+                                             const uint64_t           measurementID)
 {
    // ====== Timer management ===============================================
    NextStatisticsEvent += StatisticsInterval;
@@ -190,67 +281,69 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
    const double duration = (now - LastStatisticsEvent) / 1000000.0;
    for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
       FlowSpec* flowSpec = (FlowSpec*)*iterator;
+      if(flowSpec->Measurement == measurementID) {
 
-      const unsigned long long relTransmittedBytes   = flowSpec->TransmittedBytes   - flowSpec->LastTransmittedBytes;
-      const unsigned long long relTransmittedPackets = flowSpec->TransmittedPackets - flowSpec->LastTransmittedPackets;
-      const unsigned long long relTransmittedFrames  = flowSpec->TransmittedFrames  - flowSpec->LastTransmittedFrames;
-      const double relTransmittedByteRate            = (duration > 0.0) ? relTransmittedBytes   / duration : 0.0;
-      const double relTransmittedPacketRate          = (duration > 0.0) ? relTransmittedPackets / duration : 0.0;
-      const double relTransmittedFrameRate           = (duration > 0.0) ? relTransmittedFrames  / duration : 0.0;
-      const unsigned long long relReceivedBytes      = flowSpec->ReceivedBytes   - flowSpec->LastReceivedBytes;
-      const unsigned long long relReceivedPackets    = flowSpec->ReceivedPackets - flowSpec->LastReceivedPackets;
-      const unsigned long long relReceivedFrames     = flowSpec->ReceivedFrames  - flowSpec->LastReceivedFrames;
-      const double relReceivedByteRate               = (duration > 0.0) ? relReceivedBytes   / duration : 0.0;
-      const double relReceivedPacketRate             = (duration > 0.0) ? relReceivedPackets / duration : 0.0;
-      const double relReceivedFrameRate              = (duration > 0.0) ? relReceivedFrames  / duration : 0.0;
-      const unsigned long long relLostBytes          = flowSpec->LostBytes   - flowSpec->LastLostBytes;
-      const unsigned long long relLostPackets        = flowSpec->LostPackets - flowSpec->LastLostPackets;
-      const unsigned long long relLostFrames         = flowSpec->LostFrames  - flowSpec->LastLostFrames;
-      const double relLostByteRate                   = (duration > 0.0) ? relLostBytes   / duration : 0.0;
-      const double relLostPacketRate                 = (duration > 0.0) ? relLostPackets / duration : 0.0;
-      const double relLostFrameRate                  = (duration > 0.0) ? relLostFrames  / duration : 0.0;
+         const unsigned long long relTransmittedBytes   = flowSpec->TransmittedBytes   - flowSpec->LastTransmittedBytes;
+         const unsigned long long relTransmittedPackets = flowSpec->TransmittedPackets - flowSpec->LastTransmittedPackets;
+         const unsigned long long relTransmittedFrames  = flowSpec->TransmittedFrames  - flowSpec->LastTransmittedFrames;
+         const double relTransmittedByteRate            = (duration > 0.0) ? relTransmittedBytes   / duration : 0.0;
+         const double relTransmittedPacketRate          = (duration > 0.0) ? relTransmittedPackets / duration : 0.0;
+         const double relTransmittedFrameRate           = (duration > 0.0) ? relTransmittedFrames  / duration : 0.0;
+         const unsigned long long relReceivedBytes      = flowSpec->ReceivedBytes   - flowSpec->LastReceivedBytes;
+         const unsigned long long relReceivedPackets    = flowSpec->ReceivedPackets - flowSpec->LastReceivedPackets;
+         const unsigned long long relReceivedFrames     = flowSpec->ReceivedFrames  - flowSpec->LastReceivedFrames;
+         const double relReceivedByteRate               = (duration > 0.0) ? relReceivedBytes   / duration : 0.0;
+         const double relReceivedPacketRate             = (duration > 0.0) ? relReceivedPackets / duration : 0.0;
+         const double relReceivedFrameRate              = (duration > 0.0) ? relReceivedFrames  / duration : 0.0;
+         const unsigned long long relLostBytes          = flowSpec->LostBytes   - flowSpec->LastLostBytes;
+         const unsigned long long relLostPackets        = flowSpec->LostPackets - flowSpec->LastLostPackets;
+         const unsigned long long relLostFrames         = flowSpec->LostFrames  - flowSpec->LastLostFrames;
+         const double relLostByteRate                   = (duration > 0.0) ? relLostBytes   / duration : 0.0;
+         const double relLostPacketRate                 = (duration > 0.0) ? relLostPackets / duration : 0.0;
+         const double relLostFrameRate                  = (duration > 0.0) ? relLostFrames  / duration : 0.0;
 
-      snprintf((char*)&str, sizeof(str),
-               "%06llu %llu %1.6f %1.6f\t"
-               "%u \"%s\"\t"
-                  "%llu %llu %llu\t"
-                    "%llu %llu %llu\t"
-                    "%1.6f %1.6f %1.6f\t"
-                  "%llu %llu %llu\t"
-                    "%llu %llu %llu\t"
-                    "%1.6f %1.6f %1.6f\t"
-                  "%1.3f\t"
-                  "%llu %llu %llu\t"
-                    "%llu %llu %llu\t"
-                    "%1.6f %1.6f %1.6f\n",
+         snprintf((char*)&str, sizeof(str),
+                  "%06llu %llu %1.6f %1.6f\t"
+                  "%u \"%s\"\t"
+                     "%llu %llu %llu\t"
+                     "%llu %llu %llu\t"
+                     "%1.6f %1.6f %1.6f\t"
+                     "%llu %llu %llu\t"
+                     "%llu %llu %llu\t"
+                     "%1.6f %1.6f %1.6f\t"
+                     "%1.3f\t"
+                     "%llu %llu %llu\t"
+                     "%llu %llu %llu\t"
+                     "%1.6f %1.6f %1.6f\n",
 
-               VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
-               flowSpec->FlowID, flowSpec->Description.c_str(),
-               
-               flowSpec->TransmittedBytes, flowSpec->TransmittedPackets, flowSpec->TransmittedFrames,
-               relTransmittedBytes, relTransmittedPackets, relTransmittedFrames,
-               relTransmittedByteRate, relTransmittedPacketRate, relTransmittedFrameRate,
+                  VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
+                  flowSpec->FlowID, flowSpec->Description.c_str(),
+                  
+                  flowSpec->TransmittedBytes, flowSpec->TransmittedPackets, flowSpec->TransmittedFrames,
+                  relTransmittedBytes, relTransmittedPackets, relTransmittedFrames,
+                  relTransmittedByteRate, relTransmittedPacketRate, relTransmittedFrameRate,
 
-               flowSpec->ReceivedBytes, flowSpec->ReceivedPackets, flowSpec->ReceivedFrames,
-               relReceivedBytes, relReceivedPackets, relReceivedFrames,
-               relReceivedByteRate, relReceivedPacketRate, relReceivedFrameRate,
+                  flowSpec->ReceivedBytes, flowSpec->ReceivedPackets, flowSpec->ReceivedFrames,
+                  relReceivedBytes, relReceivedPackets, relReceivedFrames,
+                  relReceivedByteRate, relReceivedPacketRate, relReceivedFrameRate,
 
-               flowSpec->Jitter,
-                
-               flowSpec->LostBytes, flowSpec->LostPackets, flowSpec->LostFrames,
-               relLostBytes, relLostPackets, relLostFrames,
-               relLostByteRate, relLostPacketRate, relLostFrameRate);
-               
-      if(writeString(VectorName, VectorFile, VectorBZFile, str) == false) {
-         return(false);
+                  flowSpec->Jitter,
+                  
+                  flowSpec->LostBytes, flowSpec->LostPackets, flowSpec->LostFrames,
+                  relLostBytes, relLostPackets, relLostFrames,
+                  relLostByteRate, relLostPacketRate, relLostFrameRate);
+                  
+         if(writeString(VectorName, VectorFile, VectorBZFile, str) == false) {
+            return(false);
+         }
+
+         flowSpec->LastTransmittedBytes   = flowSpec->TransmittedBytes;
+         flowSpec->LastTransmittedPackets = flowSpec->TransmittedPackets;
+         flowSpec->LastTransmittedFrames  = flowSpec->TransmittedFrames;
+         flowSpec->LastReceivedBytes      = flowSpec->ReceivedBytes;
+         flowSpec->LastReceivedPackets    = flowSpec->ReceivedPackets;
+         flowSpec->LastReceivedFrames     = flowSpec->ReceivedFrames;
       }
-
-      flowSpec->LastTransmittedBytes   = flowSpec->TransmittedBytes;
-      flowSpec->LastTransmittedPackets = flowSpec->TransmittedPackets;
-      flowSpec->LastTransmittedFrames  = flowSpec->TransmittedFrames;
-      flowSpec->LastReceivedBytes      = flowSpec->ReceivedBytes;
-      flowSpec->LastReceivedPackets    = flowSpec->ReceivedPackets;
-      flowSpec->LastReceivedFrames     = flowSpec->ReceivedFrames;
    }
 
 
