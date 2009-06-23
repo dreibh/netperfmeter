@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # $Id$
 #
 # Network Performance Meter
@@ -73,7 +73,7 @@ fi
 
 
 # ====== Create combined data file ==========================================
-SUMMARY_NAME="`tempfile --suffix=.data.bz2`"
+SUMMARY_NAME="$PDF_FILE_PREFIX-summary.data.bz2"
 (
    echo "--values=\"\"$NAME_A\" 1\""
    echo "--input=$VECTOR_FILE_A"
