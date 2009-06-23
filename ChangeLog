@@ -1,4 +1,677 @@
 ------------------------------------------------------------------------
+r320 | dreibh | 2009-06-23 15:26:31 +0200 (Tue, 23 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
+
+Cleaned up plotting script.
+
+------------------------------------------------------------------------
+r319 | dreibh | 2009-06-23 15:25:15 +0200 (Tue, 23 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plotter.R
+
+Fixed plotter.R: When there are no A/B levels, do not make A/B layout. Fixed problem with reduced cex.
+
+------------------------------------------------------------------------
+r318 | dreibh | 2009-06-23 14:41:58 +0200 (Tue, 23 Jun 2009) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
+   M /trunk/netperfmeter/src/plotter.R
+   M /trunk/netperfmeter/src/statisticswriter.cc
+
+- Improved vector format.
+- Added support for PDF outlines into plotting script.
+
+------------------------------------------------------------------------
+r317 | dreibh | 2009-06-23 12:36:57 +0200 (Tue, 23 Jun 2009) | 5 lines
+Changed paths:
+   M /trunk/netperfmeter/src/Makefile.am
+   A /trunk/netperfmeter/src/combinesummaries.cc
+   M /trunk/netperfmeter/src/control.cc
+   A /trunk/netperfmeter/src/createsummary.cc
+   A /trunk/netperfmeter/src/debug.h
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/flowspec.h
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
+   A /trunk/netperfmeter/src/redblacktree.h
+   A /trunk/netperfmeter/src/redblacktree_impl.h
+   A /trunk/netperfmeter/src/simpleredblacktree.c
+   A /trunk/netperfmeter/src/simpleredblacktree.h
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   A /trunk/netperfmeter/src/t1.cc
+   A /trunk/netperfmeter/src/test2 (from /trunk/netperfmeter/src/test1:312)
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+
+- Finished NetPerfMeter protocol: results are transmitted to active node now.
+- Improved file name handling by using std::string.
+- Added CreateSummary and CombineSummaries.
+- Improved MessageReader by resumption on error for non-TCP flows.
+
+------------------------------------------------------------------------
+r316 | dreibh | 2009-06-22 11:22:05 +0200 (Mon, 22 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   M /trunk/netperfmeter/src/transfer.cc
+
+
+------------------------------------------------------------------------
+r313 | dreibh | 2009-06-19 11:13:29 +0200 (Fri, 19 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+
+
+------------------------------------------------------------------------
+r312 | dreibh | 2009-06-18 12:15:05 +0200 (Thu, 18 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   M /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+
+
+------------------------------------------------------------------------
+r311 | dreibh | 2009-06-17 09:39:20 +0200 (Wed, 17 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/flowspec.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/transfer.cc
+
+
+------------------------------------------------------------------------
+r310 | dreibh | 2009-06-15 09:27:43 +0200 (Mon, 15 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/flowspec.h
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   A /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
+
+Added jitter calculation and variables for loss statistics.
+
+------------------------------------------------------------------------
+r290 | dreibh | 2009-06-13 14:20:36 +0200 (Sat, 13 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/tools.cc
+
+Added check for DCCP support into configure.in -> defines HAVE_DCCP.
+
+------------------------------------------------------------------------
+r289 | dreibh | 2009-06-13 14:12:36 +0200 (Sat, 13 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/netperfmeter.install
+   M /trunk/netperfmeter/src/netperfmeter.cc
+
+Added manpages to Debian scripts.
+
+------------------------------------------------------------------------
+r284 | dreibh | 2009-06-13 11:16:53 +0200 (Sat, 13 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/transfer.cc
+
+
+------------------------------------------------------------------------
+r283 | dreibh | 2009-06-13 11:12:55 +0200 (Sat, 13 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   D /trunk/netperfmeter/src/netmeter.8
+   D /trunk/netperfmeter/src/netmeter.cc
+   D /trunk/netperfmeter/src/netmeterpackets.h
+   A /trunk/netperfmeter/src/netperfmeter.8 (from /trunk/netperfmeter/src/netmeter.8:281)
+   A /trunk/netperfmeter/src/netperfmeter.cc (from /trunk/netperfmeter/src/netmeter.cc:281)
+   A /trunk/netperfmeter/src/netperfmeterpackets.h (from /trunk/netperfmeter/src/netmeterpackets.h:281)
+   D /trunk/netperfmeter/src/plot-netmeter-vectors
+   D /trunk/netperfmeter/src/plot-netmeter-vectors.8
+   D /trunk/netperfmeter/src/plot-netmeter-vectors.R
+   A /trunk/netperfmeter/src/plot-netperfmeter-vectors (from /trunk/netperfmeter/src/plot-netmeter-vectors:281)
+   A /trunk/netperfmeter/src/plot-netperfmeter-vectors.8 (from /trunk/netperfmeter/src/plot-netmeter-vectors.8:281)
+   A /trunk/netperfmeter/src/plot-netperfmeter-vectors.R (from /trunk/netperfmeter/src/plot-netmeter-vectors.R:281)
+   M /trunk/netperfmeter/src/transfer.cc
+
+
+------------------------------------------------------------------------
+r282 | dreibh | 2009-06-13 11:09:11 +0200 (Sat, 13 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/debian/copyright
+   D /trunk/netperfmeter/debian/netmeter.install
+   D /trunk/netperfmeter/debian/netmeter.manpages
+   A /trunk/netperfmeter/debian/netperfmeter.install (from /trunk/netperfmeter/debian/netmeter.install:281)
+   A /trunk/netperfmeter/debian/netperfmeter.manpages (from /trunk/netperfmeter/debian/netmeter.manpages:281)
+   M /trunk/netperfmeter/debian.conf
+
+
+------------------------------------------------------------------------
+r281 | dreibh | 2009-06-13 11:04:07 +0200 (Sat, 13 Jun 2009) | 1 line
+Changed paths:
+   D /trunk/netmeter
+   A /trunk/netperfmeter (from /trunk/netmeter:278)
+
+
+------------------------------------------------------------------------
+r266 | dreibh | 2009-06-07 21:18:14 +0200 (Sun, 07 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/debian/control
+
+Debian script fix.
+
+------------------------------------------------------------------------
+r265 | dreibh | 2009-06-06 16:35:38 +0200 (Sat, 06 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   M /trunk/netmeter/debian/control
+   M /trunk/netmeter/debian/copyright
+   M /trunk/netmeter/debian/rules
+
+Updated Debian files.
+
+------------------------------------------------------------------------
+r260 | dreibh | 2009-06-04 12:04:58 +0200 (Thu, 04 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   M /trunk/netmeter/debian/control
+   M /trunk/netmeter/debian/copyright
+   A /trunk/netmeter/debian/netmeter.install (from /trunk/netmeter/debian/subnetcalc.install:256)
+   A /trunk/netmeter/debian/netmeter.manpages (from /trunk/netmeter/debian/subnetcalc.manpages:256)
+   D /trunk/netmeter/debian/subnetcalc.install
+   D /trunk/netmeter/debian/subnetcalc.manpages
+   M /trunk/netmeter/src/Makefile.am
+
+Updated Ubuntu/Debian packaging files.
+
+------------------------------------------------------------------------
+r258 | dreibh | 2009-06-04 11:37:33 +0200 (Thu, 04 Jun 2009) | 3 lines
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   M /trunk/netmeter/src/netmeter.8
+   D /trunk/netmeter/src/plot-demo2.R
+   M /trunk/netmeter/src/plot-netmeter-vectors
+   A /trunk/netmeter/src/plot-netmeter-vectors.8
+   A /trunk/netmeter/src/plot-netmeter-vectors.R (from /trunk/netmeter/src/plot-demo2.R:256)
+   M /trunk/netmeter/src/plotter.R
+
+- Improved plotting script.
+- Added manpage for plotting script.
+
+------------------------------------------------------------------------
+r256 | dreibh | 2009-06-03 15:24:13 +0200 (Wed, 03 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/plot-demo1.R
+   A /trunk/netmeter/src/plot-demo2.R
+   A /trunk/netmeter/src/plot-netmeter-vectors
+   M /trunk/netmeter/src/plotter.R
+
+
+------------------------------------------------------------------------
+r250 | dreibh | 2009-06-03 11:30:26 +0200 (Wed, 03 Jun 2009) | 1 line
+Changed paths:
+   A /trunk/netmeter/src/plot-demo1.R
+   A /trunk/netmeter/src/plotter.R
+
+
+------------------------------------------------------------------------
+r247 | dreibh | 2009-06-02 15:43:19 +0200 (Tue, 02 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/statisticswriter.cc
+
+Fixed type casts.
+
+------------------------------------------------------------------------
+r242 | dreibh | 2009-06-02 14:34:06 +0200 (Tue, 02 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/statisticswriter.cc
+
+Implemented on/off traffic at passive node.
+
+------------------------------------------------------------------------
+r241 | dreibh | 2009-06-02 14:07:19 +0200 (Tue, 02 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/netmeter.cc
+
+Implemented on/off traffic at active node.
+
+------------------------------------------------------------------------
+r239 | dreibh | 2009-06-02 11:49:34 +0200 (Tue, 02 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/control.h
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
+
+Started adding on/off flow support.
+
+------------------------------------------------------------------------
+r235 | dreibh | 2009-06-01 17:56:13 +0200 (Mon, 01 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+
+
+------------------------------------------------------------------------
+r233 | dreibh | 2009-06-01 17:33:34 +0200 (Mon, 01 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/Makefile.am
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
+
+
+------------------------------------------------------------------------
+r227 | dreibh | 2009-05-28 18:36:47 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   M /trunk/netmeter/debian/rules
+   M /trunk/netmeter/make-ppa
+   M /trunk/netmeter/src/netmeter.8
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/transfer.cc
+   M /trunk/netmeter/src/transfer.h
+
+Added option to set maximum message size. This is needed for DCCP.
+
+------------------------------------------------------------------------
+r226 | dreibh | 2009-05-28 18:00:27 +0200 (Thu, 28 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/transfer.cc
+
+
+------------------------------------------------------------------------
+r225 | dreibh | 2009-05-28 18:00:09 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/control.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/transfer.cc
+
+Added repetition of Identify message for unreliable protocols.
+
+------------------------------------------------------------------------
+r224 | dreibh | 2009-05-28 17:23:41 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/control.h
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/transfer.cc
+
+Added "Description" field to ADD_FLOW.
+
+------------------------------------------------------------------------
+r223 | dreibh | 2009-05-28 16:29:34 +0200 (Thu, 28 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   A /trunk/netmeter/make-ppa
+
+
+------------------------------------------------------------------------
+r222 | dreibh | 2009-05-28 16:27:22 +0200 (Thu, 28 May 2009) | 3 lines
+Changed paths:
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/statisticswriter.cc
+
+- DCCP and UDP fixes for MessageReader.
+- Display relative bandwidth statistics instead of total ones.
+
+------------------------------------------------------------------------
+r221 | dreibh | 2009-05-28 16:01:46 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/control.h
+   A /trunk/netmeter/src/debug
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/messagereader.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/transfer.cc
+
+Using MessageReader for control and data traffic.
+
+------------------------------------------------------------------------
+r220 | dreibh | 2009-05-28 13:47:01 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/messagereader.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/transfer.cc
+   M /trunk/netmeter/src/transfer.h
+
+Using MessageReader for data messages now.
+
+------------------------------------------------------------------------
+r219 | dreibh | 2009-05-28 13:16:31 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/messagereader.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/transfer.cc
+
+Prepared MessagerReader usage.
+
+------------------------------------------------------------------------
+r218 | dreibh | 2009-05-28 11:57:32 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   A /trunk/netmeter/src/messagereader.cc
+   A /trunk/netmeter/src/messagereader.h
+
+Started adding MessageReader.
+
+------------------------------------------------------------------------
+r217 | dreibh | 2009-05-21 13:16:20 +0200 (Thu, 21 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/statisticswriter.cc
+
+Improved vector output format.
+
+------------------------------------------------------------------------
+r216 | dreibh | 2009-05-20 09:35:37 +0200 (Wed, 20 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/transfer.cc
+
+Added "unordered" and "unreliable" options to netmeter.
+
+------------------------------------------------------------------------
+r215 | dreibh | 2009-05-19 10:20:57 +0200 (Tue, 19 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/debian/control
+   M /trunk/netmeter/debian.conf
+   M /trunk/netmeter/src/Makefile.am
+
+Prepared pre-alpha version 0.0.1 of netmeter.
+
+------------------------------------------------------------------------
+r214 | dreibh | 2009-05-19 10:04:28 +0200 (Tue, 19 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.8
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/statisticswriter.cc
+   M /trunk/netmeter/src/statisticswriter.h
+
+
+------------------------------------------------------------------------
+r213 | dreibh | 2009-05-19 09:20:40 +0200 (Tue, 19 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   A /trunk/netmeter/src/statisticswriter.cc
+   A /trunk/netmeter/src/statisticswriter.h
+   M /trunk/netmeter/src/transfer.cc
+   M /trunk/netmeter/src/transfer.h
+
+
+------------------------------------------------------------------------
+r212 | dreibh | 2009-05-18 16:02:36 +0200 (Mon, 18 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/configure.in
+
+
+------------------------------------------------------------------------
+r211 | dreibh | 2009-05-18 15:47:39 +0200 (Mon, 18 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/configure.in
+
+
+------------------------------------------------------------------------
+r210 | dreibh | 2009-05-18 09:51:30 +0200 (Mon, 18 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r209 | dreibh | 2009-05-15 16:09:40 +0200 (Fri, 15 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r208 | dreibh | 2009-05-15 15:57:00 +0200 (Fri, 15 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/transfer.cc
+
+
+------------------------------------------------------------------------
+r207 | dreibh | 2009-05-14 14:01:31 +0200 (Thu, 14 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r206 | dreibh | 2009-05-14 13:22:15 +0200 (Thu, 14 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   A /trunk/netmeter/src/control.cc
+   A /trunk/netmeter/src/control.h
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
+   A /trunk/netmeter/src/transfer.cc
+   A /trunk/netmeter/src/transfer.h
+
+
+------------------------------------------------------------------------
+r205 | dreibh | 2009-05-14 11:56:04 +0200 (Thu, 14 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+
+
+------------------------------------------------------------------------
+r204 | dreibh | 2009-05-14 11:27:02 +0200 (Thu, 14 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r203 | dreibh | 2009-05-14 11:24:17 +0200 (Thu, 14 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   A /trunk/netmeter/src/flowspec.cc
+   A /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+   A /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
+
+
+------------------------------------------------------------------------
+r202 | dreibh | 2009-05-13 23:03:28 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r201 | dreibh | 2009-05-13 22:39:23 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r200 | dreibh | 2009-05-13 21:06:35 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r199 | dreibh | 2009-05-13 20:25:25 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
+
+
+------------------------------------------------------------------------
+r198 | dreibh | 2009-05-13 16:12:21 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r197 | dreibh | 2009-05-13 16:10:01 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r196 | dreibh | 2009-05-13 15:55:33 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r195 | dreibh | 2009-05-13 15:12:21 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r194 | dreibh | 2009-05-13 13:57:38 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
+
+
+------------------------------------------------------------------------
+r193 | dreibh | 2009-05-13 11:35:03 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
+
+
+------------------------------------------------------------------------
+r192 | dreibh | 2009-05-12 19:25:47 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+
+
+------------------------------------------------------------------------
+r191 | dreibh | 2009-05-12 15:47:11 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
+
+
+------------------------------------------------------------------------
+r190 | dreibh | 2009-05-12 14:52:32 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   A /trunk/netmeter/src/ext_socket.h
+   M /trunk/netmeter/src/netmeter.cc
+   A /trunk/netmeter/src/tools.cc
+   A /trunk/netmeter/src/tools.h
+
+
+------------------------------------------------------------------------
+r187 | dreibh | 2009-05-12 11:58:51 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   A /trunk/netmeter/src/netmeter.8 (from /trunk/netmeter/src/subnetcalc.8:185)
+   A /trunk/netmeter/src/netmeter.cc (from /trunk/netmeter/src/subnetcalc.cc:185)
+   D /trunk/netmeter/src/subnetcalc.8
+   D /trunk/netmeter/src/subnetcalc.cc
+
+
+------------------------------------------------------------------------
+r186 | dreibh | 2009-05-12 11:58:15 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+
+
+------------------------------------------------------------------------
+r185 | dreibh | 2009-05-12 11:57:40 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   A /trunk/netmeter (from /trunk/subnetcalc:184)
+
+
+------------------------------------------------------------------------
+r181 | dreibh | 2009-04-30 11:24:57 +0200 (Thu, 30 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/subnetcalc/ChangeLog
+   M /trunk/subnetcalc/configure.in
+   M /trunk/subnetcalc/debian/changelog
+
+
+------------------------------------------------------------------------
 r171 | dreibh | 2009-02-21 14:40:08 +0100 (Sat, 21 Feb 2009) | 2 lines
 Changed paths:
    M /trunk/subnetcalc/debian/changelog
