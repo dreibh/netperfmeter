@@ -8,7 +8,7 @@ Standards-Version: 3.8.1
 
 Package: netperfmeter
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, r-base, ghostscript
+Depends: ${shlibs:Depends}, ${misc:Depends}, r-base, ghostscript, fntsample, pdftk, ghostscript
 Replaces: netmeter (<= 0.5.1)
 Conflicts: netmeter (<= 0.5.1)
 Recommends: traceroute, iputils-tracepath, iputils-ping, rsplib-tools, subnetcalc (>= 2.0.2)

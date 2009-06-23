@@ -250,7 +250,7 @@ hbarHandlingSpeedAggregator <- function(xSet, ySet, hbarSet, zValue, confidence)
    return(c(mMean,mMin,mMax))
 }
 
-
+3
 # Plot x/y plot with different curves as z with confidence intervals in
 # y direction. x and z can be numeric or strings, y must be numeric since
 # confidence intervals have to be computed.
@@ -349,7 +349,7 @@ plotstd3 <- function(mainTitle,
    # ------ Create plot window ----------------------------------------------
    if(!inPlotStd6) {
       margins <- c(3.25,3.25,3,0.25) + 0.0   # Margins as c(bottom, left, top, right)
-                                          # Default is c(5, 4, 4, 2) + 0.1
+                                             # Default is c(5, 4, 4, 2) + 0.1
    }
    else {
       margins <- c(5, 5, 3, 2) + 0.0   # For usage within plotstd6()
@@ -953,6 +953,12 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
          # For aLevels==1 and bLevels==1, there is no need to create the layout here!
          # Otherwise, it would reduce cex => too small fonts!
          makeLayout(aSet, bSet, aTitle, bTitle, mainTitle, pSubLabel, pColor, colorMode)
+         plotTitle    <- ""
+         largeMargins <- TRUE   # Leave some space around plotstd3() plot
+      }
+      else {
+         plotTitle <- mainTitle
+         largeMargins <- FALSE
       }
 
       # ------ Plot page ----------------------------------------------
@@ -971,7 +977,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
             oldPar2 <- par(cex=cexScaleFactor*par("cex"),
                            cex.main=cexScaleFactor*par("cex.main"),
                            cex.lab=cexScaleFactor*par("cex.lab"))
-            if(plotstd3("",
+            if(plotstd3(plotTitle,
                         xTitle, yTitle, zTitle,
                         xSubset, ySubset, zSubset,
                         vSubset, wSubset, vTitle, wTitle,
@@ -988,7 +994,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         legendPos = legendPos,
                         colorMode = colorMode,
                         frameColor = frameColor,
-                        inPlotStd6 = TRUE) < 1) {
+                        inPlotStd6 = largeMargins) < 1) {
                # No data for this field!
                plot.new()   # Must be here, otherwise the order will be wrong!
             }

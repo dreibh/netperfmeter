@@ -110,7 +110,8 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, vSet=c(), vTitle
       }
       pdfName <- paste(sep="", pdfName, ".pdf")
       cat(pdfName,"\n")
-      pdf(pdfName, width=plotWidth, height=plotHeight, family=plotFontFamily, pointsize=plotPointSize)
+      pdf(pdfName, width=plotWidth, height=plotHeight, paper=plotPaper,
+          family=plotFontFamily, pointsize=plotPointSize)
    }
    else {
       addPage()
@@ -147,45 +148,45 @@ plotNodeStats <- function(inputData, nodeName)
    createPlot(data, paste(sep="", "Bit Rate Sent/Received at Node ''", nodeName, "''"),
               (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
               data$Action, "Action")
-#    createPlot(data, paste(sep="", "Byte Rate Sent/Received at Node ''", nodeName, "''"),
-#               (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
-#               data$Action, "Action")
-#    createPlot(data, paste(sep="", "Packet Rate Sent/Received at Node ''", nodeName, "''"),
-#               data$RelPackets / data$Interval, "Packet Rate [Packets/s]", "green4",
-#               data$Action, "Action")
-#    createPlot(data, paste(sep="", "Frame Rate Sent/Received at Node ''", nodeName, "''"),
-#               data$RelFrames / data$Interval, "Frame Rate [Frames/s]", "yellow4",
-#               data$Action, "Action")
-# 
-#    # ====== Input/Output Absolute ===========================================
-#    addBookmark(2, "Input/Output Absolute")
-#    data <- subset(inputData, (inputData$Action != "Lost"))
-#    createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", nodeName, "''"),
-#               (data$AbsBytes * 8 / 1000), "Bits [Kbit]", "blue4",
-#               data$Action, "Action")
-#    createPlot(data, paste(sep="", "Bytes Sent/Received at Node ''", nodeName, "''"),
-#               (data$AbsBytes / 1000), "Bytes [KiB]", "blue2",
-#               data$Action, "Action")
-#    createPlot(data, paste(sep="", "Packets Sent/Received at Node ''", nodeName, "''"),
-#               data$AbsPackets, "Packets [1]", "green4",
-#               data$Action, "Action")
-#    createPlot(data, paste(sep="", "Frames Sent/Received at Node ''", nodeName, "''"),
-#               data$AbsFrames, "Frames [s]", "yellow4",
-#               data$Action, "Action")
-# 
-#    # ====== Jitter ==========================================================
-#    addBookmark(2, "Quality of Service")
-#    data <- subset(inputData, (inputData$Action == "Received"))
-#    createPlot(data, paste(sep="", "Observed Interarrival Jitter at Node ''", nodeName, "''"),
-#               data$Jitter, "Jitter [ms]", "gold4",
-#               data$Action, "Action")
-# 
-#    # ====== Loss ============================================================
-#    data <- subset(inputData, (inputData$Action == "Lost"))
-#    createPlot(data, paste(sep="", "Observed Byte Loss Rate at Node ''", nodeName, "''"),
-#               data$RelBytes / data$Interval, "Byte Loss Rate [KiB/s]", "red2")
-#    createPlot(data, paste(sep="", "Observed Packet Loss Rate at Node ''", nodeName, "''"),
-#               data$RelPackets / data$Interval, "Packet Loss Rate [Packets/s]", "red4")
+   createPlot(data, paste(sep="", "Byte Rate Sent/Received at Node ''", nodeName, "''"),
+              (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
+              data$Action, "Action")
+   createPlot(data, paste(sep="", "Packet Rate Sent/Received at Node ''", nodeName, "''"),
+              data$RelPackets / data$Interval, "Packet Rate [Packets/s]", "green4",
+              data$Action, "Action")
+   createPlot(data, paste(sep="", "Frame Rate Sent/Received at Node ''", nodeName, "''"),
+              data$RelFrames / data$Interval, "Frame Rate [Frames/s]", "yellow4",
+              data$Action, "Action")
+
+   # ====== Input/Output Absolute ===========================================
+   addBookmark(2, "Input/Output Absolute")
+   data <- subset(inputData, (inputData$Action != "Lost"))
+   createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", nodeName, "''"),
+              (data$AbsBytes * 8 / 1000), "Bits [Kbit]", "blue4",
+              data$Action, "Action")
+   createPlot(data, paste(sep="", "Bytes Sent/Received at Node ''", nodeName, "''"),
+              (data$AbsBytes / 1000), "Bytes [KiB]", "blue2",
+              data$Action, "Action")
+   createPlot(data, paste(sep="", "Packets Sent/Received at Node ''", nodeName, "''"),
+              data$AbsPackets, "Packets [1]", "green4",
+              data$Action, "Action")
+   createPlot(data, paste(sep="", "Frames Sent/Received at Node ''", nodeName, "''"),
+              data$AbsFrames, "Frames [s]", "yellow4",
+              data$Action, "Action")
+
+   # ====== Jitter ==========================================================
+   addBookmark(2, "Quality of Service")
+   data <- subset(inputData, (inputData$Action == "Received"))
+   createPlot(data, paste(sep="", "Interarrival Jitter at Node ''", nodeName, "''"),
+              data$Jitter, "Jitter [ms]", "gold4",
+              data$Action, "Action")
+
+   # ====== Loss ============================================================
+   data <- subset(inputData, (inputData$Action == "Lost"))
+   createPlot(data, paste(sep="", "Byte Loss Rate at Node ''", nodeName, "''"),
+              data$RelBytes / data$Interval, "Byte Loss Rate [KiB/s]", "red2")
+   createPlot(data, paste(sep="", "Packet Loss Rate at Node ''", nodeName, "''"),
+              data$RelPackets / data$Interval, "Packet Loss Rate [Packets/s]", "red4")
 }
 
 
@@ -196,10 +197,11 @@ plotNodeStats <- function(inputData, nodeName)
 plotColorMode  <- 2   # == cmColor
 plotOwnFile    <- TRUE
 plotFontFamily <- "Helvetica"
-plotPointSize  <- 22
+plotPointSize  <- 18      # Use 22 for 10x10 plots
 plotLegendSize <- 0.80
-plotWidth      <- 10
-plotHeight     <- 10
+plotWidth      <- -1
+plotHeight     <- -1
+plotPaper      <- "A4r"   # Use "special" for manual values! Or: A4/A4r.
 
 
 # ###### Command-Line Arguments #############################################
@@ -235,7 +237,7 @@ completeData <- subset(completeData, (completeData$Interval > 0))   # Avoids "di
 # ====== Begin writing PDF file =============================================
 if(!plotOwnFile) { 
    pdfFileName <- paste(sep="", pdfFilePrefix, "-TEMP.pdf")
-   pdf(pdfFileName, width=plotWidth, height=plotHeight,
+   pdf(pdfFileName, width=plotWidth, height=plotHeight, paper=plotPaper,
        family=plotFontFamily, pointsize=plotPointSize)
    openPDFInfo(pdfFileName)
 }
