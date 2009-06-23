@@ -101,12 +101,14 @@ StatisticsWriter* StatisticsWriter::addMeasurement(const uint64_t measurementID,
    if(statisticsWriter != NULL) {
       StatisticsSet.insert(std::pair<uint64_t, StatisticsWriter*>(measurementID, statisticsWriter));
 
+      // ====== Get vector file name ========================================
       char str[256];
       snprintf((char*)&str, sizeof(str), "/tmp/temp-%016llx.vec%s",
                (unsigned long long)measurementID,
                (compressed == true) ? ".bz2" : "");
       statisticsWriter->setVectorName(str);
 
+      // ====== Get scalar file name ========================================
       snprintf((char*)&str, sizeof(str), "/tmp/temp-%016llx.sca%s",
                (unsigned long long)measurementID,
                (compressed == true) ? ".bz2" : "");
@@ -161,12 +163,15 @@ bool StatisticsWriter::initializeOutputFile(const char* name,
                                             FILE**      fh,
                                             BZFILE**    bz)
 {
+   // ====== Initialize file ================================================
    *bz = NULL;
    *fh = fopen(name, "w+");
    if(*fh == NULL) {
       std::cerr << "ERROR: Unable to create output file " << name << "!" << std::endl;
       return(false);
    }
+
+   // ====== Initialize BZip2 compressor ====================================
    if(hasSuffix(name, ".bz2")) {
       int bzerror;
       *bz = BZ2_bzWriteOpen(&bzerror, *fh, 9, 0, 30);
@@ -190,6 +195,7 @@ bool StatisticsWriter::finishOutputFile(const char* name,
                                         BZFILE**    bz,
                                         const bool  closeFile)
 {
+   // ====== Finish BZip2 compression =======================================
    bool result = true;
    if(*bz) {
       int bzerror;
@@ -201,6 +207,7 @@ bool StatisticsWriter::finishOutputFile(const char* name,
       }
       *bz = NULL;
    }
+   // ====== Close or rewind file ===========================================
    if(*fh) {
       if(closeFile) {
          fclose(*fh);
@@ -242,6 +249,7 @@ bool StatisticsWriter::writeString(const char* name,
                                    BZFILE*     bz,
                                    const char* str)
 {
+   // ====== Compress string and write data =================================
    if(bz) {
       int bzerror;
       BZ2_bzWrite(&bzerror, bz, (void*)str, strlen(str));
@@ -252,6 +260,8 @@ bool StatisticsWriter::writeString(const char* name,
          return(false);
       }
    }
+
+   // ====== Write string as plain text =====================================
    else if(fh) {
       if(fputs(str, fh) <= 0) {
          std::cerr << "ERROR: Failed to write into file <" << name << ">!" << std::endl;
@@ -290,7 +300,6 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
       LastStatisticsEvent  = now;
    }
 
-
    // ====== Write vector statistics header =================================
    if(VectorLine == 0) {
       if(writeString(VectorName.c_str(), VectorFile, VectorBZFile,
@@ -303,6 +312,7 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
       }
       VectorLine = 1;
    }
+
 
    // ====== Write flow statistics ==========================================
    char str[2048];

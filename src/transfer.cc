@@ -120,11 +120,15 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
                sinfo.sinfo_flags |= SCTP_UNORDERED;
             }
          }
-         sent = sctp_send(flowSpec->SocketDescriptor, (char*)&outputBuffer, chunkSize, &sinfo, MSG_NOSIGNAL);
+         sent = sctp_send(flowSpec->SocketDescriptor,
+                          (char*)&outputBuffer, chunkSize,
+                          &sinfo, MSG_NOSIGNAL);
       }
       else if(flowSpec->Protocol == IPPROTO_UDP) {
-         sent = ext_sendto(flowSpec->SocketDescriptor, (char*)&outputBuffer, chunkSize, MSG_NOSIGNAL,
-                           &flowSpec->RemoteAddress.sa, getSocklen(&flowSpec->RemoteAddress.sa));
+         sent = ext_sendto(flowSpec->SocketDescriptor,
+                           (char*)&outputBuffer, chunkSize, MSG_NOSIGNAL,
+                           &flowSpec->RemoteAddress.sa,
+                           getSocklen(&flowSpec->RemoteAddress.sa));
       }
       else {
          sent = ext_send(flowSpec->SocketDescriptor, (char*)&outputBuffer, chunkSize, MSG_NOSIGNAL);
@@ -169,17 +173,21 @@ ssize_t handleDataMessage(const bool               activeMode,
    int             flags   = 0;
    sctp_sndrcvinfo sinfo;
 
-   const ssize_t received = messageReader->receiveMessage(sd, &inputBuffer, sizeof(inputBuffer),
-                                                          &from.sa, &fromlen, &sinfo, &flags);
+   const ssize_t received =
+      messageReader->receiveMessage(sd, &inputBuffer, sizeof(inputBuffer),
+                                    &from.sa, &fromlen, &sinfo, &flags);
    if( (received > 0) && (!(flags & MSG_NOTIFICATION)) ) {
-      const NetPerfMeterDataMessage*     dataMsg     = (const NetPerfMeterDataMessage*)&inputBuffer;
-      const NetPerfMeterIdentifyMessage* identifyMsg = (const NetPerfMeterIdentifyMessage*)&inputBuffer;
+      const NetPerfMeterDataMessage*     dataMsg     =
+         (const NetPerfMeterDataMessage*)&inputBuffer;
+      const NetPerfMeterIdentifyMessage* identifyMsg =
+         (const NetPerfMeterIdentifyMessage*)&inputBuffer;
 
       // ====== Handle NETPERFMETER_IDENTIFY_FLOW message ===================
       if( (received >= sizeof(NetPerfMeterIdentifyMessage)) &&
           (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
           (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
-         handleIdentifyMessage(flowSet, identifyMsg, sd, sinfo.sinfo_assoc_id, &from, controlSocket);
+         handleIdentifyMessage(flowSet, identifyMsg, sd, sinfo.sinfo_assoc_id,
+                               &from, controlSocket);
       }
 
       // ====== Handle NETPERFMETER_DATA message ============================
@@ -188,7 +196,8 @@ ssize_t handleDataMessage(const bool               activeMode,
          // ====== Identifiy flow ===========================================
          FlowSpec* flowSpec;
          if(activeMode) {
-            flowSpec = FlowSpec::findFlowSpec(flowSet, sd, (protocol == IPPROTO_SCTP) ? sinfo.sinfo_stream : 0);
+            flowSpec = FlowSpec::findFlowSpec(flowSet, sd,
+                                              (protocol == IPPROTO_SCTP) ? sinfo.sinfo_stream : 0);
          }
          else {
             if(protocol == IPPROTO_SCTP) {
@@ -266,7 +275,8 @@ static void updateStatistics(StatisticsWriter*              statsWriter,
    
 
    // ------ Write statistics -----------------------------------------------
-   const StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
+   const StatisticsWriter* statisticsWriter =
+      StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
    assert(statisticsWriter != NULL);
    char str[512];
    snprintf((char*)&str, sizeof(str),

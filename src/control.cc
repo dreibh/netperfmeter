@@ -154,7 +154,8 @@ static bool uploadResults(const int          controlSocket,
 static bool downloadResults(const int       controlSocket,
                             const FlowSpec* flowSpec)
 {
-   const StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
+   const StatisticsWriter* statisticsWriter =
+      StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
    assert(statisticsWriter != NULL);
 
    char statsFileName[256];
@@ -186,8 +187,10 @@ bool handleControlMessage(MessageReader*           messageReader,
    int             flags   = 0;
    sctp_sndrcvinfo sinfo;
 
-   const ssize_t received = messageReader->receiveMessage(controlSocket, &inputBuffer, sizeof(inputBuffer),
-                                                          &from.sa, &fromlen, &sinfo, &flags);
+   // ====== Read message (or fragment) =====================================
+   const ssize_t received =
+      messageReader->receiveMessage(controlSocket, &inputBuffer, sizeof(inputBuffer),
+                                    &from.sa, &fromlen, &sinfo, &flags);
    if(received == MRRM_PARTIAL_READ) {
       return(true);   // Partial read -> wait for next fragment.
    }
@@ -212,12 +215,15 @@ bool handleControlMessage(MessageReader*           messageReader,
       const NetPerfMeterHeader* header = (const NetPerfMeterHeader*)&inputBuffer;
       if(ntohs(header->Length) != received) {
          std::cerr << "ERROR: Received malformed control message!" << std::endl
-            << "       expected=" << ntohs(header->Length) << ", received=" << received << std::endl;
+            << "       expected=" << ntohs(header->Length)
+            << ", received="<< received << std::endl;
          return(false);
       }
 
+      // ====== Handle NETPERFMETER_ADD_FLOW ================================
       if(header->Type == NETPERFMETER_ADD_FLOW) {
-         const NetPerfMeterAddFlowMessage* addFlowMsg = (const NetPerfMeterAddFlowMessage*)&inputBuffer;
+         const NetPerfMeterAddFlowMessage* addFlowMsg =
+            (const NetPerfMeterAddFlowMessage*)&inputBuffer;
          if(received < sizeof(NetPerfMeterAddFlowMessage)) {
             std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message!" << std::endl;
             return(false);
@@ -250,8 +256,10 @@ bool handleControlMessage(MessageReader*           messageReader,
          }
       }
 
+      // ====== Handle NETPERFMETER_REMOVE_FLOW =============================
       else if(header->Type == NETPERFMETER_REMOVE_FLOW) {
-         const NetPerfMeterRemoveFlowMessage* removeFlowMsg = (const NetPerfMeterRemoveFlowMessage*)&inputBuffer;
+         const NetPerfMeterRemoveFlowMessage* removeFlowMsg =
+            (const NetPerfMeterRemoveFlowMessage*)&inputBuffer;
          if(received < sizeof(NetPerfMeterRemoveFlowMessage)) {
             std::cerr << "ERROR: Received malformed NETPERFMETER_REMOVE_FLOW control message!" << std::endl;
             return(false);
@@ -281,8 +289,10 @@ bool handleControlMessage(MessageReader*           messageReader,
          return(true);
       }
 
+      // ====== Handle NETPERFMETER_START ===================================
       else if(header->Type == NETPERFMETER_START) {
-         const NetPerfMeterStartMessage* startMsg = (const NetPerfMeterStartMessage*)&inputBuffer;
+         const NetPerfMeterStartMessage* startMsg =
+            (const NetPerfMeterStartMessage*)&inputBuffer;
          if(received < sizeof(NetPerfMeterStartMessage)) {
             std::cerr << "ERROR: Received malformed NETPERFMETER_START control message!" << std::endl;
             return(false);
@@ -290,9 +300,11 @@ bool handleControlMessage(MessageReader*           messageReader,
          const unsigned long long now = getMicroTime();
          const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
          char measurementIDString[64];
-         snprintf((char*)&measurementIDString, sizeof(measurementIDString), "%llx", (unsigned long long)measurementID);
+         snprintf((char*)&measurementIDString, sizeof(measurementIDString),
+                  "%llx", (unsigned long long)measurementID);
 
-         std::cout << std::endl << "Starting measurement " << measurementIDString << " ..." << std::endl;
+         std::cout << std::endl << "Starting measurement "
+                   << measurementIDString << " ..." << std::endl;
 
          for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
             FlowSpec* flowSpec = *iterator;
@@ -314,8 +326,10 @@ bool handleControlMessage(MessageReader*           messageReader,
                                             (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR));
       }
 
+      // ====== Handle NETPERFMETER_STOP ====================================
       else if(header->Type == NETPERFMETER_STOP) {
-         const NetPerfMeterStopMessage* stopMsg = (const NetPerfMeterStopMessage*)&inputBuffer;
+         const NetPerfMeterStopMessage* stopMsg =
+            (const NetPerfMeterStopMessage*)&inputBuffer;
          if(received < sizeof(NetPerfMeterStopMessage)) {
             std::cerr << "ERROR: Received malformed NETPERFMETER_STOP control message!" << std::endl;
             return(false);
@@ -323,9 +337,11 @@ bool handleControlMessage(MessageReader*           messageReader,
          const unsigned long long now = getMicroTime();
          const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
          char measurementIDString[64];
-         snprintf((char*)&measurementIDString, sizeof(measurementIDString), "%llx", (unsigned long long)measurementID);
+         snprintf((char*)&measurementIDString, sizeof(measurementIDString),
+                  "%llx", (unsigned long long)measurementID);
 
-         std::cout << std::endl << "Stopping measurement " << measurementIDString << " ..." << std::endl;
+         std::cout << std::endl << "Stopping measurement "
+                   << measurementIDString << " ..." << std::endl;
 
          bool outputReady = false;
          StatisticsWriter* statisticsWriter = StatisticsWriter::findMeasurement(measurementID);
@@ -340,8 +356,10 @@ bool handleControlMessage(MessageReader*           messageReader,
                                      measurementID, 0, 0,
                                      (outputReady == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
          if(outputReady) {
-            upload(controlSocket, sinfo.sinfo_assoc_id, statisticsWriter->VectorName.c_str(), statisticsWriter->VectorFile);
-            upload(controlSocket, sinfo.sinfo_assoc_id, statisticsWriter->ScalarName.c_str(), statisticsWriter->ScalarFile);
+            upload(controlSocket, sinfo.sinfo_assoc_id,
+                   statisticsWriter->VectorName.c_str(), statisticsWriter->VectorFile);
+            upload(controlSocket, sinfo.sinfo_assoc_id,
+                   statisticsWriter->ScalarName.c_str(), statisticsWriter->ScalarFile);
          }
          if(statisticsWriter)  {
             statisticsWriter->finishOutputFiles(true);
@@ -350,8 +368,10 @@ bool handleControlMessage(MessageReader*           messageReader,
          return(true);
       }
          
+      // ====== Handle invalid message type =================================
       std::cerr << "ERROR: Received invalid control message of type "
                 << (unsigned int)header->Type << "!" << std::endl;
+      sendAbort(controlSocket, sinfo.sinfo_assoc_id);
       return(false);
    }
 }
@@ -624,6 +644,7 @@ bool startMeasurement(int            controlSocket,
       return(false);
    }
    
+   // ====== Tell passive node to start measurement =========================
    NetPerfMeterStartMessage startMsg;
    startMsg.Header.Type   = NETPERFMETER_START;
    startMsg.Header.Flags  = hasSuffix(statisticsWriter->VectorSuffix, ".bz2") ? NPSF_COMPRESS_STATS : 0x00;
@@ -652,7 +673,9 @@ bool stopMeasurement(int            controlSocket,
                      const uint64_t measurementID)
 {
    StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
-   statisticsWriter->finishOutputFiles();
+   if(statisticsWriter->finishOutputFiles() == false) {
+      return(false);
+   }
 
    // ====== Tell passive node to stop measurement ==========================
    NetPerfMeterStopMessage stopMsg;
@@ -695,7 +718,6 @@ bool stopMeasurement(int            controlSocket,
    if(download(controlSocket, statsFileName) == false) {
       return(false);
    }
-
    std::cout << " okay" << std::endl << std::endl;
    
    return(true);

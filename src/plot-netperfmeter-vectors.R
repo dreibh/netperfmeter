@@ -227,8 +227,6 @@ cat(sep="", "pdfFilePrefix=",    pdfFilePrefix, "\n")
 cat(sep="", "plotOwnFile=",      plotOwnFile,   "\n")
 
 
-cat("CEXaaa=",par("cex"),"\n")
-
 # ====== Load input data ====================================================
 completeData <- loadResults(vectorFile)
 completeData <- subset(completeData, (completeData$Interval > 0))   # Avoids "divide by zero" on first entry
@@ -258,7 +256,7 @@ if(!plotOwnFile) {
    # ------ Close PDF and embed fonts (using Ghostscript) -------------------
    dev.off()
    closePDFInfo()
-   processPDFbyGhostscript(paste(sep="", pdfFilePrefix, ".pdf"))
+   processPDFbyGhostscript(pdfFileName)
 
    # ------ Add PDF bookmarks -----------------------------------------------
    cmd1 <- paste(sep="", "pdfoutline ", pdfFileName, " ", pdfFileName, ".ou ", pdfFileName)
@@ -274,6 +272,8 @@ if(!plotOwnFile) {
       stop(gettextf("status %d in running command '%s'", ret2, cmd2))
    }
 
-   # Remove temporary file
+   # ------ Remove temporary files ------------------------------------------
    unlink(pdfFileName)
+   unlink(paste(sep="", pdfFileName, ".in"))
+   unlink(paste(sep="", pdfFileName, ".ou"))
 }

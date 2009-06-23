@@ -182,14 +182,16 @@ void FlowSpec::print(std::ostream& os, const bool printStatistics) const
 {
    if((OriginalSocketDescriptor) || (RemoteControlAssocID != 0)) {
       if(Protocol != IPPROTO_SCTP) {
-         os << "+ " << getProtocolName(Protocol) << " Flow (Flow ID #" << FlowID << " \"" << Description << "\"):" << std::endl;
+         os << "+ " << getProtocolName(Protocol) << " Flow (Flow ID #"
+            << FlowID << " \"" << Description << "\"):" << std::endl;
       }
       else {
          os << "+ " << getProtocolName(Protocol) << " Flow:" << std::endl;
       }
    }
    if(Protocol == IPPROTO_SCTP) {
-      os << "   o Stream #" << StreamID << " (Flow ID #" << FlowID << " \"" << Description << "\"):" << std::endl;
+      os << "   o Stream #" << StreamID << " (Flow ID #"
+         << FlowID << " \"" << Description << "\"):" << std::endl;
    }
 
    os << "      - Outbound Frame Rate: ";
@@ -215,7 +217,8 @@ void FlowSpec::print(std::ostream& os, const bool printStatistics) const
    os << "      - Start/Stop:          { ";
    if(OnOffEvents.size() > 0) {
       bool start = true;
-      for(std::set<unsigned int>::iterator iterator = OnOffEvents.begin();iterator != OnOffEvents.end();iterator++) {
+      for(std::set<unsigned int>::iterator iterator = OnOffEvents.begin();
+          iterator != OnOffEvents.end();iterator++) {
          if(start) {
             os << "*" << (*iterator / 1000.0) << " ";
          }
@@ -273,7 +276,8 @@ FlowSpec* FlowSpec::findFlowSpec(std::vector<FlowSpec*>& flowSet,
                                  const uint32_t          flowID,
                                  const uint16_t          streamID)
 {
-   for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
+   for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();
+       iterator != flowSet.end();iterator++) {
       FlowSpec* flowSpec = *iterator;
       if( (flowSpec->MeasurementID == measurementID) &&
           (flowSpec->FlowID == flowID) &&
@@ -290,7 +294,8 @@ FlowSpec* FlowSpec::findFlowSpec(std::vector<FlowSpec*>& flowSet,
                                  int                     sd,
                                  uint16_t                streamID)
 {
-   for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
+   for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();
+       iterator != flowSet.end();iterator++) {
       FlowSpec* flowSpec = *iterator;
       if(flowSpec->SocketDescriptor == sd) {
          if(flowSpec->StreamID == streamID) {
@@ -306,7 +311,8 @@ FlowSpec* FlowSpec::findFlowSpec(std::vector<FlowSpec*>& flowSet,
 FlowSpec* FlowSpec::findFlowSpec(std::vector<FlowSpec*>& flowSet,
                                  const sctp_assoc_t      assocID)
 {
-   for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
+   for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();
+       iterator != flowSet.end();iterator++) {
       FlowSpec* flowSpec = *iterator;
       if( (flowSpec->RemoteAddressIsValid) && (flowSpec->RemoteDataAssocID == assocID) ) {
          return(flowSpec);
@@ -320,7 +326,8 @@ FlowSpec* FlowSpec::findFlowSpec(std::vector<FlowSpec*>& flowSet,
 FlowSpec* FlowSpec::findFlowSpec(std::vector<FlowSpec*>& flowSet,
                                  const struct sockaddr*  from)
 {
-   for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
+   for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();
+       iterator != flowSet.end();iterator++) {
       FlowSpec* flowSpec = *iterator;
       if( (flowSpec->RemoteAddressIsValid) &&
           (addresscmp(from, &flowSpec->RemoteAddress.sa, true) == 0) ) {
@@ -336,7 +343,8 @@ void FlowSpec::printFlows(std::ostream&           os,
                           std::vector<FlowSpec*>& flowSet,
                           const bool              printStatistics)
 {
-   for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
+   for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();
+       iterator != flowSet.end();iterator++) {
       const FlowSpec* flowSpec = *iterator;
       flowSpec->print(os, printStatistics);
    }
@@ -348,7 +356,8 @@ bool FlowSpec::initializeStatsFile(const bool compressed)
 {
    finishStatsFile(true);
    if(!RemoteAddressIsValid) {
-      const StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter(MeasurementID);
+      const StatisticsWriter* statisticsWriter =
+         StatisticsWriter::getStatisticsWriter(MeasurementID);
       assert(statisticsWriter != NULL);
       snprintf((char*)&StatsFileName, sizeof(StatsFileName), "%s-active-%08x-%04x%s",
                statisticsWriter->VectorPrefix.c_str(),
@@ -361,7 +370,8 @@ bool FlowSpec::initializeStatsFile(const bool compressed)
    }
    StatsFile = fopen(StatsFileName, "w+b");
    if(StatsFile == NULL) {
-      std::cerr << "ERROR: Unable to create output file " << StatsFileName << " - " << strerror(errno) << "!" << std::endl;
+      std::cerr << "ERROR: Unable to create output file " << StatsFileName
+                << " - " << strerror(errno) << "!" << std::endl;
       return(false);
    }
 
@@ -369,8 +379,9 @@ bool FlowSpec::initializeStatsFile(const bool compressed)
       int bzerror;
       StatsBZFile = BZ2_bzWriteOpen(&bzerror, StatsFile, 9, 0, 30);
       if(bzerror != BZ_OK) {
-         std::cerr << "ERROR: Unable to initialize BZip2 compression for file " << StatsFileName << "!" << std::endl
-              << "Reason: " << BZ2_bzerror(StatsBZFile, &bzerror) << std::endl;
+         std::cerr << "ERROR: Unable to initialize BZip2 compression for file "
+                   << StatsFileName << "!" << std::endl
+                   << "Reason: " << BZ2_bzerror(StatsBZFile, &bzerror) << std::endl;
          BZ2_bzWriteClose(&bzerror, StatsBZFile, 0, NULL, NULL);
          StatsBZFile = NULL;
          fclose(StatsFile);
@@ -393,8 +404,9 @@ bool FlowSpec::finishStatsFile(const bool closeFile)
       int bzerror;
       BZ2_bzWriteClose(&bzerror, StatsBZFile, 0, NULL, NULL);
       if(bzerror != BZ_OK) {
-         std::cerr << "ERROR: Unable to finish BZip2 compression for file " << StatsFileName << "!" << std::endl
-              << "Reason: " << BZ2_bzerror(StatsBZFile, &bzerror) << std::endl;
+         std::cerr << "ERROR: Unable to finish BZip2 compression for file "
+                   << StatsFileName << "!" << std::endl
+                   << "Reason: " << BZ2_bzerror(StatsBZFile, &bzerror) << std::endl;
          result = false;
       }
       StatsBZFile = NULL; 
