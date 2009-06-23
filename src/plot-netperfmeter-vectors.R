@@ -192,7 +192,6 @@ plotNodeStats <- function(inputData, nodeName)
 
 
 
-
 # ###### Default Settings ###################################################
 plotColorMode  <- 2   # == cmColor
 plotOwnFile    <- TRUE

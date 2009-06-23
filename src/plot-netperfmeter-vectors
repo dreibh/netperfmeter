@@ -79,7 +79,7 @@ SUMMARY_NAME="$PDF_FILE_PREFIX-summary.data.bz2"
    echo "--input=$VECTOR_FILE_A"
    echo "--values=\"\"$NAME_B\" 0\""
    echo "--input=$VECTOR_FILE_B"
-) | ./combinesummaries $SUMMARY_NAME "NodeName Active"
+) | ./combinesummaries $SUMMARY_NAME "NodeName Active" -quiet
 
 
 # ====== Locate plotting scripts ============================================
@@ -101,6 +101,11 @@ fi
 
 
 # ====== Call the R script for plotting =====================================
-echo "Plotting vector file $VECTOR_FILE_A -> $PDF_FILE_PREFIX"
-R CMD BATCH --vanilla "--args programDirectory=\"$PLOT_PROGRAM_DIR\" vectorFile=\"$SUMMARY_NAME\" pdfFilePrefix=\"$PDF_FILE_PREFIX\" activeName=\"$NAME_A\" passiveName=\"$NAME_B\" plotColorMode=$PLOT_COLOR_MODE plotOwnFile=$PLOT_OWN_FILE" $PLOT_PROGRAM_DIR/$PLOT_PROGRAM_SCRIPT /dev/stdout
+echo "Plotting vector file $VECTOR_FILE_A -> $PDF_FILE_PREFIX.pdf"
+R CMD BATCH --vanilla "--args programDirectory=\"$PLOT_PROGRAM_DIR\" vectorFile=\"$SUMMARY_NAME\" pdfFilePrefix=\"$PDF_FILE_PREFIX\" activeName=\"$NAME_A\" passiveName=\"$NAME_B\" plotColorMode=$PLOT_COLOR_MODE plotOwnFile=$PLOT_OWN_FILE" $PLOT_PROGRAM_DIR/$PLOT_PROGRAM_SCRIPT $PDF_FILE_PREFIX.log || (
+   echo "====== Error during GNU R plot script execution: ================"
+   echo "Last 20 lines of log file $PDF_FILE_PREFIX.log:"
+   tail -n20 $PDF_FILE_PREFIX.log
+   echo "================================================================="
+)
 rm -f $SUMMARY_NAME
