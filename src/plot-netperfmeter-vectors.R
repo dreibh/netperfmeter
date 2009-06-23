@@ -125,6 +125,7 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, vSet=c(), vTitle
             type="linesx",
             colorMode=plotColorMode,
             hideLegend=FALSE,
+            legendSize=plotLegendSize,
             simulationName="Name der Simulation",
             pStart=0)
    par(opar)
@@ -135,12 +136,68 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, vSet=c(), vTitle
 }
 
 
+# ###### Create node plots ##################################################
+plotNodeStats <- function(inputData, nodeName)
+{
+   addBookmark(1, paste(sep="", "Node ''", nodeName, "''"))
+
+   # ====== Input/Output Rates ==============================================
+   addBookmark(2, "Input/Output Rates")
+   data <- subset(inputData, (inputData$Action != "Lost"))
+   createPlot(data, paste(sep="", "Bit Rate Sent/Received at Node ''", nodeName, "''"),
+              (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
+              data$Action, "Action")
+#    createPlot(data, paste(sep="", "Byte Rate Sent/Received at Node ''", nodeName, "''"),
+#               (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
+#               data$Action, "Action")
+#    createPlot(data, paste(sep="", "Packet Rate Sent/Received at Node ''", nodeName, "''"),
+#               data$RelPackets / data$Interval, "Packet Rate [Packets/s]", "green4",
+#               data$Action, "Action")
+#    createPlot(data, paste(sep="", "Frame Rate Sent/Received at Node ''", nodeName, "''"),
+#               data$RelFrames / data$Interval, "Frame Rate [Frames/s]", "yellow4",
+#               data$Action, "Action")
+# 
+#    # ====== Input/Output Absolute ===========================================
+#    addBookmark(2, "Input/Output Absolute")
+#    data <- subset(inputData, (inputData$Action != "Lost"))
+#    createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", nodeName, "''"),
+#               (data$AbsBytes * 8 / 1000), "Bits [Kbit]", "blue4",
+#               data$Action, "Action")
+#    createPlot(data, paste(sep="", "Bytes Sent/Received at Node ''", nodeName, "''"),
+#               (data$AbsBytes / 1000), "Bytes [KiB]", "blue2",
+#               data$Action, "Action")
+#    createPlot(data, paste(sep="", "Packets Sent/Received at Node ''", nodeName, "''"),
+#               data$AbsPackets, "Packets [1]", "green4",
+#               data$Action, "Action")
+#    createPlot(data, paste(sep="", "Frames Sent/Received at Node ''", nodeName, "''"),
+#               data$AbsFrames, "Frames [s]", "yellow4",
+#               data$Action, "Action")
+# 
+#    # ====== Jitter ==========================================================
+#    addBookmark(2, "Quality of Service")
+#    data <- subset(inputData, (inputData$Action == "Received"))
+#    createPlot(data, paste(sep="", "Observed Interarrival Jitter at Node ''", nodeName, "''"),
+#               data$Jitter, "Jitter [ms]", "gold4",
+#               data$Action, "Action")
+# 
+#    # ====== Loss ============================================================
+#    data <- subset(inputData, (inputData$Action == "Lost"))
+#    createPlot(data, paste(sep="", "Observed Byte Loss Rate at Node ''", nodeName, "''"),
+#               data$RelBytes / data$Interval, "Byte Loss Rate [KiB/s]", "red2")
+#    createPlot(data, paste(sep="", "Observed Packet Loss Rate at Node ''", nodeName, "''"),
+#               data$RelPackets / data$Interval, "Packet Loss Rate [Packets/s]", "red4")
+}
+
+
+
+
 
 # ###### Default Settings ###################################################
 plotColorMode  <- 2   # == cmColor
 plotOwnFile    <- TRUE
 plotFontFamily <- "Helvetica"
 plotPointSize  <- 22
+plotLegendSize <- 0.80
 plotWidth      <- 10
 plotHeight     <- 10
 
@@ -168,10 +225,14 @@ cat(sep="", "pdfFilePrefix=",    pdfFilePrefix, "\n")
 cat(sep="", "plotOwnFile=",      plotOwnFile,   "\n")
 
 
+cat("CEXaaa=",par("cex"),"\n")
 
-# ###### Create plots as PDF file(s) ########################################
+# ====== Load input data ====================================================
 completeData <- loadResults(vectorFile)
 completeData <- subset(completeData, (completeData$Interval > 0))   # Avoids "divide by zero" on first entry
+
+
+# ====== Begin writing PDF file =============================================
 if(!plotOwnFile) { 
    pdfFileName <- paste(sep="", pdfFilePrefix, "-TEMP.pdf")
    pdf(pdfFileName, width=plotWidth, height=plotHeight,
@@ -180,44 +241,7 @@ if(!plotOwnFile) {
 }
 
 
-
-plotNodeStats <- function(inputData, nodeName)
-{
-   addBookmark(1, paste(sep="", "Node ''", nodeName, "''"))
-
-#    # ====== Input/Output ====================================================
-   addBookmark(2, "Input/Output")
-#    data <- subset(inputData, (inputData$Action != "Lost"))
-#    createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", nodeName, "''"),
-#               (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
-#               data$Action, "Action")
-#    createPlot(data, paste(sep="", "Bytes Sent/Received at Node ''", nodeName, "''"),
-#               (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
-#               data$Action, "Action")
-#    createPlot(data, paste(sep="", "Packets Sent/Received at Node ''", nodeName, "''"),
-#               data$RelPackets / data$Interval, "Byte Rate [Packets/s]", "green4",
-#               data$Action, "Action")
-#    createPlot(data, paste(sep="", "Frames Sent/Received at Node ''", nodeName, "''"),
-#               data$RelFrames / data$Interval, "Frame Rate [Frames/s]", "yellow4",
-#               data$Action, "Action")
-# 
-   # ====== Jitter ==========================================================
-   addBookmark(2, "Quality of Service")
-   data <- subset(inputData, (inputData$Action == "Received"))
-   createPlot(data, paste(sep="", "Observed Interarrival Jitter at Node ''", nodeName, "''"),
-              data$Jitter, "Jitter [ms]", "gold4",
-              data$Action, "Action")
-
-   # ====== Loss ============================================================
-   data <- subset(inputData, (inputData$Action == "Lost"))
-   createPlot(data, paste(sep="", "Observed Byte Loss Rate at Node ''", nodeName, "''"),
-              data$RelBytes / data$Interval, "Byte Loss Rate [KiB/s]", "red2")
-   createPlot(data, paste(sep="", "Observed Packet Loss Rate at Node ''", nodeName, "''"),
-              data$RelPackets / data$Interval, "Packet Loss Rate [Packets/s]", "red4")
-}
-
-
-# ====== Transmission Bandwidth =============================================
+# ====== Create plots for active and passive node ===========================
 data <- subset(completeData, (completeData$Active == 1) &
                              (completeData$FlowID != -1))
 plotNodeStats(data, activeName)
@@ -226,93 +250,28 @@ data <- subset(completeData, (completeData$Active == 0) &
                              (completeData$FlowID != -1))
 plotNodeStats(data, passiveName)
 
-# createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", activeName, "''"),
-#            (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
-#            data$Action, "Action")
-# createPlot(data, paste(sep="", "Bytes Sent/Received at Node ''", activeName, "''"),
-#            (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
-#            data$Action, "Action")
 
-
-# createPlot(passiveNodeData, directedLabel("Transmitted Bit Rate", passiveName, passiveName),
-#            (passiveNodeData$RelTransmittedBytes * 8 / 1000) / passiveNodeData$Interval,
-#            "blue4", "Bit Rate [Kbit/s]")
-
-# createPlot("Transmitted Byte Rate",
-#            (data$RelTransmittedBytes / 1024) / data$Interval,
-#            "blue2", "Byte Rate [KiB/s]")
-# createPlot("Transmitted Packet Rate",
-#            data$RelTransmittedPackets / data$Interval,
-#            "green4", "Packet Rate [Packets/s]")
-# createPlot("Transmitted Frame Rate",
-#            data$RelTransmittedFrames / data$Interval,
-#            "yellow4", "Frame Rate [Frames/s]")
-# 
-# # ====== Transmission Volume ================================================
-# createPlot("Number of Transmitted Bits",
-#            data$AbsTransmittedBytes / 1000000,
-#            "blue4", "Bits [Mbit]")
-# createPlot("Number of Transmitted Bytes",
-#            data$AbsTransmittedBytes / (1024 * 1024),
-#            "blue2", "Bytes [MiB]")
-# createPlot("Number of Transmitted Packets",
-#            data$AbsTransmittedPackets,
-#            "green4", "Packets [1]")
-# createPlot("Number of Transmitted Frames",
-#            data$AbsTransmittedFrames,
-#            "yellow4", "Frames [1]")
-# 
-# 
-# # ====== Reception Bandwidth =============================================
-# createPlot("Received Bit Rate",
-#            (data$RelReceivedBytes * 8 / 1000) / data$Interval,
-#            "blue4", "Bit Rate [Kbit/s]")
-# createPlot("Received Byte Rate",
-#            (data$RelReceivedBytes / 1024) / data$Interval,
-#            "blue2", "Byte Rate [KiB/s]")
-# createPlot("Received Packet Rate",
-#            data$AbsReceivedPackets/ data$Interval,
-#            "green4", "Packet Rate [Packets/s]")
-# createPlot("Received Frame Rate",
-#            data$AbsReceivedFrames/ data$Interval,
-#            "yellow4", "Frame Rate [Frames/s]")
-# 
-# # ====== Reception Volume ================================================
-# createPlot("Number of Received Bits",
-#            data$AbsReceivedBytes / 1000000,
-#            "blue4", "Bits [Mbit]")
-# createPlot("Number of Received Bytes",
-#            data$AbsReceivedBytes / (1024 * 1024),
-#            "blue2", "Bytes [MiB]")
-# createPlot("Number of Received Packets",
-#            data$AbsReceivedPackets,
-#            "green4", "Packets [1]")
-# createPlot("Number of Received Frames",
-#            data$AbsReceivedFrames,
-#            "yellow4", "Frames [1]")
-# 
-# # ====== Reception Jitter ================================================
-# createPlot("Received Interarrival Jitter",
-#            data$AbsReceivedFrames/ data$Interval,
-#            "gold4", "Interarrival Jitter [ms]")
-
-
+# ====== Finish PDF file ====================================================
 if(!plotOwnFile) {
+   # ------ Close PDF and embed fonts (using Ghostscript) -------------------
    dev.off()
    closePDFInfo()
    processPDFbyGhostscript(paste(sep="", pdfFilePrefix, ".pdf"))
 
+   # ------ Add PDF bookmarks -----------------------------------------------
    cmd1 <- paste(sep="", "pdfoutline ", pdfFileName, " ", pdfFileName, ".ou ", pdfFileName)
-cat("CMD=",cmd1,"\n")
    ret1 <- system(cmd1)
    if(ret1 != 0) {
       stop(gettextf("status %d in running command '%s'", ret1, cmd1))
    }
 
+   # ------ Add PDF infos ---------------------------------------------------
    cmd2 <- paste(sep="", "pdftk ", pdfFileName, " update_info ", pdfFileName, ".in output ", pdfFilePrefix, ".pdf")
-cat("CMD=",cmd2,"\n")
    ret2 <- system(cmd2)
    if(ret2 != 0) {
       stop(gettextf("status %d in running command '%s'", ret2, cmd2))
    }
+
+   # Remove temporary file
+   unlink(pdfFileName)
 }
