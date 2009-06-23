@@ -54,6 +54,7 @@ FlowSpec::FlowSpec()
    OriginalSocketDescriptor = false;
    Status                   = WaitingForStartup;
    NextStatusChangeEvent    = ~0;
+   NextTransmissionEvent    = ~0;
    BaseTime                 = getMicroTime();
    StatsFileName[0]         = 0x00;
    StatsLine                = 0;
@@ -350,9 +351,9 @@ bool FlowSpec::initializeStatsFile(const bool compressed)
       const StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter(MeasurementID);
       assert(statisticsWriter != NULL);
       snprintf((char*)&StatsFileName, sizeof(StatsFileName), "%s-active-%08x-%04x%s",
-               (const char*)&statisticsWriter->VectorPrefix,
+               statisticsWriter->VectorPrefix.c_str(),
                FlowID, StreamID,
-               (const char*)&statisticsWriter->VectorSuffix);
+               statisticsWriter->VectorSuffix.c_str());
    }
    else {
       snprintf((char*)&StatsFileName, sizeof(StatsFileName), "/tmp/temp-%016llx-%08x-%04x.data",

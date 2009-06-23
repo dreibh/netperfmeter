@@ -157,8 +157,8 @@ class FlowSpec
    bool                    RemoteAddressIsValid;
    
    // ====== Statistics file handling =======================================
-   char                    StatsFileName[256];
    unsigned long long      StatsLine;
+   char                    StatsFileName[256];
    FILE*                   StatsFile;
    BZFILE*                 StatsBZFile;
 };

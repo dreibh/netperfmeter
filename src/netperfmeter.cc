@@ -486,7 +486,7 @@ bool mainLoop(const bool               isActiveMode,
 
    // ====== Handle statistics timer ========================================
    if(statisticsWriter->getNextEvent() <= now) {
-      statisticsWriter->writeVectorStatistics(now, gFlowSet, measurementID);
+      statisticsWriter->writeAllVectorStatistics(now, gFlowSet, measurementID);
    }
 
    return(true);
@@ -638,7 +638,7 @@ void activeMode(int argc, char** argv)
          statisticsWriter->setVectorName((const char*)&argv[i][8]);
       }
       else if(strncmp(argv[i], "-scalar=", 8) == 0) {
-         statisticsWriter->ScalarName = (const char*)&argv[i][8];
+         statisticsWriter->setScalarName((const char*)&argv[i][8]);
       }
    }
 
@@ -738,7 +738,8 @@ void activeMode(int argc, char** argv)
 
    // ====== Stop measurement ===============================================
    if(!aborted) {
-      statisticsWriter->writeScalarStatistics(getMicroTime(), gFlowSet);   // Write scalar statistics first!
+      // Write scalar statistics first!
+      statisticsWriter->writeAllScalarStatistics(getMicroTime(), gFlowSet, measurementID);
    }
    if(!stopMeasurement(gControlSocket, measurementID)) {
       std::cerr << "ERROR: Failed to stop measurement!" << std::endl;

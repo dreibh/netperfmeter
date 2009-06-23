@@ -81,7 +81,7 @@ int safestrcat(char* dest, const char* src, const size_t size)
 
 
 /* ###### Find first occurrence of character in string ################### */
-char* strindex(char* string, const char character)
+static char* strindex(char* string, const char character)
 {
    if(string != NULL) {
       while(*string != character) {
@@ -98,7 +98,7 @@ char* strindex(char* string, const char character)
 
 
 /* ###### Find last occurrence of character in string #################### */
-char* strrindex(char* string, const char character)
+static char* strrindex(char* string, const char character)
 {
    const char* original = string;
 
@@ -116,43 +116,43 @@ char* strrindex(char* string, const char character)
 }
 
 
-// ###### Find n-th occurrence of char c in reverse direction ###############
-const char* rnindex(const char* str, const char c, const unsigned int steps)
+// ###### Check filename for given suffix ###################################
+bool hasSuffix(const std::string& name, const std::string& suffix)
 {
-   unsigned n = 0;
-   for(int i = strlen(str);i >= 0;i--) {
-      if(str[i] == c) {
-         n++;
-         if(n == steps) {
-            return(&str[i]);
-         }
-      }
+   const size_t found = name.rfind(suffix);
+   if(found == name.length() - suffix.length()) {
+      return(true);
    }
-   return(NULL);
+   return(false);
 }
 
 
 // ###### Dissect file name into prefix and suffix ##########################
-void dissectName(const char* name,
-                 char*       prefix, const size_t prefixSize,
-                 char*       suffix, const size_t suffixSize)
+void dissectName(const std::string& name,
+                 std::string&       prefix,
+                 std::string&       suffix)
 {
-   const char* s = rindex(name, '.');
-   if((s != NULL) && (s != name) && (strcasecmp(s, ".bz2") == 0)) {
-      const char* s1 = rnindex(name, '.', 2);
-      if(s1 != NULL) {
-         s = s1;
+   const size_t slash = name.find_last_of('/');
+   size_t dot         = name.find_last_of('.');
+   if((dot != std::string::npos) &&
+      ((slash == std::string::npos) || (slash < dot)) ) {
+      // There is a suffix which is part of the file name itself
+      if(std::string(name, dot) == ".bz2") {
+         // There is a .bz2 suffix. Look for the actual suffix.
+         const size_t dot2 = name.find_last_of('.', dot - 1);
+         if( (dot2 != std::string::npos) &&
+             ((slash == std::string::npos) || (slash < dot2)) ) {
+            // There is another suffix (*.bz2) *and* the second dot
+            // is not part of a directory name
+            dot = dot2;
+         }
       }
-   }
-   safestrcpy(prefix, name, prefixSize);
-   if(s != NULL) {
-      if((long)s - (long)name < prefixSize) {
-         prefix[(long)s - (long)name] = 0x00;
-      }
-      safestrcpy(suffix, s, suffixSize);
+      suffix = std::string(name, dot);
+      prefix = std::string(name, 0, dot);
    }
    else {
-      suffix[0] = 0x00;
+      prefix = name;
+      suffix = "";
    }
 }
 
@@ -545,6 +545,32 @@ int createAndBindSocket(const int      type,
 }
 
 
+/* ###### Send SCTP ABORT ################################################ */
+bool sendAbort(int sd, sctp_assoc_t assocID)
+{
+   sctp_sndrcvinfo sinfo;
+   memset(&sinfo, 0, sizeof(sinfo));
+   sinfo.sinfo_assoc_id = assocID;
+   sinfo.sinfo_flags    = SCTP_ABORT;
+   
+   return(sctp_send(sd, NULL, 0, &sinfo, MSG_NOSIGNAL) >= 0);
+}
+
+
+/* ###### Set blocking mode ############################################## */
+bool setBlocking(int fd)
+{
+   int flags = ext_fcntl(fd,F_GETFL,0);
+   if(flags != -1) {
+      flags &= ~O_NONBLOCK;
+      if(ext_fcntl(fd,F_SETFL, flags) == 0) {
+         return(true);
+      }
+   }
+   return(false);
+}
+
+
 /* ###### Set blocking mode ############################################## */
 bool setNonBlocking(int fd)
 {
@@ -557,7 +583,6 @@ bool setNonBlocking(int fd)
    }
    return(false);
 }
-
 
 
 /* ###### Convert byte order of 64 bit value ############################# */

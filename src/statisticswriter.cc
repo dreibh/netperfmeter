@@ -60,15 +60,13 @@ StatisticsWriter::StatisticsWriter(const uint64_t measurementID)
    LastTotalLostFrames         = 0;
 
    VectorLine                  = 0;
-   VectorName                  = "output.vec.bz2";
-   safestrcpy((char*)&VectorPrefix, "output", sizeof(VectorPrefix));
-   safestrcpy((char*)&VectorSuffix, ".vec.bz2", sizeof(VectorSuffix));
    VectorFile                  = NULL;
    VectorBZFile                = NULL;
+   setVectorName("output.vec.bz2");
 
-   ScalarName                  = "output.sca.bz2";
    ScalarFile                  = NULL;
    ScalarBZFile                = NULL;
+   setScalarName("output.sca.bz2");
 }
 
 
@@ -104,12 +102,42 @@ StatisticsWriter* StatisticsWriter::addMeasurement(const uint64_t measurementID,
       StatisticsSet.insert(std::pair<uint64_t, StatisticsWriter*>(measurementID, statisticsWriter));
 
       char str[256];
-      snprintf((char*)&str, sizeof(str), "/tmp/temp-%016llx.data%s",
+      snprintf((char*)&str, sizeof(str), "/tmp/temp-%016llx.vec%s",
                (unsigned long long)measurementID,
                (compressed == true) ? ".bz2" : "");
       statisticsWriter->setVectorName(str);
+
+      snprintf((char*)&str, sizeof(str), "/tmp/temp-%016llx.sca%s",
+               (unsigned long long)measurementID,
+               (compressed == true) ? ".bz2" : "");
+      statisticsWriter->setScalarName(str);
       
       return(statisticsWriter);
+   }
+   return(NULL);
+}
+
+
+// ###### Print measurements ################################################
+void StatisticsWriter::printMeasurements(std::ostream& os)
+{
+   os << "Measurements:" << std::endl; 
+   for(std::map<uint64_t, StatisticsWriter*>::iterator iterator = StatisticsSet.begin();
+       iterator != StatisticsSet.end(); iterator++) {
+      char str[64];
+      snprintf((char*)&str, sizeof(str), "%llx -> ptr=%p",
+               (unsigned long long)iterator->first, iterator->second);
+      os << "   - " << str << std::endl;
+   }
+}
+   
+
+// ###### Find measurement ##################################################
+StatisticsWriter* StatisticsWriter::findMeasurement(const uint64_t measurementID)
+{
+   std::map<uint64_t, StatisticsWriter*>::iterator found = StatisticsSet.find(measurementID);
+   if(found != StatisticsSet.end()) {
+      return(found->second);
    }
    return(NULL);
 }
@@ -129,22 +157,22 @@ void StatisticsWriter::removeMeasurement(const uint64_t measurementID)
 
 
 // ###### Create output file ################################################
-bool StatisticsWriter::openOutputFile(const char* name,
-                                      FILE**     fh,
-                                      BZFILE**   bz)
+bool StatisticsWriter::initializeOutputFile(const char* name,
+                                            FILE**      fh,
+                                            BZFILE**    bz)
 {
    *bz = NULL;
-   *fh = fopen(name, "w");
+   *fh = fopen(name, "w+");
    if(*fh == NULL) {
       std::cerr << "ERROR: Unable to create output file " << name << "!" << std::endl;
       return(false);
    }
-   if(strstr(name, ".bz2")) {
+   if(hasSuffix(name, ".bz2")) {
       int bzerror;
       *bz = BZ2_bzWriteOpen(&bzerror, *fh, 9, 0, 30);
       if(bzerror != BZ_OK) {
          std::cerr << "ERROR: Unable to initialize BZip2 compression on file " << name << "!" << std::endl
-              << "Reason: " << BZ2_bzerror(*bz, &bzerror) << std::endl;
+                   << "Reason: " << BZ2_bzerror(*bz, &bzerror) << std::endl;
          BZ2_bzWriteClose(&bzerror, *bz, 0, NULL, NULL);
          fclose(*fh);
          *fh = NULL;
@@ -157,9 +185,10 @@ bool StatisticsWriter::openOutputFile(const char* name,
 
 
 // ###### Close output file #################################################
-bool StatisticsWriter::closeOutputFile(const char* name,
-                                       FILE**     fh,
-                                       BZFILE**   bz)
+bool StatisticsWriter::finishOutputFile(const char* name,
+                                        FILE**      fh,
+                                        BZFILE**    bz,
+                                        const bool  closeFile)
 {
    bool result = true;
    if(*bz) {
@@ -173,20 +202,25 @@ bool StatisticsWriter::closeOutputFile(const char* name,
       *bz = NULL;
    }
    if(*fh) {
-      fclose(*fh);
-      *fh = NULL;
+      if(closeFile) {
+         fclose(*fh);
+         *fh = NULL;
+      }
+      else {
+         rewind(*fh);
+      }
    }
    return(result);
 }
 
 
 // ###### Initialize vector and scalar files ################################
-bool StatisticsWriter::openOutputFiles()
+bool StatisticsWriter::initializeOutputFiles()
 {
-   if(openOutputFile(VectorName, &VectorFile, &VectorBZFile) == false) {
+   if(initializeOutputFile(VectorName.c_str(), &VectorFile, &VectorBZFile) == false) {
       return(false);
    }
-   if(openOutputFile(ScalarName, &ScalarFile, &ScalarBZFile) == false) {
+   if(initializeOutputFile(ScalarName.c_str(), &ScalarFile, &ScalarBZFile) == false) {
       return(false);
    }
    return(true);
@@ -194,10 +228,11 @@ bool StatisticsWriter::openOutputFiles()
 
 
 // ###### Close vector and scalar files #####################################
-void StatisticsWriter::closeOutputFiles()
+bool StatisticsWriter::finishOutputFiles(const bool closeFile)
 {
-   closeOutputFile(VectorName, &VectorFile, &VectorBZFile);
-   closeOutputFile(ScalarName, &ScalarFile, &ScalarBZFile);
+   const bool s1 = finishOutputFile(VectorName.c_str(), &VectorFile, &VectorBZFile, closeFile);
+   const bool s2 = finishOutputFile(ScalarName.c_str(), &ScalarFile, &ScalarBZFile, closeFile);
+   return(s1 && s2);
 }
 
 
@@ -229,20 +264,20 @@ bool StatisticsWriter::writeString(const char* name,
 
 // ###### Write all vector statistics #######################################
 bool StatisticsWriter::writeAllVectorStatistics(const unsigned long long now,
-                                                std::vector<FlowSpec*>& flowSet,
-                                                const uint64_t          measurementID)
+                                                std::vector<FlowSpec*>&  flowSet,
+                                                const uint64_t           measurementID)
 {
    for(std::map<uint64_t, StatisticsWriter*>::iterator iterator = StatisticsSet.begin();
        iterator != StatisticsSet.end(); iterator++) {
       iterator->second->writeVectorStatistics(now, flowSet, iterator->first);
    }
-   writeVectorStatistics(now, flowSet, 0);
+   writeVectorStatistics(now, flowSet, MeasurementID);
 }
 
 
 // ###### Write vector statistics ###########################################
 bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
-                                             std::vector<FlowSpec*>& flowSet,
+                                             std::vector<FlowSpec*>&  flowSet,
                                              const uint64_t           measurementID)
 {
    // ====== Timer management ===============================================
@@ -258,7 +293,7 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
 
    // ====== Write vector statistics header =================================
    if(VectorLine == 0) {
-      if(writeString(VectorName, VectorFile, VectorBZFile,
+      if(writeString(VectorName.c_str(), VectorFile, VectorBZFile,
                      "AbsTime RelTime Interval\t"
                      "FlowID Description\t"
                      "AbsTransmittedBytes AbsTransmittedPackets AbsTransmittedFrames\t"
@@ -281,7 +316,7 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
    const double duration = (now - LastStatisticsEvent) / 1000000.0;
    for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
       FlowSpec* flowSpec = (FlowSpec*)*iterator;
-      if(flowSpec->Measurement == measurementID) {
+      if(flowSpec->MeasurementID == measurementID) {
 
          const unsigned long long relTransmittedBytes   = flowSpec->TransmittedBytes   - flowSpec->LastTransmittedBytes;
          const unsigned long long relTransmittedPackets = flowSpec->TransmittedPackets - flowSpec->LastTransmittedPackets;
@@ -333,7 +368,7 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
                   relLostBytes, relLostPackets, relLostFrames,
                   relLostByteRate, relLostPacketRate, relLostFrameRate);
                   
-         if(writeString(VectorName, VectorFile, VectorBZFile, str) == false) {
+         if(writeString(VectorName.c_str(), VectorFile, VectorBZFile, str) == false) {
             return(false);
          }
 
@@ -394,7 +429,7 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
             TotalLostBytes, TotalLostPackets, TotalLostFrames,
             relTotalLostBytes, relTotalLostPackets, relTotalLostFrames,
             relTotalLostByteRate, relTotalLostPacketRate, relTotalLostFrameRate);
-   if(writeString(VectorName, VectorFile, VectorBZFile, str) == false) {
+   if(writeString(VectorName.c_str(), VectorFile, VectorBZFile, str) == false) {
       return(false);
    }
 
@@ -427,9 +462,23 @@ bool StatisticsWriter::writeVectorStatistics(const unsigned long long now,
 }
 
 
+// ###### Write all scalar statistics #######################################
+bool StatisticsWriter::writeAllScalarStatistics(const unsigned long long now,
+                                                std::vector<FlowSpec*>&  flowSet,
+                                                const uint64_t           measurementID)
+{
+   for(std::map<uint64_t, StatisticsWriter*>::iterator iterator = StatisticsSet.begin();
+       iterator != StatisticsSet.end(); iterator++) {
+      iterator->second->writeScalarStatistics(now, flowSet, iterator->first);
+   }
+   writeScalarStatistics(now, flowSet, MeasurementID);
+}
+
+
 // ###### Write scalar statistics ###########################################
 bool StatisticsWriter::writeScalarStatistics(const unsigned long long now,
-                                             std::vector<FlowSpec*>&  flowSet)
+                                             std::vector<FlowSpec*>&  flowSet,
+                                             const uint64_t           measurementID)
 {
    const char* objectName = "netMeter";
    char        str[4096];
@@ -437,39 +486,41 @@ bool StatisticsWriter::writeScalarStatistics(const unsigned long long now,
    // ====== Write flow statistics ==========================================
    for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
       const FlowSpec* flowSpec = (const FlowSpec*)*iterator;
+      if(flowSpec->MeasurementID == measurementID) {
 
-      const double transmissionDuration = (flowSpec->LastTransmission - flowSpec->FirstTransmission) / 1000000.0;
-      const double receptionDuration    = (flowSpec->LastReception - flowSpec->FirstReception) / 1000000.0;
+         const double transmissionDuration = (flowSpec->LastTransmission - flowSpec->FirstTransmission) / 1000000.0;
+         const double receptionDuration    = (flowSpec->LastReception - flowSpec->FirstReception) / 1000000.0;
 
-      snprintf((char*)&str, sizeof(str),
-               "scalar \"%s.flow[%u]\" \"Transmitted Bytes\"       %llu\n"
-               "scalar \"%s.flow[%u]\" \"Transmitted Packets\"     %llu\n"
-               "scalar \"%s.flow[%u]\" \"Transmitted Frames\"      %llu\n"
-               "scalar \"%s.flow[%u]\" \"Transmitted Byte Rate\"   %1.6f\n"
-               "scalar \"%s.flow[%u]\" \"Transmitted Packet Rate\" %1.6f\n"
-               "scalar \"%s.flow[%u]\" \"Transmitted Frame Rate\"  %1.6f\n"
-               "scalar \"%s.flow[%u]\" \"Received Bytes\"          %llu\n"
-               "scalar \"%s.flow[%u]\" \"Received Packets\"        %llu\n"
-               "scalar \"%s.flow[%u]\" \"Received Frames\"         %llu\n"
-               "scalar \"%s.flow[%u]\" \"Received Byte Rate\"      %1.6f\n"
-               "scalar \"%s.flow[%u]\" \"Received Packet Rate\"    %1.6f\n"
-               "scalar \"%s.flow[%u]\" \"Received Frame Rate\"     %1.6f\n"
-               ,
-               objectName, flowSpec->FlowID, flowSpec->TransmittedBytes,
-               objectName, flowSpec->FlowID, flowSpec->TransmittedPackets,
-               objectName, flowSpec->FlowID, flowSpec->TransmittedFrames,
-               objectName, flowSpec->FlowID, (transmissionDuration > 0.0) ? flowSpec->TransmittedBytes   / transmissionDuration : 0.0,
-               objectName, flowSpec->FlowID, (transmissionDuration > 0.0) ? flowSpec->TransmittedPackets / transmissionDuration : 0.0,
-               objectName, flowSpec->FlowID, (transmissionDuration > 0.0) ? flowSpec->TransmittedFrames  / transmissionDuration : 0.0,
-               objectName, flowSpec->FlowID, flowSpec->ReceivedBytes,
-               objectName, flowSpec->FlowID, flowSpec->ReceivedPackets,
-               objectName, flowSpec->FlowID, flowSpec->ReceivedFrames,
-               objectName, flowSpec->FlowID, (receptionDuration > 0.0) ? flowSpec->ReceivedBytes   / receptionDuration : 0.0,
-               objectName, flowSpec->FlowID, (receptionDuration > 0.0) ? flowSpec->ReceivedPackets / receptionDuration : 0.0,
-               objectName, flowSpec->FlowID, (receptionDuration > 0.0) ? flowSpec->ReceivedFrames  / receptionDuration : 0.0
-               );
-      if(writeString(ScalarName, ScalarFile, ScalarBZFile, str) == false) {
-         return(false);
+         snprintf((char*)&str, sizeof(str),
+                  "scalar \"%s.flow[%u]\" \"Transmitted Bytes\"       %llu\n"
+                  "scalar \"%s.flow[%u]\" \"Transmitted Packets\"     %llu\n"
+                  "scalar \"%s.flow[%u]\" \"Transmitted Frames\"      %llu\n"
+                  "scalar \"%s.flow[%u]\" \"Transmitted Byte Rate\"   %1.6f\n"
+                  "scalar \"%s.flow[%u]\" \"Transmitted Packet Rate\" %1.6f\n"
+                  "scalar \"%s.flow[%u]\" \"Transmitted Frame Rate\"  %1.6f\n"
+                  "scalar \"%s.flow[%u]\" \"Received Bytes\"          %llu\n"
+                  "scalar \"%s.flow[%u]\" \"Received Packets\"        %llu\n"
+                  "scalar \"%s.flow[%u]\" \"Received Frames\"         %llu\n"
+                  "scalar \"%s.flow[%u]\" \"Received Byte Rate\"      %1.6f\n"
+                  "scalar \"%s.flow[%u]\" \"Received Packet Rate\"    %1.6f\n"
+                  "scalar \"%s.flow[%u]\" \"Received Frame Rate\"     %1.6f\n"
+                  ,
+                  objectName, flowSpec->FlowID, flowSpec->TransmittedBytes,
+                  objectName, flowSpec->FlowID, flowSpec->TransmittedPackets,
+                  objectName, flowSpec->FlowID, flowSpec->TransmittedFrames,
+                  objectName, flowSpec->FlowID, (transmissionDuration > 0.0) ? flowSpec->TransmittedBytes   / transmissionDuration : 0.0,
+                  objectName, flowSpec->FlowID, (transmissionDuration > 0.0) ? flowSpec->TransmittedPackets / transmissionDuration : 0.0,
+                  objectName, flowSpec->FlowID, (transmissionDuration > 0.0) ? flowSpec->TransmittedFrames  / transmissionDuration : 0.0,
+                  objectName, flowSpec->FlowID, flowSpec->ReceivedBytes,
+                  objectName, flowSpec->FlowID, flowSpec->ReceivedPackets,
+                  objectName, flowSpec->FlowID, flowSpec->ReceivedFrames,
+                  objectName, flowSpec->FlowID, (receptionDuration > 0.0) ? flowSpec->ReceivedBytes   / receptionDuration : 0.0,
+                  objectName, flowSpec->FlowID, (receptionDuration > 0.0) ? flowSpec->ReceivedPackets / receptionDuration : 0.0,
+                  objectName, flowSpec->FlowID, (receptionDuration > 0.0) ? flowSpec->ReceivedFrames  / receptionDuration : 0.0
+                  );
+         if(writeString(ScalarName.c_str(), ScalarFile, ScalarBZFile, str) == false) {
+            return(false);
+         }
       }
    }
 
@@ -516,7 +567,7 @@ bool StatisticsWriter::writeScalarStatistics(const unsigned long long now,
             objectName, (totalDuration > 0.0) ? TotalLostPackets / totalDuration : 0.0,
             objectName, (totalDuration > 0.0) ? TotalLostFrames  / totalDuration : 0.0
             );
-   if(writeString(ScalarName, ScalarFile, ScalarBZFile, str) == false) {
+   if(writeString(ScalarName.c_str(), ScalarFile, ScalarBZFile, str) == false) {
       return(false);
    }
 

@@ -47,12 +47,11 @@ unsigned long long getMicroTime();
 
 int safestrcpy(char* dest, const char* src, const size_t size);
 int safestrcat(char* dest, const char* src, const size_t size);
-char* strindex(char* string, const char character);
-char* strrindex(char* string, const char character);
-const char* rnindex(const char* str, const char c, const unsigned int steps);
-void dissectName(const char* name,
-                 char*       prefix, const size_t prefixSize,
-                 char*       suffix, const size_t suffixSize);
+
+bool hasSuffix(const std::string& name, const std::string& suffix);
+void dissectName(const std::string& name,
+                 std::string&       prefix,
+                 std::string&       suffix);
 
 
 union sockaddr_union {
@@ -81,6 +80,8 @@ void printAddress(std::ostream&          os,
 const char* getProtocolName(const uint8_t protocol);
 uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
+bool sendAbort(int sd, sctp_assoc_t assocID);
+bool setBlocking(int fd);
 bool setNonBlocking(int fd);
 int createAndBindSocket(const int      type,
                         const int      protocol,

@@ -21,14 +21,14 @@
 
 
 # ###### Create a plot ######################################################
-createPlot <- function(title, ySet, baseColor, yTitle)
+createPlot <- function(dataSet, title, ySet, baseColor, yTitle)
 {
    cat(sep="", "Plotting ", title, " ...\n")
 
-   xSet <- data$RelTime
+   xSet <- dataSet$RelTime
    xTitle <- "Time{t}[s]"
 
-   zSet <- data$Description
+   zSet <- dataSet$Description
    zTitle <- "Flow{F}"
    vSet <- c()
    vTitle <- ""
@@ -79,8 +79,15 @@ createPlot <- function(title, ySet, baseColor, yTitle)
 }
 
 
+# ###### Create plot label ##################################################
+directedLabel <- function(title, a, b)
+{
+   return(paste(sep="", title, " (" ,a, " -> ", b, ")"))
+}
+
+
 # ###### Default Settings ###################################################
-plotColorMode      <- 2   # == cmColor
+plotColorMode  <- 2   # == cmColor
 plotOwnFile    <- TRUE
 plotFontFamily <- "Helvetica"
 plotPointSize  <- 22
@@ -105,75 +112,90 @@ for(i in 1:length(args)) {
 
 cat(sep="", "programDirectory=", programDirectory,    "\n")
 cat(sep="", "vectorFile=",       vectorFile,    "\n")
+cat(sep="", "activeName=",       activeName,    "\n")
+cat(sep="", "passiveName=",      passiveName,    "\n")
 cat(sep="", "pdfFilePrefix=",    pdfFilePrefix, "\n")
 cat(sep="", "plotOwnFile=",      plotOwnFile,   "\n")
 
 
 
 # ###### Create plots as PDF file(s) ########################################
-data <- loadResults(vectorFile)
-data <- subset(data, (data$Interval > 0))   # Avoids "divide by zero" on first entry
+completeData <- loadResults(vectorFile)
+completeData <- subset(completeData, (completeData$Interval > 0))   # Avoids "divide by zero" on first entry
 if(!plotOwnFile) {
    pdf(paste(sep="", pdfFilePrefix, ".pdf"),
        width=plotWidth, height=plotHeight, family=plotFontFamily, pointsize=plotPointSize)
 }
+activeNodeData  <- subset(completeData, (completeData$Active == 1))
+passiveNodeData <- subset(completeData, (completeData$Active != 1))
+
 
 # ====== Transmission Bandwidth =============================================
-createPlot("Transmitted Bit Rate",
-           (data$RelTransmittedBytes * 8 / 1000) / data$Interval,
+createPlot(activeNodeData, directedLabel("Transmitted Bit Rate", activeName, passiveName),
+           (activeNodeData$RelTransmittedBytes * 8 / 1000) / activeNodeData$Interval,
            "blue4", "Bit Rate [Kbit/s]")
-createPlot("Transmitted Byte Rate",
-           (data$RelTransmittedBytes / 1024) / data$Interval,
-           "blue2", "Byte Rate [KiB/s]")
-createPlot("Transmitted Packet Rate",
-           data$AbsTransmittedPackets/ data$Interval,
-           "green4", "Packet Rate [Packets/s]")
-createPlot("Transmitted Frame Rate",
-           data$AbsTransmittedFrames/ data$Interval,
-           "yellow4", "Frame Rate [Frames/s]")
-
-# ====== Transmission Volume ================================================
-createPlot("Number of Transmitted Bits",
-           data$AbsTransmittedBytes / 1000000,
-           "blue4", "Bits [Mbit]")
-createPlot("Number of Transmitted Bytes",
-           data$AbsTransmittedBytes / (1024 * 1024),
-           "blue2", "Bytes [MiB]")
-createPlot("Number of Transmitted Packets",
-           data$AbsTransmittedPackets,
-           "green4", "Packets [1]")
-createPlot("Number of Transmitted Frames",
-           data$AbsTransmittedFrames,
-           "yellow4", "Frames [1]")
-
-
-# ====== Reception Bandwidth =============================================
-createPlot("Received Bit Rate",
-           (data$RelReceivedBytes * 8 / 1000) / data$Interval,
+createPlot(passiveNodeData, directedLabel("Transmitted Bit Rate", passiveName, passiveName),
+           (passiveNodeData$RelTransmittedBytes * 8 / 1000) / passiveNodeData$Interval,
            "blue4", "Bit Rate [Kbit/s]")
-createPlot("Received Byte Rate",
-           (data$RelReceivedBytes / 1024) / data$Interval,
-           "blue2", "Byte Rate [KiB/s]")
-createPlot("Received Packet Rate",
-           data$AbsReceivedPackets/ data$Interval,
-           "green4", "Packet Rate [Packets/s]")
-createPlot("Received Frame Rate",
-           data$AbsReceivedFrames/ data$Interval,
-           "yellow4", "Frame Rate [Frames/s]")
 
-# ====== Reception Volume ================================================
-createPlot("Number of Received Bits",
-           data$AbsReceivedBytes / 1000000,
-           "blue4", "Bits [Mbit]")
-createPlot("Number of Received Bytes",
-           data$AbsReceivedBytes / (1024 * 1024),
-           "blue2", "Bytes [MiB]")
-createPlot("Number of Received Packets",
-           data$AbsReceivedPackets,
-           "green4", "Packets [1]")
-createPlot("Number of Received Frames",
-           data$AbsReceivedFrames,
-           "yellow4", "Frames [1]")
+# createPlot("Transmitted Byte Rate",
+#            (data$RelTransmittedBytes / 1024) / data$Interval,
+#            "blue2", "Byte Rate [KiB/s]")
+# createPlot("Transmitted Packet Rate",
+#            data$RelTransmittedPackets / data$Interval,
+#            "green4", "Packet Rate [Packets/s]")
+# createPlot("Transmitted Frame Rate",
+#            data$RelTransmittedFrames / data$Interval,
+#            "yellow4", "Frame Rate [Frames/s]")
+# 
+# # ====== Transmission Volume ================================================
+# createPlot("Number of Transmitted Bits",
+#            data$AbsTransmittedBytes / 1000000,
+#            "blue4", "Bits [Mbit]")
+# createPlot("Number of Transmitted Bytes",
+#            data$AbsTransmittedBytes / (1024 * 1024),
+#            "blue2", "Bytes [MiB]")
+# createPlot("Number of Transmitted Packets",
+#            data$AbsTransmittedPackets,
+#            "green4", "Packets [1]")
+# createPlot("Number of Transmitted Frames",
+#            data$AbsTransmittedFrames,
+#            "yellow4", "Frames [1]")
+# 
+# 
+# # ====== Reception Bandwidth =============================================
+# createPlot("Received Bit Rate",
+#            (data$RelReceivedBytes * 8 / 1000) / data$Interval,
+#            "blue4", "Bit Rate [Kbit/s]")
+# createPlot("Received Byte Rate",
+#            (data$RelReceivedBytes / 1024) / data$Interval,
+#            "blue2", "Byte Rate [KiB/s]")
+# createPlot("Received Packet Rate",
+#            data$AbsReceivedPackets/ data$Interval,
+#            "green4", "Packet Rate [Packets/s]")
+# createPlot("Received Frame Rate",
+#            data$AbsReceivedFrames/ data$Interval,
+#            "yellow4", "Frame Rate [Frames/s]")
+# 
+# # ====== Reception Volume ================================================
+# createPlot("Number of Received Bits",
+#            data$AbsReceivedBytes / 1000000,
+#            "blue4", "Bits [Mbit]")
+# createPlot("Number of Received Bytes",
+#            data$AbsReceivedBytes / (1024 * 1024),
+#            "blue2", "Bytes [MiB]")
+# createPlot("Number of Received Packets",
+#            data$AbsReceivedPackets,
+#            "green4", "Packets [1]")
+# createPlot("Number of Received Frames",
+#            data$AbsReceivedFrames,
+#            "yellow4", "Frames [1]")
+# 
+# # ====== Reception Jitter ================================================
+# createPlot("Received Interarrival Jitter",
+#            data$AbsReceivedFrames/ data$Interval,
+#            "gold4", "Interarrival Jitter [ms]")
+
 
 if(!plotOwnFile) {
    dev.off()

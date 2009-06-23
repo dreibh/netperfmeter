@@ -21,18 +21,21 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [Vector File] {-ownfile}"
+   echo >&2 "Usage: $0 [Active-Side Vector File] {-ownfile} {-colour|-color|-greyscale|-grayscale|-blackandwhite} {-passiveside [Vector File]} {-activename=Label} {-passivename=Label}"
    exit 1
 fi
 
 # ====== Get vector name and PDF name prefix ================================
-VECTOR_FILE="$1"
-if [ ! -e "$VECTOR_FILE" ] ; then
-   echo >&2 "ERROR: Vector file $VECTOR_FILE not found!"
+NAME_A="Active"
+NAME_B="Passive"
+VECTOR_FILE_A="$1"
+if [ ! -e "$VECTOR_FILE_A" ] ; then
+   echo >&2 "ERROR: Vector file $VECTOR_FILE_A not found!"
    exit 1
 fi
 shift
-PDF_FILE_PREFIX="`echo "$VECTOR_FILE" | sed -e "s/.bz2$//g" -e "s/.vec$//g"`"
+VECTOR_FILE_B="`echo "$VECTOR_FILE_A" | sed -e "s/.vec.bz2$/-passive.vec.bz2/g" -e "s/.vec$/-passive.vec/g"`"
+PDF_FILE_PREFIX="`echo "$VECTOR_FILE_A" | sed -e "s/.bz2$//g" -e "s/.vec$//g"`"
 
 
 # ====== Get options ========================================================
@@ -47,12 +50,36 @@ while [ $# -gt 0 ] ; do
       PLOT_COLOR_MODE="cmGrayScale"
    elif [ "$1" = "-blackandwhite" ] ; then
       PLOT_COLOR_MODE="cmBlackAndWhite"
+   elif [ "$1" = "-passiveside" ] ; then
+      VECTOR_FILE_B="$2"
+      shift
+   elif [ "$1" = "-activename" ] ; then
+      NAME_A="$2"
+      shift
+   elif [ "$1" = "-passivename" ] ; then
+      NAME_B="$2"
+      shift
    else
       echo >&2 "ERROR: Invalid option $1!"
       exit 1
    fi
    shift
 done
+if [ ! -e "$VECTOR_FILE_B" ] ; then
+   echo >&2 "ERROR: Vector file $VECTOR_FILE_B not found!"
+   echo >&2 "       Use -passiveside [Name] to specify passive-side vector file"
+   exit 1
+fi
+
+
+# ====== Create combined data file ==========================================
+SUMMARY_NAME="`tempfile --suffix=.data.bz2`"
+(
+   echo "--values=\"\"$NAME_A\" 1\""
+   echo "--input=$VECTOR_FILE_A"
+   echo "--values=\"\"$NAME_B\" 0\""
+   echo "--input=$VECTOR_FILE_B"
+) | ./combinesummaries $SUMMARY_NAME "NodeName Active"
 
 
 # ====== Locate plotting scripts ============================================
@@ -74,5 +101,6 @@ fi
 
 
 # ====== Call the R script for plotting =====================================
-echo "Plotting vector file $VECTOR_FILE -> $PDF_FILE_PREFIX"
-R CMD BATCH --vanilla "--args programDirectory=\"$PLOT_PROGRAM_DIR\" vectorFile=\"$VECTOR_FILE\" pdfFilePrefix=\"$PDF_FILE_PREFIX\" plotColorMode=$PLOT_COLOR_MODE plotOwnFile=$PLOT_OWN_FILE" $PLOT_PROGRAM_DIR/$PLOT_PROGRAM_SCRIPT /dev/stdout
+echo "Plotting vector file $VECTOR_FILE_A -> $PDF_FILE_PREFIX"
+R CMD BATCH --vanilla "--args programDirectory=\"$PLOT_PROGRAM_DIR\" vectorFile=\"$SUMMARY_NAME\" pdfFilePrefix=\"$PDF_FILE_PREFIX\" activeName=\"$NAME_A\" passiveName=\"$NAME_B\" plotColorMode=$PLOT_COLOR_MODE plotOwnFile=$PLOT_OWN_FILE" $PLOT_PROGRAM_DIR/$PLOT_PROGRAM_SCRIPT /dev/stdout
+rm -f $SUMMARY_NAME

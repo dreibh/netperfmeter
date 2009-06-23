@@ -113,7 +113,16 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             bytesToRead = socket->MessageSize - socket->BytesRead;
          }
          else {
-            return(MRRM_STREAM_ERROR);
+            if(socket->Protocol != IPPROTO_TCP) {
+               // An error occurred before. Reset and try again ...
+               socket->Status    = Socket::MRS_WaitingForHeader;
+               socket->BytesRead = 0;
+               bytesToRead       = sizeof(TLVHeader);
+            }
+            else {
+               // Not useful to retry when synchronization has been lost for TCP!
+               return(MRRM_STREAM_ERROR);
+            }
          }
          assert(bytesToRead + socket->BytesRead <= socket->MessageBufferSize);
       }

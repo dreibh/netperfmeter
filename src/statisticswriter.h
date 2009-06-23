@@ -46,23 +46,28 @@ class StatisticsWriter
       MeasurementID = measurementID;
    }
    inline void setVectorName(const char* name) {
-      VectorName = name;
-      dissectName(VectorName, 
-                  (char*)&VectorPrefix, sizeof(VectorPrefix),
-                  (char*)&VectorSuffix, sizeof(VectorSuffix));
+      VectorName = std::string(name);
+      dissectName(VectorName,  VectorPrefix, VectorSuffix);
    }
-   bool openOutputFiles();
-   void closeOutputFiles();
+   inline void setScalarName(const char* name) {
+      ScalarName = std::string(name);
+      dissectName(ScalarName,  ScalarPrefix, ScalarSuffix);
+   }
+   bool initializeOutputFiles();
+   bool finishOutputFiles(const bool  closeFile = false);
    
    static StatisticsWriter* addMeasurement(const uint64_t measurementID, const bool compressed);
+   static void printMeasurements(std::ostream& os);
+   static StatisticsWriter* findMeasurement(const uint64_t measurementID);
    static void removeMeasurement(const uint64_t measurementID);
 
-   static bool openOutputFile(const char* name,
-                              FILE**     fh,
-                              BZFILE**   bz);
-   static bool closeOutputFile(const char* name,
-                               FILE**     fh,
-                               BZFILE**   bz);
+   static bool initializeOutputFile(const char* name,
+                                    FILE**     fh,
+                                    BZFILE**   bz);
+   static bool finishOutputFile(const char* name,
+                                FILE**      fh,
+                                BZFILE**    bz,
+                                const bool  closeFile = false);
    static bool writeString(const char* name,
                            FILE*       fh,
                            BZFILE*     bz,
@@ -71,8 +76,9 @@ class StatisticsWriter
    bool writeAllVectorStatistics(const unsigned long long now,
                                  std::vector<FlowSpec*>&  flowSet,
                                  const uint64_t           measurementID);
-   bool writeScalarStatistics(const unsigned long long now,
-                              std::vector<FlowSpec*>&  flowSet);
+   bool writeAllScalarStatistics(const unsigned long long now,
+                                 std::vector<FlowSpec*>& flowSet,
+                                 const uint64_t          measurementID);
 
    public:
    uint64_t           MeasurementID;
@@ -82,13 +88,15 @@ class StatisticsWriter
    unsigned long long NextStatisticsEvent;
 
    unsigned long long VectorLine;
-   const char*        VectorName;
-   char               VectorPrefix[256];
-   char               VectorSuffix[32];
+   std::string        VectorName;
+   std::string        VectorPrefix;
+   std::string        VectorSuffix;
    FILE*              VectorFile;
    BZFILE*            VectorBZFile;
 
-   const char*        ScalarName;
+   std::string        ScalarName;
+   std::string        ScalarPrefix;
+   std::string        ScalarSuffix;
    FILE*              ScalarFile;
    BZFILE*            ScalarBZFile;
 
@@ -115,6 +123,9 @@ class StatisticsWriter
    bool writeVectorStatistics(const unsigned long long now,
                               std::vector<FlowSpec*>&  flowSet,
                               const uint64_t           measurementID);
+   bool writeScalarStatistics(const unsigned long long now,
+                              std::vector<FlowSpec*>& flowSet,
+                              const uint64_t          measurementID);
 
    static StatisticsWriter                      GlobalStatisticsWriter;
    static std::map<uint64_t, StatisticsWriter*> StatisticsSet;
