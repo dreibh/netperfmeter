@@ -20,8 +20,62 @@
 #
 
 
+# ###### Set global variable (given as name string) to given value ##########
+setGlobalVariable <- function(variable, value)
+{
+   globalEnv <- sys.frame()
+   assign(variable, value, envir=globalEnv)
+}
+
+
+pdfOutlineFile <- NA
+pdfOutlinePage <- NA
+
+
+# ###### Create PDF info ####################################################
+openPDFInfo <- function(name)
+{
+   setGlobalVariable("pdfInfoFile", file(paste(sep="", name, ".in"), "w"))
+   setGlobalVariable("pdfOutlineFile", file(paste(sep="", name, ".ou"), "w"))
+   setGlobalVariable("pdfOutlinePage", 0)
+
+   cat(sep="", "InfoKey: Title\nInfoValue: NetPerfMeter Results Plots\n", file=pdfInfoFile);
+   cat(sep="", "InfoKey: Producer\nInfoValue: NetPerfMeter\n", file=pdfInfoFile);
+}
+
+
+# ###### Add page into PDF info #############################################
+addPage <- function()
+{
+   setGlobalVariable("pdfOutlinePage", pdfOutlinePage + 1)
+}
+
+
+# ###### Add entry into PDF info ############################################
+addBookmark <- function(level, title)
+{
+   if(!is.na(pdfOutlineFile)) {
+      cat(sep="", level, " ", pdfOutlinePage, " ", title, "\n", file=pdfOutlineFile)
+    }
+}
+
+
+# ###### Close PDF info #####################################################
+closePDFInfo <- function()
+{
+   if(!is.na(pdfOutlineFile)) {
+      close(pdfOutlineFile)
+      setGlobalVariable("pdfOutlineFile", NA)
+   }
+   if(!is.na(pdfInfoFile)) {
+      close(pdfInfoFile)
+      setGlobalVariable("pdfInfoFile", NA)
+   }
+}
+
+
 # ###### Create a plot ######################################################
-createPlot <- function(dataSet, title, ySet, baseColor, yTitle)
+createPlot <- function(dataSet, title, ySet, yTitle, baseColor, vSet=c(), vTitle="")
 {
    cat(sep="", "Plotting ", title, " ...\n")
 
@@ -30,8 +84,6 @@ createPlot <- function(dataSet, title, ySet, baseColor, yTitle)
 
    zSet <- dataSet$Description
    zTitle <- "Flow{F}"
-   vSet <- c()
-   vTitle <- ""
    wSet <- c()
    wTitle <- ""
 
@@ -60,6 +112,10 @@ createPlot <- function(dataSet, title, ySet, baseColor, yTitle)
       cat(pdfName,"\n")
       pdf(pdfName, width=plotWidth, height=plotHeight, family=plotFontFamily, pointsize=plotPointSize)
    }
+   else {
+      addPage()
+      addBookmark(3, title)
+   }
    plotstd6(title,
             pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
             pSet, aSet, bSet, xSet, ySet, zSet,
@@ -78,12 +134,6 @@ createPlot <- function(dataSet, title, ySet, baseColor, yTitle)
    }
 }
 
-
-# ###### Create plot label ##################################################
-directedLabel <- function(title, a, b)
-{
-   return(paste(sep="", title, " (" ,a, " -> ", b, ")"))
-}
 
 
 # ###### Default Settings ###################################################
@@ -122,21 +172,71 @@ cat(sep="", "plotOwnFile=",      plotOwnFile,   "\n")
 # ###### Create plots as PDF file(s) ########################################
 completeData <- loadResults(vectorFile)
 completeData <- subset(completeData, (completeData$Interval > 0))   # Avoids "divide by zero" on first entry
-if(!plotOwnFile) {
-   pdf(paste(sep="", pdfFilePrefix, ".pdf"),
-       width=plotWidth, height=plotHeight, family=plotFontFamily, pointsize=plotPointSize)
+if(!plotOwnFile) { 
+   pdfFileName <- paste(sep="", pdfFilePrefix, "-TEMP.pdf")
+   pdf(pdfFileName, width=plotWidth, height=plotHeight,
+       family=plotFontFamily, pointsize=plotPointSize)
+   openPDFInfo(pdfFileName)
 }
-activeNodeData  <- subset(completeData, (completeData$Active == 1))
-passiveNodeData <- subset(completeData, (completeData$Active != 1))
+
+
+
+plotNodeStats <- function(inputData, nodeName)
+{
+   addBookmark(1, paste(sep="", "Node ''", nodeName, "''"))
+
+#    # ====== Input/Output ====================================================
+   addBookmark(2, "Input/Output")
+#    data <- subset(inputData, (inputData$Action != "Lost"))
+#    createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", nodeName, "''"),
+#               (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
+#               data$Action, "Action")
+#    createPlot(data, paste(sep="", "Bytes Sent/Received at Node ''", nodeName, "''"),
+#               (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
+#               data$Action, "Action")
+#    createPlot(data, paste(sep="", "Packets Sent/Received at Node ''", nodeName, "''"),
+#               data$RelPackets / data$Interval, "Byte Rate [Packets/s]", "green4",
+#               data$Action, "Action")
+#    createPlot(data, paste(sep="", "Frames Sent/Received at Node ''", nodeName, "''"),
+#               data$RelFrames / data$Interval, "Frame Rate [Frames/s]", "yellow4",
+#               data$Action, "Action")
+# 
+   # ====== Jitter ==========================================================
+   addBookmark(2, "Quality of Service")
+   data <- subset(inputData, (inputData$Action == "Received"))
+   createPlot(data, paste(sep="", "Observed Interarrival Jitter at Node ''", nodeName, "''"),
+              data$Jitter, "Jitter [ms]", "gold4",
+              data$Action, "Action")
+
+   # ====== Loss ============================================================
+   data <- subset(inputData, (inputData$Action == "Lost"))
+   createPlot(data, paste(sep="", "Observed Byte Loss Rate at Node ''", nodeName, "''"),
+              data$RelBytes / data$Interval, "Byte Loss Rate [KiB/s]", "red2")
+   createPlot(data, paste(sep="", "Observed Packet Loss Rate at Node ''", nodeName, "''"),
+              data$RelPackets / data$Interval, "Packet Loss Rate [Packets/s]", "red4")
+}
 
 
 # ====== Transmission Bandwidth =============================================
-createPlot(activeNodeData, directedLabel("Transmitted Bit Rate", activeName, passiveName),
-           (activeNodeData$RelTransmittedBytes * 8 / 1000) / activeNodeData$Interval,
-           "blue4", "Bit Rate [Kbit/s]")
-createPlot(passiveNodeData, directedLabel("Transmitted Bit Rate", passiveName, passiveName),
-           (passiveNodeData$RelTransmittedBytes * 8 / 1000) / passiveNodeData$Interval,
-           "blue4", "Bit Rate [Kbit/s]")
+data <- subset(completeData, (completeData$Active == 1) &
+                             (completeData$FlowID != -1))
+plotNodeStats(data, activeName)
+
+data <- subset(completeData, (completeData$Active == 0) &
+                             (completeData$FlowID != -1))
+plotNodeStats(data, passiveName)
+
+# createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", activeName, "''"),
+#            (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
+#            data$Action, "Action")
+# createPlot(data, paste(sep="", "Bytes Sent/Received at Node ''", activeName, "''"),
+#            (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
+#            data$Action, "Action")
+
+
+# createPlot(passiveNodeData, directedLabel("Transmitted Bit Rate", passiveName, passiveName),
+#            (passiveNodeData$RelTransmittedBytes * 8 / 1000) / passiveNodeData$Interval,
+#            "blue4", "Bit Rate [Kbit/s]")
 
 # createPlot("Transmitted Byte Rate",
 #            (data$RelTransmittedBytes / 1024) / data$Interval,
@@ -199,5 +299,20 @@ createPlot(passiveNodeData, directedLabel("Transmitted Bit Rate", passiveName, p
 
 if(!plotOwnFile) {
    dev.off()
+   closePDFInfo()
    processPDFbyGhostscript(paste(sep="", pdfFilePrefix, ".pdf"))
+
+   cmd1 <- paste(sep="", "pdfoutline ", pdfFileName, " ", pdfFileName, ".ou ", pdfFileName)
+cat("CMD=",cmd1,"\n")
+   ret1 <- system(cmd1)
+   if(ret1 != 0) {
+      stop(gettextf("status %d in running command '%s'", ret1, cmd1))
+   }
+
+   cmd2 <- paste(sep="", "pdftk ", pdfFileName, " update_info ", pdfFileName, ".in output ", pdfFilePrefix, ".pdf")
+cat("CMD=",cmd2,"\n")
+   ret2 <- system(cmd2)
+   if(ret2 != 0) {
+      stop(gettextf("status %d in running command '%s'", ret2, cmd2))
+   }
 }

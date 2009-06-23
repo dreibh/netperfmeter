@@ -461,11 +461,12 @@ plotstd3 <- function(mainTitle,
                else if((type == "lx") || (type=="linesx")) {
                   lineWidth <- 5
                   if((length(vLevels) > 1) || (length(wLevels) > 1)) {
-                     lineWidth <- 3
+                     lineWidth <- 5
                   }
                   xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
                   ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
-                  lines(xSubset, ySubset, col=legendColor, lwd=lineWidth*par("cex"), pch=legendDot)
+                  lines(xSubset, ySubset, col=legendColor, lty=legendStyle,
+                        lwd=lineWidth*par("cex"), pch=legendDot)
 
                   legendTexts <- append(legendTexts, legendText)
                   legendColors <- append(legendColors, legendColor)
