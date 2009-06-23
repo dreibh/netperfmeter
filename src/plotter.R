@@ -461,7 +461,7 @@ plotstd3 <- function(mainTitle,
                else if((type == "lx") || (type=="linesx")) {
                   lineWidth <- 5
                   if((length(vLevels) > 1) || (length(wLevels) > 1)) {
-                     lineWidth <- 5
+                     lineWidth <- 3
                   }
                   xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
                   ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
