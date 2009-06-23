@@ -147,39 +147,39 @@ plotNodeStats <- function(inputData, nodeName)
    data <- subset(inputData, (inputData$Action != "Lost"))
    createPlot(data, paste(sep="", "Bit Rate Sent/Received at Node ''", nodeName, "''"),
               (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
-              data$Action, "Action")
+              data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Byte Rate Sent/Received at Node ''", nodeName, "''"),
               (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
-              data$Action, "Action")
+              data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Packet Rate Sent/Received at Node ''", nodeName, "''"),
               data$RelPackets / data$Interval, "Packet Rate [Packets/s]", "green4",
-              data$Action, "Action")
+              data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Frame Rate Sent/Received at Node ''", nodeName, "''"),
               data$RelFrames / data$Interval, "Frame Rate [Frames/s]", "yellow4",
-              data$Action, "Action")
+              data$Action, "Action{A}")
 
    # ====== Input/Output Absolute ===========================================
    addBookmark(2, "Input/Output Absolute")
    data <- subset(inputData, (inputData$Action != "Lost"))
    createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", nodeName, "''"),
               (data$AbsBytes * 8 / 1000), "Bits [Kbit]", "blue4",
-              data$Action, "Action")
+              data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Bytes Sent/Received at Node ''", nodeName, "''"),
               (data$AbsBytes / 1000), "Bytes [KiB]", "blue2",
-              data$Action, "Action")
+              data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Packets Sent/Received at Node ''", nodeName, "''"),
               data$AbsPackets, "Packets [1]", "green4",
-              data$Action, "Action")
+              data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Frames Sent/Received at Node ''", nodeName, "''"),
               data$AbsFrames, "Frames [s]", "yellow4",
-              data$Action, "Action")
+              data$Action, "Action{A}")
 
    # ====== Jitter ==========================================================
    addBookmark(2, "Quality of Service")
    data <- subset(inputData, (inputData$Action == "Received"))
    createPlot(data, paste(sep="", "Interarrival Jitter at Node ''", nodeName, "''"),
               data$Jitter, "Jitter [ms]", "gold4",
-              data$Action, "Action")
+              data$Action, "Action{A}")
 
    # ====== Loss ============================================================
    data <- subset(inputData, (inputData$Action == "Lost"))
