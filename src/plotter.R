@@ -279,7 +279,7 @@ plotstd3 <- function(mainTitle,
                      colorMode         = cmColor,
                      zColorArray       = c(),
                      frameColor        = par("fg"),
-                     legendSize  = 0.8,
+                     legendSize        = 0.8,
                      xValueFilter      = "%s",
                      yValueFilter      = "%s",
                      zValueFilter      = "%s",
@@ -949,7 +949,11 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
       # oldPar1 <- par(bg=getBackgroundColor(page, colorMode, pStart))
 
       pColor <- getBackgroundColor(page, colorMode, pStart)
-      makeLayout(aSet, bSet, aTitle, bTitle, mainTitle, pSubLabel, pColor, colorMode)
+      if( (aLevels > 1) || (bLevels > 1) ) {
+         # For aLevels==1 and bLevels==1, there is no need to create the layout here!
+         # Otherwise, it would reduce cex => too small fonts!
+         makeLayout(aSet, bSet, aTitle, bTitle, mainTitle, pSubLabel, pColor, colorMode)
+      }
 
       # ------ Plot page ----------------------------------------------
       i<-1
@@ -1019,20 +1023,20 @@ plothist <- function(mainTitle,
                      xTitle, yTitle, zTitle,
                      xSet, ySet, zSet,
                      cSet,
-                     xAxisTicks       = getUsefulTicks(xSet),
-                     yAxisTicks       = c(),
-                     breakSpace       = 0.2,
-                     freq             = TRUE,
-                     hideLegend       = FALSE,
-                     legendPos        = c(1,1),
-                     colorMode        = cmColor,
-                     zColorArray      = c(),
-                     frameColor       = par("fg"),
-                     legendSize = 0.8,
-                     showMinMax       = FALSE,
-                     showConfidence   = TRUE,
-                     confidence       = 0.95,
-                     valueFilter      = plothist.valuefilter)
+                     xAxisTicks     = getUsefulTicks(xSet),
+                     yAxisTicks     = c(),
+                     breakSpace     = 0.2,
+                     freq           = TRUE,
+                     hideLegend     = FALSE,
+                     legendPos      = c(1,1),
+                     colorMode      = cmColor,
+                     zColorArray    = c(),
+                     frameColor     = par("fg"),
+                     legendSize     = 0.8,
+                     showMinMax     = FALSE,
+                     showConfidence = TRUE,
+                     confidence     = 0.95,
+                     valueFilter    = plothist.valuefilter)
 {
    # ------ Initialize variables --------------------------------------------
    cLevels <- levels(factor(cSet))
@@ -1523,30 +1527,16 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
             width=plotWidth, height=plotHeight, onefile=FALSE,
             family=plotFontFamily, pointsize=plotFontPointsize)
       }
-      if( (length(aSet) > 0) || (length(bSet) > 0) || (length(pSet) > 0)) {
-         plotstd6(title,
-                  pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
-                  pSet, aSet, bSet, xSet, ySet, zSet,
-                  vSet, wSet, vTitle, wTitle,
-                  xAxisTicks=xAxisTicks,yAxisTicks=yAxisTicks,
-                  rangeSet=rangeSet, rangeColors=rangeColors,
-                  type="l",
-                  frameColor=frameColor,
-                  legendSize=plotLegendSizeFactor, confidence=plotConfidence,
-                  colorMode=plotColorMode, hideLegend=plotHideLegend, legendPos=legendPos)
-      }
-      else {
-         plotstd3(title,
-                  xTitle, yTitle, zTitle,
-                  xSet, ySet, zSet,
-                  vSet, wSet, vTitle, wTitle,
-                  xAxisTicks=xAxisTicks,yAxisTicks=yAxisTicks,
-                  rangeSet=rangeSet, rangeColors=rangeColors,
-                  type="l",
-                  frameColor=frameColor,
-                  legendSize=plotLegendSizeFactor, confidence=plotConfidence,
-                  colorMode=plotColorMode, hideLegend=plotHideLegend, legendPos=legendPos)
-      }
+      plotstd6(title,
+               pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
+               pSet, aSet, bSet, xSet, ySet, zSet,
+               vSet, wSet, vTitle, wTitle,
+               xAxisTicks=xAxisTicks,yAxisTicks=yAxisTicks,
+               rangeSet=rangeSet, rangeColors=rangeColors,
+               type="l",
+               frameColor=frameColor,
+               legendSize=plotLegendSizeFactor, confidence=plotConfidence,
+               colorMode=plotColorMode, hideLegend=plotHideLegend, legendPos=legendPos)
       if(plotOwnOutput) {
          dev.off()
       }
