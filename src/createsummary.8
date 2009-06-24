@@ -1,0 +1,107 @@
+.\" $Id$
+.\"
+.\" Network Performance Meter
+.\" Copyright (C) 2009 by Thomas Dreibholz
+.\"
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\"
+.\" Contact: dreibh@iem.uni-due.de
+.\"
+.\" ###### Setup ############################################################
+.Dd Jun 23, 2009
+.Dt createsummary 8
+.Os CreateSummary
+.\" ###### Name #############################################################
+.Sh NAME
+.Nm createsummary
+.Nd Scalar File Summarization Tool
+.\" ###### Synopsis #########################################################
+.Sh SYNOPSIS
+.Nm createsummary
+.Op Var Names
+.Fl batch
+.Fl interactive
+.Fl compress=Level
+.\" ###### Description ######################################################
+.Sh DESCRIPTION
+.Nm createsummary
+is a summarization tool for scalar files: it creates one GNU R data table file
+for each scalar. CreateSummary supports on-the-fly BZip2 compression. After
+startup, the program accepts the following commands from standard input (*not*
+as command-line arguments!):
+.Bl -tag -width ident
+.It Fl Fl varnames=Variables
+A space-separated list of output variable names to be added to the output data
+tables.
+.It Fl Fl values=Values
+Sets the values of the output variables for the next scalar file to the
+provided space-separated values. One value for each variable has to be
+provided.
+.It Fl Fl logfile=Name
+Sets the log file for the next scalar file. On an error related to this scalar
+file, the log file's name is displayed. This option can be used to identify
+bad simulation/measurement runs by pointing to the log file being created for
+the simulation/measurement.
+.It Fl Fl statusfile=Name
+Sets the status file for the next scalar file. On an error related to this
+scalar file, the status file is deleted. This option can be used to repeat
+bad simulation/measurement runs by re-running the simulation/measurement on
+missing status files.
+.It Fl Fl input=Filename
+Process the given scalar file.
+.It Fl Fl skip=Prefix
+All scalars beginning with the given prefix are not written to output tables.
+This option can be used to filter out unneeded results.
+.It Fl Fl simulationdirectory=Directory
+Sets the directory where to find the scalar files.
+.It Fl Fl resultsdirectory=Directory
+Sets the directory where to write the summary tables to.
+.El 
+.Pp
+.\" ###### Arguments ########################################################
+.Sh ARGUMENTS
+The following arguments may be provided:
+.Bl -tag -width indent
+.It Var Names
+A space-separated list of output variable names to be added to the output data tables.
+.It Fl batch
+Run in batch mode. The program is aborted on errors.
+.It Fl interactive
+Run in interactive mode. On errors, the program is continued.
+.It Fl compress=0-9
+Sets the BZip2 compression level; 1=none, 9=highest (default).
+.El
+.\" ###### Arguments ########################################################
+.Sh EXAMPLE
+Consider two simulation results
+test1.sca.bz2 (created with ParameterX=One) and 
+test2.sca.bz2 (created with ParameterX=Two). The scalar files are located in
+the current directory, the output tables should be written to /tmp with
+compression level 5:
+
+( echo "--simulationsdirectory=."  && \\
+  echo "--resultsdirectory=/tmp"   && \\
+  echo "--values=One"              && \\
+  echo "--input=test1.sca.bz2"     && \\
+  echo "--values=Two"              && \\
+  echo "--input=test2.sca.bz2" ) | createsummary "ParameterX" -compress=5
+.El
+.\" ###### Authors ##########################################################
+.Sh AUTHORS
+Thomas Dreibholz
+.br
+http://www.iem.uni-due.de/~dreibh/omnetpp
+.br
+mailto://dreibh@iem.uni-due.de
+.br

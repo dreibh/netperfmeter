@@ -55,6 +55,21 @@ class StatisticsWriter
    }
    bool initializeOutputFiles();
    bool finishOutputFiles(const bool  closeFile = false);
+
+   inline static std::string getActiveNodeFilename(const std::string& prefix,
+                                                   const std::string& suffix,
+                                                   const char*        extension = "") {
+      const std::string result = prefix + std::string("-active") +
+                                    std::string(extension) + suffix;
+      return(result);
+   }
+   inline static std::string getPassivNodeFilename(const std::string& prefix,
+                                                   const std::string& suffix,
+                                                   const char*        extension = "") {
+      const std::string result = prefix + std::string("-passive") +
+                                    std::string(extension) + suffix;
+      return(result);
+   }
    
    static StatisticsWriter* addMeasurement(const uint64_t measurementID, const bool compressed);
    static void printMeasurements(std::ostream& os);

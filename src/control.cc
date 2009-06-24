@@ -135,17 +135,16 @@ static bool uploadResults(const int          controlSocket,
                           const sctp_assoc_t assocID,
                           FlowSpec*          flowSpec)
 {
-   bool success = flowSpec->finishStatsFile(false);
+   bool success = flowSpec->finishVectorFile(false);
    if(success) {
       success = sendAcknowledgeToRemoteNode(controlSocket, assocID,
                                             flowSpec->MeasurementID, flowSpec->FlowID, flowSpec->StreamID,
                                             (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
       if(success) {
-         success = upload(controlSocket, assocID,
-                          flowSpec->StatsFileName, flowSpec->StatsFile);
+         success = upload(controlSocket, assocID, flowSpec->VectorName.c_str(), flowSpec->VectorFile);
       }
    }
-   flowSpec->finishStatsFile(true);
+   flowSpec->finishVectorFile(true);
    return(success);
 }
 
@@ -158,18 +157,20 @@ static bool downloadResults(const int       controlSocket,
       StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
    assert(statisticsWriter != NULL);
 
-   char statsFileName[256];
-   snprintf((char*)&statsFileName, sizeof(statsFileName), "%s-passive-%08x-%04x%s",
-            statisticsWriter->VectorPrefix.c_str(),
-            flowSpec->FlowID, flowSpec->StreamID,
-            statisticsWriter->VectorSuffix.c_str());
+   char extension[32];
+   snprintf((char*)&extension, sizeof(extension), "-%08x-%04x",
+            flowSpec->FlowID, flowSpec->StreamID);
+   const std::string vectorName = StatisticsWriter::getPassivNodeFilename(
+                                     statisticsWriter->VectorPrefix,
+                                     statisticsWriter->VectorSuffix,
+                                     extension);
 
-   std::cout << "Downloading results [" << statsFileName << "] ";
+   std::cout << "Downloading results [" << vectorName << "] ";
    std::cout.flush();
    bool success = waitForAcknowledgeFromRemoteNode(controlSocket, flowSpec->MeasurementID,
                                                    flowSpec->FlowID, flowSpec->StreamID);
    if(success) {
-      success = download(controlSocket, statsFileName);
+      success = download(controlSocket, vectorName.c_str());
    }
    std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
    return(success);
@@ -494,7 +495,7 @@ FlowSpec* createRemoteFlow(const NetPerfMeterAddFlowMessage* addFlowMsg,
 // ###### Tell remote node to remove a flow #################################
 bool removeFlowFromRemoteNode(int controlSocket, FlowSpec* flowSpec)
 {
-   flowSpec->finishStatsFile(true);
+   flowSpec->finishVectorFile(true);
    
    NetPerfMeterRemoveFlowMessage removeFlowMsg;
    removeFlowMsg.Header.Type   = NETPERFMETER_REMOVE_FLOW;
@@ -622,7 +623,7 @@ void handleIdentifyMessage(std::vector<FlowSpec*>&            flowSet,
       flowSpec->RemoteDataAssocID    = assocID;
       flowSpec->RemoteAddress        = *from;
       flowSpec->RemoteAddressIsValid = true;
-      const bool success = flowSpec->initializeStatsFile((identifyMsg->Header.Flags & NPIF_COMPRESS_STATS) ? true : false);
+      const bool success = flowSpec->initializeVectorFile((identifyMsg->Header.Flags & NPIF_COMPRESS_STATS) ? true : false);
       sendAcknowledgeToRemoteNode(controlSocket, flowSpec->RemoteControlAssocID,
                                   ntoh64(identifyMsg->MeasurementID),
                                   ntohl(identifyMsg->FlowID),
@@ -698,24 +699,23 @@ bool stopMeasurement(int            controlSocket,
    }
 
    // ====== Download passive node's vector file ============================
-   char statsFileName[256];
-   snprintf((char*)&statsFileName, sizeof(statsFileName), "%s-passive%s",
-            statisticsWriter->VectorPrefix.c_str(),
-            statisticsWriter->VectorSuffix.c_str());
-   std::cout << "Downloading results [" << statsFileName << "] ";
+   const std::string vectorName = StatisticsWriter::getPassivNodeFilename(
+                                     statisticsWriter->VectorPrefix,
+                                     statisticsWriter->VectorSuffix);
+   std::cout << "Downloading results [" << vectorName << "] ";
    std::cout.flush();
-   if(download(controlSocket, statsFileName) == false) {
+   if(download(controlSocket, vectorName.c_str()) == false) {
       return(false);
    }
    std::cout << " ";
 
    // ====== Download passive node's scalar file ============================
-   snprintf((char*)&statsFileName, sizeof(statsFileName), "%s-passive%s",
-            statisticsWriter->ScalarPrefix.c_str(),
-            statisticsWriter->ScalarSuffix.c_str());
-   std::cout << "Downloading results [" << statsFileName << "] ";
+   const std::string scalarName = StatisticsWriter::getPassivNodeFilename(
+                                     statisticsWriter->ScalarPrefix,
+                                     statisticsWriter->ScalarSuffix);
+   std::cout << "Downloading results [" << scalarName << "] ";
    std::cout.flush();
-   if(download(controlSocket, statsFileName) == false) {
+   if(download(controlSocket, scalarName.c_str()) == false) {
       return(false);
    }
    std::cout << " okay" << std::endl << std::endl;

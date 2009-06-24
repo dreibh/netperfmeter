@@ -56,10 +56,9 @@ FlowSpec::FlowSpec()
    NextStatusChangeEvent    = ~0;
    NextTransmissionEvent    = ~0;
    BaseTime                 = getMicroTime();
-   StatsFileName[0]         = 0x00;
-   StatsLine                = 0;
-   StatsFile                = NULL;
-   StatsBZFile              = NULL;
+   VectorLine               = 0;
+   VectorFile               = NULL;
+   VectorBZFile             = NULL;
 
    resetStatistics();
 }
@@ -352,73 +351,79 @@ void FlowSpec::printFlows(std::ostream&           os,
 
 
 // ###### Initialize statistics file ########################################
-bool FlowSpec::initializeStatsFile(const bool compressed)
+bool FlowSpec::initializeVectorFile(const bool compressed)
 {
-   finishStatsFile(true);
+   finishVectorFile(true);
    if(!RemoteAddressIsValid) {
       const StatisticsWriter* statisticsWriter =
          StatisticsWriter::getStatisticsWriter(MeasurementID);
       assert(statisticsWriter != NULL);
-      snprintf((char*)&StatsFileName, sizeof(StatsFileName), "%s-active-%08x-%04x%s",
-               statisticsWriter->VectorPrefix.c_str(),
-               FlowID, StreamID,
-               statisticsWriter->VectorSuffix.c_str());
+
+      char extension[32];
+      snprintf((char*)&extension, sizeof(extension), "-%08x-%04x", FlowID, StreamID);
+      VectorName = StatisticsWriter::getActiveNodeFilename(
+                                        statisticsWriter->VectorPrefix,
+                                        statisticsWriter->VectorSuffix,
+                                        extension);
+      VectorFile = fopen(VectorName.c_str(), "w+b");
    }
    else {
-      snprintf((char*)&StatsFileName, sizeof(StatsFileName), "/tmp/temp-%016llx-%08x-%04x.data",
-               (unsigned long long)MeasurementID, FlowID, StreamID);
+      const StatisticsWriter* statisticsWriter =
+         StatisticsWriter::getStatisticsWriter();
+      assert(statisticsWriter != NULL);
+      VectorName = statisticsWriter->VectorSuffix;   // To compress or not compress ...
+      VectorFile = tmpfile();
    }
-   StatsFile = fopen(StatsFileName, "w+b");
-   if(StatsFile == NULL) {
-      std::cerr << "ERROR: Unable to create output file " << StatsFileName
+   if(VectorFile == NULL) {
+      std::cerr << "ERROR: Unable to create output file " << VectorName
                 << " - " << strerror(errno) << "!" << std::endl;
       return(false);
    }
 
    if(compressed) {
       int bzerror;
-      StatsBZFile = BZ2_bzWriteOpen(&bzerror, StatsFile, 9, 0, 30);
+      VectorBZFile = BZ2_bzWriteOpen(&bzerror, VectorFile, 9, 0, 30);
       if(bzerror != BZ_OK) {
          std::cerr << "ERROR: Unable to initialize BZip2 compression for file "
-                   << StatsFileName << "!" << std::endl
-                   << "Reason: " << BZ2_bzerror(StatsBZFile, &bzerror) << std::endl;
-         BZ2_bzWriteClose(&bzerror, StatsBZFile, 0, NULL, NULL);
-         StatsBZFile = NULL;
-         fclose(StatsFile);
-         StatsFile = NULL;
+                   << VectorName << "!" << std::endl
+                   << "Reason: " << BZ2_bzerror(VectorBZFile, &bzerror) << std::endl;
+         BZ2_bzWriteClose(&bzerror, VectorBZFile, 0, NULL, NULL);
+         VectorBZFile = NULL;
+         fclose(VectorFile);
+         VectorFile = NULL;
          return(false);
       }
    }
    
-   StatsLine = 1;
-   return(StatisticsWriter::writeString((const char*)&StatsFileName, StatsFile, StatsBZFile,
+   VectorLine = 1;
+   return(StatisticsWriter::writeString((const char*)&VectorName, VectorFile, VectorBZFile,
                                         "AbsTime RelTime SeqNumber Delay PrevPacketDelayDiff Jitter\n"));
 }
 
 
 // ###### Finish writing of statistics file #################################
-bool FlowSpec::finishStatsFile(const bool closeFile)
+bool FlowSpec::finishVectorFile(const bool closeFile)
 {
    bool result = true;
-   if(StatsBZFile) {
+   if(VectorBZFile) {
       int bzerror;
-      BZ2_bzWriteClose(&bzerror, StatsBZFile, 0, NULL, NULL);
+      BZ2_bzWriteClose(&bzerror, VectorBZFile, 0, NULL, NULL);
       if(bzerror != BZ_OK) {
          std::cerr << "ERROR: Unable to finish BZip2 compression for file "
-                   << StatsFileName << "!" << std::endl
-                   << "Reason: " << BZ2_bzerror(StatsBZFile, &bzerror) << std::endl;
+                   << VectorName << "!" << std::endl
+                   << "Reason: " << BZ2_bzerror(VectorBZFile, &bzerror) << std::endl;
          result = false;
       }
-      StatsBZFile = NULL; 
+      VectorBZFile = NULL; 
    }
-   if(StatsFile) {
+   if(VectorFile) {
       if(closeFile) {
-         fclose(StatsFile);
-         StatsFile        = NULL;
-         StatsFileName[0] = 0x00;
+         fclose(VectorFile);
+         VectorFile        = NULL;
+         VectorName[0] = 0x00;
       }
       else {
-         rewind(StatsFile);
+         rewind(VectorFile);
       }
    }
    return(result);

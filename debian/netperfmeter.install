@@ -1,6 +1,4 @@
 debian/tmp/usr/bin/netperfmeter
-debian/tmp/usr/share/man/man8/netperfmeter.8
 debian/tmp/usr/bin/plot-netperfmeter-vectors
-debian/tmp/usr/share/man/man8/plot-netperfmeter-vectors.8
 debian/tmp/usr/share/netperfmeter/plot-netperfmeter-vectors.R
 debian/tmp/usr/share/netperfmeter/plotter.R

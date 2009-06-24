@@ -20,4 +20,17 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-make -j2 && ./netperfmeter [::1]:9000 -maxmsgsize=4096 -vector=output.vec.bz2 -scalar=output.sca.bz2 -sctp const5:const1000:const3:const500:description="Test" -runtime=30 $@
+if [ -e output-test2 ] ; then
+   rm -rf output-test2
+fi
+mkdir output-test2
+
+make -j2 && ./netperfmeter [::1]:9000 \
+   "-activenodename=Video-Client" \
+   "-passivenodename=Video-Server" \
+   -maxmsgsize=4096 \
+   -runtime=30 \
+   -config=output-test2/output.config \
+   -vector=output-test2/output.vec.bz2 \
+   -scalar=output-test2/output.sca.bz2 \
+   -sctp const25:const1000:const30:const500:description="Testfluß" $@

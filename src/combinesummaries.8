@@ -1,0 +1,83 @@
+.\" $Id$
+.\"
+.\" Network Performance Meter
+.\" Copyright (C) 2009 by Thomas Dreibholz
+.\"
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\"
+.\" Contact: dreibh@iem.uni-due.de
+.\"
+.\" ###### Setup ############################################################
+.Dd Jun 23, 2009
+.Dt combinesummaries 8
+.Os CombineSummaries
+.\" ###### Name #############################################################
+.Sh NAME
+.Nm combinesummaries
+.Nd Scalar Summary Combination Tool
+.\" ###### Synopsis #########################################################
+.Sh SYNOPSIS
+.Nm combinesummaries
+.Op Output File
+.Op Var Names
+.Fl quiet
+.\" ###### Description ######################################################
+.Sh DESCRIPTION
+.Nm combinesummaries
+is a combination tool for GNU R data files: it creates a single data table
+from multiple input files. CombineSummaries supports on-the-fly BZip2
+compression. After startup, the program accepts the following commands from
+standard input (*not* as command-line arguments!):
+.Bl -tag -width ident
+.It Fl Fl values=Values
+Sets the values of the output variables for the next input file to the
+provided space-separated values. One value for each variable has to be
+provided.
+.It Fl Fl input=Filename
+Process the given input file.
+.It Fl Fl simulationdirectory=Directory
+Sets the directory where to find the input files.
+.El 
+.Pp
+.\" ###### Arguments ########################################################
+.Sh ARGUMENTS
+The following arguments may be provided:
+.Bl -tag -width indent
+.It Output File
+The name of the output file to be created.
+.It Var Names
+A space-separated list of output variable names to be added to the output data tables.
+.It Fl quiet
+Do not print verbose status information.
+.El
+.\" ###### Arguments ########################################################
+.Sh EXAMPLE
+Consider two data tables
+v1.data.bz2 (created with ParameterY=Alpha) and 
+v2.data.bz2 (created with ParameterY=Beta).
+The output data table should be written to output.data.bz2.
+
+( echo "--values=\\"Alpha\\""   && \\
+  echo "--input=v1.data.bz2"  && \\
+  echo "--values=\\"Beta\\""    && \\
+  echo "--input=v2.data.bz2" ) | combinesummaries output.data.bz2 "ParameterY"
+.El
+.\" ###### Authors ##########################################################
+.Sh AUTHORS
+Thomas Dreibholz
+.br
+http://www.iem.uni-due.de/~dreibh/omnetpp
+.br
+mailto://dreibh@iem.uni-due.de
+.br

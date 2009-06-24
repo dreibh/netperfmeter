@@ -153,6 +153,14 @@ void StatisticsWriter::removeMeasurement(const uint64_t measurementID)
       StatisticsWriter* statisticsWriter = found->second;
       StatisticsSet.erase(found);
       
+      // ====== Remove temporary files ======================================
+      if(statisticsWriter->VectorName.find("/tmp/") == 0) {
+         unlink(statisticsWriter->VectorName.c_str());
+      }
+      if(statisticsWriter->ScalarName.find("/tmp/") == 0) {
+         unlink(statisticsWriter->ScalarName.c_str());
+      }
+
       delete statisticsWriter;
    }   
 }

@@ -54,7 +54,7 @@ void addDataFile(const char*   varNames,
 
    FILE* inFile = fopen(inputFileName, "r");
    if(inFile == NULL) {
-      cerr << "ERROR: Unable to open scalar file \"" << inputFileName << "\"!" << endl;
+      cerr << "ERROR: Unable to open input file \"" << inputFileName << "\"!" << endl;
       exit(1);
    }
 

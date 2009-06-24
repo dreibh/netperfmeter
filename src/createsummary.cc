@@ -753,7 +753,7 @@ static void dumpScalars(const char*        simulationsDirectory,
 static void usage(const char* name)
 {
    cerr << "Usage: "
-        << name << " [Var Names] {-compress=1-9} {-interactive|-batch}" << endl;
+        << name << " [Var Names] {-compress=0-9} {-interactive|-batch}" << endl;
    exit(1);
 }
 

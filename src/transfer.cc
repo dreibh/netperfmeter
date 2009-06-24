@@ -277,15 +277,16 @@ static void updateStatistics(StatisticsWriter*              statsWriter,
    // ------ Write statistics -----------------------------------------------
    const StatisticsWriter* statisticsWriter =
       StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
-   assert(statisticsWriter != NULL);
-   char str[512];
-   snprintf((char*)&str, sizeof(str),
-            "%06llu %llu %1.6f\t"
-            "%llu %1.3f %1.3f\n",
-            flowSpec->StatsLine++, now, (double)(now - statisticsWriter->FirstStatisticsEvent) / 1000000.0,
-            (unsigned long long)seqNumber, transitTime, diff, flowSpec->Jitter);
-   
-   StatisticsWriter::writeString((const char*)&flowSpec->StatsFileName,
-                                 flowSpec->StatsFile, flowSpec->StatsBZFile,
-                                 (const char*)&str);
+   if(statisticsWriter != NULL) {
+      char str[512];
+      snprintf((char*)&str, sizeof(str),
+               "%06llu %llu %1.6f\t"
+               "%llu %1.3f %1.3f\n",
+               flowSpec->VectorLine++, now, (double)(now - statisticsWriter->FirstStatisticsEvent) / 1000000.0,
+               (unsigned long long)seqNumber, transitTime, diff, flowSpec->Jitter);
+      
+      StatisticsWriter::writeString((const char*)&flowSpec->VectorName,
+                                    flowSpec->VectorFile, flowSpec->VectorBZFile,
+                                    (const char*)&str);
+   }
 }

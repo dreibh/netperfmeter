@@ -13,7 +13,7 @@ netperfmeter_LDADD   = $(bz2_LIBS)
 dist_bin_SCRIPTS = plot-netperfmeter-vectors
 
 
-dist_man_MANS = netperfmeter.8 plot-netperfmeter-vectors.8
+dist_man_MANS = netperfmeter.8 plot-netperfmeter-vectors.8 createsummary.8 combinesummaries.8
 
 
 EXTRA_DIST = plotter.R plot-netperfmeter-vectors.R

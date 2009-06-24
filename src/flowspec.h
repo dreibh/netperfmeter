@@ -43,8 +43,8 @@ class FlowSpec
    unsigned long long scheduleNextStatusChangeEvent(const unsigned long long now);
    unsigned long long scheduleNextTransmissionEvent();
 
-   bool initializeStatsFile(const bool compressed = true);
-   bool finishStatsFile(const bool closeFile);
+   bool initializeVectorFile(const bool compressed = true);
+   bool finishVectorFile(const bool closeFile);
    
    void resetStatistics();
    void print(std::ostream& os, const bool printStatistics = false) const;
@@ -157,10 +157,10 @@ class FlowSpec
    bool                    RemoteAddressIsValid;
    
    // ====== Statistics file handling =======================================
-   unsigned long long      StatsLine;
-   char                    StatsFileName[256];
-   FILE*                   StatsFile;
-   BZFILE*                 StatsBZFile;
+   unsigned long long      VectorLine;
+   std::string             VectorName;
+   FILE*                   VectorFile;
+   BZFILE*                 VectorBZFile;
 };
 
 #endif

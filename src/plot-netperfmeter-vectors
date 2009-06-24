@@ -73,13 +73,22 @@ fi
 
 
 # ====== Create combined data file ==========================================
+SEARCH_PATHS=". /usr/local/bin /usr/bin"
+COMBINESUMMARIES="combinesummaries"
+for searchPath in $SEARCH_PATHS ; do
+   if [ -e "$searchPath/$COMBINESUMMARIES" ] ; then
+      COMBINESUMMARIES="$searchPath/combinesummaries"
+      break
+   fi
+done
+
 SUMMARY_NAME="$PDF_FILE_PREFIX-summary.data.bz2"
 (
    echo "--values=\"\"$NAME_A\" 1\""
    echo "--input=$VECTOR_FILE_A"
    echo "--values=\"\"$NAME_B\" 0\""
    echo "--input=$VECTOR_FILE_B"
-) | ./combinesummaries $SUMMARY_NAME "NodeName Active" -quiet
+) | $COMBINESUMMARIES $SUMMARY_NAME "NodeName Active" -quiet
 
 
 # ====== Locate plotting scripts ============================================

@@ -52,6 +52,8 @@ using namespace std;
 
 vector<FlowSpec*> gFlowSet;
 set<int>          gConnectedSocketsSet;
+const char*       gActiveNodeName      = "Client";
+const char*       gPassiveNodeName     = "Server";
 int               gControlSocket       = -1;
 int               gTCPSocket           = -1;
 int               gUDPSocket           = -1;
@@ -81,6 +83,12 @@ bool handleGlobalParameter(const char* parameter)
       gRuntime = atof((const char*)&parameter[9]);
       return(true);
    }
+   else if(strncmp(parameter, "-activenodename=", 16) == 0) {
+      gActiveNodeName = (const char*)&parameter[16];
+   }
+   else if(strncmp(parameter, "-passivenodename=", 17) == 0) {
+      gPassiveNodeName = (const char*)&parameter[17];
+   }
    return(false);
 }
 
@@ -89,14 +97,16 @@ bool handleGlobalParameter(const char* parameter)
 void printGlobalParameters()
 {
    std::cout << "Global Parameters:" << std::endl
-             << "   - Runtime          = ";
+             << "   - Runtime           = ";
    if(gRuntime >= 0.0) {
       std::cout << gRuntime << "s" << std::endl;
    }
    else {
       std::cout << "until manual stop" << std::endl;
    }
-   std::cout << "   - Max Message Size = " << gMaxMsgSize << std::endl
+   std::cout << "   - Active Node Name  = " << gActiveNodeName  << std::endl
+             << "   - Passive Node Name = " << gPassiveNodeName << std::endl
+             << "   - Max Message Size  = " << gMaxMsgSize      << std::endl
              << std::endl;
 }
 
@@ -632,7 +642,8 @@ void activeMode(int argc, char** argv)
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
 
-   // ====== Get vector and scalar names ====================================
+   // ====== Get vector, scalar and config names ============================
+   const char* configName = "output.config";
    for(int i = 2;i < argc;i++) {
       if(strncmp(argv[i], "-vector=", 8) == 0) {
          statisticsWriter->setVectorName((const char*)&argv[i][8]);
@@ -640,6 +651,14 @@ void activeMode(int argc, char** argv)
       else if(strncmp(argv[i], "-scalar=", 8) == 0) {
          statisticsWriter->setScalarName((const char*)&argv[i][8]);
       }
+      else if(strncmp(argv[i], "-config=", 8) == 0) {
+         configName = (const char*)&argv[i][8];
+      }
+   }
+   FILE* configFile = fopen(configName, "w");
+   if(configFile == NULL) {
+      cerr << "ERROR: Unable to create config file " << configName << "!" << endl;
+      exit(1);
    }
 
 
@@ -674,6 +693,9 @@ void activeMode(int argc, char** argv)
          else if(strncmp(argv[i], "-scalar=", 8) == 0) {
             // Already processed above!
          }
+         else if(strncmp(argv[i], "-config=", 8) == 0) {
+            // Already processed above!
+         }
       }
       else {
          if(protocol == 0) {
@@ -685,7 +707,7 @@ void activeMode(int argc, char** argv)
                                     measurementID, &flows,
                                     &remoteAddress.sa, &controlAddress.sa);
          gFlowSet.push_back(lastFlow);
-         const bool success = lastFlow->initializeStatsFile();
+         const bool success = lastFlow->initializeVectorFile();
          if(!success) {
             return;
          }
@@ -705,7 +727,7 @@ void activeMode(int argc, char** argv)
       }
    }
    cout << endl;
-
+   
    
    printGlobalParameters();
 
@@ -750,6 +772,36 @@ void activeMode(int argc, char** argv)
       FlowSpec::printFlows(cout, gFlowSet, true);
    }
 
+
+   // ====== Write config file ==============================================
+   fprintf(configFile, "NUM_FLOWS=%u\n", flows);
+   fprintf(configFile, "NAME_ACTIVE_NODE=\"%s\"\n", gActiveNodeName);
+   fprintf(configFile, "NAME_PASSIVE_NODE=\"%s\"\n", gPassiveNodeName);
+   fprintf(configFile, "SCALAR_ACTIVE_NODE=\"%s\"\n", statisticsWriter->ScalarName.c_str());
+   fprintf(configFile, "SCALAR_PASSIVE_NODE=\"%s-passive%s\"\n",
+         statisticsWriter->ScalarPrefix.c_str(), statisticsWriter->ScalarSuffix.c_str());
+   fprintf(configFile, "VECTOR_ACTIVE_NODE=\"%s\"\n", statisticsWriter->VectorName.c_str());
+   fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s-passive%s\"\n\n",
+            statisticsWriter->VectorPrefix.c_str(), statisticsWriter->VectorSuffix.c_str());
+
+   for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end();iterator++) {
+      const FlowSpec* flowSpec = *iterator;
+      fprintf(configFile, "FLOW%u_DESCRIPTION=\"%s\"\n",          flowSpec->FlowID, flowSpec->Description.c_str());
+      fprintf(configFile, "FLOW%u_PROTOCOL=\"%s\"\n",             flowSpec->FlowID, getProtocolName(flowSpec->Protocol));
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE=%f\n",      flowSpec->FlowID, flowSpec->OutboundFrameRate);
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG=%u\n",  flowSpec->FlowID, flowSpec->OutboundFrameRateRng);
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE=%f\n",      flowSpec->FlowID, flowSpec->OutboundFrameSize);
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_RNG=%u\n",  flowSpec->FlowID, flowSpec->OutboundFrameSizeRng);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE=%f\n",       flowSpec->FlowID, flowSpec->InboundFrameRate);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG=%u\n",   flowSpec->FlowID, flowSpec->InboundFrameRateRng);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE=%f\n",       flowSpec->FlowID, flowSpec->InboundFrameSize);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_RNG=%u\n",   flowSpec->FlowID, flowSpec->InboundFrameSizeRng);
+      fprintf(configFile, "FLOW%u_RELIABLE=%f\n",                 flowSpec->FlowID, flowSpec->ReliableMode);
+      fprintf(configFile, "FLOW%u_ORDERED=%f\n",                  flowSpec->FlowID, flowSpec->OrderedMode);
+      fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n\n", flowSpec->FlowID, flowSpec->VectorName.c_str());
+   }         
+   fclose(configFile);
+      
 
    // ====== Clean up =======================================================
    cout << "Shutdown:" << endl;
