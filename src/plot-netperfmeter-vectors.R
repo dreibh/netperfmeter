@@ -258,14 +258,15 @@ if(!plotOwnFile) {
    processPDFbyGhostscript(pdfFileName)
 
    # ------ Add PDF bookmarks -----------------------------------------------
-   cmd1 <- paste(sep="", "pdfoutline ", pdfFileName, " ", pdfFileName, ".ou ", pdfFileName)
+   cmd1 <- paste(sep="", "pdfoutline ", pdfFileName, " ", pdfFileName, ".ou ", pdfFileName, " || true")
    ret1 <- system(cmd1)
    if(ret1 != 0) {
       stop(gettextf("status %d in running command '%s'", ret1, cmd1))
    }
 
    # ------ Add PDF infos ---------------------------------------------------
-   cmd2 <- paste(sep="", "pdftk ", pdfFileName, " update_info ", pdfFileName, ".in output ", pdfFilePrefix, ".pdf")
+   cmd2 <- paste(sep="", "pdftk ", pdfFileName, " update_info ", pdfFileName, ".in output ", pdfFilePrefix, ".pdf",
+                         " || mv ", pdfFileName, " ", pdfFilePrefix, ".pdf")
    ret2 <- system(cmd2)
    if(ret2 != 0) {
       stop(gettextf("status %d in running command '%s'", ret2, cmd2))
