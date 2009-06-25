@@ -205,9 +205,6 @@ if test "$enable_kernel_sctp" = "no"; then
    # ====== Check for glib ==================================================
    AM_PATH_GLIB_2_0(2.0.0, [ glib_is_okay=yes ], [ glib_is_okay=no ])
    if test "x$glib_is_okay" = "xno"; then
-      AM_PATH_GLIB(1.2.0, [ glib_is_okay=yes ], [ glib_is_okay=no ])
-   fi
-   if test "x$glib_is_okay" = "xno"; then
       AC_MSG_ERROR(GLib distribution not found.)
    fi
 
