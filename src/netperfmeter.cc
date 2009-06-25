@@ -356,16 +356,17 @@ bool mainLoop(const bool               isActiveMode,
       FlowSpec* flowSpec = *iterator;
       flowSpec->Index = -1;   // No index reference yet.
       if(flowSpec->SocketDescriptor >= 0) {
-         if(flowSpec->OriginalSocketDescriptor) {
+ // ?????????????????        if(flowSpec->OriginalSocketDescriptor) {
             assert(n < sizeof(fds) / sizeof(pollfd));
             fds[n].fd     = flowSpec->SocketDescriptor;
             fds[n].events = POLLIN;
             if( (flowSpec->OutboundFrameSize > 0.0) && (flowSpec->OutboundFrameRate <= 0.0000001) ) {
                fds[n].events |= POLLOUT;
             }
-            fds[n].revents = POLLIN;
             flowSpec->Index = n++;   // Set index reference.
-         }
+ // ?????????????????        }
+
+// printf("FLOW=%d i=%d e=%04x\n",flowSpec->FlowID,flowSpec->Index,fds[flowSpec->Index].events);
 
          flowSpec->scheduleNextStatusChangeEvent(now);
          if(flowSpec->NextStatusChangeEvent < nextStatusChangeEvent) {
