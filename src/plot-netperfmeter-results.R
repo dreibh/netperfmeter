@@ -85,7 +85,7 @@ closePDFInfo <- function()
 # ###########################################################################
 
 # ###### Create a plot ######################################################
-createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vSet=c(), vTitle="")
+createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vSet=c(), vTitle="",type="linesx")
 {
    cat(sep="", "Plotting ", title, " ...\n")
 
@@ -130,7 +130,7 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vS
             vSet, wSet, vTitle, wTitle,
             xAxisTicks=xAxisTicks,
             yAxisTicks=yAxisTicks,
-            type="linesx",
+            type=type,
             colorMode=plotColorMode,
             hideLegend=FALSE,
             legendSize=plotLegendSize,
@@ -218,10 +218,12 @@ plotQoSStatistics <- function(flowSummaryData) {
       addBookmark(2, paste(sep="", "Flow ''", flowName, "''"))
       createPlot(data, paste(sep="", "Per-Message Delay for Flow ''", flowName, "''"),
                   data$Delay, "Delay [ms]", "orange2",
-                  data$NodeName, "Node{N}")
+                  data$NodeName, "Node{N}",
+                  type="p")
       createPlot(data, paste(sep="", "Per-Message Interarrival Jitter for Flow ''", flowName, "''"),
                   data$Jitter, "Jitter [ms]", "gold4",
-                  data$NodeName, "Node{N}")
+                  data$NodeName, "Node{N}",
+                  type="p")
    }
 }
 
