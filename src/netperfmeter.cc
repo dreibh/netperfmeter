@@ -782,23 +782,28 @@ void activeMode(int argc, char** argv)
          statisticsWriter->ScalarPrefix.c_str(), statisticsWriter->ScalarSuffix.c_str());
    fprintf(configFile, "VECTOR_ACTIVE_NODE=\"%s\"\n", statisticsWriter->VectorName.c_str());
    fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s-passive%s\"\n\n",
-            statisticsWriter->VectorPrefix.c_str(), statisticsWriter->VectorSuffix.c_str());
+           statisticsWriter->VectorPrefix.c_str(), statisticsWriter->VectorSuffix.c_str());
 
    for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end();iterator++) {
       const FlowSpec* flowSpec = *iterator;
-      fprintf(configFile, "FLOW%u_DESCRIPTION=\"%s\"\n",          flowSpec->FlowID, flowSpec->Description.c_str());
-      fprintf(configFile, "FLOW%u_PROTOCOL=\"%s\"\n",             flowSpec->FlowID, getProtocolName(flowSpec->Protocol));
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE=%f\n",      flowSpec->FlowID, flowSpec->OutboundFrameRate);
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG=%u\n",  flowSpec->FlowID, flowSpec->OutboundFrameRateRng);
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE=%f\n",      flowSpec->FlowID, flowSpec->OutboundFrameSize);
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_RNG=%u\n",  flowSpec->FlowID, flowSpec->OutboundFrameSizeRng);
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE=%f\n",       flowSpec->FlowID, flowSpec->InboundFrameRate);
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG=%u\n",   flowSpec->FlowID, flowSpec->InboundFrameRateRng);
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE=%f\n",       flowSpec->FlowID, flowSpec->InboundFrameSize);
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_RNG=%u\n",   flowSpec->FlowID, flowSpec->InboundFrameSizeRng);
-      fprintf(configFile, "FLOW%u_RELIABLE=%f\n",                 flowSpec->FlowID, flowSpec->ReliableMode);
-      fprintf(configFile, "FLOW%u_ORDERED=%f\n",                  flowSpec->FlowID, flowSpec->OrderedMode);
-      fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n\n", flowSpec->FlowID, flowSpec->VectorName.c_str());
+      char extension[32];
+      snprintf((char*)&extension, sizeof(extension), "-%08x-%04x", flowSpec->FlowID, flowSpec->StreamID);
+      fprintf(configFile, "FLOW%u_DESCRIPTION=\"%s\"\n",           flowSpec->FlowID, flowSpec->Description.c_str());
+      fprintf(configFile, "FLOW%u_PROTOCOL=\"%s\"\n",              flowSpec->FlowID, getProtocolName(flowSpec->Protocol));
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE=%f\n",       flowSpec->FlowID, flowSpec->OutboundFrameRate);
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG=%u\n",   flowSpec->FlowID, flowSpec->OutboundFrameRateRng);
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE=%f\n",       flowSpec->FlowID, flowSpec->OutboundFrameSize);
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_RNG=%u\n",   flowSpec->FlowID, flowSpec->OutboundFrameSizeRng);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE=%f\n",        flowSpec->FlowID, flowSpec->InboundFrameRate);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG=%u\n",    flowSpec->FlowID, flowSpec->InboundFrameRateRng);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE=%f\n",        flowSpec->FlowID, flowSpec->InboundFrameSize);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_RNG=%u\n",    flowSpec->FlowID, flowSpec->InboundFrameSizeRng);
+      fprintf(configFile, "FLOW%u_RELIABLE=%f\n",                  flowSpec->FlowID, flowSpec->ReliableMode);
+      fprintf(configFile, "FLOW%u_ORDERED=%f\n",                   flowSpec->FlowID, flowSpec->OrderedMode);
+      fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n\n",  flowSpec->FlowID, flowSpec->VectorName.c_str());
+      fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n", flowSpec->FlowID,
+                           StatisticsWriter::getPassivNodeFilename(
+                              statisticsWriter->VectorPrefix, statisticsWriter->VectorSuffix, extension).c_str());
    }         
    fclose(configFile);
       

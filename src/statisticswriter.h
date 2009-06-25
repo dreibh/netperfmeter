@@ -71,7 +71,9 @@ class StatisticsWriter
       return(result);
    }
    
-   static StatisticsWriter* addMeasurement(const uint64_t measurementID, const bool compressed);
+   static StatisticsWriter* addMeasurement(const unsigned long long now,
+                                           const uint64_t           measurementID,
+                                           const bool               compressed);
    static void printMeasurements(std::ostream& os);
    static StatisticsWriter* findMeasurement(const uint64_t measurementID);
    static void removeMeasurement(const uint64_t measurementID);

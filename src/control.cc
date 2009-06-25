@@ -317,7 +317,9 @@ bool handleControlMessage(MessageReader*           messageReader,
          }
          
          bool success = false;
-         StatisticsWriter* statisticsWriter = StatisticsWriter::addMeasurement(measurementID, (startMsg->Header.Flags & NPSF_COMPRESS_STATS) ? true : false);
+         StatisticsWriter* statisticsWriter =
+            StatisticsWriter::addMeasurement(now, measurementID,
+                                             (startMsg->Header.Flags & NPSF_COMPRESS_STATS) ? true : false);
          if(statisticsWriter) {
             success = statisticsWriter->initializeOutputFiles();
          }

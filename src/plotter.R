@@ -1623,8 +1623,6 @@ processPDFbyGhostscript <- function(file)
    cmd1 <- paste(sep="", "pdf2ps -dPDFSETTINGS=/prepress ", file, " ", tempFile)
    cmd2 <- paste(sep="", "ps2pdf -dPDFSETTINGS=/prepress ", tempFile, " ", file)
    ret1 <- system(cmd1)
-   cat(cmd1,"\n")
-   cat(cmd2,"\n")
    if(ret1 != 0) {
       stop(gettextf("status %d in running command '%s'", ret1, cmd1))
    }

@@ -94,13 +94,16 @@ StatisticsWriter* StatisticsWriter::getStatisticsWriter(const uint64_t measureme
 
 
 // ###### Add measurement ###################################################
-StatisticsWriter* StatisticsWriter::addMeasurement(const uint64_t measurementID,
-                                                   const bool     compressed)
+StatisticsWriter* StatisticsWriter::addMeasurement(const unsigned long long now,
+                                                   const uint64_t           measurementID,
+                                                   const bool               compressed)
 {
    StatisticsWriter* statisticsWriter = new StatisticsWriter(measurementID);
    if(statisticsWriter != NULL) {
       StatisticsSet.insert(std::pair<uint64_t, StatisticsWriter*>(measurementID, statisticsWriter));
 
+      statisticsWriter->FirstStatisticsEvent = now;
+      
       // ====== Get vector file name ========================================
       char str[256];
       snprintf((char*)&str, sizeof(str), "/tmp/temp-%016llx.vec%s",

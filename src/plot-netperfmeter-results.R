@@ -28,9 +28,13 @@ setGlobalVariable <- function(variable, value)
 }
 
 
+
+# ###########################################################################
+# #### PDF Metadata Handling                                             ####
+# ###########################################################################
+
 pdfOutlineFile <- NA
 pdfOutlinePage <- NA
-
 
 # ###### Create PDF info ####################################################
 openPDFInfo <- function(name)
@@ -40,12 +44,13 @@ openPDFInfo <- function(name)
    setGlobalVariable("pdfOutlinePage", 0)
 
    cat(sep="", "InfoKey: Title\nInfoValue: NetPerfMeter Results Plots\n", file=pdfInfoFile);
+   cat(sep="", "InfoKey: Creator\nInfoValue: GNU R/Ghostscript\n", file=pdfInfoFile);
    cat(sep="", "InfoKey: Producer\nInfoValue: NetPerfMeter\n", file=pdfInfoFile);
 }
 
 
-# ###### Add page into PDF info #############################################
-addPage <- function()
+# ###### Finish current page and increase page counter ######################
+nextPage <- function()
 {
    setGlobalVariable("pdfOutlinePage", pdfOutlinePage + 1)
 }
@@ -55,7 +60,7 @@ addPage <- function()
 addBookmark <- function(level, title)
 {
    if(!is.na(pdfOutlineFile)) {
-      cat(sep="", level, " ", pdfOutlinePage, " ", title, "\n", file=pdfOutlineFile)
+      cat(sep="", level, " ", pdfOutlinePage + 1, " ", title, "\n", file=pdfOutlineFile)
     }
 }
 
@@ -74,16 +79,19 @@ closePDFInfo <- function()
 }
 
 
+
+# ###########################################################################
+# #### Plotting                                                          ####
+# ###########################################################################
+
 # ###### Create a plot ######################################################
-createPlot <- function(dataSet, title, ySet, yTitle, baseColor, vSet=c(), vTitle="")
+createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vSet=c(), vTitle="")
 {
    cat(sep="", "Plotting ", title, " ...\n")
 
    xSet <- dataSet$RelTime
    xTitle <- "Time{t}[s]"
 
-   zSet <- dataSet$Description
-   zTitle <- "Flow{F}"
    wSet <- c()
    wTitle <- ""
 
@@ -114,7 +122,6 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, vSet=c(), vTitle
           family=plotFontFamily, pointsize=plotPointSize)
    }
    else {
-      addPage()
       addBookmark(3, title)
    }
    plotstd6(title,
@@ -134,8 +141,16 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, vSet=c(), vTitle
       dev.off()
       processPDFbyGhostscript(pdfName)
    }
+   else {
+      nextPage()
+   }
 }
 
+
+
+# ###########################################################################
+# #### Statistics                                                        ####
+# ###########################################################################
 
 # ###### Create node plots ##################################################
 plotNodeStats <- function(inputData, nodeName)
@@ -147,50 +162,74 @@ plotNodeStats <- function(inputData, nodeName)
    data <- subset(inputData, (inputData$Action != "Lost"))
    createPlot(data, paste(sep="", "Bit Rate Sent/Received at Node ''", nodeName, "''"),
               (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
-              data$Action, "Action{A}")
+              data$Description, "Flow{F}", data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Byte Rate Sent/Received at Node ''", nodeName, "''"),
               (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
-              data$Action, "Action{A}")
+              data$Description, "Flow{F}", data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Packet Rate Sent/Received at Node ''", nodeName, "''"),
               data$RelPackets / data$Interval, "Packet Rate [Packets/s]", "green4",
-              data$Action, "Action{A}")
+              data$Description, "Flow{F}", data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Frame Rate Sent/Received at Node ''", nodeName, "''"),
               data$RelFrames / data$Interval, "Frame Rate [Frames/s]", "yellow4",
-              data$Action, "Action{A}")
+              data$Description, "Flow{F}", data$Action, "Action{A}")
 
    # ====== Input/Output Absolute ===========================================
    addBookmark(2, "Input/Output Absolute")
    data <- subset(inputData, (inputData$Action != "Lost"))
    createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", nodeName, "''"),
               (data$AbsBytes * 8 / 1000), "Bits [Kbit]", "blue4",
-              data$Action, "Action{A}")
+              data$Description, "Flow{F}", data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Bytes Sent/Received at Node ''", nodeName, "''"),
               (data$AbsBytes / 1000), "Bytes [KiB]", "blue2",
-              data$Action, "Action{A}")
+              data$Description, "Flow{F}", data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Packets Sent/Received at Node ''", nodeName, "''"),
               data$AbsPackets, "Packets [1]", "green4",
-              data$Action, "Action{A}")
+              data$Description, "Flow{F}", data$Action, "Action{A}")
    createPlot(data, paste(sep="", "Frames Sent/Received at Node ''", nodeName, "''"),
               data$AbsFrames, "Frames [s]", "yellow4",
-              data$Action, "Action{A}")
+              data$Description, "Flow{F}", data$Action, "Action{A}")
 
    # ====== Jitter ==========================================================
    addBookmark(2, "Quality of Service")
    data <- subset(inputData, (inputData$Action == "Received"))
    createPlot(data, paste(sep="", "Interarrival Jitter at Node ''", nodeName, "''"),
               data$Jitter, "Jitter [ms]", "gold4",
-              data$Action, "Action{A}")
+              data$Description, "Flow{F}", data$Action, "Action{A}")
 
    # ====== Loss ============================================================
    data <- subset(inputData, (inputData$Action == "Lost"))
    createPlot(data, paste(sep="", "Byte Loss Rate at Node ''", nodeName, "''"),
-              data$RelBytes / data$Interval, "Byte Loss Rate [KiB/s]", "red2")
+              data$RelBytes / data$Interval, "Byte Loss Rate [KiB/s]", "red2",
+              data$Description, "Flow{F}")
    createPlot(data, paste(sep="", "Packet Loss Rate at Node ''", nodeName, "''"),
-              data$RelPackets / data$Interval, "Packet Loss Rate [Packets/s]", "red4")
+              data$RelPackets / data$Interval, "Packet Loss Rate [Packets/s]", "red4",
+              data$Description, "Flow{F}")
+}
+
+
+# ###### Create flow QoS plots ##############################################
+plotQoSStatistics <- function(flowSummaryData) {
+   addBookmark(1, "Flow Quality of Service")
+   flowLevels <- levels(factor(flowSummaryData$FlowID))
+   for(i in seq(1, length(flowLevels))) {
+      data <- subset(flowSummaryData, (flowSummaryData$FlowID == flowLevels[i]))
+      flowNames <- levels(factor(data$FlowName))
+      flowName <- flowNames[1]
+      addBookmark(2, paste(sep="", "Flow ''", flowName, "''"))
+      createPlot(data, paste(sep="", "Per-Message Delay for Flow ''", flowName, "''"),
+                  data$Delay, "Delay [ms]", "orange2",
+                  data$NodeName, "Node{N}")
+      createPlot(data, paste(sep="", "Per-Message Interarrival Jitter for Flow ''", flowName, "''"),
+                  data$Jitter, "Jitter [ms]", "gold4",
+                  data$NodeName, "Node{N}")
+   }
 }
 
 
 
+# ###########################################################################
+# #### Main Program                                                      ####
+# ###########################################################################
 
 # ###### Default Settings ###################################################
 plotColorMode  <- 2   # == cmColor
@@ -205,7 +244,7 @@ plotPaper      <- "A4r"   # Use "special" for manual values! Or: A4/A4r.
 
 # ###### Command-Line Arguments #############################################
 args=commandArgs(TRUE)
-print(args)
+# print(args)
 
 for(i in 1:length(args)) {
    eval(parse(text=args[i]))
@@ -218,17 +257,18 @@ for(i in 1:length(args)) {
    }
 }
 
-cat(sep="", "programDirectory=", programDirectory,    "\n")
-cat(sep="", "vectorFile=",       vectorFile,    "\n")
-cat(sep="", "activeName=",       activeName,    "\n")
-cat(sep="", "passiveName=",      passiveName,    "\n")
-cat(sep="", "pdfFilePrefix=",    pdfFilePrefix, "\n")
-cat(sep="", "plotOwnFile=",      plotOwnFile,   "\n")
+# cat(sep="", "programDirectory=", programDirectory,    "\n")
+# cat(sep="", "configFile=",       configFile,    "\n")
+# cat(sep="", "summaryFile=",      summaryFile,    "\n")
+# cat(sep="", "pdfFilePrefix=",    pdfFilePrefix, "\n")
+# cat(sep="", "plotOwnFile=",      plotOwnFile,   "\n")
 
 
 # ====== Load input data ====================================================
-completeData <- loadResults(vectorFile)
-completeData <- subset(completeData, (completeData$Interval > 0))   # Avoids "divide by zero" on first entry
+source(configFile)
+summaryData <- loadResults(summaryFile)
+summaryData <- subset(summaryData, (summaryData$Interval > 0))   # Avoids "divide by zero" on first entry
+flowSummaryData <- loadResults(flowSummaryFile)
 
 
 # ====== Begin writing PDF file =============================================
@@ -241,13 +281,17 @@ if(!plotOwnFile) {
 
 
 # ====== Create plots for active and passive node ===========================
-data <- subset(completeData, (completeData$Active == 1) &
-                             (completeData$FlowID != -1))
-plotNodeStats(data, activeName)
+data <- subset(summaryData, (summaryData$IsActive == 1) &
+                             (summaryData$FlowID != -1))
+plotNodeStats(data, NAME_ACTIVE_NODE)
 
-data <- subset(completeData, (completeData$Active == 0) &
-                             (completeData$FlowID != -1))
-plotNodeStats(data, passiveName)
+data <- subset(summaryData, (summaryData$IsActive == 0) &
+                             (summaryData$FlowID != -1))
+plotNodeStats(data, NAME_PASSIVE_NODE)
+
+
+# ====== Flow QoS Statistics ================================================
+plotQoSStatistics(flowSummaryData)
 
 
 # ====== Finish PDF file ====================================================
@@ -277,3 +321,4 @@ if(!plotOwnFile) {
    unlink(paste(sep="", pdfFileName, ".in"))
    unlink(paste(sep="", pdfFileName, ".ou"))
 }
+quit(runLast=FALSE)

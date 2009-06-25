@@ -20,4 +20,19 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-make -j2 && ./netperfmeter [::1]:9000 -maxmsgsize=4096 -vector=output.vec.bz2 -scalar=output.sca.bz2 -sctp const5:exp1000:const3:exp500:description="Alpha":onoff=+1 const5:exp1000:const3:exp500:description="Beta":onoff=+30 -tcp const5:exp1000:const3:exp500:description="Gamma":onoff=+60 -runtime=300 $@
+if [ -e output-test1 ] ; then
+   rm -rf output-test1
+fi
+mkdir output-test1
+
+make -j2 && ./netperfmeter [::1]:9000 \
+   "-activenodename=Compute Client" \
+   "-passivenodename=Compute Server" \
+   -runtime=300 \
+   -maxmsgsize=4096 \
+   -config=output-test1/output.config \
+   -vector=output-test1/output.vec.bz2 \
+   -scalar=output-test1/output.sca.bz2 \
+   -sctp const5:exp1000:const3:exp500:description="Alpha":onoff=+1 \
+         const5:exp1000:const3:exp500:description="Beta":onoff=+30 \
+   -tcp const5:exp1000:const3:exp500:description="Gamma":onoff=+60 $@

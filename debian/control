@@ -6,18 +6,20 @@ Homepage: http://www.iem.uni-due.de/~dreibh/netperfmeter/
 Build-Depends: debhelper (>= 5), autotools-dev, libsctp-dev (>= 1.0.5), libbz2-dev (>= 1.0)
 Standards-Version: 3.8.1
 
-Package: scalartools
+Package: datatabletools
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: r-base
-Description: Scalar File Processing Tools
- This package contains tools to create GNU R data tables from scalar files and
- to combine such tables. On-the-fly BZip2-decompression and compression is
- supported to reduce storage space.
+Replaces: scalartools
+Conflicts: scalartools
+Description: GNU R Data Table Processing Tools
+ This package contains a tool to create GNU R data tables from scalar files
+ (createsummary) and a tool to combine GNU R data tables. On-the-fly
+ BZip2-decompression and compression is supported to reduce storage space.
 
 Package: netperfmeter
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, scalartools, r-base, ghostscript, fntsample, pdftk, ghostscript
+Depends: ${shlibs:Depends}, ${misc:Depends}, datatabletools, r-base, ghostscript, fntsample, pdftk, ghostscript
 Replaces: netmeter (<= 0.5.1)
 Conflicts: netmeter (<= 0.5.1)
 Recommends: traceroute, iputils-tracepath, iputils-ping, rsplib-tools, subnetcalc (>= 2.0.2)

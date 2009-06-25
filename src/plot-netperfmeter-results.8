@@ -20,15 +20,15 @@
 .\"
 .\" ###### Setup ############################################################
 .Dd Jun 4, 2009
-.Dt plot-plot-netperfmeter-vectors-vectors 8
-.Os plot-plot-netperfmeter-vectors-vectors
+.Dt plot-plot-netperfmeter-results-results 8
+.Os plot-plot-netperfmeter-results-results
 .\" ###### Name #############################################################
 .Sh NAME
-.Nm plot-plot-netperfmeter-vectors-vectors
+.Nm plot-plot-netperfmeter-results-results
 .Nd Network Performance Meter
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm plot-netperfmeter-vectors
+.Nm plot-netperfmeter-results
 .Op Vector Name
 .Fl ownfile
 .Fl colour
@@ -38,15 +38,15 @@
 .Fl blackandwhite
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
-.Nm plot-netperfmeter-vectors
-uses GNU R to plot a vector file written by netperfmeter into a PDF file. Optionally, a separate PDF file can be written for each page.
+.Nm plot-netperfmeter-results
+uses GNU R to plot measurement results written by NetPerfMeter into a PDF file. Optionally, a separate PDF file can be written for each page.
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It Vector Name
-The name of the vector file. BZip2-compressed files are also supported.
+.It Config Name
+The name of the config file written by NetPerfMeter.
 .It Fl ownfile
 Plot a separate PDF file for each page.
 .It Fl colour
@@ -62,18 +62,18 @@ Create black and white plot.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
-Some plot-netperfmeter-vectors usage examples:
+Some plot-netperfmeter-results usage examples:
 .Bl -tag -width indent
-.It plot-netperfmeter-vectors output.vec.bz2
+.It plot-netperfmeter-results output.config
 Plot the vector file output.vec.bz2. The resulting PDF file will be named output.pdf.
-.It plot-netperfmeter-vectors output.vec.bz2 -ownfile
-Plot the vector file output.vec.bz2. For each page, a separate PDF file is written. The resulting PDF files will be named output-<title>.pdf, where <title> corresponds to the page title.
+.It plot-netperfmeter-results output.config -ownfile
+Plot the results given by output.config. For each page, a separate PDF file is written. The resulting PDF files will be named output-<title>.pdf, where <title> corresponds to the page title.
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz
 .br
-http://www.iem.uni-due.de/~dreibh/plot-netperfmeter-vectors
+http://www.iem.uni-due.de/~dreibh/plot-netperfmeter-results
 .br
 mailto://dreibh@iem.uni-due.de
 .br
