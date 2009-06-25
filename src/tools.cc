@@ -532,11 +532,13 @@ int createAndBindSocket(const int      type,
    if(sd < 0) {
       return(-2);
    }
+#ifdef IPV6_BINDV6ONLY
    if(family == AF_INET6) {
       // Accept IPv4 and IPv6 connections.
       int on = 0;
       setsockopt(sd, IPPROTO_IPV6, IPV6_BINDV6ONLY, (char *)&on, sizeof(on));
    }
+#endif
    if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
       ext_close(sd);
       return(-3);
