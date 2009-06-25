@@ -514,24 +514,28 @@ int createAndBindSocket(const int      type,
                         const uint16_t localPort,
                         const bool     blocking)
 {
-   char           localAddressString[32];
    sockaddr_union localAddress;
 
    memset(&localAddress, 0, sizeof(localAddress));
    if(checkIPv6()) {
-      localAddress.in6.sin6_family = AF_UNSPEC;   // IPv4 *and* IPv6
+      localAddress.in6.sin6_family = AF_INET6;
       localAddress.in6.sin6_port   = htons(localPort);
-      snprintf((char*)&localAddressString, sizeof(localAddressString), "[::]:%u", localPort);
    }
    else {
-      localAddress.in.sin_family = AF_INET;   // IPv4 only
+      localAddress.in.sin_family = AF_INET;
       localAddress.in.sin_port   = htons(localPort);
    }
-   assert(string2address(localAddressString, &localAddress) == true);
 
-   int sd = ext_socket(localAddress.sa.sa_family, type, protocol);
+   const int family = localAddress.sa.sa_family;
+
+   int sd = ext_socket(family, type, protocol);
    if(sd < 0) {
       return(-2);
+   }
+   if(family == AF_INET6) {
+      // Accept IPv4 and IPv6 connections.
+      int on = 0;
+      setsockopt(sd, IPPROTO_IPV6, IPV6_BINDV6ONLY, (char *)&on, sizeof(on));
    }
    if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
       ext_close(sd);
