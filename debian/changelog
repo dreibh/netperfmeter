@@ -1,4 +1,4 @@
-netperfmeter (0.8.2-1ubuntu1) karmic; urgency=low
+netperfmeter (0.8.3-1ubuntu1) karmic; urgency=low
 
   * Closes Debian ITP bug with wnpp (Closes: #xxxxxx).
   * Initial Ubuntu package (LP: #xxxxxx).
