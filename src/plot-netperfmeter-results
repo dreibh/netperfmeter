@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # $Id$
 #
 # Network Performance Meter
@@ -111,7 +111,7 @@ FLOW_SUMMARY_NAME="$OUTPUT_PREFIX-flows.data.bz2"
       echo "--input=$activeVector"
       echo "--values=\"\"$flowDescription\" $i \"$NAME_PASSIVE_NODE\" 0\""
       echo "--input=$passiveVector"
-      let i=$i+1
+      i=$(($i+1))
    done
 ) | $COMBINESUMMARIES $FLOW_SUMMARY_NAME "FlowName FlowID NodeName IsActive" -quiet
 

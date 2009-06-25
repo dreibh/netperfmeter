@@ -1620,8 +1620,10 @@ analyseCounterResults <- function(data, lowerLimit, upperLimit,
 processPDFbyGhostscript <- function(file)
 {
    tempFile <- paste(sep="", tempfile("embedFontsIntoPDF"), ".eps")
-   cmd1 <- paste(sep="", "pdf2ps -dPDFSETTINGS=/prepress ", file, " ", tempFile)
-   cmd2 <- paste(sep="", "ps2pdf -dPDFSETTINGS=/prepress ", tempFile, " ", file)
+   cmd1 <- paste(sep="", "pdf2ps -dPDFSETTINGS=/prepress ", file, " ", tempFile,
+                         " || mv ", file, " ", tempFile)
+   cmd2 <- paste(sep="", "ps2pdf -dPDFSETTINGS=/prepress ", tempFile, " ", file,
+                         " || mv ", tempFile, " ", file)
    ret1 <- system(cmd1)
    if(ret1 != 0) {
       stop(gettextf("status %d in running command '%s'", ret1, cmd1))
@@ -1630,5 +1632,7 @@ processPDFbyGhostscript <- function(file)
    if(ret2 != 0) {
       stop(gettextf("status %d in running command '%s'", ret2, cmd2))
    }
-   file.remove(tempFile)
+   if(file.exists(tempFile)) {
+      file.remove(tempFile)
+   }
 }
