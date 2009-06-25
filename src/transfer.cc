@@ -122,16 +122,16 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
          }
          sent = sctp_send(flowSpec->SocketDescriptor,
                           (char*)&outputBuffer, chunkSize,
-                          &sinfo, MSG_NOSIGNAL);
+                          &sinfo, 0);
       }
       else if(flowSpec->Protocol == IPPROTO_UDP) {
          sent = ext_sendto(flowSpec->SocketDescriptor,
-                           (char*)&outputBuffer, chunkSize, MSG_NOSIGNAL,
+                           (char*)&outputBuffer, chunkSize, 0,
                            &flowSpec->RemoteAddress.sa,
                            getSocklen(&flowSpec->RemoteAddress.sa));
       }
       else {
-         sent = ext_send(flowSpec->SocketDescriptor, (char*)&outputBuffer, chunkSize, MSG_NOSIGNAL);
+         sent = ext_send(flowSpec->SocketDescriptor, (char*)&outputBuffer, chunkSize, 0);
       }
 
       // ====== Update statistics ===========================================

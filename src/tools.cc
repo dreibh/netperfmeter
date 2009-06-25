@@ -553,7 +553,7 @@ bool sendAbort(int sd, sctp_assoc_t assocID)
    sinfo.sinfo_assoc_id = assocID;
    sinfo.sinfo_flags    = SCTP_ABORT;
    
-   return(sctp_send(sd, NULL, 0, &sinfo, MSG_NOSIGNAL) >= 0);
+   return(sctp_send(sd, NULL, 0, &sinfo, 0) >= 0);
 }
 
 

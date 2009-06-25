@@ -68,7 +68,7 @@ static bool upload(const int          controlSocket,
 
       std::cout << ".";
       std::cout.flush();
-      if(sctp_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, &sinfo, MSG_NOSIGNAL) < 0) {
+      if(sctp_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, &sinfo, 0) < 0) {
          std::cerr << "ERROR: Failed to upload results - " << strerror(errno) << "!" << std::endl;
          success = false;
          break;
@@ -414,7 +414,7 @@ bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec)
    sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
            
    std::cout << "<R1> "; std::cout.flush();
-   if(sctp_send(controlSocket, addFlowMsg, sizeof(NetPerfMeterAddFlowMessage) + (sizeof(unsigned int) * flowSpec->OnOffEvents.size()), &sinfo, MSG_NOSIGNAL) <= 0) {
+   if(sctp_send(controlSocket, addFlowMsg, sizeof(NetPerfMeterAddFlowMessage) + (sizeof(unsigned int) * flowSpec->OnOffEvents.size()), &sinfo, 0) <= 0) {
       return(false);
    }
    
@@ -448,12 +448,12 @@ bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec)
          memset(&sinfo, 0, sizeof(sinfo));
          sinfo.sinfo_stream = flowSpec->StreamID;
          sinfo.sinfo_ppid   = PPID_NETPERFMETER_CONTROL;
-         if(sctp_send(flowSpec->SocketDescriptor, &identifyMsg, sizeof(identifyMsg), &sinfo, MSG_NOSIGNAL) <= 0) {
+         if(sctp_send(flowSpec->SocketDescriptor, &identifyMsg, sizeof(identifyMsg), &sinfo, 0) <= 0) {
             return(false);
          }
       }
       else {
-         if(ext_send(flowSpec->SocketDescriptor, &identifyMsg, sizeof(identifyMsg), MSG_NOSIGNAL) <= 0) {
+         if(ext_send(flowSpec->SocketDescriptor, &identifyMsg, sizeof(identifyMsg), 0) <= 0) {
             return(false);
          }
       }
@@ -511,7 +511,7 @@ bool removeFlowFromRemoteNode(int controlSocket, FlowSpec* flowSpec)
    memset(&sinfo, 0, sizeof(sinfo));
    sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
 
-   if(sctp_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), &sinfo, MSG_NOSIGNAL) <= 0) {
+   if(sctp_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), &sinfo, 0) <= 0) {
       return(false);
    }
    return(downloadResults(controlSocket, flowSpec));
@@ -559,7 +559,7 @@ bool sendAcknowledgeToRemoteNode(int            controlSocket,
    sinfo.sinfo_assoc_id = assocID;
    sinfo.sinfo_ppid     = PPID_NETPERFMETER_CONTROL;
 
-   return(sctp_send(controlSocket, &ackMsg, sizeof(ackMsg), &sinfo, MSG_NOSIGNAL) > 0);
+   return(sctp_send(controlSocket, &ackMsg, sizeof(ackMsg), &sinfo, 0) > 0);
 }
 
 
@@ -659,7 +659,7 @@ bool startMeasurement(int            controlSocket,
    sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
 
    std::cout << "Starting measurement ... <S1> "; std::cout.flush();
-   if(sctp_send(controlSocket, &startMsg, sizeof(startMsg), &sinfo, MSG_NOSIGNAL) < 0) {
+   if(sctp_send(controlSocket, &startMsg, sizeof(startMsg), &sinfo, 0) < 0) {
       return(false);
    }
    std::cout << "<S2> "; std::cout.flush();
@@ -692,7 +692,7 @@ bool stopMeasurement(int            controlSocket,
    sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
 
    std::cout << "Stopping measurement ... <S1> "; std::cout.flush();
-   if(sctp_send(controlSocket, &stopMsg, sizeof(stopMsg), &sinfo, MSG_NOSIGNAL) < 0) {
+   if(sctp_send(controlSocket, &stopMsg, sizeof(stopMsg), &sinfo, 0) < 0) {
       return(false);
    }
    std::cout << "<S2> "; std::cout.flush();

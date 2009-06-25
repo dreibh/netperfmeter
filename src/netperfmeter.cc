@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <poll.h>
+#include <signal.h>
 #include <math.h>
 #include <assert.h>
 #include <bzlib.h>
@@ -570,6 +571,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 
    // ====== Main loop ======================================================
+   sigignore(SIGPIPE);
    installBreakDetector();
    const unsigned long long stopAt = (gRuntime > 0) ? (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    while( (!breakDetected()) && (!gStopTimeReached) ) {
