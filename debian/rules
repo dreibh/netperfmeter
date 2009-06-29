@@ -24,7 +24,7 @@ config.status: configure
 
 
 #Architecture
-build: build-arch    # build-indep   [TD: build-indep not necessary]
+build: build-arch build-indep   # [TD: build-indep necessary]
 
 build-arch: build-arch-stamp
 build-arch-stamp:  config.status
@@ -43,7 +43,7 @@ clean:
 
 	dh_clean
 
-install: install-arch   # install-indep   [TD: install-indep not necessary]
+install: install-arch install-indep   # [TD: install-indep necessary]
 install-indep:
 	dh_testdir
 	dh_testroot
@@ -84,5 +84,5 @@ binary-indep: build-indep install-indep
 binary-arch: build-arch install-arch
 	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
 
-binary: binary-arch   # binary-indep   [TD: binary-indep not necessary]
+binary: binary-arch binary-indep   # [TD: binary-indep necessary]
 .PHONY: build clean binary-indep binary-arch binary install install-indep install-arch

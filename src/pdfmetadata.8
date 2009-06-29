@@ -1,0 +1,104 @@
+.\" $Id$
+.\"
+.\" PDF Metadata Updater
+.\" Copyright (C) 2009 by Thomas Dreibholz
+.\"
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\"
+.\" Contact: dreibh@iem.uni-due.de
+.\"
+.\" ###### Setup ############################################################
+.Dd June 29, 2009
+.Dt pdfmetadata 8
+.Os pdfmetadata
+.\" ###### Name #############################################################
+.Sh NAME
+.Nm pdfmetadata
+.Nd PDF Metadata Updater
+.\" ###### Synopsis #########################################################
+.Sh SYNOPSIS
+.Nm pdfmetadata
+.Op Input PDF
+.Op Metadata
+.Op Output PDF
+.\" ###### Description ######################################################
+.Sh DESCRIPTION
+.Nm pdfmetadata
+is tool to add and update the metadata of a PDF file. In particular, it can
+be used to add outlines (bookmarks) to a document. Furthermore, it can set
+the document properties (e.g. author, title,  keywords, creator, producer).
+
+Note, that all metadata content will be encoded in ISO-8859-1 encoding. It
+is not (yet) possible to use non-ISO-8859-1 text in the PDF metadata.
+
+The metadata may contain the following commands:
+.Bl -tag -width ident
+.It outline Level Page Bookmark
+Add a PDF outline at the given level
+(0=chapter, 1=section, 2=subsection, 3=subsubsection, 4=paragraph, ...) and
+pointing to the given page number. Bookmark denotes the label text.
+.It author Author
+Sets the document author to the given value.
+.It title Title
+Sets the document title to the given value.
+.It title Subject
+Sets the document subject to the given value.
+.It keywords Keywords
+Sets the document keywords to the given value.
+.It creator Creator
+Sets the document creator to the given value.
+.It producer Producer
+Sets the document producer to the given value.
+.El
+.Pp
+.\" ###### Arguments ########################################################
+.Sh ARGUMENTS
+The following arguments have to be provided:
+.Bl -tag -width indent
+.It Input PDF
+The input PDF file name.
+.It Output PDF
+The output PDF file name.
+.El
+.\" ###### Arguments ########################################################
+.Sh EXAMPLES
+A pdfmetadata usage example:
+.Bl -tag -width indent
+.It pdfmetadata MyDocument.pdf MyMetadata.meta MyDocument-Updated.pdf
+.El
+
+A metadata example:
+.Bl -tag -width indent
+outline 1 1 Chapter 1
+.br
+outline 2 2 Section 1.1
+.br
+outline 2 4 Section 1.2
+.br
+outline 1 6 Chapter 2
+.br
+author John Smith
+.br
+title An Example Document
+.br
+keywords Example, PDF, pdfmetadata
+.El
+.\" ###### Authors ##########################################################
+.Sh AUTHORS
+Thomas Dreibholz
+.br
+http://www.iem.uni-due.de/~dreibh/pdfmetadata
+.br
+mailto://dreibh@iem.uni-due.de
+.br

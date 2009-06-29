@@ -1,0 +1,184 @@
+#!/usr/bin/perl -w
+# $Id$
+#
+# PDF Metadata Updater
+# Copyright (C) 2009 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
+
+use strict;
+use POSIX;
+use PDF::API2;
+use Encode;
+use subs qw(updatePDFMetadataRecursion);
+use subs qw(updatePDFMetadata);
+
+
+# ###### Get next command line ##############################################
+sub getNextCommand($) {
+   my $inputFile = shift;   # Metadata input file
+   my $command;
+
+   while ($command = <$inputFile>) {
+      chomp $command;
+      # ====== Skip empty lines =============================================
+      next if $command =~ /^$/;
+      # ====== Skip comments (#, //) ========================================
+      next if $command =~ /^\/\//;
+      next if $command =~ /^#/;
+      last;
+   }
+#    if($command) {
+#       printf("INPUT: %s\n",$command);
+#    }
+   return $command;
+}
+
+
+# ###### Recursion for updating PDF metadata (outlines, properties) #########
+sub updatePDFMetadataRecursion($$$$) {
+   my $pdfFile         = shift;   # PDF file
+   my $parentOutline   = shift;   # Parent outline in PDF's outline tree
+   my $command         = shift;   # Command
+   my $inputFile       = shift;   # Metadata input file
+   
+   my $currentLevel    = -12345;
+   my $currentOutline;
+
+   commandHandlingLoop: while ($command) {
+      # ===== Handle "outline" command ======================================
+      if($command =~ /^outline/) {
+         my ($dummy, $newLevel, $page, $bookmark) = split(/ /, $command, 4);
+         if($currentLevel < 0) {
+            $currentLevel= $newLevel;
+         }
+
+         # ====== New subtree in outline hierarchy ==========================
+         if ($newLevel > $currentLevel) {
+            $command = updatePDFMetadataRecursion($pdfFile, $currentOutline,
+                                                  $command, $inputFile);
+            next commandHandlingLoop;   # Handle returned command by loop
+         }
+         # ====== Go up in outline hierarchy ================================
+         elsif ($newLevel < $currentLevel) {
+            # Return $command in updatePDFMetadataRecursion() call above;
+            # this will lead to the creation of a new item.
+            return($command); 
+         }
+         # ====== Add item in outline hierarchy =============================
+         else {
+            Encode::from_to($bookmark, "utf8", "iso-8859-1");
+            $currentOutline = $parentOutline->outline;
+            $currentOutline->title($bookmark);
+            my $pdfPage = $pdfFile->{pagestack}->[$page - 1];
+            $currentOutline->dest($pdfPage);
+         }
+      }
+
+      # ===== Handle "title" command ========================================
+      if($command =~ /^title/) {
+         my ($dummy, $title) = split(/ /, $command, 2);
+         Encode::from_to($title, "utf8", "iso-8859-1");
+         $pdfFile->info('Title' => $title);
+      }
+      
+      # ===== Handle "subject" command ======================================
+      if($command =~ /^subject/) {
+         my ($dummy, $subject) = split(/ /, $command, 2);
+         Encode::from_to($subject, "utf8", "iso-8859-1");
+         $pdfFile->info('Subject' => $subject)
+      }
+
+      # ===== Handle "author" command =======================================
+      if($command =~ /^author/) {
+         my ($dummy, $author) = split(/ /, $command, 2);
+         Encode::from_to($author, "utf8", "iso-8859-1");
+         $pdfFile->info('Author' => $author)
+      }
+
+      # ===== Handle "creator" command ======================================
+      if($command =~ /^creator/) {
+         my ($dummy, $creator) = split(/ /, $command, 2);
+         Encode::from_to($creator, "utf8", "iso-8859-1");
+         $pdfFile->info('Creator' => $creator)
+      }
+
+      # ===== Handle "producer" command =====================================
+      if($command =~ /^producer/) {
+         my ($dummy, $producer) = split(/ /, $command, 2);
+         Encode::from_to($producer, "utf8", "iso-8859-1");
+         $pdfFile->info('Producer' => $producer)
+      }
+
+      # ===== Handle "keywords" command =====================================
+      if($command =~ /^keywords/) {
+         my ($dummy, $keywords) = split(/ /, $command, 2);
+         Encode::from_to($keywords, "utf8", "iso-8859-1");
+         $pdfFile->info('Keywords' => $keywords)
+      }
+
+      $command = getNextCommand($inputFile);
+   }
+}
+
+
+# ###### Update PDF metadata (outlines, properties) #########################
+sub updatePDFMetadata($$) {
+   my $pdfFile   = shift;   # PDF file
+   my $metadataFile = shift;   # Metadata input file
+
+   my $command = getNextCommand(*metadataFile);
+   
+   updatePDFMetadataRecursion($pdfFile, $pdfFile->outlines, $command, $metadataFile);
+}
+
+
+
+# ###### Main program #######################################################
+if ($#ARGV != 2) {
+   printf("Usage: %s input.pdf metadata.meta output.pdf\n", $0);
+   exit 1;
+}
+
+# ====== Handle arguments ===================================================
+my $inputPDFName      = $ARGV[0];
+my $inputMetadataName = $ARGV[1];
+my $outputPDFName     = $ARGV[2];
+my $pdfFile           = PDF::API2->open($inputPDFName);
+open(metadataFile, "<", $inputMetadataName) or
+   die("ERROR: Unable to open metadata file \"", $inputMetadataName, "\"");
+
+# ====== Set default author and producer ====================================
+my $userID=POSIX::getuid();
+my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell) = getpwuid($userID);
+if($gcos) {
+   my ($fullName) = split(/,/, $gcos, 2);
+   $pdfFile->info('Author'   => $fullName,
+                  'Producer' => $fullName);
+}
+
+# ====== Set modification time ==============================================
+my $time = strftime("D:%Y%m%d%H%M%S%z", localtime());
+$pdfFile->info('ModDate' => $time);
+
+# ====== Apply metadata changes from metadata file ==========================
+updatePDFMetadata($pdfFile, *metadataFile);
+
+# ====== Save results =======================================================
+$pdfFile->saveas($outputPDFName);
+
+exit 0;

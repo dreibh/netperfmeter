@@ -6,6 +6,15 @@ Homepage: http://www.iem.uni-due.de/~dreibh/netperfmeter/
 Build-Depends: debhelper (>= 5), autotools-dev, libsctp-dev (>= 1.0.5), libbz2-dev (>= 1.0)
 Standards-Version: 3.8.1
 
+Package: pdfmetadata
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, perl (>= 5.8.0), libpdf-api2-perl
+Description: PDF Metadata Update Tool
+ This package contains a tool to add and update the metadata of a PDF file.
+ In particular, it can be used to add outlines (bookmarks) to a document.
+ Furthermore, it can set the document properties (e.g. author, title,
+ keywords, creator, producer).
+
 Package: datatabletools
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -19,7 +28,7 @@ Description: GNU R Data Table Processing Tools
 
 Package: netperfmeter
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, datatabletools, r-base, ghostscript, fntsample, pdftk, ghostscript
+Depends: ${shlibs:Depends}, ${misc:Depends}, scalartools, pdfmetadata, r-base, ghostscript, perl (>= 5.8.0), libpdf-api2-perl
 Replaces: netmeter (<= 0.5.1)
 Conflicts: netmeter (<= 0.5.1)
 Recommends: traceroute, iputils-tracepath, iputils-ping, rsplib-tools, subnetcalc (>= 2.0.2)
