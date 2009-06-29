@@ -1,0 +1,53 @@
+#!/bin/sh
+
+# ====== Get arguments ======================================================
+if [ $# -lt 1 ] ; then
+   echo >&2 "Usage: $0 [Input PDF] [Output PDF]"
+   exit 1
+fi
+
+INPUT_PDF="$1"
+OUTPUT_PDF="$2"
+
+if [ ! -e "$INPUT_PDF" ] ; then
+   echo >&2 "ERROR: PDF file $INPUT_PDF does not exist!"
+   exit 1
+fi
+
+
+# ====== Perform conversion =================================================
+# ( ps2pdf -dPDFSETTINGS=/prepress $1 - | ps2pdf -  tmp-$2 &&pdfopt tmp-$2 $2  ) || cp $1 $2
+# rm -f tmp-$2
+
+
+
+GS_EXECUTABLE=gs
+gs="`dirname $0`/$GS_EXECUTABLE"
+if test ! -x "$gs"; then
+   gs="$GS_EXECUTABLE"
+fi
+GS_EXECUTABLE=gs
+
+
+OPTIONS="-dCompatibilityLevel=1.4 -dSAFER -dDELAYSAFER"
+
+# echo "1Running...  $INPUT_PDF -> $OUTPUT_PDF"
+# "$GS_EXECUTABLE" -q -dEmbedAllFonts=true -dNODISPLAY -dNOPAUSE -dBATCH $OPTIONS -sDEVICE=pdfwrite -c .setpdfwrite -- pdfopt.ps "$1" "$2"
+
+echo "2Running...  $INPUT_PDF -> $OUTPUT_PDF"
+"$GS_EXECUTABLE" -q -dEmbedAllFonts=true -dNOPAUSE -dBATCH $OPTIONS -sDEVICE=pdfwrite "-sOutputFile=$OUTPUT_PDF" -c .setpdfwrite -f "$INPUT_PDF"
+
+
+"$GS_EXECUTABLE" -q -dEmbedAllFonts=true -dNOPAUSE -dBATCH $OPTIONS -sDEVICE=pdfwrite "-sOutputFile=$OUTPUT_PDF" -c .setpdfwrite -f "$INPUT_PDF"
+
+
+# echo "Running...  $INPUT_PDF -> $OUTPUT_PDF"
+# exec "$GS_EXECUTABLE"
+# gs $OPTIONS -q  -dNOPAUSE -dBATCH -sDEVICE=pdfwrite "-sOutputFile=$OUTPUT_PDF" -c .setpdfwrite -f "$INPUT_PDF"
+# exec "$GS_EXECUTABLE" -q -dNODISPLAY -dNOPAUSE -dBATCH $OPTIONS -sDEVICE=pdfwrite -c .setpdfwrite -- pdfopt.ps "$1" "$2"
+
+
+ls -l $OUTPUT_PDF
+
+
+exit 0

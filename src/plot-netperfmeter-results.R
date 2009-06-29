@@ -33,48 +33,49 @@ setGlobalVariable <- function(variable, value)
 # #### PDF Metadata Handling                                             ####
 # ###########################################################################
 
-pdfOutlineFile <- NA
-pdfOutlinePage <- NA
+pdfMetadataFile <- NA
+pdfMetadataPage <- NA
 
 # ###### Create PDF info ####################################################
-openPDFInfo <- function(name)
+openPDFMetadata <- function(name)
 {
-   setGlobalVariable("pdfInfoFile", file(paste(sep="", name, ".in"), "w"))
-   setGlobalVariable("pdfOutlineFile", file(paste(sep="", name, ".ou"), "w"))
-   setGlobalVariable("pdfOutlinePage", 0)
+   setGlobalVariable("pdfMetadataFile", file(paste(sep="", name, ".meta"), "w"))
+   setGlobalVariable("pdfMetadataPage", 0)
 
-   cat(sep="", "InfoKey: Title\nInfoValue: NetPerfMeter Results Plots\n", file=pdfInfoFile);
-   cat(sep="", "InfoKey: Creator\nInfoValue: GNU R/Ghostscript\n", file=pdfInfoFile);
-   cat(sep="", "InfoKey: Producer\nInfoValue: NetPerfMeter\n", file=pdfInfoFile);
+   cat(sep="", "title NetPerfMeter Results Plots\n", file=pdfMetadataFile);
+   cat(sep="", "subject Measurement Results\n", file=pdfMetadataFile);
+   cat(sep="", "creator plot-netperfmeter-results\n", file=pdfMetadataFile);
+   cat(sep="", "producer GNU R/Ghostscript\n", file=pdfMetadataFile);
+   cat(sep="", "keywords: NetPerfMeter, Measurements, Results\n", file=pdfMetadataFile);
 }
 
 
 # ###### Finish current page and increase page counter ######################
-nextPage <- function()
+nextPageInPDFMetadata <- function()
 {
-   setGlobalVariable("pdfOutlinePage", pdfOutlinePage + 1)
+   setGlobalVariable("pdfMetadataPage", pdfMetadataPage + 1)
 }
 
 
 # ###### Add entry into PDF info ############################################
-addBookmark <- function(level, title)
+addBookmarkInPDFMetadata <- function(level, title)
 {
-   if(!is.na(pdfOutlineFile)) {
-      cat(sep="", level, " ", pdfOutlinePage + 1, " ", title, "\n", file=pdfOutlineFile)
+   if(!is.na(pdfMetadataFile)) {
+      cat(sep="", "outline ", level, " ", pdfMetadataPage + 1, " ", title, "\n", file=pdfMetadataFile)
     }
 }
 
 
 # ###### Close PDF info #####################################################
-closePDFInfo <- function()
+closePDFMetadata <- function()
 {
-   if(!is.na(pdfOutlineFile)) {
-      close(pdfOutlineFile)
-      setGlobalVariable("pdfOutlineFile", NA)
+   if(!is.na(pdfMetadataFile)) {
+      close(pdfMetadataFile)
+      setGlobalVariable("pdfMetadataFile", NA)
    }
-   if(!is.na(pdfInfoFile)) {
-      close(pdfInfoFile)
-      setGlobalVariable("pdfInfoFile", NA)
+   if(!is.na(pdfMetadataFile)) {
+      close(pdfMetadataFile)
+      setGlobalVariable("pdfMetadataFile", NA)
    }
 }
 
@@ -122,7 +123,7 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vS
           family=plotFontFamily, pointsize=plotPointSize)
    }
    else {
-      addBookmark(3, title)
+      addBookmarkInPDFMetadata(3, title)
    }
    plotstd6(title,
             pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
@@ -142,7 +143,7 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vS
       processPDFbyGhostscript(pdfName)
    }
    else {
-      nextPage()
+      nextPageInPDFMetadata()
    }
 }
 
@@ -155,10 +156,10 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vS
 # ###### Create node plots ##################################################
 plotNodeStats <- function(inputData, nodeName)
 {
-   addBookmark(1, paste(sep="", "Node ''", nodeName, "''"))
+   addBookmarkInPDFMetadata(1, paste(sep="", "Node ''", nodeName, "''"))
 
    # ====== Input/Output Rates ==============================================
-   addBookmark(2, "Input/Output Rates")
+   addBookmarkInPDFMetadata(2, "Input/Output Rates")
    data <- subset(inputData, (inputData$Action != "Lost"))
    createPlot(data, paste(sep="", "Bit Rate Sent/Received at Node ''", nodeName, "''"),
               (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
@@ -174,7 +175,7 @@ plotNodeStats <- function(inputData, nodeName)
               data$Description, "Flow{F}", data$Action, "Action{A}")
 
    # ====== Input/Output Absolute ===========================================
-   addBookmark(2, "Input/Output Absolute")
+   addBookmarkInPDFMetadata(2, "Input/Output Absolute")
    data <- subset(inputData, (inputData$Action != "Lost"))
    createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", nodeName, "''"),
               (data$AbsBytes * 8 / 1000), "Bits [Kbit]", "blue4",
@@ -190,7 +191,7 @@ plotNodeStats <- function(inputData, nodeName)
               data$Description, "Flow{F}", data$Action, "Action{A}")
 
    # ====== Jitter ==========================================================
-   addBookmark(2, "Quality of Service")
+   addBookmarkInPDFMetadata(2, "Quality of Service")
    data <- subset(inputData, (inputData$Action == "Received"))
    createPlot(data, paste(sep="", "Interarrival Jitter at Node ''", nodeName, "''"),
               data$Jitter, "Jitter [ms]", "gold4",
@@ -209,13 +210,13 @@ plotNodeStats <- function(inputData, nodeName)
 
 # ###### Create flow QoS plots ##############################################
 plotQoSStatistics <- function(flowSummaryData) {
-   addBookmark(1, "Flow Quality of Service")
+   addBookmarkInPDFMetadata(1, "Flow Quality of Service")
    flowLevels <- levels(factor(flowSummaryData$FlowID))
    for(i in seq(1, length(flowLevels))) {
       data <- subset(flowSummaryData, (flowSummaryData$FlowID == flowLevels[i]))
       flowNames <- levels(factor(data$FlowName))
       flowName <- flowNames[1]
-      addBookmark(2, paste(sep="", "Flow ''", flowName, "''"))
+      addBookmarkInPDFMetadata(2, paste(sep="", "Flow ''", flowName, "''"))
       createPlot(data, paste(sep="", "Per-Message Delay for Flow ''", flowName, "''"),
                   data$Delay, "Delay [ms]", "orange2",
                   data$NodeName, "Node{N}",
@@ -278,7 +279,7 @@ if(!plotOwnFile) {
    pdfFileName <- paste(sep="", pdfFilePrefix, "-TEMP.pdf")
    pdf(pdfFileName, width=plotWidth, height=plotHeight, paper=plotPaper,
        family=plotFontFamily, pointsize=plotPointSize)
-   openPDFInfo(pdfFileName)
+   openPDFMetadata(pdfFileName)
 }
 
 
@@ -300,27 +301,19 @@ plotQoSStatistics(flowSummaryData)
 if(!plotOwnFile) {
    # ------ Close PDF and embed fonts (using Ghostscript) -------------------
    dev.off()
-   closePDFInfo()
+   closePDFMetadata()
    processPDFbyGhostscript(pdfFileName)
 
-   # ------ Add PDF bookmarks -----------------------------------------------
-   cmd1 <- paste(sep="", "pdfoutline ", pdfFileName, " ", pdfFileName, ".ou ", pdfFileName, " || true")
-   ret1 <- system(cmd1)
-   if(ret1 != 0) {
-      stop(gettextf("status %d in running command '%s'", ret1, cmd1))
-   }
-
-   # ------ Add PDF infos ---------------------------------------------------
-   cmd2 <- paste(sep="", "pdftk ", pdfFileName, " update_info ", pdfFileName, ".in output ", pdfFilePrefix, ".pdf",
-                         " || mv ", pdfFileName, " ", pdfFilePrefix, ".pdf")
-   ret2 <- system(cmd2)
-   if(ret2 != 0) {
-      stop(gettextf("status %d in running command '%s'", ret2, cmd2))
+   # ------ Add PDF outlines and meta data ----------------------------------
+   cmd <- paste(sep="", "pdfmetadata ", pdfFileName, " ", pdfFileName, ".meta ", pdfFilePrefix, ".pdf",
+                        " || mv ", pdfFileName, " ", pdfFilePrefix, ".pdf")
+   ret <- system(cmd)
+   if(ret != 0) {
+      stop(gettextf("status %d in running command '%s'", ret, cmd))
    }
 
    # ------ Remove temporary files ------------------------------------------
    unlink(pdfFileName)
-   unlink(paste(sep="", pdfFileName, ".in"))
-   unlink(paste(sep="", pdfFileName, ".ou"))
+   unlink(paste(sep="", pdfFileName, ".meta"))
 }
 quit(runLast=FALSE)
