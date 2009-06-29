@@ -302,18 +302,28 @@ if(!plotOwnFile) {
    # ------ Close PDF and embed fonts (using Ghostscript) -------------------
    dev.off()
    closePDFMetadata()
-   processPDFbyGhostscript(pdfFileName)
 
    # ------ Add PDF outlines and meta data ----------------------------------
-   cmd <- paste(sep="", "pdfmetadata ", pdfFileName, " ", pdfFileName, ".meta ", pdfFilePrefix, ".pdf",
-                        " || mv ", pdfFileName, " ", pdfFilePrefix, ".pdf")
-   ret <- system(cmd)
-   if(ret != 0) {
-      stop(gettextf("status %d in running command '%s'", ret, cmd))
+   cmd1 <- paste(sep="", "pdfmetadata ", pdfFileName, " ", pdfFileName, ".meta ", pdfFilePrefix, "-TEMP2.pdf",
+                         " || mv ", pdfFileName, " ", pdfFilePrefix, "-TEMP2.pdf")
+#    cat(cmd1,"\n")
+   ret1 <- system(cmd1)
+   if(ret1 != 0) {
+      stop(gettextf("status %d in running command '%s'", ret1, cmd1))
+   }
+
+   # ------ Add PDF outlines and meta data ----------------------------------
+   cmd2 <- paste(sep="", "pdfembedfonts ", pdfFilePrefix, "-TEMP2.pdf", " ", pdfFilePrefix, ".pdf -optimize",
+                         " || mv ", pdfFilePrefix, "-TEMP2.pdf", " ", pdfFilePrefix, ".pdf")
+#    cat(cmd2,"\n")
+   ret2 <- system(cmd2)
+   if(ret2 != 0) {
+      stop(gettextf("status %d in running command '%s'", ret2, cmd2))
    }
 
    # ------ Remove temporary files ------------------------------------------
    unlink(pdfFileName)
+   unlink(paste(sep="", pdfFilePrefix, "-TEMP2.pdf"))
    unlink(paste(sep="", pdfFileName, ".meta"))
 }
 quit(runLast=FALSE)

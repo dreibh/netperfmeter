@@ -10,10 +10,10 @@ netperfmeter_SOURCES = netperfmeter.cc ext_socket.h netperfmeterpackets.h tools.
 netperfmeter_LDADD   = $(bz2_LIBS)
 
 
-dist_bin_SCRIPTS = plot-netperfmeter-results pdfmetadata
+dist_bin_SCRIPTS = plot-netperfmeter-results pdfmetadata pdfembedfonts
 
 
-dist_man_MANS = netperfmeter.8 plot-netperfmeter-results.8 createsummary.8 combinesummaries.8 pdfmetadata.8
+dist_man_MANS = netperfmeter.8 plot-netperfmeter-results.8 createsummary.8 combinesummaries.8 pdfmetadata.8 pdfembedfonts.8
 
 
 EXTRA_DIST = plotter.R plot-netperfmeter-results.R

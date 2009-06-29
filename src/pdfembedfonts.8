@@ -1,6 +1,6 @@
 .\" $Id$
 .\"
-.\" PDF Metadata Updater
+.\" PDF Font Embedder
 .\" Copyright (C) 2009 by Thomas Dreibholz
 .\"
 .\" This program is free software: you can redistribute it and/or modify
@@ -20,47 +20,24 @@
 .\"
 .\" ###### Setup ############################################################
 .Dd June 29, 2009
-.Dt pdfmetadata 8
-.Os pdfmetadata
+.Dt pdfembedfonts 8
+.Os pdfembedfonts
 .\" ###### Name #############################################################
 .Sh NAME
-.Nm pdfmetadata
+.Nm pdfembedfonts
 .Nd PDF Metadata Updater
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm pdfmetadata
+.Nm pdfembedfonts
 .Op Input PDF
-.Op Metadata
 .Op Output PDF
+.Fl optimize
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
-.Nm pdfmetadata
-is tool to add and update the metadata of a PDF file. In particular, it can
-be used to add outlines (bookmarks) to a document. Furthermore, it can set
-the document properties (e.g. author, title,  keywords, creator, producer).
-
-Note, that all metadata content will be encoded in ISO-8859-1 encoding. It
-is not (yet) possible to use non-ISO-8859-1 text in the PDF metadata.
-
-The metadata may contain the following commands:
-.Bl -tag -width ident
-.It outline Level Page Bookmark
-Add a PDF outline at the given level
-(0=chapter, 1=section, 2=subsection, 3=subsubsection, 4=paragraph, ...) and
-pointing to the given page number. Bookmark denotes the label text.
-.It author Author
-Sets the document author to the given value.
-.It title Title
-Sets the document title to the given value.
-.It title Subject
-Sets the document subject to the given value.
-.It keywords Keywords
-Sets the document keywords to the given value.
-.It creator Creator
-Sets the document creator to the given value.
-.It producer Producer
-Sets the document producer to the given value.
-.El
+.Nm pdfembedfonts
+uses GhostScript to make a copy of a given PDF file which included all
+required font data. Optionally, the resulting PDF will also be linearized
+("fast web view", "optimized").
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
@@ -70,29 +47,14 @@ The following arguments have to be provided:
 The input PDF file name.
 .It Output PDF
 The output PDF file name.
+.It Fl linearize
+Linearize the resulting PDF file.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
-A pdfmetadata usage example:
+A pdfembedfonts usage example:
 .Bl -tag -width indent
-.It pdfmetadata MyDocument.pdf MyMetadata.meta MyDocument-Updated.pdf
-.El
-
-A metadata example:
-.Bl -tag -width indent
-outline 1 1 Chapter 1
-.br
-outline 2 2 Section 1.1
-.br
-outline 2 4 Section 1.2
-.br
-outline 1 6 Chapter 2
-.br
-author John Smith
-.br
-title An Example Document
-.br
-keywords Example, PDF, pdfmetadata
+.It pdfembedfonts MyDocument.pdf MyDocument-with-Embedded-Fonts.pdf
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
