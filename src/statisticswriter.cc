@@ -73,6 +73,7 @@ StatisticsWriter::StatisticsWriter(const uint64_t measurementID)
 // ###### Destructor ########################################################
 StatisticsWriter::~StatisticsWriter()
 {
+   finishOutputFiles(true);
 }
 
 

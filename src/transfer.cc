@@ -111,7 +111,7 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
          if(flowSpec->ReliableMode < 1.0) {
             const bool sendUnreliable = (randomDouble() < flowSpec->ReliableMode);
             if(sendUnreliable) {
-               sinfo.sinfo_timetolive = 1.0;
+               sinfo.sinfo_timetolive = 1;
             }
          }
          if(flowSpec->OrderedMode < 1.0) {

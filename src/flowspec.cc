@@ -67,6 +67,7 @@ FlowSpec::FlowSpec()
 // ###### Destructor ########################################################
 FlowSpec::~FlowSpec()
 {
+   finishVectorFile(true);
 }
 
 

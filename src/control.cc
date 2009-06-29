@@ -525,6 +525,20 @@ void remoteAllFlowsOwnedBy(std::vector<FlowSpec*>& flowSet, const sctp_assoc_t a
    while(iterator != flowSet.end()) {
       FlowSpec* flowSpec = *iterator;
       if(flowSpec->RemoteControlAssocID == assocID) {
+         if(flowSpec->RemoteAddressIsValid) {
+            if(flowSpec->Protocol == IPPROTO_SCTP) {
+               sendAbort(flowSpec->SocketDescriptor, flowSpec->RemoteDataAssocID);
+            }
+            else if(flowSpec->Protocol == IPPROTO_UDP) {
+               // Nothing to do for UDP
+            }
+            else {
+               // TCP and DCCP
+               ext_close(flowSpec->SocketDescriptor);
+            }
+         }
+         StatisticsWriter::removeMeasurement(flowSpec->MeasurementID);
+
          std::vector<FlowSpec*>::iterator toBeRemoved = iterator;
          flowSet.erase(toBeRemoved);
          delete flowSpec;

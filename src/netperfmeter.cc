@@ -296,18 +296,19 @@ bool mainLoop(const bool               isActiveMode,
               const unsigned long long stopAt,
               const uint64_t           measurementID)
 {
-   int                tcpConnectionIDs[gConnectedSocketsSet.size()];
-   pollfd             fds[5 + gFlowSet.size() + gConnectedSocketsSet.size()];
-   int                n                     = 0;
-   int                controlID             = -1;
-   int                tcpID                 = -1;
-   int                udpID                 = -1;
-   int                sctpID                = -1;
-   int                dccpID                = -1;
-   unsigned long long nextStatusChangeEvent = (1ULL << 63);
-   unsigned long long nextTransmissionEvent = (1ULL << 63);
-   unsigned long long now                   = getMicroTime();
-   StatisticsWriter*  statisticsWriter      = StatisticsWriter::getStatisticsWriter();
+   int                    tcpConnectionIDs[gConnectedSocketsSet.size()];
+   pollfd                 fds[5 + gFlowSet.size() + gConnectedSocketsSet.size()];
+   int                    n                     = 0;
+   int                    controlID             = -1;
+   int                    tcpID                 = -1;
+   int                    udpID                 = -1;
+   int                    sctpID                = -1;
+   int                    dccpID                = -1;
+   unsigned long long     nextStatusChangeEvent = (1ULL << 63);
+   unsigned long long     nextTransmissionEvent = (1ULL << 63);
+   unsigned long long     now                   = getMicroTime();
+   StatisticsWriter*      statisticsWriter      = StatisticsWriter::getStatisticsWriter();
+   std::map<int, pollfd*> pollFDIndex;
 
 
    // ====== Get parameters for poll() ======================================
@@ -387,7 +388,7 @@ bool mainLoop(const bool               isActiveMode,
    // ====== Use poll() to wait for events ==================================
    const long long nextEvent = (long long)std::min(std::min(nextStatusChangeEvent, nextTransmissionEvent),
                                                    std::min(stopAt, statisticsWriter->getNextEvent()));
-   const int timeout         = (int) (std::max(0LL, nextEvent - (long long)now) / 1000LL);
+   const int timeout         = (int)(std::max(0LL, nextEvent - (long long)now) / 1000LL);
 
    // printf("to=%d   txNext=%lld\n", timeout, nextEvent - (long long)now);
    const int result = ext_poll((pollfd*)&fds, n, timeout);
@@ -414,6 +415,7 @@ bool mainLoop(const bool               isActiveMode,
       bool gConnectedSocketsSetUpdated = false;
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gTCPSocket, NULL, 0);
+printf("\nACCEPT=%d\n",newSD);         
          if(newSD >= 0) {
             gMessageReader.registerSocket(IPPROTO_TCP, newSD);
             gConnectedSocketsSet.insert(newSD);

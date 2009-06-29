@@ -38,6 +38,12 @@ MessageReader::MessageReader()
 // ###### Destructor ########################################################
 MessageReader::~MessageReader()
 {
+   std::map<int, Socket*>::iterator iterator = SocketMap.begin();
+   while(iterator != SocketMap.end()) {
+      Socket* socket = iterator->second;
+      deregisterSocket(socket->SocketDescriptor);
+      iterator = SocketMap.begin();
+   }
 }
 
 
