@@ -6,10 +6,12 @@ Homepage: http://www.iem.uni-due.de/~dreibh/netperfmeter/
 Build-Depends: debhelper (>= 5), autotools-dev, libsctp-dev (>= 1.0.5), libbz2-dev (>= 1.0)
 Standards-Version: 3.8.1
 
-Package: pdftools
+Package: pdfproctools
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, perl (>= 5.8.0), libpdf-api2-perl
-Description: PDF Tools
+Replaces: pdfmetadata, pdftools
+Conflicts: pdfmetadata, pdftools
+Description: PDF Processing Tools
  This package contains tools for PDF file processing.
  .
  PDFMetadata updates the metadata of a PDF file. In particular, it can be
@@ -33,7 +35,7 @@ Description: GNU R Data Table Processing Tools
 
 Package: netperfmeter
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, datatabletools, pdftools, r-base, ghostscript, perl (>= 5.8.0), libpdf-api2-perl
+Depends: ${shlibs:Depends}, ${misc:Depends}, datatabletools, pdfproctools, r-base, ghostscript, perl (>= 5.8.0), libpdf-api2-perl
 Replaces: netmeter (<= 0.5.1)
 Conflicts: netmeter (<= 0.5.1)
 Recommends: traceroute, iputils-tracepath, iputils-ping, rsplib-tools, subnetcalc (>= 2.0.2)
