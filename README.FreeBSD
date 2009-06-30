@@ -1,0 +1,9 @@
+Dependencies under FreeBSD:
+- R
+- gcc42 (includes a required library;
+         FreeBSD 7.1 fails to install it as dependency of R)
+- p5-PDF-API2
+- ghostscript8+
+
+Command to install all dependencies (as root):
+pkg_add -r R gcc42 p5-PDF-API2 ghostscript8
