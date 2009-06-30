@@ -265,20 +265,24 @@ FlowSpec* createLocalFlow(const char*     parameters,
       cout.flush();
 
       if(flowSpec->SocketDescriptor < 0) {
-         cerr << "ERROR: Unable to create " << getProtocolName(flowSpec->Protocol) << " socket - " << strerror(errno) << "!" << endl;
+         cerr << "ERROR: Unable to create " << getProtocolName(flowSpec->Protocol)
+              << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
       }
       if(flowSpec->Protocol == IPPROTO_SCTP) {
          sctp_event_subscribe events;
          memset((char*)&events, 0 ,sizeof(events));
          events.sctp_data_io_event = 1;
-         if(ext_setsockopt(flowSpec->SocketDescriptor, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-            cerr << "ERROR: Failed to configure events on SCTP socket - " << strerror(errno) << "!" << endl;
+         if(ext_setsockopt(flowSpec->SocketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
+                           &events, sizeof(events)) < 0) {
+            cerr << "ERROR: Failed to configure events on SCTP socket - "
+                 << strerror(errno) << "!" << endl;
             exit(1);
          }
       }
       if(ext_connect(flowSpec->SocketDescriptor, remoteAddress, getSocklen(remoteAddress)) < 0) {
-         cerr << "ERROR: Unable to connect " << getProtocolName(flowSpec->Protocol) << " socket - " << strerror(errno) << "!" << endl;
+         cerr << "ERROR: Unable to connect " << getProtocolName(flowSpec->Protocol)
+              << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
       }
       setNonBlocking(flowSpec->SocketDescriptor);
@@ -355,27 +359,40 @@ bool mainLoop(const bool               isActiveMode,
    }
    for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end();iterator++) {
       FlowSpec* flowSpec = *iterator;
-      flowSpec->Index = -1;   // No index reference yet.
       if(flowSpec->SocketDescriptor >= 0) {
- // ?????????????????        if(flowSpec->OriginalSocketDescriptor) {
+         // ====== Find or create PollFD entry ==============================
+         pollfd*                          pfd; 
+         std::map<int, pollfd*>::iterator found =
+            pollFDIndex.find(flowSpec->SocketDescriptor);
+         if(found != pollFDIndex.end()) {
+            pfd = found->second;
+         }
+         else {
             assert(n < sizeof(fds) / sizeof(pollfd));
-            fds[n].fd     = flowSpec->SocketDescriptor;
-            fds[n].events = POLLIN;
-            if( (flowSpec->OutboundFrameSize > 0.0) && (flowSpec->OutboundFrameRate <= 0.0000001) ) {
-               fds[n].events |= POLLOUT;
-            }
-            flowSpec->Index = n++;   // Set index reference.
- // ?????????????????        }
+            pfd = &fds[n];
+            n++;
+            pfd->fd      = flowSpec->SocketDescriptor;
+            pfd->events  = POLLIN;   // Always set POLLIN
+            pfd->revents = 0;
+            pollFDIndex.insert(std::pair<int, pollfd*>(flowSpec->SocketDescriptor, pfd));
+         }
+         
+         // ====== Saturated sender: set POLLOUT ============================
+         if( (flowSpec->OutboundFrameSize > 0.0) &&
+             (flowSpec->OutboundFrameRate <= 0.0000001) ) {
+            pfd->events |= POLLOUT;
+         }
 
-// printf("FLOW=%d i=%d e=%04x\n",flowSpec->FlowID,flowSpec->Index,fds[flowSpec->Index].events);
-
+         // ====== Schedule next status change event ========================
          flowSpec->scheduleNextStatusChangeEvent(now);
          if(flowSpec->NextStatusChangeEvent < nextStatusChangeEvent) {
             nextStatusChangeEvent = flowSpec->NextStatusChangeEvent;
          }
 
+         // ====== Schedule next transmission event =========================
          if( (flowSpec->Status == FlowSpec::On) &&
-             (flowSpec->OutboundFrameSize > 0.0) && (flowSpec->OutboundFrameRate > 0.0000001) ) {
+             (flowSpec->OutboundFrameSize > 0.0) && 
+             (flowSpec->OutboundFrameRate > 0.0000001) ) {
             flowSpec->scheduleNextTransmissionEvent();
             if(flowSpec->NextTransmissionEvent < nextTransmissionEvent) {
                nextTransmissionEvent = flowSpec->NextTransmissionEvent;
@@ -407,15 +424,16 @@ bool mainLoop(const bool               isActiveMode,
 
       // ====== Incoming data message =======================================
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
-         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet, now, gSCTPSocket, IPPROTO_SCTP, gControlSocket);
+         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
+                           now, gSCTPSocket, IPPROTO_SCTP, gControlSocket);
       }
       if( (udpID >= 0) && (fds[udpID].revents & POLLIN) ) {
-         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet, now, gUDPSocket, IPPROTO_UDP, gControlSocket);
+         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
+                           now, gUDPSocket, IPPROTO_UDP, gControlSocket);
       }
       bool gConnectedSocketsSetUpdated = false;
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gTCPSocket, NULL, 0);
-printf("\nACCEPT=%d\n",newSD);         
          if(newSD >= 0) {
             gMessageReader.registerSocket(IPPROTO_TCP, newSD);
             gConnectedSocketsSet.insert(newSD);
@@ -438,8 +456,9 @@ printf("\nACCEPT=%d\n",newSD);
       if(!gConnectedSocketsSetUpdated) {
          for(int i = 0;i < gConnectedSocketsSet.size();i++) {
             if(fds[i].revents & POLLIN) {
-               const ssize_t result = handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
-                                                        now, fds[i].fd, IPPROTO_TCP, gControlSocket);
+               const ssize_t result =
+                  handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
+                                    now, fds[i].fd, IPPROTO_TCP, gControlSocket);
                if( (result < 0) && (result != MRRM_PARTIAL_READ) ) {
                   gMessageReader.deregisterSocket(fds[i].fd);
                   gConnectedSocketsSet.erase(fds[i].fd);
@@ -454,9 +473,18 @@ printf("\nACCEPT=%d\n",newSD);
       for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end();iterator++) {
          FlowSpec* flowSpec = *iterator;
          if(flowSpec->SocketDescriptor >= 0) {
+            // ====== Find PollFD entry =====================================
+            std::map<int, pollfd*>::iterator found =
+               pollFDIndex.find(flowSpec->SocketDescriptor);
+            if(found == pollFDIndex.end()) {
+               continue;
+            }
+            const pollfd* pfd = found->second;
+            
             // ====== Incoming data =========================================
-            if( (flowSpec->Index >= 0) && (fds[flowSpec->Index].revents & POLLIN) ) {
-               handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet, now, fds[flowSpec->Index].fd, flowSpec->Protocol, gControlSocket);
+            if(pfd->revents & POLLIN) {
+               handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
+                                 now, pfd->fd, flowSpec->Protocol, gControlSocket);
             }
 
             // ====== Status change =========================================
@@ -467,14 +495,16 @@ printf("\nACCEPT=%d\n",newSD);
             // ====== Send outgoing data ====================================
             if(flowSpec->Status == FlowSpec::On) {
                // ====== Outgoing data (saturated sender) ===================
-               if( (flowSpec->OutboundFrameSize > 0.0) && (flowSpec->OutboundFrameRate <= 0.0000001) ) {
-                  if(fds[flowSpec->Index].revents & POLLOUT) {
+               if( (flowSpec->OutboundFrameSize > 0.0) &&
+                   (flowSpec->OutboundFrameRate <= 0.0000001) ) {
+                  if(pfd->revents & POLLOUT) {
                      transmitFrame(statisticsWriter, flowSpec, now, gMaxMsgSize);
                   }
                }
 
                // ====== Outgoing data (non-saturated sender) ===============
-               if( (flowSpec->OutboundFrameSize >= 1.0) && (flowSpec->OutboundFrameRate > 0.0000001) ) {
+               if( (flowSpec->OutboundFrameSize >= 1.0) &&
+                   (flowSpec->OutboundFrameRate > 0.0000001) ) {
                   const unsigned long long lastEvent = flowSpec->LastTransmission;
                   if(flowSpec->NextTransmissionEvent <= now) {
                      do {
@@ -514,7 +544,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    // ====== Initialize control socket ======================================
    gControlSocket = createAndBindSocket(SOCK_SEQPACKET, IPPROTO_SCTP, localPort + 1, true);   // Leave it blocking!
    if(gControlSocket < 0) {
-      cerr << "ERROR: Failed to create and bind SCTP socket for control port - " << strerror(errno) << "!" << endl;
+      cerr << "ERROR: Failed to create and bind SCTP socket for control port - "
+           << strerror(errno) << "!" << endl;
       exit(1);
    }
    sctp_event_subscribe events;
@@ -522,7 +553,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    events.sctp_data_io_event     = 1;
    events.sctp_association_event = 1;
    if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-      cerr << "ERROR: Failed to configure events on control socket - " << strerror(errno) << "!" << endl;
+      cerr << "ERROR: Failed to configure events on control socket - "
+           << strerror(errno) << "!" << endl;
       exit(1);
    }
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
@@ -530,12 +562,14 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    // ====== Initialize data socket for each protocol =======================
    gTCPSocket = createAndBindSocket(SOCK_STREAM, IPPROTO_TCP, localPort);
    if(gTCPSocket < 0) {
-      cerr << "ERROR: Failed to create and bind TCP socket - " << strerror(errno) << "!" << endl;
+      cerr << "ERROR: Failed to create and bind TCP socket - "
+           << strerror(errno) << "!" << endl;
       exit(1);
    }
    gUDPSocket = createAndBindSocket(SOCK_DGRAM, IPPROTO_UDP, localPort);
    if(gUDPSocket < 0) {
-      cerr << "ERROR: Failed to create and bind UDP socket - " << strerror(errno) << "!" << endl;
+      cerr << "ERROR: Failed to create and bind UDP socket - "
+           << strerror(errno) << "!" << endl;
       exit(1);
    }
    gMessageReader.registerSocket(IPPROTO_UDP, gUDPSocket);
@@ -547,13 +581,15 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 #endif
    gSCTPSocket = createAndBindSocket(SOCK_SEQPACKET, IPPROTO_SCTP, localPort);
    if(gSCTPSocket < 0) {
-      cerr << "ERROR: Failed to create and bind SCTP socket - " << strerror(errno) << "!" << endl;
+      cerr << "ERROR: Failed to create and bind SCTP socket - "
+           << strerror(errno) << "!" << endl;
       exit(1);
    }
    memset((char*)&events, 0 ,sizeof(events));
    events.sctp_data_io_event = 1;
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-      cerr << "ERROR: Failed to configure events on SCTP socket - " << strerror(errno) << "!" << endl;
+      cerr << "ERROR: Failed to configure events on SCTP socket - "
+           << strerror(errno) << "!" << endl;
       exit(1);
    }
    gMessageReader.registerSocket(IPPROTO_SCTP, gSCTPSocket);
@@ -576,7 +612,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    // ====== Main loop ======================================================
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
-   const unsigned long long stopAt = (gRuntime > 0) ? (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
+   const unsigned long long stopAt = (gRuntime > 0) ?
+      (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       mainLoop(false, stopAt, 0);
    }
@@ -628,19 +665,23 @@ void activeMode(int argc, char** argv)
    snprintf((char*)&mIDString, sizeof(mIDString), "%lx", measurementID);
    cout << "Active Mode:" << endl
         << "   - Measurement ID  = " << mIDString << endl
-        << "   - Remote Address  = "; printAddress(cout, &remoteAddress.sa, true);  cout << endl
-        << "   - Control Address = "; printAddress(cout, &controlAddress.sa, true); cout << " - connecting ... ";
+        << "   - Remote Address  = "; printAddress(cout, &remoteAddress.sa, true); 
+   cout << endl
+        << "   - Control Address = "; printAddress(cout, &controlAddress.sa, true);
+   cout << " - connecting ... ";
    cout.flush();
 
 
    // ====== Initialize control socket ======================================
    gControlSocket = ext_socket(controlAddress.sa.sa_family, SOCK_STREAM, IPPROTO_SCTP);
    if(gControlSocket < 0) {
-      cerr << "ERROR: Failed to create SCTP socket for control port - " << strerror(errno) << "!" << endl;
+      cerr << "ERROR: Failed to create SCTP socket for control port - "
+           << strerror(errno) << "!" << endl;
       exit(1);
    }
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
-      cerr << "ERROR: Unable to establish control association - " << strerror(errno) << "!" << endl;
+      cerr << "ERROR: Unable to establish control association - "
+           << strerror(errno) << "!" << endl;
       exit(1);
    }
    cout << "okay; sd=" << gControlSocket << endl << endl;
@@ -704,7 +745,8 @@ void activeMode(int argc, char** argv)
       }
       else {
          if(protocol == 0) {
-            cerr << "ERROR: Protocol specification needed before flow specification " << argv[i] << "!" << endl;
+            cerr << "ERROR: Protocol specification needed before flow specification "
+                 << argv[i] << "!" << endl;
             exit(1);
          }
 
@@ -751,7 +793,8 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Main loop ======================================================
-   const unsigned long long stopAt  = (gRuntime > 0) ? (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
+   const unsigned long long stopAt  = (gRuntime > 0) ?
+      (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    bool                     aborted = false;
    installBreakDetector();
    while( (!breakDetected()) && (!gStopTimeReached) ) {
@@ -839,7 +882,9 @@ void activeMode(int argc, char** argv)
 int main(int argc, char** argv)
 {
    if(argc < 2) {
-      cerr << "Usage: " << argv[0] << " [Port|Remote Endpoint] {-tcp|-udp|-sctp|-dccp} {flow spec} ..." << endl;
+      cerr << "Usage: " << argv[0]
+           << " [Port|Remote Endpoint] {-tcp|-udp|-sctp|-dccp} {flow spec} ..."
+           << endl;
       exit(1);
    }
 

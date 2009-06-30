@@ -20,17 +20,19 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-if [ -e output-test2 ] ; then
-   rm -rf output-test2
+DIRECTORY=test2-output
+
+if [ -e $DIRECTORY ] ; then
+   rm -rf $DIRECTORY
 fi
-mkdir output-test2
+mkdir $DIRECTORY
 
 make -j2 && ./netperfmeter [::1]:9000 \
    "-activenodename=Video-Client" \
    "-passivenodename=Video-Server" \
    -runtime=30 \
    -maxmsgsize=4096 \
-   -config=output-test2/output.config \
-   -vector=output-test2/output.vec.bz2 \
-   -scalar=output-test2/output.sca.bz2 \
+   -config=$DIRECTORY/output.config \
+   -vector=$DIRECTORY/output.vec.bz2 \
+   -scalar=$DIRECTORY/output.sca.bz2 \
    -sctp const25:const1000:const30:const500:description="Video Stream" $@

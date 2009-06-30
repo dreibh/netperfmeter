@@ -46,7 +46,6 @@ FlowSpec::FlowSpec()
    InboundFrameSizeRng      = RANDOM_CONSTANT;
    LastOutboundSeqNumber    = 0;
    LastOutboundFrameID      = 0;
-   Index                    = -1;
    RemoteControlAssocID     = 0;
    RemoteDataAssocID        = 0;
    RemoteAddressIsValid     = false;

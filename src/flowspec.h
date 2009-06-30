@@ -68,30 +68,30 @@ class FlowSpec
 
    // ====== Attributes =====================================================
    public:
-   FlowSpec*               NextFlow;
+   FlowSpec*              NextFlow;
 
-   std::string             Description;
-   uint64_t                MeasurementID;
-   uint32_t                FlowID;
-   uint16_t                StreamID;
-   uint8_t                 Protocol;
+   std::string            Description;
+   uint64_t               MeasurementID;
+   uint32_t               FlowID;
+   uint16_t               StreamID;
+   uint8_t                Protocol;
 
-   double                  ReliableMode;
-   double                  OrderedMode;
+   double                 ReliableMode;
+   double                 OrderedMode;
 
-   double                  OutboundFrameRate;
-   double                  OutboundFrameSize;
-   double                  InboundFrameRate;
-   double                  InboundFrameSize;
-   uint8_t                 OutboundFrameRateRng;
-   uint8_t                 OutboundFrameSizeRng;
-   uint8_t                 InboundFrameRateRng;
-   uint8_t                 InboundFrameSizeRng;
+   double                 OutboundFrameRate;
+   double                 OutboundFrameSize;
+   double                 InboundFrameRate;
+   double                 InboundFrameSize;
+   uint8_t                OutboundFrameRateRng;
+   uint8_t                OutboundFrameSizeRng;
+   uint8_t                InboundFrameRateRng;
+   uint8_t                InboundFrameSizeRng;
 
 
    // ====== Socket Descriptor ==============================================
-   int                     SocketDescriptor;
-   bool                    OriginalSocketDescriptor;
+   int                    SocketDescriptor;
+   bool                   OriginalSocketDescriptor;
 
 
    // ====== Sequence Numbers ===============================================
@@ -99,41 +99,41 @@ class FlowSpec
    uint32_t                LastOutboundFrameID;
 
    // ====== Timing =========================================================
-   unsigned long long      FirstTransmission;
-   unsigned long long      FirstReception;
-   unsigned long long      LastTransmission;
-   unsigned long long      LastReception;
+   unsigned long long     FirstTransmission;
+   unsigned long long     FirstReception;
+   unsigned long long     LastTransmission;
+   unsigned long long     LastReception;
 
 
    // ====== Current statistics =============================================
-   unsigned long long      TransmittedBytes;
-   unsigned long long      TransmittedPackets;
-   unsigned long long      TransmittedFrames;
+   unsigned long long     TransmittedBytes;
+   unsigned long long     TransmittedPackets;
+   unsigned long long     TransmittedFrames;
 
-   unsigned long long      ReceivedBytes;
-   unsigned long long      ReceivedPackets;
-   unsigned long long      ReceivedFrames;
+   unsigned long long     ReceivedBytes;
+   unsigned long long     ReceivedPackets;
+   unsigned long long     ReceivedFrames;
    
-   double                  Jitter;
-   unsigned long long      LostBytes;
-   unsigned long long      LostPackets;
-   unsigned long long      LostFrames;
+   double                 Jitter;
+   unsigned long long     LostBytes;
+   unsigned long long     LostPackets;
+   unsigned long long     LostFrames;
 
 
    // ====== Last-time statistics (for bandwidth calculations) ==============
-   unsigned long long      LastTransmittedBytes;
-   unsigned long long      LastTransmittedPackets;
-   unsigned long long      LastTransmittedFrames;
+   unsigned long long     LastTransmittedBytes;
+   unsigned long long     LastTransmittedPackets;
+   unsigned long long     LastTransmittedFrames;
 
-   unsigned long long      LastReceivedBytes;
-   unsigned long long      LastReceivedPackets;
-   unsigned long long      LastReceivedFrames;
+   unsigned long long     LastReceivedBytes;
+   unsigned long long     LastReceivedPackets;
+   unsigned long long     LastReceivedFrames;
 
-   unsigned long long      LastLostBytes;
-   unsigned long long      LastLostPackets;
-   unsigned long long      LastLostFrames;
+   unsigned long long     LastLostBytes;
+   unsigned long long     LastLostPackets;
+   unsigned long long     LastLostFrames;
 
-   double                  LastTransitTime;
+   double                 LastTransitTime;
 
    // ====== Start/stop control =============================================
    enum FlowStatus {
@@ -141,26 +141,25 @@ class FlowSpec
       On                = 2,
       Off               = 3
    };
-   FlowStatus              Status;
-   unsigned long long      NextStatusChangeEvent;
-   std::set<unsigned int>  OnOffEvents;
-   unsigned long long      BaseTime;
+   FlowStatus             Status;
+   unsigned long long     NextStatusChangeEvent;
+   std::set<unsigned int> OnOffEvents;
+   unsigned long long     BaseTime;
 
 
    // ====== Variables for event loop =======================================
-   int                     Index;
-   unsigned long long      NextTransmissionEvent;
+   unsigned long long     NextTransmissionEvent;
 
-   sctp_assoc_t            RemoteControlAssocID;
-   sctp_assoc_t            RemoteDataAssocID;
-   sockaddr_union          RemoteAddress;
-   bool                    RemoteAddressIsValid;
+   sctp_assoc_t           RemoteControlAssocID;
+   sctp_assoc_t           RemoteDataAssocID;
+   sockaddr_union         RemoteAddress;
+   bool                   RemoteAddressIsValid;
    
    // ====== Statistics file handling =======================================
-   unsigned long long      VectorLine;
-   std::string             VectorName;
-   FILE*                   VectorFile;
-   BZFILE*                 VectorBZFile;
+   unsigned long long     VectorLine;
+   std::string            VectorName;
+   FILE*                  VectorFile;
+   BZFILE*                VectorBZFile;
 };
 
 #endif
