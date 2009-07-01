@@ -313,6 +313,7 @@ bool mainLoop(const bool               isActiveMode,
    unsigned long long     now                   = getMicroTime();
    StatisticsWriter*      statisticsWriter      = StatisticsWriter::getStatisticsWriter();
    std::map<int, pollfd*> pollFDIndex;
+   static size_t          flowRoundRobin        = 0;
 
 
    // ====== Get parameters for poll() ======================================
@@ -376,9 +377,10 @@ bool mainLoop(const bool               isActiveMode,
             pfd->revents = 0;
             pollFDIndex.insert(std::pair<int, pollfd*>(flowSpec->SocketDescriptor, pfd));
          }
-         
+
          // ====== Saturated sender: set POLLOUT ============================
-         if( (flowSpec->OutboundFrameSize > 0.0) &&
+         if( (flowSpec->Status == FlowSpec::On) &&
+             (flowSpec->OutboundFrameSize > 0.0) &&
              (flowSpec->OutboundFrameRate <= 0.0000001) ) {
             pfd->events |= POLLOUT;
          }
@@ -409,6 +411,7 @@ bool mainLoop(const bool               isActiveMode,
 
    // printf("to=%d   txNext=%lld\n", timeout, nextEvent - (long long)now);
    const int result = ext_poll((pollfd*)&fds, n, timeout);
+// ???    printf("result=%d\n");
    now = getMicroTime();   // Get current time.
 
    // ====== Handle socket events ===========================================
@@ -470,8 +473,10 @@ bool mainLoop(const bool               isActiveMode,
 
 
       // ====== Outgoing flow events ========================================
-      for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end();iterator++) {
-         FlowSpec* flowSpec = *iterator;
+      const size_t flows = gFlowSet.size();
+      for(size_t i = 0;i < flows;i++) {
+         FlowSpec* flowSpec = gFlowSet[(i + flowRoundRobin) % flows];
+
          if(flowSpec->SocketDescriptor >= 0) {
             // ====== Find PollFD entry =====================================
             std::map<int, pollfd*>::iterator found =
@@ -480,7 +485,7 @@ bool mainLoop(const bool               isActiveMode,
                continue;
             }
             const pollfd* pfd = found->second;
-            
+
             // ====== Incoming data =========================================
             if(pfd->revents & POLLIN) {
                handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
@@ -498,6 +503,7 @@ bool mainLoop(const bool               isActiveMode,
                if( (flowSpec->OutboundFrameSize > 0.0) &&
                    (flowSpec->OutboundFrameRate <= 0.0000001) ) {
                   if(pfd->revents & POLLOUT) {
+// ??? printf("   TRY: %d   %04x\n",(i + flowRoundRobin) % flows,   pfd->revents);
                      transmitFrame(statisticsWriter, flowSpec, now, gMaxMsgSize);
                   }
                }
@@ -531,6 +537,12 @@ bool mainLoop(const bool               isActiveMode,
    // ====== Handle statistics timer ========================================
    if(statisticsWriter->getNextEvent() <= now) {
       statisticsWriter->writeAllVectorStatistics(now, gFlowSet, measurementID);
+   }
+
+   // ====== Ensure round-robin handling of streams over the same assoc =====
+   flowRoundRobin++;
+   if(flowRoundRobin >= gFlowSet.size()) {
+      flowRoundRobin = 0;
    }
 
    return(true);

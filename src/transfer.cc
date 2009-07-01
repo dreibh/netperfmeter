@@ -132,6 +132,10 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
       }
       else {
          sent = ext_send(flowSpec->SocketDescriptor, (char*)&outputBuffer, chunkSize, 0);
+if((sent > 0) && (sent != chunkSize)) {
+puts("ERRR!");
+exit(1);
+}
       }
 
       // ====== Update statistics ===========================================

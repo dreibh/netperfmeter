@@ -43,6 +43,7 @@
 
 
 unsigned long long getMicroTime();
+void printTimeStamp(std::ostream& os);
 
 
 int safestrcpy(char* dest, const char* src, const size_t size);

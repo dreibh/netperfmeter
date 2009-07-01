@@ -57,6 +57,21 @@ unsigned long long getMicroTime()
 }
 
 
+// ###### Print time stamp ##################################################
+void printTimeStamp(std::ostream& os)
+{
+   char str[128];
+   const unsigned long long microTime = getMicroTime();
+   const time_t timeStamp = microTime / 1000000;
+   const struct tm *timeptr = localtime(&timeStamp);
+   strftime((char*)&str,sizeof(str),"%d-%b-%Y %H:%M:%S",timeptr);
+   os << str;
+   snprintf((char*)&str,sizeof(str),
+            ".%04d: ",(unsigned int)(microTime % 1000000) / 100);
+   os << str;
+}
+
+
 /* ###### Length-checking strcpy() ###################################### */
 int safestrcpy(char* dest, const char* src, const size_t size)
 {
