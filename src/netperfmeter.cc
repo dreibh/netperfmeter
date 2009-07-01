@@ -53,16 +53,16 @@ using namespace std;
 
 vector<FlowSpec*> gFlowSet;
 set<int>          gConnectedSocketsSet;
-const char*       gActiveNodeName      = "Client";
-const char*       gPassiveNodeName     = "Server";
-int               gControlSocket       = -1;
-int               gTCPSocket           = -1;
-int               gUDPSocket           = -1;
-int               gSCTPSocket          = -1;
-int               gDCCPSocket          = -1;
-size_t            gMaxMsgSize          = 16000;
-double            gRuntime             = -1.0;
-bool              gStopTimeReached     = false;
+const char*       gActiveNodeName  = "Client";
+const char*       gPassiveNodeName = "Server";
+int               gControlSocket   = -1;
+int               gTCPSocket       = -1;
+int               gUDPSocket       = -1;
+int               gSCTPSocket      = -1;
+int               gDCCPSocket      = -1;
+size_t            gMaxMsgSize      = 16000;
+double            gRuntime         = -1.0;
+bool              gStopTimeReached = false;
 MessageReader     gMessageReader;
 
 
