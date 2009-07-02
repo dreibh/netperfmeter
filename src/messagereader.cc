@@ -29,6 +29,7 @@
 // #define DEBUG_MESSAGEREADER
 
 
+
 // ###### Constructor #######################################################
 MessageReader::MessageReader()
 {

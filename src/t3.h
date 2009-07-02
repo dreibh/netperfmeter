@@ -15,6 +15,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
+#include "messagereader.h"
 #include "thread.h"
 #include "tools.h"
 
@@ -117,6 +118,8 @@ class Flow;
 
 class FlowManager : public Thread
 {
+   friend class Flow;
+
    // ====== Methods ========================================================
    protected:
    FlowManager();
@@ -125,6 +128,9 @@ class FlowManager : public Thread
    public:
    inline static FlowManager* getFlowManager() {
       return(&FlowManagerSingleton);
+   }
+   inline MessageReader* getMessageReader() {
+      return(&Reader);
    }
 
    void addFlow(Flow* flow);
@@ -148,6 +154,8 @@ class FlowManager : public Thread
                   uint16_t  streamID);
    Flow* findFlow(const struct sockaddr* from);
       
+      
+   // ====== Protected Methods ==============================================
    protected:
    void run();
 
@@ -156,6 +164,7 @@ class FlowManager : public Thread
    private:
    static FlowManager FlowManagerSingleton;
 
+   MessageReader      Reader;
    std::vector<Flow*> FlowSet;
 };
 
@@ -210,10 +219,28 @@ class Flow : public Thread
       return(&RemoteAddress.sa);
    }
 
+   inline double getJitter() const {
+      return(Jitter);
+   }
+   inline void setJitter(const double jitter) {
+      Jitter = jitter;
+   }
+   inline double getDelay() const {
+      return(Delay);
+   }
+   inline void setDelay(const double transitTime) {
+      Delay = transitTime;
+   }
+
    void updateTransmissionStatistics(const unsigned long long now,
-                                     const size_t             addedframes,
+                                     const size_t             addedFrames,
                                      const size_t             addedPackets,
                                      const size_t             addedBytes);
+   void updateReceptionStatistics(const unsigned long long now,
+                                  const size_t             addedFrames,
+                                  const size_t             addedBytes,
+                                  const double             delay,
+                                  const double             jitter);
 
    
    void print(std::ostream& os, const bool printStatistics = false) const;
@@ -277,8 +304,9 @@ class Flow : public Thread
    // ====== Statistics =====================================================
    FlowBandwidthStats   CurrentBandwidthStats;
    FlowBandwidthStats   LastBandwidthStats;
-   double               Jitter;
-   double               Delay;
+
+   double               Delay;   // Transit time of latest received packet
+   double               Jitter;  // Current jitter value
    OutputFile           Vector;
 };
 

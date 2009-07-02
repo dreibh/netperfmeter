@@ -12,6 +12,7 @@
 #include <stdarg.h>
 
 #include "thread.h"
+#include "messagereader.h"
 #include "tools.h"
 #include "t3.h"
 
@@ -330,6 +331,8 @@ FlowManager::~FlowManager()
 {
    puts("Shut1");
    stop();
+   puts("Shut1b");
+   waitForFinish();
    puts("Shut2");
 }
 
@@ -585,10 +588,31 @@ void Flow::updateTransmissionStatistics(const unsigned long long now,
 }
 
 
+void Flow::updateReceptionStatistics(const unsigned long long now,
+                                     const size_t             addedFrames,
+                                     const size_t             addedBytes,
+                                     const double             delay,
+                                     const double             jitter)
+{
+   lock();
+   LastReception = now;
+   if(FirstReception == 0) {
+      FirstReception = now;
+   }
+   CurrentBandwidthStats.ReceivedFrames  += addedFrames;
+   CurrentBandwidthStats.ReceivedPackets++;
+   CurrentBandwidthStats.ReceivedBytes   += addedBytes;
+   Delay  = delay;
+   Jitter = jitter;
+   unlock();
+}
+
+
 bool Flow::activate()
 {
    deactivate();
    assert(SocketDescriptor >= 0);
+   FlowManager::getFlowManager()->getMessageReader()->registerSocket(Traffic.Protocol, SocketDescriptor);
    start();
 }
 
@@ -611,6 +635,8 @@ bool Flow::deactivate()
       puts("wait...");
       waitForFinish();
       puts("------------------ STOP okay!");
+   
+      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
    }
    else
    puts("ALREADY STOPPED!");
@@ -720,7 +746,7 @@ puts("START-OF-THREAD!!!");
 void FlowManager::run()
 {
 puts("FM-Thread!!!");
-/*   do {
+   do {
       lock();
       pollfd pollFDs[FlowSet.size()];
       int    pollFDIndex[FlowSet.size()];
@@ -750,9 +776,10 @@ puts("WAIT FM...");
             if( (FlowSet[i]->PollFDEntry) &&
                 (FlowSet[i]->PollFDEntry->revents & POLLIN) ) {
                 printf("IN for flow %u\n",FlowSet[i]->FlowID);
+                
             }
          }
          unlock();
       }
-   } while(!Stopping);*/
+   } while(!Stopping);
 }

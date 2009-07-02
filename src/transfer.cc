@@ -30,8 +30,8 @@
 #include <iostream>
 
 
-static void updateStatistics(StatisticsWriter*              statsWriter,
-                             FlowSpec*                      flowSpec,
+static void updateStatistics(// ??????????? StatisticsWriter*              statsWriter,
+                             Flow*                      flowSpec,
                              const unsigned long long       now,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   received);
@@ -39,6 +39,7 @@ static void updateStatistics(StatisticsWriter*              statsWriter,
 
 #define MAXIMUM_MESSAGE_SIZE (size_t)65536
 #define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetPerfMeterDataMessage))
+
 
 
 // ###### Send NETPERFMETER_DATA message ####################################
@@ -180,10 +181,10 @@ ssize_t transmitFrame(// StatisticsWriter*        statsWriter, ???
 
 
 // ###### Handle data message ###############################################
-ssize_t handleDataMessage(const bool               activeMode,
-                          MessageReader*           messageReader,
-                          StatisticsWriter*        statsWriter,
-                          std::vector<FlowSpec*>&  flowSet,
+ssize_t handleDataMessage(const bool               isActiveMode,
+//                           MessageReader*           messageReader,
+//                           StatisticsWriter*        statsWriter,
+//                           std::vector<FlowSpec*>&  flowSet,
                           const unsigned long long now,
                           const int                sd,
                           const int                protocol,
@@ -196,8 +197,8 @@ ssize_t handleDataMessage(const bool               activeMode,
    sctp_sndrcvinfo sinfo;
 
    const ssize_t received =
-      messageReader->receiveMessage(sd, &inputBuffer, sizeof(inputBuffer),
-                                    &from.sa, &fromlen, &sinfo, &flags);
+      FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
+         sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
    if( (received > 0) && (!(flags & MSG_NOTIFICATION)) ) {
       const NetPerfMeterDataMessage*     dataMsg     =
          (const NetPerfMeterDataMessage*)&inputBuffer;
@@ -208,33 +209,37 @@ ssize_t handleDataMessage(const bool               activeMode,
       if( (received >= sizeof(NetPerfMeterIdentifyMessage)) &&
           (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
           (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
-         handleIdentifyMessage(flowSet, identifyMsg, sd, sinfo.sinfo_assoc_id,
-                               &from, controlSocket);
+puts("IDENTIF!!!");          exit(1);
+/*         handleIdentifyMessage(flowSet, identifyMsg, sd, sinfo.sinfo_assoc_id,
+                               &from, controlSocket);*/
       }
 
       // ====== Handle NETPERFMETER_DATA message ============================
       else if( (received >= sizeof(NetPerfMeterDataMessage)) &&
                (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
          // ====== Identifiy flow ===========================================
-         FlowSpec* flowSpec;
-         if(activeMode) {
-            flowSpec = FlowSpec::findFlowSpec(flowSet, sd,
-                                              (protocol == IPPROTO_SCTP) ? sinfo.sinfo_stream : 0);
+         Flow* flow;
+         if(isActiveMode) {
+            flow = FlowManager::getFlowManager()->findFlow(
+                      sd, (protocol == IPPROTO_SCTP) ? sinfo.sinfo_stream : 0);
          }
          else {
-            if(protocol == IPPROTO_SCTP) {
-               flowSpec = FlowSpec::findFlowSpec(flowSet, sinfo.sinfo_assoc_id);
+/*  ??????????           if(protocol == IPPROTO_SCTP) {
+               flow = FlowManager::findFlow(flowSet, sinfo.sinfo_assoc_id);
             }
-            else if(protocol == IPPROTO_UDP) {
-               flowSpec = FlowSpec::findFlowSpec(flowSet, &from.sa);
+            else*/
+            if(protocol == IPPROTO_UDP) {
+               flow = FlowManager::getFlowManager()->findFlow(&from.sa);
             }
             else {
-               flowSpec = FlowSpec::findFlowSpec(flowSet, sd, 0);
+               flow = FlowManager::getFlowManager()->findFlow(sd, 0);
             }
          }
-         if(flowSpec) {
-            //Update flow statistics by received NETPERFMETER_DATA message.
-            updateStatistics(statsWriter, flowSpec, now, dataMsg, received);
+         if(flow) {
+            // Update flow statistics by received NETPERFMETER_DATA message.
+            updateStatistics(
+//             statsWriter,
+            flow, now, dataMsg, received);
          }
          else {
             std::cout << "WARNING: Received data for unknown flow!" << std::endl;
@@ -250,25 +255,18 @@ ssize_t handleDataMessage(const bool               activeMode,
 
 
 // ###### Update flow statistics with incoming NETPERFMETER_DATA message ####
-static void updateStatistics(StatisticsWriter*              statsWriter,
-                             FlowSpec*                      flowSpec,
+static void updateStatistics(// ?????????? StatisticsWriter*              statsWriter,
+                             Flow*                      flow,
                              const unsigned long long       now,
                              const NetPerfMeterDataMessage* dataMsg,
-                             const size_t                   received)
+                             const size_t                   receivedBytes)
 {
-   // ====== Update reception time ==========================================
-   flowSpec->LastReception = now;
-   if(flowSpec->FirstReception == 0) {
-      flowSpec->FirstReception = now;
-   }
-
-
    // ====== Update bandwidth statistics ====================================
-   flowSpec->ReceivedPackets++;
-   flowSpec->ReceivedBytes += (unsigned long long)received;
+//    flow->ReceivedPackets++;
+//    flow->ReceivedBytes += (unsigned long long)received;
 
-   statsWriter->TotalReceivedPackets++;
-   statsWriter->TotalReceivedBytes += (unsigned long long)received;
+//    statsWriter->TotalReceivedPackets++;
+//    statsWriter->TotalReceivedBytes += (unsigned long long)received;
 
 
    // ====== Update QoS statistics ==========================================
@@ -284,31 +282,34 @@ static void updateStatistics(StatisticsWriter*              statsWriter,
       if (d < 0) d = -d;
       s->jitter += (1./16.) * ((double)d - s->jitter);
    */
-   const double diff = transitTime - flowSpec->LastTransitTime;
-   flowSpec->LastTransitTime = transitTime;
-   flowSpec->Jitter += (1.0/16.0) * (fabs(diff) - flowSpec->Jitter);
+   const double diff   = transitTime - flow->getDelay();
+   const double jitter = flow->getJitter() + (1.0/16.0) * (fabs(diff) - flow->getJitter());
 
    // ------ Loss calculation -----------------------------------------------
     
-   // printf("%llu: d=%1.3f ms   j=%1.3f ms\n",seqNumber,transitTime,flowSpec->Jitter);
+   // printf("%llu: d=%1.3f ms   j=%1.3f ms\n",seqNumber,transitTime,flow->Jitter);
+// ????????
+//    flow->ReceivedFrames++;   // ??? To be implemented ???
+//    statsWriter->TotalReceivedFrames++;   // ??? To be implemented ???
 
-   flowSpec->ReceivedFrames++;   // ??? To be implemented ???
-   statsWriter->TotalReceivedFrames++;   // ??? To be implemented ???
-   
+   size_t receivedFrames = 1;   // ??? To be implemented ???
+   flow->updateReceptionStatistics(now, receivedFrames, receivedBytes, transitTime, jitter);
 
    // ------ Write statistics -----------------------------------------------
+   /*
    const StatisticsWriter* statisticsWriter =
-      StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
+      StatisticsWriter::getStatisticsWriter(flow->MeasurementID);
    if((statisticsWriter != NULL) && (statisticsWriter->FirstStatisticsEvent > 0)) {
       char str[512];
       snprintf((char*)&str, sizeof(str),
                "%06llu %llu %1.6f\t"
                "%llu %1.3f %1.3f %1.3f\n",
-               flowSpec->VectorLine++, now, (double)(now - statisticsWriter->FirstStatisticsEvent) / 1000000.0,
-               (unsigned long long)seqNumber, transitTime, diff, flowSpec->Jitter);
+               flow->VectorLine++, now, (double)(now - statisticsWriter->FirstStatisticsEvent) / 1000000.0,
+               (unsigned long long)seqNumber, transitTime, diff, flow->Jitter);
       
-      StatisticsWriter::writeString((const char*)&flowSpec->VectorName,
-                                    flowSpec->VectorFile, flowSpec->VectorBZFile,
+      StatisticsWriter::writeString((const char*)&flow->VectorName,
+                                    flow->VectorFile, flow->VectorBZFile,
                                     (const char*)&str);
    }
+   */
 }

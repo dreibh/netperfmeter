@@ -26,22 +26,23 @@
 #include <sys/types.h>
 #include <map>
 
-class MessageReader
-{
-   public:
-   MessageReader();
-   ~MessageReader();
-
-   public:
-   bool registerSocket(const int    protocol,
-                       const int    sd,
-                       const size_t maxMessageSize = 65535);
-   bool deregisterSocket(const int sd);
 
 #define MRRM_SOCKET_ERROR (ssize_t)-1
 #define MRRM_STREAM_ERROR (ssize_t)-2
 #define MRRM_PARTIAL_READ (ssize_t)-3
 #define MRRM_BAD_SOCKET   (ssize_t)-4
+
+class MessageReader
+{
+   // ====== Public Methods =================================================
+   public:
+   MessageReader();
+   ~MessageReader();
+   
+   bool registerSocket(const int    protocol,
+                       const int    sd,
+                       const size_t maxMessageSize = 65535);
+   bool deregisterSocket(const int sd);
 
    ssize_t receiveMessage(const int        sd,
                           void*            buffer,
@@ -51,6 +52,7 @@ class MessageReader
                           sctp_sndrcvinfo* sinfo,
                           int*             msgFlags);
 
+   // ====== Private Data ===================================================
    private:
    struct TLVHeader {
       uint8_t  Type;
@@ -73,10 +75,6 @@ class MessageReader
       size_t              BytesRead;
    };
 
-   std::map<int, Socket*> SocketMap;
-
-
-   private:
    inline Socket* getSocket(const int sd) {
       std::map<int, Socket*>::iterator found = SocketMap.find(sd);
       if(found != SocketMap.end()) {
@@ -84,6 +82,8 @@ class MessageReader
       }
       return(NULL);
    }
+   
+   std::map<int, Socket*> SocketMap;
 };
 
 #endif
