@@ -31,6 +31,10 @@ class Thread : public Mutex
    Thread();
    virtual ~Thread();
 
+   inline bool isRunning() const {
+      return(MyThread != NULL);
+   }
+
    virtual bool start();
    virtual void stop();
    void waitForFinish();

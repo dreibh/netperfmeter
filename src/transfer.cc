@@ -41,16 +41,21 @@ static void updateStatistics(StatisticsWriter*              statsWriter,
 #define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetPerfMeterDataMessage))
 
 
-
-// ###### Transmit data frame ###############################################
-ssize_t transmitFrame(StatisticsWriter*        statsWriter,
-                      FlowSpec*                flowSpec,
-                      const unsigned long long now,
-                      const size_t             maxMsgSize)
+// ###### Send NETPERFMETER_DATA message ####################################
+ssize_t sendNetPerfMeterData(Flow*                    flow,
+                             const uint32_t           frameID,
+                             const bool               isFrameBegin,
+                             const bool               isFrameEnd,
+                             const unsigned long long now,
+                             size_t                   bytesToSend)
 {
    static char              outputBuffer[MAXIMUM_MESSAGE_SIZE];
    static bool              outputBufferInitialized = false;
    NetPerfMeterDataMessage* dataMsg                 = (NetPerfMeterDataMessage*)&outputBuffer;
+
+   if(bytesToSend < sizeof(NetPerfMeterDataMessage)) {
+      bytesToSend = sizeof(NetPerfMeterDataMessage);
+   }
 
    // ====== Create printable data pattern ==================================
    if(outputBufferInitialized == false) {
@@ -66,97 +71,110 @@ ssize_t transmitFrame(StatisticsWriter*        statsWriter,
    }
 
 
+   // ====== Prepare NETPERFMETER_DATA message ==============================
+   dataMsg->Header.Type   = NETPERFMETER_DATA;
+   dataMsg->Header.Flags  = 0x00;
+   if(isFrameBegin) {
+      dataMsg->Header.Flags |= DHF_FRAME_BEGIN;
+   }
+   if(isFrameEnd) {
+      dataMsg->Header.Flags |= DHF_FRAME_END;
+   }
+   dataMsg->Header.Length = htons(bytesToSend);
+   dataMsg->MeasurementID = hton64(flow->getMeasurementID());
+   dataMsg->FlowID        = htonl(flow->getFlowID());
+   dataMsg->StreamID      = htons(flow->getStreamID());
+   dataMsg->Padding       = 0x0000;
+   dataMsg->FrameID       = htonl(frameID);
+   dataMsg->SeqNumber     = hton64(flow->nextOutboundSeqNumber());
+   dataMsg->ByteSeqNumber = hton64(flow->getCurrentBandwidthStats().TransmittedBytes);
+   dataMsg->TimeStamp     = hton64(now);
+
+   // ====== Send NETPERFMETER_DATA message =================================
+   ssize_t sent;
+   if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
+      sctp_sndrcvinfo sinfo;
+      memset(&sinfo, 0, sizeof(sinfo));
+//  ???????      sinfo.sinfo_assoc_id = (flow->RemoteAddressIsValid) ? flow->RemoteDataAssocID : 0;
+      sinfo.sinfo_stream   = flow->getStreamID();
+      sinfo.sinfo_ppid     = htonl(PPID_NETPERFMETER_DATA);
+      if(flow->getTrafficSpec().ReliableMode < 1.0) {
+         const bool sendUnreliable = (randomDouble() < flow->getTrafficSpec().ReliableMode);
+         if(sendUnreliable) {
+            sinfo.sinfo_timetolive = 1;
+         }
+      }
+      if(flow->getTrafficSpec().OrderedMode < 1.0) {
+         const bool sendUnordered = (randomDouble() < flow->getTrafficSpec().OrderedMode);
+         if(sendUnordered) {
+            sinfo.sinfo_flags |= SCTP_UNORDERED;
+         }
+      }
+      sent = sctp_send(flow->getSocketDescriptor(),
+                       (char*)&outputBuffer, bytesToSend,
+                       &sinfo, 0);
+   }
+   else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
+      sent = ext_sendto(flow->getSocketDescriptor(),
+                        (char*)&outputBuffer, bytesToSend, 0,
+                        flow->getRemoteAddress(),
+                        getSocklen(flow->getRemoteAddress()));
+   }
+   else {
+      sent = ext_send(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, 0);
+   }
+   return(sent);
+}
+
+
+
+// ###### Transmit data frame ###############################################
+ssize_t transmitFrame(// StatisticsWriter*        statsWriter, ???
+                      Flow*                    flow,
+                      const unsigned long long now,
+                      const size_t             maxMsgSize)
+{
    // ====== Obtain length of data to send ==================================
-   size_t bytesToSend = (size_t)rint(getRandomValue(flowSpec->OutboundFrameSize,
-                                                    flowSpec->OutboundFrameSizeRng));
+   size_t bytesToSend = (size_t)rint(getRandomValue(flow->getTrafficSpec().OutboundFrameSize,
+                                                    flow->getTrafficSpec().OutboundFrameSizeRng));
    if(bytesToSend == 0) {
       // On POLLOUT, we generate a maximum-sized message. If there is still space
       // in the buffer, POLLOUT will be set again ...
       bytesToSend = std::min(maxMsgSize, MAXIMUM_MESSAGE_SIZE);
    }
-   ssize_t bytesSent = 0;
+   ssize_t bytesSent   = 0;
+   size_t  packetsSent = 0;
 
+   const uint32_t frameID = flow->nextOutboundFrameID();
    while(bytesSent < bytesToSend) {
-      // ====== Prepare NETPERFMETER_DATA message ===============================
+      // ====== Send message ================================================
       size_t chunkSize = std::min(bytesToSend, std::min(maxMsgSize, MAXIMUM_MESSAGE_SIZE));
-      if(chunkSize < sizeof(NetPerfMeterDataMessage)) {
-         chunkSize = sizeof(NetPerfMeterDataMessage);
-      }
-      dataMsg->Header.Type   = NETPERFMETER_DATA;
-      dataMsg->Header.Flags  = 0x00;
-      if(bytesSent == 0) {
-         dataMsg->Header.Flags |= DHF_FRAME_BEGIN;
-      }
-      if(bytesSent + chunkSize >= bytesToSend) {
-         dataMsg->Header.Flags |= DHF_FRAME_END;
-      }
-      dataMsg->Header.Length = htons(chunkSize);
-      dataMsg->MeasurementID = hton64(flowSpec->MeasurementID);
-      dataMsg->FlowID        = htonl(flowSpec->FlowID);
-      dataMsg->StreamID      = htons(flowSpec->StreamID);
-      dataMsg->Padding       = 0x0000;
-      dataMsg->FrameID       = htonl(flowSpec->LastOutboundFrameID++);
-      dataMsg->SeqNumber     = hton64(flowSpec->LastOutboundSeqNumber++);
-      dataMsg->ByteSeqNumber = hton64(flowSpec->TransmittedBytes);
-      dataMsg->TimeStamp     = hton64(now);
-
-      // ====== Send NETPERFMETER_DATA message ==================================
-      ssize_t sent;
-      if(flowSpec->Protocol == IPPROTO_SCTP) {
-         sctp_sndrcvinfo sinfo;
-         memset(&sinfo, 0, sizeof(sinfo));
-         sinfo.sinfo_assoc_id = (flowSpec->RemoteAddressIsValid) ? flowSpec->RemoteDataAssocID : 0;
-         sinfo.sinfo_stream   = flowSpec->StreamID;
-         sinfo.sinfo_ppid     = htonl(PPID_NETPERFMETER_DATA);
-         if(flowSpec->ReliableMode < 1.0) {
-            const bool sendUnreliable = (randomDouble() < flowSpec->ReliableMode);
-            if(sendUnreliable) {
-               sinfo.sinfo_timetolive = 1;
-            }
-         }
-         if(flowSpec->OrderedMode < 1.0) {
-            const bool sendUnordered = (randomDouble() < flowSpec->OrderedMode);
-            if(sendUnordered) {
-               sinfo.sinfo_flags |= SCTP_UNORDERED;
-            }
-         }
-         sent = sctp_send(flowSpec->SocketDescriptor,
-                          (char*)&outputBuffer, chunkSize,
-                          &sinfo, 0);
-      }
-      else if(flowSpec->Protocol == IPPROTO_UDP) {
-         sent = ext_sendto(flowSpec->SocketDescriptor,
-                           (char*)&outputBuffer, chunkSize, 0,
-                           &flowSpec->RemoteAddress.sa,
-                           getSocklen(&flowSpec->RemoteAddress.sa));
-      }
-      else {
-         sent = ext_send(flowSpec->SocketDescriptor, (char*)&outputBuffer, chunkSize, 0);
-if((sent > 0) && (sent != chunkSize)) {
-puts("ERRR!");
-exit(1);
-}
-      }
+      const ssize_t sent =
+         sendNetPerfMeterData(flow, frameID,
+                              (bytesSent == 0),                       // Is frame begin?
+                              (bytesSent + chunkSize >= bytesToSend), // Is frame end?
+                              now, chunkSize);
 
       // ====== Update statistics ===========================================
       if(sent > 0) {
          bytesSent += sent;
-         flowSpec->LastTransmission = now;
-         if(flowSpec->FirstTransmission == 0) {
-            flowSpec->FirstTransmission = now;
-         }
-         flowSpec->TransmittedPackets++;
-         flowSpec->TransmittedBytes += (unsigned long long)sent;
-         statsWriter->TotalTransmittedBytes += sent;
-         statsWriter->TotalTransmittedPackets++;
+         packetsSent++;
+
+
+// ??????????????????
+/*         statsWriter->TotalTransmittedBytes += sent;
+         statsWriter->TotalTransmittedPackets++;*/
       }
       else {
-         printf("Overload for Flow ID #%u - %s!\n", flowSpec->FlowID,strerror(errno));
+         printf("Overload for Flow ID #%u - %s!\n", flow->getFlowID(), strerror(errno));
          break;
       }
    }
-   flowSpec->TransmittedFrames++;
-   statsWriter->TotalTransmittedFrames++;
+
+   flow->updateTransmissionStatistics(now, 1, packetsSent, bytesSent);
+
+// ??????????????????
+//    statsWriter->TotalTransmittedFrames++;
    return(bytesSent);
 }
 

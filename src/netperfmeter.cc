@@ -309,9 +309,9 @@ bool mainLoop(const bool               isActiveMode,
               const unsigned long long stopAt,
               const uint64_t           measurementID)
 {
-/*
    int                    tcpConnectionIDs[gConnectedSocketsSet.size()];
-   pollfd                 fds[5 + gFlowSet.size() + gConnectedSocketsSet.size()];
+   pollfd                 fds[5 + gConnectedSocketsSet.size() + 9999];   // ?????????????
+//    pollfd                 fds[5 + gFlowSet.size() + gConnectedSocketsSet.size()];
    int                    n                     = 0;
    int                    controlID             = -1;
    int                    tcpID                 = -1;
@@ -368,6 +368,7 @@ bool mainLoop(const bool               isActiveMode,
       dccpID         = n;
       n++;
    }
+/*   
    for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end();iterator++) {
       FlowSpec* flowSpec = *iterator;
       if(flowSpec->SocketDescriptor >= 0) {
@@ -412,7 +413,7 @@ bool mainLoop(const bool               isActiveMode,
          }
       }
    }
-
+*/
 
    // ====== Use poll() to wait for events ==================================
    const long long nextEvent = (long long)std::min(std::min(nextStatusChangeEvent, nextTransmissionEvent),
@@ -429,13 +430,17 @@ bool mainLoop(const bool               isActiveMode,
 
       // ====== Incoming control message ====================================
       if( (controlID >= 0) && (fds[controlID].revents & POLLIN) ) {
+      puts("CTRL!!!!");
+      /*
          const bool controlOkay = handleControlMessage(&gMessageReader, gFlowSet, gControlSocket);
          if((!controlOkay) && (isActiveMode)) {
             return(false);
          }
+         */
       }
 
       // ====== Incoming data message =======================================
+/*
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
          handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
                            now, gSCTPSocket, IPPROTO_SCTP, gControlSocket);
@@ -444,7 +449,9 @@ bool mainLoop(const bool               isActiveMode,
          handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
                            now, gUDPSocket, IPPROTO_UDP, gControlSocket);
       }
+      */
       bool gConnectedSocketsSetUpdated = false;
+/*
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gTCPSocket, NULL, 0);
          if(newSD >= 0) {
@@ -463,9 +470,10 @@ bool mainLoop(const bool               isActiveMode,
          }
       }
 #endif
-
+*/
 
       // ====== Incoming data on connected sockets ==========================
+      /*
       if(!gConnectedSocketsSetUpdated) {
          for(int i = 0;i < gConnectedSocketsSet.size();i++) {
             if(fds[i].revents & POLLIN) {
@@ -480,8 +488,9 @@ bool mainLoop(const bool               isActiveMode,
             }
          }
       }
+      */
 
-
+/*
       // ====== Outgoing flow events ========================================
       const size_t flows = gFlowSet.size();
       for(size_t i = 0;i < flows;i++) {
@@ -536,9 +545,11 @@ bool mainLoop(const bool               isActiveMode,
             }
          }
       }
+*/
 
 
       // ====== Stop-time reached ===========================================
+printf("S=%llu\n", stopAt-now);
       if(now >= stopAt) {
          gStopTimeReached = true;
       }
@@ -546,15 +557,15 @@ bool mainLoop(const bool               isActiveMode,
 
    // ====== Handle statistics timer ========================================
    if(statisticsWriter->getNextEvent() <= now) {
-      statisticsWriter->writeAllVectorStatistics(now, gFlowSet, measurementID);
+//    puts("stat");
+//      statisticsWriter->writeAllVectorStatistics(now, gFlowSet, measurementID);
    }
 
-   // ====== Ensure round-robin handling of streams over the same assoc =====
+/*   // ====== Ensure round-robin handling of streams over the same assoc =====
    flowRoundRobin++;
    if(flowRoundRobin >= gFlowSet.size()) {
       flowRoundRobin = 0;
-   }
-*/
+   }*/
    return(true);
 }
 
@@ -835,6 +846,7 @@ fputs(".", stderr);usleep(500000);
 
 
    // ====== Stop measurement ===============================================
+   cout << "Shutdown:" << endl;
    if(!aborted) {
       // Write scalar statistics first!
 // ??????????      statisticsWriter->writeAllScalarStatistics(getMicroTime(), gFlowSet, measurementID);
@@ -885,7 +897,6 @@ fputs(".", stderr);usleep(500000);
       */
 
    // ====== Clean up =======================================================
-   cout << "Shutdown:" << endl;
    /*
    vector<FlowSpec*>::iterator iterator = gFlowSet.begin();
    while(iterator != gFlowSet.end()) {

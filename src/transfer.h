@@ -28,8 +28,8 @@
 #include "netperfmeterpackets.h"
 
 
-ssize_t transmitFrame(StatisticsWriter*        statsWriter,
-                      FlowSpec*                flowSpec,
+ssize_t transmitFrame(// ??? StatisticsWriter*        statsWriter,
+                      Flow*                    flow,
                       const unsigned long long now,
                       const size_t             maxMsgSize);
 ssize_t handleDataMessage(const bool               activeMode,

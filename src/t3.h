@@ -11,6 +11,7 @@
 #include <bzlib.h>
 #include <ext_socket.h>
 
+#include <poll.h>
 #include <assert.h>
 #include <stdarg.h>
 
@@ -114,7 +115,7 @@ class FlowBandwidthStats
 
 class Flow;
 
-class FlowManager : Thread
+class FlowManager : public Thread
 {
    // ====== Methods ========================================================
    protected:
@@ -188,6 +189,32 @@ class Flow : public Thread
       return(Traffic);
    }
 
+   inline const FlowBandwidthStats& getCurrentBandwidthStats() const {
+      return(CurrentBandwidthStats);
+   }
+   inline FlowBandwidthStats& getCurrentBandwidthStats() {
+      return(CurrentBandwidthStats);
+   }
+
+   inline uint32_t nextOutboundFrameID() {
+      return(++LastOutboundFrameID);
+   }
+   inline uint64_t nextOutboundSeqNumber() {
+      return(++LastOutboundSeqNumber);
+   }
+
+   inline bool isRemoteAddressValid() const {
+      return(RemoteAddressIsValid);
+   }
+   inline const sockaddr* getRemoteAddress() const {
+      return(&RemoteAddress.sa);
+   }
+
+   void updateTransmissionStatistics(const unsigned long long now,
+                                     const size_t             addedframes,
+                                     const size_t             addedPackets,
+                                     const size_t             addedBytes);
+
    
    void print(std::ostream& os, const bool printStatistics = false) const;
    void resetStatistics();
@@ -201,8 +228,11 @@ class Flow : public Thread
    virtual void run();
    
 
-   // ====== Private Data ===================================================
+   // ====== Private Methods ================================================
    private:
+   unsigned long long scheduleNextStatusChangeEvent(const unsigned long long now);
+   unsigned long long scheduleNextTransmissionEvent() const;
+      
       
    // ====== Flow Identification ============================================
    uint64_t               MeasurementID;
@@ -212,6 +242,7 @@ class Flow : public Thread
    // ====== Socket Descriptor ==============================================
    int                    SocketDescriptor;
    bool                   OriginalSocketDescriptor;
+   pollfd*                PollFDEntry;   // For internal usage by FlowManager
 
    sctp_assoc_t           RemoteControlAssocID;
    sctp_assoc_t           RemoteDataAssocID;
@@ -225,7 +256,7 @@ class Flow : public Thread
    unsigned long long     FirstReception;
    unsigned long long     LastTransmission;
    unsigned long long   LastReception;
-   unsigned long long   NextTransmissionEvent;
+//    unsigned long long   NextTransmissionEvent;
 
    // ====== Start/stop control =============================================
    enum FlowStatus {
@@ -234,13 +265,13 @@ class Flow : public Thread
       Off               = 3
    };
    FlowStatus             Status;
-   unsigned long long     NextStatusChangeEvent;
+//    unsigned long long     NextStatusChangeEvent;
 
 
    // ====== Traffic ????? ===============================================
    TrafficSpec          Traffic;
-   uint64_t             LastOutboundSeqNumber;
    uint32_t             LastOutboundFrameID;
+   uint64_t             LastOutboundSeqNumber;
    
    
    // ====== Statistics =====================================================

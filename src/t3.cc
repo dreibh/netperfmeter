@@ -16,6 +16,10 @@
 #include "t3.h"
 
 
+extern size_t gMaxMsgSize;
+
+
+
 // ###### Constructor #######################################################
 OutputFile::OutputFile()
 {
@@ -324,7 +328,9 @@ FlowManager::FlowManager()
 // ###### Destructor ########################################################
 FlowManager::~FlowManager()
 {
-   
+   puts("Shut1");
+   stop();
+   puts("Shut2");
 }
 
 
@@ -344,6 +350,7 @@ void FlowManager::print(std::ostream& os,
 void FlowManager::addFlow(Flow* flow)
 {
    lock();
+   flow->PollFDEntry = NULL;
    FlowSet.push_back(flow);
    unlock();
 }
@@ -353,6 +360,7 @@ void FlowManager::addFlow(Flow* flow)
 void FlowManager::removeFlow(Flow* flow)
 {
    lock();
+   flow->PollFDEntry = NULL;
    puts("REMOVE FEHLT!!!");
    exit(1);
 //    FlowSet.erase(flow);
@@ -462,19 +470,13 @@ void FlowManager::stopMeasurement(const uint64_t           measurementID,
       if(flow->MeasurementID == measurementID) {
          flow->deactivate();
          if(printFlows) {
-            flow->print(std::cout, true);;
+            flow->print(std::cout, true);
          }
       }
    }
    unlock();
 }
 
-
-// ###### Reception thread function #########################################
-void FlowManager::run()
-{
-   
-}
 
 
 
@@ -488,15 +490,17 @@ Flow::Flow(const uint64_t     measurementID,
            const uint16_t     streamID,
            const TrafficSpec& trafficSpec)
 {
+   MeasurementID            = measurementID;
+   FlowID                   = flowID;
+   StreamID                 = streamID;
+
+   SocketDescriptor         = -1;   
+   OriginalSocketDescriptor = false;
    RemoteControlAssocID     = 0;
    RemoteDataAssocID        = 0;
    RemoteAddressIsValid     = false;
-   SocketDescriptor         = -1;
-   OriginalSocketDescriptor = false;
 
    Status                   = WaitingForStartup;
-   NextStatusChangeEvent    = ~0;
-   NextTransmissionEvent    = ~0;
    BaseTime                 = getMicroTime();
 
    Traffic                  = trafficSpec;
@@ -557,8 +561,27 @@ void Flow::setSocketDescriptor(const int  socketDescriptor,
                                const bool originalSocketDescriptor)
 {
    deactivate();
+   FlowManager::getFlowManager()->lock();
    SocketDescriptor         = socketDescriptor;
    OriginalSocketDescriptor = originalSocketDescriptor;
+   FlowManager::getFlowManager()->unlock();
+}
+
+
+void Flow::updateTransmissionStatistics(const unsigned long long now,
+                                        const size_t             addedFrames,
+                                        const size_t             addedPackets,
+                                        const size_t             addedBytes)
+{
+   lock();
+   LastTransmission = now;
+   if(FirstTransmission == 0) {
+      FirstTransmission = now;
+   }
+   CurrentBandwidthStats.TransmittedFrames  += addedFrames;
+   CurrentBandwidthStats.TransmittedPackets += addedPackets;
+   CurrentBandwidthStats.TransmittedBytes   += addedBytes;
+   unlock();
 }
 
 
@@ -572,10 +595,164 @@ bool Flow::activate()
 
 bool Flow::deactivate()
 {
+   if(isRunning()) {
+      puts("------------------ STOP --------------------");
+      stop();
+      if(SocketDescriptor >= 0) {
+         if(Traffic.Protocol == IPPROTO_UDP) {
+            puts("udp---");
+            ext_close(SocketDescriptor);
+         }
+         else {
+         puts("tcp---");
+            ext_shutdown(SocketDescriptor, 2);
+         }
+      }
+      puts("wait...");
+      waitForFinish();
+      puts("------------------ STOP okay!");
+   }
+   else
+   puts("ALREADY STOPPED!");
 }
+
+
+// ###### Schedule next status change event #################################
+unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long now)
+{
+   unsigned long long               nextTransmissionEvent;
+   std::set<unsigned int>::iterator first = Traffic.OnOffEvents.begin();
+
+   if((Status != WaitingForStartup) && (first != Traffic.OnOffEvents.end())) {
+      const unsigned int relNextEvent = *first;
+      const unsigned long long absNextEvent = BaseTime + (1000ULL * relNextEvent);
+      nextTransmissionEvent = absNextEvent;
+   }
+   else {
+      nextTransmissionEvent = ~0;
+   }
+   return(nextTransmissionEvent);
+}
+
+
+// ###### Schedule next transmission event (non-saturated sender) ###########
+unsigned long long Flow::scheduleNextTransmissionEvent() const
+{
+   unsigned long long nextTransmissionEvent;
+
+   if(Status == On) {
+      // ====== Saturated sender ============================================
+      if( (Traffic.OutboundFrameSize > 0.0) && (Traffic.OutboundFrameRate <= 0.0000001) ) {
+         nextTransmissionEvent = 0;
+      }
+      // ====== Non-saturated sender ========================================
+      else if( (Traffic.OutboundFrameSize > 0.0) && (Traffic.OutboundFrameRate > 0.0000001) ) {
+         const double nextFrameRate = getRandomValue(Traffic.OutboundFrameRate, Traffic.OutboundFrameRateRng);
+         nextTransmissionEvent = LastTransmission + (unsigned long long)rint(1000000.0 / nextFrameRate);
+      }
+   }
+   else {
+      nextTransmissionEvent = ~0;
+   }
+   return(nextTransmissionEvent);
+}
+
 
 
 void Flow::run()
 {
+puts("START-OF-THREAD!!!");
+   signal(SIGPIPE, SIG_IGN);
+
+   bool result = true;
+   do {
+      // ====== Schedule next status change event ===========================
+      unsigned long long       now              = getMicroTime();
+      const unsigned long long nextStatusChange = scheduleNextStatusChangeEvent(now);
+      const unsigned long long nextTransmission = scheduleNextTransmissionEvent();
+      unsigned long long       nextEvent        = std::min(nextStatusChange, nextTransmission);
+
+      // ====== Wait until there is something to do =========================
+      if(nextEvent > now) {
+         int timeout = std::min(1000, (int)((nextEvent - now) / 1000));
+         printf("Wait %d ms    ss=%1.0f  tx=%1.0f\n", timeout,  (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
+         usleep(1000 * (timeout + 1));
+         puts("---");
+         now = getMicroTime();
+      }
+      else {
+         printf("NoWait   ss=%1.0f  tx=%1.0f\n", (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
+      }
+
+      // ====== Send outgoing data ==========================================
+      if(Status == Flow::On) {
+         // ====== Outgoing data (saturated sender) =========================
+         if( (Traffic.OutboundFrameSize > 0.0) && (Traffic.OutboundFrameRate <= 0.0000001) ) {
+            result = (transmitFrame(this, now, gMaxMsgSize) > 0);
+         }
+
+         // ====== Outgoing data (non-saturated sender) =====================
+         else if( (Traffic.OutboundFrameSize >= 1.0) && (Traffic.OutboundFrameRate > 0.0000001) ) {
+            const unsigned long long lastEvent = LastTransmission;
+            if(nextTransmission <= now) {
+               do {
+                  result = (transmitFrame(this, now, gMaxMsgSize) > 0);
+                  if(now - lastEvent > 1000000) {
+                     // Time gap of more than 1s -> do not try to correct
+                     break;
+                  }
+               } while(scheduleNextTransmissionEvent() <= now);
+            }
+         }
+      }
+   } while( (result == true) && (!Stopping) );
    
+   puts("END-OF-THREAD!!!");
+}
+
+
+
+
+
+
+
+// ###### Reception thread function #########################################
+void FlowManager::run()
+{
+puts("FM-Thread!!!");
+/*   do {
+      lock();
+      pollfd pollFDs[FlowSet.size()];
+      int    pollFDIndex[FlowSet.size()];
+      size_t n = 0;
+      for(size_t i = 0;i  < FlowSet.size();i++) {
+         if(FlowSet[i]->SocketDescriptor >= 0) {
+            pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
+            pollFDs[n].events  = POLLIN;
+            pollFDs[n].revents = 0;
+            FlowSet[i]->PollFDEntry = &pollFDs[n];
+            n++;
+         }
+         else {
+            FlowSet[i]->PollFDEntry = NULL;
+         }
+      }
+      unlock();
+
+puts("WAIT FM...");
+      const int timeout = 1000;
+      const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
+ puts("WAIT FM OKAY");
+
+      if(result > 0) {
+         lock();
+         for(size_t i = 0;i  < FlowSet.size();i++) {
+            if( (FlowSet[i]->PollFDEntry) &&
+                (FlowSet[i]->PollFDEntry->revents & POLLIN) ) {
+                printf("IN for flow %u\n",FlowSet[i]->FlowID);
+            }
+         }
+         unlock();
+      }
+   } while(!Stopping);*/
 }

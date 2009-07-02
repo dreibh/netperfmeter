@@ -182,6 +182,9 @@ bool performNetPerfMeterStart(int            controlSocket,
 bool performNetPerfMeterStop(int            controlSocket,
                              const uint64_t measurementID)
 {
+   // ====== Start flows ====================================================
+   FlowManager::getFlowManager()->stopMeasurement(measurementID);
+
    StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
    if(statisticsWriter->finishOutputFiles() == false) {
       return(false);
