@@ -428,6 +428,7 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
 }
 
 
+// ###### Start measurement #################################################
 void FlowManager::startMeasurement(const uint64_t           measurementID,
                                    const bool               printFlows,
                                    const unsigned long long now)
@@ -442,16 +443,30 @@ void FlowManager::startMeasurement(const uint64_t           measurementID,
          if(printFlows) {
             flow->print(std::cout);
          }
+         flow->activate();
       }
    }
    unlock();
 }
 
 
+// ###### Stop measurement ##################################################
 void FlowManager::stopMeasurement(const uint64_t           measurementID,
+                                  const bool               printFlows,
                                   const unsigned long long now)
 {
-
+   lock();
+   for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
+       iterator != FlowSet.end();iterator++) {
+      Flow* flow = *iterator;
+      if(flow->MeasurementID == measurementID) {
+         flow->deactivate();
+         if(printFlows) {
+            flow->print(std::cout, true);;
+         }
+      }
+   }
+   unlock();
 }
 
 

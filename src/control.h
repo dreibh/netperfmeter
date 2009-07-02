@@ -33,10 +33,23 @@
 
 
 bool performNetPerfMeterAddFlow(int controlSocket, const Flow* flow);
+bool performNetPerfMeterIdentifyFlow(int controlSocket, const Flow* flow);
 bool performNetPerfMeterStart(int            controlSocket,
                               const uint64_t measurementID);
 bool performNetPerfMeterStop(int            controlSocket,
                              const uint64_t measurementID);
+
+bool sendNetPerfMeterAcknowledge(int            controlSocket,
+                                 sctp_assoc_t   assocID,   // ????? notwendig ???
+                                 const uint64_t measurementID,
+                                 const uint32_t flowID,
+                                 const uint16_t streamID,
+                                 const uint32_t status);
+bool awaitNetPerfMeterAcknowledge(int            controlSocket,
+                                  const uint64_t measurementID,
+                                  const uint32_t flowID,
+                                  const uint16_t streamID,
+                                  const int      timeout = -1);
 
 
 bool handleControlMessage(MessageReader*           messageReader,
@@ -55,11 +68,6 @@ bool sendAcknowledgeToRemoteNode(int            controlSocket,
                                  const uint32_t flowID,
                                  const uint16_t streamID,
                                  const uint32_t status);
-bool waitForAcknowledgeFromRemoteNode(int            controlSocket,
-                                      const uint64_t measurementID,
-                                      const uint32_t flowID,
-                                      const uint16_t streamID,
-                                      const int      timeout = -1);
 void handleIdentifyMessage(std::vector<FlowSpec*>&        flowSet,
                            const NetPerfMeterIdentifyMessage* identifyMsg,
                            const int                      sd,

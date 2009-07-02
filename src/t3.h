@@ -133,7 +133,8 @@ class FlowManager : Thread
                          const bool               printFlows = false,
                          const unsigned long long now        = getMicroTime());
    void stopMeasurement(const uint64_t            measurementID,
-                        const unsigned long long  now = getMicroTime());
+                        const bool                printFlows = false,
+                        const unsigned long long  now        = getMicroTime());
                          
 
    void print(std::ostream& os,
@@ -236,9 +237,7 @@ class Flow : public Thread
    unsigned long long     NextStatusChangeEvent;
 
 
-   // ====== Sequence Numbers ===============================================
-
-
+   // ====== Traffic ????? ===============================================
    TrafficSpec          Traffic;
    uint64_t             LastOutboundSeqNumber;
    uint32_t             LastOutboundFrameID;
