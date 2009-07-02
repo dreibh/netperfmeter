@@ -47,7 +47,22 @@
 #include <iostream>
 
 
-/* ###### Get current timer ############################################## */
+// ###### Create formatted string (printf-like) #############################
+std::string format(const char* fmt, ...)
+{
+   char buffer[16384];
+   
+   va_list va;
+   va_start(va, fmt);
+   int bufferLength = vsnprintf(buffer, sizeof(buffer), fmt, va);
+   buffer[sizeof(buffer) - 1] = 0x00;   // Just to be really sure ...
+   va_end(va);
+
+   return(std::string(buffer));
+}
+
+
+// ###### Get current timer #################################################
 unsigned long long getMicroTime()
 {
   struct timeval tv;

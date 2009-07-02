@@ -13,33 +13,7 @@
 
 #include "thread.h"
 #include "tools.h"
-
-
-class OutputFile
-{
-   // ====== Methods ========================================================
-   public:
-   OutputFile();
-   ~OutputFile();
-   
-   bool initialize(const char* name, const bool compressFile);
-   bool finish(const bool closeFile = true);
-   bool printf(const char* str, ...);
-   
-   inline FILE* getFile() const {
-      return(File);
-   }
-   inline size_t nextLine() {
-      return(++Line);
-   }
-
-   // ====== Private Data ===================================================
-   private:
-   std::string Name;
-   size_t      Line;
-   FILE*       File;
-   BZFILE*     BZFile;
-};
+#include "t3.h"
 
 
 // ###### Constructor #######################################################
@@ -164,38 +138,6 @@ bool OutputFile::printf(const char* str, ...)
 
 
 
-class TrafficSpec
-{
-   // ====== Methods ========================================================
-   public:
-   TrafficSpec();
-   ~TrafficSpec();
-
-   void print(std::ostream& os) const;
-   void reset();
-   
-
-   // ====== Public Data ====================================================
-   public:
-   static void showEntry(std::ostream& os, const double value, const uint8_t rng);
-
-   int                    Protocol;
-   std::set<unsigned int> OnOffEvents;
-
-   double   ReliableMode;
-   double   OrderedMode;
-
-   double   OutboundFrameRate;
-   double   OutboundFrameSize;
-   double   InboundFrameRate;
-   double   InboundFrameSize;
-   uint8_t  OutboundFrameRateRng;
-   uint8_t  OutboundFrameSizeRng;
-   uint8_t  InboundFrameRateRng;
-   uint8_t  InboundFrameSizeRng;
-};
-
-
 // ###### Constructor #######################################################
 TrafficSpec::TrafficSpec()
 {
@@ -290,34 +232,6 @@ void TrafficSpec::reset()
 
 
 
-class FlowBandwidthStats
-{
-   // ====== Methods ========================================================
-   public:
-   FlowBandwidthStats();
-   ~FlowBandwidthStats();
-
-   void print(std::ostream& os,
-              const double  transmissionDuration,
-              const double  receptionDuration) const;
-   void reset();
-   
-
-   // ====== Public Data ====================================================
-   public:
-   unsigned long long     TransmittedBytes;
-   unsigned long long     TransmittedPackets;
-   unsigned long long     TransmittedFrames;
-
-   unsigned long long     ReceivedBytes;
-   unsigned long long     ReceivedPackets;
-   unsigned long long     ReceivedFrames;
-   
-   unsigned long long     LostBytes;
-   unsigned long long     LostPackets;
-   unsigned long long     LostFrames;
-};
-
 
 // ###### Constructor #######################################################
 FlowBandwidthStats::FlowBandwidthStats()
@@ -395,129 +309,7 @@ void FlowBandwidthStats::reset()
 }
 
 
-
-class Flow;
-
-class FlowManager : Thread
-{
-   // ====== Methods ========================================================
-   protected:
-   FlowManager();
-   virtual ~FlowManager();
-  
-   public:
-   inline FlowManager* getFlowManager() const {
-      return(&FlowManagerSingleton);
-   }
-
-   void addFlow(Flow* flow);
-   void removeFlow(Flow* flow);
-
-   void print(std::ostream& os,
-              const bool    printStatistics = false);
-
-   Flow* findFlow(const uint64_t measurementID,
-                  const uint32_t flowID,
-                  const uint16_t streamID);
-   Flow* findFlow(const int socketDescriptor,
-                  uint16_t  streamID);
-   Flow* findFlow(const struct sockaddr* from);
-      
-   protected:
-   void run();
-
-
-   // ====== Private Data ===================================================
-   private:
-   static FlowManager FlowManagerSingleton;
-
-   std::vector<Flow*> FlowSet;
-};
-
-
 FlowManager FlowManager::FlowManagerSingleton;
-
-
-
-class Flow : public Thread
-{
-   friend class FlowManager;   
-
-   // ====== Methods ========================================================
-   public:
-   Flow(const char*        description,
-        const uint64_t     measurementID,
-        const uint32_t     flowID,
-        const uint16_t     streamID,
-        const TrafficSpec& trafficSpec);
-   virtual ~Flow();
-   
-   void print(std::ostream& os, const bool printStatistics = false) const;
-   void resetStatistics();
-
-   void setSocketDescriptor(const int  socketDescriptor,
-                            const bool originalSocketDescriptor = true);
-   bool activate();
-   bool deactivate();
-
-   protected:
-   virtual void run();
-   
-
-   // ====== Private Data ===================================================
-   private:
-      
-   // ====== Flow Identification ============================================
-   std::string            Description;
-   uint64_t               MeasurementID;
-   uint32_t               FlowID;
-   uint16_t               StreamID;
-
-   // ====== Socket Descriptor ==============================================
-   int                    SocketDescriptor;
-   bool                   OriginalSocketDescriptor;
-
-   sctp_assoc_t           RemoteControlAssocID;
-   sctp_assoc_t           RemoteDataAssocID;
-   sockaddr_union         RemoteAddress;
-   bool                   RemoteAddressIsValid;
-
-
-   // ====== Timing =========================================================
-   unsigned long long     BaseTime;
-   unsigned long long     FirstTransmission;
-   unsigned long long     FirstReception;
-   unsigned long long     LastTransmission;
-   unsigned long long   LastReception;
-   unsigned long long   NextTransmissionEvent;
-
-   // ====== Start/stop control =============================================
-   enum FlowStatus {
-      WaitingForStartup = 1,
-      On                = 2,
-      Off               = 3
-   };
-   FlowStatus             Status;
-   unsigned long long     NextStatusChangeEvent;
-
-
-   // ====== Sequence Numbers ===============================================
-
-
-   TrafficSpec          Traffic;
-   uint64_t             LastOutboundSeqNumber;
-   uint32_t             LastOutboundFrameID;
-   
-   
-   // ====== Statistics =====================================================
-   FlowBandwidthStats   CurrentBandwidthStats;
-   FlowBandwidthStats   LastBandwidthStats;
-   double               Jitter;
-   double               Delay;
-   OutputFile           Vector;
-};
-
-
 
 
 
@@ -549,7 +341,7 @@ void FlowManager::print(std::ostream& os,
 
 
 // ###### Add flow ##########################################################
-void addFlow(Flow* flow)
+void FlowManager::addFlow(Flow* flow)
 {
    lock();
    FlowSet.push_back(flow);
@@ -558,10 +350,12 @@ void addFlow(Flow* flow)
 
 
 // ###### Remove flow #######################################################
-void removeFlow(Flow* flow)
+void FlowManager::removeFlow(Flow* flow)
 {
    lock();
-   FlowSet.erase(flow);
+   puts("REMOVE FEHLT!!!");
+   exit(1);
+//    FlowSet.erase(flow);
    unlock();
 }
 
@@ -594,31 +388,70 @@ Flow* FlowManager::findFlow(const uint64_t measurementID,
 Flow* FlowManager::findFlow(const int      socketDescriptor,
                             const uint16_t streamID)
 {
+   Flow* found = NULL;
+
+   lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end();iterator++) {
       Flow* flow = *iterator;
       if(flow->SocketDescriptor == socketDescriptor) {
          if(flow->StreamID == streamID) {
-            return(flow);
+            found = flow;
+            break;
          }
       }
    }
-   return(NULL);
+   unlock();
+   
+   return(found);
 }
 
 
 // ###### Find Flow by source address #######################################
 Flow* FlowManager::findFlow(const struct sockaddr* from)
 {
+   Flow* found = NULL;
+
+   lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end();iterator++) {
       Flow* flow = *iterator;
       if( (flow->RemoteAddressIsValid) &&
           (addresscmp(from, &flow->RemoteAddress.sa, true) == 0) ) {
-         return(flow);
+         found = flow;
+         break;
       }
    }
-   return(NULL);
+   unlock();
+   
+   return(found);
+}
+
+
+void FlowManager::startMeasurement(const uint64_t           measurementID,
+                                   const bool               printFlows,
+                                   const unsigned long long now)
+{
+   lock();
+   for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
+       iterator != FlowSet.end();iterator++) {
+      Flow* flow = *iterator;
+      if(flow->MeasurementID == measurementID) {
+         flow->BaseTime = now;
+         flow->Status   = (flow->Traffic.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
+         if(printFlows) {
+            flow->print(std::cout);
+         }
+      }
+   }
+   unlock();
+}
+
+
+void FlowManager::stopMeasurement(const uint64_t           measurementID,
+                                  const unsigned long long now)
+{
+
 }
 
 
@@ -635,8 +468,7 @@ void FlowManager::run()
 
 
 // ###### Constructor #######################################################
-Flow::Flow(const char*        description,
-           const uint64_t     measurementID,
+Flow::Flow(const uint64_t     measurementID,
            const uint32_t     flowID,
            const uint16_t     streamID,
            const TrafficSpec& trafficSpec)
@@ -653,19 +485,19 @@ Flow::Flow(const char*        description,
    BaseTime                 = getMicroTime();
 
    Traffic                  = trafficSpec;
-   
+
    resetStatistics();
    LastOutboundSeqNumber    = 0;
    LastOutboundFrameID      = 0;
    
-   getFlowManager()->addFlow(this);
+   FlowManager::getFlowManager()->addFlow(this);
 }
 
 
 // ###### Destructor ########################################################
 Flow::~Flow()
 {
-   getFlowManager()->removeFlow(this);
+   FlowManager::getFlowManager()->removeFlow(this);
    deactivate();
 }
 
@@ -685,7 +517,7 @@ void Flow::print(std::ostream& os, const bool printStatistics) const
    if((OriginalSocketDescriptor) || (RemoteControlAssocID != 0)) {
       if(Traffic.Protocol != IPPROTO_SCTP) {
          os << "+ " << getProtocolName(Traffic.Protocol) << " Flow (Flow ID #"
-            << FlowID << " \"" << Description << "\"):" << std::endl;
+            << FlowID << " \"" << Traffic.Description << "\"):" << std::endl;
       }
       else {
          os << "+ " << getProtocolName(Traffic.Protocol) << " Flow:" << std::endl;
@@ -693,7 +525,7 @@ void Flow::print(std::ostream& os, const bool printStatistics) const
    }
    if(Traffic.Protocol == IPPROTO_SCTP) {
       os << "   o Stream #" << StreamID << " (Flow ID #"
-         << FlowID << " \"" << Description << "\"):" << std::endl;
+         << FlowID << " \"" << Traffic.Description << "\"):" << std::endl;
    }
    Traffic.print(os);
 
@@ -732,11 +564,3 @@ void Flow::run()
 {
    
 }
-
-
-/*
-using namespace std;
-
-int main(int argc, char** argv)
-{
-}*/

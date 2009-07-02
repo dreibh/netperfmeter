@@ -28,6 +28,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -41,6 +42,7 @@
 #include <iostream>
 
 
+std::string format(const char* fmt, ...);
 
 unsigned long long getMicroTime();
 void printTimeStamp(std::ostream& os);

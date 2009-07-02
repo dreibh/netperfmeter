@@ -22,6 +22,7 @@
 #include "control.h"
 #include "tools.h"
 #include "statisticswriter.h"
+#include "t3.h"
 
 #include <string.h>
 #include <math.h>
@@ -298,23 +299,24 @@ bool handleControlMessage(MessageReader*           messageReader,
             std::cerr << "ERROR: Received malformed NETPERFMETER_START control message!" << std::endl;
             return(false);
          }
-         const unsigned long long now = getMicroTime();
          const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
-         char measurementIDString[64];
-         snprintf((char*)&measurementIDString, sizeof(measurementIDString),
-                  "%llx", (unsigned long long)measurementID);
 
          std::cout << std::endl << "Starting measurement "
-                   << measurementIDString << " ..." << std::endl;
+                   << format("%llx", (unsigned long long)measurementID) << " ..." << std::endl;
 
-         for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
+// ???????? "now" notwendig??????
+         const unsigned long long now = getMicroTime();
+         FlowManager::getFlowManager()->startMeasurement(measurementID, now, true);
+
+// ?????????
+/*         for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
             FlowSpec* flowSpec = *iterator;
             if(flowSpec->MeasurementID == measurementID) {
                flowSpec->BaseTime = now;
                flowSpec->Status   = (flowSpec->OnOffEvents.size() > 0) ? FlowSpec::Off : FlowSpec::On;
                flowSpec->print(std::cout);
             }
-         }
+         }*/
          
          bool success = false;
          StatisticsWriter* statisticsWriter =
@@ -660,7 +662,10 @@ bool startMeasurement(int            controlSocket,
    if(statisticsWriter->initializeOutputFiles() == false) {
       return(false);
    }
-   
+
+   // ====== Start flows ====================================================
+   FlowManager::getFlowManager()->startMeasurement(measurementID);
+      
    // ====== Tell passive node to start measurement =========================
    NetPerfMeterStartMessage startMsg;
    startMsg.Header.Type   = NETPERFMETER_START;

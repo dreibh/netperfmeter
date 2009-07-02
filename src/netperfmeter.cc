@@ -52,8 +52,8 @@
 using namespace std;
 
 
-
-vector<FlowSpec*> gFlowSet;
+// ????????????
+// vector<FlowSpec*> gFlowSet;
 set<int>          gConnectedSocketsSet;
 const char*       gActiveNodeName  = "Client";
 const char*       gPassiveNodeName = "Server";
@@ -115,7 +115,9 @@ void printGlobalParameters()
 
 
 // ###### Read random number parameter ######################################
-const char* getNextEntry(const char* parameters, double* value, uint8_t* rng)
+static const char* parseNextEntry(const char* parameters,
+                                  double*     value,
+                                  uint8_t*    rng)
 {
    int n = 0;
    if(sscanf(parameters, "exp%lf%n", value, &n) == 1) {
@@ -136,28 +138,29 @@ const char* getNextEntry(const char* parameters, double* value, uint8_t* rng)
 
 
 // ###### Read flow option ##################################################
-const char* getNextOption(const char* parameters, FlowSpec* flowSpec)
+static const char* parseTrafficSpecOption(const char*  parameters,
+                                          TrafficSpec& trafficSpec)
 {
+   char   description[256];
    int    n     = 0;
    double value = 0.0;
-   char   description[256];
 
    if(sscanf(parameters, "unordered=%lf%n", &value, &n) == 1) {
       if((value < 0.0) || (value > 1.0)) {
          cerr << "ERROR: Bad probability for \"unordered\" option in " << parameters << "!" << endl;
          exit(1);
       }
-      flowSpec->OrderedMode = value;
+      trafficSpec.OrderedMode = value;
    }
    else if(sscanf(parameters, "unreliable=%lf%n", &value, &n) == 1) {
       if((value < 0.0) || (value > 1.0)) {
          cerr << "ERROR: Bad probability for \"unreliable\" option in " << parameters << "!" << endl;
          exit(1);
       }
-      flowSpec->ReliableMode = value;
+      trafficSpec.ReliableMode = value;
    }
    else if(sscanf(parameters, "description=%255[^:]s%n", (char*)&description, &n) == 1) {
-      flowSpec->Description = std::string(description);
+      trafficSpec.Description = std::string(description);
       n = 12 + strlen(description);
    }
    else if(strncmp(parameters,"onoff=", 6) == 0) {
@@ -180,7 +183,7 @@ const char* getNextOption(const char* parameters, FlowSpec* flowSpec)
             cerr << "ERROR: Invalid on/off list at " << (const char*)&parameters[m] << "!" << std::endl;
             exit(1);
          }
-         flowSpec->OnOffEvents.insert(onoff);
+         trafficSpec.OnOffEvents.insert(onoff);
          lastEvent = onoff;
          m += n;
       }
@@ -198,101 +201,105 @@ const char* getNextOption(const char* parameters, FlowSpec* flowSpec)
 
 
 // ###### Create FlowSpec for new flow ######################################
-FlowSpec* createLocalFlow(const char*     parameters,
-                          const uint8_t   protocol,
-                          FlowSpec*       lastFlow,
-                          const uint64_t  measurementID,
-                          uint32_t*       flowID,
-                          const sockaddr* remoteAddress,
-                          const sockaddr* controlAddress)
+static Flow* createFlow(Flow*           previousFlow,
+                        const char*     parameters,
+                        const uint64_t  measurementID,
+                        const uint8_t   protocol,
+                        const sockaddr* remoteAddress)
 {
-   FlowSpec* flowSpec = new FlowSpec;
-   assert(flowSpec != NULL);
+   // ====== Get flow ID and stream ID ======================================
+   static uint32_t flowID    = 0; // will be increased with each successfull call
+   uint16_t         streamID = (previousFlow != NULL) ? previousFlow->getStreamID() + 1 : 0;
 
-   flowSpec->MeasurementID = measurementID;
-   flowSpec->FlowID        = (*flowID)++;
-   flowSpec->Protocol      = protocol;
-
-   char description[32];
-   snprintf((char*)&description, sizeof(description), "Flow %u", flowSpec->FlowID);
-   flowSpec->Description = std::string(description);
-
-   parameters = getNextEntry(parameters, &flowSpec->OutboundFrameRate, &flowSpec->OutboundFrameRateRng);
+   // ====== Get TrafficSpec ================================================
+   TrafficSpec trafficSpec;
+   trafficSpec.Description = format("Flow %u", flowID);
+   trafficSpec.Protocol    = protocol;
+   parameters = parseNextEntry(parameters, &trafficSpec.OutboundFrameRate, &trafficSpec.OutboundFrameRateRng);
    if(parameters) {
-      parameters = getNextEntry(parameters, &flowSpec->OutboundFrameSize, &flowSpec->OutboundFrameSizeRng);
+      parameters = parseNextEntry(parameters, &trafficSpec.OutboundFrameSize, &trafficSpec.OutboundFrameSizeRng);
       if(parameters) {
-         parameters = getNextEntry(parameters, &flowSpec->InboundFrameRate, &flowSpec->InboundFrameRateRng);
+         parameters = parseNextEntry(parameters, &trafficSpec.InboundFrameRate, &trafficSpec.InboundFrameRateRng);
          if(parameters) {
-            parameters = getNextEntry(parameters, &flowSpec->InboundFrameSize, &flowSpec->InboundFrameSizeRng);
+            parameters = parseNextEntry(parameters, &trafficSpec.InboundFrameSize, &trafficSpec.InboundFrameSizeRng);
             if(parameters) {
-               while( (parameters = getNextOption(parameters, flowSpec)) ) {
+               while( (parameters = parseTrafficSpecOption(parameters, trafficSpec)) ) {
                }
             }
          }
       }
    }
 
-   if(lastFlow) {
-      flowSpec->SocketDescriptor         = lastFlow->SocketDescriptor;
-      flowSpec->OriginalSocketDescriptor = false;
-      flowSpec->StreamID                 = lastFlow->StreamID + 1;
-      flowSpec->print(cout);
-      cout << "      - Connection okay; sd=" << flowSpec->SocketDescriptor << endl;
+   // ====== Create new flow ================================================
+   Flow* flow = new Flow(measurementID, flowID, streamID, trafficSpec);
+   assert(flow != NULL);
+
+   // ====== Set up socket ==================================================
+   int  socketDescriptor;
+   bool originalSocketDescriptor;
+
+   if(previousFlow) {
+      originalSocketDescriptor = false;
+      socketDescriptor         = previousFlow->getSocketDescriptor();
+      cout << "      - Connection okay; sd=" << socketDescriptor << endl;
    }
    else {
-      flowSpec->OriginalSocketDescriptor = true;
-      flowSpec->StreamID                 = 0;
-      flowSpec->SocketDescriptor         = -1;
-      switch(flowSpec->Protocol) {
+      originalSocketDescriptor = true;
+      socketDescriptor          = -1;
+      switch(protocol) {
          case IPPROTO_SCTP:
-            flowSpec->SocketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_SCTP);
+            socketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_SCTP);
            break;
          case IPPROTO_TCP:
-            flowSpec->SocketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_TCP);
+            socketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_TCP);
            break;
          case IPPROTO_UDP:
-            flowSpec->SocketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+            socketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_DGRAM, IPPROTO_UDP);
            break;
 #ifdef HAVE_DCCP
          case IPPROTO_DCCP:
-            flowSpec->SocketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_DCCP, IPPROTO_DCCP);
+            socketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_DCCP, IPPROTO_DCCP);
            break;
 #endif
       }
-      flowSpec->print(cout);
+      flow->print(cout);
+      if(socketDescriptor < 0) {
+         cerr << "ERROR: Unable to create " << getProtocolName(protocol)
+              << " socket - " << strerror(errno) << "!" << endl;
+         exit(1);
+      }
 
-      cout << "      - Connecting " << getProtocolName(flowSpec->Protocol) << " socket to ";
+      // ====== Establish connection ========================================
+      cout << "      - Connecting " << getProtocolName(protocol) << " socket to ";
       printAddress(cout, remoteAddress, true);
       cout << " ... ";
       cout.flush();
 
-      if(flowSpec->SocketDescriptor < 0) {
-         cerr << "ERROR: Unable to create " << getProtocolName(flowSpec->Protocol)
-              << " socket - " << strerror(errno) << "!" << endl;
-         exit(1);
-      }
-      if(flowSpec->Protocol == IPPROTO_SCTP) {
+      if(protocol == IPPROTO_SCTP) {
          sctp_event_subscribe events;
          memset((char*)&events, 0 ,sizeof(events));
          events.sctp_data_io_event = 1;
-         if(ext_setsockopt(flowSpec->SocketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
+         if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
                            &events, sizeof(events)) < 0) {
             cerr << "ERROR: Failed to configure events on SCTP socket - "
                  << strerror(errno) << "!" << endl;
             exit(1);
          }
       }
-      if(ext_connect(flowSpec->SocketDescriptor, remoteAddress, getSocklen(remoteAddress)) < 0) {
-         cerr << "ERROR: Unable to connect " << getProtocolName(flowSpec->Protocol)
+      if(ext_connect(socketDescriptor, remoteAddress, getSocklen(remoteAddress)) < 0) {
+         cerr << "ERROR: Unable to connect " << getProtocolName(protocol)
               << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
       }
-      setNonBlocking(flowSpec->SocketDescriptor);
-      cout << "okay; sd=" << flowSpec->SocketDescriptor << endl;
-      gMessageReader.registerSocket(flowSpec->Protocol, flowSpec->SocketDescriptor);
+      cout << "okay; sd=" << socketDescriptor << endl;
+
+      // ====== Update flow with socket descriptor ==========================
+      flow->setSocketDescriptor(socketDescriptor, originalSocketDescriptor);
+      //gMessageReader.registerSocket(flow->Protocol, socketDescriptor);   /// ?????????????!!!
    }
 
-   return(flowSpec);
+   flowID++;
+   return(flow);
 }
 
 
@@ -302,6 +309,7 @@ bool mainLoop(const bool               isActiveMode,
               const unsigned long long stopAt,
               const uint64_t           measurementID)
 {
+/*
    int                    tcpConnectionIDs[gConnectedSocketsSet.size()];
    pollfd                 fds[5 + gFlowSet.size() + gConnectedSocketsSet.size()];
    int                    n                     = 0;
@@ -546,7 +554,7 @@ bool mainLoop(const bool               isActiveMode,
    if(flowRoundRobin >= gFlowSet.size()) {
       flowRoundRobin = 0;
    }
-
+*/
    return(true);
 }
 
@@ -555,6 +563,7 @@ bool mainLoop(const bool               isActiveMode,
 // ###### Passive Mode ######################################################
 void passiveMode(int argc, char** argv, const uint16_t localPort)
 {
+/*
    // ====== Initialize control socket ======================================
    gControlSocket = createAndBindSocket(SOCK_SEQPACKET, IPPROTO_SCTP, localPort + 1, true);   // Leave it blocking!
    if(gControlSocket < 0) {
@@ -648,6 +657,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(gDCCPSocket >= 0) {
       ext_close(gDCCPSocket);
    }
+  */
+  puts("STOP!!!");
+  exit(1);
 }
 
 
@@ -723,8 +735,8 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Initialize flows ===============================================
-   uint8_t   protocol = 0;
-   FlowSpec* lastFlow      = NULL;
+   uint8_t protocol = 0;
+   Flow*   lastFlow = NULL;
    for(int i = 2;i < argc;i++) {
       if(argv[i][0] == '-') {
          lastFlow = NULL;
@@ -764,21 +776,19 @@ void activeMode(int argc, char** argv)
             exit(1);
          }
 
-         lastFlow = createLocalFlow(argv[i], protocol, lastFlow,
-                                    measurementID, &flows,
-                                    &remoteAddress.sa, &controlAddress.sa);
-         gFlowSet.push_back(lastFlow);
-         const bool success = lastFlow->initializeVectorFile();
-         if(!success) {
-            return;
-         }
+         lastFlow = createFlow(lastFlow, argv[i], measurementID,
+                               protocol, &remoteAddress.sa);
+// // ??????????         const bool success = lastFlow->initializeVectorFile();
+// //          if(!success) {
+// //             return;
+// //          }
 
          cout << "      - Registering flow at remote node ... ";
          cout.flush();
-         if(!addFlowToRemoteNode(gControlSocket, lastFlow)) {
+/*         if(!addFlowToRemoteNode(gControlSocket, lastFlow)) {
             cerr << "ERROR: Failed to add flow to remote node!" << endl;
             exit(1);
-         }
+         }*/
          cout << "okay" << endl;
 
          if(protocol != IPPROTO_SCTP) {
@@ -799,11 +809,12 @@ void activeMode(int argc, char** argv)
       std::cerr << "ERROR: Failed to start measurement!" << std::endl;
       exit(1);
    }
-   for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end(); iterator++) {
-      FlowSpec* flowSpec = *iterator;
-      flowSpec->BaseTime = now;
-      flowSpec->Status   = (flowSpec->OnOffEvents.size() > 0) ? FlowSpec::Off : FlowSpec::On;
-   }
+//  ??????
+//    for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end(); iterator++) {
+//       FlowSpec* flowSpec = *iterator;
+//       flowSpec->BaseTime = now;
+//       flowSpec->Status   = (flowSpec->OnOffEvents.size() > 0) ? FlowSpec::Off : FlowSpec::On;
+//    }
 
 
    // ====== Main loop ======================================================
@@ -823,7 +834,7 @@ void activeMode(int argc, char** argv)
    // ====== Stop measurement ===============================================
    if(!aborted) {
       // Write scalar statistics first!
-      statisticsWriter->writeAllScalarStatistics(getMicroTime(), gFlowSet, measurementID);
+// ??????????      statisticsWriter->writeAllScalarStatistics(getMicroTime(), gFlowSet, measurementID);
    }
    if(!stopMeasurement(gControlSocket, measurementID)) {
       std::cerr << "ERROR: Failed to stop measurement!" << std::endl;
@@ -831,10 +842,10 @@ void activeMode(int argc, char** argv)
    }
 
    if(!aborted) {
-      FlowSpec::printFlows(cout, gFlowSet, true);
+      FlowManager::getFlowManager()->print(cout, true);
    }
 
-
+/*
    // ====== Write config file ==============================================
    fprintf(configFile, "NUM_FLOWS=%u\n", flows);
    fprintf(configFile, "NAME_ACTIVE_NODE=\"%s\"\n", gActiveNodeName);
@@ -868,9 +879,10 @@ void activeMode(int argc, char** argv)
                               statisticsWriter->VectorPrefix, statisticsWriter->VectorSuffix, extension).c_str());
    }         
    fclose(configFile);
-      
+      */
 
    // ====== Clean up =======================================================
+   /*
    cout << "Shutdown:" << endl;
    vector<FlowSpec*>::iterator iterator = gFlowSet.begin();
    while(iterator != gFlowSet.end()) {
@@ -888,6 +900,7 @@ void activeMode(int argc, char** argv)
    cout << endl;
    gMessageReader.deregisterSocket(gControlSocket);
    ext_close(gControlSocket);
+   */
 }
 
 
