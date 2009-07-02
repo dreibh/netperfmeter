@@ -31,10 +31,19 @@
 #include <vector>
 
 
+
+bool performNetPerfMeterAddFlow(int controlSocket, const Flow* flow);
+bool performNetPerfMeterStart(int            controlSocket,
+                              const uint64_t measurementID);
+bool performNetPerfMeterStop(int            controlSocket,
+                             const uint64_t measurementID);
+
+
 bool handleControlMessage(MessageReader*           messageReader,
                           std::vector<FlowSpec*>& flowSet,
                           int                      controlSocket);
-bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec);
+
+// bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec);
 FlowSpec* createRemoteFlow(const NetPerfMeterAddFlowMessage* addFlowMsg,
                            const sctp_assoc_t            controlAssocID,
                            const char*                   description);
@@ -57,9 +66,9 @@ void handleIdentifyMessage(std::vector<FlowSpec*>&        flowSet,
                            const sctp_assoc_t             assocID,
                            const sockaddr_union*          from,
                            const int                      controlSocket);
-bool startMeasurement(int            controlSocket,
-                      const uint64_t measurementID);
-bool stopMeasurement(int            controlSocket,
-                     const uint64_t measurementID);
+/*bool startMeasurement(int            controlSocket,
+                      const uint64_t measurementID);*/
+// bool stopMeasurement(int            controlSocket,
+//                      const uint64_t measurementID);
 
 #endif

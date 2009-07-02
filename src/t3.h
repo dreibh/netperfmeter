@@ -183,6 +183,9 @@ class Flow : public Thread
    inline int getSocketDescriptor() const {
       return(SocketDescriptor);
    }
+   inline const TrafficSpec& getTrafficSpec() const {
+      return(Traffic);
+   }
 
    
    void print(std::ostream& os, const bool printStatistics = false) const;

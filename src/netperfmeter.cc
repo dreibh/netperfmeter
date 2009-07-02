@@ -785,10 +785,10 @@ void activeMode(int argc, char** argv)
 
          cout << "      - Registering flow at remote node ... ";
          cout.flush();
-/*         if(!addFlowToRemoteNode(gControlSocket, lastFlow)) {
+         if(!performNetPerfMeterAddFlow(gControlSocket, lastFlow)) {
             cerr << "ERROR: Failed to add flow to remote node!" << endl;
             exit(1);
-         }*/
+         }
          cout << "okay" << endl;
 
          if(protocol != IPPROTO_SCTP) {
@@ -805,7 +805,7 @@ void activeMode(int argc, char** argv)
 
    // ====== Start measurement ==============================================
    const unsigned long long now = getMicroTime();
-   if(!startMeasurement(gControlSocket, measurementID)) {
+   if(!performNetPerfMeterStart(gControlSocket, measurementID)) {
       std::cerr << "ERROR: Failed to start measurement!" << std::endl;
       exit(1);
    }
@@ -823,6 +823,9 @@ void activeMode(int argc, char** argv)
    bool                     aborted = false;
    installBreakDetector();
    while( (!breakDetected()) && (!gStopTimeReached) ) {
+
+fputs(".", stderr);usleep(500000);
+   
       if(!mainLoop(true, stopAt, measurementID)) {
          cout << endl << "*** Aborted ***" << endl;
          aborted = true;
@@ -836,7 +839,7 @@ void activeMode(int argc, char** argv)
       // Write scalar statistics first!
 // ??????????      statisticsWriter->writeAllScalarStatistics(getMicroTime(), gFlowSet, measurementID);
    }
-   if(!stopMeasurement(gControlSocket, measurementID)) {
+   if(!performNetPerfMeterStop(gControlSocket, measurementID)) {
       std::cerr << "ERROR: Failed to stop measurement!" << std::endl;
       exit(1);
    }
@@ -882,8 +885,8 @@ void activeMode(int argc, char** argv)
       */
 
    // ====== Clean up =======================================================
-   /*
    cout << "Shutdown:" << endl;
+   /*
    vector<FlowSpec*>::iterator iterator = gFlowSet.begin();
    while(iterator != gFlowSet.end()) {
       FlowSpec* flowSpec = *iterator;
