@@ -1,4 +1,4 @@
-bin_PROGRAMS = netperfmeter createsummary combinesummaries
+bin_PROGRAMS = t3 netperfmeter createsummary combinesummaries
 
 createsummary_SOURCES = createsummary.cc redblacktree.h redblacktree_impl.h simpleredblacktree.h simpleredblacktree.c debug.h
 createsummary_LDADD   = $(bz2_LIBS)
@@ -6,8 +6,12 @@ createsummary_LDADD   = $(bz2_LIBS)
 combinesummaries_SOURCES = combinesummaries.cc
 combinesummaries_LDADD   = $(bz2_LIBS)
 
-netperfmeter_SOURCES = netperfmeter.cc ext_socket.h netperfmeterpackets.h tools.h tools.cc flowspec.h flowspec.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc statisticswriter.h statisticswriter.cc
-netperfmeter_LDADD   = $(bz2_LIBS)
+netperfmeter_SOURCES = netperfmeter.cc ext_socket.h netperfmeterpackets.h thread.cc thread.h mutex.cc mutex.h tools.h tools.cc flowspec.h flowspec.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc statisticswriter.h statisticswriter.cc
+netperfmeter_LDADD   = $(bz2_LIBS) -lpthread
+
+
+t3_SOURCES = t3.cc thread.cc thread.h mutex.cc mutex.h ext_socket.h netperfmeterpackets.h tools.h tools.cc flowspec.h flowspec.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc statisticswriter.h statisticswriter.cc
+t3_LDADD   = $(bz2_LIBS) -lpthread
 
 
 dist_bin_SCRIPTS = plot-netperfmeter-results pdfmetadata pdfembedfonts

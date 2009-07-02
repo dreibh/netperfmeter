@@ -41,6 +41,8 @@
 #include "transfer.h"
 #include "statisticswriter.h"
 
+#include "t3.cc"
+
 
 #ifndef HAVE_DCCP
 #warning DCCP is not supported by the API of this system!
