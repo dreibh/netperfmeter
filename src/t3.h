@@ -37,16 +37,19 @@ class OutputFile
    inline const std::string& getName() const {
       return(Name);
    }
-   inline size_t nextLine() {
+   inline unsigned long long getLine() const {
+      return(Line);
+   }
+   inline unsigned long long nextLine() {
       return(++Line);
    }
 
    // ====== Private Data ===================================================
    private:
-   std::string Name;
-   size_t      Line;
-   FILE*       File;
-   BZFILE*     BZFile;
+   std::string        Name;
+   unsigned long long Line;
+   FILE*              File;
+   BZFILE*            BZFile;
 };
 
 
@@ -115,36 +118,10 @@ class FlowBandwidthStats
 };
 
 
+FlowBandwidthStats operator+(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2);
+FlowBandwidthStats operator-(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2);
 
 
-
-class Measurement;
-
-class MeasurementManager : public Mutex
-{
-   // ====== Protected Methods ==============================================
-   protected:
-   
-   // ====== Public Methods =================================================
-   public:
-   inline static MeasurementManager* getMeasurementManager() {
-      return(&MeasurementManagerSingleton);
-   }
-
-   bool addMeasurement(Measurement* measurement);
-   void printMeasurements(std::ostream& os);
-   void removeMeasurement(Measurement* measurement);
-
-   unsigned long long getNextEvent();
-   void handleEvents(const unsigned long long now);
-
-   // ====== Private Data ===================================================
-   private:
-   Measurement* findMeasurement(const uint64_t measurementID);
-
-   static MeasurementManager        MeasurementManagerSingleton;
-   std::map<uint64_t, Measurement*> MeasurementSet;
-};
 
 
 class Measurement : public Mutex
@@ -161,7 +138,19 @@ class Measurement : public Mutex
                    const char*              vectorNamePattern,
                    const char*              scalarNamePattern);
    void finish();
+
+   void updateTransmissionStatistics(const unsigned long long now,
+                                     const size_t             addedFrames,
+                                     const size_t             addedPackets,
+                                     const size_t             addedBytes);
+   void updateReceptionStatistics(const unsigned long long now,
+                                  const size_t             addedFrames,
+                                  const size_t             addedBytes,
+                                  const double             delay,
+                                  const double             jitter);
+   
    void writeVectorStatistics(const unsigned long long now);
+
 
    // ====== Private Data ===================================================
    private:
@@ -177,42 +166,70 @@ class Measurement : public Mutex
    OutputFile         ScalarFile;
 //    OutputFile         ConfigFile;
 
+   unsigned long long LastTransmission;
+   unsigned long long FirstTransmission;
+   unsigned long long LastReception;
+   unsigned long long FirstReception;
    FlowBandwidthStats CurrentBandwidthStats;
    FlowBandwidthStats LastBandwidthStats;
-/*
-   unsigned long long VectorLine;
-   std::string        VectorName;
-   std::string        VectorPrefix;
-   std::string        VectorSuffix;
-   FILE*              VectorFile;
-   BZFILE*            VectorBZFile;
-
-   std::string        ScalarName;
-   std::string        ScalarPrefix;
-   std::string        ScalarSuffix;
-   FILE*              ScalarFile;
-   BZFILE*            ScalarBZFile;
-
-   unsigned long long TotalTransmittedBytes;
-   unsigned long long TotalTransmittedPackets;
-   unsigned long long TotalTransmittedFrames;
-   unsigned long long TotalReceivedBytes;
-   unsigned long long TotalReceivedPackets;
-   unsigned long long TotalReceivedFrames;
-   unsigned long long TotalLostBytes;
-   unsigned long long TotalLostPackets;
-   unsigned long long TotalLostFrames;
-   unsigned long long LastTotalTransmittedBytes;
-   unsigned long long LastTotalTransmittedPackets;
-   unsigned long long LastTotalTransmittedFrames;
-   unsigned long long LastTotalReceivedBytes;
-   unsigned long long LastTotalReceivedPackets;
-   unsigned long long LastTotalReceivedFrames;
-   unsigned long long LastTotalLostBytes;
-   unsigned long long LastTotalLostPackets;
-   unsigned long long LastTotalLostFrames;
-*/
+   double             Delay;
+   double             Jitter;
 };
+
+
+class MeasurementManager : public Mutex
+{
+   // ====== Protected Methods ==============================================
+   protected:
+   
+   // ====== Public Methods =================================================
+   public:
+   inline static MeasurementManager* getMeasurementManager() {
+      return(&MeasurementManagerSingleton);
+   }
+
+   bool addMeasurement(Measurement* measurement);
+   void printMeasurements(std::ostream& os);
+   void removeMeasurement(Measurement* measurement);
+
+   inline void updateTransmissionStatistics(const uint64_t           measurementID,
+                                            const unsigned long long now,
+                                            const size_t             addedFrames,
+                                            const size_t             addedPackets,
+                                            const size_t             addedBytes) {
+      lock();
+      Measurement* measurement = findMeasurement(measurementID);
+      if(measurement) {
+         measurement->updateTransmissionStatistics(now, addedFrames, addedPackets, addedBytes);
+      }
+      unlock();
+   }
+   
+   void updateReceptionStatistics(const uint64_t           measurementID,
+                                  const unsigned long long now,
+                                  const size_t             addedFrames,
+                                  const size_t             addedBytes,
+                                  const double             delay,
+                                  const double             jitter) {
+      lock();
+      Measurement* measurement = findMeasurement(measurementID);
+      if(measurement) {
+         measurement->updateReceptionStatistics(now, addedFrames, addedBytes, delay, jitter);
+      }
+      unlock();
+   }
+
+   unsigned long long getNextEvent();
+   void handleEvents(const unsigned long long now);
+
+   // ====== Private Data ===================================================
+   private:
+   Measurement* findMeasurement(const uint64_t measurementID);
+
+   static MeasurementManager        MeasurementManagerSingleton;
+   std::map<uint64_t, Measurement*> MeasurementSet;
+};
+
 
 
 
@@ -251,6 +268,8 @@ class FlowManager : public Thread
 
    void addFlow(Flow* flow);
    void removeFlow(Flow* flow);
+   void print(std::ostream& os,
+              const bool    printStatistics);
 
    void startMeasurement(const uint64_t           measurementID,
                          const bool               printFlows = false,
@@ -259,9 +278,14 @@ class FlowManager : public Thread
                         const bool                printFlows = false,
                         const unsigned long long  now        = getMicroTime());
                          
-
-   void print(std::ostream& os,
-              const bool    printStatistics = false);
+   void writeVectorStatistics(const uint64_t           measurementID,
+                              const unsigned long long now,
+                              OutputFile&              vectorFile,
+                              size_t&                  globalFlows,
+                              FlowBandwidthStats&      globalStats,
+                              FlowBandwidthStats&      relGlobalStats,
+                              const unsigned long long firstStatisticsEvent,
+                              const unsigned long long lastStatisticsEvent);
 
    Flow* findFlow(const uint64_t measurementID,
                   const uint32_t flowID,
@@ -284,6 +308,8 @@ class FlowManager : public Thread
    std::vector<Flow*> FlowSet;
    std::map<int, int> UnidentifiedSockets;
    bool               UpdatedUnidentifiedSockets;
+   FlowBandwidthStats CurrentGlobalStats;
+   FlowBandwidthStats LastGlobalStats;
 };
 
 
@@ -339,6 +365,18 @@ class Flow : public Thread
    inline FlowBandwidthStats& getCurrentBandwidthStats() {
       return(CurrentBandwidthStats);
    }
+//    inline unsigned long long getFirstTransmission() const {
+//       return(FirstTransmission);
+//    }
+//    inline unsigned long long getLastTransmission() const {
+//       return(LastTransmission);
+//    }
+//    inline unsigned long long getFirstReception() const {
+//       return(FirstReception);
+//    }
+//    inline unsigned long long getLastReception() const {
+//       return(LastReception);
+//    }  ??????????ß
 
    inline uint32_t nextOutboundFrameID() {
       return(++LastOutboundFrameID);

@@ -174,6 +174,9 @@ ssize_t transmitFrame(// StatisticsWriter*        statsWriter, ???
    }
 
    flow->updateTransmissionStatistics(now, 1, packetsSent, bytesSent);
+   MeasurementManager::getMeasurementManager()->updateTransmissionStatistics(
+      flow->getMeasurementID(),
+      now,  1, packetsSent, bytesSent);
 
 // ??????????????????
 //    statsWriter->TotalTransmittedFrames++;
@@ -227,9 +230,7 @@ ssize_t handleDataMessage(const bool               isActiveMode,
          }
          if(flow) {
             // Update flow statistics by received NETPERFMETER_DATA message.
-            updateStatistics(
-//             statsWriter,
-            flow, now, dataMsg, received);
+            updateStatistics(flow, now, dataMsg, received);
          }
          else {
             std::cout << "WARNING: Received data for unknown flow!" << std::endl;
@@ -294,7 +295,12 @@ static void updateStatistics(// ?????????? StatisticsWriter*              statsW
 //    statsWriter->TotalReceivedFrames++;   // ??? To be implemented ???
 
    size_t receivedFrames = 1;   // ??? To be implemented ???
-   flow->updateReceptionStatistics(now, receivedFrames, receivedBytes, transitTime, jitter);
+
+   flow->updateReceptionStatistics(
+      now, receivedFrames, receivedBytes, transitTime, jitter);
+   MeasurementManager::getMeasurementManager()->updateReceptionStatistics(
+      flow->getMeasurementID(),
+      now, receivedFrames, receivedBytes, transitTime, jitter);
 
    // ------ Write statistics -----------------------------------------------
    /*

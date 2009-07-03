@@ -252,6 +252,42 @@ FlowBandwidthStats::~FlowBandwidthStats()
 }
 
 
+FlowBandwidthStats operator+(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2)
+{
+   FlowBandwidthStats result;
+   result.TransmittedBytes   = s1.TransmittedBytes + s2.TransmittedBytes;
+   result.TransmittedPackets = s1.TransmittedPackets + s2.TransmittedPackets;
+   result.TransmittedFrames  = s1.TransmittedFrames + s2.TransmittedFrames;
+
+   result.ReceivedBytes      = s1.ReceivedBytes + s2.ReceivedBytes;
+   result.ReceivedPackets    = s1.ReceivedPackets + s2.ReceivedPackets;
+   result.ReceivedFrames     = s1.ReceivedFrames + s2.ReceivedFrames;
+
+   result.LostBytes          = s1.LostBytes + s2.LostBytes;
+   result.LostPackets        = s1.LostPackets + s2.LostPackets;
+   result.LostFrames         = s1.LostFrames + s2.LostFrames;
+   return(result);
+}
+
+
+FlowBandwidthStats operator-(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2)
+{
+   FlowBandwidthStats result;
+   result.TransmittedBytes   = s1.TransmittedBytes - s2.TransmittedBytes;
+   result.TransmittedPackets = s1.TransmittedPackets - s2.TransmittedPackets;
+   result.TransmittedFrames  = s1.TransmittedFrames - s2.TransmittedFrames;
+
+   result.ReceivedBytes      = s1.ReceivedBytes - s2.ReceivedBytes;
+   result.ReceivedPackets    = s1.ReceivedPackets - s2.ReceivedPackets;
+   result.ReceivedFrames     = s1.ReceivedFrames - s2.ReceivedFrames;
+
+   result.LostBytes          = s1.LostBytes - s2.LostBytes;
+   result.LostPackets        = s1.LostPackets - s2.LostPackets;
+   result.LostFrames         = s1.LostFrames - s2.LostFrames;
+   return(result);
+}
+
+
 // ###### Print FlowBandwidthStats ##########################################
 void FlowBandwidthStats::print(std::ostream& os,
                                const double  transmissionDuration,
@@ -493,6 +529,105 @@ void FlowManager::stopMeasurement(const uint64_t           measurementID,
 
 
 
+void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
+                                        const unsigned long long now,
+                                        OutputFile&              vectorFile,
+                                        size_t&                  globalFlows,
+                                        FlowBandwidthStats&      globalStats,
+                                        FlowBandwidthStats&      relGlobalStats,
+                                        const unsigned long long firstStatisticsEvent,
+                                        const unsigned long long lastStatisticsEvent)
+{
+   // ====== Write vector statistics header =================================
+   if(vectorFile.getLine() == 0) {
+      vectorFile.printf("AbsTime RelTime Interval\t"
+                        "FlowID Description Jitter\t"
+                        "Action\t"
+                           "AbsBytes AbsPackets AbsFrames\t"
+                           "RelBytes RelPackets RelFrames\n");
+   }
+
+   lock();
+
+   // ====== Write flow statistics ==========================================
+   FlowBandwidthStats lastTotalStats;
+   FlowBandwidthStats currentTotalStats;
+   const double duration = (now - lastStatisticsEvent) / 1000000.0;
+   for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
+       iterator != FlowSet.end();iterator++) {
+       Flow* flow = *iterator;
+       if(flow->MeasurementID == measurementID) {
+          flow->lock();
+
+          const FlowBandwidthStats relStats = flow->CurrentBandwidthStats - flow->LastBandwidthStats;
+          lastTotalStats     = lastTotalStats + flow->LastBandwidthStats;
+          currentTotalStats  = currentTotalStats + flow->CurrentBandwidthStats;
+          CurrentGlobalStats = CurrentGlobalStats + relStats;
+
+          vectorFile.printf(
+            "%06llu %llu %1.6f %1.6f\t%u \"%s\" %1.3f\t"
+               "\"Sent\"     %llu %llu %llu\t%llu %llu %llu\n"
+            "%06llu %llu %1.6f %1.6f\t%u \"%s\" %1.3f\t"
+               "\"Received\" %llu %llu %llu\t%llu %llu %llu\n"
+            "%06llu %llu %1.6f %1.6f\t%u \"%s\" %1.3f\t"
+               "\"Lost\"     %llu %llu %llu\t%llu %llu %llu\n",
+
+            vectorFile.nextLine(), now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+               flow->FlowID, flow->Traffic.Description.c_str(), flow->Jitter,
+               flow->CurrentBandwidthStats.TransmittedBytes, flow->CurrentBandwidthStats.TransmittedPackets, flow->CurrentBandwidthStats.TransmittedFrames,
+               relStats.TransmittedBytes, relStats.TransmittedPackets, relStats.TransmittedFrames,
+
+            vectorFile.nextLine(), now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+               flow->FlowID, flow->Traffic.Description.c_str(), flow->Jitter,
+               flow->CurrentBandwidthStats.ReceivedBytes, flow->CurrentBandwidthStats.ReceivedPackets, flow->CurrentBandwidthStats.ReceivedFrames,
+               relStats.ReceivedBytes, relStats.ReceivedPackets, relStats.ReceivedFrames,
+
+            vectorFile.nextLine(), now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+               flow->FlowID, flow->Traffic.Description.c_str(), flow->Jitter,
+               flow->CurrentBandwidthStats.LostBytes, flow->CurrentBandwidthStats.LostPackets, flow->CurrentBandwidthStats.LostFrames,
+               relStats.LostBytes, relStats.LostPackets, relStats.LostFrames);
+          
+          flow->LastBandwidthStats = flow->CurrentBandwidthStats;
+          flow->unlock();
+       }
+   }
+
+   // ====== Write total statistics =========================================
+   const FlowBandwidthStats relTotalStats = currentTotalStats - lastTotalStats;
+      vectorFile.printf(
+      "%06llu %llu %1.6f %1.6f\t-1 \"Total\" 0\t"
+         "\"Sent\"     %llu %llu %llu\t%llu %llu %llu\n"
+      "%06llu %llu %1.6f %1.6f\t-1 \"Total\" 0\t"
+         "\"Received\" %llu %llu %llu\t%llu %llu %llu\n"
+      "%06llu %llu %1.6f %1.6f\t-1 \"Total\" 0\t"
+         "\"Lost\"     %llu %llu %llu\t%llu %llu %llu\n",
+
+      vectorFile.nextLine(), now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+         currentTotalStats.TransmittedBytes, currentTotalStats.TransmittedPackets, currentTotalStats.TransmittedFrames,
+         relTotalStats.TransmittedBytes, relTotalStats.TransmittedPackets, relTotalStats.TransmittedFrames,
+
+      vectorFile.nextLine(), now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+         currentTotalStats.ReceivedBytes, currentTotalStats.ReceivedPackets, currentTotalStats.ReceivedFrames,
+         relTotalStats.ReceivedBytes, relTotalStats.ReceivedPackets, relTotalStats.ReceivedFrames,
+
+      vectorFile.nextLine(), now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+         currentTotalStats.LostBytes, currentTotalStats.LostPackets, currentTotalStats.LostFrames,
+         relTotalStats.LostBytes, relTotalStats.LostPackets, relTotalStats.LostFrames);
+
+   
+   // ====== Return global values (all measurements) for displaying =========
+   globalFlows     = FlowSet.size();
+   globalStats     = CurrentGlobalStats;
+   relGlobalStats  = CurrentGlobalStats - LastGlobalStats;
+   
+   LastGlobalStats = CurrentGlobalStats;
+
+   unlock();
+}
+
+
+
+
 
 
 
@@ -521,6 +656,10 @@ Flow::Flow(const uint64_t     measurementID,
 
    Traffic                       = trafficSpec;
 
+   FirstTransmission             = 0;
+   LastTransmission              = 0;
+   FirstReception                = 0;
+   LastReception                 = 0;
    resetStatistics();
    LastOutboundSeqNumber         = 0;
    LastOutboundFrameID           = 0;
@@ -979,6 +1118,43 @@ void MeasurementManager::handleEvents(const unsigned long long now)
 }
 
 
+void Measurement::updateTransmissionStatistics(const unsigned long long now,
+                                               const size_t             addedFrames,
+                                               const size_t             addedPackets,
+                                               const size_t             addedBytes)
+{
+   lock();
+   LastTransmission = now;
+   if(FirstTransmission == 0) {
+      FirstTransmission = now;
+   }
+   CurrentBandwidthStats.TransmittedFrames  += addedFrames;
+   CurrentBandwidthStats.TransmittedPackets += addedPackets;
+   CurrentBandwidthStats.TransmittedBytes   += addedBytes;
+   unlock();
+}
+
+
+void Measurement::updateReceptionStatistics(const unsigned long long now,
+                                            const size_t             addedFrames,
+                                            const size_t             addedBytes,
+                                            const double             delay,
+                                            const double             jitter)
+{
+   lock();
+   LastReception = now;
+   if(FirstReception == 0) {
+      FirstReception = now;
+   }
+   CurrentBandwidthStats.ReceivedFrames  += addedFrames;
+   CurrentBandwidthStats.ReceivedPackets++;
+   CurrentBandwidthStats.ReceivedBytes   += addedBytes;
+   Delay  = delay;
+   Jitter = jitter;
+   unlock();
+}
+
+
 void Measurement::writeVectorStatistics(const unsigned long long now)
 {
    lock();
@@ -992,8 +1168,139 @@ void Measurement::writeVectorStatistics(const unsigned long long now)
       LastStatisticsEvent  = now;
    }
 
-puts("wrt...");
+   // ====== Write statistics ===============================================
+   size_t             globalFlows;
+   FlowBandwidthStats globalStats;
+   FlowBandwidthStats relGlobalStats;
+    FlowManager::getFlowManager()->writeVectorStatistics(
+      MeasurementID, now, VectorFile,
+      globalFlows, globalStats, relGlobalStats,
+      FirstStatisticsEvent, LastStatisticsEvent);
+
+/*   // ====== Write vector statistics header =================================
+   if(VectorFile.getLine() == 0) {
+      VectorFile.printf("AbsTime RelTime Interval\t"
+                        "FlowID Description Jitter\t"
+                        "Action\t"
+                           "AbsBytes AbsPackets AbsFrames\t"
+                           "RelBytes RelPackets RelFrames\n");
+   }
+
+*/
+//    // ====== Write flow statistics ==========================================
+//    const double duration = (now - LastStatisticsEvent) / 1000000.0;
+//    for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
+//       FlowSpec* flowSpec = (FlowSpec*)*iterator;
+//       if(flowSpec->MeasurementID == measurementID) {
+// 
+//          const unsigned long long relTransmittedBytes   = flowSpec->TransmittedBytes   - flowSpec->LastTransmittedBytes;
+//          const unsigned long long relTransmittedPackets = flowSpec->TransmittedPackets - flowSpec->LastTransmittedPackets;
+//          const unsigned long long relTransmittedFrames  = flowSpec->TransmittedFrames  - flowSpec->LastTransmittedFrames;
+//          const unsigned long long relReceivedBytes      = flowSpec->ReceivedBytes   - flowSpec->LastReceivedBytes;
+//          const unsigned long long relReceivedPackets    = flowSpec->ReceivedPackets - flowSpec->LastReceivedPackets;
+//          const unsigned long long relReceivedFrames     = flowSpec->ReceivedFrames  - flowSpec->LastReceivedFrames;
+//          const unsigned long long relLostBytes          = flowSpec->LostBytes   - flowSpec->LastLostBytes;
+//          const unsigned long long relLostPackets        = flowSpec->LostPackets - flowSpec->LastLostPackets;
+//          const unsigned long long relLostFrames         = flowSpec->LostFrames  - flowSpec->LastLostFrames;
+// 
+//          snprintf((char*)&str, sizeof(str),
+//                   "%06llu %llu %1.6f %1.6f\t%u \"%s\" %1.3f\t"
+//                      "\"Sent\"     %llu %llu %llu\t%llu %llu %llu\n"
+//                   "%06llu %llu %1.6f %1.6f\t%u \"%s\" %1.3f\t"
+//                      "\"Received\" %llu %llu %llu\t%llu %llu %llu\n"
+//                   "%06llu %llu %1.6f %1.6f\t%u \"%s\" %1.3f\t"
+//                      "\"Lost\"     %llu %llu %llu\t%llu %llu %llu\n",
+// 
+//                   VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
+//                      flowSpec->FlowID, flowSpec->Description.c_str(), flowSpec->Jitter,                
+//                      flowSpec->TransmittedBytes, flowSpec->TransmittedPackets, flowSpec->TransmittedFrames,
+//                      relTransmittedBytes, relTransmittedPackets, relTransmittedFrames,
+// 
+//                   VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
+//                      flowSpec->FlowID, flowSpec->Description.c_str(), flowSpec->Jitter,                
+//                      flowSpec->ReceivedBytes, flowSpec->ReceivedPackets, flowSpec->ReceivedFrames,
+//                      relReceivedBytes, relReceivedPackets, relReceivedFrames,
+// 
+//                   VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
+//                      flowSpec->FlowID, flowSpec->Description.c_str(), flowSpec->Jitter,                
+//                      flowSpec->LostBytes, flowSpec->LostPackets, flowSpec->LostFrames,
+//                      relLostBytes, relLostPackets, relLostFrames);
+//                   
+//          if(writeString(VectorName.c_str(), VectorFile, VectorBZFile, str) == false) {
+//             return(false);
+//          }
+// 
+//          flowSpec->LastTransmittedBytes   = flowSpec->TransmittedBytes;
+//          flowSpec->LastTransmittedPackets = flowSpec->TransmittedPackets;
+//          flowSpec->LastTransmittedFrames  = flowSpec->TransmittedFrames;
+//          flowSpec->LastReceivedBytes      = flowSpec->ReceivedBytes;
+//          flowSpec->LastReceivedPackets    = flowSpec->ReceivedPackets;
+//          flowSpec->LastReceivedFrames     = flowSpec->ReceivedFrames;
+//       }
+//    }
+// 
+// 
+//    // ====== Get total flow statistics  =====================================
+//    const unsigned long long relTotalTransmittedBytes   = TotalTransmittedBytes   - LastTotalTransmittedBytes;
+//    const unsigned long long relTotalTransmittedPackets = TotalTransmittedPackets - LastTotalTransmittedPackets;
+//    const unsigned long long relTotalTransmittedFrames  = TotalTransmittedFrames  - LastTotalTransmittedFrames;
+//    const unsigned long long relTotalReceivedBytes      = TotalReceivedBytes   - LastTotalReceivedBytes;
+//    const unsigned long long relTotalReceivedPackets    = TotalReceivedPackets - LastTotalReceivedPackets;
+//    const unsigned long long relTotalReceivedFrames     = TotalReceivedFrames  - LastTotalReceivedFrames;
+//    const unsigned long long relTotalLostBytes          = TotalLostBytes   - LastTotalLostBytes;
+//    const unsigned long long relTotalLostPackets        = TotalLostPackets - LastTotalLostPackets;
+//    const unsigned long long relTotalLostFrames         = TotalLostFrames  - LastTotalLostFrames;
+// 
+//    snprintf((char*)&str, sizeof(str),
+//             "%06llu %llu %1.6f %1.6f\t-1 \"Total\" 0\t"
+//                "\"Sent\"     %llu %llu %llu\t%llu %llu %llu\n"
+//             "%06llu %llu %1.6f %1.6f\t-1 \"Total\" 0\t"
+//                "\"Received\" %llu %llu %llu\t%llu %llu %llu\n"
+//             "%06llu %llu %1.6f %1.6f\t-1 \"Total\" 0\t"
+//                "\"Lost\"     %llu %llu %llu\t%llu %llu %llu\n",
+// 
+//             VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
+//                TotalTransmittedBytes, TotalTransmittedPackets, TotalTransmittedFrames,
+//                relTotalTransmittedBytes, relTotalTransmittedPackets, relTotalTransmittedFrames,
+// 
+//             VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
+//                TotalReceivedBytes, TotalReceivedPackets, TotalReceivedFrames,
+//                relTotalReceivedBytes, relTotalReceivedPackets, relTotalReceivedFrames,
+// 
+//             VectorLine++, now, (double)(now - FirstStatisticsEvent) / 1000000.0, duration,
+//                TotalLostBytes, TotalLostPackets, TotalLostFrames,
+//                relTotalLostBytes, relTotalLostPackets, relTotalLostFrames);
+//    if(writeString(VectorName.c_str(), VectorFile, VectorBZFile, str) == false) {
+//       return(false);
+//    }
+
+/*
+MeasurementManager::getMeasurementManager()->getCurrentGlobalStats(),
+   const FlowBandwidthStats = CurrentBandwidthStats - LastBandwidthStats;
+
    
+   LastGlobalStats = CurrentGlobalStats;*/
+
+   
+   // ====== Print bandwidth information line ===============================
+   const double duration = (now - LastStatisticsEvent) / 1000000.0;
+   const unsigned int totalDuration = (unsigned int)((now - FirstStatisticsEvent) / 1000000ULL);
+   std::cout <<
+      format("\r<-- Duration: %2u:%02u:%02u   Flows: %u   Transmitted: %1.2f MiB at %1.1f Kbit/s   Received: %1.2f MiB at %1.1f Kbit/s -->\x1b[0K",
+             totalDuration / 3600,
+             (totalDuration / 60) % 60,
+             totalDuration % 60,
+             globalFlows,
+             globalStats.TransmittedBytes / (1024.0 * 1024.0),
+             (duration > 0.0) ? (8 * relGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
+             globalStats.ReceivedBytes / (1024.0 * 1024.0),
+             (duration > 0.0) ? (8 * relGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0);
+   std::cout.flush();
+
+
+   LastStatisticsEvent = now;
+   LastBandwidthStats       = CurrentBandwidthStats;   // ALT!!!?????
+
    unlock();
 }
 
@@ -1005,7 +1312,13 @@ puts("wrt...");
 // ###### Destructor ########################################################
 Measurement::Measurement()
 {
-   MeasurementID = 0;
+   MeasurementID     = 0;
+   FirstTransmission = 0;
+   LastTransmission  = 0;
+   FirstReception    = 0;
+   LastReception     = 0;
+   Delay             = 0.0;
+   Jitter            = 0.0;
 }
 
 
@@ -1013,23 +1326,6 @@ Measurement::Measurement()
 Measurement::~Measurement()
 {
    finish();
-puts("######### destr MS");
-/*
-   std::map<uint64_t, Measurement*>::iterator found = StatisticsSet.find(measurementID);
-   if(found != StatisticsSet.end()) {
-      Measurement* statisticsWriter = found->second;
-      StatisticsSet.erase(found);
-      
-      // ====== Remove temporary files ======================================
-      if(statisticsWriter->VectorName.find("/tmp/") == 0) {
-         unlink(statisticsWriter->VectorName.c_str());
-      }
-      if(statisticsWriter->ScalarName.find("/tmp/") == 0) {
-         unlink(statisticsWriter->ScalarName.c_str());
-      }
-
-      delete statisticsWriter;
-   }   */
 }
 
 
