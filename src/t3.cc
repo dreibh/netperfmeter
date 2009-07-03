@@ -358,7 +358,6 @@ FlowManager FlowManager::FlowManagerSingleton;
 // ###### Constructor #######################################################
 FlowManager::FlowManager()
 {
-   puts("Start FMgr...");
    start();
 }
 
@@ -366,11 +365,8 @@ FlowManager::FlowManager()
 // ###### Destructor ########################################################
 FlowManager::~FlowManager()
 {
-   puts("Shut1");
    stop();
-   puts("Shut1b");
    waitForFinish();
-   puts("Shut2");
 }
 
 
@@ -772,26 +768,18 @@ bool Flow::activate()
 bool Flow::deactivate()
 {
    if(isRunning()) {
-      puts("------------------ STOP --------------------");
       stop();
       if(SocketDescriptor >= 0) {
          if(Traffic.Protocol == IPPROTO_UDP) {
-            puts("udp---");
             ext_close(SocketDescriptor);
          }
          else {
-         puts("tcp---");
             ext_shutdown(SocketDescriptor, 2);
          }
       }
-      puts("wait...");
       waitForFinish();
-      puts("------------------ STOP okay!");
-   
       FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
    }
-   else
-   puts("ALREADY STOPPED!");
 }
 
 
@@ -839,7 +827,6 @@ unsigned long long Flow::scheduleNextTransmissionEvent() const
 
 void Flow::run()
 {
-puts("START-OF-THREAD!!!");
    signal(SIGPIPE, SIG_IGN);
 
    bool result = true;
@@ -855,7 +842,6 @@ puts("START-OF-THREAD!!!");
          int timeout = std::min(1000, (int)((nextEvent - now) / 1000));
 // ?????         printf("Wait %d ms    ss=%1.0f  tx=%1.0f\n", timeout,  (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
          usleep(1000 * (timeout + 1));
-         puts("---");
          now = getMicroTime();
       }
       else {
@@ -884,8 +870,6 @@ puts("START-OF-THREAD!!!");
          }
       }
    } while( (result == true) && (!Stopping) );
-   
-   puts("END-OF-THREAD!!!");
 }
 
 
@@ -954,7 +938,6 @@ void FlowManager::removeSocket(const int  socketDescriptor,
 // ###### Reception thread function #########################################
 void FlowManager::run()
 {
-puts("FM-Thread!!!");
    do {
       lock();
       pollfd pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
@@ -966,7 +949,6 @@ puts("FM-Thread!!!");
             pollFDs[n].events  = POLLIN;
             pollFDs[n].revents = 0;
             FlowSet[i]->PollFDEntry = &pollFDs[n];
-printf("wait for IN flow=%d\n",FlowSet[i]->FlowID);         
             n++;
          }
          else {
@@ -979,7 +961,6 @@ printf("wait for IN flow=%d\n",FlowSet[i]->FlowID);
       for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
           iterator != UnidentifiedSockets.end(); iterator++) {
          pollFDs[n].fd      = iterator->first;
-         printf("wait for pollin on %d\n", iterator->first);
          pollFDs[n].events  = POLLIN;
          pollFDs[n].revents = 0;
          unidentifiedSocketsPollFDIndex[i] = &pollFDs[n];
@@ -998,7 +979,6 @@ printf("wait for IN flow=%d\n",FlowSet[i]->FlowID);
          for(i = 0;i  < FlowSet.size();i++) {
             if( (FlowSet[i]->PollFDEntry) &&
                 (FlowSet[i]->PollFDEntry->revents & POLLIN) ) {
-                printf("IN for flow %u   inputSt=%d\n",FlowSet[i]->FlowID,FlowSet[i]->InputStatus);
                 // NOTE: FlowSet[i] may not be the actual Flow!
                 //       It may be another stream of the same SCTP assoc!
                 handleDataMessage(true, now,
@@ -1042,7 +1022,6 @@ bool MeasurementManager::addMeasurement(Measurement* measurement)
       MeasurementSet.insert(std::pair<uint64_t, Measurement*>(measurement->MeasurementID,
                                                               measurement));
       success = true;
-puts("------------ INS");
    }
    unlock();
 
@@ -1088,18 +1067,15 @@ unsigned long long MeasurementManager::getNextEvent()
 {
    unsigned long long nextStatisticsEvent = (1ULL << 63);
 
-puts("###################################");
    lock();
    for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
        const Measurement* measurement = iterator->second;
        nextStatisticsEvent = std::min(nextStatisticsEvent,
                                       measurement->NextStatisticsEvent);
-printf("NX=%llx   mNX=%llx\n", nextStatisticsEvent, measurement->NextStatisticsEvent);
    }
    unlock();
 
-printf("  => NX=%llx\n", nextStatisticsEvent);
    return(nextStatisticsEvent);
 }
 
@@ -1224,8 +1200,8 @@ Measurement::~Measurement()
 
 bool Measurement::initialize(const unsigned long long now,
                              const uint64_t           measurementID,
-                             const char*              vectorNamePattern,
-                             const char*              scalarNamePattern)
+                             const char*              vectorName,
+                             const char*              scalarName)
 {
    MeasurementID        = measurementID;
    StatisticsInterval   = 1000000;
@@ -1233,10 +1209,12 @@ bool Measurement::initialize(const unsigned long long now,
    FirstStatisticsEvent = 0;
    LastStatisticsEvent  = 0;
 
-   VectorNamePattern    = std::string(vectorNamePattern);
-   ScalarNamePattern    = std::string(scalarNamePattern);
-
-   return(MeasurementManager::getMeasurementManager()->addMeasurement(this));
+   if(MeasurementManager::getMeasurementManager()->addMeasurement(this)) {
+      const bool s1 = VectorFile.initialize(vectorName, hasSuffix(vectorName, ".bz2"));
+      const bool s2 = ScalarFile.initialize(scalarName, hasSuffix(scalarName, ".bz2"));
+      return(s1 && s2);
+   }
+   return(false);
 }
 
 

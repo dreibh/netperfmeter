@@ -135,8 +135,8 @@ class Measurement : public Mutex
 
    bool initialize(const unsigned long long now,
                    const uint64_t           measurementID,
-                   const char*              vectorNamePattern,
-                   const char*              scalarNamePattern);
+                   const char*              vectorName,
+                   const char*              scalarName);
    void finish();
 
 /*   void updateTransmissionStatistics(const unsigned long long now,
@@ -160,8 +160,6 @@ class Measurement : public Mutex
    unsigned long long LastStatisticsEvent;
    unsigned long long NextStatisticsEvent;
 
-   std::string        VectorNamePattern;
-   std::string        ScalarNamePattern;
    OutputFile         VectorFile;
    OutputFile         ScalarFile;
 //    OutputFile         ConfigFile;

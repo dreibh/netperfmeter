@@ -96,7 +96,6 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
-//  ???????      sinfo.sinfo_assoc_id = (flow->RemoteAddressIsValid) ? flow->RemoteDataAssocID : 0;
       sinfo.sinfo_stream   = flow->getStreamID();
       sinfo.sinfo_ppid     = htonl(PPID_NETPERFMETER_DATA);
       if(flow->getTrafficSpec().ReliableMode < 1.0) {
@@ -114,7 +113,6 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       sent = sctp_send(flow->getSocketDescriptor(),
                        (char*)&outputBuffer, bytesToSend,
                        &sinfo, 0);
-printf("SEND: %d on sock %d  =>  res=%d\n", bytesToSend, flow->getSocketDescriptor(), sent);
    }
    else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
       sent = ext_sendto(flow->getSocketDescriptor(),
@@ -242,14 +240,10 @@ ssize_t handleDataMessage(const bool               isActiveMode,
    }
    
    else if( (received <= 0) && (received != MRRM_PARTIAL_READ) ) {
-
-       puts("NULL!");
-      printf("r=%d ++++++++++++++++++++++\n",received);
-       Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
-       if(flow) {
-          flow->endOfInput();
-       }
-       printf("F=%p\n",flow);
+      Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
+      if(flow) {
+         flow->endOfInput();
+      }
    }
 
    return(received);

@@ -421,9 +421,9 @@ bool mainLoop(const bool               isActiveMode,
       (long long)std::min(stopAt, MeasurementManager::getMeasurementManager()->getNextEvent());
    const int timeout = std::max(0, (int)((nextEvent - (long long)now) / 1000LL));
 
-   printf("to=%d   txNext=%lld\n", timeout, nextEvent - (long long)now);
+// ???   printf("to=%d   txNext=%lld\n", timeout, nextEvent - (long long)now);
    int result = ext_poll((pollfd*)&fds, n, timeout);
-   printf("result=%d\n",result);
+//    printf("result=%d\n",result);
    
    
 
@@ -566,7 +566,6 @@ bool mainLoop(const bool               isActiveMode,
 
    // ====== Handle statistics timer ========================================
    if(MeasurementManager::getMeasurementManager()->getNextEvent() <= now) {
-      puts("stat");
       MeasurementManager::getMeasurementManager()->handleEvents(now);
    }
 
@@ -845,9 +844,6 @@ void activeMode(int argc, char** argv)
    bool                     aborted = false;
    installBreakDetector();
    while( (!breakDetected()) && (!gStopTimeReached) ) {
-
-fputs(".", stderr);usleep(500000);
-   
       if(!mainLoop(true, stopAt, measurementID)) {
          cout << endl << "*** Aborted ***" << endl;
          aborted = true;
