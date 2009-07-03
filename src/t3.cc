@@ -513,7 +513,6 @@ Flow::Flow(const uint64_t     measurementID,
    OriginalSocketDescriptor      = false;
    RemoteControlSocketDescriptor = controlSocketDescriptor;
    RemoteControlAssocID          = controlAssocID;
-   RemoteDataAssocID             = 0;  // ??????
    RemoteAddressIsValid          = false;
 
    InputStatus                   = WaitingForStartup;
@@ -787,36 +786,11 @@ bool FlowManager::identifySocket(const uint64_t        measurementID,
       controlAssocID             = flow->RemoteControlAssocID;
       success = flow->getVectorFile().initialize(NULL, compressVectorFile);
       flow->unlock();
+      removeSocket(socketDescriptor, false);   // Socket is now managed as flow!
    }
    unlock();
 
    return(success);
-    
-
-/*????   
-   if(fl
-
-   ntoh64(identifyMsg->MeasurementID),
-                                               ntohl(identifyMsg->FlowID),
-                                               ntohs(identifyMsg->StreamID));
-   if((flow != NULL) && (flow->RemoteAddressIsValid == false)) {
-      flow->setSocketDescriptor(
-      flow->SocketDescriptor     = sd;
-// ??????      flow->RemoteDataAssocID    = assocID;
-      
-      flow->RemoteAddress        = *from;
-      flow->RemoteAddressIsValid = true;
-      const bool success = flow->initializeVectorFile((identifyMsg->Header.Flags & NPIF_COMPRESS_STATS) ? true : false);
-      sendNetPerfMeterAcknowledge(controlSocket, flow->RemoteControlAssocID,
-                                  ntoh64(identifyMsg->MeasurementID),
-                                  ntohl(identifyMsg->FlowID),
-                                  ntohs(identifyMsg->StreamID),
-                                  (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
-   }
-   else {
-      std::cerr << "WARNING: NETPERFMETER_IDENTIFY_FLOW message for unknown flow!" << std::endl;
-   }
-   */
 }
 
 
@@ -910,4 +884,176 @@ printf("wait for IN flow=%d\n",FlowSet[i]->FlowID);
          unlock();
       }
    } while(!Stopping);
+}
+
+
+
+
+
+
+MeasurementManager MeasurementManager::MeasurementManagerSingleton;
+
+// ###### Add measurement ###################################################
+bool MeasurementManager::addMeasurement(Measurement* measurement)
+{
+   bool success = false;
+
+   lock();
+   if(!findMeasurement(measurement->MeasurementID)) {
+      MeasurementSet.insert(std::pair<uint64_t, Measurement*>(measurement->MeasurementID,
+                                                              measurement));
+      success = true;
+puts("------------ INS");
+   }
+   unlock();
+
+   return(success);
+}
+
+
+// ###### Print measurements ################################################
+void MeasurementManager::printMeasurements(std::ostream& os)
+{
+   os << "Measurements:" << std::endl; 
+   for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
+       iterator != MeasurementSet.end(); iterator++) {
+      char str[64];
+      snprintf((char*)&str, sizeof(str), "%llx -> ptr=%p",
+               (unsigned long long)iterator->first, iterator->second);
+      os << "   - " << str << std::endl;
+   }
+}
+   
+
+// ###### Find measurement ##################################################
+Measurement* MeasurementManager::findMeasurement(const uint64_t measurementID)
+{
+   std::map<uint64_t, Measurement*>::iterator found = MeasurementSet.find(measurementID);
+   if(found != MeasurementSet.end()) {
+      return(found->second);
+   }
+   return(NULL);
+}
+
+
+// ###### Remove measurement ################################################
+void MeasurementManager::removeMeasurement(Measurement* measurement)
+{
+   lock();
+   MeasurementSet.erase(measurement->MeasurementID);
+   unlock();
+}
+
+
+unsigned long long MeasurementManager::getNextEvent()
+{
+   unsigned long long nextStatisticsEvent = (1ULL << 63);
+
+puts("###################################");
+   lock();
+   for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
+       iterator != MeasurementSet.end(); iterator++) {
+       const Measurement* measurement = iterator->second;
+       nextStatisticsEvent = std::min(nextStatisticsEvent,
+                                      measurement->NextStatisticsEvent);
+printf("NX=%llx   mNX=%llx\n", nextStatisticsEvent, measurement->NextStatisticsEvent);
+   }
+   unlock();
+
+printf("  => NX=%llx\n", nextStatisticsEvent);
+   return(nextStatisticsEvent);
+}
+
+
+void MeasurementManager::handleEvents(const unsigned long long now)
+{
+   lock();
+   for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
+       iterator != MeasurementSet.end(); iterator++) {
+       Measurement* measurement = iterator->second;
+       if(measurement->NextStatisticsEvent <= now) {
+          measurement->writeVectorStatistics(now);
+       }
+   }
+   unlock();
+}
+
+
+void Measurement::writeVectorStatistics(const unsigned long long now)
+{
+   lock();
+   // ====== Timer management ===============================================
+   NextStatisticsEvent += StatisticsInterval;
+   if(NextStatisticsEvent <= now) {   // Initialization!
+      NextStatisticsEvent = now + StatisticsInterval;
+   }
+   if(FirstStatisticsEvent == 0) {
+      FirstStatisticsEvent = now;
+      LastStatisticsEvent  = now;
+   }
+
+puts("wrt...");
+   
+   unlock();
+}
+
+
+
+
+
+
+// ###### Destructor ########################################################
+Measurement::Measurement()
+{
+   MeasurementID = 0;
+}
+
+
+// ###### Destructor ########################################################
+Measurement::~Measurement()
+{
+   finish();
+puts("######### destr MS");
+/*
+   std::map<uint64_t, Measurement*>::iterator found = StatisticsSet.find(measurementID);
+   if(found != StatisticsSet.end()) {
+      Measurement* statisticsWriter = found->second;
+      StatisticsSet.erase(found);
+      
+      // ====== Remove temporary files ======================================
+      if(statisticsWriter->VectorName.find("/tmp/") == 0) {
+         unlink(statisticsWriter->VectorName.c_str());
+      }
+      if(statisticsWriter->ScalarName.find("/tmp/") == 0) {
+         unlink(statisticsWriter->ScalarName.c_str());
+      }
+
+      delete statisticsWriter;
+   }   */
+}
+
+
+bool Measurement::initialize(const unsigned long long now,
+                             const uint64_t           measurementID,
+                             const char*              vectorNamePattern,
+                             const char*              scalarNamePattern)
+{
+   MeasurementID        = measurementID;
+   StatisticsInterval   = 1000000;
+   NextStatisticsEvent  = 0;
+   FirstStatisticsEvent = 0;
+   LastStatisticsEvent  = 0;
+
+   VectorNamePattern    = std::string(vectorNamePattern);
+   ScalarNamePattern    = std::string(scalarNamePattern);
+
+   return(MeasurementManager::getMeasurementManager()->addMeasurement(this));
+}
+
+
+void Measurement::finish()
+{
+   MeasurementManager::getMeasurementManager()->removeMeasurement(this);
+   VectorFile.finish();
+   ScalarFile.finish();
 }

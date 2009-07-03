@@ -117,6 +117,107 @@ class FlowBandwidthStats
 
 
 
+
+class Measurement;
+
+class MeasurementManager : public Mutex
+{
+   // ====== Protected Methods ==============================================
+   protected:
+   
+   // ====== Public Methods =================================================
+   public:
+   inline static MeasurementManager* getMeasurementManager() {
+      return(&MeasurementManagerSingleton);
+   }
+
+   bool addMeasurement(Measurement* measurement);
+   void printMeasurements(std::ostream& os);
+   void removeMeasurement(Measurement* measurement);
+
+   unsigned long long getNextEvent();
+   void handleEvents(const unsigned long long now);
+
+   // ====== Private Data ===================================================
+   private:
+   Measurement* findMeasurement(const uint64_t measurementID);
+
+   static MeasurementManager        MeasurementManagerSingleton;
+   std::map<uint64_t, Measurement*> MeasurementSet;
+};
+
+
+class Measurement : public Mutex
+{
+   friend class MeasurementManager;
+
+   // ====== Public Methods =================================================
+   public:
+   Measurement();
+   ~Measurement();
+
+   bool initialize(const unsigned long long now,
+                   const uint64_t           measurementID,
+                   const char*              vectorNamePattern,
+                   const char*              scalarNamePattern);
+   void finish();
+   void writeVectorStatistics(const unsigned long long now);
+
+   // ====== Private Data ===================================================
+   private:
+   uint64_t           MeasurementID;
+   unsigned long long StatisticsInterval;
+   unsigned long long FirstStatisticsEvent;
+   unsigned long long LastStatisticsEvent;
+   unsigned long long NextStatisticsEvent;
+
+   std::string        VectorNamePattern;
+   std::string        ScalarNamePattern;
+   OutputFile         VectorFile;
+   OutputFile         ScalarFile;
+//    OutputFile         ConfigFile;
+
+   FlowBandwidthStats CurrentBandwidthStats;
+   FlowBandwidthStats LastBandwidthStats;
+/*
+   unsigned long long VectorLine;
+   std::string        VectorName;
+   std::string        VectorPrefix;
+   std::string        VectorSuffix;
+   FILE*              VectorFile;
+   BZFILE*            VectorBZFile;
+
+   std::string        ScalarName;
+   std::string        ScalarPrefix;
+   std::string        ScalarSuffix;
+   FILE*              ScalarFile;
+   BZFILE*            ScalarBZFile;
+
+   unsigned long long TotalTransmittedBytes;
+   unsigned long long TotalTransmittedPackets;
+   unsigned long long TotalTransmittedFrames;
+   unsigned long long TotalReceivedBytes;
+   unsigned long long TotalReceivedPackets;
+   unsigned long long TotalReceivedFrames;
+   unsigned long long TotalLostBytes;
+   unsigned long long TotalLostPackets;
+   unsigned long long TotalLostFrames;
+   unsigned long long LastTotalTransmittedBytes;
+   unsigned long long LastTotalTransmittedPackets;
+   unsigned long long LastTotalTransmittedFrames;
+   unsigned long long LastTotalReceivedBytes;
+   unsigned long long LastTotalReceivedPackets;
+   unsigned long long LastTotalReceivedFrames;
+   unsigned long long LastTotalLostBytes;
+   unsigned long long LastTotalLostPackets;
+   unsigned long long LastTotalLostFrames;
+*/
+};
+
+
+
+
+
 class Flow;
 
 class FlowManager : public Thread
@@ -296,45 +397,44 @@ class Flow : public Thread
    private:
    unsigned long long scheduleNextStatusChangeEvent(const unsigned long long now);
    unsigned long long scheduleNextTransmissionEvent() const;
-      
+
       
    // ====== Flow Identification ============================================
-   uint64_t               MeasurementID;
-   uint32_t               FlowID;
-   uint16_t               StreamID;
+   uint64_t           MeasurementID;
+   uint32_t           FlowID;
+   uint16_t           StreamID;
 
-   // ====== Socket Descriptor ==============================================
-   int                    SocketDescriptor;
-   bool                   OriginalSocketDescriptor;
-   pollfd*                PollFDEntry;   // For internal usage by FlowManager
+   // ====== Socket Management ==============================================
+   int                SocketDescriptor;
+   bool               OriginalSocketDescriptor;
+   pollfd*            PollFDEntry;   // For internal usage by FlowManager
 
-   int                    RemoteControlSocketDescriptor;
-   sctp_assoc_t           RemoteControlAssocID;
-   sctp_assoc_t           RemoteDataAssocID;   // ????? deprec.
-   sockaddr_union         RemoteAddress;
-   bool                   RemoteAddressIsValid;
+   int                RemoteControlSocketDescriptor;
+   sctp_assoc_t       RemoteControlAssocID;
+   sockaddr_union     RemoteAddress;
+   bool               RemoteAddressIsValid;
 
 
    // ====== Timing =========================================================
-   unsigned long long   BaseTime;
-   unsigned long long   FirstTransmission;
-   unsigned long long   FirstReception;
-   unsigned long long   LastTransmission;
-   unsigned long long   LastReception;
+   unsigned long long BaseTime;
+   unsigned long long FirstTransmission;
+   unsigned long long FirstReception;
+   unsigned long long LastTransmission;
+   unsigned long long LastReception;
 
    // ====== Traffic Specification ==========================================
-   TrafficSpec          Traffic;
-   FlowStatus           InputStatus;
-   FlowStatus           OutputStatus;
-   uint32_t             LastOutboundFrameID;    // ID of last outbound frame
-   uint64_t             LastOutboundSeqNumber;  // ID of last outbound packet
+   TrafficSpec        Traffic;
+   FlowStatus         InputStatus;
+   FlowStatus         OutputStatus;
+   uint32_t           LastOutboundFrameID;     // ID of last outbound frame
+   uint64_t           LastOutboundSeqNumber;   // ID of last outbound packet
    
    // ====== Statistics =====================================================
-   OutputFile           VectorFile;
-   FlowBandwidthStats   CurrentBandwidthStats;
-   FlowBandwidthStats   LastBandwidthStats;
-   double               Delay;   // Transit time of latest received packet
-   double               Jitter;  // Current jitter value
+   OutputFile         VectorFile;
+   FlowBandwidthStats CurrentBandwidthStats;
+   FlowBandwidthStats LastBandwidthStats;
+   double             Delay;    // Transit time of latest received packet
+   double             Jitter;   // Current jitter value
 };
 
 #endif

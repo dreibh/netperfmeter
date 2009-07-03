@@ -211,6 +211,8 @@ bool performNetPerfMeterStop(int            controlSocket,
    }
 
    // ====== Download passive node's vector file ============================
+   puts("?????? SKIP DOWNLOAD !!!!");
+/*   
    const std::string vectorName = StatisticsWriter::getPassivNodeFilename(
                                      statisticsWriter->VectorPrefix,
                                      statisticsWriter->VectorSuffix);
@@ -231,7 +233,7 @@ bool performNetPerfMeterStop(int            controlSocket,
       return(false);
    }
    std::cout << " okay" << std::endl << std::endl;
-   
+  */ 
    return(true);
 }
 
@@ -624,6 +626,7 @@ outputReady=true; // ???
                                measurementID, 0, 0,
                                (outputReady == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
    if(outputReady) {
+   puts("?????? SKIP UPLOAD !!!!");
 /*      uploadOutput(controlSocket, assocID,
              statisticsWriter->VectorName.c_str(), statisticsWriter->VectorFile);
       upload(controlSocket, assocID,

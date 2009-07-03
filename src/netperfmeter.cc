@@ -321,7 +321,7 @@ bool mainLoop(const bool               isActiveMode,
 /*   unsigned long long     nextStatusChangeEvent = (1ULL << 63);
    unsigned long long     nextTransmissionEvent = (1ULL << 63);*/
    unsigned long long     now                   = getMicroTime();
-   StatisticsWriter*      statisticsWriter      = StatisticsWriter::getStatisticsWriter();
+//    StatisticsWriter*      statisticsWriter      = StatisticsWriter::getStatisticsWriter();
    std::map<int, pollfd*> pollFDIndex;
    static size_t          flowRoundRobin        = 0;
 
@@ -417,9 +417,9 @@ bool mainLoop(const bool               isActiveMode,
 */
 
    // ====== Use poll() to wait for events ==================================
-   const long long nextEvent = (long long)std::min(stopAt,  (1ULL << 63));  // ??????
-                                                //   statisticsWriter->getNextEvent());
-   const int timeout         = (int)(std::max(0LL, nextEvent - (long long)now) / 1000LL);
+   const long long nextEvent =
+      (long long)std::min(stopAt, MeasurementManager::getMeasurementManager()->getNextEvent());
+   const int timeout = std::max(0, (int)((nextEvent - (long long)now) / 1000LL));
 
    printf("to=%d   txNext=%lld\n", timeout, nextEvent - (long long)now);
    int result = ext_poll((pollfd*)&fds, n, timeout);
@@ -451,38 +451,28 @@ bool mainLoop(const bool               isActiveMode,
                            now, gUDPSocket, IPPROTO_UDP, gControlSocket);
       }
       */
-      bool gConnectedSocketsSetUpdated = false;
-/*      if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
+//       bool gConnectedSocketsSetUpdated = false;
+      
+      if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gTCPSocket, NULL, 0);
          if(newSD >= 0) {
-            gMessageReader.registerSocket(IPPROTO_TCP, newSD);
-            gConnectedSocketsSet.insert(newSD);
-            gConnectedSocketsSetUpdated = true;     // ???? deprec.
+            FlowManager::getFlowManager()->addSocket(IPPROTO_TCP, newSD);
          }
-      }*/
+      }
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gSCTPSocket, NULL, 0);
          if(newSD >= 0) {
-            printf("ACC=%d·\n",newSD);
             FlowManager::getFlowManager()->addSocket(IPPROTO_SCTP, newSD);
-/*            
-            gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
-            gConnectedSocketsSet.insert(newSD);
-            gConnectedSocketsSetUpdated = true;     // ???? deprec.*/
          }
       }
-/*
 #ifdef HAVE_DCCP
       if( (dccpID >= 0) && (fds[dccpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gDCCPSocket, NULL, 0);
          if(newSD >= 0) {
-            gMessageReader.registerSocket(IPPROTO_DCCP, newSD);
-            gConnectedSocketsSet.insert(newSD);
-            gConnectedSocketsSetUpdated = true;
+            FlowManager::getFlowManager()->addSocket(IPPROTO_DCCP, newSD);
          }
       }
 #endif
-*/
 
 //       // ====== Incoming data on connected sockets ==========================
 //       if(!gConnectedSocketsSetUpdated) {
@@ -575,9 +565,9 @@ bool mainLoop(const bool               isActiveMode,
    }
 
    // ====== Handle statistics timer ========================================
-   if(statisticsWriter->getNextEvent() <= now) {
+   if(MeasurementManager::getMeasurementManager()->getNextEvent() <= now) {
       puts("stat");
-//       statisticsWriter->writeAllVectorStatistics(now, gFlowSet, measurementID);
+      MeasurementManager::getMeasurementManager()->handleEvents(now);
    }
 
 /*   // ====== Ensure round-robin handling of streams over the same assoc =====
@@ -709,7 +699,7 @@ void activeMode(int argc, char** argv)
    // ====== Initialize IDs and print status ================================
    uint32_t flows         = 0;
    uint64_t measurementID = getMicroTime();
-   
+
    StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
    statisticsWriter->setMeasurementID(measurementID);
 
@@ -741,24 +731,30 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Get vector, scalar and config names ============================
-   const char* configName = "output.config";
+   const char* vectorNamePattern = "vector.vec.bz2";
+   const char* scalarNamePattern = "scalar.sca.bz2";
+   const char* configName        = "output.config";
    for(int i = 2;i < argc;i++) {
       if(strncmp(argv[i], "-vector=", 8) == 0) {
-         statisticsWriter->setVectorName((const char*)&argv[i][8]);
+         vectorNamePattern = (const char*)&argv[i][8];
       }
       else if(strncmp(argv[i], "-scalar=", 8) == 0) {
-         statisticsWriter->setScalarName((const char*)&argv[i][8]);
+         scalarNamePattern = (const char*)&argv[i][8];
       }
       else if(strncmp(argv[i], "-config=", 8) == 0) {
          configName = (const char*)&argv[i][8];
       }
    }
+
+   // ====== Initialize output file handling ================================
+   puts("\n\n########## ADD M\n\n");
+   Measurement measurement;
+   measurement.initialize(getMicroTime(), measurementID, vectorNamePattern, scalarNamePattern);
    FILE* configFile = fopen(configName, "w");
    if(configFile == NULL) {
       cerr << "ERROR: Unable to create config file " << configName << "!" << endl;
       exit(1);
    }
-
 
    // ====== Initialize flows ===============================================
    uint8_t protocol = 0;
@@ -930,6 +926,7 @@ fputs(".", stderr);usleep(500000);
    gMessageReader.deregisterSocket(gControlSocket);
    ext_close(gControlSocket);
    */
+   measurement.finish();
 }
 
 
