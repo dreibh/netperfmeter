@@ -517,7 +517,7 @@ static bool handleNetPerfMeterAddFlow(const NetPerfMeterAddFlowMessage* addFlowM
       
       Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
                             ntohs(addFlowMsg->StreamID), trafficSpec,
-                            assocID);  // <- AssocID!!!!! ???????????
+                            controlSocket, assocID);
       return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                          measurementID, flowID, streamID,
                                          (flow != NULL) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR));
@@ -683,6 +683,7 @@ puts("---- REMOVE ALL ....");
          return(false);
       }
 
+printf("CONTROL: type=%d\n",header->Type);
       switch(header->Type) {
          case NETPERFMETER_ADD_FLOW:
             return(handleNetPerfMeterAddFlow(
@@ -740,45 +741,32 @@ bool removeFlowFromRemoteNode(int controlSocket, FlowSpec* flowSpec)
 
 
 // ###### Handle NETPERFMETER_IDENTIFY_FLOW message #########################
-void handleIdentifyMessage(const NetPerfMeterIdentifyMessage* identifyMsg,
-                           const int                          sd,
-                           const sockaddr_union*              from,
-                           const sctp_assoc_t                 assocID,
-                           const int                          controlSocket)
+void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
+                                const int                          sd,
+                                const sockaddr_union*              from)
 {
+   int          controlSocketDescriptor;
+   sctp_assoc_t controlAssocID;
    const bool success =
-      FlowManager::getFlowManager()->identifyFlow(ntoh64(identifyMsg->MeasurementID),
-                                                  ntohl(identifyMsg->FlowID),
-                                                  ntohs(identifyMsg->StreamID));
-   if(success == false) {
-      std::cerr << "WARNING: Failed to identify flow on NETPERFMETER_IDENTIFY_FLOW!" << std::endl;
-   }
-   sendNetPerfMeterAcknowledge(controlSocket, flow->RemoteControlAssocID,
-                                 ntoh64(identifyMsg->MeasurementID),
-                                 ntohl(identifyMsg->FlowID),
-                                 ntohs(identifyMsg->StreamID),
-                                 (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
-   
-   ?????????ßß
-   Flow* flow = Flow::findFlow(flowSet,
-                                               ntoh64(identifyMsg->MeasurementID),
-                                               ntohl(identifyMsg->FlowID),
-                                               ntohs(identifyMsg->StreamID));
-   if((flow != NULL) && (flow->RemoteAddressIsValid == false)) {
-      flow->setSocketDescriptor(
-      flow->SocketDescriptor     = sd;
-// ??????      flow->RemoteDataAssocID    = assocID;
-      
-      flow->RemoteAddress        = *from;
-      flow->RemoteAddressIsValid = true;
-      const bool success = flow->initializeVectorFile((identifyMsg->Header.Flags & NPIF_COMPRESS_STATS) ? true : false);
-      sendNetPerfMeterAcknowledge(controlSocket, flow->RemoteControlAssocID,
+      FlowManager::getFlowManager()->identifySocket(ntoh64(identifyMsg->MeasurementID),
+                                                    ntohl(identifyMsg->FlowID),
+                                                    ntohs(identifyMsg->StreamID),
+                                                    sd, from,
+                                                    (identifyMsg->Header.Flags & NPIF_COMPRESS_STATS) ?
+                                                       true : false,
+                                                    controlSocketDescriptor,
+                                                    controlAssocID);
+   if(controlAssocID != 0) {
+      sendNetPerfMeterAcknowledge(controlSocketDescriptor, controlAssocID,
                                   ntoh64(identifyMsg->MeasurementID),
                                   ntohl(identifyMsg->FlowID),
                                   ntohs(identifyMsg->StreamID),
-                                  (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
+                                  (success == true) ? NETPERFMETER_STATUS_OKAY :
+                                                      NETPERFMETER_STATUS_ERROR);
+printf(" ---->> ID=%d\n",success);
    }
    else {
+      // No known flow -> no assoc ID to send response to!
       std::cerr << "WARNING: NETPERFMETER_IDENTIFY_FLOW message for unknown flow!" << std::endl;
    }
 }

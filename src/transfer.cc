@@ -114,6 +114,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       sent = sctp_send(flow->getSocketDescriptor(),
                        (char*)&outputBuffer, bytesToSend,
                        &sinfo, 0);
+printf("SEND: %d on sock %d  =>  res=%d\n", bytesToSend, flow->getSocketDescriptor(), sent);
    }
    else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
       sent = ext_sendto(flow->getSocketDescriptor(),
@@ -210,9 +211,7 @@ ssize_t handleDataMessage(const bool               isActiveMode,
       if( (received >= sizeof(NetPerfMeterIdentifyMessage)) &&
           (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
           (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
-puts("IDENTIF!!!");          exit(1);
-/*         handleIdentifyMessage(flowSet, identifyMsg, sd, sinfo.sinfo_assoc_id,
-                               &from, controlSocket);*/
+          handleNetPerfMeterIdentify(identifyMsg, sd, &from);
       }
 
       // ====== Handle NETPERFMETER_DATA message ============================

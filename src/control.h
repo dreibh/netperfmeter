@@ -54,6 +54,11 @@ bool awaitNetPerfMeterAcknowledge(int            controlSocket,
 
 // ?????  passive side!
                                   
+void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
+                                const int                          sd,
+                                const sockaddr_union*              from);
+
+/// ???? Name
 bool handleControlMessage(MessageReader* messageReader,
                           int            controlSocket);
 

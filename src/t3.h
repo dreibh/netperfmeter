@@ -137,6 +137,14 @@ class FlowManager : public Thread
    }
 
    void addSocket(const int protocol, const int socketDescriptor);
+   bool identifySocket(const uint64_t        measurementID,
+                       const uint32_t        flowID,
+                       const uint16_t        streamID,
+                       const int             socketDescriptor,
+                       const sockaddr_union* from,
+                       const bool            compressVectorFile,
+                       int&                  controlSocketDescriptor,
+                       sctp_assoc_t&         controlAssocID);
    void removeSocket(const int  socketDescriptor,
                      const bool closeSocket = true);
 
@@ -193,7 +201,8 @@ class Flow : public Thread
         const uint32_t     flowID,
         const uint16_t     streamID,
         const TrafficSpec& trafficSpec,
-        const sctp_assoc_t controlAssocID = 0);
+        const int          controlSocketDescriptor = -1,
+        const sctp_assoc_t controlAssocID          = 0);
    virtual ~Flow();
    
 
@@ -299,6 +308,7 @@ class Flow : public Thread
    bool                   OriginalSocketDescriptor;
    pollfd*                PollFDEntry;   // For internal usage by FlowManager
 
+   int                    RemoteControlSocketDescriptor;
    sctp_assoc_t           RemoteControlAssocID;
    sctp_assoc_t           RemoteDataAssocID;   // ????? deprec.
    sockaddr_union         RemoteAddress;

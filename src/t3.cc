@@ -502,27 +502,29 @@ Flow::Flow(const uint64_t     measurementID,
            const uint32_t     flowID,
            const uint16_t     streamID,
            const TrafficSpec& trafficSpec,
+           const int          controlSocketDescriptor,
            const sctp_assoc_t controlAssocID)
 {
-   MeasurementID            = measurementID;
-   FlowID                   = flowID;
-   StreamID                 = streamID;
+   MeasurementID                 = measurementID;
+   FlowID                        = flowID;
+   StreamID                      = streamID;
 
-   SocketDescriptor         = -1;   
-   OriginalSocketDescriptor = false;
-   RemoteControlAssocID     = controlAssocID;
-   RemoteDataAssocID        = 0;  // ??????
-   RemoteAddressIsValid     = false;
+   SocketDescriptor              = -1;   
+   OriginalSocketDescriptor      = false;
+   RemoteControlSocketDescriptor = controlSocketDescriptor;
+   RemoteControlAssocID          = controlAssocID;
+   RemoteDataAssocID             = 0;  // ??????
+   RemoteAddressIsValid          = false;
 
-   InputStatus              = WaitingForStartup;
-   OutputStatus             = WaitingForStartup;
-   BaseTime                 = getMicroTime();
+   InputStatus                   = WaitingForStartup;
+   OutputStatus                  = WaitingForStartup;
+   BaseTime                      = getMicroTime();
 
-   Traffic                  = trafficSpec;
+   Traffic                       = trafficSpec;
 
    resetStatistics();
-   LastOutboundSeqNumber    = 0;
-   LastOutboundFrameID      = 0;
+   LastOutboundSeqNumber         = 0;
+   LastOutboundFrameID           = 0;
    
    FlowManager::getFlowManager()->addFlow(this);
 }
@@ -758,6 +760,63 @@ void FlowManager::addSocket(const int protocol, const int socketDescriptor)
    UnidentifiedSockets.insert(std::pair<int, int>(socketDescriptor, protocol));
    UpdatedUnidentifiedSockets = true;
    unlock();
+}
+
+
+bool FlowManager::identifySocket(const uint64_t        measurementID,
+                                 const uint32_t        flowID,
+                                 const uint16_t        streamID,
+                                 const int             socketDescriptor,
+                                 const sockaddr_union* from,
+                                 const bool            compressVectorFile,
+                                 int&                  controlSocketDescriptor,
+                                 sctp_assoc_t&         controlAssocID)
+{
+   bool success            = false;
+   controlSocketDescriptor = -1;
+   controlAssocID          = 0;
+
+   lock();
+   Flow* flow = findFlow(measurementID, flowID, streamID);
+   if( (flow != NULL) && (flow->RemoteAddressIsValid == false) ) {
+      flow->lock();
+      flow->setSocketDescriptor(socketDescriptor, false);
+      flow->RemoteAddress        = *from;
+      flow->RemoteAddressIsValid = true;
+      controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
+      controlAssocID             = flow->RemoteControlAssocID;
+      success = flow->getVectorFile().initialize(NULL, compressVectorFile);
+      flow->unlock();
+   }
+   unlock();
+
+   return(success);
+    
+
+/*????   
+   if(fl
+
+   ntoh64(identifyMsg->MeasurementID),
+                                               ntohl(identifyMsg->FlowID),
+                                               ntohs(identifyMsg->StreamID));
+   if((flow != NULL) && (flow->RemoteAddressIsValid == false)) {
+      flow->setSocketDescriptor(
+      flow->SocketDescriptor     = sd;
+// ??????      flow->RemoteDataAssocID    = assocID;
+      
+      flow->RemoteAddress        = *from;
+      flow->RemoteAddressIsValid = true;
+      const bool success = flow->initializeVectorFile((identifyMsg->Header.Flags & NPIF_COMPRESS_STATS) ? true : false);
+      sendNetPerfMeterAcknowledge(controlSocket, flow->RemoteControlAssocID,
+                                  ntoh64(identifyMsg->MeasurementID),
+                                  ntohl(identifyMsg->FlowID),
+                                  ntohs(identifyMsg->StreamID),
+                                  (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
+   }
+   else {
+      std::cerr << "WARNING: NETPERFMETER_IDENTIFY_FLOW message for unknown flow!" << std::endl;
+   }
+   */
 }
 
 
