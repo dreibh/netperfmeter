@@ -139,7 +139,7 @@ class Measurement : public Mutex
                    const char*              scalarNamePattern);
    void finish();
 
-   void updateTransmissionStatistics(const unsigned long long now,
+/*   void updateTransmissionStatistics(const unsigned long long now,
                                      const size_t             addedFrames,
                                      const size_t             addedPackets,
                                      const size_t             addedBytes);
@@ -147,7 +147,7 @@ class Measurement : public Mutex
                                   const size_t             addedFrames,
                                   const size_t             addedBytes,
                                   const double             delay,
-                                  const double             jitter);
+                                  const double             jitter);*/
    
    void writeVectorStatistics(const unsigned long long now);
 
@@ -170,10 +170,6 @@ class Measurement : public Mutex
    unsigned long long FirstTransmission;
    unsigned long long LastReception;
    unsigned long long FirstReception;
-   FlowBandwidthStats CurrentBandwidthStats;
-   FlowBandwidthStats LastBandwidthStats;
-   double             Delay;
-   double             Jitter;
 };
 
 
@@ -192,32 +188,32 @@ class MeasurementManager : public Mutex
    void printMeasurements(std::ostream& os);
    void removeMeasurement(Measurement* measurement);
 
-   inline void updateTransmissionStatistics(const uint64_t           measurementID,
-                                            const unsigned long long now,
-                                            const size_t             addedFrames,
-                                            const size_t             addedPackets,
-                                            const size_t             addedBytes) {
-      lock();
-      Measurement* measurement = findMeasurement(measurementID);
-      if(measurement) {
-         measurement->updateTransmissionStatistics(now, addedFrames, addedPackets, addedBytes);
-      }
-      unlock();
-   }
-   
-   void updateReceptionStatistics(const uint64_t           measurementID,
-                                  const unsigned long long now,
-                                  const size_t             addedFrames,
-                                  const size_t             addedBytes,
-                                  const double             delay,
-                                  const double             jitter) {
-      lock();
-      Measurement* measurement = findMeasurement(measurementID);
-      if(measurement) {
-         measurement->updateReceptionStatistics(now, addedFrames, addedBytes, delay, jitter);
-      }
-      unlock();
-   }
+//    inline void updateTransmissionStatistics(const uint64_t           measurementID,
+//                                             const unsigned long long now,
+//                                             const size_t             addedFrames,
+//                                             const size_t             addedPackets,
+//                                             const size_t             addedBytes) {
+//       lock();
+//       Measurement* measurement = findMeasurement(measurementID);
+//       if(measurement) {
+//          measurement->updateTransmissionStatistics(now, addedFrames, addedPackets, addedBytes);
+//       }
+//       unlock();
+//    }
+//    
+//    void updateReceptionStatistics(const uint64_t           measurementID,
+//                                   const unsigned long long now,
+//                                   const size_t             addedFrames,
+//                                   const size_t             addedBytes,
+//                                   const double             delay,
+//                                   const double             jitter) {
+//       lock();
+//       Measurement* measurement = findMeasurement(measurementID);
+//       if(measurement) {
+//          measurement->updateReceptionStatistics(now, addedFrames, addedBytes, delay, jitter);
+//       }
+//       unlock();
+//    }
 
    unsigned long long getNextEvent();
    void handleEvents(const unsigned long long now);

@@ -174,9 +174,9 @@ ssize_t transmitFrame(// StatisticsWriter*        statsWriter, ???
    }
 
    flow->updateTransmissionStatistics(now, 1, packetsSent, bytesSent);
-   MeasurementManager::getMeasurementManager()->updateTransmissionStatistics(
-      flow->getMeasurementID(),
-      now,  1, packetsSent, bytesSent);
+//    MeasurementManager::getMeasurementManager()->updateTransmissionStatistics(
+//       flow->getMeasurementID(),
+//       now,  1, packetsSent, bytesSent);
 
 // ??????????????????
 //    statsWriter->TotalTransmittedFrames++;
@@ -298,9 +298,9 @@ static void updateStatistics(// ?????????? StatisticsWriter*              statsW
 
    flow->updateReceptionStatistics(
       now, receivedFrames, receivedBytes, transitTime, jitter);
-   MeasurementManager::getMeasurementManager()->updateReceptionStatistics(
-      flow->getMeasurementID(),
-      now, receivedFrames, receivedBytes, transitTime, jitter);
+//    MeasurementManager::getMeasurementManager()->updateReceptionStatistics(
+//       flow->getMeasurementID(),
+//       now, receivedFrames, receivedBytes, transitTime, jitter);
 
    // ------ Write statistics -----------------------------------------------
    /*
