@@ -37,8 +37,7 @@ ssize_t handleDataMessage(const bool               isActiveMode,
 //                           StatisticsWriter*        statsWriter,
 //                           std::vector<FlowSpec*>&  flowSet,
                           const unsigned long long now,
-                          const int                sd,
                           const int                protocol,
-                          const int                controlSocket);
+                          const int                sd);
 
 #endif

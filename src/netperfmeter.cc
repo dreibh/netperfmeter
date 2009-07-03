@@ -318,8 +318,8 @@ bool mainLoop(const bool               isActiveMode,
    int                    udpID                 = -1;
    int                    sctpID                = -1;
    int                    dccpID                = -1;
-   unsigned long long     nextStatusChangeEvent = (1ULL << 63);
-   unsigned long long     nextTransmissionEvent = (1ULL << 63);
+/*   unsigned long long     nextStatusChangeEvent = (1ULL << 63);
+   unsigned long long     nextTransmissionEvent = (1ULL << 63);*/
    unsigned long long     now                   = getMicroTime();
    StatisticsWriter*      statisticsWriter      = StatisticsWriter::getStatisticsWriter();
    std::map<int, pollfd*> pollFDIndex;
@@ -327,7 +327,8 @@ bool mainLoop(const bool               isActiveMode,
 
 
    // ====== Get parameters for poll() ======================================
-   for(set<int>::iterator iterator = gConnectedSocketsSet.begin();iterator != gConnectedSocketsSet.end();iterator++) {
+   for(set<int>::iterator iterator = gConnectedSocketsSet.begin();
+       iterator != gConnectedSocketsSet.end();iterator++) {
       fds[n].fd      = *iterator;
       fds[n].events  = POLLIN;
       fds[n].revents = 0;
@@ -416,27 +417,27 @@ bool mainLoop(const bool               isActiveMode,
 */
 
    // ====== Use poll() to wait for events ==================================
-   const long long nextEvent = (long long)std::min(std::min(nextStatusChangeEvent, nextTransmissionEvent),
-                                                   std::min(stopAt, statisticsWriter->getNextEvent()));
+   const long long nextEvent = (long long)std::min(stopAt,  (1ULL << 63));  // ??????
+                                                //   statisticsWriter->getNextEvent());
    const int timeout         = (int)(std::max(0LL, nextEvent - (long long)now) / 1000LL);
 
-   // printf("to=%d   txNext=%lld\n", timeout, nextEvent - (long long)now);
-   const int result = ext_poll((pollfd*)&fds, n, timeout);
-// ???    printf("result=%d\n");
-   now = getMicroTime();   // Get current time.
+   printf("to=%d   txNext=%lld\n", timeout, nextEvent - (long long)now);
+   int result = ext_poll((pollfd*)&fds, n, timeout);
+   printf("result=%d\n",result);
+   
+   
 
    // ====== Handle socket events ===========================================
+   now = getMicroTime();   // Get current time.
    if(result >= 0) {
 
       // ====== Incoming control message ====================================
       if( (controlID >= 0) && (fds[controlID].revents & POLLIN) ) {
-      puts("CTRL!!!!");
-      /*
-         const bool controlOkay = handleControlMessage(&gMessageReader, gFlowSet, gControlSocket);
+         puts("CRTL!!!!");
+         const bool controlOkay = handleControlMessage(&gMessageReader, gControlSocket);
          if((!controlOkay) && (isActiveMode)) {
             return(false);
          }
-         */
       }
 
       // ====== Incoming data message =======================================
@@ -451,15 +452,26 @@ bool mainLoop(const bool               isActiveMode,
       }
       */
       bool gConnectedSocketsSetUpdated = false;
-/*
-      if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
+/*      if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gTCPSocket, NULL, 0);
          if(newSD >= 0) {
             gMessageReader.registerSocket(IPPROTO_TCP, newSD);
             gConnectedSocketsSet.insert(newSD);
-            gConnectedSocketsSetUpdated = true;
+            gConnectedSocketsSetUpdated = true;     // ???? deprec.
+         }
+      }*/
+      if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
+         const int newSD = ext_accept(gSCTPSocket, NULL, 0);
+         if(newSD >= 0) {
+            printf("ACC=%d·\n",newSD);
+            FlowManager::getFlowManager()->addSocket(IPPROTO_SCTP, newSD);
+/*            
+            gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
+            gConnectedSocketsSet.insert(newSD);
+            gConnectedSocketsSetUpdated = true;     // ???? deprec.*/
          }
       }
+/*
 #ifdef HAVE_DCCP
       if( (dccpID >= 0) && (fds[dccpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gDCCPSocket, NULL, 0);
@@ -472,23 +484,32 @@ bool mainLoop(const bool               isActiveMode,
 #endif
 */
 
-      // ====== Incoming data on connected sockets ==========================
-      /*
-      if(!gConnectedSocketsSetUpdated) {
-         for(int i = 0;i < gConnectedSocketsSet.size();i++) {
-            if(fds[i].revents & POLLIN) {
-               const ssize_t result =
-                  handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
-                                    now, fds[i].fd, IPPROTO_TCP, gControlSocket);
-               if( (result < 0) && (result != MRRM_PARTIAL_READ) ) {
-                  gMessageReader.deregisterSocket(fds[i].fd);
-                  gConnectedSocketsSet.erase(fds[i].fd);
-                  ext_close(fds[i].fd);
-               }
-            }
-         }
-      }
-      */
+//       // ====== Incoming data on connected sockets ==========================
+//       if(!gConnectedSocketsSetUpdated) {
+//          for(int i = 0;i < gConnectedSocketsSet.size();i++) {
+//             if(fds[i].revents & POLLIN) {
+//                puts("DATA-ON-NEW-SOCKET");
+//                result = handleIdentifyMessage(now, fds[i].fd);
+//                if(result != MRRM_PARTIAL_READ) {
+//                   printf("########## MOVE SD %d\n",fds[i].fd);
+//                   if(result < 0) {
+//                   printf("########## ERASE SD %d\n",fds[i].fd);
+//                      ext_close(fds[i].fd); 
+//                   }
+//                   gMessageReader.deregisterSocket(fds[i].fd);
+//                   gConnectedSocketsSet.erase(fds[i].fd);
+//                }
+// /*               const ssize_t result =
+//                   handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
+//                                     now, fds[i].fd, IPPROTO_TCP, gControlSocket);
+//                if( (result < 0) && (result != MRRM_PARTIAL_READ) ) {
+//                   gMessageReader.deregisterSocket(fds[i].fd);
+//                   gConnectedSocketsSet.erase(fds[i].fd);
+//                   ext_close(fds[i].fd);
+//                }*/
+//             }
+//          }
+//       }
 
 /*
       // ====== Outgoing flow events ========================================
@@ -546,19 +567,17 @@ bool mainLoop(const bool               isActiveMode,
          }
       }
 */
+   }
 
-
-      // ====== Stop-time reached ===========================================
-printf("S=%llu\n", stopAt-now);
-      if(now >= stopAt) {
-         gStopTimeReached = true;
-      }
+   // ====== Stop-time reached ==============================================
+   if(now >= stopAt) {
+      gStopTimeReached = true;
    }
 
    // ====== Handle statistics timer ========================================
    if(statisticsWriter->getNextEvent() <= now) {
-//    puts("stat");
-//      statisticsWriter->writeAllVectorStatistics(now, gFlowSet, measurementID);
+      puts("stat");
+//       statisticsWriter->writeAllVectorStatistics(now, gFlowSet, measurementID);
    }
 
 /*   // ====== Ensure round-robin handling of streams over the same assoc =====
@@ -574,7 +593,6 @@ printf("S=%llu\n", stopAt-now);
 // ###### Passive Mode ######################################################
 void passiveMode(int argc, char** argv, const uint16_t localPort)
 {
-/*
    // ====== Initialize control socket ======================================
    gControlSocket = createAndBindSocket(SOCK_SEQPACKET, IPPROTO_SCTP, localPort + 1, true);   // Leave it blocking!
    if(gControlSocket < 0) {
@@ -613,7 +631,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       cerr << "NOTE: Your kernel does not provide DCCP support." << endl;
    }
 #endif
-   gSCTPSocket = createAndBindSocket(SOCK_SEQPACKET, IPPROTO_SCTP, localPort);
+   gSCTPSocket = createAndBindSocket(SOCK_STREAM, IPPROTO_SCTP, localPort);
    if(gSCTPSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket - "
            << strerror(errno) << "!" << endl;
@@ -654,7 +672,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 
    // ====== Print status ===================================================
-   FlowSpec::printFlows(cout, gFlowSet, true);
+   FlowManager::getFlowManager()->print(cout, true);
 
 
    // ====== Clean up =======================================================
@@ -668,9 +686,6 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(gDCCPSocket >= 0) {
       ext_close(gDCCPSocket);
    }
-  */
-  puts("STOP!!!");
-  exit(1);
 }
 
 

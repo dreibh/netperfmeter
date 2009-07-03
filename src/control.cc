@@ -35,8 +35,8 @@
 #define IDENTIFY_TIMEOUT    2500
 
 
-static bool download(const int       controlSocket,
-                     const char*     fileName);
+static bool download(const int   controlSocket,
+                     const char* fileName);
 
 
 // ###### Tell remote node to add new flow ##################################
@@ -311,56 +311,6 @@ bool awaitNetPerfMeterAcknowledge(int            controlSocket,
 
 
 
-// ###### Upload file #######################################################
-static bool upload(const int          controlSocket,
-                   const sctp_assoc_t assocID,
-                   const char*        fileName,
-                   FILE*              fh)
-{
-   char                 messageBuffer[sizeof(NetPerfMeterResults) + NETPERFMETER_RESULTS_MAX_DATA_LENGTH];
-   NetPerfMeterResults* resultsMsg = (NetPerfMeterResults*)&messageBuffer;
-
-   resultsMsg->Header.Type = NETPERFMETER_RESULTS;
-         
-   sctp_sndrcvinfo sinfo;
-   memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_assoc_id = assocID;
-   sinfo.sinfo_ppid     = PPID_NETPERFMETER_CONTROL;
-
-   std::cout << std::endl << "Uploading results [" << fileName << "] ";
-   std::cout.flush();
-
-   bool success = true;
-   setBlocking(controlSocket);
-   do {
-      const size_t bytes = fread(&resultsMsg->Data, 1, NETPERFMETER_RESULTS_MAX_DATA_LENGTH, fh);
-      resultsMsg->Header.Flags  = feof(fh) ? RHF_EOF : 0x00;
-      resultsMsg->Header.Length = htons(bytes);
-      // printf("   -> b=%d   snd=%d\n",(int)bytes, (int)(sizeof(NetPerfMeterResults) + bytes));
-      if(ferror(fh)) {
-         std::cerr << "ERROR: Failed to read results from " << fileName << " - " << strerror(errno) << "!" << std::endl;
-         success = false;
-         break;
-      }
-
-      std::cout << ".";
-      std::cout.flush();
-      if(sctp_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, &sinfo, 0) < 0) {
-         std::cerr << "ERROR: Failed to upload results - " << strerror(errno) << "!" << std::endl;
-         success = false;
-         break;
-      }
-
-   } while(!(resultsMsg->Header.Flags & RHF_EOF));
-   if(!success) {
-      sendAbort(controlSocket, assocID);
-   }
-   setNonBlocking(controlSocket);
-   std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
-   return(success);
-}
-
-
 // ###### Download file #####################################################
 static bool download(const int       controlSocket,
                      const char*     fileName)
@@ -407,25 +357,6 @@ static bool download(const int       controlSocket,
 }
 
 
-// ###### Upload statistics file ############################################
-static bool uploadResults(const int          controlSocket,
-                          const sctp_assoc_t assocID,
-                          FlowSpec*          flowSpec)
-{
-   bool success = flowSpec->finishVectorFile(false);
-   if(success) {
-      success = sendNetPerfMeterAcknowledge(controlSocket, assocID,
-                                            flowSpec->MeasurementID, flowSpec->FlowID, flowSpec->StreamID,
-                                            (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
-      if(success) {
-         success = upload(controlSocket, assocID, flowSpec->VectorName.c_str(), flowSpec->VectorFile);
-      }
-   }
-   flowSpec->finishVectorFile(true);
-   return(success);
-}
-
-
 // ###### Download statistics file ##########################################
 static bool downloadResults(const int       controlSocket,
                             const FlowSpec* flowSpec)
@@ -454,10 +385,262 @@ static bool downloadResults(const int       controlSocket,
 }
 
 
+
+
+
+// ?????? passive side CTRL!
+
+
+// ###### Upload file #######################################################
+static bool uploadOutputFile(const int          controlSocket,
+                             const sctp_assoc_t assocID,
+                             const OutputFile&  outputFile)
+{
+   char                 messageBuffer[sizeof(NetPerfMeterResults) +
+                                      NETPERFMETER_RESULTS_MAX_DATA_LENGTH];
+   NetPerfMeterResults* resultsMsg = (NetPerfMeterResults*)&messageBuffer;
+
+   // ====== Initialize header ==============================================
+   sctp_sndrcvinfo sinfo;
+   memset(&sinfo, 0, sizeof(sinfo));
+   sinfo.sinfo_assoc_id    = assocID;
+   sinfo.sinfo_ppid        = PPID_NETPERFMETER_CONTROL;
+   resultsMsg->Header.Type = NETPERFMETER_RESULTS;
+
+   std::cout << std::endl << "Uploading results [" << outputFile.getName() << "] ";
+   std::cout.flush();
+
+   // ====== Transmission loop ==============================================
+   bool success = true;
+   setBlocking(controlSocket);
+   do {
+      // ====== Read chunk from file ========================================
+      const size_t bytes = fread(&resultsMsg->Data, 1,
+                                 NETPERFMETER_RESULTS_MAX_DATA_LENGTH,
+                                 outputFile.getFile());
+      resultsMsg->Header.Flags  = feof(outputFile.getFile()) ? RHF_EOF : 0x00;
+      resultsMsg->Header.Length = htons(bytes);
+      // printf("   -> b=%d   snd=%d\n",(int)bytes, (int)(sizeof(NetPerfMeterResults) + bytes));
+      if(ferror(outputFile.getFile())) {
+         std::cerr << "ERROR: Failed to read results from "
+                   << outputFile.getName() << " - "
+                   << strerror(errno) << "!" << std::endl;
+         success = false;
+         break;
+      }
+
+      // ====== Transmit chunk ==============================================
+      if(sctp_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, &sinfo, 0) < 0) {
+         std::cerr << "ERROR: Failed to upload results - " << strerror(errno) << "!" << std::endl;
+         success = false;
+         break;
+      }
+      std::cout << ".";
+      std::cout.flush();
+   } while(!(resultsMsg->Header.Flags & RHF_EOF));
+
+   // ====== Check results ==================================================
+   if(!success) {
+      sendAbort(controlSocket, assocID);
+   }
+   setNonBlocking(controlSocket);
+   std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
+   return(success);
+}
+
+
+// ###### Upload per-flow statistics file ###################################
+static bool uploadResults(const int          controlSocket,
+                          const sctp_assoc_t assocID,
+                          Flow*              flow)
+{
+   bool success = flow->getVectorFile().finish(false);
+   if(success) {
+      success = sendNetPerfMeterAcknowledge(
+                   controlSocket, assocID,
+                   flow->getMeasurementID(), flow->getFlowID(), flow->getStreamID(),
+                   (success == true) ? NETPERFMETER_STATUS_OKAY :
+                                       NETPERFMETER_STATUS_ERROR);
+      if(success) {
+         success = uploadOutputFile(controlSocket, assocID, flow->getVectorFile());
+      }
+   }
+   flow->getVectorFile().finish(true);
+   return(success);
+}
+
+
+// ###### Handle NETPERFMETER_ADD_FLOW ######################################
+static bool handleNetPerfMeterAddFlow(const NetPerfMeterAddFlowMessage* addFlowMsg,
+                                      const int                         controlSocket,
+                                      const sctp_assoc_t                assocID,
+                                      const size_t                      received)
+{
+   if(received < sizeof(NetPerfMeterAddFlowMessage)) {
+      std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message!"
+                << std::endl;
+      return(false);
+   }
+   const uint64_t measurementID   = ntoh64(addFlowMsg->MeasurementID);
+   const uint32_t flowID          = ntohl(addFlowMsg->FlowID);
+   const uint16_t streamID        = ntohs(addFlowMsg->StreamID);
+   const size_t   startStopEvents = ntohs(addFlowMsg->OnOffEvents);
+   if(received < sizeof(NetPerfMeterAddFlowMessage) + (startStopEvents * sizeof(unsigned int))) {
+      std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message "
+                   "(too few start/stop entries)!" << std::endl;
+      return(false);
+   }
+   char description[sizeof(addFlowMsg->Description) + 1];
+   memcpy((char*)&description, (const char*)&addFlowMsg->Description, sizeof(addFlowMsg->Description));
+   description[sizeof(addFlowMsg->Description)] = 0x00;
+   if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID)) {
+      std::cerr << "ERROR: NETPERFMETER_ADD_FLOW tried to add already-existing flow!"
+                << std::endl;
+      return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
+                                          measurementID, flowID, streamID,
+                                          NETPERFMETER_STATUS_ERROR));
+   }
+   else {
+      // ====== Create new flow =============================================
+      TrafficSpec trafficSpec;
+      trafficSpec.Protocol             = addFlowMsg->Protocol;
+      trafficSpec.Description          = std::string(description);
+      trafficSpec.OutboundFrameRate    = networkToDouble(addFlowMsg->FrameRate);
+      trafficSpec.OutboundFrameSize    = networkToDouble(addFlowMsg->FrameSize);
+      trafficSpec.OutboundFrameRateRng = addFlowMsg->FrameRateRng;
+      trafficSpec.OutboundFrameSizeRng = addFlowMsg->FrameSizeRng;
+      trafficSpec.OrderedMode          = ntohl(addFlowMsg->OrderedMode)  / (double)0xffffffff;
+      trafficSpec.ReliableMode         = ntohl(addFlowMsg->ReliableMode) / (double)0xffffffff;
+      for(size_t i = 0;i < startStopEvents;i++) {
+         trafficSpec.OnOffEvents.insert(ntohl(addFlowMsg->OnOffEvent[i]));
+      }
+      
+      Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
+                            ntohs(addFlowMsg->StreamID), trafficSpec,
+                            assocID);  // <- AssocID!!!!! ???????????
+      return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
+                                         measurementID, flowID, streamID,
+                                         (flow != NULL) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR));
+   }
+}
+
+
+// ###### Handle NETPERFMETER_REMOVE_FLOW #####################################
+static bool handleNetPerfMeterRemoveFlow(const NetPerfMeterRemoveFlowMessage* removeFlowMsg,
+                                         const int                            controlSocket,
+                                         const sctp_assoc_t                   assocID,
+                                         const size_t                         received)
+{
+   if(received < sizeof(NetPerfMeterRemoveFlowMessage)) {
+      std::cerr << "ERROR: Received malformed NETPERFMETER_REMOVE_FLOW control message!"
+                << std::endl;
+      return(false);
+   }
+   const uint64_t measurementID = ntoh64(removeFlowMsg->MeasurementID);
+   const uint32_t flowID        = ntohl(removeFlowMsg->FlowID);
+   const uint16_t streamID      = ntohs(removeFlowMsg->StreamID);
+   Flow* flow = FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID);
+   if(flow == NULL) {
+      std::cerr << "ERROR: NETPERFMETER_ADD_REMOVE tried to remove not-existing flow!"
+                << std::endl;
+      return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
+                                          measurementID, flowID, streamID,
+                                          NETPERFMETER_STATUS_ERROR));
+   }
+   else {
+      // ------ Remove Flow from Flow Manager -------------------------
+      FlowManager::getFlowManager()->removeFlow(flow);
+      // ------ Upload statistics file --------------------------------
+      uploadResults(controlSocket, assocID, flow);
+      delete flow;
+   }
+   return(true);
+}
+
+
+// ###### Handle NETPERFMETER_START #########################################
+static bool handleNetPerfMeterStart(const NetPerfMeterStartMessage* startMsg,
+                                    const int                       controlSocket,
+                                    const sctp_assoc_t              assocID,
+                                    const size_t                    received)
+{
+   if(received < sizeof(NetPerfMeterStartMessage)) {
+      std::cerr << "ERROR: Received malformed NETPERFMETER_START control message!" << std::endl;
+      return(false);
+   }
+   const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
+
+   std::cout << std::endl << "Starting measurement "
+               << format("%llx", (unsigned long long)measurementID) << " ..." << std::endl;
+
+   // ???????? "now" notwendig??????
+   const unsigned long long now = getMicroTime();
+   FlowManager::getFlowManager()->startMeasurement(measurementID, now, true);
+
+   bool success = false;
+   StatisticsWriter* statisticsWriter =
+      StatisticsWriter::addMeasurement(now, measurementID,
+                                       (startMsg->Header.Flags & NPSF_COMPRESS_STATS) ? true : false);
+   if(statisticsWriter) {
+      success = statisticsWriter->initializeOutputFiles();
+   }
+   
+   return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
+                                       measurementID, 0, 0,
+                                       (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR));
+}
+
+
+// ###### Handle NETPERFMETER_STOP #########################################
+static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
+                                   const int                      controlSocket,
+                                   const sctp_assoc_t             assocID,
+                                   const size_t                   received)
+{
+   if(received < sizeof(NetPerfMeterStopMessage)) {
+      std::cerr << "ERROR: Received malformed NETPERFMETER_STOP control message!" << std::endl;
+      return(false);
+   }
+   const unsigned long long now = getMicroTime();
+   const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
+   char measurementIDString[64];
+   snprintf((char*)&measurementIDString, sizeof(measurementIDString),
+            "%llx", (unsigned long long)measurementID);
+
+   std::cout << std::endl << "Stopping measurement "
+               << measurementIDString << " ..." << std::endl;
+
+   bool outputReady = false;
+   StatisticsWriter* statisticsWriter = StatisticsWriter::findMeasurement(measurementID);
+   if(statisticsWriter) {
+//       outputReady = statisticsWriter->writeAllScalarStatistics(now, flowSet, measurementID);
+outputReady=true; // ???
+      if(outputReady) {
+         outputReady = statisticsWriter->finishOutputFiles(false);
+      }
+   }
+   
+   sendNetPerfMeterAcknowledge(controlSocket, assocID,
+                               measurementID, 0, 0,
+                               (outputReady == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
+   if(outputReady) {
+/*      uploadOutput(controlSocket, assocID,
+             statisticsWriter->VectorName.c_str(), statisticsWriter->VectorFile);
+      upload(controlSocket, assocID,
+             statisticsWriter->ScalarName.c_str(), statisticsWriter->ScalarFile);*/
+   }
+   if(statisticsWriter)  {
+      statisticsWriter->finishOutputFiles(true);
+      StatisticsWriter::removeMeasurement(measurementID);
+   }
+   return(true);
+}   
+
+
+
 // ###### Handle incoming control message ###################################
-bool handleControlMessage(MessageReader*           messageReader,
-                          std::vector<FlowSpec*>& flowSet,
-                          int                      controlSocket)
+bool handleControlMessage(MessageReader* messageReader,
+                          int            controlSocket)
 {
    char            inputBuffer[65536];
    sockaddr_union  from;
@@ -484,7 +667,9 @@ bool handleControlMessage(MessageReader*           messageReader,
       if( (notification->sn_header.sn_type == SCTP_ASSOC_CHANGE) &&
           ((notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) ||
            (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP)) ) {
-         remoteAllFlowsOwnedBy(flowSet, notification->sn_assoc_change.sac_assoc_id);
+         
+//         remoteAllFlowsOwnedBy(notification->sn_assoc_change.sac_assoc_id);
+puts("---- REMOVE ALL ....");
       }
    }
 
@@ -498,188 +683,35 @@ bool handleControlMessage(MessageReader*           messageReader,
          return(false);
       }
 
-      // ====== Handle NETPERFMETER_ADD_FLOW ================================
-      if(header->Type == NETPERFMETER_ADD_FLOW) {
-         const NetPerfMeterAddFlowMessage* addFlowMsg =
-            (const NetPerfMeterAddFlowMessage*)&inputBuffer;
-         if(received < sizeof(NetPerfMeterAddFlowMessage)) {
-            std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message!" << std::endl;
+      switch(header->Type) {
+         case NETPERFMETER_ADD_FLOW:
+            return(handleNetPerfMeterAddFlow(
+                      (const NetPerfMeterAddFlowMessage*)&inputBuffer,
+                      controlSocket, sinfo.sinfo_assoc_id, received));
+          break;
+         case NETPERFMETER_REMOVE_FLOW:
+            return(handleNetPerfMeterRemoveFlow(
+                      (const NetPerfMeterRemoveFlowMessage*)&inputBuffer,
+                      controlSocket, sinfo.sinfo_assoc_id, received));
+          break;
+         case NETPERFMETER_START:
+            return(handleNetPerfMeterStart(
+                      (const NetPerfMeterStartMessage*)&inputBuffer,
+                      controlSocket, sinfo.sinfo_assoc_id, received));
+          break;
+         case NETPERFMETER_STOP:
+            return(handleNetPerfMeterStop(
+                      (const NetPerfMeterStopMessage*)&inputBuffer,
+                      controlSocket, sinfo.sinfo_assoc_id, received));
+          break;
+         default:
+            std::cerr << "ERROR: Received invalid control message of type "
+                     << (unsigned int)header->Type << "!" << std::endl;
+            sendAbort(controlSocket, sinfo.sinfo_assoc_id);
             return(false);
-         }
-         const uint64_t measurementID   = ntoh64(addFlowMsg->MeasurementID);
-         const uint32_t flowID          = ntohl(addFlowMsg->FlowID);
-         const uint16_t streamID        = ntohs(addFlowMsg->StreamID);
-         const size_t   startStopEvents = ntohs(addFlowMsg->OnOffEvents);
-         if(received < sizeof(NetPerfMeterAddFlowMessage) + (startStopEvents * sizeof(unsigned int))) {
-            std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message (too few start/stop entries)!" << std::endl;
-            return(false);
-         }
-         char description[sizeof(addFlowMsg->Description) + 1];
-         memcpy((char*)&description, (const char*)&addFlowMsg->Description, sizeof(addFlowMsg->Description));
-         description[sizeof(addFlowMsg->Description)] = 0x00;
-         if(FlowSpec::findFlowSpec(flowSet, measurementID, flowID, streamID)) {
-            std::cerr << "ERROR: NETPERFMETER_ADD_FLOW tried to add already-existing flow!" << std::endl;
-            return(sendNetPerfMeterAcknowledge(controlSocket, sinfo.sinfo_assoc_id,
-                                               measurementID, flowID, streamID,
-                                               NETPERFMETER_STATUS_ERROR));
-         }
-         else {
-            FlowSpec* newFlowSpec = createRemoteFlow(addFlowMsg, sinfo.sinfo_assoc_id, (const char*)&description);
-            for(size_t i = 0;i < startStopEvents;i++) {
-               newFlowSpec->OnOffEvents.insert(ntohl(addFlowMsg->OnOffEvent[i]));
-            }
-            flowSet.push_back(newFlowSpec);
-            return(sendNetPerfMeterAcknowledge(controlSocket, sinfo.sinfo_assoc_id,
-                                               measurementID, flowID, streamID, NETPERFMETER_STATUS_OKAY));
-         }
+          break;
       }
-
-      // ====== Handle NETPERFMETER_REMOVE_FLOW =============================
-      else if(header->Type == NETPERFMETER_REMOVE_FLOW) {
-         const NetPerfMeterRemoveFlowMessage* removeFlowMsg =
-            (const NetPerfMeterRemoveFlowMessage*)&inputBuffer;
-         if(received < sizeof(NetPerfMeterRemoveFlowMessage)) {
-            std::cerr << "ERROR: Received malformed NETPERFMETER_REMOVE_FLOW control message!" << std::endl;
-            return(false);
-         }
-         const uint64_t measurementID = ntoh64(removeFlowMsg->MeasurementID);
-         const uint32_t flowID        = ntohl(removeFlowMsg->FlowID);
-         const uint16_t streamID      = ntohs(removeFlowMsg->StreamID);
-         FlowSpec* flowSpec = FlowSpec::findFlowSpec(flowSet, measurementID, flowID, streamID);
-         if(flowSpec == NULL) {
-            std::cerr << "ERROR: NETPERFMETER_ADD_REMOVE tried to remove not-existing flow!" << std::endl;
-            return(sendNetPerfMeterAcknowledge(controlSocket, sinfo.sinfo_assoc_id,
-                                               measurementID, flowID, streamID,
-                                               NETPERFMETER_STATUS_ERROR));
-         }
-         else {
-            // ------ Remove FlowSpec from set of flows ---------------------
-            for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
-               if(*iterator == flowSpec) {
-                  flowSet.erase(iterator);
-                  break;
-               }
-            }
-            // ------ Upload statistics file --------------------------------
-            uploadResults(controlSocket, sinfo.sinfo_assoc_id, flowSpec);
-            delete flowSpec;
-         }
-         return(true);
-      }
-
-      // ====== Handle NETPERFMETER_START ===================================
-      else if(header->Type == NETPERFMETER_START) {
-         const NetPerfMeterStartMessage* startMsg =
-            (const NetPerfMeterStartMessage*)&inputBuffer;
-         if(received < sizeof(NetPerfMeterStartMessage)) {
-            std::cerr << "ERROR: Received malformed NETPERFMETER_START control message!" << std::endl;
-            return(false);
-         }
-         const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
-
-         std::cout << std::endl << "Starting measurement "
-                   << format("%llx", (unsigned long long)measurementID) << " ..." << std::endl;
-
-// ???????? "now" notwendig??????
-         const unsigned long long now = getMicroTime();
-         FlowManager::getFlowManager()->startMeasurement(measurementID, now, true);
-
-// ?????????
-/*         for(std::vector<FlowSpec*>::iterator iterator = flowSet.begin();iterator != flowSet.end();iterator++) {
-            FlowSpec* flowSpec = *iterator;
-            if(flowSpec->MeasurementID == measurementID) {
-               flowSpec->BaseTime = now;
-               flowSpec->Status   = (flowSpec->OnOffEvents.size() > 0) ? FlowSpec::Off : FlowSpec::On;
-               flowSpec->print(std::cout);
-            }
-         }*/
-         
-         bool success = false;
-         StatisticsWriter* statisticsWriter =
-            StatisticsWriter::addMeasurement(now, measurementID,
-                                             (startMsg->Header.Flags & NPSF_COMPRESS_STATS) ? true : false);
-         if(statisticsWriter) {
-            success = statisticsWriter->initializeOutputFiles();
-         }
-         
-         return(sendNetPerfMeterAcknowledge(controlSocket, sinfo.sinfo_assoc_id,
-                                            measurementID, 0, 0,
-                                            (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR));
-      }
-
-      // ====== Handle NETPERFMETER_STOP ====================================
-      else if(header->Type == NETPERFMETER_STOP) {
-         const NetPerfMeterStopMessage* stopMsg =
-            (const NetPerfMeterStopMessage*)&inputBuffer;
-         if(received < sizeof(NetPerfMeterStopMessage)) {
-            std::cerr << "ERROR: Received malformed NETPERFMETER_STOP control message!" << std::endl;
-            return(false);
-         }
-         const unsigned long long now = getMicroTime();
-         const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
-         char measurementIDString[64];
-         snprintf((char*)&measurementIDString, sizeof(measurementIDString),
-                  "%llx", (unsigned long long)measurementID);
-
-         std::cout << std::endl << "Stopping measurement "
-                   << measurementIDString << " ..." << std::endl;
-
-         bool outputReady = false;
-         StatisticsWriter* statisticsWriter = StatisticsWriter::findMeasurement(measurementID);
-         if(statisticsWriter) {
-            outputReady = statisticsWriter->writeAllScalarStatistics(now, flowSet, measurementID);
-            if(outputReady) {
-               outputReady = statisticsWriter->finishOutputFiles(false);
-            }
-         }
-         
-         sendNetPerfMeterAcknowledge(controlSocket, sinfo.sinfo_assoc_id,
-                                     measurementID, 0, 0,
-                                     (outputReady == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
-         if(outputReady) {
-            upload(controlSocket, sinfo.sinfo_assoc_id,
-                   statisticsWriter->VectorName.c_str(), statisticsWriter->VectorFile);
-            upload(controlSocket, sinfo.sinfo_assoc_id,
-                   statisticsWriter->ScalarName.c_str(), statisticsWriter->ScalarFile);
-         }
-         if(statisticsWriter)  {
-            statisticsWriter->finishOutputFiles(true);
-            StatisticsWriter::removeMeasurement(measurementID);
-         }
-         return(true);
-      }
-         
-      // ====== Handle invalid message type =================================
-      std::cerr << "ERROR: Received invalid control message of type "
-                << (unsigned int)header->Type << "!" << std::endl;
-      sendAbort(controlSocket, sinfo.sinfo_assoc_id);
-      return(false);
    }
-}
-
-
-// ###### Create FlowSpec for remote flow ###################################
-FlowSpec* createRemoteFlow(const NetPerfMeterAddFlowMessage* addFlowMsg,
-                           const sctp_assoc_t                controlAssocID,
-                           const char*                       description)
-{
-   FlowSpec* flowSpec = new FlowSpec;
-   assert(flowSpec != NULL);
-
-   flowSpec->MeasurementID            = ntoh64(addFlowMsg->MeasurementID);
-   flowSpec->FlowID                   = ntohl(addFlowMsg->FlowID);
-   flowSpec->StreamID                 = ntohs(addFlowMsg->StreamID);
-   flowSpec->Protocol                 = addFlowMsg->Protocol;
-   flowSpec->Description              = std::string(description);
-   flowSpec->OutboundFrameRate        = networkToDouble(addFlowMsg->FrameRate);
-   flowSpec->OutboundFrameSize        = networkToDouble(addFlowMsg->FrameSize);
-   flowSpec->OutboundFrameRateRng     = addFlowMsg->FrameRateRng;
-   flowSpec->OutboundFrameSizeRng     = addFlowMsg->FrameSizeRng;
-   flowSpec->OrderedMode              = ntohl(addFlowMsg->OrderedMode)  / (double)0xffffffff;
-   flowSpec->ReliableMode             = ntohl(addFlowMsg->ReliableMode) / (double)0xffffffff;
-   flowSpec->RemoteControlAssocID     = controlAssocID;
-   flowSpec->scheduleNextTransmissionEvent();
-   return(flowSpec);
 }
 
 
@@ -708,24 +740,39 @@ bool removeFlowFromRemoteNode(int controlSocket, FlowSpec* flowSpec)
 
 
 // ###### Handle NETPERFMETER_IDENTIFY_FLOW message #########################
-void handleIdentifyMessage(std::vector<FlowSpec*>&            flowSet,
-                           const NetPerfMeterIdentifyMessage* identifyMsg,
+void handleIdentifyMessage(const NetPerfMeterIdentifyMessage* identifyMsg,
                            const int                          sd,
-                           const sctp_assoc_t                 assocID,
                            const sockaddr_union*              from,
+                           const sctp_assoc_t                 assocID,
                            const int                          controlSocket)
 {
-   FlowSpec* flowSpec = FlowSpec::findFlowSpec(flowSet,
+   const bool success =
+      FlowManager::getFlowManager()->identifyFlow(ntoh64(identifyMsg->MeasurementID),
+                                                  ntohl(identifyMsg->FlowID),
+                                                  ntohs(identifyMsg->StreamID));
+   if(success == false) {
+      std::cerr << "WARNING: Failed to identify flow on NETPERFMETER_IDENTIFY_FLOW!" << std::endl;
+   }
+   sendNetPerfMeterAcknowledge(controlSocket, flow->RemoteControlAssocID,
+                                 ntoh64(identifyMsg->MeasurementID),
+                                 ntohl(identifyMsg->FlowID),
+                                 ntohs(identifyMsg->StreamID),
+                                 (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
+   
+   ?????????ßß
+   Flow* flow = Flow::findFlow(flowSet,
                                                ntoh64(identifyMsg->MeasurementID),
                                                ntohl(identifyMsg->FlowID),
                                                ntohs(identifyMsg->StreamID));
-   if((flowSpec != NULL) && (flowSpec->RemoteAddressIsValid == false)) {
-      flowSpec->SocketDescriptor     = sd;
-      flowSpec->RemoteDataAssocID    = assocID;
-      flowSpec->RemoteAddress        = *from;
-      flowSpec->RemoteAddressIsValid = true;
-      const bool success = flowSpec->initializeVectorFile((identifyMsg->Header.Flags & NPIF_COMPRESS_STATS) ? true : false);
-      sendNetPerfMeterAcknowledge(controlSocket, flowSpec->RemoteControlAssocID,
+   if((flow != NULL) && (flow->RemoteAddressIsValid == false)) {
+      flow->setSocketDescriptor(
+      flow->SocketDescriptor     = sd;
+// ??????      flow->RemoteDataAssocID    = assocID;
+      
+      flow->RemoteAddress        = *from;
+      flow->RemoteAddressIsValid = true;
+      const bool success = flow->initializeVectorFile((identifyMsg->Header.Flags & NPIF_COMPRESS_STATS) ? true : false);
+      sendNetPerfMeterAcknowledge(controlSocket, flow->RemoteControlAssocID,
                                   ntoh64(identifyMsg->MeasurementID),
                                   ntohl(identifyMsg->FlowID),
                                   ntohs(identifyMsg->StreamID),

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string>
 #include <iostream>
 #include <vector>
@@ -362,11 +363,17 @@ void FlowManager::addFlow(Flow* flow)
 // ###### Remove flow #######################################################
 void FlowManager::removeFlow(Flow* flow)
 {
+   flow->deactivate();
+
    lock();
    flow->PollFDEntry = NULL;
-   puts("REMOVE FEHLT!!!");
-   exit(1);
-//    FlowSet.erase(flow);
+   for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
+       iterator != FlowSet.end();iterator++) {
+       if(*iterator == flow) {
+          FlowSet.erase(iterator);
+         break;
+      }
+   }
    unlock();
 }
 
@@ -449,12 +456,15 @@ void FlowManager::startMeasurement(const uint64_t           measurementID,
        iterator != FlowSet.end();iterator++) {
       Flow* flow = *iterator;
       if(flow->MeasurementID == measurementID) {
-         flow->BaseTime = now;
-         flow->Status   = (flow->Traffic.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
-         if(printFlows) {
-            flow->print(std::cout);
+         if(flow->SocketDescriptor >= 0) {
+            flow->BaseTime     = now;
+            flow->InputStatus  = Flow::On;
+            flow->OutputStatus = (flow->Traffic.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
+            if(printFlows) {
+               flow->print(std::cout);
+            }
+            flow->activate();
          }
-         flow->activate();
       }
    }
    unlock();
@@ -491,7 +501,8 @@ void FlowManager::stopMeasurement(const uint64_t           measurementID,
 Flow::Flow(const uint64_t     measurementID,
            const uint32_t     flowID,
            const uint16_t     streamID,
-           const TrafficSpec& trafficSpec)
+           const TrafficSpec& trafficSpec,
+           const sctp_assoc_t controlAssocID)
 {
    MeasurementID            = measurementID;
    FlowID                   = flowID;
@@ -499,11 +510,12 @@ Flow::Flow(const uint64_t     measurementID,
 
    SocketDescriptor         = -1;   
    OriginalSocketDescriptor = false;
-   RemoteControlAssocID     = 0;
-   RemoteDataAssocID        = 0;
+   RemoteControlAssocID     = controlAssocID;
+   RemoteDataAssocID        = 0;  // ??????
    RemoteAddressIsValid     = false;
 
-   Status                   = WaitingForStartup;
+   InputStatus              = WaitingForStartup;
+   OutputStatus             = WaitingForStartup;
    BaseTime                 = getMicroTime();
 
    Traffic                  = trafficSpec;
@@ -649,7 +661,7 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
    unsigned long long               nextTransmissionEvent;
    std::set<unsigned int>::iterator first = Traffic.OnOffEvents.begin();
 
-   if((Status != WaitingForStartup) && (first != Traffic.OnOffEvents.end())) {
+   if((OutputStatus != WaitingForStartup) && (first != Traffic.OnOffEvents.end())) {
       const unsigned int relNextEvent = *first;
       const unsigned long long absNextEvent = BaseTime + (1000ULL * relNextEvent);
       nextTransmissionEvent = absNextEvent;
@@ -666,7 +678,7 @@ unsigned long long Flow::scheduleNextTransmissionEvent() const
 {
    unsigned long long nextTransmissionEvent;
 
-   if(Status == On) {
+   if(OutputStatus == On) {
       // ====== Saturated sender ============================================
       if( (Traffic.OutboundFrameSize > 0.0) && (Traffic.OutboundFrameRate <= 0.0000001) ) {
          nextTransmissionEvent = 0;
@@ -701,17 +713,17 @@ puts("START-OF-THREAD!!!");
       // ====== Wait until there is something to do =========================
       if(nextEvent > now) {
          int timeout = std::min(1000, (int)((nextEvent - now) / 1000));
-         printf("Wait %d ms    ss=%1.0f  tx=%1.0f\n", timeout,  (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
+// ?????         printf("Wait %d ms    ss=%1.0f  tx=%1.0f\n", timeout,  (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
          usleep(1000 * (timeout + 1));
          puts("---");
          now = getMicroTime();
       }
       else {
-         printf("NoWait   ss=%1.0f  tx=%1.0f\n", (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
+// ?????         printf("NoWait   ss=%1.0f  tx=%1.0f\n", (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
       }
 
       // ====== Send outgoing data ==========================================
-      if(Status == Flow::On) {
+      if(OutputStatus == Flow::On) {
          // ====== Outgoing data (saturated sender) =========================
          if( (Traffic.OutboundFrameSize > 0.0) && (Traffic.OutboundFrameRate <= 0.0000001) ) {
             result = (transmitFrame(this, now, gMaxMsgSize) > 0);
@@ -739,6 +751,31 @@ puts("START-OF-THREAD!!!");
 
 
 
+void FlowManager::addSocket(const int protocol, const int socketDescriptor)
+{
+   lock();
+   FlowManager::getFlowManager()->getMessageReader()->registerSocket(protocol, socketDescriptor);
+   UnidentifiedSockets.insert(std::pair<int, int>(socketDescriptor, protocol));
+   UpdatedUnidentifiedSockets = true;
+   unlock();
+}
+
+
+void FlowManager::removeSocket(const int  socketDescriptor,
+                               const bool closeSocket)
+{
+   lock();
+   std::map<int, int>::iterator found = UnidentifiedSockets.find(socketDescriptor);
+   assert(found != UnidentifiedSockets.end());
+   UnidentifiedSockets.erase(found);
+   UpdatedUnidentifiedSockets = true;
+   if(closeSocket) {
+      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(socketDescriptor);
+      ext_close(socketDescriptor);
+   }
+   unlock();
+}
+
 
 
 
@@ -748,35 +785,67 @@ void FlowManager::run()
 puts("FM-Thread!!!");
    do {
       lock();
-      pollfd pollFDs[FlowSet.size()];
-      int    pollFDIndex[FlowSet.size()];
+      pollfd pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
       size_t n = 0;
       for(size_t i = 0;i  < FlowSet.size();i++) {
-         if(FlowSet[i]->SocketDescriptor >= 0) {
+         if( (FlowSet[i]->InputStatus != Flow::Off) &&
+             (FlowSet[i]->SocketDescriptor >= 0) ) {
             pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
             pollFDs[n].events  = POLLIN;
             pollFDs[n].revents = 0;
             FlowSet[i]->PollFDEntry = &pollFDs[n];
+printf("wait for IN flow=%d\n",FlowSet[i]->FlowID);         
             n++;
          }
          else {
             FlowSet[i]->PollFDEntry = NULL;
          }
       }
+      UpdatedUnidentifiedSockets = false;
+      pollfd* unidentifiedSocketsPollFDIndex[UnidentifiedSockets.size()];
+      size_t i = 0;
+      for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
+          iterator != UnidentifiedSockets.end(); iterator++) {
+         pollFDs[n].fd      = iterator->first;
+         printf("wait for pollin on %d\n", iterator->first);
+         pollFDs[n].events  = POLLIN;
+         pollFDs[n].revents = 0;
+         unidentifiedSocketsPollFDIndex[i] = &pollFDs[n];
+         n++; i++;
+      }
       unlock();
 
-puts("WAIT FM...");
+// puts("WAIT FM...");
       const int timeout = 1000;
       const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
- puts("WAIT FM OKAY");
+//  puts("WAIT FM OKAY");
 
       if(result > 0) {
+         const unsigned long long now = getMicroTime();
          lock();
-         for(size_t i = 0;i  < FlowSet.size();i++) {
+         for(i = 0;i  < FlowSet.size();i++) {
             if( (FlowSet[i]->PollFDEntry) &&
                 (FlowSet[i]->PollFDEntry->revents & POLLIN) ) {
-                printf("IN for flow %u\n",FlowSet[i]->FlowID);
-                
+                printf("IN for flow %u   inputSt=%d\n",FlowSet[i]->FlowID,FlowSet[i]->InputStatus);
+                // NOTE: FlowSet[i] may not be the actual Flow!
+                //       It may be another stream of the same SCTP assoc!
+                handleDataMessage(true, now,
+                                  FlowSet[i]->getTrafficSpec().Protocol,
+                                  FlowSet[i]->PollFDEntry->fd);
+            }
+         }
+         if(!UpdatedUnidentifiedSockets) {
+            i = 0;
+            for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
+               iterator != UnidentifiedSockets.end(); iterator++) {
+               assert(unidentifiedSocketsPollFDIndex[i]->fd == iterator->first);
+               if(unidentifiedSocketsPollFDIndex[i]->revents & POLLIN) {
+         printf("POLLIN on %d\n", iterator->first);
+                  handleDataMessage(true, now,
+                                    iterator->second,
+                                    iterator->first);
+               }
+               i++;
             }
          }
          unlock();

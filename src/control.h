@@ -52,28 +52,31 @@ bool awaitNetPerfMeterAcknowledge(int            controlSocket,
                                   const int      timeout = -1);
 
 
-bool handleControlMessage(MessageReader*           messageReader,
-                          std::vector<FlowSpec*>& flowSet,
-                          int                      controlSocket);
+// ?????  passive side!
+                                  
+bool handleControlMessage(MessageReader* messageReader,
+                          int            controlSocket);
 
+                          
+                          
 // bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec);
-FlowSpec* createRemoteFlow(const NetPerfMeterAddFlowMessage* addFlowMsg,
+/*FlowSpec* createRemoteFlow(const NetPerfMeterAddFlowMessage* addFlowMsg,
                            const sctp_assoc_t            controlAssocID,
-                           const char*                   description);
+                           const char*                   description);*/
 bool removeFlowFromRemoteNode(int controlSocket, FlowSpec* flowSpec);
 void remoteAllFlowsOwnedBy(std::vector<FlowSpec*>& flowSet, const sctp_assoc_t assocID);
-bool sendAcknowledgeToRemoteNode(int            controlSocket,
+/*bool sendAcknowledgeToRemoteNode(int            controlSocket,
                                  sctp_assoc_t   assocID,
                                  const uint64_t measurementID,
                                  const uint32_t flowID,
                                  const uint16_t streamID,
-                                 const uint32_t status);
-void handleIdentifyMessage(std::vector<FlowSpec*>&        flowSet,
+                                 const uint32_t status);*/
+/*void handleIdentifyMessage(std::vector<FlowSpec*>&        flowSet,
                            const NetPerfMeterIdentifyMessage* identifyMsg,
                            const int                      sd,
                            const sctp_assoc_t             assocID,
                            const sockaddr_union*          from,
-                           const int                      controlSocket);
+                           const int                      controlSocket);*/
 /*bool startMeasurement(int            controlSocket,
                       const uint64_t measurementID);*/
 // bool stopMeasurement(int            controlSocket,

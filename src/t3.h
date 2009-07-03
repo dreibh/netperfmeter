@@ -34,6 +34,9 @@ class OutputFile
    inline FILE* getFile() const {
       return(File);
    }
+   inline const std::string& getName() const {
+      return(Name);
+   }
    inline size_t nextLine() {
       return(++Line);
    }
@@ -133,6 +136,10 @@ class FlowManager : public Thread
       return(&Reader);
    }
 
+   void addSocket(const int protocol, const int socketDescriptor);
+   void removeSocket(const int  socketDescriptor,
+                     const bool closeSocket = true);
+
    void addFlow(Flow* flow);
    void removeFlow(Flow* flow);
 
@@ -166,19 +173,27 @@ class FlowManager : public Thread
 
    MessageReader      Reader;
    std::vector<Flow*> FlowSet;
+   std::map<int, int> UnidentifiedSockets;
+   bool               UpdatedUnidentifiedSockets;
 };
 
 
 class Flow : public Thread
 {
    friend class FlowManager;   
+   enum FlowStatus {
+      WaitingForStartup = 1,
+      On                = 2,
+      Off               = 3
+   };
 
    // ====== Methods ========================================================
    public:
    Flow(const uint64_t     measurementID,
         const uint32_t     flowID,
         const uint16_t     streamID,
-        const TrafficSpec& trafficSpec);
+        const TrafficSpec& trafficSpec,
+        const sctp_assoc_t controlAssocID = 0);
    virtual ~Flow();
    
 
@@ -190,12 +205,22 @@ class Flow : public Thread
    }
    inline uint16_t getStreamID() const {
       return(StreamID);
-   }
+   }   
    inline int getSocketDescriptor() const {
       return(SocketDescriptor);
    }
    inline const TrafficSpec& getTrafficSpec() const {
       return(Traffic);
+   }
+   inline FlowStatus getOutputStatus() const {
+      return(OutputStatus);
+   }
+   inline FlowStatus getInputStatus() const {
+      return(InputStatus);
+   }
+
+   inline void endOfInput() {
+      InputStatus = Off;
    }
 
    inline const FlowBandwidthStats& getCurrentBandwidthStats() const {
@@ -219,6 +244,9 @@ class Flow : public Thread
       return(&RemoteAddress.sa);
    }
 
+   inline OutputFile& getVectorFile() {
+      return(VectorFile);
+   }
    inline double getJitter() const {
       return(Jitter);
    }
@@ -272,42 +300,31 @@ class Flow : public Thread
    pollfd*                PollFDEntry;   // For internal usage by FlowManager
 
    sctp_assoc_t           RemoteControlAssocID;
-   sctp_assoc_t           RemoteDataAssocID;
+   sctp_assoc_t           RemoteDataAssocID;   // ????? deprec.
    sockaddr_union         RemoteAddress;
    bool                   RemoteAddressIsValid;
 
 
    // ====== Timing =========================================================
-   unsigned long long     BaseTime;
-   unsigned long long     FirstTransmission;
-   unsigned long long     FirstReception;
-   unsigned long long     LastTransmission;
+   unsigned long long   BaseTime;
+   unsigned long long   FirstTransmission;
+   unsigned long long   FirstReception;
+   unsigned long long   LastTransmission;
    unsigned long long   LastReception;
-//    unsigned long long   NextTransmissionEvent;
 
-   // ====== Start/stop control =============================================
-   enum FlowStatus {
-      WaitingForStartup = 1,
-      On                = 2,
-      Off               = 3
-   };
-   FlowStatus             Status;
-//    unsigned long long     NextStatusChangeEvent;
-
-
-   // ====== Traffic ????? ===============================================
+   // ====== Traffic Specification ==========================================
    TrafficSpec          Traffic;
-   uint32_t             LastOutboundFrameID;
-   uint64_t             LastOutboundSeqNumber;
-   
+   FlowStatus           InputStatus;
+   FlowStatus           OutputStatus;
+   uint32_t             LastOutboundFrameID;    // ID of last outbound frame
+   uint64_t             LastOutboundSeqNumber;  // ID of last outbound packet
    
    // ====== Statistics =====================================================
+   OutputFile           VectorFile;
    FlowBandwidthStats   CurrentBandwidthStats;
    FlowBandwidthStats   LastBandwidthStats;
-
    double               Delay;   // Transit time of latest received packet
    double               Jitter;  // Current jitter value
-   OutputFile           Vector;
 };
 
 #endif

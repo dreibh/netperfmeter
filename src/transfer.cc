@@ -186,9 +186,8 @@ ssize_t handleDataMessage(const bool               isActiveMode,
 //                           StatisticsWriter*        statsWriter,
 //                           std::vector<FlowSpec*>&  flowSet,
                           const unsigned long long now,
-                          const int                sd,
                           const int                protocol,
-                          const int                controlSocket)
+                          const int                sd)
 {
    char            inputBuffer[65536];
    sockaddr_union  from;
@@ -196,6 +195,7 @@ ssize_t handleDataMessage(const bool               isActiveMode,
    int             flags   = 0;
    sctp_sndrcvinfo sinfo;
 
+   sinfo.sinfo_stream = 0;
    const ssize_t received =
       FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
          sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
@@ -206,6 +206,7 @@ ssize_t handleDataMessage(const bool               isActiveMode,
          (const NetPerfMeterIdentifyMessage*)&inputBuffer;
 
       // ====== Handle NETPERFMETER_IDENTIFY_FLOW message ===================
+      // ?????????????????????????????????????????????ß
       if( (received >= sizeof(NetPerfMeterIdentifyMessage)) &&
           (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
           (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
@@ -219,21 +220,11 @@ puts("IDENTIF!!!");          exit(1);
                (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
          // ====== Identifiy flow ===========================================
          Flow* flow;
-         if(isActiveMode) {
-            flow = FlowManager::getFlowManager()->findFlow(
-                      sd, (protocol == IPPROTO_SCTP) ? sinfo.sinfo_stream : 0);
+         if(( protocol == IPPROTO_UDP) && (!isActiveMode) ) {
+            flow = FlowManager::getFlowManager()->findFlow(&from.sa);
          }
          else {
-/*  ??????????           if(protocol == IPPROTO_SCTP) {
-               flow = FlowManager::findFlow(flowSet, sinfo.sinfo_assoc_id);
-            }
-            else*/
-            if(protocol == IPPROTO_UDP) {
-               flow = FlowManager::getFlowManager()->findFlow(&from.sa);
-            }
-            else {
-               flow = FlowManager::getFlowManager()->findFlow(sd, 0);
-            }
+            flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
          }
          if(flow) {
             // Update flow statistics by received NETPERFMETER_DATA message.
@@ -248,6 +239,17 @@ puts("IDENTIF!!!");          exit(1);
       else {
          std::cout << "WARNING: Received garbage!" << std::endl;
       }
+   }
+   
+   else if( (received <= 0) && (received != MRRM_PARTIAL_READ) ) {
+
+       puts("NULL!");
+      printf("r=%d ++++++++++++++++++++++\n",received);
+       Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
+       if(flow) {
+          flow->endOfInput();
+       }
+       printf("F=%p\n",flow);
    }
 
    return(received);
