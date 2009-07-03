@@ -427,8 +427,9 @@ class Flow : public Thread
 
    // ====== Private Methods ================================================
    private:
-   unsigned long long scheduleNextStatusChangeEvent(const unsigned long long now);
    unsigned long long scheduleNextTransmissionEvent() const;
+   unsigned long long scheduleNextStatusChangeEvent(const unsigned long long now);
+   void handleStatusChangeEvent(const unsigned long long now);
 
       
    // ====== Flow Identification ============================================
@@ -460,6 +461,7 @@ class Flow : public Thread
    FlowStatus         OutputStatus;
    uint32_t           LastOutboundFrameID;     // ID of last outbound frame
    uint64_t           LastOutboundSeqNumber;   // ID of last outbound packet
+   unsigned long long NextStatusChangeEvent;
    
    // ====== Statistics =====================================================
    OutputFile         VectorFile;

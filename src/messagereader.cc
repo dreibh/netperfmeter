@@ -51,7 +51,8 @@ MessageReader::~MessageReader()
 // ###### Register a socket #################################################
 bool MessageReader::registerSocket(const int    protocol,
                                    const int    sd,
-                                   const size_t maxMessageSize)
+                                   const size_t maxMessageSize,
+                                   const bool   warnIfAlreadyRegistered)
 {
    std::map<int, Socket*>::iterator found = SocketMap.find(sd);
    if(found == SocketMap.end()) {
@@ -70,7 +71,9 @@ bool MessageReader::registerSocket(const int    protocol,
       SocketMap.insert(std::pair<int, Socket*>(sd, socket));
    }
    else {
-      std::cerr << "ERROR: Socket registered twice!" << std::endl;
+      if(warnIfAlreadyRegistered) {
+         std::cerr << "ERROR: Socket registered twice!" << std::endl;
+      }
       return(false);
    }
    return(true);

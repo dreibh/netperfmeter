@@ -241,7 +241,7 @@ static Flow* createFlow(Flow*           previousFlow,
    if(previousFlow) {
       originalSocketDescriptor = false;
       socketDescriptor         = previousFlow->getSocketDescriptor();
-      cout << "      - Connection okay; sd=" << socketDescriptor << endl;
+      cout << "      - Connection okay (stream " << streamID << " on existing assoc); sd=" << socketDescriptor << endl;
    }
    else {
       originalSocketDescriptor = true;
@@ -292,11 +292,10 @@ static Flow* createFlow(Flow*           previousFlow,
          exit(1);
       }
       cout << "okay; sd=" << socketDescriptor << endl;
-
-      // ====== Update flow with socket descriptor ==========================
-      flow->setSocketDescriptor(socketDescriptor, originalSocketDescriptor);
-      //gMessageReader.registerSocket(flow->Protocol, socketDescriptor);   /// ?????????????!!!
    }
+   
+   // ====== Update flow with socket descriptor =============================
+   flow->setSocketDescriptor(socketDescriptor, originalSocketDescriptor);
 
    flowID++;
    return(flow);
@@ -423,7 +422,7 @@ bool mainLoop(const bool               isActiveMode,
 
 // ???   printf("to=%d   txNext=%lld\n", timeout, nextEvent - (long long)now);
    int result = ext_poll((pollfd*)&fds, n, timeout);
-//    printf("result=%d\n",result);
+   printf("result=%d\n",result);
    
    
 

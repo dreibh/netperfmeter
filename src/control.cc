@@ -44,7 +44,7 @@ bool performNetPerfMeterAddFlow(int controlSocket, const Flow* flow)
 {
    // ====== Sent NETPERFMETER_ADD_FLOW to remote node ======================
    const size_t                addFlowMsgSize = sizeof(NetPerfMeterAddFlowMessage) +
-                                                (sizeof(unsigned int) * flow->getTrafficSpec().OnOffEvents.size());
+                                                   (sizeof(unsigned int) * flow->getTrafficSpec().OnOffEvents.size());
    char                        addFlowMsgBuffer[addFlowMsgSize];
    NetPerfMeterAddFlowMessage* addFlowMsg = (NetPerfMeterAddFlowMessage*)&addFlowMsgBuffer;
    addFlowMsg->Header.Type   = NETPERFMETER_ADD_FLOW;

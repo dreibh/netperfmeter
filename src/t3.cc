@@ -659,6 +659,7 @@ Flow::Flow(const uint64_t     measurementID,
    resetStatistics();
    LastOutboundSeqNumber         = 0;
    LastOutboundFrameID           = 0;
+   NextStatusChangeEvent         = (1ULL << 63);
    
    FlowManager::getFlowManager()->addFlow(this);
 }
@@ -760,7 +761,8 @@ bool Flow::activate()
 {
    deactivate();
    assert(SocketDescriptor >= 0);
-   FlowManager::getFlowManager()->getMessageReader()->registerSocket(Traffic.Protocol, SocketDescriptor);
+   FlowManager::getFlowManager()->getMessageReader()->registerSocket(
+      Traffic.Protocol, SocketDescriptor, 65535, false);
    start();
 }
 
@@ -780,24 +782,6 @@ bool Flow::deactivate()
       waitForFinish();
       FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
    }
-}
-
-
-// ###### Schedule next status change event #################################
-unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long now)
-{
-   unsigned long long               nextTransmissionEvent;
-   std::set<unsigned int>::iterator first = Traffic.OnOffEvents.begin();
-
-   if((OutputStatus != WaitingForStartup) && (first != Traffic.OnOffEvents.end())) {
-      const unsigned int relNextEvent = *first;
-      const unsigned long long absNextEvent = BaseTime + (1000ULL * relNextEvent);
-      nextTransmissionEvent = absNextEvent;
-   }
-   else {
-      nextTransmissionEvent = ~0;
-   }
-   return(nextTransmissionEvent);
 }
 
 
@@ -824,6 +808,47 @@ unsigned long long Flow::scheduleNextTransmissionEvent() const
 }
 
 
+// ###### Schedule next status change event #################################
+unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long now)
+{
+   std::set<unsigned int>::iterator first = Traffic.OnOffEvents.begin();
+
+   if((OutputStatus != WaitingForStartup) && (first != Traffic.OnOffEvents.end())) {
+      const unsigned int relNextEvent = *first;
+      const unsigned long long absNextEvent = BaseTime + (1000ULL * relNextEvent);
+      NextStatusChangeEvent = absNextEvent;
+   }
+   else {
+      NextStatusChangeEvent = (1ULL << 63);
+   }
+   return(NextStatusChangeEvent);
+}
+
+
+// ###### Status change event ###############################################
+void Flow::handleStatusChangeEvent(const unsigned long long now)
+{
+   if(NextStatusChangeEvent <= now) {
+      std::set<unsigned int>::iterator first = Traffic.OnOffEvents.begin();
+      assert(first != Traffic.OnOffEvents.end());
+
+      if(OutputStatus == Off) {
+         OutputStatus = On;
+      }
+      else if(OutputStatus == On) {
+         OutputStatus = Off;
+      }
+      else {
+         assert(false);
+      }
+
+      Traffic.OnOffEvents.erase(first);
+   }
+   scheduleNextStatusChangeEvent(now);
+}
+
+
+
 
 void Flow::run()
 {
@@ -841,22 +866,25 @@ void Flow::run()
       if(nextEvent > now) {
          int timeout = std::min(1000, (int)((nextEvent - now) / 1000));
 // ?????         printf("Wait %d ms    ss=%1.0f  tx=%1.0f\n", timeout,  (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
+// printf("T%d   to=%d\n",FlowID,1000 * (timeout + 1));               
          usleep(1000 * (timeout + 1));
          now = getMicroTime();
       }
-      else {
-// ?????         printf("NoWait   ss=%1.0f  tx=%1.0f\n", (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
-      }
+//       else {
+//          printf("NoWait   ss=%1.0f  tx=%1.0f\n", (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
+//       }
 
       // ====== Send outgoing data ==========================================
       if(OutputStatus == Flow::On) {
          // ====== Outgoing data (saturated sender) =========================
-         if( (Traffic.OutboundFrameSize > 0.0) && (Traffic.OutboundFrameRate <= 0.0000001) ) {
+         if( (Traffic.OutboundFrameSize > 0.0) &&
+             (Traffic.OutboundFrameRate <= 0.0000001) ) {
             result = (transmitFrame(this, now, gMaxMsgSize) > 0);
          }
 
          // ====== Outgoing data (non-saturated sender) =====================
-         else if( (Traffic.OutboundFrameSize >= 1.0) && (Traffic.OutboundFrameRate > 0.0000001) ) {
+         else if( (Traffic.OutboundFrameSize >= 1.0) &&
+                  (Traffic.OutboundFrameRate > 0.0000001) ) {
             const unsigned long long lastEvent = LastTransmission;
             if(nextTransmission <= now) {
                do {
@@ -868,6 +896,11 @@ void Flow::run()
                } while(scheduleNextTransmissionEvent() <= now);
             }
          }
+      }
+
+      // ====== Handle status changes =======================================
+      if(nextStatusChange <= now) {
+         handleStatusChangeEvent(now);
       }
    } while( (result == true) && (!Stopping) );
 }
@@ -922,9 +955,10 @@ void FlowManager::removeSocket(const int  socketDescriptor,
 {
    lock();
    std::map<int, int>::iterator found = UnidentifiedSockets.find(socketDescriptor);
-   assert(found != UnidentifiedSockets.end());
-   UnidentifiedSockets.erase(found);
-   UpdatedUnidentifiedSockets = true;
+   if(found != UnidentifiedSockets.end()) {
+      UnidentifiedSockets.erase(found);
+      UpdatedUnidentifiedSockets = true;
+   }
    if(closeSocket) {
       FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(socketDescriptor);
       ext_close(socketDescriptor);
@@ -972,6 +1006,7 @@ void FlowManager::run()
       const int timeout = 1000;
       const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
 //  puts("WAIT FM OKAY");
+// puts("R");
 
       if(result > 0) {
          const unsigned long long now = getMicroTime();
