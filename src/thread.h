@@ -32,7 +32,7 @@ class Thread : public Mutex
    virtual ~Thread();
 
    inline bool isRunning() const {
-      return(MyThread != NULL);
+      return(MyThread != 0);
    }
 
    virtual bool start();

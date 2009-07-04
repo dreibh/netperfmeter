@@ -54,8 +54,8 @@ std::string format(const char* fmt, ...)
    
    va_list va;
    va_start(va, fmt);
-   int bufferLength = vsnprintf(buffer, sizeof(buffer), fmt, va);
-   buffer[sizeof(buffer) - 1] = 0x00;   // Just to be really sure ...
+   const int bufferLength = vsnprintf(buffer, sizeof(buffer), fmt, va);
+   buffer[bufferLength - 1] = 0x00;   // Just to be really sure ...
    va_end(va);
 
    return(std::string(buffer));
@@ -97,7 +97,7 @@ int pollTimeout(const unsigned long long now, const size_t n, ...)
       const unsigned long long t = va_arg(va, unsigned long long);
       timeout = std::min(timeout, t);
    }
-   if(timeout == ~0) {
+   if(timeout == ~0ULL) {
       return(-1);   // Infinite wait time (only care for sockets/files)
    }
    const double delta = (double)timeout - (double)now;

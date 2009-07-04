@@ -31,7 +31,6 @@
 #include <vector>
 
 
-
 bool performNetPerfMeterAddFlow(int controlSocket, const Flow* flow);
 bool performNetPerfMeterIdentifyFlow(int controlSocket, const Flow* flow);
 bool performNetPerfMeterStart(int            controlSocket,
@@ -45,7 +44,7 @@ bool performNetPerfMeterStop(int            controlSocket,
                              const uint64_t measurementID);
 
 bool sendNetPerfMeterAcknowledge(int            controlSocket,
-                                 sctp_assoc_t   assocID,   // ????? notwendig ???
+                                 sctp_assoc_t   assocID,
                                  const uint64_t measurementID,
                                  const uint32_t flowID,
                                  const uint16_t streamID,
@@ -64,32 +63,7 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                 const sockaddr_union*              from);
 
 /// ???? Name
-bool handleControlMessage(MessageReader* messageReader,
-                          int            controlSocket);
-
-                          
-                          
-// bool addFlowToRemoteNode(int controlSocket, const FlowSpec* flowSpec);
-/*FlowSpec* createRemoteFlow(const NetPerfMeterAddFlowMessage* addFlowMsg,
-                           const sctp_assoc_t            controlAssocID,
-                           const char*                   description);*/
-bool removeFlowFromRemoteNode(int controlSocket, FlowSpec* flowSpec);
-void remoteAllFlowsOwnedBy(std::vector<FlowSpec*>& flowSet, const sctp_assoc_t assocID);
-/*bool sendAcknowledgeToRemoteNode(int            controlSocket,
-                                 sctp_assoc_t   assocID,
-                                 const uint64_t measurementID,
-                                 const uint32_t flowID,
-                                 const uint16_t streamID,
-                                 const uint32_t status);*/
-/*void handleIdentifyMessage(std::vector<FlowSpec*>&        flowSet,
-                           const NetPerfMeterIdentifyMessage* identifyMsg,
-                           const int                      sd,
-                           const sctp_assoc_t             assocID,
-                           const sockaddr_union*          from,
-                           const int                      controlSocket);*/
-/*bool startMeasurement(int            controlSocket,
-                      const uint64_t measurementID);*/
-// bool stopMeasurement(int            controlSocket,
-//                      const uint64_t measurementID);
+bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
+                                      int            controlSocket);
 
 #endif

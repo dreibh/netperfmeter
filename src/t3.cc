@@ -46,12 +46,13 @@ bool OutputFile::initialize(const char* name, const bool compressFile)
       Name = std::string(name);
    }
    else {
-      Name = "(anonymous file)";
+      Name = "(temporary file)";
    }
    Line = 0;
 
    // ====== Initialize file ================================================
-char str[128];
+   // ??????????????ß
+/*char str[128];
 if(name == NULL) {
    static int yyy=1000;
    name = (char*)&str;
@@ -59,7 +60,7 @@ if(name == NULL) {
    puts("HACK!!!???");
       Name = std::string(name);
 }
-   
+   */
    File = (name != NULL) ? fopen(name, "w+") : tmpfile();
    if(File == NULL) {
       std::cerr << "ERROR: Unable to create output file " << name << "!" << std::endl;

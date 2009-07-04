@@ -21,7 +21,6 @@
 
 #include "control.h"
 #include "tools.h"
-#include "statisticswriter.h"
 #include "t3.h"
 
 #include <string.h>
@@ -174,13 +173,10 @@ bool performNetPerfMeterIdentifyFlow(int controlSocket, const Flow* flow)
       // SCTP and TCP are reliable transport protocols => no retransmissions
       maxTrials = IDENTIFY_MAX_TRIALS;
    }
-   const StatisticsWriter* statisticsWriter =
-      StatisticsWriter::getStatisticsWriter(flow->getMeasurementID());
-   assert(statisticsWriter != NULL);
    for(unsigned int trial = 0;trial < maxTrials;trial++) {
       NetPerfMeterIdentifyMessage identifyMsg;
       identifyMsg.Header.Type   = NETPERFMETER_IDENTIFY_FLOW;
-      identifyMsg.Header.Flags  = hasSuffix(statisticsWriter->VectorSuffix, ".bz2") ? NPMIF_COMPRESS_VECTORS : 0x00;
+      identifyMsg.Header.Flags  = hasSuffix(flow->getVectorFile().getName(), ".bz2") ? NPMIF_COMPRESS_VECTORS : 0x00;
       identifyMsg.Header.Length = htons(sizeof(identifyMsg));
       identifyMsg.MagicNumber   = hton64(NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER);
       identifyMsg.MeasurementID = hton64(flow->getMeasurementID());
@@ -223,11 +219,6 @@ bool performNetPerfMeterStart(int            controlSocket,
                               const char*    vectorNamePattern,
                               const char*    scalarNamePattern)
 {
-   StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
-   if(statisticsWriter->initializeOutputFiles() == false) {
-      return(false);
-   }
-
    // ====== Write config file ==============================================
    FILE* configFile = fopen(configName, "w");
    if(configFile == NULL) {
@@ -241,12 +232,14 @@ bool performNetPerfMeterStart(int            controlSocket,
    fprintf(configFile, "NUM_FLOWS=%u\n", (unsigned int)FlowManager::getFlowManager()->getFlowSet().size());
    fprintf(configFile, "NAME_ACTIVE_NODE=\"%s\"\n", activeNodeName);
    fprintf(configFile, "NAME_PASSIVE_NODE=\"%s\"\n", passiveNodeName);
-   fprintf(configFile, "SCALAR_ACTIVE_NODE=\"%s\"\n", statisticsWriter->ScalarName.c_str());
-   fprintf(configFile, "SCALAR_PASSIVE_NODE=\"%s-passive%s\"\n",
-         statisticsWriter->ScalarPrefix.c_str(), statisticsWriter->ScalarSuffix.c_str());
-   fprintf(configFile, "VECTOR_ACTIVE_NODE=\"%s\"\n", statisticsWriter->VectorName.c_str());
-   fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s-passive%s\"\n\n",
-           statisticsWriter->VectorPrefix.c_str(), statisticsWriter->VectorSuffix.c_str());
+   fprintf(configFile, "SCALAR_ACTIVE_NODE=\"%s\"\n",
+                        Flow::getNodeOutputName(scalarNamePattern, "active").c_str());
+   fprintf(configFile, "SCALAR_PASSIVE_NODE=\"%s\"\n",
+                        Flow::getNodeOutputName(scalarNamePattern, "passive").c_str());
+   fprintf(configFile, "VECTOR_ACTIVE_NODE=\"%s\"\n",
+                        Flow::getNodeOutputName(vectorNamePattern, "active").c_str());
+   fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s\"\n\n",
+                        Flow::getNodeOutputName(vectorNamePattern, "passive").c_str());
 
    for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
       iterator != FlowManager::getFlowManager()->getFlowSet().end();
@@ -274,6 +267,7 @@ bool performNetPerfMeterStart(int            controlSocket,
                               format("-%08x-%04x", flow->getFlowID(), flow->getStreamID())).c_str());
    }         
    FlowManager::getFlowManager()->unlock();
+   
    fclose(configFile);
 
    // ====== Start flows ====================================================
@@ -291,10 +285,10 @@ bool performNetPerfMeterStart(int            controlSocket,
       startMsg.Header.Length = htons(sizeof(startMsg));
       startMsg.MeasurementID = hton64(measurementID);
       startMsg.Header.Flags  = 0x00;
-      if(hasSuffix(statisticsWriter->ScalarSuffix, ".bz2")) {
+      if(hasSuffix(scalarNamePattern, ".bz2")) {
          startMsg.Header.Flags |= NPMSF_COMPRESS_SCALARS;
       }
-      if(hasSuffix(statisticsWriter->VectorSuffix, ".bz2")) {
+      if(hasSuffix(vectorNamePattern, ".bz2")) {
          startMsg.Header.Flags |= NPMSF_COMPRESS_VECTORS;
       }
 
@@ -743,8 +737,8 @@ static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
 
 
 // ###### Handle incoming control message ###################################
-bool handleControlMessage(MessageReader* messageReader,
-                          int            controlSocket)
+bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
+                                      int            controlSocket)
 {
    char            inputBuffer[65536];
    sockaddr_union  from;
@@ -773,7 +767,7 @@ bool handleControlMessage(MessageReader* messageReader,
            (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP)) ) {
          
 //         remoteAllFlowsOwnedBy(notification->sn_assoc_change.sac_assoc_id);
-puts("---- REMOVE ALL ....");
+puts("---- MISSING REMOVE ALL ....");
       }
    }
 
@@ -787,7 +781,6 @@ puts("---- REMOVE ALL ....");
          return(false);
       }
 
-printf("CONTROL: type=%d\n",header->Type);
       switch(header->Type) {
          case NETPERFMETER_ADD_FLOW:
             return(handleNetPerfMeterAddFlow(
@@ -844,7 +837,6 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                   ntohs(identifyMsg->StreamID),
                                   (success == true) ? NETPERFMETER_STATUS_OKAY :
                                                       NETPERFMETER_STATUS_ERROR);
-printf(" ---->> ID=%d\n",success);
    }
    else {
       // No known flow -> no assoc ID to send response to!
@@ -873,7 +865,7 @@ void remoteAllFlowsOwnedBy(std::vector<FlowSpec*>& flowSet,
                ext_close(flowSpec->SocketDescriptor);
             }
          }
-         StatisticsWriter::removeMeasurement(flowSpec->MeasurementID);
+//          StatisticsWriter::removeMeasurement(flowSpec->MeasurementID);
 
          std::vector<FlowSpec*>::iterator toBeRemoved = iterator;
          flowSet.erase(toBeRemoved);

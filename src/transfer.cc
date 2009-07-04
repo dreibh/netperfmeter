@@ -30,8 +30,7 @@
 #include <iostream>
 
 
-static void updateStatistics(// ??????????? StatisticsWriter*              statsWriter,
-                             Flow*                      flowSpec,
+static void updateStatistics(Flow*                      flowSpec,
                              const unsigned long long       now,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   received);
@@ -129,14 +128,14 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
 
 
 // ###### Transmit data frame ###############################################
-ssize_t transmitFrame(// StatisticsWriter*        statsWriter, ???
-                      Flow*                    flow,
+ssize_t transmitFrame(Flow*                    flow,
                       const unsigned long long now,
                       const size_t             maxMsgSize)
 {
    // ====== Obtain length of data to send ==================================
-   size_t bytesToSend = (size_t)rint(getRandomValue(flow->getTrafficSpec().OutboundFrameSize,
-                                                    flow->getTrafficSpec().OutboundFrameSizeRng));
+   size_t bytesToSend =
+      (size_t)rint(getRandomValue(flow->getTrafficSpec().OutboundFrameSize,
+                                  flow->getTrafficSpec().OutboundFrameSizeRng));
    if(bytesToSend == 0) {
       // On POLLOUT, we generate a maximum-sized message. If there is still space
       // in the buffer, POLLOUT will be set again ...
@@ -159,11 +158,6 @@ ssize_t transmitFrame(// StatisticsWriter*        statsWriter, ???
       if(sent > 0) {
          bytesSent += sent;
          packetsSent++;
-
-
-// ??????????????????
-/*         statsWriter->TotalTransmittedBytes += sent;
-         statsWriter->TotalTransmittedPackets++;*/
       }
       else {
          printf("Overload for Flow ID #%u - %s!\n", flow->getFlowID(), strerror(errno));
@@ -172,21 +166,12 @@ ssize_t transmitFrame(// StatisticsWriter*        statsWriter, ???
    }
 
    flow->updateTransmissionStatistics(now, 1, packetsSent, bytesSent);
-//    MeasurementManager::getMeasurementManager()->updateTransmissionStatistics(
-//       flow->getMeasurementID(),
-//       now,  1, packetsSent, bytesSent);
-
-// ??????????????????
-//    statsWriter->TotalTransmittedFrames++;
    return(bytesSent);
 }
 
 
 // ###### Handle data message ###############################################
 ssize_t handleDataMessage(const bool               isActiveMode,
-//                           MessageReader*           messageReader,
-//                           StatisticsWriter*        statsWriter,
-//                           std::vector<FlowSpec*>&  flowSet,
                           const unsigned long long now,
                           const int                protocol,
                           const int                sd)
@@ -250,20 +235,11 @@ ssize_t handleDataMessage(const bool               isActiveMode,
 
 
 // ###### Update flow statistics with incoming NETPERFMETER_DATA message ####
-static void updateStatistics(// ?????????? StatisticsWriter*              statsWriter,
-                             Flow*                      flow,
+static void updateStatistics(Flow*                      flow,
                              const unsigned long long       now,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   receivedBytes)
 {
-   // ====== Update bandwidth statistics ====================================
-//    flow->ReceivedPackets++;
-//    flow->ReceivedBytes += (unsigned long long)received;
-
-//    statsWriter->TotalReceivedPackets++;
-//    statsWriter->TotalReceivedBytes += (unsigned long long)received;
-
-
    // ====== Update QoS statistics ==========================================
    const uint64_t seqNumber   = ntoh64(dataMsg->SeqNumber);
    const uint64_t timeStamp   = ntoh64(dataMsg->TimeStamp);
@@ -281,38 +257,9 @@ static void updateStatistics(// ?????????? StatisticsWriter*              statsW
    const double jitter = flow->getJitter() + (1.0/16.0) * (fabs(diff) - flow->getJitter());
 
    // ------ Loss calculation -----------------------------------------------
-    
-   // printf("%llu: d=%1.3f ms   j=%1.3f ms\n",seqNumber,transitTime,flow->Jitter);
-// ????????
-//    flow->ReceivedFrames++;   // ??? To be implemented ???
-//    statsWriter->TotalReceivedFrames++;   // ??? To be implemented ???
-
    size_t receivedFrames = 1;   // ??? To be implemented ???
 
    flow->updateReceptionStatistics(
       now, receivedFrames, receivedBytes,
       (unsigned long long)seqNumber, transitTime, diff, jitter);
-      
-//       diff
-//    MeasurementManager::getMeasurementManager()->updateReceptionStatistics(
-//       flow->getMeasurementID(),
-//       now, receivedFrames, receivedBytes, transitTime, jitter);
-
-   // ------ Write statistics -----------------------------------------------
-/*
-const Measurement* measurement =
-      MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
-   if( (measurement) && (measurement->FirstStatisticsEvent > 0) ) {
-      flow->
-      snprintf((char*)&str, sizeof(str),
-               "%06llu %llu %1.6f\t"
-               "%llu %1.3f %1.3f %1.3f\n",
-               flow->VectorLine++, now, (double)(now - statisticsWriter->FirstStatisticsEvent) / 1000000.0,
-               (unsigned long long)seqNumber, transitTime, diff, flow->Jitter);
-      
-      StatisticsWriter::writeString((const char*)&flow->VectorName,
-                                    flow->VectorFile, flow->VectorBZFile,
-                                    (const char*)&str);
-   }
-   */
 }

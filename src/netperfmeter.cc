@@ -52,8 +52,6 @@
 using namespace std;
 
 
-// ????????????
-// vector<FlowSpec*> gFlowSet;
 set<int>          gConnectedSocketsSet;
 const char*       gActiveNodeName  = "Client";
 const char*       gPassiveNodeName = "Server";
@@ -200,7 +198,7 @@ static const char* parseTrafficSpecOption(const char*  parameters,
 }
 
 
-// ###### Create FlowSpec for new flow ######################################
+// ###### Create Flow for new flow ##########################################
 static Flow* createFlow(Flow*              previousFlow,
                         const char*        parameters,
                         const uint64_t     measurementID,
@@ -313,27 +311,35 @@ static Flow* createFlow(Flow*              previousFlow,
 }
 
 
+// ###### Initialize pollFD entry in main loop ##############################
+static void addToPollFDs(pollfd* pollFDs, const int fd, int& n, int* index = NULL)
+{
+   if(fd >= 0) {
+      pollFDs[n].fd      = fd;
+      pollFDs[n].events  = POLLIN;
+      pollFDs[n].revents = 0;
+      if(index) {
+         *index = n;
+      }
+      n++;
+   }
+}
+
 
 // ###### Main loop #########################################################
 bool mainLoop(const bool               isActiveMode,
               const unsigned long long stopAt,
               const uint64_t           measurementID)
 {
-   int                    tcpConnectionIDs[gConnectedSocketsSet.size()];
-   pollfd                 fds[5 + gConnectedSocketsSet.size() + 9999];   // ?????????????
-//    pollfd                 fds[5 + gFlowSet.size() + gConnectedSocketsSet.size()];
-   int                    n                     = 0;
-   int                    controlID             = -1;
-   int                    tcpID                 = -1;
-   int                    udpID                 = -1;
-   int                    sctpID                = -1;
-   int                    dccpID                = -1;
-/*   unsigned long long     nextStatusChangeEvent = (1ULL << 63);
-   unsigned long long     nextTransmissionEvent = (1ULL << 63);*/
-   unsigned long long     now                   = getMicroTime();
-//    StatisticsWriter*      statisticsWriter      = StatisticsWriter::getStatisticsWriter();
+   pollfd                 fds[5 + gConnectedSocketsSet.size()];
+   int                    n         = 0;
+   int                    controlID = -1;
+   int                    tcpID     = -1;
+   int                    udpID     = -1;
+   int                    sctpID    = -1;
+   int                    dccpID    = -1;
+   unsigned long long     now       = getMicroTime();
    std::map<int, pollfd*> pollFDIndex;
-   static size_t          flowRoundRobin        = 0;
 
 
    // ====== Get parameters for poll() ======================================
@@ -344,98 +350,22 @@ bool mainLoop(const bool               isActiveMode,
       fds[n].revents = 0;
       n++;
    }
-   if(gControlSocket >= 0) {
-      fds[n].fd      = gControlSocket;
-      fds[n].events  = POLLIN;
-      fds[n].revents = 0;
-      controlID      = n;
-      n++;
-   }
-   if(gTCPSocket >= 0) {
-      fds[n].fd      = gTCPSocket;
-      fds[n].events  = POLLIN;
-      fds[n].revents = 0;
-      tcpID          = n;
-      n++;
-   }
-   if(gUDPSocket >= 0) {
-      fds[n].fd      = gUDPSocket;
-      fds[n].events  = POLLIN;
-      fds[n].revents = 0;
-      udpID          = n;
-      n++;
-   }
-   if(gSCTPSocket >= 0) {
-      fds[n].fd      = gSCTPSocket;
-      fds[n].events  = POLLIN;
-      fds[n].revents = 0;
-      sctpID         = n;
-      n++;
-   }
-   if(gDCCPSocket >= 0) {
-      fds[n].fd      = gDCCPSocket;
-      fds[n].events  = POLLIN;
-      fds[n].revents = 0;
-      dccpID         = n;
-      n++;
-   }
-/*   
-   for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end();iterator++) {
-      FlowSpec* flowSpec = *iterator;
-      if(flowSpec->SocketDescriptor >= 0) {
-         // ====== Find or create PollFD entry ==============================
-         pollfd*                          pfd; 
-         std::map<int, pollfd*>::iterator found =
-            pollFDIndex.find(flowSpec->SocketDescriptor);
-         if(found != pollFDIndex.end()) {
-            pfd = found->second;
-         }
-         else {
-            assert(n < sizeof(fds) / sizeof(pollfd));
-            pfd = &fds[n];
-            n++;
-            pfd->fd      = flowSpec->SocketDescriptor;
-            pfd->events  = POLLIN;   // Always set POLLIN
-            pfd->revents = 0;
-            pollFDIndex.insert(std::pair<int, pollfd*>(flowSpec->SocketDescriptor, pfd));
-         }
+   addToPollFDs((pollfd*)&fds, gControlSocket, n, &controlID);
+   addToPollFDs((pollfd*)&fds, gTCPSocket,  n, &tcpID);
+   addToPollFDs((pollfd*)&fds, gUDPSocket,  n, &udpID);
+   addToPollFDs((pollfd*)&fds, gSCTPSocket, n, &sctpID);
+   addToPollFDs((pollfd*)&fds, gDCCPSocket, n, &dccpID);
 
-         // ====== Saturated sender: set POLLOUT ============================
-         if( (flowSpec->Status == FlowSpec::On) &&
-             (flowSpec->OutboundFrameSize > 0.0) &&
-             (flowSpec->OutboundFrameRate <= 0.0000001) ) {
-            pfd->events |= POLLOUT;
-         }
-
-         // ====== Schedule next status change event ========================
-         flowSpec->scheduleNextStatusChangeEvent(now);
-         if(flowSpec->NextStatusChangeEvent < nextStatusChangeEvent) {
-            nextStatusChangeEvent = flowSpec->NextStatusChangeEvent;
-         }
-
-         // ====== Schedule next transmission event =========================
-         if( (flowSpec->Status == FlowSpec::On) &&
-             (flowSpec->OutboundFrameSize > 0.0) && 
-             (flowSpec->OutboundFrameRate > 0.0000001) ) {
-            flowSpec->scheduleNextTransmissionEvent();
-            if(flowSpec->NextTransmissionEvent < nextTransmissionEvent) {
-               nextTransmissionEvent = flowSpec->NextTransmissionEvent;
-            }
-         }
-      }
-   }
-*/
-
+   
    // ====== Use poll() to wait for events ==================================
    const int timeout = pollTimeout(now, 3,
                                    stopAt,
                                    MeasurementManager::getMeasurementManager()->getNextEvent(),
                                    now + 1000000);
 
-   // printf("timeout=%d\n",timeout);
+//    printf("timeout=%d\n",timeout);
    const int result = ext_poll((pollfd*)&fds, n, timeout);
-   // printf("result=%d\n",result);
-   
+//    printf("result=%d\n",result);
    
 
    // ====== Handle socket events ===========================================
@@ -444,32 +374,26 @@ bool mainLoop(const bool               isActiveMode,
 
       // ====== Incoming control message ====================================
       if( (controlID >= 0) && (fds[controlID].revents & POLLIN) ) {
-         puts("CRTL!!!!");
-         const bool controlOkay = handleControlMessage(&gMessageReader, gControlSocket);
+         const bool controlOkay = handleNetPerfMeterControlMessage(
+                                     &gMessageReader, gControlSocket);
          if((!controlOkay) && (isActiveMode)) {
             return(false);
          }
       }
 
       // ====== Incoming data message =======================================
-/*
-      if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
-         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
-                           now, gSCTPSocket, IPPROTO_SCTP, gControlSocket);
-      }
-      if( (udpID >= 0) && (fds[udpID].revents & POLLIN) ) {
-         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
-                           now, gUDPSocket, IPPROTO_UDP, gControlSocket);
-      }
-      */
-//       bool gConnectedSocketsSetUpdated = false;
-      
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gTCPSocket, NULL, 0);
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_TCP, newSD);
          }
       }
+/*
+      if( (udpID >= 0) && (fds[udpID].revents & POLLIN) ) {
+         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
+                           now, gUDPSocket, IPPROTO_UDP, gControlSocket);
+      }
+*/      
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gSCTPSocket, NULL, 0);
          if(newSD >= 0) {
@@ -485,89 +409,6 @@ bool mainLoop(const bool               isActiveMode,
       }
 #endif
 
-//       // ====== Incoming data on connected sockets ==========================
-//       if(!gConnectedSocketsSetUpdated) {
-//          for(int i = 0;i < gConnectedSocketsSet.size();i++) {
-//             if(fds[i].revents & POLLIN) {
-//                puts("DATA-ON-NEW-SOCKET");
-//                result = handleIdentifyMessage(now, fds[i].fd);
-//                if(result != MRRM_PARTIAL_READ) {
-//                   printf("########## MOVE SD %d\n",fds[i].fd);
-//                   if(result < 0) {
-//                   printf("########## ERASE SD %d\n",fds[i].fd);
-//                      ext_close(fds[i].fd); 
-//                   }
-//                   gMessageReader.deregisterSocket(fds[i].fd);
-//                   gConnectedSocketsSet.erase(fds[i].fd);
-//                }
-// /*               const ssize_t result =
-//                   handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
-//                                     now, fds[i].fd, IPPROTO_TCP, gControlSocket);
-//                if( (result < 0) && (result != MRRM_PARTIAL_READ) ) {
-//                   gMessageReader.deregisterSocket(fds[i].fd);
-//                   gConnectedSocketsSet.erase(fds[i].fd);
-//                   ext_close(fds[i].fd);
-//                }*/
-//             }
-//          }
-//       }
-
-/*
-      // ====== Outgoing flow events ========================================
-      const size_t flows = gFlowSet.size();
-      for(size_t i = 0;i < flows;i++) {
-         FlowSpec* flowSpec = gFlowSet[(i + flowRoundRobin) % flows];
-
-         if(flowSpec->SocketDescriptor >= 0) {
-            // ====== Find PollFD entry =====================================
-            std::map<int, pollfd*>::iterator found =
-               pollFDIndex.find(flowSpec->SocketDescriptor);
-            if(found == pollFDIndex.end()) {
-               continue;
-            }
-            const pollfd* pfd = found->second;
-
-            // ====== Incoming data =========================================
-            if(pfd->revents & POLLIN) {
-               handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
-                                 now, pfd->fd, flowSpec->Protocol, gControlSocket);
-            }
-
-            // ====== Status change =========================================
-            if(flowSpec->NextStatusChangeEvent <= now) {
-               flowSpec->statusChangeEvent(now);
-            }
-
-            // ====== Send outgoing data ====================================
-            if(flowSpec->Status == FlowSpec::On) {
-               // ====== Outgoing data (saturated sender) ===================
-               if( (flowSpec->OutboundFrameSize > 0.0) &&
-                   (flowSpec->OutboundFrameRate <= 0.0000001) ) {
-                  if(pfd->revents & POLLOUT) {
-// ??? printf("   TRY: %d   %04x\n",(i + flowRoundRobin) % flows,   pfd->revents);
-                     transmitFrame(statisticsWriter, flowSpec, now, gMaxMsgSize);
-                  }
-               }
-
-               // ====== Outgoing data (non-saturated sender) ===============
-               if( (flowSpec->OutboundFrameSize >= 1.0) &&
-                   (flowSpec->OutboundFrameRate > 0.0000001) ) {
-                  const unsigned long long lastEvent = flowSpec->LastTransmission;
-                  if(flowSpec->NextTransmissionEvent <= now) {
-                     do {
-                        transmitFrame(statisticsWriter, flowSpec, now, gMaxMsgSize);
-                        if(now - lastEvent > 1000000) {
-                           // Time gap of more than 1s -> do not try to correct
-                           break;
-                        }
-                        flowSpec->scheduleNextTransmissionEvent();
-                     } while(flowSpec->NextTransmissionEvent <= now);
-                  }
-               }
-            }
-         }
-      }
-*/
    }
 
    // ====== Stop-time reached ==============================================
@@ -579,12 +420,6 @@ bool mainLoop(const bool               isActiveMode,
    if(MeasurementManager::getMeasurementManager()->getNextEvent() <= now) {
       MeasurementManager::getMeasurementManager()->handleEvents(now);
    }
-
-/*   // ====== Ensure round-robin handling of streams over the same assoc =====
-   flowRoundRobin++;
-   if(flowRoundRobin >= gFlowSet.size()) {
-      flowRoundRobin = 0;
-   }*/
    return(true);
 }
 
@@ -594,7 +429,7 @@ bool mainLoop(const bool               isActiveMode,
 void passiveMode(int argc, char** argv, const uint16_t localPort)
 {
    // ====== Initialize control socket ======================================
-   gControlSocket = createAndBindSocket(SOCK_SEQPACKET, IPPROTO_SCTP, localPort + 1, true);   // Leave it blocking!
+   gControlSocket = createAndBindSocket(SOCK_SEQPACKET, IPPROTO_SCTP, localPort + 1);
    if(gControlSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket for control port - "
            << strerror(errno) << "!" << endl;
@@ -707,16 +542,10 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Initialize IDs and print status ================================
-   uint32_t flows         = 0;
-   uint64_t measurementID = getMicroTime();
-
-   StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
-   statisticsWriter->setMeasurementID(measurementID);
-
-   char mIDString[32];
-   snprintf((char*)&mIDString, sizeof(mIDString), "%lx", measurementID);
+   uint64_t measurementID = random64();
+   
    cout << "Active Mode:" << endl
-        << "   - Measurement ID  = " << mIDString << endl
+        << "   - Measurement ID  = " << format("%lx", measurementID) << endl
         << "   - Remote Address  = "; printAddress(cout, &remoteAddress.sa, true); 
    cout << endl
         << "   - Control Address = "; printAddress(cout, &controlAddress.sa, true);
@@ -740,35 +569,12 @@ void activeMode(int argc, char** argv)
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
 
-   // ====== Get vector, scalar and config names ============================
+   // ====== Handle command-line parameters =================================
    const char* vectorNamePattern = "vector.vec.bz2";
    const char* scalarNamePattern = "scalar.sca.bz2";
    const char* configName        = "output.config";
-   for(int i = 2;i < argc;i++) {   // ????????????? NACh unten ...
-      if(strncmp(argv[i], "-vector=", 8) == 0) {
-         vectorNamePattern = (const char*)&argv[i][8];
-      }
-      else if(strncmp(argv[i], "-scalar=", 8) == 0) {
-         scalarNamePattern = (const char*)&argv[i][8];
-      }
-      else if(strncmp(argv[i], "-config=", 8) == 0) {
-         configName = (const char*)&argv[i][8];
-      }
-   }
-
-   // ====== Initialize output file handling ================================
-   puts("\n\n########## ADD M\n\n");
-/*   Measurement measurement;
-   measurement.initialize(getMicroTime(), measurementID, vectorNamePattern, scalarNamePattern);*/
-//    FILE* configFile = fopen(configName, "w");
-//    if(configFile == NULL) {
-//       cerr << "ERROR: Unable to create config file " << configName << "!" << endl;
-//       exit(1);
-//    }
-
-   // ====== Initialize flows ===============================================
-   uint8_t protocol = 0;
-   Flow*   lastFlow = NULL;
+   uint8_t     protocol          = 0;
+   Flow*       lastFlow          = NULL;
    for(int i = 2;i < argc;i++) {
       if(argv[i][0] == '-') {
          lastFlow = NULL;
@@ -792,13 +598,13 @@ void activeMode(int argc, char** argv)
 #endif
          }
          else if(strncmp(argv[i], "-vector=", 8) == 0) {
-            // Already processed above!
+            vectorNamePattern = (const char*)&argv[i][8];
          }
          else if(strncmp(argv[i], "-scalar=", 8) == 0) {
-            // Already processed above!
+            scalarNamePattern = (const char*)&argv[i][8];
          }
          else if(strncmp(argv[i], "-config=", 8) == 0) {
-            // Already processed above!
+            configName = (const char*)&argv[i][8];
          }
       }
       else {
@@ -810,10 +616,6 @@ void activeMode(int argc, char** argv)
 
          lastFlow = createFlow(lastFlow, argv[i], measurementID, vectorNamePattern,
                                protocol, &remoteAddress.sa);
-// // ??????????         const bool success = lastFlow->initializeVectorFile();
-// //          if(!success) {
-// //             return;
-// //          }
 
          cout << "      - Registering flow at remote node ... ";
          cout.flush();
@@ -836,19 +638,12 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Start measurement ==============================================
-   const unsigned long long now = getMicroTime();
    if(!performNetPerfMeterStart(gControlSocket, measurementID,
                                 gActiveNodeName, gPassiveNodeName,
                                 configName, vectorNamePattern, scalarNamePattern)) {
       std::cerr << "ERROR: Failed to start measurement!" << std::endl;
       exit(1);
    }
-//  ??????
-//    for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end(); iterator++) {
-//       FlowSpec* flowSpec = *iterator;
-//       flowSpec->BaseTime = now;
-//       flowSpec->Status   = (flowSpec->OnOffEvents.size() > 0) ? FlowSpec::Off : FlowSpec::On;
-//    }
 
 
    // ====== Main loop ======================================================
@@ -868,10 +663,6 @@ void activeMode(int argc, char** argv)
 
    // ====== Stop measurement ===============================================
    cout << "Shutdown:" << endl;
-   if(!aborted) {
-      // Write scalar statistics first!
-// ??????????      statisticsWriter->writeAllScalarStatistics(getMicroTime(), gFlowSet, measurementID);
-   }
    if(!performNetPerfMeterStop(gControlSocket, measurementID)) {
       std::cerr << "ERROR: Failed to stop measurement!" << std::endl;
       exit(1);
@@ -880,63 +671,6 @@ void activeMode(int argc, char** argv)
    if(!aborted) {
       FlowManager::getFlowManager()->print(cout, true);
    }
-
-/*
-   // ====== Write config file ==============================================
-   fprintf(configFile, "NUM_FLOWS=%u\n", flows);
-   fprintf(configFile, "NAME_ACTIVE_NODE=\"%s\"\n", gActiveNodeName);
-   fprintf(configFile, "NAME_PASSIVE_NODE=\"%s\"\n", gPassiveNodeName);
-   fprintf(configFile, "SCALAR_ACTIVE_NODE=\"%s\"\n", statisticsWriter->ScalarName.c_str());
-   fprintf(configFile, "SCALAR_PASSIVE_NODE=\"%s-passive%s\"\n",
-         statisticsWriter->ScalarPrefix.c_str(), statisticsWriter->ScalarSuffix.c_str());
-   fprintf(configFile, "VECTOR_ACTIVE_NODE=\"%s\"\n", statisticsWriter->VectorName.c_str());
-   fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s-passive%s\"\n\n",
-           statisticsWriter->VectorPrefix.c_str(), statisticsWriter->VectorSuffix.c_str());
-
-   for(vector<FlowSpec*>::iterator iterator = gFlowSet.begin();iterator != gFlowSet.end();iterator++) {
-      const FlowSpec* flowSpec = *iterator;
-      char extension[32];
-      snprintf((char*)&extension, sizeof(extension), "-%08x-%04x", flowSpec->FlowID, flowSpec->StreamID);
-      fprintf(configFile, "FLOW%u_DESCRIPTION=\"%s\"\n",           flowSpec->FlowID, flowSpec->Description.c_str());
-      fprintf(configFile, "FLOW%u_PROTOCOL=\"%s\"\n",              flowSpec->FlowID, getProtocolName(flowSpec->Protocol));
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE=%f\n",       flowSpec->FlowID, flowSpec->OutboundFrameRate);
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG=%u\n",   flowSpec->FlowID, flowSpec->OutboundFrameRateRng);
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE=%f\n",       flowSpec->FlowID, flowSpec->OutboundFrameSize);
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_RNG=%u\n",   flowSpec->FlowID, flowSpec->OutboundFrameSizeRng);
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE=%f\n",        flowSpec->FlowID, flowSpec->InboundFrameRate);
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG=%u\n",    flowSpec->FlowID, flowSpec->InboundFrameRateRng);
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE=%f\n",        flowSpec->FlowID, flowSpec->InboundFrameSize);
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_RNG=%u\n",    flowSpec->FlowID, flowSpec->InboundFrameSizeRng);
-      fprintf(configFile, "FLOW%u_RELIABLE=%f\n",                  flowSpec->FlowID, flowSpec->ReliableMode);
-      fprintf(configFile, "FLOW%u_ORDERED=%f\n",                   flowSpec->FlowID, flowSpec->OrderedMode);
-      fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n\n",  flowSpec->FlowID, flowSpec->VectorName.c_str());
-      fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n", flowSpec->FlowID,
-                           StatisticsWriter::getPassivNodeFilename(
-                              statisticsWriter->VectorPrefix, statisticsWriter->VectorSuffix, extension).c_str());
-   }         
-   fclose(configFile);
-      */
-
-   // ====== Clean up =======================================================
-   /*
-   vector<FlowSpec*>::iterator iterator = gFlowSet.begin();
-   while(iterator != gFlowSet.end()) {
-      FlowSpec* flowSpec = *iterator;
-      cout << "   o Flow ID #" << flowSpec->FlowID << ": ";
-      cout.flush();
-      if(flowSpec->OriginalSocketDescriptor) {
-         gMessageReader.deregisterSocket(flowSpec->SocketDescriptor);
-      }
-      removeFlowFromRemoteNode(gControlSocket, flowSpec);
-      delete flowSpec;
-      gFlowSet.erase(iterator);
-      iterator = gFlowSet.begin();
-   }
-   cout << endl;
-   gMessageReader.deregisterSocket(gControlSocket);
-   ext_close(gControlSocket);
-   */
-//    measurement.finish();
 }
 
 
