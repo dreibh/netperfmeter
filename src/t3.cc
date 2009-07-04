@@ -25,8 +25,9 @@ extern size_t gMaxMsgSize;
 // ###### Constructor #######################################################
 OutputFile::OutputFile()
 {
-   File   = NULL;
-   BZFile = NULL;
+   File       = NULL;
+   BZFile     = NULL;
+   WriteError = false;
 }
 
 
@@ -64,6 +65,7 @@ if(name == NULL) {
    File = (name != NULL) ? fopen(name, "w+") : tmpfile();
    if(File == NULL) {
       std::cerr << "ERROR: Unable to create output file " << name << "!" << std::endl;
+      WriteError = true;
       return(false);
    }
 
@@ -79,9 +81,11 @@ if(name == NULL) {
          fclose(File);
          File = NULL;
          unlink(name);
+         WriteError = true;
          return(false);
       }
    }
+   WriteError = false;
    return(true);
 }
 
@@ -90,7 +94,6 @@ if(name == NULL) {
 bool OutputFile::finish(const bool closeFile)
 {
    // ====== Finish BZip2 compression =======================================
-   bool result = true;
    if(BZFile) {
       int bzerror;
       BZ2_bzWriteClose(&bzerror, BZFile, 0, NULL, NULL);
@@ -98,21 +101,23 @@ bool OutputFile::finish(const bool closeFile)
          std::cerr << "ERROR: Unable to finish BZip2 compression on file <"
                    << Name << ">!" << std::endl
                    << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << std::endl;
-         result = false;
+         WriteError = true;
       }
       BZFile = NULL;
    }
    // ====== Close or rewind file ===========================================
    if(File) {
       if(closeFile) {
-         fclose(File);
+         if(fclose(File) != 0) {
+            WriteError = true;
+         }
          File = NULL;
       }
       else {
          rewind(File);
       }
    }
-   return(result);
+   return(!WriteError);
 }
 
 
@@ -428,7 +433,7 @@ Flow* FlowManager::findFlow(const uint64_t measurementID,
 {
    Flow* found = NULL;
    
-   lock();   // ???????????????????????????
+   lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end();iterator++) {
       Flow* flow = *iterator;
@@ -1058,7 +1063,8 @@ void Flow::run()
       if(nextStatusChange <= now) {
          handleStatusChangeEvent(now);
       }
-   } while( (result == true) && (!Stopping) );
+   } while( (result == true) && (!isStopping()) );
+   puts("####### END OF THREAD (XMIT)!");
 }
 
 
@@ -1159,11 +1165,8 @@ void FlowManager::run()
       }
       unlock();
 
-// puts("WAIT FM...");
       const int timeout = 1000;
       const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
-//  puts("WAIT FM OKAY");
-// puts("R");
 
       if(result > 0) {
          const unsigned long long now = getMicroTime();
@@ -1184,7 +1187,6 @@ void FlowManager::run()
                iterator != UnidentifiedSockets.end(); iterator++) {
                assert(unidentifiedSocketsPollFDIndex[i]->fd == iterator->first);
                if(unidentifiedSocketsPollFDIndex[i]->revents & POLLIN) {
-         printf("POLLIN on %d\n", iterator->first);
                   handleDataMessage(true, now,
                                     iterator->second,
                                     iterator->first);
@@ -1200,7 +1202,8 @@ void FlowManager::run()
          }
          unlock();
       }
-   } while(!Stopping);
+   } while(!isStopping());
+   puts("####### END OF THREAD (RECV)!");
 }
 
 
@@ -1321,19 +1324,20 @@ void MeasurementManager::handleEvents(const unsigned long long now)
       // ====== Print bandwidth information line ============================
       const double duration = (now - LastDisplayEvent) / 1000000.0;
       const unsigned int totalDuration = (unsigned int)((now - FirstDisplayEvent) / 1000000ULL);
-      std::cout <<
-         format("\r<-- Duration: %2u:%02u:%02u   "
-                "Flows: %u   "
-                "Transmitted: %1.2f MiB at %1.1f Kbit/s   "
-                "Received: %1.2f MiB at %1.1f Kbit/s -->\x1b[0K",
-                totalDuration / 3600,
-                (totalDuration / 60) % 60,
-                totalDuration % 60,
-                GlobalFlows,
-                GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
-                (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
-                GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
-                (duration > 0.0) ? (8 * RelGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0);
+      std::cout << "\r" << "<-- "
+         << format("Duration: %2u:%02u:%02u   "
+                   "Flows: %u   "
+                   "Transmitted: %1.2f MiB at %1.1f Kbit/s   "
+                   "Received: %1.2f MiB at %1.1f Kbit/s",
+                   totalDuration / 3600,
+                   (totalDuration / 60) % 60,
+                   totalDuration % 60,
+                   GlobalFlows,
+                   GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
+                   (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
+                   GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
+                   (duration > 0.0) ? (8 * RelGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0)
+         << " -->" << "\x1b[0K";
       std::cout.flush();
       
       LastDisplayEvent = now;

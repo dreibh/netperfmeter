@@ -50,12 +50,13 @@ class OutputFile
    unsigned long long Line;
    FILE*              File;
    BZFILE*            BZFile;
+   bool               WriteError;
 };
 
 
 
 
-class TrafficSpec
+class TrafficSpec   // ???????????? NAME -> FlowTrafficSpec
 {
    // ====== Methods ========================================================
    public:
@@ -74,17 +75,17 @@ class TrafficSpec
    uint8_t                Protocol;
    std::set<unsigned int> OnOffEvents;
 
-   double   ReliableMode;
-   double   OrderedMode;
+   double                 ReliableMode;
+   double                 OrderedMode;
 
-   double   OutboundFrameRate;
-   double   OutboundFrameSize;
-   double   InboundFrameRate;
-   double   InboundFrameSize;
-   uint8_t  OutboundFrameRateRng;
-   uint8_t  OutboundFrameSizeRng;
-   uint8_t  InboundFrameRateRng;
-   uint8_t  InboundFrameSizeRng;
+   double                 OutboundFrameRate;
+   double                 OutboundFrameSize;
+   double                 InboundFrameRate;
+   double                 InboundFrameSize;
+   uint8_t                OutboundFrameRateRng;
+   uint8_t                OutboundFrameSizeRng;
+   uint8_t                InboundFrameRateRng;
+   uint8_t                InboundFrameSizeRng;
 };
 
 
@@ -104,17 +105,17 @@ class FlowBandwidthStats
 
    // ====== Public Data ====================================================
    public:
-   unsigned long long     TransmittedBytes;
-   unsigned long long     TransmittedPackets;
-   unsigned long long     TransmittedFrames;
+   unsigned long long TransmittedBytes;
+   unsigned long long TransmittedPackets;
+   unsigned long long TransmittedFrames;
 
-   unsigned long long     ReceivedBytes;
-   unsigned long long     ReceivedPackets;
-   unsigned long long     ReceivedFrames;
+   unsigned long long ReceivedBytes;
+   unsigned long long ReceivedPackets;
+   unsigned long long ReceivedFrames;
    
-   unsigned long long     LostBytes;
-   unsigned long long     LostPackets;
-   unsigned long long     LostFrames;
+   unsigned long long LostBytes;
+   unsigned long long LostPackets;
+   unsigned long long LostFrames;
 };
 
 

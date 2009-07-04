@@ -566,8 +566,7 @@ bool setPort(struct sockaddr* address, uint16_t port)
 /* ###### Create server socket of appropriate family and bind it ######### */
 int createAndBindSocket(const int      type,
                         const int      protocol,
-                        const uint16_t localPort,
-                        const bool     blocking)
+                        const uint16_t localPort)
 {
    sockaddr_union localAddress;
 
@@ -599,9 +598,6 @@ int createAndBindSocket(const int      type,
       return(-3);
    }
    ext_listen(sd, 10);
-   if(!blocking) {
-      setNonBlocking(sd);
-   }
    return(sd);
 }
 

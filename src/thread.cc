@@ -31,7 +31,9 @@
 Thread::Thread()
 {
    MyThread = 0;
+   lock();
    Stopping = false;
+   unlock();
 }
 
 
@@ -57,7 +59,9 @@ void* Thread::startRoutine(void* object)
 bool Thread::start()
 {
    if(MyThread == 0) {
+      lock();
       Stopping = false;
+      unlock();
       if(pthread_create(&MyThread, NULL, startRoutine, (void*)this) == 0) {
          return(true);
       }
@@ -74,7 +78,9 @@ bool Thread::start()
 // ###### Stop thread #######################################################
 void Thread::stop()
 {
+   lock();
    Stopping = true;
+   unlock();
 }
 
 

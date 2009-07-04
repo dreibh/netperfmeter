@@ -89,8 +89,7 @@ bool setBlocking(int fd);
 bool setNonBlocking(int fd);
 int createAndBindSocket(const int      type,
                         const int      protocol,
-                        const uint16_t localPort,
-                        const bool     blocking = true);
+                        const uint16_t localPort);
 uint64_t hton64(const uint64_t value);
 uint64_t ntoh64(const uint64_t value);
 

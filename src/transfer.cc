@@ -30,7 +30,7 @@
 #include <iostream>
 
 
-static void updateStatistics(Flow*                      flowSpec,
+static void updateStatistics(Flow*                          flowSpec,
                              const unsigned long long       now,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   received);
@@ -160,7 +160,7 @@ ssize_t transmitFrame(Flow*                    flow,
          packetsSent++;
       }
       else {
-         printf("Overload for Flow ID #%u - %s!\n", flow->getFlowID(), strerror(errno));
+         // Transmission error -> stop sending.
          break;
       }
    }

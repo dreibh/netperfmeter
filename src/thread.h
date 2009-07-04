@@ -34,6 +34,12 @@ class Thread : public Mutex
    inline bool isRunning() const {
       return(MyThread != 0);
    }
+   inline bool isStopping() {
+      lock();
+      const bool stopping = Stopping;
+      unlock();
+      return(stopping);
+   }
 
    virtual bool start();
    virtual void stop();
@@ -46,10 +52,11 @@ class Thread : public Mutex
 
    protected:
    pthread_t MyThread;
-   bool      Stopping;
 
    private:      
    static void* startRoutine(void* object);   
+
+   bool         Stopping;
 };
 
 #endif
