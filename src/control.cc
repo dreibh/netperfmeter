@@ -76,7 +76,7 @@ static bool downloadOutputFile(const int   controlSocket,
                    << fileName << "!" << std::endl;
       }
    
-      if(resultsMsg->Header.Flags & RHF_EOF) {
+      if(resultsMsg->Header.Flags & NPMRF_EOF) {
          success = true;
          break;
       }
@@ -180,7 +180,7 @@ bool performNetPerfMeterIdentifyFlow(int controlSocket, const Flow* flow)
    for(unsigned int trial = 0;trial < maxTrials;trial++) {
       NetPerfMeterIdentifyMessage identifyMsg;
       identifyMsg.Header.Type   = NETPERFMETER_IDENTIFY_FLOW;
-      identifyMsg.Header.Flags  = hasSuffix(statisticsWriter->VectorSuffix, ".bz2") ? NPIF_COMPRESS_STATS : 0x00;
+      identifyMsg.Header.Flags  = hasSuffix(statisticsWriter->VectorSuffix, ".bz2") ? NPMIF_COMPRESS_VECTORS : 0x00;
       identifyMsg.Header.Length = htons(sizeof(identifyMsg));
       identifyMsg.MagicNumber   = hton64(NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER);
       identifyMsg.MeasurementID = hton64(flow->getMeasurementID());
@@ -217,6 +217,9 @@ bool performNetPerfMeterIdentifyFlow(int controlSocket, const Flow* flow)
 // ###### Start measurement #################################################
 bool performNetPerfMeterStart(int            controlSocket,
                               const uint64_t measurementID,
+                              const char*    activeNodeName,
+                              const char*    passiveNodeName,
+                              const char*    configName,
                               const char*    vectorNamePattern,
                               const char*    scalarNamePattern)
 {
@@ -224,6 +227,54 @@ bool performNetPerfMeterStart(int            controlSocket,
    if(statisticsWriter->initializeOutputFiles() == false) {
       return(false);
    }
+
+   // ====== Write config file ==============================================
+   FILE* configFile = fopen(configName, "w");
+   if(configFile == NULL) {
+      std::cerr << "ERROR: Unable to create config file <"
+                << configName << ">!" << std::endl;
+      return(false);
+   }
+
+   FlowManager::getFlowManager()->lock();
+
+   fprintf(configFile, "NUM_FLOWS=%u\n", (unsigned int)FlowManager::getFlowManager()->getFlowSet().size());
+   fprintf(configFile, "NAME_ACTIVE_NODE=\"%s\"\n", activeNodeName);
+   fprintf(configFile, "NAME_PASSIVE_NODE=\"%s\"\n", passiveNodeName);
+   fprintf(configFile, "SCALAR_ACTIVE_NODE=\"%s\"\n", statisticsWriter->ScalarName.c_str());
+   fprintf(configFile, "SCALAR_PASSIVE_NODE=\"%s-passive%s\"\n",
+         statisticsWriter->ScalarPrefix.c_str(), statisticsWriter->ScalarSuffix.c_str());
+   fprintf(configFile, "VECTOR_ACTIVE_NODE=\"%s\"\n", statisticsWriter->VectorName.c_str());
+   fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s-passive%s\"\n\n",
+           statisticsWriter->VectorPrefix.c_str(), statisticsWriter->VectorSuffix.c_str());
+
+   for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+      iterator != FlowManager::getFlowManager()->getFlowSet().end();
+      iterator++) {
+      const Flow* flow = *iterator;
+      char extension[32];
+      snprintf((char*)&extension, sizeof(extension), "-%08x-%04x",        flow->getFlowID(), flow->getStreamID());
+      fprintf(configFile, "FLOW%u_DESCRIPTION=\"%s\"\n",                  flow->getFlowID(), flow->getTrafficSpec().Description.c_str());
+      fprintf(configFile, "FLOW%u_PROTOCOL=\"%s\"\n",                     flow->getFlowID(), getProtocolName(flow->getTrafficSpec().Protocol));
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE=%f\n",              flow->getFlowID(), flow->getTrafficSpec().OutboundFrameRate);
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG_ID=%u\n",       flow->getFlowID(), flow->getTrafficSpec().OutboundFrameRateRng);
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG_NAME=\"%s\"\n", flow->getFlowID(), getRandomGeneratorName(flow->getTrafficSpec().OutboundFrameRateRng));
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE=%f\n",              flow->getFlowID(), flow->getTrafficSpec().OutboundFrameSize);
+      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_RNG=%u\n",          flow->getFlowID(), flow->getTrafficSpec().OutboundFrameSizeRng);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE=%f\n",               flow->getFlowID(), flow->getTrafficSpec().InboundFrameRate);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG_ID=%u\n",        flow->getFlowID(), flow->getTrafficSpec().InboundFrameRateRng);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG_NAME=\"%s\"\n",  flow->getFlowID(), getRandomGeneratorName(flow->getTrafficSpec().InboundFrameRateRng));
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE=%f\n",               flow->getFlowID(), flow->getTrafficSpec().InboundFrameSize);
+      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_RNG=%u\n",           flow->getFlowID(), flow->getTrafficSpec().InboundFrameSizeRng);
+      fprintf(configFile, "FLOW%u_RELIABLE=%f\n",                         flow->getFlowID(), flow->getTrafficSpec().ReliableMode);
+      fprintf(configFile, "FLOW%u_ORDERED=%f\n",                          flow->getFlowID(), flow->getTrafficSpec().OrderedMode);
+      fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(), flow->getVectorFile().getName().c_str());
+      fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n",        flow->getFlowID(),
+                           Flow::getNodeOutputName(vectorNamePattern, "passive",
+                              format("-%08x-%04x", flow->getFlowID(), flow->getStreamID())).c_str());
+   }         
+   FlowManager::getFlowManager()->unlock();
+   fclose(configFile);
 
    // ====== Start flows ====================================================
    const bool success = FlowManager::getFlowManager()->startMeasurement(
@@ -237,10 +288,15 @@ bool performNetPerfMeterStart(int            controlSocket,
       // ====== Tell passive node to start measurement ======================
       NetPerfMeterStartMessage startMsg;
       startMsg.Header.Type   = NETPERFMETER_START;
-      startMsg.Header.Flags  = hasSuffix(statisticsWriter->VectorSuffix, ".bz2") ?
-                                            NPSF_COMPRESS_STATS : 0x00;
       startMsg.Header.Length = htons(sizeof(startMsg));
       startMsg.MeasurementID = hton64(measurementID);
+      startMsg.Header.Flags  = 0x00;
+      if(hasSuffix(statisticsWriter->ScalarSuffix, ".bz2")) {
+         startMsg.Header.Flags |= NPMSF_COMPRESS_SCALARS;
+      }
+      if(hasSuffix(statisticsWriter->VectorSuffix, ".bz2")) {
+         startMsg.Header.Flags |= NPMSF_COMPRESS_VECTORS;
+      }
 
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
@@ -283,7 +339,7 @@ static bool sendNetPerfMeterRemoveFlow(int          controlSocket,
    if(sctp_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), &sinfo, 0) <= 0) {
       return(false);
    }
-   return(downloadResults(controlSocket, measurement->getVectorFile().getName(), flow));
+   return(downloadResults(controlSocket, measurement->getVectorNamePattern(), flow));
 }
 
 
@@ -293,11 +349,9 @@ bool performNetPerfMeterStop(int            controlSocket,
 {
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->stopMeasurement(measurementID);
-
-   StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
-   if(statisticsWriter->finishOutputFiles() == false) {
-      return(false);
-   }
+   Measurement* measurement = MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
+   assert(measurement != NULL);
+   measurement->writeScalarStatistics(getMicroTime());
 
    // ====== Tell passive node to stop measurement ==========================
    NetPerfMeterStopMessage stopMsg;
@@ -318,10 +372,6 @@ bool performNetPerfMeterStop(int            controlSocket,
    if(awaitNetPerfMeterAcknowledge(controlSocket, measurementID, 0, 0) == false) {
       return(false);
    }
-
-   // ====== Download passive node's vector file ============================
-   Measurement* measurement = MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
-   assert(measurement != NULL);
 
    // ====== Download passive node's vector file ============================
    const std::string vectorName = Flow::getNodeOutputName(
@@ -370,7 +420,7 @@ bool performNetPerfMeterStop(int            controlSocket,
 
 // ###### Send NETPERFMETER_ACKNOWLEDGE to remote node ######################
 bool sendNetPerfMeterAcknowledge(int            controlSocket,
-                                 sctp_assoc_t   assocID,   // ????? notwendig ???
+                                 sctp_assoc_t   assocID,
                                  const uint64_t measurementID,
                                  const uint32_t flowID,
                                  const uint16_t streamID,
@@ -477,7 +527,7 @@ static bool uploadOutputFile(const int          controlSocket,
       const size_t bytes = fread(&resultsMsg->Data, 1,
                                  NETPERFMETER_RESULTS_MAX_DATA_LENGTH,
                                  outputFile.getFile());
-      resultsMsg->Header.Flags  = feof(outputFile.getFile()) ? RHF_EOF : 0x00;
+      resultsMsg->Header.Flags  = feof(outputFile.getFile()) ? NPMRF_EOF : 0x00;
       resultsMsg->Header.Length = htons(bytes);
       // printf("   -> b=%d   snd=%d\n",(int)bytes, (int)(sizeof(NetPerfMeterResults) + bytes));
       if(ferror(outputFile.getFile())) {
@@ -496,7 +546,7 @@ static bool uploadOutputFile(const int          controlSocket,
       }
       std::cout << ".";
       std::cout.flush();
-   } while(!(resultsMsg->Header.Flags & RHF_EOF));
+   } while(!(resultsMsg->Header.Flags & NPMRF_EOF));
 
    // ====== Check results ==================================================
    if(!success) {
@@ -611,7 +661,6 @@ static bool handleNetPerfMeterRemoveFlow(const NetPerfMeterRemoveFlowMessage* re
       FlowManager::getFlowManager()->removeFlow(flow);
       // ------ Upload statistics file --------------------------------
       flow->getVectorFile().finish(false);
-printf("$$$$$$$$$$$ LINE=%d\n",flow->getVectorFile().getLine());
       uploadResults(controlSocket, assocID, flow);
       delete flow;
    }
@@ -637,21 +686,14 @@ static bool handleNetPerfMeterStart(const NetPerfMeterStartMessage* startMsg,
    const unsigned long long now = getMicroTime();
    bool success = FlowManager::getFlowManager()->startMeasurement(
       measurementID, now,
-      NULL, (startMsg->Header.Flags & NPSF_COMPRESS_STATS) ? true : false,
-      NULL, false,
+      NULL, (startMsg->Header.Flags & NPMSF_COMPRESS_VECTORS) ? true : false,
+      NULL, (startMsg->Header.Flags & NPMSF_COMPRESS_SCALARS) ? true : false,
       true);
-   
-// ???????????????????   
-   StatisticsWriter* statisticsWriter =
-      StatisticsWriter::addMeasurement(now, measurementID,
-                                       (startMsg->Header.Flags & NPSF_COMPRESS_STATS) ? true : false);
-   if(statisticsWriter) {
-      success = statisticsWriter->initializeOutputFiles();
-   }
    
    return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                        measurementID, 0, 0,
-                                       (success == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR));
+                                       (success == true) ? NETPERFMETER_STATUS_OKAY :
+                                                           NETPERFMETER_STATUS_ERROR));
 }
 
 
@@ -678,8 +720,9 @@ static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
    Measurement* measurement =
       MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
    if(measurement) {
-      success = ( (((OutputFile&)measurement->getVectorFile()).finish(false)) &&
-                  (((OutputFile&)measurement->getScalarFile()).finish(false)) );
+      measurement->writeScalarStatistics(getMicroTime());
+      success = ( (((OutputFile&)measurement->getScalarFile()).finish(false)) &&
+                  (((OutputFile&)measurement->getVectorFile()).finish(false)) );
    }
       
    
@@ -790,7 +833,7 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                                     ntohl(identifyMsg->FlowID),
                                                     ntohs(identifyMsg->StreamID),
                                                     sd, from,
-                                                    (identifyMsg->Header.Flags & NPIF_COMPRESS_STATS) ?
+                                                    (identifyMsg->Header.Flags & NPMIF_COMPRESS_VECTORS) ?
                                                        true : false,
                                                     controlSocketDescriptor,
                                                     controlAssocID);

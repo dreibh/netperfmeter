@@ -111,6 +111,7 @@ void sendBreak(const bool quiet);
 #define RANDOM_UNIFORM     1
 #define RANDOM_EXPONENTIAL 2
 
+const char* getRandomGeneratorName(const uint8_t rng);
 double getRandomValue(const double x, const uint8_t rng);
 uint8_t random8();
 uint16_t random16();

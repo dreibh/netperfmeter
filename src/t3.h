@@ -160,6 +160,7 @@ class Measurement : public Mutex
                    const bool               compressScalarFile);
    void finish();
    
+   void writeScalarStatistics(const unsigned long long now);
    void writeVectorStatistics(const unsigned long long now,
                               size_t&                  globalFlows,
                               FlowBandwidthStats&      globalStats,
@@ -277,6 +278,10 @@ class FlowManager : public Thread
                         const bool                printFlows = false,
                         const unsigned long long  now        = getMicroTime());
                          
+   void writeScalarStatistics(const uint64_t           measurementID,
+                              const unsigned long long now,
+                              OutputFile&              scalarFile,
+                              const unsigned long long firstStatisticsEvent);
    void writeVectorStatistics(const uint64_t           measurementID,
                               const unsigned long long now,
                               OutputFile&              vectorFile,

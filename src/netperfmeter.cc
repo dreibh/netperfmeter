@@ -744,7 +744,7 @@ void activeMode(int argc, char** argv)
    const char* vectorNamePattern = "vector.vec.bz2";
    const char* scalarNamePattern = "scalar.sca.bz2";
    const char* configName        = "output.config";
-   for(int i = 2;i < argc;i++) {
+   for(int i = 2;i < argc;i++) {   // ????????????? NACh unten ...
       if(strncmp(argv[i], "-vector=", 8) == 0) {
          vectorNamePattern = (const char*)&argv[i][8];
       }
@@ -760,11 +760,11 @@ void activeMode(int argc, char** argv)
    puts("\n\n########## ADD M\n\n");
 /*   Measurement measurement;
    measurement.initialize(getMicroTime(), measurementID, vectorNamePattern, scalarNamePattern);*/
-   FILE* configFile = fopen(configName, "w");
-   if(configFile == NULL) {
-      cerr << "ERROR: Unable to create config file " << configName << "!" << endl;
-      exit(1);
-   }
+//    FILE* configFile = fopen(configName, "w");
+//    if(configFile == NULL) {
+//       cerr << "ERROR: Unable to create config file " << configName << "!" << endl;
+//       exit(1);
+//    }
 
    // ====== Initialize flows ===============================================
    uint8_t protocol = 0;
@@ -838,7 +838,8 @@ void activeMode(int argc, char** argv)
    // ====== Start measurement ==============================================
    const unsigned long long now = getMicroTime();
    if(!performNetPerfMeterStart(gControlSocket, measurementID,
-                                vectorNamePattern, scalarNamePattern)) {
+                                gActiveNodeName, gPassiveNodeName,
+                                configName, vectorNamePattern, scalarNamePattern)) {
       std::cerr << "ERROR: Failed to start measurement!" << std::endl;
       exit(1);
    }

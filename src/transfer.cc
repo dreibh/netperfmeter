@@ -76,10 +76,10 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    dataMsg->Header.Type   = NETPERFMETER_DATA;
    dataMsg->Header.Flags  = 0x00;
    if(isFrameBegin) {
-      dataMsg->Header.Flags |= DHF_FRAME_BEGIN;
+      dataMsg->Header.Flags |= NPMDF_FRAME_BEGIN;
    }
    if(isFrameEnd) {
-      dataMsg->Header.Flags |= DHF_FRAME_END;
+      dataMsg->Header.Flags |= NPMDF_FRAME_END;
    }
    dataMsg->Header.Length = htons(bytesToSend);
    dataMsg->MeasurementID = hton64(flow->getMeasurementID());
@@ -146,7 +146,7 @@ ssize_t transmitFrame(// StatisticsWriter*        statsWriter, ???
    size_t  packetsSent = 0;
 
    const uint32_t frameID = flow->nextOutboundFrameID();
-   while(bytesSent < bytesToSend) {
+   while(bytesSent < (ssize_t)bytesToSend) {
       // ====== Send message ================================================
       size_t chunkSize = std::min(bytesToSend, std::min(maxMsgSize, MAXIMUM_MESSAGE_SIZE));
       const ssize_t sent =
@@ -208,15 +208,14 @@ ssize_t handleDataMessage(const bool               isActiveMode,
          (const NetPerfMeterIdentifyMessage*)&inputBuffer;
 
       // ====== Handle NETPERFMETER_IDENTIFY_FLOW message ===================
-      // ?????????????????????????????????????????????ß
-      if( (received >= sizeof(NetPerfMeterIdentifyMessage)) &&
+      if( (received >= (ssize_t)sizeof(NetPerfMeterIdentifyMessage)) &&
           (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
           (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
           handleNetPerfMeterIdentify(identifyMsg, sd, &from);
       }
 
       // ====== Handle NETPERFMETER_DATA message ============================
-      else if( (received >= sizeof(NetPerfMeterDataMessage)) &&
+      else if( (received >= (ssize_t)sizeof(NetPerfMeterDataMessage)) &&
                (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
          // ====== Identifiy flow ===========================================
          Flow* flow;

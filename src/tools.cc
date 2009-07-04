@@ -920,7 +920,7 @@ void sendBreak(const bool quiet)
 
 
 
-/* ###### Get random value using specified random number generator #### */
+/* ###### Get random value using specified random number generator ####### */
 double getRandomValue(const double x, const uint8_t rng)
 {
    double value;
@@ -941,6 +941,23 @@ double getRandomValue(const double x, const uint8_t rng)
    return(value);
 }
 
+
+/* ###### Get name of specified random number generator ################## */
+const char* getRandomGeneratorName(const uint8_t rng)
+{
+   switch(rng) {
+      case RANDOM_CONSTANT:
+         return("constant");
+       break;
+      case RANDOM_EXPONENTIAL:
+         return("exponential");
+       break;
+      case RANDOM_UNIFORM:
+         return("uniform");
+       break;
+   }
+   return("(invalid!)");
+}
 
 
 /*

@@ -543,6 +543,7 @@ void FlowManager::stopMeasurement(const uint64_t           measurementID,
        iterator != FlowSet.end();iterator++) {
       Flow* flow = *iterator;
       if(flow->MeasurementID == measurementID) {
+         // ====== Stop flow ================================================
          flow->deactivate();
          if(printFlows) {
             flow->print(std::cout, true);
@@ -554,6 +555,102 @@ void FlowManager::stopMeasurement(const uint64_t           measurementID,
 
 
 
+void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
+                                        const unsigned long long now,
+                                        OutputFile&              scalarFile,
+                                        const unsigned long long firstStatisticsEvent)
+{
+   std::string objectName =
+      std::string("netPerfMeter.") +
+         ((scalarFile.getName() == std::string()) ? "passive" : "active");
+
+   lock();
+   FlowBandwidthStats totalBandwidthStats;
+   for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
+      iterator != FlowSet.end();iterator++) {
+      Flow* flow = *iterator;
+      flow->lock();
+      if(flow->MeasurementID == measurementID) {
+         const double transmissionDuration = (flow->LastTransmission - flow->FirstTransmission) / 1000000.0;
+         const double receptionDuration    = (flow->LastReception - flow->FirstReception) / 1000000.0;
+         scalarFile.printf(
+            "scalar \"%s.flow[%u]\" \"Transmitted Bytes\"       %llu\n"
+            "scalar \"%s.flow[%u]\" \"Transmitted Packets\"     %llu\n"
+            "scalar \"%s.flow[%u]\" \"Transmitted Frames\"      %llu\n"
+            "scalar \"%s.flow[%u]\" \"Transmitted Byte Rate\"   %1.6f\n"
+            "scalar \"%s.flow[%u]\" \"Transmitted Packet Rate\" %1.6f\n"
+            "scalar \"%s.flow[%u]\" \"Transmitted Frame Rate\"  %1.6f\n"
+            "scalar \"%s.flow[%u]\" \"Received Bytes\"          %llu\n"
+            "scalar \"%s.flow[%u]\" \"Received Packets\"        %llu\n"
+            "scalar \"%s.flow[%u]\" \"Received Frames\"         %llu\n"
+            "scalar \"%s.flow[%u]\" \"Received Byte Rate\"      %1.6f\n"
+            "scalar \"%s.flow[%u]\" \"Received Packet Rate\"    %1.6f\n"
+            "scalar \"%s.flow[%u]\" \"Received Frame Rate\"     %1.6f\n"
+            ,
+            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedBytes,
+            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedPackets,
+            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedFrames,
+            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedBytes   / transmissionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedPackets / transmissionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedFrames  / transmissionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedBytes,
+            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedPackets,
+            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedFrames,
+            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? flow->CurrentBandwidthStats.ReceivedBytes   / receptionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? flow->CurrentBandwidthStats.ReceivedPackets / receptionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? flow->CurrentBandwidthStats.ReceivedFrames  / receptionDuration : 0.0
+            );
+         totalBandwidthStats = totalBandwidthStats + flow->CurrentBandwidthStats;
+      }
+      flow->unlock();
+   }
+
+   // ====== Write total statistics =========================================
+   const double totalDuration = (now - firstStatisticsEvent) / 1000000.0;
+   scalarFile.printf(
+      "scalar \"%s.total\" \"Transmitted Bytes\"       %llu\n"
+      "scalar \"%s.total\" \"Transmitted Packets\"     %llu\n"
+      "scalar \"%s.total\" \"Transmitted Frames\"      %llu\n"
+      "scalar \"%s.total\" \"Transmitted Byte Rate\"   %1.6f\n"
+      "scalar \"%s.total\" \"Transmitted Packet Rate\" %1.6f\n"
+      "scalar \"%s.total\" \"Transmitted Frame Rate\"  %1.6f\n"
+      "scalar \"%s.total\" \"Received Bytes\"          %llu\n"
+      "scalar \"%s.total\" \"Received Packets\"        %llu\n"
+      "scalar \"%s.total\" \"Received Frames\"         %llu\n"
+      "scalar \"%s.total\" \"Received Byte Rate\"      %1.6f\n"
+      "scalar \"%s.total\" \"Received Packet Rate\"    %1.6f\n"
+      "scalar \"%s.total\" \"Received Frame Rate\"     %1.6f\n"
+      "scalar \"%s.total\" \"Lost Bytes\"              %llu\n"
+      "scalar \"%s.total\" \"Lost Packets\"            %llu\n"
+      "scalar \"%s.total\" \"Lost Frames\"             %llu\n"
+      "scalar \"%s.total\" \"Lost Byte Rate\"          %1.6f\n"
+      "scalar \"%s.total\" \"Lost Packet Rate\"        %1.6f\n"
+      "scalar \"%s.total\" \"Lost Frame Rate\"         %1.6f\n"
+      ,
+      objectName.c_str(), totalBandwidthStats.TransmittedBytes,
+      objectName.c_str(), totalBandwidthStats.TransmittedPackets,
+      objectName.c_str(), totalBandwidthStats.TransmittedFrames,
+      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.TransmittedBytes   / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.TransmittedPackets / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.TransmittedFrames  / totalDuration : 0.0,
+         
+      objectName.c_str(), totalBandwidthStats.ReceivedBytes,
+      objectName.c_str(), totalBandwidthStats.ReceivedPackets,
+      objectName.c_str(), totalBandwidthStats.ReceivedFrames,
+      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.ReceivedBytes   / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.ReceivedPackets / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.ReceivedFrames  / totalDuration : 0.0,
+
+      objectName.c_str(), totalBandwidthStats.LostBytes,
+      objectName.c_str(), totalBandwidthStats.LostPackets,
+      objectName.c_str(), totalBandwidthStats.LostFrames,
+      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.LostBytes   / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.LostPackets / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.LostFrames  / totalDuration : 0.0
+      );
+   unlock();
+}
+                                        
 
 void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
                                         const unsigned long long now,
@@ -1246,6 +1343,13 @@ void MeasurementManager::handleEvents(const unsigned long long now)
 }
 
 
+void Measurement::writeScalarStatistics(const unsigned long long now)
+{
+   FlowManager::getFlowManager()->writeScalarStatistics(
+      MeasurementID, now, ScalarFile,
+      FirstStatisticsEvent);
+}
+
 void Measurement::writeVectorStatistics(const unsigned long long now,
                                         size_t&                  globalFlows,
                                         FlowBandwidthStats&      globalStats,
@@ -1316,13 +1420,17 @@ bool Measurement::initialize(const unsigned long long now,
    NextStatisticsEvent  = 0;
 
    if(MeasurementManager::getMeasurementManager()->addMeasurement(this)) {
-      VectorNamePattern = std::string(vectorNamePattern);
-      ScalarNamePattern = std::string(scalarNamePattern);
+      VectorNamePattern = (vectorNamePattern != NULL) ?
+                             std::string(vectorNamePattern) : std::string(); 
       const bool s1 = VectorFile.initialize(
-                         (vectorNamePattern != NULL) ? Flow::getNodeOutputName(vectorNamePattern, "active").c_str() : NULL,
+                         (vectorNamePattern != NULL) ?
+                            Flow::getNodeOutputName(vectorNamePattern, "active").c_str() : NULL,
                          compressVectorFile);
+      ScalarNamePattern = (scalarNamePattern != NULL) ?
+                             std::string(scalarNamePattern) : std::string(); 
       const bool s2 = ScalarFile.initialize(
-                         (scalarNamePattern != NULL) ? Flow::getNodeOutputName(scalarNamePattern, "active").c_str() : NULL,
+                         (scalarNamePattern != NULL) ?
+                            Flow::getNodeOutputName(scalarNamePattern, "active").c_str() : NULL,
                          compressScalarFile);
       return(s1 && s2);
    }

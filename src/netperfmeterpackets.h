@@ -109,7 +109,7 @@ struct NetPerfMeterIdentifyMessage
 
 #define NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER 0x4bcdf3aa303c6774ULL
 
-#define NPIF_COMPRESS_STATS (1 << 0)
+#define NPMIF_COMPRESS_VECTORS (1 << 0)
 
 
 struct NetPerfMeterDataMessage
@@ -129,8 +129,8 @@ struct NetPerfMeterDataMessage
    char               Payload[];
 } __attribute__((packed));
 
-#define DHF_FRAME_BEGIN (1 << 0)
-#define DHF_FRAME_END (1 << 1)
+#define NPMDF_FRAME_BEGIN (1 << 0)
+#define NPMDF_FRAME_END (1 << 1)
 
 
 struct NetPerfMeterStartMessage
@@ -140,7 +140,8 @@ struct NetPerfMeterStartMessage
    uint64_t           MeasurementID;
 } __attribute__((packed));
 
-#define NPSF_COMPRESS_STATS (1 << 0)
+#define NPMSF_COMPRESS_VECTORS (1 << 0)
+#define NPMSF_COMPRESS_SCALARS (1 << 1)
 
 
 struct NetPerfMeterStopMessage
@@ -157,7 +158,7 @@ struct NetPerfMeterResults
    char               Data[];
 } __attribute__((packed));
 
-#define RHF_EOF                              (1 << 0)
+#define NPMRF_EOF                            (1 << 0)
 #define NETPERFMETER_RESULTS_MAX_DATA_LENGTH 1024
 
 #endif
