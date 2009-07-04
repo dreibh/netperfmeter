@@ -87,6 +87,31 @@ void printTimeStamp(std::ostream& os)
 }
 
 
+// ###### Get timeout value for poll() from microtime values ################
+int pollTimeout(const unsigned long long now, const size_t n, ...)
+{
+   va_list va;
+   va_start(va, n);
+   unsigned long long timeout = ~0;
+   for(size_t i = 0;i < n;i++) {
+      const unsigned long long t = va_arg(va, unsigned long long);
+      timeout = std::min(timeout, t);
+   }
+   if(timeout == ~0) {
+      return(-1);   // Infinite wait time (only care for sockets/files)
+   }
+   const double delta = (double)timeout - (double)now;
+   if(delta <= 0.0) {
+      return(0);   // Do not wait, just check sockets/files
+   }
+   else {
+      // Return wait time in milliseconds.
+      // NOTE: Return ceiling of the value, since 999ULL/1000ULL == 0!
+      return((int)ceil(delta / 1000.0));
+   }
+}
+                
+
 /* ###### Length-checking strcpy() ###################################### */
 int safestrcpy(char* dest, const char* src, const size_t size)
 {

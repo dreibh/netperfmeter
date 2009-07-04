@@ -191,7 +191,7 @@ bool performNetPerfMeterStart(int            controlSocket,
 bool performNetPerfMeterStop(int            controlSocket,
                              const uint64_t measurementID)
 {
-   // ====== Start flows ====================================================
+   // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->stopMeasurement(measurementID);
 
    StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
@@ -624,6 +624,12 @@ static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
    std::cout << std::endl << "Stopping measurement "
                << measurementIDString << " ..." << std::endl;
 
+   // ====== Stop flows =====================================================
+   FlowManager::getFlowManager()->stopMeasurement(measurementID);
+
+   Measurement* measurement = MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
+   
+/*// ??????????????   
    bool outputReady = false;
    StatisticsWriter* statisticsWriter = StatisticsWriter::findMeasurement(measurementID);
    if(statisticsWriter) {
@@ -633,21 +639,21 @@ outputReady=true; // ???
          outputReady = statisticsWriter->finishOutputFiles(false);
       }
    }
+// ??????????????   */
    
    sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                measurementID, 0, 0,
-                               (outputReady == true) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
-   if(outputReady) {
-   puts("?????? SKIP UPLOAD !!!!");
-/*      uploadOutput(controlSocket, assocID,
-             statisticsWriter->VectorName.c_str(), statisticsWriter->VectorFile);
-      upload(controlSocket, assocID,
-             statisticsWriter->ScalarName.c_str(), statisticsWriter->ScalarFile);*/
+                               (measurement != NULL) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
+   if(measurement) {
+      uploadOutputFile(controlSocket, assocID, measurement->getVectorFile());
+      uploadOutputFile(controlSocket, assocID, measurement->getScalarFile());
+
+      delete measurement;
    }
-   if(statisticsWriter)  {
+/*   if(statisticsWriter)  {
       statisticsWriter->finishOutputFiles(true);
       StatisticsWriter::removeMeasurement(measurementID);
-   }
+   }*/
    return(true);
 }   
 

@@ -216,8 +216,9 @@ class MeasurementManager : public Mutex
    unsigned long long               FirstDisplayEvent;
    unsigned long long               LastDisplayEvent;
    unsigned long long               NextDisplayEvent;
-   size_t                           GlobalFlows;    // For displaying only
-   FlowBandwidthStats               GlobalStats;    // For displaying only
+   size_t                           GlobalFlows;      // For displaying only
+   FlowBandwidthStats               GlobalStats;      // For displaying only
+   FlowBandwidthStats               RelGlobalStats;   // For displaying only
 };
 
 

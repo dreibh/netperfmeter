@@ -46,6 +46,7 @@ std::string format(const char* fmt, ...);
 
 unsigned long long getMicroTime();
 void printTimeStamp(std::ostream& os);
+int pollTimeout(const unsigned long long now, const size_t n, ...);
 
 
 int safestrcpy(char* dest, const char* src, const size_t size);

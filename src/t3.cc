@@ -1163,42 +1163,50 @@ unsigned long long MeasurementManager::getNextEvent()
 void MeasurementManager::handleEvents(const unsigned long long now)
 {
    lock();
-   FlowBandwidthStats relGlobalStats;
+   
+   // ====== Handle statistics events =======================================
    for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
        Measurement* measurement = iterator->second;
        if(measurement->NextStatisticsEvent <= now) {
-          measurement->writeVectorStatistics(now, GlobalFlows, GlobalStats, relGlobalStats);
+          measurement->writeVectorStatistics(now, GlobalFlows, GlobalStats, RelGlobalStats);
        }
    }
    
-   // ====== Timer management ===============================================
-   NextDisplayEvent += DisplayInterval;
-   if(NextDisplayEvent <= now) {   // Initialization!
-      NextDisplayEvent = now + DisplayInterval;
+   // ====== Display status =================================================
+   if(NextDisplayEvent <= now) {
+      // ====== Timer management ============================================
+      NextDisplayEvent += DisplayInterval;
+      if(NextDisplayEvent <= now) {   // Initialization!
+         NextDisplayEvent = now + DisplayInterval;
+      }
+      if(FirstDisplayEvent == 0) {
+         FirstDisplayEvent = now;
+         LastDisplayEvent  = now;
+      }
+      
+      // ====== Print bandwidth information line ============================
+      const double duration = (now - LastDisplayEvent) / 1000000.0;
+      const unsigned int totalDuration = (unsigned int)((now - FirstDisplayEvent) / 1000000ULL);
+      std::cout <<
+         format("\r<-- Duration: %2u:%02u:%02u   "
+                "Flows: %u   "
+                "Transmitted: %1.2f MiB at %1.1f Kbit/s   "
+                "Received: %1.2f MiB at %1.1f Kbit/s -->\x1b[0K",
+                totalDuration / 3600,
+                (totalDuration / 60) % 60,
+                totalDuration % 60,
+                GlobalFlows,
+                GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
+                (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
+                GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
+                (duration > 0.0) ? (8 * RelGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0);
+      std::cout.flush();
+      
+      LastDisplayEvent = now;
+      RelGlobalStats.reset();
    }
-   if(FirstDisplayEvent == 0) {
-      FirstDisplayEvent = now;
-      LastDisplayEvent  = now;
-   }
-   
-   // ====== Print bandwidth information line ===============================
-   const double duration = (now - LastDisplayEvent) / 1000000.0;
-   const unsigned int totalDuration = (unsigned int)((now - FirstDisplayEvent) / 1000000ULL);
-   std::cout <<
-      format("\r<-- Duration: %2u:%02u:%02u   Flows: %u   Transmitted: %1.2f MiB at %1.1f Kbit/s   Received: %1.2f MiB at %1.1f Kbit/s -->\x1b[0K",
-             totalDuration / 3600,
-             (totalDuration / 60) % 60,
-             totalDuration % 60,
-             GlobalFlows,
-             GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
-             (duration > 0.0) ? (8 * relGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
-             GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
-             (duration > 0.0) ? (8 * relGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0);
-   std::cout.flush();
-   
-   LastDisplayEvent = now;
-   
+
    unlock();
 }
 

@@ -427,13 +427,14 @@ bool mainLoop(const bool               isActiveMode,
 */
 
    // ====== Use poll() to wait for events ==================================
-   const long long nextEvent =
-      (long long)std::min(stopAt, MeasurementManager::getMeasurementManager()->getNextEvent());
-   const int timeout = std::max(0, (int)((nextEvent - (long long)now) / 1000LL));
+   const int timeout = pollTimeout(now, 3,
+                                   stopAt,
+                                   MeasurementManager::getMeasurementManager()->getNextEvent(),
+                                   now + 1000000);
 
-// ???   printf("to=%d   txNext=%lld\n", timeout, nextEvent - (long long)now);
-   int result = ext_poll((pollfd*)&fds, n, timeout);
-   printf("result=%d\n",result);
+   // printf("timeout=%d\n",timeout);
+   const int result = ext_poll((pollfd*)&fds, n, timeout);
+   // printf("result=%d\n",result);
    
    
 
