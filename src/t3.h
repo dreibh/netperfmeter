@@ -133,6 +133,16 @@ class Measurement : public Mutex
    Measurement();
    ~Measurement();
 
+   const uint64_t getMeasurementID() const {
+      return(MeasurementID);
+   }
+   const OutputFile& getVectorFile() const {
+      return(VectorFile);
+   }
+   const OutputFile& getScalarFile() const {
+      return(ScalarFile);
+   }
+   
    bool initialize(const unsigned long long now,
                    const uint64_t           measurementID,
                    const char*              vectorName,
@@ -183,8 +193,10 @@ class MeasurementManager : public Mutex
    }
 
    bool addMeasurement(Measurement* measurement);
-   void printMeasurements(std::ostream& os);
+   Measurement* findMeasurement(const uint64_t measurementID);
    void removeMeasurement(Measurement* measurement);
+
+   void printMeasurements(std::ostream& os);
 
 //    inline void updateTransmissionStatistics(const uint64_t           measurementID,
 //                                             const unsigned long long now,
@@ -218,8 +230,6 @@ class MeasurementManager : public Mutex
 
    // ====== Private Data ===================================================
    private:
-   Measurement* findMeasurement(const uint64_t measurementID);
-
    static MeasurementManager        MeasurementManagerSingleton;
    std::map<uint64_t, Measurement*> MeasurementSet;
 };
@@ -400,6 +410,17 @@ class Flow : public Thread
    }
    inline void setDelay(const double transitTime) {
       Delay = transitTime;
+   }
+
+   inline static std::string getNodeOutputName(const std::string& pattern,
+                                               const char*        type,
+                                               const std::string  extension = "") {
+      std::string prefix;
+      std::string suffix;
+      dissectName(pattern, prefix, suffix);
+      const std::string result = prefix + "-" + std::string(type) +
+                                 std::string(extension) + suffix;
+      return(result);
    }
 
    void updateTransmissionStatistics(const unsigned long long now,

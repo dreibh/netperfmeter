@@ -51,6 +51,15 @@ bool OutputFile::initialize(const char* name, const bool compressFile)
    Line = 0;
 
    // ====== Initialize file ================================================
+char str[128];
+if(name == NULL) {
+   static int yyy=1000;
+   name = (char*)&str;
+   sprintf((char*)&str, "FILE-%03d", yyy++);
+   puts("HACK!!!???");
+      Name = std::string(name);
+}
+   
    File = (name != NULL) ? fopen(name, "w+") : tmpfile();
    if(File == NULL) {
       std::cerr << "ERROR: Unable to create output file " << name << "!" << std::endl;
@@ -484,6 +493,7 @@ void FlowManager::startMeasurement(const uint64_t           measurementID,
                                    const unsigned long long now)
 {
    lock();
+   puts("########## START mEAS");
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end();iterator++) {
       Flow* flow = *iterator;
@@ -494,7 +504,7 @@ void FlowManager::startMeasurement(const uint64_t           measurementID,
             flow->OutputStatus = (flow->Traffic.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
             if(printFlows) {
                flow->print(std::cout);
-            }
+            }            
             flow->activate();
          }
       }
@@ -670,6 +680,7 @@ Flow::~Flow()
 {
    FlowManager::getFlowManager()->removeFlow(this);
    deactivate();
+   VectorFile.finish(true);
 }
 
 

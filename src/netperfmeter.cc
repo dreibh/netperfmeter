@@ -201,15 +201,15 @@ static const char* parseTrafficSpecOption(const char*  parameters,
 
 
 // ###### Create FlowSpec for new flow ######################################
-static Flow* createFlow(Flow*           previousFlow,
-                        const char*     parameters,
-                        const uint64_t  measurementID,
-                        const uint8_t   protocol,
-                        const sockaddr* remoteAddress)
+static Flow* createFlow(Flow*              previousFlow,
+                        const char*        parameters,
+                        const Measurement* measurement,
+                        const uint8_t      protocol,
+                        const sockaddr*    remoteAddress)
 {
    // ====== Get flow ID and stream ID ======================================
-   static uint32_t flowID    = 0; // will be increased with each successfull call
-   uint16_t         streamID = (previousFlow != NULL) ? previousFlow->getStreamID() + 1 : 0;
+   static uint32_t flowID   = 0; // will be increased with each successfull call
+   uint16_t        streamID = (previousFlow != NULL) ? previousFlow->getStreamID() + 1 : 0;
 
    // ====== Get TrafficSpec ================================================
    TrafficSpec trafficSpec;
@@ -231,9 +231,19 @@ static Flow* createFlow(Flow*           previousFlow,
    }
 
    // ====== Create new flow ================================================
-   Flow* flow = new Flow(measurementID, flowID, streamID, trafficSpec);
+   Flow* flow = new Flow(measurement->getMeasurementID(),
+                         flowID, streamID, trafficSpec);
    assert(flow != NULL);
 
+   // ====== Initialize vector file =========================================
+   const std::string vectorName = flow->getNodeOutputName(measurement->getVectorFile().getName(),
+                                                          "active",
+                                                          format("-%08x-%04x", flowID, streamID));
+   if(!flow->getVectorFile().initialize(vectorName.c_str(), hasSuffix(vectorName, ".bz2"))) {
+      std::cerr << "ERROR: Unable to create vector file <" << vectorName << ">!" << std::endl;
+      exit(1);
+   }
+   
    // ====== Set up socket ==================================================
    int  socketDescriptor;
    bool originalSocketDescriptor;
@@ -296,7 +306,7 @@ static Flow* createFlow(Flow*           previousFlow,
    
    // ====== Update flow with socket descriptor =============================
    flow->setSocketDescriptor(socketDescriptor, originalSocketDescriptor);
-
+   
    flowID++;
    return(flow);
 }
@@ -796,7 +806,7 @@ void activeMode(int argc, char** argv)
             exit(1);
          }
 
-         lastFlow = createFlow(lastFlow, argv[i], measurementID,
+         lastFlow = createFlow(lastFlow, argv[i], &measurement,
                                protocol, &remoteAddress.sa);
 // // ??????????         const bool success = lastFlow->initializeVectorFile();
 // //          if(!success) {
