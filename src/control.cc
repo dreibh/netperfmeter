@@ -50,14 +50,14 @@ static bool downloadOutputFile(const int   controlSocket,
    }
    bool success = false;
    ssize_t received = ext_recv(controlSocket, resultsMsg, sizeof(messageBuffer), 0);
-   while(received >= sizeof(NetPerfMeterResults)) {
+   while(received >= (ssize_t)sizeof(NetPerfMeterResults)) {
       const size_t bytes = ntohs(resultsMsg->Header.Length);
       if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
          std::cerr << "ERROR: Received unexpected message type "
                    << (unsigned int)resultsMsg->Header.Type <<  "!" << std::endl;
          exit(1);
       }
-      if(bytes + sizeof(NetPerfMeterResults) > received) {
+      if(bytes + sizeof(NetPerfMeterResults) > (size_t)received) {
          std::cerr << "ERROR: Received malformed NETPERFMETER_RESULTS message!" << std::endl;
          // printf("%u + %u > %u\n", bytes, sizeof(NetPerfMeterResults), received);
          exit(1);
@@ -88,27 +88,23 @@ static bool downloadOutputFile(const int   controlSocket,
 
 
 // ###### Download statistics file ##########################################
-static bool downloadResults(const int       controlSocket,
-                            const FlowSpec* flowSpec)
+static bool downloadResults(const int          controlSocket,
+                            const std::string& namePattern,
+                            const Flow*        flow)
 {
-   const StatisticsWriter* statisticsWriter =
-      StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
-   assert(statisticsWriter != NULL);
+   const std::string outputName =
+      Flow::getNodeOutputName(
+         namePattern, "passive",
+         format("-%08x-%04x", flow->getFlowID(), flow->getStreamID()));
 
-   char extension[32];
-   snprintf((char*)&extension, sizeof(extension), "-%08x-%04x",
-            flowSpec->FlowID, flowSpec->StreamID);
-   const std::string vectorName = StatisticsWriter::getPassivNodeFilename(
-                                     statisticsWriter->VectorPrefix,
-                                     statisticsWriter->VectorSuffix,
-                                     extension);
-
-   std::cout << "Downloading results [" << vectorName << "] ";
+   std::cout << "Downloading results [" << outputName << "] ";
    std::cout.flush();
-   bool success = awaitNetPerfMeterAcknowledge(controlSocket, flowSpec->MeasurementID,
-                                               flowSpec->FlowID, flowSpec->StreamID);
+   bool success = awaitNetPerfMeterAcknowledge(controlSocket,
+                                               flow->getMeasurementID(),
+                                               flow->getFlowID(),
+                                               flow->getStreamID());
    if(success) {
-      success = downloadOutputFile(controlSocket, vectorName.c_str());
+      success = downloadOutputFile(controlSocket, outputName.c_str());
    }
    std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
    return(success);
@@ -232,8 +228,10 @@ bool performNetPerfMeterStart(int            controlSocket,
    // ====== Start flows ====================================================
    const bool success = FlowManager::getFlowManager()->startMeasurement(
                            measurementID, getMicroTime(),
-                           vectorNamePattern, hasSuffix(vectorNamePattern, ".bz2"),
-                           scalarNamePattern, hasSuffix(scalarNamePattern, ".bz2"),
+                           Flow::getNodeOutputName(vectorNamePattern, "active").c_str(),
+                           hasSuffix(vectorNamePattern, ".bz2"),
+                           Flow::getNodeOutputName(scalarNamePattern, "active").c_str(),
+                           hasSuffix(scalarNamePattern, ".bz2"),
                            true);
    if(success) {
       // ====== Tell passive node to start measurement ======================
@@ -260,6 +258,32 @@ bool performNetPerfMeterStart(int            controlSocket,
       return(true);
    }
    return(false);
+}
+
+
+// ###### Tell remote node to remove a flow #################################
+static bool sendNetPerfMeterRemoveFlow(int          controlSocket,
+                                       Measurement* measurement,
+                                       Flow*        flow)
+{
+   flow->getVectorFile().finish(true);
+   
+   NetPerfMeterRemoveFlowMessage removeFlowMsg;
+   removeFlowMsg.Header.Type   = NETPERFMETER_REMOVE_FLOW;
+   removeFlowMsg.Header.Flags  = 0x00;
+   removeFlowMsg.Header.Length = htons(sizeof(removeFlowMsg));
+   removeFlowMsg.MeasurementID = hton64(flow->getMeasurementID());
+   removeFlowMsg.FlowID        = htonl(flow->getFlowID());
+   removeFlowMsg.StreamID      = htons(flow->getStreamID());
+
+   sctp_sndrcvinfo sinfo;
+   memset(&sinfo, 0, sizeof(sinfo));
+   sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
+
+   if(sctp_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), &sinfo, 0) <= 0) {
+      return(false);
+   }
+   return(downloadResults(controlSocket, measurement->getVectorFile().getName(), flow));
 }
 
 
@@ -302,7 +326,7 @@ bool performNetPerfMeterStop(int            controlSocket,
    // ====== Download passive node's vector file ============================
    const std::string vectorName = Flow::getNodeOutputName(
       measurement->getVectorFile().getName(), "passive");
-   std::cout << "Downloading results [" << vectorName << "] ";
+   std::cout << std::endl << "Downloading results [" << vectorName << "] ";
    std::cout.flush();
    if(downloadOutputFile(controlSocket, vectorName.c_str()) == false) {
       delete measurement;
@@ -313,7 +337,7 @@ bool performNetPerfMeterStop(int            controlSocket,
    // ====== Download passive node's scalar file ============================
    const std::string scalarName = Flow::getNodeOutputName(
       measurement->getScalarFile().getName(), "passive");
-   std::cout << "Downloading results [" << scalarName << "] ";
+   std::cout << std::endl << "Downloading results [" << scalarName << "] ";
    std::cout.flush();
    if(downloadOutputFile(controlSocket, scalarName.c_str()) == false) {
       delete measurement;
@@ -321,6 +345,24 @@ bool performNetPerfMeterStop(int            controlSocket,
    }
    std::cout << " okay" << std::endl << std::endl;
 
+   // ====== Download flow results and remove the flows =====================
+   FlowManager::getFlowManager()->lock();
+   std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+   while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
+      Flow* flow = *iterator;
+      if(flow->getMeasurementID() == measurementID) {
+         if(sendNetPerfMeterRemoveFlow(controlSocket, measurement, flow) == false) {
+            delete measurement;
+            return(false);
+         }
+         delete flow;
+         iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+         // Is there a better solution?
+      }
+   }
+   FlowManager::getFlowManager()->unlock();
+
+   // ====== Remove the Measurement object =================================
    delete measurement;
    return(true);
 }
@@ -373,7 +415,7 @@ bool awaitNetPerfMeterAcknowledge(int            controlSocket,
 
    // ====== Read NETPERFMETER_ACKNOWLEDGE message ==========================
    NetPerfMeterAcknowledgeMessage ackMsg;
-   if(ext_recv(controlSocket, &ackMsg, sizeof(ackMsg), 0) < sizeof(ackMsg)) {
+   if(ext_recv(controlSocket, &ackMsg, sizeof(ackMsg), 0) < (ssize_t)sizeof(ackMsg)) {
       return(false);
    }
    if(ackMsg.Header.Type != NETPERFMETER_ACKNOWLEDGE) {
@@ -568,6 +610,8 @@ static bool handleNetPerfMeterRemoveFlow(const NetPerfMeterRemoveFlowMessage* re
       // ------ Remove Flow from Flow Manager -------------------------
       FlowManager::getFlowManager()->removeFlow(flow);
       // ------ Upload statistics file --------------------------------
+      flow->getVectorFile().finish(false);
+printf("$$$$$$$$$$$ LINE=%d\n",flow->getVectorFile().getLine());
       uploadResults(controlSocket, assocID, flow);
       delete flow;
    }
@@ -618,30 +662,36 @@ static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
                                    const size_t                   received)
 {
    if(received < sizeof(NetPerfMeterStopMessage)) {
-      std::cerr << "ERROR: Received malformed NETPERFMETER_STOP control message!" << std::endl;
+      std::cerr << "ERROR: Received malformed NETPERFMETER_STOP control message!"
+                << std::endl;
       return(false);
    }
-   const unsigned long long now = getMicroTime();
    const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
-   char measurementIDString[64];
-   snprintf((char*)&measurementIDString, sizeof(measurementIDString),
-            "%llx", (unsigned long long)measurementID);
 
    std::cout << std::endl << "Stopping measurement "
-               << measurementIDString << " ..." << std::endl;
+              << format("%llx", (unsigned long long)measurementID)
+              << " ..." << std::endl;
 
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->stopMeasurement(measurementID);
-
-   Measurement* measurement = MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
+   bool         success     = false;
+   Measurement* measurement =
+      MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
+   if(measurement) {
+      success = ( (((OutputFile&)measurement->getVectorFile()).finish(false)) &&
+                  (((OutputFile&)measurement->getScalarFile()).finish(false)) );
+   }
+      
    
    sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                measurementID, 0, 0,
-                               (measurement != NULL) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
+                               (success == true) ? NETPERFMETER_STATUS_OKAY : 
+                                                   NETPERFMETER_STATUS_ERROR);
    if(measurement) {
-      uploadOutputFile(controlSocket, assocID, measurement->getVectorFile());
-      uploadOutputFile(controlSocket, assocID, measurement->getScalarFile());
-
+      if(success) {
+         uploadOutputFile(controlSocket, assocID, measurement->getVectorFile());
+         uploadOutputFile(controlSocket, assocID, measurement->getScalarFile());
+      }
       delete measurement;
    }
    return(true);
@@ -725,30 +775,6 @@ printf("CONTROL: type=%d\n",header->Type);
       }
    }
    return(true);
-}
-
-
-// ###### Tell remote node to remove a flow #################################
-bool removeFlowFromRemoteNode(int controlSocket, FlowSpec* flowSpec)
-{
-   flowSpec->finishVectorFile(true);
-   
-   NetPerfMeterRemoveFlowMessage removeFlowMsg;
-   removeFlowMsg.Header.Type   = NETPERFMETER_REMOVE_FLOW;
-   removeFlowMsg.Header.Flags  = 0x00;
-   removeFlowMsg.Header.Length = htons(sizeof(removeFlowMsg));
-   removeFlowMsg.MeasurementID = hton64(flowSpec->MeasurementID);
-   removeFlowMsg.FlowID        = htonl(flowSpec->FlowID);
-   removeFlowMsg.StreamID      = htons(flowSpec->StreamID);
-
-   sctp_sndrcvinfo sinfo;
-   memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
-
-   if(sctp_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), &sinfo, 0) <= 0) {
-      return(false);
-   }
-   return(downloadResults(controlSocket, flowSpec));
 }
 
 

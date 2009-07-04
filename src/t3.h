@@ -244,6 +244,9 @@ class FlowManager : public Thread
    inline MessageReader* getMessageReader() {
       return(&Reader);
    }
+   inline std::vector<Flow*>& getFlowSet() {   // Internal usage only!
+      return(FlowSet);
+   }
 
    void addSocket(const int protocol, const int socketDescriptor);
    bool identifySocket(const uint64_t        measurementID,
@@ -388,6 +391,9 @@ class Flow : public Thread
    }
 
    inline OutputFile& getVectorFile() {
+      return(VectorFile);
+   }
+   inline const OutputFile& getVectorFile() const {
       return(VectorFile);
    }
    inline double getJitter() const {
