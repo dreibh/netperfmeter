@@ -26,6 +26,7 @@
 #include <iostream>
 
 
+#if 0
 StatisticsWriter                      StatisticsWriter::GlobalStatisticsWriter;
 std::map<uint64_t, StatisticsWriter*> StatisticsWriter::StatisticsSet;
 
@@ -554,3 +555,4 @@ bool StatisticsWriter::writeScalarStatistics(const unsigned long long now,
 
    return(true);
 }
+#endif

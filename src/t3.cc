@@ -18,7 +18,7 @@
 #include "t3.h"
 
 
-extern size_t gMaxMsgSize;
+extern size_t gMaxMsgSize;   // ???? Teil der TrafficSpec!!!
 
 
 
@@ -52,16 +52,6 @@ bool OutputFile::initialize(const char* name, const bool compressFile)
    Line = 0;
 
    // ====== Initialize file ================================================
-   // ??????????????ß
-/*char str[128];
-if(name == NULL) {
-   static int yyy=1000;
-   name = (char*)&str;
-   sprintf((char*)&str, "FILE-%03d", yyy++);
-   puts("HACK!!!???");
-      Name = std::string(name);
-}
-   */
    File = (name != NULL) ? fopen(name, "w+") : tmpfile();
    if(File == NULL) {
       std::cerr << "ERROR: Unable to create output file " << name << "!" << std::endl;
@@ -268,7 +258,9 @@ FlowBandwidthStats::~FlowBandwidthStats()
 }
 
 
-FlowBandwidthStats operator+(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2)
+// ###### "+" operator ######################################################
+FlowBandwidthStats operator+(const FlowBandwidthStats& s1,
+                             const FlowBandwidthStats& s2)
 {
    FlowBandwidthStats result;
    result.TransmittedBytes   = s1.TransmittedBytes + s2.TransmittedBytes;
@@ -286,7 +278,9 @@ FlowBandwidthStats operator+(const FlowBandwidthStats& s1, const FlowBandwidthSt
 }
 
 
-FlowBandwidthStats operator-(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2)
+// ###### "-" operator ######################################################
+FlowBandwidthStats operator-(const FlowBandwidthStats& s1, 
+                             const FlowBandwidthStats& s2)
 {
    FlowBandwidthStats result;
    result.TransmittedBytes   = s1.TransmittedBytes - s2.TransmittedBytes;
@@ -365,6 +359,9 @@ void FlowBandwidthStats::reset()
    LostPackets        = 0;
    LostFrames         = 0;
 }
+
+
+
 
 
 FlowManager FlowManager::FlowManagerSingleton;
@@ -506,7 +503,6 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
    bool success = false;
    
    lock();
-   puts("########## START mEAS");
    Measurement* measurement = new Measurement;
    if(measurement != NULL) {
       if(measurement->initialize(now, measurementID, 
@@ -792,7 +788,7 @@ Flow::Flow(const uint64_t     measurementID,
    resetStatistics();
    LastOutboundSeqNumber         = 0;
    LastOutboundFrameID           = 0;
-   NextStatusChangeEvent         = (1ULL << 63);
+   NextStatusChangeEvent         = ~0ULL;
    
    FlowManager::getFlowManager()->addFlow(this);
 }
@@ -980,7 +976,7 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
       NextStatusChangeEvent = absNextEvent;
    }
    else {
-      NextStatusChangeEvent = (1ULL << 63);
+      NextStatusChangeEvent = ~0ULL;
    }
    return(NextStatusChangeEvent);
 }
@@ -1025,15 +1021,12 @@ void Flow::run()
 
       // ====== Wait until there is something to do =========================
       if(nextEvent > now) {
-         int timeout = std::min(1000, (int)((nextEvent - now) / 1000));
-// ?????         printf("Wait %d ms    ss=%1.0f  tx=%1.0f\n", timeout,  (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
-// printf("T%d   to=%d\n",FlowID,1000 * (timeout + 1));               
-         usleep(1000 * (timeout + 1));
+         int timeout = pollTimeout(now, 2,
+                                   now + 1000000,
+                                   nextEvent);
+         ext_poll(NULL, 0, timeout);
          now = getMicroTime();
       }
-//       else {
-//          printf("NoWait   ss=%1.0f  tx=%1.0f\n", (double)nextStatusChange-(double)now,(double)nextTransmission-(double)now);
-//       }
 
       // ====== Send outgoing data ==========================================
       if(OutputStatus == Flow::On) {
@@ -1064,7 +1057,6 @@ void Flow::run()
          handleStatusChangeEvent(now);
       }
    } while( (result == true) && (!isStopping()) );
-   puts("####### END OF THREAD (XMIT)!");
 }
 
 
@@ -1203,7 +1195,6 @@ void FlowManager::run()
          unlock();
       }
    } while(!isStopping());
-   puts("####### END OF THREAD (RECV)!");
 }
 
 

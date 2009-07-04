@@ -27,7 +27,11 @@ if [ -e $DIRECTORY ] ; then
 fi
 mkdir $DIRECTORY
 
-make -j2 && valgrind --tool=helgrind ./netperfmeter [::1]:9000 \
+# VALGRIND=
+VALGRIND=valgrind --tool=helgrind
+# VALGRIND=./debug
+
+make -j2 &&  $VALGRIND ./netperfmeter [::1]:9000 \
    "-activenodename=Video-Client" \
    "-passivenodename=Video-Server" \
    -runtime=30 \
@@ -35,4 +39,4 @@ make -j2 && valgrind --tool=helgrind ./netperfmeter [::1]:9000 \
    -config=$DIRECTORY/output.config \
    -vector=$DIRECTORY/output.vec.bz2 \
    -scalar=$DIRECTORY/output.sca.bz2 \
-   -sctp const2:const1000:const3:const500:description="Video Stream" $@
+   -sctp const2:const1000:const3:const500:description="Videodatenstrom" $@

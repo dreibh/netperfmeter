@@ -27,8 +27,8 @@
 #include <vector>
 #include <map>
 
+#if 0
 #include "flowspec.h"
-
 
 class StatisticsWriter
 {
@@ -148,4 +148,5 @@ class StatisticsWriter
    static std::map<uint64_t, StatisticsWriter*> StatisticsSet;
 };
 
+#endif
 #endif

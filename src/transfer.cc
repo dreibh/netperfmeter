@@ -126,7 +126,6 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
 }
 
 
-
 // ###### Transmit data frame ###############################################
 ssize_t transmitFrame(Flow*                    flow,
                       const unsigned long long now,

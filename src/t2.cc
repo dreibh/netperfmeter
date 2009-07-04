@@ -7,6 +7,18 @@
 #include "netperfmeterpackets.h"
 
 
+/*
+char str[128];
+if(name == NULL) {
+   static int yyy=1000;
+   name = (char*)&str;
+   sprintf((char*)&str, "FILE-%03d", yyy++);
+   puts("HACK!!!???");
+   Name = std::string(name);
+}
+*/
+
+
 struct Fragment
 {
    uint64_t PacketSeqNumber;

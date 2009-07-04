@@ -350,6 +350,9 @@ class Flow : public Thread
    inline int getSocketDescriptor() const {
       return(SocketDescriptor);
    }
+   inline sctp_assoc_t getRemoteControlAssocID() const {
+      return(RemoteControlAssocID);
+   }
    inline const TrafficSpec& getTrafficSpec() const {
       return(Traffic);
    }

@@ -27,6 +27,7 @@
 #include <math.h>
 
 
+#if 0
 // ###### Constructor #######################################################
 FlowSpec::FlowSpec()
 {
@@ -428,3 +429,4 @@ bool FlowSpec::finishVectorFile(const bool closeFile)
    }
    return(result);
 }
+#endif

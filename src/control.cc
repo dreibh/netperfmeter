@@ -400,9 +400,11 @@ bool performNetPerfMeterStop(int            controlSocket,
             return(false);
          }
          delete flow;
+         // Invalidated iterator. Is there a better solution?
          iterator = FlowManager::getFlowManager()->getFlowSet().begin();
-         // Is there a better solution?
+         continue;
       }
+      iterator++;
    }
    FlowManager::getFlowManager()->unlock();
 
@@ -675,7 +677,7 @@ static bool handleNetPerfMeterStart(const NetPerfMeterStartMessage* startMsg,
    const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
 
    std::cout << std::endl << "Starting measurement "
-               << format("%llx", (unsigned long long)measurementID) << " ..." << std::endl;
+               << format("$%llx", (unsigned long long)measurementID) << " ..." << std::endl;
 
    const unsigned long long now = getMicroTime();
    bool success = FlowManager::getFlowManager()->startMeasurement(
@@ -705,7 +707,7 @@ static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
    const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
 
    std::cout << std::endl << "Stopping measurement "
-              << format("%llx", (unsigned long long)measurementID)
+              << format("$%llx", (unsigned long long)measurementID)
               << " ..." << std::endl;
 
    // ====== Stop flows =====================================================
@@ -734,6 +736,31 @@ static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
    return(true);
 }   
 
+
+// ###### Delete all flows owned by a given remote node #####################
+static void handleControlAssocShutdown(const sctp_assoc_t assocID)
+{
+   FlowManager::getFlowManager()->lock();
+
+   std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+   while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
+      Flow* flow = *iterator;
+      if(flow->getRemoteControlAssocID() == assocID) {
+         Measurement* measurement =
+            MeasurementManager::getMeasurementManager()->findMeasurement(flow->getMeasurementID());
+         if(measurement) {
+            delete measurement;
+         }
+         delete flow;
+         // Invalidated iterator. Is there a better solution?         
+         iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+         continue;
+      }
+      iterator++;
+   }
+   
+   FlowManager::getFlowManager()->unlock();
+}
 
 
 // ###### Handle incoming control message ###################################
@@ -765,9 +792,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       if( (notification->sn_header.sn_type == SCTP_ASSOC_CHANGE) &&
           ((notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) ||
            (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP)) ) {
-         
-//         remoteAllFlowsOwnedBy(notification->sn_assoc_change.sac_assoc_id);
-puts("---- MISSING REMOVE ALL ....");
+        handleControlAssocShutdown(notification->sn_assoc_change.sac_assoc_id);
       }
    }
 
@@ -841,39 +866,5 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
    else {
       // No known flow -> no assoc ID to send response to!
       std::cerr << "WARNING: NETPERFMETER_IDENTIFY_FLOW message for unknown flow!" << std::endl;
-   }
-}
-
-
-// ###### Delete all flows owned by a given remote node #####################
-void remoteAllFlowsOwnedBy(std::vector<FlowSpec*>& flowSet,
-                           const sctp_assoc_t assocID)
-{
-   std::vector<FlowSpec*>::iterator iterator = flowSet.begin();
-   while(iterator != flowSet.end()) {
-      FlowSpec* flowSpec = *iterator;
-      if(flowSpec->RemoteControlAssocID == assocID) {
-         if(flowSpec->RemoteAddressIsValid) {
-            if(flowSpec->Protocol == IPPROTO_SCTP) {
-               sendAbort(flowSpec->SocketDescriptor, flowSpec->RemoteDataAssocID);
-            }
-            else if(flowSpec->Protocol == IPPROTO_UDP) {
-               // Nothing to do for UDP
-            }
-            else {
-               // TCP and DCCP
-               ext_close(flowSpec->SocketDescriptor);
-            }
-         }
-//          StatisticsWriter::removeMeasurement(flowSpec->MeasurementID);
-
-         std::vector<FlowSpec*>::iterator toBeRemoved = iterator;
-         flowSet.erase(toBeRemoved);
-         delete flowSpec;
-         iterator = flowSet.begin();   // Is there a better solution?
-      }
-      else {
-         iterator++;
-      }
    }
 }

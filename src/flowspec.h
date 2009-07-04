@@ -34,7 +34,7 @@
 
 #include "t3.h"
 
-
+#if 0
 class FlowSpec
 {
    public:
@@ -163,5 +163,6 @@ class FlowSpec
    FILE*                  VectorFile;
    BZFILE*                VectorBZFile;
 };
+#endif
 
 #endif
