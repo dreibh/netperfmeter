@@ -268,7 +268,7 @@ class FlowManager : public Thread
                          const bool               compressVectorFile,
                          const char*              scalarNamePattern,
                          const bool               compressScalarFile,
-                         const bool               printFlows);
+                         const bool               printFlows = false);
    void stopMeasurement(const uint64_t            measurementID,
                         const bool                printFlows = false,
                         const unsigned long long  now        = getMicroTime());

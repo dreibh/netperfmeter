@@ -156,6 +156,7 @@ bool OutputFile::printf(const char* str, ...)
 // ###### Constructor #######################################################
 TrafficSpec::TrafficSpec()
 {
+   reset();
 }
 
 
@@ -1002,6 +1003,8 @@ void FlowManager::removeSocket(const int  socketDescriptor,
 // ###### Reception thread function #########################################
 void FlowManager::run()
 {
+   signal(SIGPIPE, SIG_IGN);
+
    do {
       lock();
       pollfd pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
@@ -1061,6 +1064,12 @@ void FlowManager::run()
                   handleDataMessage(true, now,
                                     iterator->second,
                                     iterator->first);
+                  if(UpdatedUnidentifiedSockets) {
+                     // NOTE: The UnidentifiedSockets set may have changed in
+                     // handleDataMessage -> ... -> FlowManager::identifySocket
+                     // => stop processing if this is the case
+                     break;
+                  }
                }
                i++;
             }

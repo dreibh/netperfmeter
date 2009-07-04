@@ -854,6 +854,7 @@ void activeMode(int argc, char** argv)
    const unsigned long long stopAt  = (gRuntime > 0) ?
       (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    bool                     aborted = false;
+   signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       if(!mainLoop(true, stopAt, measurementID)) {

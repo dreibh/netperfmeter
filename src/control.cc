@@ -35,8 +35,84 @@
 #define IDENTIFY_TIMEOUT    2500
 
 
-static bool download(const int   controlSocket,
-                     const char* fileName);
+// ###### Download file #####################################################
+static bool downloadOutputFile(const int   controlSocket,
+                               const char* fileName)
+{
+   char                 messageBuffer[sizeof(NetPerfMeterResults) + NETPERFMETER_RESULTS_MAX_DATA_LENGTH];
+   NetPerfMeterResults* resultsMsg = (NetPerfMeterResults*)&messageBuffer;
+
+   FILE* fh = fopen(fileName, "w");
+   if(fh == NULL) {
+      std::cerr << "ERROR: Unable to create file " << fileName
+               << " - " << strerror(errno) << "!" << std::endl;
+      return(false);
+   }
+   bool success = false;
+   ssize_t received = ext_recv(controlSocket, resultsMsg, sizeof(messageBuffer), 0);
+   while(received >= sizeof(NetPerfMeterResults)) {
+      const size_t bytes = ntohs(resultsMsg->Header.Length);
+      if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
+         std::cerr << "ERROR: Received unexpected message type "
+                   << (unsigned int)resultsMsg->Header.Type <<  "!" << std::endl;
+         exit(1);
+      }
+      if(bytes + sizeof(NetPerfMeterResults) > received) {
+         std::cerr << "ERROR: Received malformed NETPERFMETER_RESULTS message!" << std::endl;
+         // printf("%u + %u > %u\n", bytes, sizeof(NetPerfMeterResults), received);
+         exit(1);
+      }
+      std::cout << ".";
+      
+      if(bytes > 0) {
+         if(fwrite((char*)&resultsMsg->Data, bytes, 1, fh) != 1) {
+            std::cerr << "ERROR: Unable to write results to file " << fileName
+                     << " - " << strerror(errno) << "!" << std::endl;
+   //          exit(1);
+         }
+      }
+      else {
+         std::cerr << "WARNING: No results received for "
+                   << fileName << "!" << std::endl;
+      }
+   
+      if(resultsMsg->Header.Flags & RHF_EOF) {
+         success = true;
+         break;
+      }
+      received = ext_recv(controlSocket, resultsMsg, sizeof(messageBuffer), 0);
+   }
+   fclose(fh);
+   return(success);
+}
+
+
+// ###### Download statistics file ##########################################
+static bool downloadResults(const int       controlSocket,
+                            const FlowSpec* flowSpec)
+{
+   const StatisticsWriter* statisticsWriter =
+      StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
+   assert(statisticsWriter != NULL);
+
+   char extension[32];
+   snprintf((char*)&extension, sizeof(extension), "-%08x-%04x",
+            flowSpec->FlowID, flowSpec->StreamID);
+   const std::string vectorName = StatisticsWriter::getPassivNodeFilename(
+                                     statisticsWriter->VectorPrefix,
+                                     statisticsWriter->VectorSuffix,
+                                     extension);
+
+   std::cout << "Downloading results [" << vectorName << "] ";
+   std::cout.flush();
+   bool success = awaitNetPerfMeterAcknowledge(controlSocket, flowSpec->MeasurementID,
+                                               flowSpec->FlowID, flowSpec->StreamID);
+   if(success) {
+      success = downloadOutputFile(controlSocket, vectorName.c_str());
+   }
+   std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
+   return(success);
+}
 
 
 // ###### Tell remote node to add new flow ##################################
@@ -220,29 +296,32 @@ bool performNetPerfMeterStop(int            controlSocket,
    }
 
    // ====== Download passive node's vector file ============================
-   puts("?????? SKIP DOWNLOAD !!!!");
-/*   
-   const std::string vectorName = StatisticsWriter::getPassivNodeFilename(
-                                     statisticsWriter->VectorPrefix,
-                                     statisticsWriter->VectorSuffix);
+   Measurement* measurement = MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
+   assert(measurement != NULL);
+
+   // ====== Download passive node's vector file ============================
+   const std::string vectorName = Flow::getNodeOutputName(
+      measurement->getVectorFile().getName(), "passive");
    std::cout << "Downloading results [" << vectorName << "] ";
    std::cout.flush();
-   if(download(controlSocket, vectorName.c_str()) == false) {
+   if(downloadOutputFile(controlSocket, vectorName.c_str()) == false) {
+      delete measurement;
       return(false);
    }
    std::cout << " ";
 
    // ====== Download passive node's scalar file ============================
-   const std::string scalarName = StatisticsWriter::getPassivNodeFilename(
-                                     statisticsWriter->ScalarPrefix,
-                                     statisticsWriter->ScalarSuffix);
+   const std::string scalarName = Flow::getNodeOutputName(
+      measurement->getScalarFile().getName(), "passive");
    std::cout << "Downloading results [" << scalarName << "] ";
    std::cout.flush();
-   if(download(controlSocket, scalarName.c_str()) == false) {
+   if(downloadOutputFile(controlSocket, scalarName.c_str()) == false) {
+      delete measurement;
       return(false);
    }
    std::cout << " okay" << std::endl << std::endl;
-  */ 
+
+   delete measurement;
    return(true);
 }
 
@@ -321,79 +400,6 @@ bool awaitNetPerfMeterAcknowledge(int            controlSocket,
 
 
 
-
-// ###### Download file #####################################################
-static bool download(const int       controlSocket,
-                     const char*     fileName)
-{
-   char                 messageBuffer[sizeof(NetPerfMeterResults) + NETPERFMETER_RESULTS_MAX_DATA_LENGTH];
-   NetPerfMeterResults* resultsMsg = (NetPerfMeterResults*)&messageBuffer;
-
-   FILE* fh = fopen(fileName, "w");
-   if(fh == NULL) {
-      std::cerr << "ERROR: Unable to create file " << fileName
-               << " - " << strerror(errno) << "!" << std::endl;
-      return(false);
-   }
-   bool success = false;
-   ssize_t received = ext_recv(controlSocket, resultsMsg, sizeof(messageBuffer), 0);
-   while(received >= sizeof(NetPerfMeterResults)) {
-      const size_t bytes = ntohs(resultsMsg->Header.Length);
-      if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
-         std::cerr << "ERROR: Received unexpected message type "
-                   << (unsigned int)resultsMsg->Header.Type <<  "!" << std::endl;
-         exit(1);
-      }
-      if(bytes + sizeof(NetPerfMeterResults) > received) {
-         std::cerr << "ERROR: Received malformed NETPERFMETER_RESULTS message!" << std::endl;
-         // printf("%u + %u > %u\n", bytes, sizeof(NetPerfMeterResults), received);
-         exit(1);
-      }
-      std::cout << ".";
-
-      if(fwrite((char*)&resultsMsg->Data, bytes, 1, fh) != 1) {
-         std::cerr << "ERROR: Unable to write results to file " << fileName
-                  << " - " << strerror(errno) << "!" << std::endl;
-         exit(1);
-      }
-   
-      if(resultsMsg->Header.Flags & RHF_EOF) {
-         success = true;
-         break;
-      }
-      received = ext_recv(controlSocket, resultsMsg, sizeof(messageBuffer), 0);
-   }
-   fclose(fh);
-   return(success);
-}
-
-
-// ###### Download statistics file ##########################################
-static bool downloadResults(const int       controlSocket,
-                            const FlowSpec* flowSpec)
-{
-   const StatisticsWriter* statisticsWriter =
-      StatisticsWriter::getStatisticsWriter(flowSpec->MeasurementID);
-   assert(statisticsWriter != NULL);
-
-   char extension[32];
-   snprintf((char*)&extension, sizeof(extension), "-%08x-%04x",
-            flowSpec->FlowID, flowSpec->StreamID);
-   const std::string vectorName = StatisticsWriter::getPassivNodeFilename(
-                                     statisticsWriter->VectorPrefix,
-                                     statisticsWriter->VectorSuffix,
-                                     extension);
-
-   std::cout << "Downloading results [" << vectorName << "] ";
-   std::cout.flush();
-   bool success = awaitNetPerfMeterAcknowledge(controlSocket, flowSpec->MeasurementID,
-                                               flowSpec->FlowID, flowSpec->StreamID);
-   if(success) {
-      success = download(controlSocket, vectorName.c_str());
-   }
-   std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
-   return(success);
-}
 
 
 
@@ -629,18 +635,6 @@ static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
 
    Measurement* measurement = MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
    
-/*// ??????????????   
-   bool outputReady = false;
-   StatisticsWriter* statisticsWriter = StatisticsWriter::findMeasurement(measurementID);
-   if(statisticsWriter) {
-//       outputReady = statisticsWriter->writeAllScalarStatistics(now, flowSet, measurementID);
-outputReady=true; // ???
-      if(outputReady) {
-         outputReady = statisticsWriter->finishOutputFiles(false);
-      }
-   }
-// ??????????????   */
-   
    sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                measurementID, 0, 0,
                                (measurement != NULL) ? NETPERFMETER_STATUS_OKAY : NETPERFMETER_STATUS_ERROR);
@@ -650,10 +644,6 @@ outputReady=true; // ???
 
       delete measurement;
    }
-/*   if(statisticsWriter)  {
-      statisticsWriter->finishOutputFiles(true);
-      StatisticsWriter::removeMeasurement(measurementID);
-   }*/
    return(true);
 }   
 
@@ -734,6 +724,7 @@ printf("CONTROL: type=%d\n",header->Type);
           break;
       }
    }
+   return(true);
 }
 
 
