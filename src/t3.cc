@@ -751,6 +751,16 @@ void Flow::setSocketDescriptor(const int  socketDescriptor,
 }
 
 
+bool Flow::initializeVectorFile(const char* name, const bool compressed)
+{
+   if(VectorFile.initialize(name, compressed)) {
+      VectorFile.nextLine();
+      return(VectorFile.printf("AbsTime RelTime SeqNumber Delay PrevPacketDelayDiff Jitter\n"));
+   }
+   return(false);
+}
+
+
 void Flow::updateTransmissionStatistics(const unsigned long long now,
                                         const size_t             addedFrames,
                                         const size_t             addedPackets,
@@ -771,10 +781,14 @@ void Flow::updateTransmissionStatistics(const unsigned long long now,
 void Flow::updateReceptionStatistics(const unsigned long long now,
                                      const size_t             addedFrames,
                                      const size_t             addedBytes,
+                                     const unsigned long long seqNumber,
                                      const double             delay,
+                                     const double             delayDiff,
                                      const double             jitter)
 {
    lock();
+   
+   // ====== Update statistics ==============================================
    LastReception = now;
    if(FirstReception == 0) {
       FirstReception = now;
@@ -784,6 +798,19 @@ void Flow::updateReceptionStatistics(const unsigned long long now,
    CurrentBandwidthStats.ReceivedBytes   += addedBytes;
    Delay  = delay;
    Jitter = jitter;
+   
+   // ====== Write line to flow's vector file ===============================
+   const Measurement* measurement =
+      MeasurementManager::getMeasurementManager()->findMeasurement(MeasurementID);
+   if( (measurement) && (measurement->getFirstStatisticsEvent() > 0) ) {
+      VectorFile.printf(
+         "%06llu %llu %1.6f\t"
+         "%llu %1.3f %1.3f %1.3f\n",
+         VectorFile.nextLine(), now,
+         (double)(now - measurement->getFirstStatisticsEvent()) / 1000000.0,
+         seqNumber, delay, delayDiff, jitter);
+   }
+   
    unlock();
 }
 
@@ -794,11 +821,11 @@ bool Flow::activate()
    assert(SocketDescriptor >= 0);
    FlowManager::getFlowManager()->getMessageReader()->registerSocket(
       Traffic.Protocol, SocketDescriptor, 65535, false);
-   start();
+   return(start());
 }
 
 
-bool Flow::deactivate()
+void Flow::deactivate()
 {
    if(isRunning()) {
       stop();
@@ -948,7 +975,6 @@ void FlowManager::addSocket(const int protocol, const int socketDescriptor)
    unlock();
 }
 
-
 bool FlowManager::identifySocket(const uint64_t        measurementID,
                                  const uint32_t        flowID,
                                  const uint16_t        streamID,
@@ -971,7 +997,7 @@ bool FlowManager::identifySocket(const uint64_t        measurementID,
       flow->RemoteAddressIsValid = true;
       controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
       controlAssocID             = flow->RemoteControlAssocID;
-      success = flow->getVectorFile().initialize(NULL, compressVectorFile);
+      success = flow->initializeVectorFile(NULL, compressVectorFile);
       flow->unlock();
       removeSocket(socketDescriptor, false);   // Socket is now managed as flow!
    }
@@ -1279,9 +1305,9 @@ Measurement::~Measurement()
 
 bool Measurement::initialize(const unsigned long long now,
                              const uint64_t           measurementID,
-                             const char*              vectorName,
+                             const char*              vectorNamePattern,
                              const bool               compressVectorFile,
-                             const char*              scalarName,
+                             const char*              scalarNamePattern,
                              const bool               compressScalarFile)
 {
    MeasurementID        = measurementID;
@@ -1290,8 +1316,14 @@ bool Measurement::initialize(const unsigned long long now,
    NextStatisticsEvent  = 0;
 
    if(MeasurementManager::getMeasurementManager()->addMeasurement(this)) {
-      const bool s1 = VectorFile.initialize(vectorName, compressVectorFile);
-      const bool s2 = ScalarFile.initialize(scalarName, compressScalarFile);
+      VectorNamePattern = std::string(vectorNamePattern);
+      ScalarNamePattern = std::string(scalarNamePattern);
+      const bool s1 = VectorFile.initialize(
+                         (vectorNamePattern != NULL) ? Flow::getNodeOutputName(vectorNamePattern, "active").c_str() : NULL,
+                         compressVectorFile);
+      const bool s2 = ScalarFile.initialize(
+                         (scalarNamePattern != NULL) ? Flow::getNodeOutputName(scalarNamePattern, "active").c_str() : NULL,
+                         compressScalarFile);
       return(s1 && s2);
    }
    return(false);

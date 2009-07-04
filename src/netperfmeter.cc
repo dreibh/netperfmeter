@@ -240,7 +240,7 @@ static Flow* createFlow(Flow*              previousFlow,
    const std::string vectorName = flow->getNodeOutputName(vectorNamePattern,
                                                           "active",
                                                           format("-%08x-%04x", flowID, streamID));
-   if(!flow->getVectorFile().initialize(vectorName.c_str(), hasSuffix(vectorNamePattern, ".bz2"))) {
+   if(!flow->initializeVectorFile(vectorName.c_str(), hasSuffix(vectorNamePattern, ".bz2"))) {
       std::cerr << "ERROR: Unable to create vector file <" << vectorName << ">!" << std::endl;
       exit(1);
    }

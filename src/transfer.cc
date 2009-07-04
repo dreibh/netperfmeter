@@ -291,17 +291,20 @@ static void updateStatistics(// ?????????? StatisticsWriter*              statsW
    size_t receivedFrames = 1;   // ??? To be implemented ???
 
    flow->updateReceptionStatistics(
-      now, receivedFrames, receivedBytes, transitTime, jitter);
+      now, receivedFrames, receivedBytes,
+      (unsigned long long)seqNumber, transitTime, diff, jitter);
+      
+//       diff
 //    MeasurementManager::getMeasurementManager()->updateReceptionStatistics(
 //       flow->getMeasurementID(),
 //       now, receivedFrames, receivedBytes, transitTime, jitter);
 
    // ------ Write statistics -----------------------------------------------
-   /*
-   const StatisticsWriter* statisticsWriter =
-      StatisticsWriter::getStatisticsWriter(flow->MeasurementID);
-   if((statisticsWriter != NULL) && (statisticsWriter->FirstStatisticsEvent > 0)) {
-      char str[512];
+/*
+const Measurement* measurement =
+      MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
+   if( (measurement) && (measurement->FirstStatisticsEvent > 0) ) {
+      flow->
       snprintf((char*)&str, sizeof(str),
                "%06llu %llu %1.6f\t"
                "%llu %1.3f %1.3f %1.3f\n",

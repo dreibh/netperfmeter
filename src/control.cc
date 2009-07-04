@@ -228,9 +228,9 @@ bool performNetPerfMeterStart(int            controlSocket,
    // ====== Start flows ====================================================
    const bool success = FlowManager::getFlowManager()->startMeasurement(
                            measurementID, getMicroTime(),
-                           Flow::getNodeOutputName(vectorNamePattern, "active").c_str(),
+                           vectorNamePattern,                                       
                            hasSuffix(vectorNamePattern, ".bz2"),
-                           Flow::getNodeOutputName(scalarNamePattern, "active").c_str(),
+                           scalarNamePattern,                                             
                            hasSuffix(scalarNamePattern, ".bz2"),
                            true);
    if(success) {
@@ -325,7 +325,7 @@ bool performNetPerfMeterStop(int            controlSocket,
 
    // ====== Download passive node's vector file ============================
    const std::string vectorName = Flow::getNodeOutputName(
-      measurement->getVectorFile().getName(), "passive");
+      measurement->getVectorNamePattern(), "passive");
    std::cout << std::endl << "Downloading results [" << vectorName << "] ";
    std::cout.flush();
    if(downloadOutputFile(controlSocket, vectorName.c_str()) == false) {
@@ -336,7 +336,7 @@ bool performNetPerfMeterStop(int            controlSocket,
 
    // ====== Download passive node's scalar file ============================
    const std::string scalarName = Flow::getNodeOutputName(
-      measurement->getScalarFile().getName(), "passive");
+      measurement->getScalarNamePattern(), "passive");
    std::cout << std::endl << "Downloading results [" << scalarName << "] ";
    std::cout.flush();
    if(downloadOutputFile(controlSocket, scalarName.c_str()) == false) {

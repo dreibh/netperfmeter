@@ -136,11 +136,20 @@ class Measurement : public Mutex
    const uint64_t getMeasurementID() const {
       return(MeasurementID);
    }
+   const std::string& getVectorNamePattern() const {
+      return(VectorNamePattern);
+   }
    const OutputFile& getVectorFile() const {
       return(VectorFile);
    }
+   const std::string& getScalarNamePattern() const {
+      return(ScalarNamePattern);
+   }
    const OutputFile& getScalarFile() const {
       return(ScalarFile);
+   }
+   inline unsigned long long getFirstStatisticsEvent() const {
+      return(FirstStatisticsEvent);
    }
    
    bool initialize(const unsigned long long now,
@@ -150,16 +159,6 @@ class Measurement : public Mutex
                    const char*              scalarName,
                    const bool               compressScalarFile);
    void finish();
-
-/*   void updateTransmissionStatistics(const unsigned long long now,
-                                     const size_t             addedFrames,
-                                     const size_t             addedPackets,
-                                     const size_t             addedBytes);
-   void updateReceptionStatistics(const unsigned long long now,
-                                  const size_t             addedFrames,
-                                  const size_t             addedBytes,
-                                  const double             delay,
-                                  const double             jitter);*/
    
    void writeVectorStatistics(const unsigned long long now,
                               size_t&                  globalFlows,
@@ -175,6 +174,8 @@ class Measurement : public Mutex
    unsigned long long LastStatisticsEvent;
    unsigned long long NextStatisticsEvent;
 
+   std::string        VectorNamePattern;
+   std::string        ScalarNamePattern;
    OutputFile         VectorFile;
    OutputFile         ScalarFile;
 //    OutputFile         ConfigFile;
@@ -363,7 +364,7 @@ class Flow : public Thread
    inline FlowBandwidthStats& getCurrentBandwidthStats() {
       return(CurrentBandwidthStats);
    }
-//    inline unsigned long long getFirstTransmission() const {
+//  ????  inline unsigned long long getFirstTransmission() const {
 //       return(FirstTransmission);
 //    }
 //    inline unsigned long long getLastTransmission() const {
@@ -374,7 +375,7 @@ class Flow : public Thread
 //    }
 //    inline unsigned long long getLastReception() const {
 //       return(LastReception);
-//    }  ??????????ß
+//    }
 
    inline uint32_t nextOutboundFrameID() {
       return(++LastOutboundFrameID);
@@ -420,6 +421,7 @@ class Flow : public Thread
       return(result);
    }
 
+   bool initializeVectorFile(const char* name, const bool compressed);
    void updateTransmissionStatistics(const unsigned long long now,
                                      const size_t             addedFrames,
                                      const size_t             addedPackets,
@@ -427,7 +429,9 @@ class Flow : public Thread
    void updateReceptionStatistics(const unsigned long long now,
                                   const size_t             addedFrames,
                                   const size_t             addedBytes,
+                                  const unsigned long long seqNumber,
                                   const double             delay,
+                                  const double             delayDiff,
                                   const double             jitter);
 
    
@@ -437,7 +441,7 @@ class Flow : public Thread
    void setSocketDescriptor(const int  socketDescriptor,
                             const bool originalSocketDescriptor = true);
    bool activate();
-   bool deactivate();
+   void deactivate();
 
    protected:
    virtual void run();
