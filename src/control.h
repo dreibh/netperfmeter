@@ -35,7 +35,9 @@
 bool performNetPerfMeterAddFlow(int controlSocket, const Flow* flow);
 bool performNetPerfMeterIdentifyFlow(int controlSocket, const Flow* flow);
 bool performNetPerfMeterStart(int            controlSocket,
-                              const uint64_t measurementID);
+                              const uint64_t measurementID,
+                              const char*    vectorNamePattern,
+                              const char*    scalarNamePattern);
 bool performNetPerfMeterStop(int            controlSocket,
                              const uint64_t measurementID);
 

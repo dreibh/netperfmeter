@@ -146,7 +146,9 @@ class Measurement : public Mutex
    bool initialize(const unsigned long long now,
                    const uint64_t           measurementID,
                    const char*              vectorName,
-                   const char*              scalarName);
+                   const bool               compressVectorFile,
+                   const char*              scalarName,
+                   const bool               compressScalarFile);
    void finish();
 
 /*   void updateTransmissionStatistics(const unsigned long long now,
@@ -159,7 +161,10 @@ class Measurement : public Mutex
                                   const double             delay,
                                   const double             jitter);*/
    
-   void writeVectorStatistics(const unsigned long long now);
+   void writeVectorStatistics(const unsigned long long now,
+                              size_t&                  globalFlows,
+                              FlowBandwidthStats&      globalStats,
+                              FlowBandwidthStats&      relGlobalStats);
 
 
    // ====== Private Data ===================================================
@@ -185,6 +190,8 @@ class MeasurementManager : public Mutex
 {
    // ====== Protected Methods ==============================================
    protected:
+   MeasurementManager();
+   ~MeasurementManager();
    
    // ====== Public Methods =================================================
    public:
@@ -198,33 +205,6 @@ class MeasurementManager : public Mutex
 
    void printMeasurements(std::ostream& os);
 
-//    inline void updateTransmissionStatistics(const uint64_t           measurementID,
-//                                             const unsigned long long now,
-//                                             const size_t             addedFrames,
-//                                             const size_t             addedPackets,
-//                                             const size_t             addedBytes) {
-//       lock();
-//       Measurement* measurement = findMeasurement(measurementID);
-//       if(measurement) {
-//          measurement->updateTransmissionStatistics(now, addedFrames, addedPackets, addedBytes);
-//       }
-//       unlock();
-//    }
-//    
-//    void updateReceptionStatistics(const uint64_t           measurementID,
-//                                   const unsigned long long now,
-//                                   const size_t             addedFrames,
-//                                   const size_t             addedBytes,
-//                                   const double             delay,
-//                                   const double             jitter) {
-//       lock();
-//       Measurement* measurement = findMeasurement(measurementID);
-//       if(measurement) {
-//          measurement->updateReceptionStatistics(now, addedFrames, addedBytes, delay, jitter);
-//       }
-//       unlock();
-//    }
-
    unsigned long long getNextEvent();
    void handleEvents(const unsigned long long now);
 
@@ -232,6 +212,12 @@ class MeasurementManager : public Mutex
    private:
    static MeasurementManager        MeasurementManagerSingleton;
    std::map<uint64_t, Measurement*> MeasurementSet;
+   unsigned long long               DisplayInterval;
+   unsigned long long               FirstDisplayEvent;
+   unsigned long long               LastDisplayEvent;
+   unsigned long long               NextDisplayEvent;
+   size_t                           GlobalFlows;    // For displaying only
+   FlowBandwidthStats               GlobalStats;    // For displaying only
 };
 
 
@@ -275,9 +261,13 @@ class FlowManager : public Thread
    void print(std::ostream& os,
               const bool    printStatistics);
 
-   void startMeasurement(const uint64_t           measurementID,
-                         const bool               printFlows = false,
-                         const unsigned long long now        = getMicroTime());
+   bool startMeasurement(const uint64_t           measurementID,
+                         const unsigned long long now,
+                         const char*              vectorNamePattern,
+                         const bool               compressVectorFile,
+                         const char*              scalarNamePattern,
+                         const bool               compressScalarFile,
+                         const bool               printFlows);
    void stopMeasurement(const uint64_t            measurementID,
                         const bool                printFlows = false,
                         const unsigned long long  now        = getMicroTime());

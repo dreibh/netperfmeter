@@ -144,7 +144,9 @@ bool performNetPerfMeterIdentifyFlow(int controlSocket, const Flow* flow)
 
 // ###### Start measurement #################################################
 bool performNetPerfMeterStart(int            controlSocket,
-                              const uint64_t measurementID)
+                              const uint64_t measurementID,
+                              const char*    vectorNamePattern,
+                              const char*    scalarNamePattern)
 {
    StatisticsWriter* statisticsWriter = StatisticsWriter::getStatisticsWriter();
    if(statisticsWriter->initializeOutputFiles() == false) {
@@ -152,29 +154,36 @@ bool performNetPerfMeterStart(int            controlSocket,
    }
 
    // ====== Start flows ====================================================
-   FlowManager::getFlowManager()->startMeasurement(measurementID);
-      
-   // ====== Tell passive node to start measurement =========================
-   NetPerfMeterStartMessage startMsg;
-   startMsg.Header.Type   = NETPERFMETER_START;
-   startMsg.Header.Flags  = hasSuffix(statisticsWriter->VectorSuffix, ".bz2") ? NPSF_COMPRESS_STATS : 0x00;
-   startMsg.Header.Length = htons(sizeof(startMsg));
-   startMsg.MeasurementID = hton64(measurementID);
+   const bool success = FlowManager::getFlowManager()->startMeasurement(
+                           measurementID, getMicroTime(),
+                           vectorNamePattern, hasSuffix(vectorNamePattern, ".bz2"),
+                           scalarNamePattern, hasSuffix(scalarNamePattern, ".bz2"),
+                           true);
+   if(success) {
+      // ====== Tell passive node to start measurement ======================
+      NetPerfMeterStartMessage startMsg;
+      startMsg.Header.Type   = NETPERFMETER_START;
+      startMsg.Header.Flags  = hasSuffix(statisticsWriter->VectorSuffix, ".bz2") ?
+                                            NPSF_COMPRESS_STATS : 0x00;
+      startMsg.Header.Length = htons(sizeof(startMsg));
+      startMsg.MeasurementID = hton64(measurementID);
 
-   sctp_sndrcvinfo sinfo;
-   memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
+      sctp_sndrcvinfo sinfo;
+      memset(&sinfo, 0, sizeof(sinfo));
+      sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
 
-   std::cout << "Starting measurement ... <S1> "; std::cout.flush();
-   if(sctp_send(controlSocket, &startMsg, sizeof(startMsg), &sinfo, 0) < 0) {
-      return(false);
+      std::cout << "Starting measurement ... <S1> "; std::cout.flush();
+      if(sctp_send(controlSocket, &startMsg, sizeof(startMsg), &sinfo, 0) < 0) {
+         return(false);
+      }
+      std::cout << "<S2> "; std::cout.flush();
+      if(awaitNetPerfMeterAcknowledge(controlSocket, measurementID, 0, 0) == false) {
+         return(false);
+      }
+      std::cout << "okay" << std::endl << std::endl;
+      return(true);
    }
-   std::cout << "<S2> "; std::cout.flush();
-   if(awaitNetPerfMeterAcknowledge(controlSocket, measurementID, 0, 0) == false) {
-      return(false);
-   }
-   std::cout << "okay" << std::endl << std::endl;
-   return(true);
+   return(false);
 }
 
 
@@ -575,11 +584,14 @@ static bool handleNetPerfMeterStart(const NetPerfMeterStartMessage* startMsg,
    std::cout << std::endl << "Starting measurement "
                << format("%llx", (unsigned long long)measurementID) << " ..." << std::endl;
 
-   // ???????? "now" notwendig??????
    const unsigned long long now = getMicroTime();
-   FlowManager::getFlowManager()->startMeasurement(measurementID, now, true);
-
-   bool success = false;
+   bool success = FlowManager::getFlowManager()->startMeasurement(
+      measurementID, now,
+      NULL, (startMsg->Header.Flags & NPSF_COMPRESS_STATS) ? true : false,
+      NULL, false,
+      true);
+   
+// ???????????????????   
    StatisticsWriter* statisticsWriter =
       StatisticsWriter::addMeasurement(now, measurementID,
                                        (startMsg->Header.Flags & NPSF_COMPRESS_STATS) ? true : false);

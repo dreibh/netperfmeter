@@ -203,7 +203,8 @@ static const char* parseTrafficSpecOption(const char*  parameters,
 // ###### Create FlowSpec for new flow ######################################
 static Flow* createFlow(Flow*              previousFlow,
                         const char*        parameters,
-                        const Measurement* measurement,
+                        const uint64_t     measurementID,
+                        const char*        vectorNamePattern,
                         const uint8_t      protocol,
                         const sockaddr*    remoteAddress)
 {
@@ -231,15 +232,15 @@ static Flow* createFlow(Flow*              previousFlow,
    }
 
    // ====== Create new flow ================================================
-   Flow* flow = new Flow(measurement->getMeasurementID(),
+   Flow* flow = new Flow(measurementID,
                          flowID, streamID, trafficSpec);
    assert(flow != NULL);
 
    // ====== Initialize vector file =========================================
-   const std::string vectorName = flow->getNodeOutputName(measurement->getVectorFile().getName(),
+   const std::string vectorName = flow->getNodeOutputName(vectorNamePattern,
                                                           "active",
                                                           format("-%08x-%04x", flowID, streamID));
-   if(!flow->getVectorFile().initialize(vectorName.c_str(), hasSuffix(vectorName, ".bz2"))) {
+   if(!flow->getVectorFile().initialize(vectorName.c_str(), hasSuffix(vectorNamePattern, ".bz2"))) {
       std::cerr << "ERROR: Unable to create vector file <" << vectorName << ">!" << std::endl;
       exit(1);
    }
@@ -756,8 +757,8 @@ void activeMode(int argc, char** argv)
 
    // ====== Initialize output file handling ================================
    puts("\n\n########## ADD M\n\n");
-   Measurement measurement;
-   measurement.initialize(getMicroTime(), measurementID, vectorNamePattern, scalarNamePattern);
+/*   Measurement measurement;
+   measurement.initialize(getMicroTime(), measurementID, vectorNamePattern, scalarNamePattern);*/
    FILE* configFile = fopen(configName, "w");
    if(configFile == NULL) {
       cerr << "ERROR: Unable to create config file " << configName << "!" << endl;
@@ -806,7 +807,7 @@ void activeMode(int argc, char** argv)
             exit(1);
          }
 
-         lastFlow = createFlow(lastFlow, argv[i], &measurement,
+         lastFlow = createFlow(lastFlow, argv[i], measurementID, vectorNamePattern,
                                protocol, &remoteAddress.sa);
 // // ??????????         const bool success = lastFlow->initializeVectorFile();
 // //          if(!success) {
@@ -835,7 +836,8 @@ void activeMode(int argc, char** argv)
 
    // ====== Start measurement ==============================================
    const unsigned long long now = getMicroTime();
-   if(!performNetPerfMeterStart(gControlSocket, measurementID)) {
+   if(!performNetPerfMeterStart(gControlSocket, measurementID,
+                                vectorNamePattern, scalarNamePattern)) {
       std::cerr << "ERROR: Failed to start measurement!" << std::endl;
       exit(1);
    }
@@ -931,7 +933,7 @@ void activeMode(int argc, char** argv)
    gMessageReader.deregisterSocket(gControlSocket);
    ext_close(gControlSocket);
    */
-   measurement.finish();
+//    measurement.finish();
 }
 
 
