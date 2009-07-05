@@ -179,7 +179,6 @@ class Measurement : public Mutex
    std::string        ScalarNamePattern;
    OutputFile         VectorFile;
    OutputFile         ScalarFile;
-//    OutputFile         ConfigFile;
 
    unsigned long long LastTransmission;
    unsigned long long FirstTransmission;
@@ -187,42 +186,6 @@ class Measurement : public Mutex
    unsigned long long FirstReception;
 };
 
-/*
-class MeasurementManager : public Mutex
-{
-   // ====== Protected Methods ==============================================
-   protected:
-   MeasurementManager();
-   ~MeasurementManager();
-   
-   // ====== Public Methods =================================================
-   public:
-   inline static MeasurementManager* getMeasurementManager() {
-      return(&MeasurementManagerSingleton);
-   }
-
-   bool addMeasurement(Measurement* measurement);
-   Measurement* findMeasurement(const uint64_t measurementID);
-   void removeMeasurement(Measurement* measurement);
-
-   void printMeasurements(std::ostream& os);
-
-   unsigned long long getNextEvent();
-   void handleEvents(const unsigned long long now);
-
-   // ====== Private Data ===================================================
-   private:
-   static MeasurementManager        MeasurementManagerSingleton;
-   std::map<uint64_t, Measurement*> MeasurementSet;
-   unsigned long long               DisplayInterval;
-   unsigned long long               FirstDisplayEvent;
-   unsigned long long               LastDisplayEvent;
-   unsigned long long               NextDisplayEvent;
-   size_t                           GlobalFlows;      // For displaying only
-   FlowBandwidthStats               GlobalStats;      // For displaying only
-   FlowBandwidthStats               RelGlobalStats;   // For displaying only
-};
-*/
 
 
 class Flow;
@@ -272,8 +235,8 @@ class FlowManager : public Thread
 
    void addFlow(Flow* flow);
    void removeFlow(Flow* flow);
-   void print(std::ostream& os,
-              const bool    printStatistics);
+   void printFlows(std::ostream& os,
+                   const bool    printStatistics);
 
    bool startMeasurement(const uint64_t           measurementID,
                          const unsigned long long now,
@@ -304,17 +267,29 @@ class FlowManager : public Thread
    Flow* findFlow(const int socketDescriptor,
                   uint16_t  streamID);
    Flow* findFlow(const struct sockaddr* from);
-      
+
+   
+   bool addMeasurement(Measurement* measurement);
+   Measurement* findMeasurement(const uint64_t measurementID);
+   void printMeasurements(std::ostream& os);
+   void removeMeasurement(Measurement* measurement);
+
       
    // ====== Protected Methods ==============================================
    protected:
    void run();
+
+   
+   // ====== Private Methods ================================================
+   unsigned long long getNextEvent();
+   void handleEvents(const unsigned long long now);
 
 
    // ====== Private Data ===================================================
    private:
    static FlowManager FlowManagerSingleton;
 
+   // ------ Flow Management ------------------------------------------------
    MessageReader      Reader;
    std::vector<Flow*> FlowSet;
    std::map<int, int> UnidentifiedSockets;
@@ -323,20 +298,7 @@ class FlowManager : public Thread
    FlowBandwidthStats CurrentGlobalStats;
    FlowBandwidthStats LastGlobalStats;
 
-   // ??????????????????????
-   public:
-   bool addMeasurement(Measurement* measurement);
-   Measurement* findMeasurement(const uint64_t measurementID);
-   void removeMeasurement(Measurement* measurement);
-
-   void printMeasurements(std::ostream& os);
-
-   unsigned long long getNextEvent();
-   void handleEvents(const unsigned long long now);
-
-   // ====== Private Data ===================================================
-   private:
-//    static MeasurementManager        MeasurementManagerSingleton;
+   // ------ Measurement Management -----------------------------------------
    std::map<uint64_t, Measurement*> MeasurementSet;
    unsigned long long               DisplayInterval;
    unsigned long long               FirstDisplayEvent;
@@ -344,7 +306,6 @@ class FlowManager : public Thread
    unsigned long long               NextDisplayEvent;
    FlowBandwidthStats               GlobalStats;      // For displaying only
    FlowBandwidthStats               RelGlobalStats;   // For displaying only
-// ?????????????????????
 };
 
 
@@ -403,18 +364,18 @@ class Flow : public Thread
    inline FlowBandwidthStats& getCurrentBandwidthStats() {
       return(CurrentBandwidthStats);
    }
-//  ????  inline unsigned long long getFirstTransmission() const {
-//       return(FirstTransmission);
-//    }
-//    inline unsigned long long getLastTransmission() const {
-//       return(LastTransmission);
-//    }
-//    inline unsigned long long getFirstReception() const {
-//       return(FirstReception);
-//    }
-//    inline unsigned long long getLastReception() const {
-//       return(LastReception);
-//    }
+   inline unsigned long long getFirstTransmission() const {
+      return(FirstTransmission);
+   }
+   inline unsigned long long getLastTransmission() const {
+      return(LastTransmission);
+   }
+   inline unsigned long long getFirstReception() const {
+      return(FirstReception);
+   }
+   inline unsigned long long getLastReception() const {
+      return(LastReception);
+   }
 
    inline uint32_t nextOutboundFrameID() {
       return(++LastOutboundFrameID);
@@ -449,7 +410,10 @@ class Flow : public Thread
       Delay = transitTime;
    }
 
-   inline void setMeasurement(Measurement* measurement) {  // ??????
+   inline Measurement* getMeasurement() const {
+      return(MyMeasurement);
+   }
+   inline void setMeasurement(Measurement* measurement) {
       lock();
       MyMeasurement = measurement;
       unlock();
@@ -531,7 +495,7 @@ class Flow : public Thread
    unsigned long long NextStatusChangeEvent;
    
    // ====== Statistics =====================================================
-   Measurement*       MyMeasurement; // ?????
+   Measurement*       MyMeasurement;
    OutputFile         VectorFile;
    FlowBandwidthStats CurrentBandwidthStats;
    FlowBandwidthStats LastBandwidthStats;

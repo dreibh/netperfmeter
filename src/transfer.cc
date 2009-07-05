@@ -166,10 +166,10 @@ ssize_t transmitFrame(Flow*                    flow,
 
 
 // ###### Handle data message ###############################################
-ssize_t handleDataMessage(const bool               isActiveMode,
-                          const unsigned long long now,
-                          const int                protocol,
-                          const int                sd)
+ssize_t handleNetPerfMeterData(const bool               isActiveMode,
+                               const unsigned long long now,
+                               const int                protocol,
+                               const int                sd)
 {
    char            inputBuffer[65536];
    sockaddr_union  from;

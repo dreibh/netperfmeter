@@ -389,8 +389,8 @@ FlowManager::~FlowManager()
 
 
 // ###### Print all flows ###################################################
-void FlowManager::print(std::ostream& os,
-                        const bool    printStatistics)
+void FlowManager::printFlows(std::ostream& os,
+                             const bool    printStatistics)
 {
    lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
@@ -1208,12 +1208,12 @@ void FlowManager::run()
             const int     protocol = FlowSet[i]->getTrafficSpec().Protocol;
             FlowSet[i]->unlock();
             // NOTE: Release the lock here, because the FlowSet enty may belong
-            //       to another stream of the socket. handleDataMessage() will
-            //       find and lock the actual FlowSet entry!
+            //       to another stream of the socket. handleNetPerfMeterData()
+            //       will find and lock the actual FlowSet entry!
             if( (entry) && (entry->revents & POLLIN) ) {
                 // NOTE: FlowSet[i] may not be the actual Flow!
                 //       It may be another stream of the same SCTP assoc!
-                handleDataMessage(true, now, protocol, entry->fd);
+                handleNetPerfMeterData(true, now, protocol, entry->fd);
             }
          }
 
@@ -1224,9 +1224,9 @@ void FlowManager::run()
                iterator != UnidentifiedSockets.end(); iterator++) {
                assert(unidentifiedSocketsPollFDIndex[i]->fd == iterator->first);
                if(unidentifiedSocketsPollFDIndex[i]->revents & POLLIN) {
-                  handleDataMessage(true, now,
-                                    iterator->second,
-                                    iterator->first);
+                  handleNetPerfMeterData(true, now,
+                                         iterator->second,
+                                         iterator->first);
                   if(UpdatedUnidentifiedSockets) {
                      // NOTE: The UnidentifiedSockets set may have changed in
                      // handleDataMessage -> ... -> FlowManager::identifySocket

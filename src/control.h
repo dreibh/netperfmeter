@@ -41,7 +41,8 @@ bool performNetPerfMeterStart(int            controlSocket,
                               const char*    vectorNamePattern,
                               const char*    scalarNamePattern);
 bool performNetPerfMeterStop(int            controlSocket,
-                             const uint64_t measurementID);
+                             const uint64_t measurementID,
+                             const bool     printResults = false);
 
 bool sendNetPerfMeterAcknowledge(int            controlSocket,
                                  sctp_assoc_t   assocID,

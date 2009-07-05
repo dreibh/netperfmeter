@@ -339,7 +339,8 @@ static bool sendNetPerfMeterRemoveFlow(int          controlSocket,
 
 // ###### Stop measurement ##################################################
 bool performNetPerfMeterStop(int            controlSocket,
-                             const uint64_t measurementID)
+                             const uint64_t measurementID,
+                             const bool     printResults)
 {
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->stopMeasurement(measurementID);
@@ -398,6 +399,9 @@ bool performNetPerfMeterStop(int            controlSocket,
          if(sendNetPerfMeterRemoveFlow(controlSocket, measurement, flow) == false) {
             delete measurement;
             return(false);
+         }
+         if(printResults) {
+            flow->print(std::cout, true);
          }
          delete flow;
          // Invalidated iterator. Is there a better solution?
@@ -751,8 +755,7 @@ static void handleControlAssocShutdown(const sctp_assoc_t assocID)
    while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
       Flow* flow = *iterator;
       if(flow->getRemoteControlAssocID() == assocID) {
-         Measurement* measurement =
-            FlowManager::getFlowManager()->findMeasurement(flow->getMeasurementID());
+         Measurement* measurement = flow->getMeasurement();
          if(measurement) {
             delete measurement;
          }

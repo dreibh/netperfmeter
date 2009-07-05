@@ -52,17 +52,18 @@
 using namespace std;
 
 
-const char*       gActiveNodeName  = "Client";
-const char*       gPassiveNodeName = "Server";
-int               gControlSocket   = -1;
-int               gTCPSocket       = -1;
-int               gUDPSocket       = -1;
-int               gSCTPSocket      = -1;
-int               gDCCPSocket      = -1;
-size_t            gMaxMsgSize      = 16000;
-double            gRuntime         = -1.0;
-bool              gStopTimeReached = false;
-MessageReader     gMessageReader;
+static const char*   gActiveNodeName  = "Client";
+static const char*   gPassiveNodeName = "Server";
+static int           gControlSocket   = -1;
+static int           gTCPSocket       = -1;
+static int           gUDPSocket       = -1;
+static int           gSCTPSocket      = -1;
+static int           gDCCPSocket      = -1;
+static double        gRuntime         = -1.0;
+static bool          gStopTimeReached = false;
+static MessageReader gMessageReader;
+
+size_t            gMaxMsgSize      = 16000;   // ?????
 
 
 
@@ -379,12 +380,11 @@ bool mainLoop(const bool               isActiveMode,
             FlowManager::getFlowManager()->addSocket(IPPROTO_TCP, newSD);
          }
       }
-/*
       if( (udpID >= 0) && (fds[udpID].revents & POLLIN) ) {
-         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
-                           now, gUDPSocket, IPPROTO_UDP, gControlSocket);
+puts("UDP???"); exit(1);
+/*         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
+                           now, gUDPSocket, IPPROTO_UDP, gControlSocket);*/
       }
-*/      
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gSCTPSocket, NULL, 0);
          if(newSD >= 0) {
@@ -606,7 +606,7 @@ void activeMode(int argc, char** argv)
          cout << "      - Registering flow at remote node ... ";
          cout.flush();
          if(!performNetPerfMeterAddFlow(gControlSocket, lastFlow)) {
-            cerr << "ERROR: Failed to add flow to remote node!" << endl;
+            cerr << endl << "ERROR: Failed to add flow to remote node!" << endl;
             exit(1);
          }
          cout << "okay" << endl;
@@ -653,13 +653,9 @@ void activeMode(int argc, char** argv)
 
    // ====== Stop measurement ===============================================
    cout << "Shutdown:" << endl;
-   if(!performNetPerfMeterStop(gControlSocket, measurementID)) {
+   if(!performNetPerfMeterStop(gControlSocket, measurementID, true)) {
       std::cerr << "ERROR: Failed to stop measurement!" << std::endl;
       exit(1);
-   }
-
-   if(!aborted) {
-      FlowManager::getFlowManager()->print(cout, true);
    }
 }
 
