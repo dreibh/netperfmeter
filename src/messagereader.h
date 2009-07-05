@@ -41,8 +41,7 @@ class MessageReader
    
    bool registerSocket(const int    protocol,
                        const int    sd,
-                       const size_t maxMessageSize          = 65535,
-                       const bool   warnIfAlreadyRegistered = true);
+                       const size_t maxMessageSize = 65535);
    bool deregisterSocket(const int sd);
 
    ssize_t receiveMessage(const int        sd,
@@ -70,6 +69,7 @@ class MessageReader
       MessageReaderStatus Status;
       int                 Protocol;
       int                 SocketDescriptor;
+      size_t              UseCount;
       char*               MessageBuffer;
       size_t              MessageBufferSize;
       size_t              MessageSize;
