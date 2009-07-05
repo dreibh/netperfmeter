@@ -131,6 +131,7 @@ bool performNetPerfMeterAddFlow(int controlSocket, const Flow* flow)
    addFlowMsg->FrameRateRng  = flow->getTrafficSpec().InboundFrameRateRng;
    addFlowMsg->FrameSizeRng  = flow->getTrafficSpec().InboundFrameSizeRng;
    addFlowMsg->ReliableMode  = htonl((uint32_t)rint(flow->getTrafficSpec().ReliableMode * (double)0xffffffff));
+   addFlowMsg->MaxMsgSize    = htons(flow->getTrafficSpec().MaxMsgSize);
    addFlowMsg->OrderedMode   = htonl((uint32_t)rint(flow->getTrafficSpec().OrderedMode * (double)0xffffffff));
    addFlowMsg->OnOffEvents   = htons(flow->getTrafficSpec().OnOffEvents.size());
    size_t i = 0;
@@ -611,13 +612,14 @@ static bool handleNetPerfMeterAddFlow(const NetPerfMeterAddFlowMessage* addFlowM
    }
    else {
       // ====== Create new flow =============================================
-      TrafficSpec trafficSpec;
+      FlowTrafficSpec trafficSpec;
       trafficSpec.Protocol             = addFlowMsg->Protocol;
       trafficSpec.Description          = std::string(description);
       trafficSpec.OutboundFrameRate    = networkToDouble(addFlowMsg->FrameRate);
       trafficSpec.OutboundFrameSize    = networkToDouble(addFlowMsg->FrameSize);
       trafficSpec.OutboundFrameRateRng = addFlowMsg->FrameRateRng;
       trafficSpec.OutboundFrameSizeRng = addFlowMsg->FrameSizeRng;
+      trafficSpec.MaxMsgSize           = ntohs(addFlowMsg->MaxMsgSize);
       trafficSpec.OrderedMode          = ntohl(addFlowMsg->OrderedMode)  / (double)0xffffffff;
       trafficSpec.ReliableMode         = ntohl(addFlowMsg->ReliableMode) / (double)0xffffffff;
       for(size_t i = 0;i < startStopEvents;i++) {

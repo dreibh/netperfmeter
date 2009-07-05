@@ -32,7 +32,6 @@
 .Op Port
 .Nm netperfmeter
 .Op Destination:Port
-.Fl maxmsgsize=Bytes
 .Fl runtime=Seconds
 .Fl scalar=Name
 .Fl vector=Name
@@ -64,7 +63,7 @@ Some netperfmeter usage examples:
 .Bl -tag -width indent
 .It netperfmeter 9000
 Start in passive mode, i.e. accepting connections, on port 9000.
-.It netperfmeter 172.16.255.254:9000 -maxmsgsize=4096 -vector=output.vec.bz2 -scalar=output.sca.bz2 -sctp const5:exp1000:const3:exp500:description="Alpha":onoff=+10 const5:exp1000:const3:exp500:description="Beta":onoff=+30 -tcp const5:exp1000:const3:exp500:description="Gamma":onoff=+60 -runtime=300
+.It netperfmeter 172.16.255.254:9000 -vector=output.vec.bz2 -scalar=output.sca.bz2 -sctp const5:exp1000:const3:exp500:description="Alpha":onoff=+10 const5:exp1000:const3:exp500:description="Beta":onoff=+30 -tcp const5:exp1000:const3:exp500:description="Gamma":onoff=+60 -runtime=300
 Start in active mode, i.e. establish connection to 172.16.255.254, port 9000.
 Frames will be segmented into messages of up to 4096 bytes.
 Write vectors to output.vec.bz2 (BZip2-compressed).

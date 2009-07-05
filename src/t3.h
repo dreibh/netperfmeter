@@ -56,12 +56,12 @@ class OutputFile
 
 
 
-class TrafficSpec   // ???????????? NAME -> FlowTrafficSpec
+class FlowTrafficSpec
 {
    // ====== Methods ========================================================
    public:
-   TrafficSpec();
-   ~TrafficSpec();
+   FlowTrafficSpec();
+   ~FlowTrafficSpec();
 
    void print(std::ostream& os) const;
    void reset();
@@ -78,6 +78,8 @@ class TrafficSpec   // ???????????? NAME -> FlowTrafficSpec
    double                 ReliableMode;
    double                 OrderedMode;
 
+   uint16_t               MaxMsgSize;
+   
    double                 OutboundFrameRate;
    double                 OutboundFrameSize;
    double                 InboundFrameRate;
@@ -320,12 +322,12 @@ class Flow : public Thread
 
    // ====== Methods ========================================================
    public:
-   Flow(const uint64_t     measurementID,
-        const uint32_t     flowID,
-        const uint16_t     streamID,
-        const TrafficSpec& trafficSpec,
-        const int          controlSocketDescriptor = -1,
-        const sctp_assoc_t controlAssocID          = 0);
+   Flow(const uint64_t         measurementID,
+        const uint32_t         flowID,
+        const uint16_t         streamID,
+        const FlowTrafficSpec& trafficSpec,
+        const int              controlSocketDescriptor = -1,
+        const sctp_assoc_t     controlAssocID          = 0);
    virtual ~Flow();
    
 
@@ -344,8 +346,8 @@ class Flow : public Thread
    inline sctp_assoc_t getRemoteControlAssocID() const {
       return(RemoteControlAssocID);
    }
-   inline const TrafficSpec& getTrafficSpec() const {
-      return(Traffic);
+   inline const FlowTrafficSpec& getTrafficSpec() const {
+      return(TrafficSpec);
    }
    inline FlowStatus getOutputStatus() const {
       return(OutputStatus);
@@ -487,7 +489,7 @@ class Flow : public Thread
    unsigned long long LastReception;
 
    // ====== Traffic Specification ==========================================
-   TrafficSpec        Traffic;
+   FlowTrafficSpec    TrafficSpec;
    FlowStatus         InputStatus;
    FlowStatus         OutputStatus;
    uint32_t           LastOutboundFrameID;     // ID of last outbound frame

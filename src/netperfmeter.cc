@@ -63,24 +63,12 @@ static double        gRuntime         = -1.0;
 static bool          gStopTimeReached = false;
 static MessageReader gMessageReader;
 
-size_t            gMaxMsgSize      = 16000;   // ?????
-
 
 
 // ###### Handle global command-line parameter ##############################
 bool handleGlobalParameter(const char* parameter)
 {
-   if(strncmp(parameter, "-maxmsgsize=", 12) == 0) {
-      gMaxMsgSize = atol((const char*)&parameter[12]);
-      if(gMaxMsgSize > 65536) {
-         gMaxMsgSize = 65536;
-      }
-      else if(gMaxMsgSize < 128) {
-         gMaxMsgSize = 128;
-      }
-      return(true);
-   }
-   else if(strncmp(parameter, "-runtime=", 9) == 0) {
+   if(strncmp(parameter, "-runtime=", 9) == 0) {
       gRuntime = atof((const char*)&parameter[9]);
       return(true);
    }
@@ -107,7 +95,6 @@ void printGlobalParameters()
    }
    std::cout << "   - Active Node Name  = " << gActiveNodeName  << std::endl
              << "   - Passive Node Name = " << gPassiveNodeName << std::endl
-             << "   - Max Message Size  = " << gMaxMsgSize      << std::endl
              << std::endl;
 }
 
@@ -136,26 +123,36 @@ static const char* parseNextEntry(const char* parameters,
 
 
 // ###### Read flow option ##################################################
-static const char* parseTrafficSpecOption(const char*  parameters,
-                                          TrafficSpec& trafficSpec)
+static const char* parseTrafficSpecOption(const char*      parameters,
+                                          FlowTrafficSpec& trafficSpec)
 {
    char   description[256];
-   int    n     = 0;
-   double value = 0.0;
+   int    n        = 0;
+   double dblValue = 0.0;
+   int    intValue = 0;
 
-   if(sscanf(parameters, "unordered=%lf%n", &value, &n) == 1) {
-      if((value < 0.0) || (value > 1.0)) {
+   if(sscanf(parameters, "maxmsgsize=%u%n", &intValue, &n) == 1) {
+      if(intValue > 65535) {
+         intValue = 65535;
+      }
+      else if(intValue < 128) {
+         intValue = 128;
+      }
+      trafficSpec.MaxMsgSize = intValue;
+   }
+   else if(sscanf(parameters, "unordered=%lf%n", &dblValue, &n) == 1) {
+      if((dblValue < 0.0) || (dblValue > 1.0)) {
          cerr << "ERROR: Bad probability for \"unordered\" option in " << parameters << "!" << endl;
          exit(1);
       }
-      trafficSpec.OrderedMode = value;
+      trafficSpec.OrderedMode = dblValue;
    }
-   else if(sscanf(parameters, "unreliable=%lf%n", &value, &n) == 1) {
-      if((value < 0.0) || (value > 1.0)) {
+   else if(sscanf(parameters, "unreliable=%lf%n", &dblValue, &n) == 1) {
+      if((dblValue < 0.0) || (dblValue > 1.0)) {
          cerr << "ERROR: Bad probability for \"unreliable\" option in " << parameters << "!" << endl;
          exit(1);
       }
-      trafficSpec.ReliableMode = value;
+      trafficSpec.ReliableMode = dblValue;
    }
    else if(sscanf(parameters, "description=%255[^:]s%n", (char*)&description, &n) == 1) {
       trafficSpec.Description = std::string(description);
@@ -166,16 +163,16 @@ static const char* parseTrafficSpecOption(const char*  parameters,
       size_t       m         = 5;
       while( (parameters[m] != 0x00) && (parameters[m] != ':') ) {
          m++;
-         double       value;
+         double       dblValue;
          unsigned int onoff;
-         if(sscanf((const char*)&parameters[m], "+%lf%n", &value, &n) == 1) {
+         if(sscanf((const char*)&parameters[m], "+%lf%n", &dblValue, &n) == 1) {
             // Relative time
-            onoff = (unsigned int)rint(1000.0 * value);
+            onoff = (unsigned int)rint(1000.0 * dblValue);
             onoff += lastEvent;
          }
-         else if(sscanf((const char*)&parameters[m], "%lf%n", &value, &n) == 1) {
+         else if(sscanf((const char*)&parameters[m], "%lf%n", &dblValue, &n) == 1) {
             // Absolute time
-            onoff = (unsigned int)rint(1000.0 * value);
+            onoff = (unsigned int)rint(1000.0 * dblValue);
          }
          else {
             cerr << "ERROR: Invalid on/off list at " << (const char*)&parameters[m] << "!" << std::endl;
@@ -210,8 +207,8 @@ static Flow* createFlow(Flow*              previousFlow,
    static uint32_t flowID   = 0; // will be increased with each successfull call
    uint16_t        streamID = (previousFlow != NULL) ? previousFlow->getStreamID() + 1 : 0;
 
-   // ====== Get TrafficSpec ================================================
-   TrafficSpec trafficSpec;
+   // ====== Get FlowTrafficSpec ============================================
+   FlowTrafficSpec trafficSpec;
    trafficSpec.Description = format("Flow %u", flowID);
    trafficSpec.Protocol    = protocol;
    parameters = parseNextEntry(parameters, &trafficSpec.OutboundFrameRate, &trafficSpec.OutboundFrameRateRng);

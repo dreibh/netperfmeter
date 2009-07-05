@@ -29,8 +29,7 @@
 
 
 ssize_t transmitFrame(Flow*                    flow,
-                      const unsigned long long now,
-                      const size_t             maxMsgSize);
+                      const unsigned long long now);
 
 ssize_t handleNetPerfMeterData(const bool               isActiveMode,
                                const unsigned long long now,

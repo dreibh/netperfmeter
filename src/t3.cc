@@ -18,9 +18,6 @@
 #include "t3.h"
 
 
-extern size_t gMaxMsgSize;   // ???? Teil der TrafficSpec!!!
-
-
 
 // ###### Constructor #######################################################
 OutputFile::OutputFile()
@@ -150,20 +147,22 @@ bool OutputFile::printf(const char* str, ...)
 
 
 // ###### Constructor #######################################################
-TrafficSpec::TrafficSpec()
+FlowTrafficSpec::FlowTrafficSpec()
 {
    reset();
 }
 
 
 // ###### Destructor ########################################################
-TrafficSpec::~TrafficSpec()
+FlowTrafficSpec::~FlowTrafficSpec()
 {
 }
 
 
 // ###### Show configuration entry (value + random number generator) ########
-void TrafficSpec::showEntry(std::ostream& os, const double value, const uint8_t rng)
+void FlowTrafficSpec::showEntry(std::ostream& os,
+                                const double  value,
+                                const uint8_t rng)
 {
    char str[256];
 
@@ -182,9 +181,11 @@ void TrafficSpec::showEntry(std::ostream& os, const double value, const uint8_t 
 }
 
 
-// ###### Print TrafficSpec #################################################
-void TrafficSpec::print(std::ostream& os) const
+// ###### Print FlowTrafficSpec #############################################
+void FlowTrafficSpec::print(std::ostream& os) const
 {
+   os << "      - Max. Message Size:   "
+      << MaxMsgSize << std::endl;
    os << "      - Outbound Frame Rate: ";
    showEntry(os, OutboundFrameRate, OutboundFrameRateRng);
    os << std::endl;
@@ -226,9 +227,10 @@ void TrafficSpec::print(std::ostream& os) const
 }
 
 
-// ###### Reset TrafficSpec #################################################
-void TrafficSpec::reset()
+// ###### Reset FlowTrafficSpec #############################################
+void FlowTrafficSpec::reset()
 {
+   MaxMsgSize               = 16000;
    OrderedMode              = 1.0;
    ReliableMode             = 1.0;
    OutboundFrameRate        = 0.0;
@@ -524,7 +526,7 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
                if(flow->SocketDescriptor >= 0) {
                   flow->BaseTime     = now;
                   flow->InputStatus  = Flow::On;
-                  flow->OutputStatus = (flow->Traffic.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
+                  flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
                   if(printFlows) {
                      flow->print(std::cout);
                   }            
@@ -705,17 +707,17 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
                "\"Lost\"     %llu %llu %llu\t%llu %llu %llu\n",
 
             vectorFile.nextLine(), now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-               flow->FlowID, flow->Traffic.Description.c_str(), flow->Jitter,
+               flow->FlowID, flow->TrafficSpec.Description.c_str(), flow->Jitter,
                flow->CurrentBandwidthStats.TransmittedBytes, flow->CurrentBandwidthStats.TransmittedPackets, flow->CurrentBandwidthStats.TransmittedFrames,
                relStats.TransmittedBytes, relStats.TransmittedPackets, relStats.TransmittedFrames,
 
             vectorFile.nextLine(), now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-               flow->FlowID, flow->Traffic.Description.c_str(), flow->Jitter,
+               flow->FlowID, flow->TrafficSpec.Description.c_str(), flow->Jitter,
                flow->CurrentBandwidthStats.ReceivedBytes, flow->CurrentBandwidthStats.ReceivedPackets, flow->CurrentBandwidthStats.ReceivedFrames,
                relStats.ReceivedBytes, relStats.ReceivedPackets, relStats.ReceivedFrames,
 
             vectorFile.nextLine(), now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-               flow->FlowID, flow->Traffic.Description.c_str(), flow->Jitter,
+               flow->FlowID, flow->TrafficSpec.Description.c_str(), flow->Jitter,
                flow->CurrentBandwidthStats.LostBytes, flow->CurrentBandwidthStats.LostPackets, flow->CurrentBandwidthStats.LostFrames,
                relStats.LostBytes, relStats.LostPackets, relStats.LostFrames);
                
@@ -764,12 +766,12 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
 
 
 // ###### Constructor #######################################################
-Flow::Flow(const uint64_t     measurementID,
-           const uint32_t     flowID,
-           const uint16_t     streamID,
-           const TrafficSpec& trafficSpec,
-           const int          controlSocketDescriptor,
-           const sctp_assoc_t controlAssocID)
+Flow::Flow(const uint64_t         measurementID,
+           const uint32_t         flowID,
+           const uint16_t         streamID,
+           const FlowTrafficSpec& trafficSpec,
+           const int              controlSocketDescriptor,
+           const sctp_assoc_t     controlAssocID)
 {
    lock();
    MeasurementID                 = measurementID;
@@ -786,7 +788,7 @@ Flow::Flow(const uint64_t     measurementID,
    OutputStatus                  = WaitingForStartup;
    BaseTime                      = getMicroTime();
 
-   Traffic                       = trafficSpec;
+   TrafficSpec                   = trafficSpec;
 
    MyMeasurement                 = NULL;
    FirstTransmission             = 0;
@@ -828,19 +830,19 @@ void Flow::print(std::ostream& os, const bool printStatistics)
 {
    lock();
    if((OriginalSocketDescriptor) || (RemoteControlAssocID != 0)) {
-      if(Traffic.Protocol != IPPROTO_SCTP) {
-         os << "+ " << getProtocolName(Traffic.Protocol) << " Flow (Flow ID #"
-            << FlowID << " \"" << Traffic.Description << "\"):" << std::endl;
+      if(TrafficSpec.Protocol != IPPROTO_SCTP) {
+         os << "+ " << getProtocolName(TrafficSpec.Protocol) << " Flow (Flow ID #"
+            << FlowID << " \"" << TrafficSpec.Description << "\"):" << std::endl;
       }
       else {
-         os << "+ " << getProtocolName(Traffic.Protocol) << " Flow:" << std::endl;
+         os << "+ " << getProtocolName(TrafficSpec.Protocol) << " Flow:" << std::endl;
       }
    }
-   if(Traffic.Protocol == IPPROTO_SCTP) {
+   if(TrafficSpec.Protocol == IPPROTO_SCTP) {
       os << "   o Stream #" << StreamID << " (Flow ID #"
-         << FlowID << " \"" << Traffic.Description << "\"):" << std::endl;
+         << FlowID << " \"" << TrafficSpec.Description << "\"):" << std::endl;
    }
-   Traffic.print(os);
+   TrafficSpec.print(os);
 
 
    if(printStatistics) {
@@ -939,7 +941,7 @@ bool Flow::activate()
    deactivate();
    assert(SocketDescriptor >= 0);
    FlowManager::getFlowManager()->getMessageReader()->registerSocket(
-      Traffic.Protocol, SocketDescriptor);
+      TrafficSpec.Protocol, SocketDescriptor);
    return(start());
 }
 
@@ -949,7 +951,7 @@ void Flow::deactivate()
    if(isRunning()) {
       stop();
       if(SocketDescriptor >= 0) {
-         if(Traffic.Protocol == IPPROTO_UDP) {
+         if(TrafficSpec.Protocol == IPPROTO_UDP) {
             ext_close(SocketDescriptor);
          }
          else {
@@ -970,12 +972,12 @@ unsigned long long Flow::scheduleNextTransmissionEvent()
    lock();
    if(OutputStatus == On) {
       // ====== Saturated sender ============================================
-      if( (Traffic.OutboundFrameSize > 0.0) && (Traffic.OutboundFrameRate <= 0.0000001) ) {
+      if( (TrafficSpec.OutboundFrameSize > 0.0) && (TrafficSpec.OutboundFrameRate <= 0.0000001) ) {
          nextTransmissionEvent = 0;
       }
       // ====== Non-saturated sender ========================================
-      else if( (Traffic.OutboundFrameSize > 0.0) && (Traffic.OutboundFrameRate > 0.0000001) ) {
-         const double nextFrameRate = getRandomValue(Traffic.OutboundFrameRate, Traffic.OutboundFrameRateRng);
+      else if( (TrafficSpec.OutboundFrameSize > 0.0) && (TrafficSpec.OutboundFrameRate > 0.0000001) ) {
+         const double nextFrameRate = getRandomValue(TrafficSpec.OutboundFrameRate, TrafficSpec.OutboundFrameRateRng);
          nextTransmissionEvent = LastTransmission + (unsigned long long)rint(1000000.0 / nextFrameRate);
       }
    }
@@ -993,8 +995,8 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
 {
    lock();
    
-   std::set<unsigned int>::iterator first = Traffic.OnOffEvents.begin();
-   if((OutputStatus != WaitingForStartup) && (first != Traffic.OnOffEvents.end())) {
+   std::set<unsigned int>::iterator first = TrafficSpec.OnOffEvents.begin();
+   if((OutputStatus != WaitingForStartup) && (first != TrafficSpec.OnOffEvents.end())) {
       const unsigned int relNextEvent = *first;
       const unsigned long long absNextEvent = BaseTime + (1000ULL * relNextEvent);
       NextStatusChangeEvent = absNextEvent;
@@ -1013,8 +1015,8 @@ void Flow::handleStatusChangeEvent(const unsigned long long now)
 {
    lock();
    if(NextStatusChangeEvent <= now) {
-      std::set<unsigned int>::iterator first = Traffic.OnOffEvents.begin();
-      assert(first != Traffic.OnOffEvents.end());
+      std::set<unsigned int>::iterator first = TrafficSpec.OnOffEvents.begin();
+      assert(first != TrafficSpec.OnOffEvents.end());
 
       if(OutputStatus == Off) {
          OutputStatus = On;
@@ -1026,7 +1028,7 @@ void Flow::handleStatusChangeEvent(const unsigned long long now)
          assert(false);
       }
 
-      Traffic.OnOffEvents.erase(first);
+      TrafficSpec.OnOffEvents.erase(first);
    }
    scheduleNextStatusChangeEvent(now);
    unlock();
@@ -1059,18 +1061,18 @@ void Flow::run()
       // ====== Send outgoing data ==========================================
       if(OutputStatus == Flow::On) {
          // ====== Outgoing data (saturated sender) =========================
-         if( (Traffic.OutboundFrameSize > 0.0) &&
-             (Traffic.OutboundFrameRate <= 0.0000001) ) {
-            result = (transmitFrame(this, now, gMaxMsgSize) > 0);
+         if( (TrafficSpec.OutboundFrameSize > 0.0) &&
+             (TrafficSpec.OutboundFrameRate <= 0.0000001) ) {
+            result = (transmitFrame(this, now) > 0);
          }
 
          // ====== Outgoing data (non-saturated sender) =====================
-         else if( (Traffic.OutboundFrameSize >= 1.0) &&
-                  (Traffic.OutboundFrameRate > 0.0000001) ) {
+         else if( (TrafficSpec.OutboundFrameSize >= 1.0) &&
+                  (TrafficSpec.OutboundFrameRate > 0.0000001) ) {
             const unsigned long long lastEvent = LastTransmission;
             if(nextTransmission <= now) {
                do {
-                  result = (transmitFrame(this, now, gMaxMsgSize) > 0);
+                  result = (transmitFrame(this, now) > 0);
                   if(now - lastEvent > 1000000) {
                      // Time gap of more than 1s -> do not try to correct
                      break;
@@ -1251,23 +1253,6 @@ void FlowManager::run()
 
 
 
-
-// MeasurementManager MeasurementManager::MeasurementManagerSingleton;
-
-
-// MeasurementManager::MeasurementManager()
-// {
-//    DisplayInterval   = 1000000;
-//    FirstDisplayEvent = 0;
-//    LastDisplayEvent  = 0;
-//    NextDisplayEvent  = 0;
-//    GlobalFlows       = 0;
-// }
-
-   
-// MeasurementManager::~MeasurementManager()
-// {
-// }
 
 
 // ###### Add measurement ###################################################

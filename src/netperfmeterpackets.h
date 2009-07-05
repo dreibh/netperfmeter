@@ -83,6 +83,8 @@ struct NetPerfMeterAddFlowMessage
    uint8_t              FrameRateRng;
    uint8_t              FrameSizeRng;
 
+   uint16_t             MaxMsgSize;
+   
    uint16_t             OnOffEvents;
    unsigned int         OnOffEvent[];
 } __attribute__((packed));

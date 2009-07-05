@@ -124,8 +124,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
 
 // ###### Transmit data frame ###############################################
 ssize_t transmitFrame(Flow*                    flow,
-                      const unsigned long long now,
-                      const size_t             maxMsgSize)
+                      const unsigned long long now)
 {
    // ====== Obtain length of data to send ==================================
    size_t bytesToSend =
@@ -134,7 +133,7 @@ ssize_t transmitFrame(Flow*                    flow,
    if(bytesToSend == 0) {
       // On POLLOUT, we generate a maximum-sized message. If there is still space
       // in the buffer, POLLOUT will be set again ...
-      bytesToSend = std::min(maxMsgSize, MAXIMUM_MESSAGE_SIZE);
+      bytesToSend = std::min((size_t)flow->getTrafficSpec().MaxMsgSize, MAXIMUM_MESSAGE_SIZE);
    }
    ssize_t bytesSent   = 0;
    size_t  packetsSent = 0;
@@ -142,7 +141,8 @@ ssize_t transmitFrame(Flow*                    flow,
    const uint32_t frameID = flow->nextOutboundFrameID();
    while(bytesSent < (ssize_t)bytesToSend) {
       // ====== Send message ================================================
-      size_t chunkSize = std::min(bytesToSend, std::min(maxMsgSize, MAXIMUM_MESSAGE_SIZE));
+      size_t chunkSize = std::min(bytesToSend, std::min((size_t)flow->getTrafficSpec().MaxMsgSize,
+                                                        MAXIMUM_MESSAGE_SIZE));
       const ssize_t sent =
          sendNetPerfMeterData(flow, frameID,
                               (bytesSent == 0),                       // Is frame begin?
