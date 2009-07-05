@@ -371,6 +371,7 @@ FlowManager FlowManager::FlowManagerSingleton;
 // ###### Constructor #######################################################
 FlowManager::FlowManager()
 {
+   DisplayOn         = false;
    DisplayInterval   = 1000000;
    FirstDisplayEvent = 0;
    LastDisplayEvent  = 0;
@@ -717,7 +718,7 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
                flow->FlowID, flow->Traffic.Description.c_str(), flow->Jitter,
                flow->CurrentBandwidthStats.LostBytes, flow->CurrentBandwidthStats.LostPackets, flow->CurrentBandwidthStats.LostFrames,
                relStats.LostBytes, relStats.LostPackets, relStats.LostFrames);
-          
+               
           flow->LastBandwidthStats = flow->CurrentBandwidthStats;
           flow->unlock();
        }
@@ -1155,6 +1156,7 @@ void FlowManager::run()
    signal(SIGPIPE, SIG_IGN);
 
    do {
+      // ====== Collect PollFDs for poll() ==================================
       lock();
       pollfd pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
       size_t n = 0;
@@ -1186,13 +1188,20 @@ void FlowManager::run()
       }
       unlock();
 
-      const int timeout = pollTimeout(getMicroTime(), 1,
+      
+      // ====== Wait for events =============================================
+      unsigned long long now = getMicroTime();
+      const int timeout = pollTimeout(getMicroTime(), 2,
+                                      now + 250000,
                                       getNextEvent());
       const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
 
-      const unsigned long long now = getMicroTime();
+      
+      // ====== Handle events ===============================================
+      now = getMicroTime();
       if(result > 0) {
          lock();
+         // ====== Handle read events of flows ==============================
          for(i = 0;i  < FlowSet.size();i++) {
             FlowSet[i]->lock();
             const pollfd* entry    = FlowSet[i]->PollFDEntry;
@@ -1207,6 +1216,8 @@ void FlowManager::run()
                 handleDataMessage(true, now, protocol, entry->fd);
             }
          }
+
+         // ====== Handle read events of yet unidentified sockets ===========
          if(!UpdatedUnidentifiedSockets) {
             i = 0;
             for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
@@ -1354,25 +1365,27 @@ void FlowManager::handleEvents(const unsigned long long now)
       }
       
       // ====== Print bandwidth information line ============================
-      const double       duration      = (now - LastDisplayEvent) / 1000000.0;
-      const unsigned int totalDuration = (unsigned int)((now - FirstDisplayEvent) / 1000000ULL);
-      
-      // NOTE: ostream/cout has race condition problem according to helgrind.
-      //       => simply using stdout instead.
-      fprintf(stdout,
-              "\r<-- Duration: %2u:%02u:%02u   "
-              "Flows: %u   "
-              "Transmitted: %1.2f MiB at %1.1f Kbit/s   "
-              "Received: %1.2f MiB at %1.1f Kbit/s -->\x1b[0K",
-              totalDuration / 3600,
-              (totalDuration / 60) % 60,
-              totalDuration % 60,
-              (unsigned int)FlowSet.size(),
-              GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
-              (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
-              GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
-              (duration > 0.0) ? (8 * RelGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0);
-      fflush(stdout);
+      if(DisplayOn) {
+         const double       duration      = (now - LastDisplayEvent) / 1000000.0;
+         const unsigned int totalDuration = (unsigned int)((now - FirstDisplayEvent) / 1000000ULL);
+         
+         // NOTE: ostream/cout has race condition problem according to helgrind.
+         //       => simply using stdout instead.
+         fprintf(stdout,
+               "\r<-- Duration: %2u:%02u:%02u   "
+               "Flows: %u   "
+               "Transmitted: %1.2f MiB at %1.1f Kbit/s   "
+               "Received: %1.2f MiB at %1.1f Kbit/s -->\x1b[0K",
+               totalDuration / 3600,
+               (totalDuration / 60) % 60,
+               totalDuration % 60,
+               (unsigned int)FlowSet.size(),
+               GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
+               (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
+               GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
+               (duration > 0.0) ? (8 * RelGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0);
+         fflush(stdout);
+      }
       
       LastDisplayEvent = now;
       RelGlobalStats.reset();
@@ -1443,7 +1456,7 @@ Measurement::Measurement()
 // ###### Destructor ########################################################
 Measurement::~Measurement()
 {
-   finish();
+   finish(true);
 }
 
 
@@ -1478,9 +1491,10 @@ bool Measurement::initialize(const unsigned long long now,
 }
 
 
-void Measurement::finish()
+bool Measurement::finish(const bool closeFiles)
 {
    FlowManager::getFlowManager()->removeMeasurement(this);
-   VectorFile.finish();
-   ScalarFile.finish();
+   const bool s1 = VectorFile.finish(closeFiles);
+   const bool s2 = ScalarFile.finish(closeFiles);
+   return(s1 && s2);
 }

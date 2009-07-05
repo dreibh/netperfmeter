@@ -159,7 +159,7 @@ class Measurement : public Mutex
                    const bool               compressVectorFile,
                    const char*              scalarName,
                    const bool               compressScalarFile);
-   void finish();
+   bool finish(const bool closeFiles);
    
    void writeScalarStatistics(const unsigned long long now);
    void writeVectorStatistics(const unsigned long long now,
@@ -246,6 +246,17 @@ class FlowManager : public Thread
    inline std::vector<Flow*>& getFlowSet() {   // Internal usage only!
       return(FlowSet);
    }
+   
+   inline void enableDisplay() {
+      lock();
+      DisplayOn = true;
+      unlock();
+   }
+   inline void disableDisplay() {
+      lock();
+      DisplayOn = false;
+      unlock();
+   }
 
    void addSocket(const int protocol, const int socketDescriptor);
    bool identifySocket(const uint64_t        measurementID,
@@ -308,6 +319,7 @@ class FlowManager : public Thread
    std::vector<Flow*> FlowSet;
    std::map<int, int> UnidentifiedSockets;
    bool               UpdatedUnidentifiedSockets;
+   bool               DisplayOn;
    FlowBandwidthStats CurrentGlobalStats;
    FlowBandwidthStats LastGlobalStats;
 

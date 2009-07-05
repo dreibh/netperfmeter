@@ -67,7 +67,7 @@ static bool downloadOutputFile(const int   controlSocket,
          if(fwrite((char*)&resultsMsg->Data, bytes, 1, fh) != 1) {
             std::cerr << "ERROR: Unable to write results to file " << fileName
                      << " - " << strerror(errno) << "!" << std::endl;
-   //          exit(1);
+            exit(1);
          }
       }
       else {
@@ -719,8 +719,7 @@ static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
    if(measurement) {
       measurement->lock();
       measurement->writeScalarStatistics(getMicroTime());
-      success = ( (((OutputFile&)measurement->getScalarFile()).finish(false)) &&
-                  (((OutputFile&)measurement->getVectorFile()).finish(false)) );
+      success = measurement->finish(false);
       measurement->unlock();
    }
    FlowManager::getFlowManager()->unlock();

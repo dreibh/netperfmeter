@@ -39,4 +39,4 @@ make -j2 &&  $VALGRIND ./netperfmeter [::1]:9000 \
    -config=$DIRECTORY/output.config \
    -vector=$DIRECTORY/output.vec.bz2 \
    -scalar=$DIRECTORY/output.sca.bz2 \
-   -sctp const2:const1000:const3:const500:description="Videodatenstrom" $@
+   -udp const2:const1000:const3:const500:description="Videodatenstrom" $@

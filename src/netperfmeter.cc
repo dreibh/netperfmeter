@@ -485,15 +485,15 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    // ====== Main loop ======================================================
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
+   FlowManager::getFlowManager()->enableDisplay();
+   
    const unsigned long long stopAt = (gRuntime > 0) ?
       (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       mainLoop(false, stopAt, 0);
    }
 
-
-   // ====== Print status ===================================================
-   FlowManager::getFlowManager()->print(cout, true);
+   FlowManager::getFlowManager()->disableDisplay();
 
 
    // ====== Clean up =======================================================
@@ -638,6 +638,8 @@ void activeMode(int argc, char** argv)
    bool                     aborted = false;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
+   FlowManager::getFlowManager()->enableDisplay();
+
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       if(!mainLoop(true, stopAt, measurementID)) {
          cout << endl << "*** Aborted ***" << endl;
@@ -645,6 +647,8 @@ void activeMode(int argc, char** argv)
          break;
       }
    }
+
+   FlowManager::getFlowManager()->disableDisplay();
 
 
    // ====== Stop measurement ===============================================
