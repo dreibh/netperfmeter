@@ -49,29 +49,15 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
                              const unsigned long long now,
                              size_t                   bytesToSend)
 {
-   static char              outputBuffer[MAXIMUM_MESSAGE_SIZE];
-   static bool              outputBufferInitialized = false;
-   NetPerfMeterDataMessage* dataMsg                 = (NetPerfMeterDataMessage*)&outputBuffer;
+   char                     outputBuffer[MAXIMUM_MESSAGE_SIZE];
+   NetPerfMeterDataMessage* dataMsg = (NetPerfMeterDataMessage*)&outputBuffer;
 
    if(bytesToSend < sizeof(NetPerfMeterDataMessage)) {
       bytesToSend = sizeof(NetPerfMeterDataMessage);
    }
 
-   // ====== Create printable data pattern ==================================
-   if(outputBufferInitialized == false) {
-      unsigned char c = 30;
-      for(size_t i = 0;i < MAXIMUM_PAYLOAD_SIZE;i++) {
-         dataMsg->Payload[i] = (char)c;
-         c++;
-         if(c > 127) {
-            c = 30;
-         }
-      }
-      outputBufferInitialized = true;
-   }
-
-
    // ====== Prepare NETPERFMETER_DATA message ==============================
+   // ------ Create header --------------------------------
    dataMsg->Header.Type   = NETPERFMETER_DATA;
    dataMsg->Header.Flags  = 0x00;
    if(isFrameBegin) {
@@ -89,6 +75,16 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    dataMsg->SeqNumber     = hton64(flow->nextOutboundSeqNumber());
    dataMsg->ByteSeqNumber = hton64(flow->getCurrentBandwidthStats().TransmittedBytes);
    dataMsg->TimeStamp     = hton64(now);
+   
+   // ------ Create payload data pattern ------------------
+   unsigned char c = 30;
+   for(size_t i = 0;i < (bytesToSend - sizeof(NetPerfMeterDataMessage));i++) {
+      dataMsg->Payload[i] = (char)c;
+      c++;
+      if(c > 127) {
+         c = 30;
+      }
+   }
 
    // ====== Send NETPERFMETER_DATA message =================================
    ssize_t sent;

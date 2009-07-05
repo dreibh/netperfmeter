@@ -360,7 +360,7 @@ bool mainLoop(const bool               isActiveMode,
    // ====== Use poll() to wait for events ==================================
    const int timeout = pollTimeout(now, 3,
                                    stopAt,
-                                   MeasurementManager::getMeasurementManager()->getNextEvent(),
+                                   FlowManager::getFlowManager()->getNextEvent(),
                                    now + 1000000);
 
 //    printf("timeout=%d\n",timeout);
@@ -417,8 +417,8 @@ bool mainLoop(const bool               isActiveMode,
    }
 
    // ====== Handle statistics timer ========================================
-   if(MeasurementManager::getMeasurementManager()->getNextEvent() <= now) {
-      MeasurementManager::getMeasurementManager()->handleEvents(now);
+   if(FlowManager::getFlowManager()->getNextEvent() <= now) {
+      FlowManager::getFlowManager()->handleEvents(now);
    }
    return(true);
 }

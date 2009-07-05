@@ -127,7 +127,7 @@ FlowBandwidthStats operator-(const FlowBandwidthStats& s1, const FlowBandwidthSt
 
 class Measurement : public Mutex
 {
-   friend class MeasurementManager;
+   friend class FlowManager;
 
    // ====== Public Methods =================================================
    public:
@@ -163,7 +163,6 @@ class Measurement : public Mutex
    
    void writeScalarStatistics(const unsigned long long now);
    void writeVectorStatistics(const unsigned long long now,
-                              size_t&                  globalFlows,
                               FlowBandwidthStats&      globalStats,
                               FlowBandwidthStats&      relGlobalStats);
 
@@ -188,7 +187,7 @@ class Measurement : public Mutex
    unsigned long long FirstReception;
 };
 
-
+/*
 class MeasurementManager : public Mutex
 {
    // ====== Protected Methods ==============================================
@@ -223,10 +222,7 @@ class MeasurementManager : public Mutex
    FlowBandwidthStats               GlobalStats;      // For displaying only
    FlowBandwidthStats               RelGlobalStats;   // For displaying only
 };
-
-
-
-
+*/
 
 
 class Flow;
@@ -286,7 +282,6 @@ class FlowManager : public Thread
    void writeVectorStatistics(const uint64_t           measurementID,
                               const unsigned long long now,
                               OutputFile&              vectorFile,
-                              size_t&                  globalFlows,
                               FlowBandwidthStats&      globalStats,
                               FlowBandwidthStats&      relGlobalStats,
                               const unsigned long long firstStatisticsEvent,
@@ -315,6 +310,29 @@ class FlowManager : public Thread
    bool               UpdatedUnidentifiedSockets;
    FlowBandwidthStats CurrentGlobalStats;
    FlowBandwidthStats LastGlobalStats;
+
+   // ??????????????????????
+   public:
+   bool addMeasurement(Measurement* measurement);
+   Measurement* findMeasurement(const uint64_t measurementID);
+   void removeMeasurement(Measurement* measurement);
+
+   void printMeasurements(std::ostream& os);
+
+   unsigned long long getNextEvent();
+   void handleEvents(const unsigned long long now);
+
+   // ====== Private Data ===================================================
+   private:
+//    static MeasurementManager        MeasurementManagerSingleton;
+   std::map<uint64_t, Measurement*> MeasurementSet;
+   unsigned long long               DisplayInterval;
+   unsigned long long               FirstDisplayEvent;
+   unsigned long long               LastDisplayEvent;
+   unsigned long long               NextDisplayEvent;
+   FlowBandwidthStats               GlobalStats;      // For displaying only
+   FlowBandwidthStats               RelGlobalStats;   // For displaying only
+// ?????????????????????
 };
 
 
@@ -419,6 +437,12 @@ class Flow : public Thread
       Delay = transitTime;
    }
 
+   inline void setMeasurement(Measurement* measurement) {  // ??????
+      lock();
+      MyMeasurement = measurement;
+      unlock();
+   }
+
    inline static std::string getNodeOutputName(const std::string& pattern,
                                                const char*        type,
                                                const std::string  extension = "") {
@@ -444,7 +468,7 @@ class Flow : public Thread
                                   const double             jitter);
 
    
-   void print(std::ostream& os, const bool printStatistics = false) const;
+   void print(std::ostream& os, const bool printStatistics = false);
    void resetStatistics();
 
    void setSocketDescriptor(const int  socketDescriptor,
@@ -458,7 +482,7 @@ class Flow : public Thread
 
    // ====== Private Methods ================================================
    private:
-   unsigned long long scheduleNextTransmissionEvent() const;
+   unsigned long long scheduleNextTransmissionEvent();
    unsigned long long scheduleNextStatusChangeEvent(const unsigned long long now);
    void handleStatusChangeEvent(const unsigned long long now);
 
@@ -495,6 +519,7 @@ class Flow : public Thread
    unsigned long long NextStatusChangeEvent;
    
    // ====== Statistics =====================================================
+   Measurement*       MyMeasurement; // ?????
    OutputFile         VectorFile;
    FlowBandwidthStats CurrentBandwidthStats;
    FlowBandwidthStats LastBandwidthStats;

@@ -371,6 +371,10 @@ FlowManager FlowManager::FlowManagerSingleton;
 // ###### Constructor #######################################################
 FlowManager::FlowManager()
 {
+   DisplayInterval   = 1000000;
+   FirstDisplayEvent = 0;
+   LastDisplayEvent  = 0;
+   NextDisplayEvent  = 0;
    start();
 }
 
@@ -387,11 +391,13 @@ FlowManager::~FlowManager()
 void FlowManager::print(std::ostream& os,
                         const bool    printStatistics)
 {
+   lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end();iterator++) {
-      const Flow* flow= *iterator;
+      Flow* flow= *iterator;
       flow->print(os, printStatistics);
    }
+   unlock();
 }
 
 
@@ -513,6 +519,7 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
             iterator != FlowSet.end();iterator++) {
             Flow* flow = *iterator;
             if(flow->MeasurementID == measurementID) {
+               flow->setMeasurement(measurement);
                if(flow->SocketDescriptor >= 0) {
                   flow->BaseTime     = now;
                   flow->InputStatus  = Flow::On;
@@ -657,7 +664,6 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
 void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
                                         const unsigned long long now,
                                         OutputFile&              vectorFile,
-                                        size_t&                  globalFlows,
                                         FlowBandwidthStats&      globalStats,
                                         FlowBandwidthStats&      relGlobalStats,
                                         const unsigned long long firstStatisticsEvent,
@@ -741,7 +747,6 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
 
    
    // ====== Return global values (all measurements) for displaying =========
-   globalFlows     = FlowSet.size();
    globalStats     = CurrentGlobalStats;
    relGlobalStats  = CurrentGlobalStats - LastGlobalStats;
    
@@ -765,6 +770,7 @@ Flow::Flow(const uint64_t     measurementID,
            const int          controlSocketDescriptor,
            const sctp_assoc_t controlAssocID)
 {
+   lock();
    MeasurementID                 = measurementID;
    FlowID                        = flowID;
    StreamID                      = streamID;
@@ -781,6 +787,7 @@ Flow::Flow(const uint64_t     measurementID,
 
    Traffic                       = trafficSpec;
 
+   MyMeasurement                 = NULL;
    FirstTransmission             = 0;
    LastTransmission              = 0;
    FirstReception                = 0;
@@ -789,6 +796,7 @@ Flow::Flow(const uint64_t     measurementID,
    LastOutboundSeqNumber         = 0;
    LastOutboundFrameID           = 0;
    NextStatusChangeEvent         = ~0ULL;
+   unlock();
    
    FlowManager::getFlowManager()->addFlow(this);
 }
@@ -805,16 +813,19 @@ Flow::~Flow()
 
 void Flow::resetStatistics()
 {
+   lock();
    CurrentBandwidthStats.reset();
    LastBandwidthStats.reset();
    Jitter = 0;
    Delay  = 0;
+   unlock();
 }
 
 
 // ###### Print Flow ########################################################
-void Flow::print(std::ostream& os, const bool printStatistics) const
+void Flow::print(std::ostream& os, const bool printStatistics)
 {
+   lock();
    if((OriginalSocketDescriptor) || (RemoteControlAssocID != 0)) {
       if(Traffic.Protocol != IPPROTO_SCTP) {
          os << "+ " << getProtocolName(Traffic.Protocol) << " Flow (Flow ID #"
@@ -836,6 +847,7 @@ void Flow::print(std::ostream& os, const bool printStatistics) const
                                   (LastTransmission - FirstTransmission) / 1000000.0,
                                   (LastReception    - FirstReception)    / 1000000.0);
    }
+   unlock();
 }
 
 
@@ -843,20 +855,26 @@ void Flow::setSocketDescriptor(const int  socketDescriptor,
                                const bool originalSocketDescriptor)
 {
    deactivate();
-   FlowManager::getFlowManager()->lock();
+   lock();
    SocketDescriptor         = socketDescriptor;
    OriginalSocketDescriptor = originalSocketDescriptor;
-   FlowManager::getFlowManager()->unlock();
+   unlock();
 }
 
 
 bool Flow::initializeVectorFile(const char* name, const bool compressed)
 {
+   bool success = false;
+   
+   lock();
    if(VectorFile.initialize(name, compressed)) {
       VectorFile.nextLine();
-      return(VectorFile.printf("AbsTime RelTime SeqNumber Delay PrevPacketDelayDiff Jitter\n"));
+      success = VectorFile.printf(
+                   "AbsTime RelTime SeqNumber Delay PrevPacketDelayDiff Jitter\n");
    }
-   return(false);
+   unlock();
+   
+   return(success);
 }
 
 
@@ -866,6 +884,8 @@ void Flow::updateTransmissionStatistics(const unsigned long long now,
                                         const size_t             addedBytes)
 {
    lock();
+
+   // ====== Update statistics ==============================================
    LastTransmission = now;
    if(FirstTransmission == 0) {
       FirstTransmission = now;
@@ -873,6 +893,7 @@ void Flow::updateTransmissionStatistics(const unsigned long long now,
    CurrentBandwidthStats.TransmittedFrames  += addedFrames;
    CurrentBandwidthStats.TransmittedPackets += addedPackets;
    CurrentBandwidthStats.TransmittedBytes   += addedBytes;
+
    unlock();
 }
 
@@ -899,14 +920,12 @@ void Flow::updateReceptionStatistics(const unsigned long long now,
    Jitter = jitter;
    
    // ====== Write line to flow's vector file ===============================
-   const Measurement* measurement =
-      MeasurementManager::getMeasurementManager()->findMeasurement(MeasurementID);
-   if( (measurement) && (measurement->getFirstStatisticsEvent() > 0) ) {
+   if( (MyMeasurement) && (MyMeasurement->getFirstStatisticsEvent() > 0) ) {
       VectorFile.printf(
          "%06llu %llu %1.6f\t"
          "%llu %1.3f %1.3f %1.3f\n",
          VectorFile.nextLine(), now,
-         (double)(now - measurement->getFirstStatisticsEvent()) / 1000000.0,
+         (double)(now - MyMeasurement->getFirstStatisticsEvent()) / 1000000.0,
          seqNumber, delay, delayDiff, jitter);
    }
    
@@ -919,7 +938,7 @@ bool Flow::activate()
    deactivate();
    assert(SocketDescriptor >= 0);
    FlowManager::getFlowManager()->getMessageReader()->registerSocket(
-      Traffic.Protocol, SocketDescriptor, 65535, false);
+      Traffic.Protocol, SocketDescriptor);
    return(start());
 }
 
@@ -943,10 +962,11 @@ void Flow::deactivate()
 
 
 // ###### Schedule next transmission event (non-saturated sender) ###########
-unsigned long long Flow::scheduleNextTransmissionEvent() const
+unsigned long long Flow::scheduleNextTransmissionEvent()
 {
    unsigned long long nextTransmissionEvent;
 
+   lock();
    if(OutputStatus == On) {
       // ====== Saturated sender ============================================
       if( (Traffic.OutboundFrameSize > 0.0) && (Traffic.OutboundFrameRate <= 0.0000001) ) {
@@ -961,6 +981,8 @@ unsigned long long Flow::scheduleNextTransmissionEvent() const
    else {
       nextTransmissionEvent = ~0;
    }
+   unlock();
+   
    return(nextTransmissionEvent);
 }
 
@@ -968,8 +990,9 @@ unsigned long long Flow::scheduleNextTransmissionEvent() const
 // ###### Schedule next status change event #################################
 unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long now)
 {
+   lock();
+   
    std::set<unsigned int>::iterator first = Traffic.OnOffEvents.begin();
-
    if((OutputStatus != WaitingForStartup) && (first != Traffic.OnOffEvents.end())) {
       const unsigned int relNextEvent = *first;
       const unsigned long long absNextEvent = BaseTime + (1000ULL * relNextEvent);
@@ -978,6 +1001,8 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
    else {
       NextStatusChangeEvent = ~0ULL;
    }
+   
+   unlock();
    return(NextStatusChangeEvent);
 }
 
@@ -985,6 +1010,7 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
 // ###### Status change event ###############################################
 void Flow::handleStatusChangeEvent(const unsigned long long now)
 {
+   lock();
    if(NextStatusChangeEvent <= now) {
       std::set<unsigned int>::iterator first = Traffic.OnOffEvents.begin();
       assert(first != Traffic.OnOffEvents.end());
@@ -1002,6 +1028,7 @@ void Flow::handleStatusChangeEvent(const unsigned long long now)
       Traffic.OnOffEvents.erase(first);
    }
    scheduleNextStatusChangeEvent(now);
+   unlock();
 }
 
 
@@ -1132,6 +1159,7 @@ void FlowManager::run()
       pollfd pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
       size_t n = 0;
       for(size_t i = 0;i  < FlowSet.size();i++) {
+         FlowSet[i]->lock();
          if( (FlowSet[i]->InputStatus != Flow::Off) &&
              (FlowSet[i]->SocketDescriptor >= 0) ) {
             pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
@@ -1143,6 +1171,7 @@ void FlowManager::run()
          else {
             FlowSet[i]->PollFDEntry = NULL;
          }
+         FlowSet[i]->unlock();
       }
       UpdatedUnidentifiedSockets = false;
       pollfd* unidentifiedSocketsPollFDIndex[UnidentifiedSockets.size()];
@@ -1164,13 +1193,17 @@ void FlowManager::run()
          const unsigned long long now = getMicroTime();
          lock();
          for(i = 0;i  < FlowSet.size();i++) {
-            if( (FlowSet[i]->PollFDEntry) &&
-                (FlowSet[i]->PollFDEntry->revents & POLLIN) ) {
+            FlowSet[i]->lock();
+            const pollfd* entry    = FlowSet[i]->PollFDEntry;
+            const int     protocol = FlowSet[i]->getTrafficSpec().Protocol;
+            FlowSet[i]->unlock();
+            // NOTE: Release the lock here, because the FlowSet enty may belong
+            //       to another stream of the socket. handleDataMessage() will
+            //       find and lock the actual FlowSet entry!
+            if( (entry) && (entry->revents & POLLIN) ) {
                 // NOTE: FlowSet[i] may not be the actual Flow!
                 //       It may be another stream of the same SCTP assoc!
-                handleDataMessage(true, now,
-                                  FlowSet[i]->getTrafficSpec().Protocol,
-                                  FlowSet[i]->PollFDEntry->fd);
+                handleDataMessage(true, now, protocol, entry->fd);
             }
          }
          if(!UpdatedUnidentifiedSockets) {
@@ -1202,26 +1235,26 @@ void FlowManager::run()
 
 
 
-MeasurementManager MeasurementManager::MeasurementManagerSingleton;
+// MeasurementManager MeasurementManager::MeasurementManagerSingleton;
 
 
-MeasurementManager::MeasurementManager()
-{
-   DisplayInterval   = 1000000;
-   FirstDisplayEvent = 0;
-   LastDisplayEvent  = 0;
-   NextDisplayEvent  = 0;
-   GlobalFlows       = 0;
-}
+// MeasurementManager::MeasurementManager()
+// {
+//    DisplayInterval   = 1000000;
+//    FirstDisplayEvent = 0;
+//    LastDisplayEvent  = 0;
+//    NextDisplayEvent  = 0;
+//    GlobalFlows       = 0;
+// }
 
    
-MeasurementManager::~MeasurementManager()
-{
-}
+// MeasurementManager::~MeasurementManager()
+// {
+// }
 
 
 // ###### Add measurement ###################################################
-bool MeasurementManager::addMeasurement(Measurement* measurement)
+bool FlowManager::addMeasurement(Measurement* measurement)
 {
    bool success = false;
 
@@ -1238,7 +1271,7 @@ bool MeasurementManager::addMeasurement(Measurement* measurement)
 
 
 // ###### Print measurements ################################################
-void MeasurementManager::printMeasurements(std::ostream& os)
+void FlowManager::printMeasurements(std::ostream& os)
 {
    os << "Measurements:" << std::endl; 
    for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
@@ -1252,7 +1285,7 @@ void MeasurementManager::printMeasurements(std::ostream& os)
    
 
 // ###### Find measurement ##################################################
-Measurement* MeasurementManager::findMeasurement(const uint64_t measurementID)
+Measurement* FlowManager::findMeasurement(const uint64_t measurementID)
 {
    std::map<uint64_t, Measurement*>::iterator found = MeasurementSet.find(measurementID);
    if(found != MeasurementSet.end()) {
@@ -1263,7 +1296,7 @@ Measurement* MeasurementManager::findMeasurement(const uint64_t measurementID)
 
 
 // ###### Remove measurement ################################################
-void MeasurementManager::removeMeasurement(Measurement* measurement)
+void FlowManager::removeMeasurement(Measurement* measurement)
 {
    lock();
    MeasurementSet.erase(measurement->MeasurementID);
@@ -1271,7 +1304,7 @@ void MeasurementManager::removeMeasurement(Measurement* measurement)
 }
 
 
-unsigned long long MeasurementManager::getNextEvent()
+unsigned long long FlowManager::getNextEvent()
 {
    unsigned long long nextEvent = NextDisplayEvent;
 
@@ -1287,16 +1320,18 @@ unsigned long long MeasurementManager::getNextEvent()
 }
 
 
-void MeasurementManager::handleEvents(const unsigned long long now)
+void FlowManager::handleEvents(const unsigned long long now)
 {
    lock();
    
    // ====== Handle statistics events =======================================
+   bool hasUpdate = false;
    for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
        Measurement* measurement = iterator->second;
        if(measurement->NextStatisticsEvent <= now) {
-          measurement->writeVectorStatistics(now, GlobalFlows, GlobalStats, RelGlobalStats);
+          measurement->writeVectorStatistics(now, GlobalStats, RelGlobalStats);
+          hasUpdate = true;
        }
    }
    
@@ -1323,7 +1358,7 @@ void MeasurementManager::handleEvents(const unsigned long long now)
                    totalDuration / 3600,
                    (totalDuration / 60) % 60,
                    totalDuration % 60,
-                   GlobalFlows,
+                   FlowSet.size(),
                    GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
                    (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
                    GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
@@ -1347,7 +1382,6 @@ void Measurement::writeScalarStatistics(const unsigned long long now)
 }
 
 void Measurement::writeVectorStatistics(const unsigned long long now,
-                                        size_t&                  globalFlows,
                                         FlowBandwidthStats&      globalStats,
                                         FlowBandwidthStats&      relGlobalStats)
 {
@@ -1366,7 +1400,7 @@ void Measurement::writeVectorStatistics(const unsigned long long now,
    // ====== Write statistics ===============================================
    FlowManager::getFlowManager()->writeVectorStatistics(
       MeasurementID, now, VectorFile,
-      globalFlows, globalStats, relGlobalStats,
+      globalStats, relGlobalStats,
       FirstStatisticsEvent, LastStatisticsEvent);
    
    // ====== Update timing ==================================================   
@@ -1415,7 +1449,7 @@ bool Measurement::initialize(const unsigned long long now,
    LastStatisticsEvent  = 0;
    NextStatisticsEvent  = 0;
 
-   if(MeasurementManager::getMeasurementManager()->addMeasurement(this)) {
+   if(FlowManager::getFlowManager()->addMeasurement(this)) {
       VectorNamePattern = (vectorNamePattern != NULL) ?
                              std::string(vectorNamePattern) : std::string(); 
       const bool s1 = VectorFile.initialize(
@@ -1436,7 +1470,7 @@ bool Measurement::initialize(const unsigned long long now,
 
 void Measurement::finish()
 {
-   MeasurementManager::getMeasurementManager()->removeMeasurement(this);
+   FlowManager::getFlowManager()->removeMeasurement(this);
    VectorFile.finish();
    ScalarFile.finish();
 }

@@ -343,7 +343,7 @@ bool performNetPerfMeterStop(int            controlSocket,
 {
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->stopMeasurement(measurementID);
-   Measurement* measurement = MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
+   Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(measurementID);
    assert(measurement != NULL);
    measurement->writeScalarStatistics(getMicroTime());
 
@@ -714,7 +714,7 @@ static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
    FlowManager::getFlowManager()->stopMeasurement(measurementID);
    bool         success     = false;
    Measurement* measurement =
-      MeasurementManager::getMeasurementManager()->findMeasurement(measurementID);
+      FlowManager::getFlowManager()->findMeasurement(measurementID);
    if(measurement) {
       measurement->writeScalarStatistics(getMicroTime());
       success = ( (((OutputFile&)measurement->getScalarFile()).finish(false)) &&
@@ -747,7 +747,7 @@ static void handleControlAssocShutdown(const sctp_assoc_t assocID)
       Flow* flow = *iterator;
       if(flow->getRemoteControlAssocID() == assocID) {
          Measurement* measurement =
-            MeasurementManager::getMeasurementManager()->findMeasurement(flow->getMeasurementID());
+            FlowManager::getFlowManager()->findMeasurement(flow->getMeasurementID());
          if(measurement) {
             delete measurement;
          }
