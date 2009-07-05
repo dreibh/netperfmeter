@@ -711,21 +711,27 @@ static bool handleNetPerfMeterStop(const NetPerfMeterStopMessage* stopMsg,
               << " ..." << std::endl;
 
    // ====== Stop flows =====================================================
+   FlowManager::getFlowManager()->lock();
    FlowManager::getFlowManager()->stopMeasurement(measurementID);
    bool         success     = false;
    Measurement* measurement =
       FlowManager::getFlowManager()->findMeasurement(measurementID);
    if(measurement) {
+      measurement->lock();
       measurement->writeScalarStatistics(getMicroTime());
       success = ( (((OutputFile&)measurement->getScalarFile()).finish(false)) &&
                   (((OutputFile&)measurement->getVectorFile()).finish(false)) );
+      measurement->unlock();
    }
+   FlowManager::getFlowManager()->unlock();
       
-   
+   // ====== Acknowledge result =============================================
    sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                measurementID, 0, 0,
                                (success == true) ? NETPERFMETER_STATUS_OKAY : 
                                                    NETPERFMETER_STATUS_ERROR);
+                                                   
+   // ====== Upload results =================================================
    if(measurement) {
       if(success) {
          uploadOutputFile(controlSocket, assocID, measurement->getVectorFile());

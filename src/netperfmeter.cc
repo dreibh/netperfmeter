@@ -52,7 +52,6 @@
 using namespace std;
 
 
-set<int>          gConnectedSocketsSet;
 const char*       gActiveNodeName  = "Client";
 const char*       gPassiveNodeName = "Server";
 int               gControlSocket   = -1;
@@ -331,7 +330,7 @@ bool mainLoop(const bool               isActiveMode,
               const unsigned long long stopAt,
               const uint64_t           measurementID)
 {
-   pollfd                 fds[5 + gConnectedSocketsSet.size()];
+   pollfd                 fds[5];
    int                    n         = 0;
    int                    controlID = -1;
    int                    tcpID     = -1;
@@ -343,13 +342,6 @@ bool mainLoop(const bool               isActiveMode,
 
 
    // ====== Get parameters for poll() ======================================
-   for(set<int>::iterator iterator = gConnectedSocketsSet.begin();
-       iterator != gConnectedSocketsSet.end();iterator++) {
-      fds[n].fd      = *iterator;
-      fds[n].events  = POLLIN;
-      fds[n].revents = 0;
-      n++;
-   }
    addToPollFDs((pollfd*)&fds, gControlSocket, n, &controlID);
    addToPollFDs((pollfd*)&fds, gTCPSocket,  n, &tcpID);
    addToPollFDs((pollfd*)&fds, gUDPSocket,  n, &udpID);
@@ -358,9 +350,8 @@ bool mainLoop(const bool               isActiveMode,
 
    
    // ====== Use poll() to wait for events ==================================
-   const int timeout = pollTimeout(now, 3,
+   const int timeout = pollTimeout(now, 2,
                                    stopAt,
-                                   FlowManager::getFlowManager()->getNextEvent(),
                                    now + 1000000);
 
 //    printf("timeout=%d\n",timeout);
@@ -414,11 +405,6 @@ bool mainLoop(const bool               isActiveMode,
    // ====== Stop-time reached ==============================================
    if(now >= stopAt) {
       gStopTimeReached = true;
-   }
-
-   // ====== Handle statistics timer ========================================
-   if(FlowManager::getFlowManager()->getNextEvent() <= now) {
-      FlowManager::getFlowManager()->handleEvents(now);
    }
    return(true);
 }

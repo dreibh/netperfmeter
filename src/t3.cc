@@ -1186,11 +1186,12 @@ void FlowManager::run()
       }
       unlock();
 
-      const int timeout = 1000;
+      const int timeout = pollTimeout(getMicroTime(), 1,
+                                      getNextEvent());
       const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
 
+      const unsigned long long now = getMicroTime();
       if(result > 0) {
-         const unsigned long long now = getMicroTime();
          lock();
          for(i = 0;i  < FlowSet.size();i++) {
             FlowSet[i]->lock();
@@ -1226,6 +1227,11 @@ void FlowManager::run()
             }
          }
          unlock();
+      }
+      
+      // ====== Handle statistics timer =====================================
+      if(getNextEvent() <= now) {
+         handleEvents(now);
       }
    } while(!isStopping());
 }
@@ -1348,23 +1354,25 @@ void FlowManager::handleEvents(const unsigned long long now)
       }
       
       // ====== Print bandwidth information line ============================
-      const double duration = (now - LastDisplayEvent) / 1000000.0;
+      const double       duration      = (now - LastDisplayEvent) / 1000000.0;
       const unsigned int totalDuration = (unsigned int)((now - FirstDisplayEvent) / 1000000ULL);
-      std::cout << "\r" << "<-- "
-         << format("Duration: %2u:%02u:%02u   "
-                   "Flows: %u   "
-                   "Transmitted: %1.2f MiB at %1.1f Kbit/s   "
-                   "Received: %1.2f MiB at %1.1f Kbit/s",
-                   totalDuration / 3600,
-                   (totalDuration / 60) % 60,
-                   totalDuration % 60,
-                   FlowSet.size(),
-                   GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
-                   (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
-                   GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
-                   (duration > 0.0) ? (8 * RelGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0)
-         << " -->" << "\x1b[0K";
-      std::cout.flush();
+      
+      // NOTE: ostream/cout has race condition problem according to helgrind.
+      //       => simply using stdout instead.
+      fprintf(stdout,
+              "\r<-- Duration: %2u:%02u:%02u   "
+              "Flows: %u   "
+              "Transmitted: %1.2f MiB at %1.1f Kbit/s   "
+              "Received: %1.2f MiB at %1.1f Kbit/s -->\x1b[0K",
+              totalDuration / 3600,
+              (totalDuration / 60) % 60,
+              totalDuration % 60,
+              (unsigned int)FlowSet.size(),
+              GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
+              (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
+              GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
+              (duration > 0.0) ? (8 * RelGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0);
+      fflush(stdout);
       
       LastDisplayEvent = now;
       RelGlobalStats.reset();
@@ -1376,9 +1384,11 @@ void FlowManager::handleEvents(const unsigned long long now)
 
 void Measurement::writeScalarStatistics(const unsigned long long now)
 {
+   lock();
    FlowManager::getFlowManager()->writeScalarStatistics(
       MeasurementID, now, ScalarFile,
       FirstStatisticsEvent);
+   unlock();
 }
 
 void Measurement::writeVectorStatistics(const unsigned long long now,
