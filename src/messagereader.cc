@@ -284,7 +284,6 @@ ssize_t MessageReader::receiveMessage(const int        sd,
    else {
       std::cerr << "ERROR: Unknown socket " << sd
                 << " given in call of MessageReader::receiveMessage()!" << std::endl;
-      abort();
       return(MRRM_BAD_SOCKET);
    }
 }

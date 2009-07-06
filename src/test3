@@ -27,8 +27,8 @@ if [ -e $DIRECTORY ] ; then
 fi
 mkdir $DIRECTORY
 
-VALGRIND=
-# VALGRIND="valgrind --tool=helgrind"
+# VALGRIND=
+VALGRIND="valgrind --tool=helgrind"
 # VALGRIND=./debug
 
 make -j2 && $VALGRIND ./netperfmeter [::1]:9000 \

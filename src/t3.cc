@@ -1247,9 +1247,10 @@ void FlowManager::run()
                if(unidentifiedSocketsPollFDIndex[i]->revents & POLLIN) {
                   if(handleNetPerfMeterData(true, now,
                                             iterator->second,
-                                            iterator->first) <= 0) {
+                                            iterator->first) == 0) {
                      // Incoming connection has already been closed -> remove it!
-printf("REMOVE INCOMING: %d\n", iterator->first);
+                     std::cout << "NOTE: Shutdown of still unidentified incoming connection "
+                               << iterator->first << "!" << std::endl;
                      removeSocket(iterator->first, true);
                      break;
                   }
