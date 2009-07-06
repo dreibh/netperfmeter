@@ -26,6 +26,8 @@
 #include <string.h>
 #include <iostream>
 
+
+// #define DEBUG_SOCKETS
 // #define DEBUG_MESSAGEREADER
 
 
@@ -75,10 +77,10 @@ bool MessageReader::registerSocket(const int    protocol,
       socket = found->second;
       socket->UseCount++;
    }
-/*
+#ifdef DEBUG_SOCKETS
    printf("RegisterSocket: UseCount[sd=%d,proto=%d]=%u\n",
           socket->SocketDescriptor, socket->Protocol, (unsigned int)socket->UseCount);
-*/
+#endif
    return(true);
 }
 
@@ -90,10 +92,10 @@ bool MessageReader::deregisterSocket(const int sd)
    if(found != SocketMap.end()) {
       Socket* socket = found->second;
       socket->UseCount--;
-/*
+#ifdef DEBUG_SOCKETS
       printf("DeregisterSocket: UseCount[sd=%d,proto=%d]=%u\n",
              socket->SocketDescriptor, socket->Protocol, (unsigned int)socket->UseCount);
-*/
+#endif
       if(socket->UseCount == 0) {
          SocketMap.erase(found);
          delete [] socket->MessageBuffer;
@@ -251,12 +253,14 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 
             // ====== Completed reading =====================================
             if(socket->MessageSize > bufferSize) {
-               std::cerr << "ERROR: Buffer size for MessageReader::receiveMessage() is too small!" << std::endl;
+               std::cerr << "ERROR: Buffer size for MessageReader::receiveMessage() is too small!"
+                         << std::endl;
                socket->Status = Socket::MRS_StreamError;
                return(MRRM_STREAM_ERROR);
             }
             if((socket->Protocol == IPPROTO_SCTP) && (!(*msgFlags & MSG_EOR))) {
-               std::cerr << "ERROR: TLV message end does not match with SCTP message end!" << std::endl;
+               std::cerr << "ERROR: TLV message end does not match with SCTP message end!"
+                         << std::endl;
                socket->Status = Socket::MRS_StreamError;
                return(MRRM_STREAM_ERROR);
             }
@@ -267,13 +271,20 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             socket->BytesRead   = 0;
             return(received);
          }
+         return(MRRM_BAD_SOCKET);
       }
       // ====== Handle read errors ==========================================
       else if(received < 0) {
          return(MRRM_SOCKET_ERROR);
       }
+      else {   // received == 0
+         return(received);
+      }
    }
-   std::cerr << "ERROR: Unknown socket " << sd
-             << " given in call of MessageReader::receiveMessage()!" << std::endl;
-   return(MRRM_BAD_SOCKET);
+   else {
+      std::cerr << "ERROR: Unknown socket " << sd
+                << " given in call of MessageReader::receiveMessage()!" << std::endl;
+      abort();
+      return(MRRM_BAD_SOCKET);
+   }
 }
