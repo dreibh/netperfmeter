@@ -21,13 +21,19 @@
 
 #include "control.h"
 #include "tools.h"
-#include "t3.h"
 
 #include <string.h>
 #include <math.h>
 #include <poll.h>
 #include <assert.h>
+
 #include <iostream>
+
+
+
+// ##########################################################################
+// #### Active Side Control                                              ####
+// ##########################################################################
 
 
 #define IDENTIFY_MAX_TRIALS 10
@@ -38,7 +44,8 @@
 static bool downloadOutputFile(const int   controlSocket,
                                const char* fileName)
 {
-   char                 messageBuffer[sizeof(NetPerfMeterResults) + NETPERFMETER_RESULTS_MAX_DATA_LENGTH];
+   char                 messageBuffer[sizeof(NetPerfMeterResults) +
+                                      NETPERFMETER_RESULTS_MAX_DATA_LENGTH];
    NetPerfMeterResults* resultsMsg = (NetPerfMeterResults*)&messageBuffer;
 
    FILE* fh = fopen(fileName, "w");
@@ -485,7 +492,8 @@ bool awaitNetPerfMeterAcknowledge(int            controlSocket,
    if( (ntoh64(ackMsg.MeasurementID) != measurementID) ||
        (ntohl(ackMsg.FlowID) != flowID) ||
        (ntohs(ackMsg.StreamID) != streamID) ) {
-      std::cerr << "ERROR: Received NETPERFMETER_ACKNOWLEDGE for wrong measurement/flow/stream!" << std::endl;
+      std::cerr << "ERROR: Received NETPERFMETER_ACKNOWLEDGE for wrong measurement/flow/stream!"
+                << std::endl;
       return(false);
    }
 
@@ -497,14 +505,9 @@ bool awaitNetPerfMeterAcknowledge(int            controlSocket,
 
 
 
-
-
-
-
-
-
-
-// ?????? passive side CTRL!
+// ##########################################################################
+// #### Passive Side Control                                             ####
+// ##########################################################################
 
 
 // ###### Upload file #######################################################
@@ -528,7 +531,6 @@ static bool uploadOutputFile(const int          controlSocket,
 
    // ====== Transmission loop ==============================================
    bool success = true;
-   setBlocking(controlSocket);
    do {
       // ====== Read chunk from file ========================================
       const size_t bytes = fread(&resultsMsg->Data, 1,
@@ -559,7 +561,6 @@ static bool uploadOutputFile(const int          controlSocket,
    if(!success) {
       sendAbort(controlSocket, assocID);
    }
-   setNonBlocking(controlSocket);
    std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
    return(success);
 }

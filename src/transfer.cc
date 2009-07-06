@@ -254,8 +254,12 @@ static void updateStatistics(Flow*                      flow,
 
    // ------ Loss calculation -----------------------------------------------
    size_t receivedFrames = 1;   // ??? To be implemented ???
+   size_t lostFrames  = 0;   // ??? To be implemented ???
+   size_t lostPackets = 0;   // ??? To be implemented ???
+   size_t lostBytes   = 0;   // ??? To be implemented ???
 
    flow->updateReceptionStatistics(
       now, receivedFrames, receivedBytes,
+      lostFrames, lostPackets, lostBytes,
       (unsigned long long)seqNumber, transitTime, diff, jitter);
 }

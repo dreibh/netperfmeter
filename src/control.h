@@ -22,14 +22,15 @@
 #ifndef CONTROL_H
 #define CONTROL_H
 
-#include "flowspec.h"
-#include "netperfmeterpackets.h"
+#include "flow.h"
 #include "messagereader.h"
-#include "tools.h"
 
 #include <ext_socket.h>
-#include <vector>
 
+
+// ##########################################################################
+// #### Active Side Control                                              ####
+// ##########################################################################
 
 bool performNetPerfMeterAddFlow(int controlSocket, const Flow* flow);
 bool performNetPerfMeterIdentifyFlow(int controlSocket, const Flow* flow);
@@ -57,13 +58,14 @@ bool awaitNetPerfMeterAcknowledge(int            controlSocket,
                                   const int      timeout = -1);
 
 
-// ?????  passive side!
+// ##########################################################################
+// #### Passive Side Control                                             ####
+// ##########################################################################
                                   
 void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                 const int                          sd,
                                 const sockaddr_union*              from);
 
-/// ???? Name
 bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
                                       int            controlSocket);
 

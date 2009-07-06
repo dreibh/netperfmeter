@@ -85,8 +85,6 @@ const char* getProtocolName(const uint8_t protocol);
 uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
 bool sendAbort(int sd, sctp_assoc_t assocID);
-bool setBlocking(int fd);
-bool setNonBlocking(int fd);
 int createAndBindSocket(const int      type,
                         const int      protocol,
                         const uint16_t localPort);
@@ -118,6 +116,5 @@ uint64_t random64();
 uint32_t random32();
 double randomDouble();
 double randomExpDouble(const double p);
-
 
 #endif

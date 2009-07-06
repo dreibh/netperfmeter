@@ -22,10 +22,9 @@
 #ifndef TRANSFER_H
 #define TRANSFER_H
 
-#include "flowspec.h"
-#include "messagereader.h"
-#include "statisticswriter.h"
-#include "netperfmeterpackets.h"
+#include "flow.h"
+
+#include <sys/types.h>
 
 
 ssize_t transmitFrame(Flow*                    flow,

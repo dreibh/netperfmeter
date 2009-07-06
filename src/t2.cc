@@ -7,16 +7,32 @@
 #include "netperfmeterpackets.h"
 
 
-/*
-char str[128];
-if(name == NULL) {
-   static int yyy=1000;
-   name = (char*)&str;
-   sprintf((char*)&str, "FILE-%03d", yyy++);
-   puts("HACK!!!???");
-   Name = std::string(name);
+/* ###### Set blocking mode ############################################## */
+bool setBlocking(int fd)
+{
+   int flags = ext_fcntl(fd,F_GETFL,0);
+   if(flags != -1) {
+      flags &= ~O_NONBLOCK;
+      if(ext_fcntl(fd,F_SETFL, flags) == 0) {
+         return(true);
+      }
+   }
+   return(false);
 }
-*/
+
+
+/* ###### Set blocking mode ############################################## */
+bool setNonBlocking(int fd)
+{
+   int flags = ext_fcntl(fd,F_GETFL,0);
+   if(flags != -1) {
+      flags |= O_NONBLOCK;
+      if(ext_fcntl(fd,F_SETFL, flags) == 0) {
+         return(true);
+      }
+   }
+   return(false);
+}
 
 
 struct Fragment

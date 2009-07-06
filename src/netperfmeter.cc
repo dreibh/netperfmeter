@@ -27,21 +27,12 @@
 #include <signal.h>
 #include <math.h>
 #include <assert.h>
-#include <bzlib.h>
-#include <netinet/in.h>
 
 #include <iostream>
-#include <vector>
-#include <set>
 
-#include "tools.h"
-#include "flowspec.h"
-#include "netperfmeterpackets.h"
+#include "flow.h"
 #include "control.h"
 #include "transfer.h"
-#include "statisticswriter.h"
-
-#include "t3.cc"
 
 
 #ifndef HAVE_DCCP

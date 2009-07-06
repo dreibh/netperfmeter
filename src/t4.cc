@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <poll.h>
 #include <sys/select.h>
@@ -38,7 +39,7 @@ int main(int argc, char** argv)
                  
             if(result > 0) {
                ssize_t r = ext_recv(sd, (char*)&buffer, sizeof(buffer), 0);
-               printf("r=%d\n", r);
+               printf("r=%d\n", (int)r);
             }
          }
       }
@@ -51,7 +52,7 @@ int main(int argc, char** argv)
             puts("Connect ...");
             if(ext_connect(sd, &in.sa, getSocklen(&in.sa)) == 0) {
                char buffer[65536];
-               printf("sent=%d\n", ext_send(sd, (char*)&buffer, 1024,0));
+               printf("sent=%d\n", (int)ext_send(sd, (char*)&buffer, 1024,0));
             }
             ext_close(sd);
          }

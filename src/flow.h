@@ -1,193 +1,39 @@
-#ifndef T3_H
-#define T3_H
+/* $Id$
+ *
+ * Network Performance Meter
+ * Copyright (C) 2009 by Thomas Dreibholz
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <iostream>
-#include <vector>
-#include <set>
-#include <map>
-#include <bzlib.h>
-#include <ext_socket.h>
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have relReceived a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Contact: dreibh@iem.uni-due.de
+ */
 
-#include <poll.h>
-#include <assert.h>
-#include <stdarg.h>
+#ifndef FLOW_H
+#define FLOW_H
 
-#include "messagereader.h"
 #include "thread.h"
+#include "messagereader.h"
+#include "outputfile.h"
+#include "flowbandwidthstats.h"
+#include "flowtrafficspec.h"
+#include "measurement.h"
 #include "tools.h"
 
+#include <poll.h>
 
-class OutputFile
-{
-   // ====== Methods ========================================================
-   public:
-   OutputFile();
-   ~OutputFile();
-   
-   bool initialize(const char* name, const bool compressFile);
-   bool finish(const bool closeFile = true);
-   bool printf(const char* str, ...);
-   
-   inline FILE* getFile() const {
-      return(File);
-   }
-   inline const std::string& getName() const {
-      return(Name);
-   }
-   inline unsigned long long getLine() const {
-      return(Line);
-   }
-   inline unsigned long long nextLine() {
-      return(++Line);
-   }
-
-   // ====== Private Data ===================================================
-   private:
-   std::string        Name;
-   unsigned long long Line;
-   FILE*              File;
-   BZFILE*            BZFile;
-   bool               WriteError;
-};
-
-
-
-
-class FlowTrafficSpec
-{
-   // ====== Methods ========================================================
-   public:
-   FlowTrafficSpec();
-   ~FlowTrafficSpec();
-
-   void print(std::ostream& os) const;
-   void reset();
-   
-
-   // ====== Public Data ====================================================
-   public:
-   static void showEntry(std::ostream& os, const double value, const uint8_t rng);
-
-   std::string            Description;
-   uint8_t                Protocol;
-   std::set<unsigned int> OnOffEvents;
-
-   double                 ReliableMode;
-   double                 OrderedMode;
-
-   uint16_t               MaxMsgSize;
-   
-   double                 OutboundFrameRate;
-   double                 OutboundFrameSize;
-   double                 InboundFrameRate;
-   double                 InboundFrameSize;
-   uint8_t                OutboundFrameRateRng;
-   uint8_t                OutboundFrameSizeRng;
-   uint8_t                InboundFrameRateRng;
-   uint8_t                InboundFrameSizeRng;
-};
-
-
-
-class FlowBandwidthStats
-{
-   // ====== Methods ========================================================
-   public:
-   FlowBandwidthStats();
-   ~FlowBandwidthStats();
-
-   void print(std::ostream& os,
-              const double  transmissionDuration,
-              const double  receptionDuration) const;
-   void reset();
-   
-
-   // ====== Public Data ====================================================
-   public:
-   unsigned long long TransmittedBytes;
-   unsigned long long TransmittedPackets;
-   unsigned long long TransmittedFrames;
-
-   unsigned long long ReceivedBytes;
-   unsigned long long ReceivedPackets;
-   unsigned long long ReceivedFrames;
-   
-   unsigned long long LostBytes;
-   unsigned long long LostPackets;
-   unsigned long long LostFrames;
-};
-
-
-FlowBandwidthStats operator+(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2);
-FlowBandwidthStats operator-(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2);
-
-
-
-
-class Measurement : public Mutex
-{
-   friend class FlowManager;
-
-   // ====== Public Methods =================================================
-   public:
-   Measurement();
-   ~Measurement();
-
-   const uint64_t getMeasurementID() const {
-      return(MeasurementID);
-   }
-   const std::string& getVectorNamePattern() const {
-      return(VectorNamePattern);
-   }
-   const OutputFile& getVectorFile() const {
-      return(VectorFile);
-   }
-   const std::string& getScalarNamePattern() const {
-      return(ScalarNamePattern);
-   }
-   const OutputFile& getScalarFile() const {
-      return(ScalarFile);
-   }
-   inline unsigned long long getFirstStatisticsEvent() const {
-      return(FirstStatisticsEvent);
-   }
-   
-   bool initialize(const unsigned long long now,
-                   const uint64_t           measurementID,
-                   const char*              vectorName,
-                   const bool               compressVectorFile,
-                   const char*              scalarName,
-                   const bool               compressScalarFile);
-   bool finish(const bool closeFiles);
-   
-   void writeScalarStatistics(const unsigned long long now);
-   void writeVectorStatistics(const unsigned long long now,
-                              FlowBandwidthStats&      globalStats,
-                              FlowBandwidthStats&      relGlobalStats);
-
-
-   // ====== Private Data ===================================================
-   private:
-   uint64_t           MeasurementID;
-   unsigned long long StatisticsInterval;
-   unsigned long long FirstStatisticsEvent;
-   unsigned long long LastStatisticsEvent;
-   unsigned long long NextStatisticsEvent;
-
-   std::string        VectorNamePattern;
-   std::string        ScalarNamePattern;
-   OutputFile         VectorFile;
-   OutputFile         ScalarFile;
-
-   unsigned long long LastTransmission;
-   unsigned long long FirstTransmission;
-   unsigned long long LastReception;
-   unsigned long long FirstReception;
-};
-
+#include <vector>
+#include <map>
 
 
 class Flow;
@@ -440,6 +286,9 @@ class Flow : public Thread
    void updateReceptionStatistics(const unsigned long long now,
                                   const size_t             addedFrames,
                                   const size_t             addedBytes,
+                                  const size_t             lostFrames,
+                                  const size_t             lostPackets,
+                                  const size_t             lostBytes,
                                   const unsigned long long seqNumber,
                                   const double             delay,
                                   const double             delayDiff,

@@ -53,7 +53,7 @@ std::string format(const char* fmt, ...)
    char buffer[16384];
    va_list va;
    va_start(va, fmt);
-   const int bufferLength = vsnprintf(buffer, sizeof(buffer), fmt, va);
+   vsnprintf(buffer, sizeof(buffer), fmt, va);
    va_end(va);
    return(std::string(buffer));
 }
@@ -608,34 +608,6 @@ bool sendAbort(int sd, sctp_assoc_t assocID)
    sinfo.sinfo_flags    = SCTP_ABORT;
    
    return(sctp_send(sd, NULL, 0, &sinfo, 0) >= 0);
-}
-
-
-/* ###### Set blocking mode ############################################## */
-bool setBlocking(int fd)
-{
-   int flags = ext_fcntl(fd,F_GETFL,0);
-   if(flags != -1) {
-      flags &= ~O_NONBLOCK;
-      if(ext_fcntl(fd,F_SETFL, flags) == 0) {
-         return(true);
-      }
-   }
-   return(false);
-}
-
-
-/* ###### Set blocking mode ############################################## */
-bool setNonBlocking(int fd)
-{
-   int flags = ext_fcntl(fd,F_GETFL,0);
-   if(flags != -1) {
-      flags |= O_NONBLOCK;
-      if(ext_fcntl(fd,F_SETFL, flags) == 0) {
-         return(true);
-      }
-   }
-   return(false);
 }
 
 
