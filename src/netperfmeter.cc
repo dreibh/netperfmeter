@@ -359,7 +359,7 @@ bool mainLoop(const bool               isActiveMode,
 
    // ====== Handle socket events ===========================================
    now = getMicroTime();   // Get current time.
-   if(result >= 0) {
+   if(result > 0) {
 
       // ====== Incoming control message ====================================
       if( (controlID >= 0) && (fds[controlID].revents & POLLIN) ) {
