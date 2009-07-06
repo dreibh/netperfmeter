@@ -51,13 +51,10 @@
 std::string format(const char* fmt, ...)
 {
    char buffer[16384];
-   
    va_list va;
    va_start(va, fmt);
    const int bufferLength = vsnprintf(buffer, sizeof(buffer), fmt, va);
-   buffer[bufferLength - 1] = 0x00;   // Just to be really sure ...
    va_end(va);
-
    return(std::string(buffer));
 }
 

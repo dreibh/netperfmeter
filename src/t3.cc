@@ -1245,9 +1245,14 @@ void FlowManager::run()
                iterator != UnidentifiedSockets.end(); iterator++) {
                assert(unidentifiedSocketsPollFDIndex[i]->fd == iterator->first);
                if(unidentifiedSocketsPollFDIndex[i]->revents & POLLIN) {
-                  handleNetPerfMeterData(true, now,
-                                         iterator->second,
-                                         iterator->first);
+                  if(handleNetPerfMeterData(true, now,
+                                            iterator->second,
+                                            iterator->first) <= 0) {
+                     // Incoming connection has already been closed -> remove it!
+printf("REMOVE INCOMING: %d\n", iterator->first);
+                     removeSocket(iterator->first, true);
+                     break;
+                  }
                   if(UpdatedUnidentifiedSockets) {
                      // NOTE: The UnidentifiedSockets set may have changed in
                      // handleDataMessage -> ... -> FlowManager::identifySocket
