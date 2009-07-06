@@ -181,6 +181,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
    const ssize_t received =
       FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
          sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
+
    if( (received > 0) && (!(flags & MSG_NOTIFICATION)) ) {
       const NetPerfMeterDataMessage*     dataMsg     =
          (const NetPerfMeterDataMessage*)&inputBuffer;

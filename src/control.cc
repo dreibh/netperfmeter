@@ -458,9 +458,12 @@ bool awaitNetPerfMeterAcknowledge(int            controlSocket,
    pfd.events  = POLLIN;
    pfd.revents = 0;
    if(ext_poll(&pfd, 1, timeout) < 1) {
+      std::cout << "<timeout> ";
+      std::cout.flush();
       return(false);
    }
    if(!(pfd.revents & POLLIN)) {
+      std::cout << "<no answer> ";
       return(false);
    }
 

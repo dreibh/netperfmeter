@@ -352,9 +352,9 @@ bool mainLoop(const bool               isActiveMode,
                                    stopAt,
                                    now + 1000000);
 
-//    printf("timeout=%d\n",timeout);
+   // printf("timeout=%d\n",timeout);
    const int result = ext_poll((pollfd*)&fds, n, timeout);
-//    printf("result=%d\n",result);
+   // printf("result=%d\n",result);
    
 
    // ====== Handle socket events ===========================================
@@ -378,9 +378,9 @@ bool mainLoop(const bool               isActiveMode,
          }
       }
       if( (udpID >= 0) && (fds[udpID].revents & POLLIN) ) {
-puts("UDP???"); exit(1);
-/*         handleDataMessage(isActiveMode, &gMessageReader, statisticsWriter, gFlowSet,
-                           now, gUDPSocket, IPPROTO_UDP, gControlSocket);*/
+         FlowManager::getFlowManager()->lock();
+         handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDPSocket);
+         FlowManager::getFlowManager()->unlock();
       }
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gSCTPSocket, NULL, 0);
@@ -436,19 +436,23 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
            << strerror(errno) << "!" << endl;
       exit(1);
    }
+
    gUDPSocket = createAndBindSocket(SOCK_DGRAM, IPPROTO_UDP, localPort);
    if(gUDPSocket < 0) {
       cerr << "ERROR: Failed to create and bind UDP socket - "
            << strerror(errno) << "!" << endl;
       exit(1);
    }
-   gMessageReader.registerSocket(IPPROTO_UDP, gUDPSocket);
+   // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
+   FlowManager::getFlowManager()->addSocket(IPPROTO_UDP, gUDPSocket);
+   
 #ifdef HAVE_DCCP
    gDCCPSocket = createAndBindSocket(SOCK_DCCP, IPPROTO_DCCP, localPort);
    if(gDCCPSocket < 0) {
       cerr << "NOTE: Your kernel does not provide DCCP support." << endl;
    }
 #endif
+
    gSCTPSocket = createAndBindSocket(SOCK_STREAM, IPPROTO_SCTP, localPort);
    if(gSCTPSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket - "
@@ -462,7 +466,6 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
            << strerror(errno) << "!" << endl;
       exit(1);
    }
-   gMessageReader.registerSocket(IPPROTO_SCTP, gSCTPSocket);
 
 
    // ====== Set options ====================================================
@@ -497,9 +500,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gMessageReader.deregisterSocket(gControlSocket);
    ext_close(gControlSocket);
    ext_close(gTCPSocket);
-   gMessageReader.deregisterSocket(gUDPSocket);
+   FlowManager::getFlowManager()->removeSocket(gUDPSocket);
    ext_close(gUDPSocket);
-   gMessageReader.deregisterSocket(gSCTPSocket);
    ext_close(gSCTPSocket);
    if(gDCCPSocket >= 0) {
       ext_close(gDCCPSocket);
@@ -663,7 +665,7 @@ int main(int argc, char** argv)
 {
    if(argc < 2) {
       cerr << "Usage: " << argv[0]
-           << " [Port|Remote Endpoint] {-tcp|-udp|-sctp|-dccp} {flow spec} ..."
+           << " [Local Port|Remote Endpoint] {-tcp|-udp|-sctp|-dccp} {flow spec} ..."
            << endl;
       exit(1);
    }

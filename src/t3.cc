@@ -952,7 +952,9 @@ void Flow::deactivate()
       stop();
       if(SocketDescriptor >= 0) {
          if(TrafficSpec.Protocol == IPPROTO_UDP) {
-            ext_close(SocketDescriptor);
+            // NOTE: There is only one UDP socket. We cannot close it here!
+            // The thread will notice the need to finish after the poll()
+            // timeout.
          }
          else {
             ext_shutdown(SocketDescriptor, 2);

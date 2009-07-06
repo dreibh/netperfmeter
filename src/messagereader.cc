@@ -53,11 +53,12 @@ bool MessageReader::registerSocket(const int    protocol,
                                    const int    sd,
                                    const size_t maxMessageSize)
 {
+   Socket*                          socket;
    std::map<int, Socket*>::iterator found = SocketMap.find(sd);
    if(found == SocketMap.end()) {
       assert(maxMessageSize >= sizeof(TLVHeader));
 
-      Socket* socket = new Socket;
+      socket = new Socket;
       assert(socket != NULL);
       socket->MessageBuffer = new char[maxMessageSize];
       assert(socket->MessageBuffer != NULL);
@@ -71,9 +72,13 @@ bool MessageReader::registerSocket(const int    protocol,
       SocketMap.insert(std::pair<int, Socket*>(sd, socket));
    }
    else {
-      Socket* socket = found->second;
+      socket = found->second;
       socket->UseCount++;
    }
+/*
+   printf("RegisterSocket: UseCount[sd=%d,proto=%d]=%u\n",
+          socket->SocketDescriptor, socket->Protocol, (unsigned int)socket->UseCount);
+*/
    return(true);
 }
 
@@ -85,6 +90,10 @@ bool MessageReader::deregisterSocket(const int sd)
    if(found != SocketMap.end()) {
       Socket* socket = found->second;
       socket->UseCount--;
+/*
+      printf("DeregisterSocket: UseCount[sd=%d,proto=%d]=%u\n",
+             socket->SocketDescriptor, socket->Protocol, (unsigned int)socket->UseCount);
+*/
       if(socket->UseCount == 0) {
          SocketMap.erase(found);
          delete [] socket->MessageBuffer;
@@ -149,6 +158,8 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          dummyFlags = 0;
          msgFlags   = &dummyFlags;
       }
+      *msgFlags |= MSG_DONTWAIT;   // NOTE: Do not block here!
+      // printf("recv(%d)...\n", socket->SocketDescriptor);
       if(socket->Protocol == IPPROTO_SCTP) {
          received = sctp_recvmsg(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
@@ -159,6 +170,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  *msgFlags, from, fromSize);
       }
+      // printf("recv(%d)=%d\n", socket->SocketDescriptor,received);
 
 
       // ====== Handle received data ========================================
@@ -261,5 +273,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          return(MRRM_SOCKET_ERROR);
       }
    }
+   std::cerr << "ERROR: Unknown socket " << sd
+             << " given in call of MessageReader::receiveMessage()!" << std::endl;
    return(MRRM_BAD_SOCKET);
 }
