@@ -977,7 +977,7 @@ void Flow::deactivate()
 // ###### Schedule next transmission event (non-saturated sender) ###########
 unsigned long long Flow::scheduleNextTransmissionEvent()
 {
-   unsigned long long nextTransmissionEvent;
+   unsigned long long nextTransmissionEvent = ~0ULL;   // No transmission
 
    lock();
    if(OutputStatus == On) {
@@ -990,9 +990,6 @@ unsigned long long Flow::scheduleNextTransmissionEvent()
          const double nextFrameRate = getRandomValue(TrafficSpec.OutboundFrameRate, TrafficSpec.OutboundFrameRateRng);
          nextTransmissionEvent = LastTransmission + (unsigned long long)rint(1000000.0 / nextFrameRate);
       }
-   }
-   else {
-      nextTransmissionEvent = ~0;
    }
    unlock();
    
@@ -1173,17 +1170,21 @@ void FlowManager::run()
    do {
       // ====== Collect PollFDs for poll() ==================================
       lock();
-      pollfd pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
-      size_t n = 0;
+      std::set<int> socketSet;
+      pollfd        pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
+      size_t        n = 0;
       for(size_t i = 0;i  < FlowSet.size();i++) {
          FlowSet[i]->lock();
          if( (FlowSet[i]->InputStatus != Flow::Off) &&
              (FlowSet[i]->SocketDescriptor >= 0) ) {
-            pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
-            pollFDs[n].events  = POLLIN;
-            pollFDs[n].revents = 0;
-            FlowSet[i]->PollFDEntry = &pollFDs[n];
-            n++;
+            if(socketSet.find(FlowSet[i]->SocketDescriptor) == socketSet.end()) {
+               pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
+               pollFDs[n].events  = POLLIN;
+               pollFDs[n].revents = 0;
+               FlowSet[i]->PollFDEntry = &pollFDs[n];
+               n++;
+               socketSet.insert(FlowSet[i]->SocketDescriptor);
+            }
          }
          else {
             FlowSet[i]->PollFDEntry = NULL;
@@ -1201,6 +1202,7 @@ void FlowManager::run()
          unidentifiedSocketsPollFDIndex[i] = &pollFDs[n];
          n++; i++;
       }
+      const unsigned long long nextEvent = getNextEvent();
       unlock();
 
       
@@ -1208,20 +1210,23 @@ void FlowManager::run()
       unsigned long long now = getMicroTime();
       const int timeout = pollTimeout(getMicroTime(), 2,
                                       now + 250000,
-                                      getNextEvent());
+                                      nextEvent);
+      // printf("timeout=%d\n", timeout);                                      
       const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
+      // printf("result=%d\n",result);
 
       
       // ====== Handle events ===============================================
+      lock();
+
       now = getMicroTime();
       if(result > 0) {
-         lock();
          // ====== Handle read events of flows ==============================
          for(i = 0;i  < FlowSet.size();i++) {
-            FlowSet[i]->lock();
+//             FlowSet[i]->lock();
             const pollfd* entry    = FlowSet[i]->PollFDEntry;
             const int     protocol = FlowSet[i]->getTrafficSpec().Protocol;
-            FlowSet[i]->unlock();
+//             FlowSet[i]->unlock();
             // NOTE: Release the lock here, because the FlowSet enty may belong
             //       to another stream of the socket. handleNetPerfMeterData()
             //       will find and lock the actual FlowSet entry!
@@ -1231,6 +1236,7 @@ void FlowManager::run()
                 handleNetPerfMeterData(true, now, protocol, entry->fd);
             }
          }
+
 
          // ====== Handle read events of yet unidentified sockets ===========
          if(!UpdatedUnidentifiedSockets) {
@@ -1252,13 +1258,14 @@ void FlowManager::run()
                i++;
             }
          }
-         unlock();
       }
       
       // ====== Handle statistics timer =====================================
       if(getNextEvent() <= now) {
          handleEvents(now);
       }
+      
+      unlock();
    } while(!isStopping());
 }
 

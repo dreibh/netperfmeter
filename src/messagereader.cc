@@ -161,7 +161,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          msgFlags   = &dummyFlags;
       }
       *msgFlags |= MSG_DONTWAIT;   // NOTE: Do not block here!
-      // printf("recv(%d)...\n", socket->SocketDescriptor);
+      // printf("recv(%d,%04x) ...\n", socket->SocketDescriptor, *msgFlags);
       if(socket->Protocol == IPPROTO_SCTP) {
          received = sctp_recvmsg(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,

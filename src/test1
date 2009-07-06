@@ -28,7 +28,7 @@ fi
 mkdir $DIRECTORY
 
 # VALGRIND=
-VALGRIND=valgrind --tool=helgrind
+VALGRIND="valgrind --tool=helgrind"
 # VALGRIND=./debug
 
 make -j2 && $VALGRIND ./netperfmeter [::1]:9000 \
