@@ -40,6 +40,6 @@ make -j2 && $VALGRIND ./netperfmeter [::1]:9000 \
    -vector=$DIRECTORY/output.vec.bz2 \
    -scalar=$DIRECTORY/output.sca.bz2 \
    -sctp \
-      const0:const0:const20:const1452:description="Video Stream #1" \
-      const0:const0:const20:const1452:description="Video Stream #2" \
+      const0:const0:const0:const1452:description="Video Stream #1" \
+      const0:const0:const0:const1452:description="Video Stream #2" \
    $@
