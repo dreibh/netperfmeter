@@ -22,7 +22,7 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 
-#include <config.h>
+#include <assert.h>
 #include <pthread.h>
 
 
