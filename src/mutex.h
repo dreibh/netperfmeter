@@ -22,6 +22,7 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 
+#include <config.h>
 #include <pthread.h>
 
 
@@ -60,6 +61,10 @@ class Mutex
 
    private:
    pthread_mutex_t MyMutex;
+#ifdef __APPLE__
+   pthread_t       MutexOwner;
+   unsigned int    MutexRecursionLevel;
+#endif
 };
 
 #endif

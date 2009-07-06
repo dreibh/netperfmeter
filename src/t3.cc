@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
+#include <math.h>
 #include <string>
 #include <iostream>
 #include <vector>
@@ -13,6 +15,7 @@
 #include <stdarg.h>
 
 #include "thread.h"
+#include "transfer.h"
 #include "messagereader.h"
 #include "tools.h"
 #include "t3.h"
