@@ -344,10 +344,12 @@ bool performNetPerfMeterStop(int            controlSocket,
                              const bool     printResults)
 {
    // ====== Stop flows =====================================================
+   FlowManager::getFlowManager()->lock();
    FlowManager::getFlowManager()->stopMeasurement(measurementID);
    Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(measurementID);
    assert(measurement != NULL);
    measurement->writeScalarStatistics(getMicroTime());
+   FlowManager::getFlowManager()->unlock();
 
    // ====== Tell passive node to stop measurement ==========================
    NetPerfMeterStopMessage stopMsg;

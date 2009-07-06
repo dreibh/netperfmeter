@@ -420,9 +420,9 @@ void FlowManager::addFlow(Flow* flow)
 // ###### Remove flow #######################################################
 void FlowManager::removeFlow(Flow* flow)
 {
+   lock();
    flow->deactivate();
 
-   lock();
    flow->PollFDEntry = NULL;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end();iterator++) {
@@ -952,6 +952,10 @@ bool Flow::activate()
 void Flow::deactivate()
 {
    if(isRunning()) {
+      lock();
+      InputStatus  = Off;
+      OutputStatus = Off;
+      unlock();
       stop();
       if(SocketDescriptor >= 0) {
          if(TrafficSpec.Protocol == IPPROTO_UDP) {
@@ -965,6 +969,7 @@ void Flow::deactivate()
       }
       waitForFinish();
       FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
+      PollFDEntry = NULL;   // Poll FD entry is now invalid!
    }
 }
 
@@ -1064,7 +1069,10 @@ void Flow::run()
       }
 
       // ====== Send outgoing data ==========================================
-      if(OutputStatus == Flow::On) {
+      lock();
+      const FlowStatus outputStatus = OutputStatus;
+      unlock();
+      if(outputStatus == Flow::On) {
          // ====== Outgoing data (saturated sender) =========================
          if( (TrafficSpec.OutboundFrameSize > 0.0) &&
              (TrafficSpec.OutboundFrameRate <= 0.0000001) ) {
