@@ -32,26 +32,27 @@
 // #### Active Side Control                                              ####
 // ##########################################################################
 
-bool performNetPerfMeterAddFlow(int controlSocket, const Flow* flow);
-bool performNetPerfMeterIdentifyFlow(int controlSocket, const Flow* flow);
-bool performNetPerfMeterStart(int            controlSocket,
+bool performNetPerfMeterAddFlow(MessageReader* messageReader,
+                                int            controlSocket,
+                                const Flow*    flow);
+bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
+                                     int            controlSocket,
+                                     const Flow*    flow);
+bool performNetPerfMeterStart(MessageReader* messageReader,
+                              int            controlSocket,
                               const uint64_t measurementID,
                               const char*    activeNodeName,
                               const char*    passiveNodeName,
                               const char*    configName,
                               const char*    vectorNamePattern,
                               const char*    scalarNamePattern);
-bool performNetPerfMeterStop(int            controlSocket,
+bool performNetPerfMeterStop(MessageReader* messageReader,
+                             int            controlSocket,
                              const uint64_t measurementID,
                              const bool     printResults = false);
 
-bool sendNetPerfMeterAcknowledge(int            controlSocket,
-                                 sctp_assoc_t   assocID,
-                                 const uint64_t measurementID,
-                                 const uint32_t flowID,
-                                 const uint16_t streamID,
-                                 const uint32_t status);
-bool awaitNetPerfMeterAcknowledge(int            controlSocket,
+bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
+                                  int            controlSocket,
                                   const uint64_t measurementID,
                                   const uint32_t flowID,
                                   const uint16_t streamID,
@@ -68,5 +69,12 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
 
 bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
                                       int            controlSocket);
+
+bool sendNetPerfMeterAcknowledge(int            controlSocket,
+                                 sctp_assoc_t   assocID,
+                                 const uint64_t measurementID,
+                                 const uint32_t flowID,
+                                 const uint16_t streamID,
+                                 const uint32_t status);
 
 #endif

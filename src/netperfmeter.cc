@@ -602,7 +602,7 @@ void activeMode(int argc, char** argv)
 
          cout << "      - Registering flow at remote node ... ";
          cout.flush();
-         if(!performNetPerfMeterAddFlow(gControlSocket, lastFlow)) {
+         if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
             cerr << endl << "ERROR: Failed to add flow to remote node!" << endl;
             exit(1);
          }
@@ -621,7 +621,7 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Start measurement ==============================================
-   if(!performNetPerfMeterStart(gControlSocket, measurementID,
+   if(!performNetPerfMeterStart(&gMessageReader, gControlSocket, measurementID,
                                 gActiveNodeName, gPassiveNodeName,
                                 configName, vectorNamePattern, scalarNamePattern)) {
       std::cerr << "ERROR: Failed to start measurement!" << std::endl;
@@ -650,7 +650,7 @@ void activeMode(int argc, char** argv)
 
    // ====== Stop measurement ===============================================
    cout << "Shutdown:" << endl;
-   if(!performNetPerfMeterStop(gControlSocket, measurementID, true)) {
+   if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID, true)) {
       std::cerr << "ERROR: Failed to stop measurement!" << std::endl;
       exit(1);
    }

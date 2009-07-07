@@ -49,7 +49,7 @@ bool OutputFile::initialize(const char* name, const bool compressFile)
       Name = std::string(name);
    }
    else {
-      Name = "(temporary file)";
+      Name = std::string();
    }
    Line = 0;
 
