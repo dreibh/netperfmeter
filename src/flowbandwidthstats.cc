@@ -80,23 +80,23 @@ void FlowBandwidthStats::print(std::ostream& os,
                                const double  transmissionDuration,
                                const double  receptionDuration) const
 {
-   const double transmittedBits       = 8 * TransmittedBytes;
-   const double transmittedBitRate    = transmittedBits / transmissionDuration;
-   const double transmittedBytes      = TransmittedBytes;
-   const double transmittedByteRate   = transmittedBytes / transmissionDuration;
-   const double transmittedPackets    = TransmittedPackets;
-   const double transmittedPacketRate = transmittedPackets / transmissionDuration;
-   const double transmittedFrames     = TransmittedFrames;
-   const double transmittedFrameRate  = transmittedFrames / transmissionDuration;
+   const unsigned long long transmittedBits       = 8 * TransmittedBytes;
+   const unsigned long long transmittedBitRate    = calculateRate(transmittedBits, transmissionDuration);
+   const unsigned long long transmittedBytes      = TransmittedBytes;
+   const unsigned long long transmittedByteRate   = calculateRate(transmittedBytes, transmissionDuration);
+   const unsigned long long transmittedPackets    = TransmittedPackets;
+   const unsigned long long transmittedPacketRate = calculateRate(transmittedPackets, transmissionDuration);
+   const unsigned long long transmittedFrames     = TransmittedFrames;
+   const unsigned long long transmittedFrameRate  = calculateRate(transmittedFrames, transmissionDuration);
 
-   const double receivedBits          = 8 * ReceivedBytes;
-   const double receivedBitRate       = receivedBits / receptionDuration;
-   const double receivedBytes         = ReceivedBytes;
-   const double receivedByteRate      = receivedBytes / receptionDuration;
-   const double receivedPackets       = ReceivedPackets;
-   const double receivedPacketRate    = receivedPackets / receptionDuration;
-   const double receivedFrames        = ReceivedFrames;
-   const double receivedFrameRate     = receivedFrames / receptionDuration;
+   const unsigned long long receivedBits          = 8 * ReceivedBytes;
+   const unsigned long long receivedBitRate       = calculateRate(receivedBits, receptionDuration);
+   const unsigned long long receivedBytes         = ReceivedBytes;
+   const unsigned long long receivedByteRate      = calculateRate(receivedBytes, receptionDuration);
+   const unsigned long long receivedPackets       = ReceivedPackets;
+   const unsigned long long receivedPacketRate    = calculateRate(receivedPackets, receptionDuration);
+   const unsigned long long receivedFrames        = ReceivedFrames;
+   const unsigned long long receivedFrameRate     = calculateRate(receivedFrames, receptionDuration);
 
    os << "      - Transmission:        " << std::endl
       << "         * Duration:         " << transmissionDuration << " s" << std::endl

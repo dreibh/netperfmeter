@@ -22,6 +22,7 @@
 #ifndef FLOWBANDWIDTHSTATS_H
 #define FLOWBANDWIDTHSTATS_H
 
+#include <math.h>
 #include <string>
 #include <iostream>
 
@@ -37,7 +38,14 @@ class FlowBandwidthStats
               const double  transmissionDuration,
               const double  receptionDuration) const;
    void reset();
-   
+
+   inline static unsigned long long calculateRate(const unsigned long long value,
+                                                  const double             duration) {
+      if(duration < 0.000001) {
+         return(0);
+      }
+      return((unsigned long long)rint(value / duration));
+   }
 
    // ====== Public Data ====================================================
    public:
