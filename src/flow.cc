@@ -958,12 +958,13 @@ unsigned long long Flow::scheduleNextTransmissionEvent()
    lock();
    if(OutputStatus == On) {
       // ====== Saturated sender ============================================
-      if( (TrafficSpec.OutboundFrameSize > 0.0) && (TrafficSpec.OutboundFrameRate <= 0.0000001) ) {
+      if( (TrafficSpec.OutboundFrameSize[0] > 0.0) && (TrafficSpec.OutboundFrameRate[0] <= 0.0000001) ) {
          nextTransmissionEvent = 0;
       }
       // ====== Non-saturated sender ========================================
-      else if( (TrafficSpec.OutboundFrameSize > 0.0) && (TrafficSpec.OutboundFrameRate > 0.0000001) ) {
-         const double nextFrameRate = getRandomValue(TrafficSpec.OutboundFrameRate, TrafficSpec.OutboundFrameRateRng);
+      else if( (TrafficSpec.OutboundFrameSize[0] > 0.0) && (TrafficSpec.OutboundFrameRate[0] > 0.0000001) ) {
+         const double nextFrameRate = getRandomValue((const double*)&TrafficSpec.OutboundFrameRate,
+                                                     TrafficSpec.OutboundFrameRateRng);
          nextTransmissionEvent = LastTransmission + (unsigned long long)rint(1000000.0 / nextFrameRate);
       }
    }
@@ -1046,14 +1047,14 @@ void Flow::run()
       unlock();
       if(outputStatus == Flow::On) {
          // ====== Outgoing data (saturated sender) =========================
-         if( (TrafficSpec.OutboundFrameSize > 0.0) &&
-             (TrafficSpec.OutboundFrameRate <= 0.0000001) ) {
+         if( (TrafficSpec.OutboundFrameSize[0] > 0.0) &&
+             (TrafficSpec.OutboundFrameRate[0] <= 0.0000001) ) {
             result = (transmitFrame(this, now) > 0);
          }
 
          // ====== Outgoing data (non-saturated sender) =====================
-         else if( (TrafficSpec.OutboundFrameSize >= 1.0) &&
-                  (TrafficSpec.OutboundFrameRate > 0.0000001) ) {
+         else if( (TrafficSpec.OutboundFrameSize[0] >= 1.0) &&
+                  (TrafficSpec.OutboundFrameRate[0] > 0.0000001) ) {
             const unsigned long long lastEvent = LastTransmission;
             if(nextTransmission <= now) {
                do {

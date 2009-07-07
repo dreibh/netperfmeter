@@ -133,8 +133,10 @@ bool performNetPerfMeterAddFlow(int controlSocket, const Flow* flow)
    addFlowMsg->StreamID      = htons(flow->getStreamID());
    addFlowMsg->Protocol      = flow->getTrafficSpec().Protocol;
    addFlowMsg->Flags         = 0x00;
-   addFlowMsg->FrameRate     = doubleToNetwork(flow->getTrafficSpec().InboundFrameRate);
-   addFlowMsg->FrameSize     = doubleToNetwork(flow->getTrafficSpec().InboundFrameSize);
+   for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+      addFlowMsg->FrameRate[i] = doubleToNetwork(flow->getTrafficSpec().InboundFrameRate[i]);
+      addFlowMsg->FrameSize[i] = doubleToNetwork(flow->getTrafficSpec().InboundFrameSize[i]);
+   }
    addFlowMsg->FrameRateRng  = flow->getTrafficSpec().InboundFrameRateRng;
    addFlowMsg->FrameSizeRng  = flow->getTrafficSpec().InboundFrameSizeRng;
    addFlowMsg->ReliableMode  = htonl((uint32_t)((long long)rint(flow->getTrafficSpec().ReliableMode * (double)0xffffffff)));
@@ -258,15 +260,23 @@ bool performNetPerfMeterStart(int            controlSocket,
       snprintf((char*)&extension, sizeof(extension), "-%08x-%04x",        flow->getFlowID(), flow->getStreamID());
       fprintf(configFile, "FLOW%u_DESCRIPTION=\"%s\"\n",                  flow->getFlowID(), flow->getTrafficSpec().Description.c_str());
       fprintf(configFile, "FLOW%u_PROTOCOL=\"%s\"\n",                     flow->getFlowID(), getProtocolName(flow->getTrafficSpec().Protocol));
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE=%f\n",              flow->getFlowID(), flow->getTrafficSpec().OutboundFrameRate);
+      for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+         fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().OutboundFrameRate[i]);
+      }
       fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG_ID=%u\n",       flow->getFlowID(), flow->getTrafficSpec().OutboundFrameRateRng);
       fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG_NAME=\"%s\"\n", flow->getFlowID(), getRandomGeneratorName(flow->getTrafficSpec().OutboundFrameRateRng));
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE=%f\n",              flow->getFlowID(), flow->getTrafficSpec().OutboundFrameSize);
+      for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+         fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().OutboundFrameSize[i]);
+      }
       fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_RNG=%u\n",          flow->getFlowID(), flow->getTrafficSpec().OutboundFrameSizeRng);
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE=%f\n",               flow->getFlowID(), flow->getTrafficSpec().InboundFrameRate);
+      for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+         fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().InboundFrameRate[i]);
+      }
       fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG_ID=%u\n",        flow->getFlowID(), flow->getTrafficSpec().InboundFrameRateRng);
       fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG_NAME=\"%s\"\n",  flow->getFlowID(), getRandomGeneratorName(flow->getTrafficSpec().InboundFrameRateRng));
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE=%f\n",               flow->getFlowID(), flow->getTrafficSpec().InboundFrameSize);
+      for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+         fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().InboundFrameSize[i]);
+      }
       fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_RNG=%u\n",           flow->getFlowID(), flow->getTrafficSpec().InboundFrameSizeRng);
       fprintf(configFile, "FLOW%u_RELIABLE=%f\n",                         flow->getFlowID(), flow->getTrafficSpec().ReliableMode);
       fprintf(configFile, "FLOW%u_ORDERED=%f\n",                          flow->getFlowID(), flow->getTrafficSpec().OrderedMode);
@@ -622,8 +632,10 @@ static bool handleNetPerfMeterAddFlow(const NetPerfMeterAddFlowMessage* addFlowM
       FlowTrafficSpec trafficSpec;
       trafficSpec.Protocol             = addFlowMsg->Protocol;
       trafficSpec.Description          = std::string(description);
-      trafficSpec.OutboundFrameRate    = networkToDouble(addFlowMsg->FrameRate);
-      trafficSpec.OutboundFrameSize    = networkToDouble(addFlowMsg->FrameSize);
+      for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+         trafficSpec.OutboundFrameRate[i] = networkToDouble(addFlowMsg->FrameRate[i]);
+         trafficSpec.OutboundFrameSize[i] = networkToDouble(addFlowMsg->FrameSize[i]);
+      }
       trafficSpec.OutboundFrameRateRng = addFlowMsg->FrameRateRng;
       trafficSpec.OutboundFrameSizeRng = addFlowMsg->FrameSizeRng;
       trafficSpec.MaxMsgSize           = ntohs(addFlowMsg->MaxMsgSize);

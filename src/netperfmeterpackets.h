@@ -63,6 +63,9 @@ struct NetPerfMeterAcknowledgeMessage
 #define NETPERFMETER_STATUS_ERROR 1
 
 
+#define NETPERFMETER_DESCRIPTION_SIZE     32
+#define NETPERFMETER_RNG_INPUT_PARAMETERS 4
+
 struct NetPerfMeterAddFlowMessage
 {
    NetPerfMeterHeader   Header;
@@ -73,13 +76,13 @@ struct NetPerfMeterAddFlowMessage
    uint8_t              Protocol;
    uint8_t              Flags;
 
-   char                 Description[32];
+   char                 Description[NETPERFMETER_DESCRIPTION_SIZE];
 
    uint32_t             ReliableMode;
    uint32_t             OrderedMode;
 
-   network_double_t     FrameRate;
-   network_double_t     FrameSize;
+   network_double_t     FrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   network_double_t     FrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
    uint8_t              FrameRateRng;
    uint8_t              FrameSizeRng;
 

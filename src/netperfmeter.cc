@@ -92,15 +92,22 @@ void printGlobalParameters()
 
 // ###### Read random number parameter ######################################
 static const char* parseNextEntry(const char* parameters,
-                                  double*     value,
+                                  double*     valueArray,
                                   uint8_t*    rng)
 {
    int n = 0;
-   if(sscanf(parameters, "exp%lf%n", value, &n) == 1) {
+   for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+      valueArray[i] = 0.0;
+   }
+   if(sscanf(parameters, "exp%lf%n", &valueArray[0], &n) == 1) {
       *rng = RANDOM_EXPONENTIAL;
    }
-   else if(sscanf(parameters, "const%lf%n", value, &n) == 1) {
+   else if(sscanf(parameters, "const%lf%n", &valueArray[0], &n) == 1) {
       *rng = RANDOM_CONSTANT;
+   }
+   else if(sscanf(parameters, "uniform%lf,%lf%n", &valueArray[0], &valueArray[1], &n) == 2) {
+      *rng = RANDOM_UNIFORM;
+      printf("%lf +/- %lf%%\n",valueArray[0],valueArray[1]*100);
    }
    else {
       cerr << "ERROR: Invalid parameters " << parameters << endl;
@@ -202,13 +209,13 @@ static Flow* createFlow(Flow*              previousFlow,
    FlowTrafficSpec trafficSpec;
    trafficSpec.Description = format("Flow %u", flowID);
    trafficSpec.Protocol    = protocol;
-   parameters = parseNextEntry(parameters, &trafficSpec.OutboundFrameRate, &trafficSpec.OutboundFrameRateRng);
+   parameters = parseNextEntry(parameters, (double*)&trafficSpec.OutboundFrameRate, &trafficSpec.OutboundFrameRateRng);
    if(parameters) {
-      parameters = parseNextEntry(parameters, &trafficSpec.OutboundFrameSize, &trafficSpec.OutboundFrameSizeRng);
+      parameters = parseNextEntry(parameters, (double*)&trafficSpec.OutboundFrameSize, &trafficSpec.OutboundFrameSizeRng);
       if(parameters) {
-         parameters = parseNextEntry(parameters, &trafficSpec.InboundFrameRate, &trafficSpec.InboundFrameRateRng);
+         parameters = parseNextEntry(parameters, (double*)&trafficSpec.InboundFrameRate, &trafficSpec.InboundFrameRateRng);
          if(parameters) {
-            parameters = parseNextEntry(parameters, &trafficSpec.InboundFrameSize, &trafficSpec.InboundFrameSizeRng);
+            parameters = parseNextEntry(parameters, (double*)&trafficSpec.InboundFrameSize, &trafficSpec.InboundFrameSizeRng);
             if(parameters) {
                while( (parameters = parseTrafficSpecOption(parameters, trafficSpec)) ) {
                }

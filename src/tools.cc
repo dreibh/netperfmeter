@@ -887,18 +887,21 @@ void sendBreak(const bool quiet)
 
 
 /* ###### Get random value using specified random number generator ####### */
-double getRandomValue(const double x, const uint8_t rng)
+double getRandomValue(const double* valueArray, const uint8_t rng)
 {
    double value;
    switch(rng) {
       case RANDOM_CONSTANT:
-         value = x;
+         value = valueArray[0];
        break;
       case RANDOM_EXPONENTIAL:
-         value = randomExpDouble(x);
+         value = randomExpDouble(valueArray[0]);
        break;
-      case RANDOM_UNIFORM:
-         value = x * randomDouble();
+      case RANDOM_UNIFORM: {
+         const double lowest  = valueArray[0] - valueArray[1]*valueArray[0];
+         const double highest = valueArray[0] + valueArray[1]*valueArray[0];
+         value = lowest + (randomDouble() * (highest - lowest));
+        }
        break;
       default:
          assert(false);

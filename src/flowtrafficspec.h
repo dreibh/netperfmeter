@@ -44,7 +44,7 @@ class FlowTrafficSpec
 
    // ====== Public Data ====================================================
    public:
-   static void showEntry(std::ostream& os, const double value, const uint8_t rng);
+   static void showEntry(std::ostream& os, const double* valueArray, const uint8_t rng);
 
    std::string            Description;
    uint8_t                Protocol;
@@ -55,10 +55,10 @@ class FlowTrafficSpec
 
    uint16_t               MaxMsgSize;
    
-   double                 OutboundFrameRate;
-   double                 OutboundFrameSize;
-   double                 InboundFrameRate;
-   double                 InboundFrameSize;
+   double                 OutboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   double                 OutboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   double                 InboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   double                 InboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
    uint8_t                OutboundFrameRateRng;
    uint8_t                OutboundFrameSizeRng;
    uint8_t                InboundFrameRateRng;

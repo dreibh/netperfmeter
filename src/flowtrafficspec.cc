@@ -37,22 +37,29 @@ FlowTrafficSpec::~FlowTrafficSpec()
 
 // ###### Show configuration entry (value + random number generator) ########
 void FlowTrafficSpec::showEntry(std::ostream& os,
-                                const double  value,
+                                const double* valueArray,
                                 const uint8_t rng)
 {
    char str[256];
 
-   const char* rngName = "unknown?!";
    switch(rng) {
       case RANDOM_CONSTANT:
-         rngName = "constant";
+         snprintf((char*)&str, sizeof(str), "%1.6lf (constant)",
+                  valueArray[0]);
        break;
       case RANDOM_EXPONENTIAL:
-         rngName = "negative exponential";
+         snprintf((char*)&str, sizeof(str), "%1.6lf (neg. exp.)",
+                  valueArray[0]);
+       break;
+      case RANDOM_UNIFORM:
+         snprintf((char*)&str, sizeof(str), "%1.6lf +/- %1.3lf%% (uniform)",
+                  valueArray[0], 100.0 * valueArray[1]);
+       break;
+      default:
+         snprintf((char*)&str, sizeof(str), "unknown?!");
        break;
    }
 
-   snprintf((char*)&str, sizeof(str), "%1.6lf (%s)", value, rngName);
    os << str;
 }
 
@@ -63,16 +70,16 @@ void FlowTrafficSpec::print(std::ostream& os) const
    os << "      - Max. Message Size:   "
       << MaxMsgSize << std::endl;
    os << "      - Outbound Frame Rate: ";
-   showEntry(os, OutboundFrameRate, OutboundFrameRateRng);
+   showEntry(os, (const double*)&OutboundFrameRate, OutboundFrameRateRng);
    os << std::endl;
    os << "      - Outbound Frame Size: ";
-   showEntry(os, OutboundFrameSize, OutboundFrameSizeRng);
+   showEntry(os, (const double*)&OutboundFrameSize, OutboundFrameSizeRng);
    os << std::endl;
    os << "      - Inbound Frame Rate:  ";
-   showEntry(os, InboundFrameRate, InboundFrameRateRng);
+   showEntry(os, (const double*)&InboundFrameRate, InboundFrameRateRng);
    os << std::endl;
    os << "      - Inbound Frame Size:  ";
-   showEntry(os, InboundFrameSize, InboundFrameSizeRng);
+   showEntry(os, (const double*)&InboundFrameSize, InboundFrameSizeRng);
    os << std::endl;
    if(Protocol == IPPROTO_SCTP) {
       char ordered[32];
@@ -106,15 +113,17 @@ void FlowTrafficSpec::print(std::ostream& os) const
 // ###### Reset FlowTrafficSpec #############################################
 void FlowTrafficSpec::reset()
 {
-   MaxMsgSize               = 16000;
-   OrderedMode              = 1.0;
-   ReliableMode             = 1.0;
-   OutboundFrameRate        = 0.0;
-   OutboundFrameSize        = 0.0;
-   OutboundFrameRateRng     = RANDOM_CONSTANT;
-   OutboundFrameSizeRng     = RANDOM_CONSTANT;
-   InboundFrameRate         = 0.0;
-   InboundFrameSize         = 0.0;
-   InboundFrameRateRng      = RANDOM_CONSTANT;
-   InboundFrameSizeRng      = RANDOM_CONSTANT;
+   MaxMsgSize   = 16000;
+   OrderedMode  = 1.0;
+   ReliableMode = 1.0;
+   for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+      OutboundFrameRate[i] = 0.0;
+      OutboundFrameSize[i] = 0.0;
+      InboundFrameRate[i]  = 0.0;
+      InboundFrameSize[i]  = 0.0;
+   }
+   OutboundFrameRateRng = RANDOM_CONSTANT;
+   OutboundFrameSizeRng = RANDOM_CONSTANT;
+   InboundFrameRateRng  = RANDOM_CONSTANT;
+   InboundFrameSizeRng  = RANDOM_CONSTANT;
 }

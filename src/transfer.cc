@@ -128,7 +128,7 @@ ssize_t transmitFrame(Flow*                    flow,
 {
    // ====== Obtain length of data to send ==================================
    size_t bytesToSend =
-      (size_t)rint(getRandomValue(flow->getTrafficSpec().OutboundFrameSize,
+      (size_t)rint(getRandomValue((const double*)&flow->getTrafficSpec().OutboundFrameSize,
                                   flow->getTrafficSpec().OutboundFrameSizeRng));
    if(bytesToSend == 0) {
       // On POLLOUT, we generate a maximum-sized message. If there is still space
