@@ -27,6 +27,7 @@
 #include <string.h>
 #include <assert.h>
 #include <signal.h>
+#include <poll.h>
 #include <math.h>
 
 #include <ctype.h>
@@ -1012,3 +1013,72 @@ double randomExpDouble(const double p)
 {
    return( -p * log(randomDouble()) );
 }
+
+
+#ifdef __APPLE__
+#warning Using poll() to select() wrapper to work around broken Apple poll().
+int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
+{
+   // ====== Prepare timeout setting ========================================
+   struct       timeval  timeout;
+   struct       timeval* to;
+   int          fdcount = 0;
+   int          n;
+   int          result;
+   unsigned int i;
+
+   if(time < 0)
+      to = NULL;
+   else {
+      to = &timeout;
+      timeout.tv_sec  = time / 1000;
+      timeout.tv_usec = (time % 1000) * 1000;
+   }
+
+   // ====== Prepare FD settings ============================================
+   fd_set readfdset;
+   fd_set writefdset;
+   fd_set exceptfdset;
+   FD_ZERO(&readfdset);
+   FD_ZERO(&writefdset);
+   FD_ZERO(&exceptfdset);
+   n = 0;
+   for(i = 0; i < count; i++) {
+      if(fdlist[i].fd < 0) {
+         continue;
+      }
+      if(fdlist[i].events & POLLIN) {
+         FD_SET(fdlist[i].fd, &readfdset);
+      }
+      if(fdlist[i].events & POLLOUT) {
+         FD_SET(fdlist[i].fd, &writefdset);
+      }
+      FD_SET(fdlist[i].fd, &exceptfdset);
+      n = std::max(n, fdlist[i].fd);
+      fdcount++;
+   }
+   for(i = 0;i < count;i++) {
+      fdlist[i].revents = 0;
+   }
+
+   // ====== Do ext_select() ================================================
+   result = ext_select(n + 1, &readfdset, &writefdset ,&exceptfdset, to);
+   if(result < 0) {
+      return(result);
+   }
+
+   // ====== Set result flags ===============================================
+   for(i = 0;i < count;i++) {
+      if(FD_ISSET(fdlist[i].fd,&readfdset) && (fdlist[i].events & POLLIN)) {
+         fdlist[i].revents |= POLLIN;
+      }
+      if(FD_ISSET(fdlist[i].fd,&writefdset) && (fdlist[i].events & POLLOUT)) {
+         fdlist[i].revents |= POLLOUT;
+      }
+      if(FD_ISSET(fdlist[i].fd,&exceptfdset)) {
+         fdlist[i].revents |= POLLERR;
+      }
+   }
+   return(result);
+}
+#endif

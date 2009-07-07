@@ -662,7 +662,7 @@ void FlowManager::run()
                                       now + 250000,
                                       nextEvent);
       // printf("timeout=%d\n", timeout);                                      
-      const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
+      const int result = ext_poll_wrapper((pollfd*)&pollFDs, n, timeout);
       // printf("result=%d\n",result);
 
       
@@ -1036,7 +1036,7 @@ void Flow::run()
          int timeout = pollTimeout(now, 2,
                                    now + 1000000,
                                    nextEvent);
-         ext_poll(NULL, 0, timeout);
+         ext_poll_wrapper(NULL, 0, timeout);
          now = getMicroTime();
       }
 

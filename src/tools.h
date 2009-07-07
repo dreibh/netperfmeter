@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <poll.h>
 #include <errno.h>
 
 #include <sys/types.h>
@@ -116,5 +117,15 @@ uint64_t random64();
 uint32_t random32();
 double randomDouble();
 double randomExpDouble(const double p);
+
+#ifdef __APPLE__
+// Apple's poll() function is broken. We need a wrapper to select() here!
+int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time);
+#else
+inline int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
+{
+   return(ext_poll(fdlist, count, time));
+}
+#endif
 
 #endif
