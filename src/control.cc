@@ -742,6 +742,16 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       success = measurement->finish(false);
       measurement->unlock();
    }
+   
+   // ====== Remove pointer to Measurement from its flows ===================
+   for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+      iterator != FlowManager::getFlowManager()->getFlowSet().end();
+      iterator++) {
+      Flow* flow = *iterator;
+      if(flow->getMeasurement() == measurement) {
+         flow->setMeasurement(NULL);
+      }
+   }
    FlowManager::getFlowManager()->unlock();
       
    // ====== Acknowledge result =============================================

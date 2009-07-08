@@ -25,6 +25,7 @@
 #include "mutex.h"
 #include "outputfile.h"
 #include "flowbandwidthstats.h"
+#include "tools.h"
 
 
 class Measurement : public Mutex

@@ -35,8 +35,7 @@ make -j2 &&  $VALGRIND ./netperfmeter [::1]:9000 \
    "-activenodename=Video-Client" \
    "-passivenodename=Video-Server" \
    -runtime=30 \
-   -maxmsgsize=4096 \
    -config=$DIRECTORY/output.config \
    -vector=$DIRECTORY/output.vec.bz2 \
    -scalar=$DIRECTORY/output.sca.bz2 \
-   -udp const2:const1000:const3:const500:description="Videodatenstrom" $@
+   -sctp const2:const1000:const3:const500:description="Videodatenstrom" $@

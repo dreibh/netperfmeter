@@ -301,7 +301,7 @@ class Flow : public Thread
    void setSocketDescriptor(const int  socketDescriptor,
                             const bool originalSocketDescriptor = true);
    bool activate();
-   void deactivate();
+   void deactivate(const bool asyncStop = false);
 
    protected:
    virtual void run();

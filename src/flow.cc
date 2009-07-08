@@ -214,14 +214,26 @@ void FlowManager::stopMeasurement(const uint64_t           measurementID,
                                   const unsigned long long now)
 {
    lock();
-   for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
-      Flow* flow = *iterator;
-      if(flow->MeasurementID == measurementID) {
-         // ====== Stop flow ================================================
-         flow->deactivate();
-         if(printFlows) {
-            flow->print(std::cout, true);
+   // We make a two-staged stopping process here:
+   // In stage 0, the flows' sender threads are told to stop.
+   //   => all threads can perform shutdown simultaneously
+   //   => much faster if there are many flows
+   // In stage 1, we wait until the threads have stopped.
+   for(unsigned int stage = 0;stage < 2;stage++) {
+      for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
+         iterator != FlowSet.end();iterator++) {
+         Flow* flow = *iterator;
+         if(flow->MeasurementID == measurementID) {
+            // ====== Stop flow ================================================
+            if(stage == 0) {
+               flow->deactivate(true);
+            }
+            else {
+               flow->deactivate(false);
+               if(printFlows) {
+                  flow->print(std::cout, true);
+               }
+            }
          }
       }
    }
@@ -925,7 +937,7 @@ bool Flow::activate()
 
 
 // ###### Stop flow's transmission thread ###################################
-void Flow::deactivate()
+void Flow::deactivate(const bool asyncStop)
 {
    if(isRunning()) {
       lock();
@@ -943,9 +955,11 @@ void Flow::deactivate()
             ext_shutdown(SocketDescriptor, 2);
          }
       }
-      waitForFinish();
-      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
-      PollFDEntry = NULL;   // Poll FD entry is now invalid!
+      if(!asyncStop) {
+         waitForFinish();
+         FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
+         PollFDEntry = NULL;   // Poll FD entry is now invalid!
+      }
    }
 }
 
