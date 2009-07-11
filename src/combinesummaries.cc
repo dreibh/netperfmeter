@@ -43,9 +43,10 @@ void addDataFile(const char*   varNames,
                  unsigned int& outPos)
 {
    unsigned int line;
-   char         outBuffer[16384 + 4096];
-   char         inBuffer[16384];
-   char         storage[sizeof(inBuffer) + 1];
+   const size_t bufferSize = 16384;
+   char         outBuffer[bufferSize + 512];
+   char         inBuffer[bufferSize + 16];
+   char         storage[bufferSize + 16];
    int          bzerror;
    size_t       bytesRead;
    size_t       storageSize = 0;
@@ -78,10 +79,10 @@ void addDataFile(const char*   varNames,
    for(;;) {
       memcpy((char*)&inBuffer, storage, storageSize);
       if(inBZFile) {
-         bytesRead = BZ2_bzRead(&bzerror, inBZFile, (char*)&inBuffer[storageSize], sizeof(inBuffer) - storageSize);
+         bytesRead = BZ2_bzRead(&bzerror, inBZFile, (char*)&inBuffer[storageSize], bufferSize - storageSize);
       }
       else {
-         bytesRead = fread((char*)&inBuffer[storageSize], 1, sizeof(inBuffer) - storageSize, inFile);
+         bytesRead = fread((char*)&inBuffer[storageSize], 1, bufferSize - storageSize, inFile);
       }
       if(bytesRead <= 0) {
          bytesRead = 0;
