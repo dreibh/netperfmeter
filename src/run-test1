@@ -1,0 +1,41 @@
+#!/bin/bash
+
+Variables="Flows FrameRate FrameSize"
+
+Flows_VALUES="1 2 5"
+FrameRate_VALUES="const0 const20"
+FrameSize_VALUES="const1452"
+
+
+perform_run ()
+{
+   # ====== Generate all setting of the current variable $1 =================
+   if [ "$1" != "" ] ; then
+      local varName="$1"
+      local varValues=`eval "echo \\\$$varName""_VALUES"`
+      local value
+      if [ "$varValues" = "" ] ; then
+         echo >&2 "ERROR: No settings for variable $varName found!"
+         exit 1
+      fi
+      shift
+      for value in $varValues ; do
+         # ====== Use setting $value and recursively set other variables ====
+         eval "$varName=$value"
+         perform_run $@
+      done
+
+   # ====== All variables have been set -> generate a run ===================
+   else
+      echo -n -e "Run for:\t"
+      for vN in $Variables ; do
+         eval "e=\$$vN"
+         echo -n -e "$vN=$e\t"
+      done
+     echo ""
+   fi
+}
+
+
+
+perform_run $Variables
