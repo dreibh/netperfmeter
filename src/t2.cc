@@ -7,52 +7,10 @@
 #include "netperfmeterpackets.h"
 
 
-/* ###### Set blocking mode ############################################## */
-bool setBlocking(int fd)
-{
-   int flags = ext_fcntl(fd,F_GETFL,0);
-   if(flags != -1) {
-      flags &= ~O_NONBLOCK;
-      if(ext_fcntl(fd,F_SETFL, flags) == 0) {
-         return(true);
-      }
-   }
-   return(false);
-}
-
-
-/* ###### Set blocking mode ############################################## */
-bool setNonBlocking(int fd)
-{
-   int flags = ext_fcntl(fd,F_GETFL,0);
-   if(flags != -1) {
-      flags |= O_NONBLOCK;
-      if(ext_fcntl(fd,F_SETFL, flags) == 0) {
-         return(true);
-      }
-   }
-   return(false);
-}
-
-
-struct Fragment
-{
-   uint64_t PacketSeqNumber;
-   uint64_t ByteSeqNumber;
-   uint16_t Length;
-   uint8_t  Flags;
-};
-
-struct Frame
-{
-   uint32_t                      FrameID;
-   unsigned long long            LastUpdate;
-   std::map<uint64_t, Fragment*> FragmentSet;
-};
-
 
 class Defragmenter
 {
+   // ====== Public Methods =================================================
    public:
    Defragmenter();
    ~Defragmenter();
@@ -63,22 +21,45 @@ class Defragmenter
                     const NetPerfMeterDataMessage* dataMsg);
    void purge(const unsigned long long now,
               const unsigned long long defragmentTimeout,
-              unsigned long long&      lostBytes,
-              unsigned long long&      lostPackets,
-              unsigned long long&      lostFrames);
-   
+              size_t&                  lostBytes,
+              size_t&                  lostPackets,
+              size_t&                  lostFrames);
+
+
+   // ====== Private Data ===================================================
    private:
+   struct Fragment
+   {
+      uint64_t PacketSeqNumber;
+      uint64_t ByteSeqNumber;
+      uint16_t Length;
+      uint8_t  Flags;
+   };
+   struct Frame
+   {
+      uint32_t                      FrameID;
+      unsigned long long            LastUpdate;
+      std::map<uint64_t, Fragment*> FragmentSet;
+   };
+
    bool checkFrame(Frame* frame);
    
    std::map<uint32_t, Frame*> FrameSet;
+   uint64_t                   LastPacketSeqNumber;
+   uint64_t                   LastByteSeqNumber;
+   uint32_t                   LastFrameID;
+   bool                       Synchronized;
 };
 
 
+// ###### Constructor #######################################################
 Defragmenter::Defragmenter()
 {
+   Synchronized = false;
 }
 
 
+// ###### Destructor ########################################################
 Defragmenter::~Defragmenter()
 {
 }
@@ -98,7 +79,14 @@ void Defragmenter::print(std::ostream& os)
          Fragment* fragment = fragmentIterator->second;
          os << "      + Fragment " << fragment->PacketSeqNumber << ":\t"
             << "ByteSeq=" << fragment->ByteSeqNumber
-            << ", Length=" << fragment->Length << std::endl;
+            << ", Length=" << fragment->Length << "   ";
+         if(fragment->Flags & NPMDF_FRAME_BEGIN) {
+            os << "<Begin> ";
+         }
+         if(fragment->Flags & NPMDF_FRAME_END) {
+            os << "<End> ";
+         }
+         os << std::endl;
       }
    }
 }
@@ -112,18 +100,18 @@ bool Defragmenter::checkFrame(Frame* frame)
    for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
        fragmentIterator != frame->FragmentSet.end(); fragmentIterator++) {
       const Fragment* fragment = fragmentIterator->second;
-      if(fragment->Flags & DHF_FRAME_BEGIN) {
+      if(fragment->Flags & NPMDF_FRAME_BEGIN) {
          if(beginFound) {
             std::cout << "Malformed frame " << frame->FrameID
-                      << ": multiple DHF_FRAME_BEGIN!" << std::endl;
+                      << ": multiple NPMDF_FRAME_BEGIN!" << std::endl;
             return(false);
          }
          beginFound = false;
       }
-      if(fragment->Flags & DHF_FRAME_END) {
+      if(fragment->Flags & NPMDF_FRAME_END) {
          if(endFound) {
             std::cout << "Malformed frame " << frame->FrameID
-                      << ": multiple DHF_FRAME_END!" << std::endl;
+                      << ": multiple NPMDF_FRAME_END!" << std::endl;
             return(false);
          }
          endFound = false;
@@ -180,16 +168,78 @@ void Defragmenter::addFragment(const unsigned long long       now,
 // ###### Purge incomplete frames from Defragmenter #########################
 void Defragmenter::purge(const unsigned long long now,
                          const unsigned long long defragmentTimeout,
-                         unsigned long long&      lostBytes,
-                         unsigned long long&      lostPackets,
-                         unsigned long long&      lostFrames)
+                         size_t&                  lostBytes,
+                         size_t&                  lostPackets,
+                         size_t&                  lostFrames)
 {
+   lostBytes   = 0;
+   lostPackets = 0;
+   lostFrames  = 0;
+   
+   Frame*                               frame;
+   for(std::map<uint32_t, Frame*>::iterator frameIterator = FrameSet.begin();
+       frameIterator != FrameSet.end(); frameIterator++) {
+      Frame* frame = frameIterator->second;
+
+      size_t n        = 0;
+      bool   hasBegin = false;
+      bool   hasEnd   = false;
+      for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
+          fragmentIterator != frame->FragmentSet.end(); fragmentIterator++, n++) {
+         Fragment* fragment = fragmentIterator->second;
+      
+         if( (n == 0) && (fragment->Flags & NPMDF_FRAME_BEGIN) ) {
+            hasBegin = true;
+         }
+         if(fragment->Flags & NPMDF_FRAME_END) {
+            hasEnd = true;
+         }
+         
+         
+      
+/*         if(!Synchronized) {
+            LastPacketSeqNumber = fragment->PacketSeqNumber;
+            LastByteSeqNumber   = fragment->ByteSeqNumber;
+            LastFrameID         = frame->FrameID;
+         }*/
+         
+         
+      }
+   }
 }
 
 
 
 using namespace std;
 
+Defragmenter gDefrag;
+
+
+void add(unsigned long long now,
+         uint32_t frameID, uint64_t seqNum, uint64_t byteSeq, uint8_t flags = 0)
+{
+   NetPerfMeterDataMessage d;
+   d.Header.Flags = flags;
+   d.Header.Length = htons(1000 + sizeof(d));
+   d.FrameID = htonl(frameID);
+   d.SeqNumber = hton64(seqNum);
+   d.ByteSeqNumber = hton64(byteSeq);
+   gDefrag.addFragment(now, &d);
+}
+
+
+
 int main(int argc, char** argv)
 {
+   size_t b,p,f;
+
+   add(1000000,   1,    0,   0, NPMDF_FRAME_BEGIN);
+   add(1000001,   1,    1,   1000);
+   add(1000002,   1,    2,   2000, NPMDF_FRAME_END);
+
+   add(1000002,   2,    4,   4000, NPMDF_FRAME_BEGIN);
+   
+   gDefrag.print(cout);
+   gDefrag.purge(5000000, 1000000, b, p, f);
+   printf("=> b=%d, p=%d, f=%d\n", (int)b, (int)p, (int)f);
 }
