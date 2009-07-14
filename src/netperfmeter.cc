@@ -130,14 +130,18 @@ static const char* parseNextEntry(const char* parameters,
 
 // ###### Read flow option ##################################################
 static const char* parseTrafficSpecOption(const char*      parameters,
-                                          FlowTrafficSpec& trafficSpec)
+                                          FlowTrafficSpec& trafficSpec,
+                                          uint32_t&        flowID)
 {
    char   description[256];
    int    n        = 0;
    double dblValue = 0.0;
    int    intValue = 0;
 
-   if(sscanf(parameters, "maxmsgsize=%u%n", &intValue, &n) == 1) {
+   if(sscanf(parameters, "id=%u%n", &intValue, &n) == 1) {
+      flowID = (uint32_t)intValue;
+   }
+   else if(sscanf(parameters, "maxmsgsize=%u%n", &intValue, &n) == 1) {
       if(intValue > 65535) {
          intValue = 65535;
       }
@@ -215,8 +219,7 @@ static Flow* createFlow(Flow*              previousFlow,
 
    // ====== Get FlowTrafficSpec ============================================
    FlowTrafficSpec trafficSpec;
-   trafficSpec.Description = format("Flow %u", flowID);
-   trafficSpec.Protocol    = protocol;
+   trafficSpec.Protocol = protocol;
    parameters = parseNextEntry(parameters, (double*)&trafficSpec.OutboundFrameRate, &trafficSpec.OutboundFrameRateRng);
    if(parameters) {
       parameters = parseNextEntry(parameters, (double*)&trafficSpec.OutboundFrameSize, &trafficSpec.OutboundFrameSizeRng);
@@ -225,14 +228,21 @@ static Flow* createFlow(Flow*              previousFlow,
          if(parameters) {
             parameters = parseNextEntry(parameters, (double*)&trafficSpec.InboundFrameSize, &trafficSpec.InboundFrameSizeRng);
             if(parameters) {
-               while( (parameters = parseTrafficSpecOption(parameters, trafficSpec)) ) {
+               while( (parameters = parseTrafficSpecOption(parameters, trafficSpec, flowID)) ) {
                }
             }
          }
       }
    }
+   if(trafficSpec.Description == "") {
+      trafficSpec.Description = format("Flow %u", flowID);
+   }
 
    // ====== Create new flow ================================================
+   if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID) != NULL) {
+      std::cerr << "ERROR: Flow ID " << flowID << " is used twice. Ensure correct id=<ID> parameters!" << std::endl;
+      exit(1);
+   }
    Flow* flow = new Flow(measurementID,
                          flowID, streamID, trafficSpec);
    assert(flow != NULL);

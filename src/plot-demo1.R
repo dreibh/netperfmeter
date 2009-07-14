@@ -33,10 +33,11 @@ plotConfigurations <- list(
    # ------------------------------------------------------------------------
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBytes.pdf"),
-        "Receiver's Perspective", NA, NA, list(1,0),
+        "Receiver's Perspective", NA, NA, list(1,1),
         "Flows", "passive.flow-ReceivedBytes",
         "passive.flow", "OnlyOneAssoc", "",
-        "", "", "")
+        "", "", "",
+        "(data1$passive.flow == 1) | (data1$passive.flow == 1001)")
 )
 
 
