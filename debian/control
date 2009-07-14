@@ -8,7 +8,7 @@ Standards-Version: 3.8.1
 
 Package: pdfproctools
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, perl (>= 5.8.0), libpdf-api2-perl
+Depends: ${shlibs:Depends}, ${misc:Depends}, perl (>= 5.8.0), libpdf-api2-perl, ghostscript
 Replaces: pdfmetadata, pdftools
 Conflicts: pdfmetadata, pdftools
 Description: PDF Processing Tools
@@ -35,7 +35,7 @@ Description: GNU R Data Table Processing Tools
 
 Package: netperfmeter
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, datatabletools, pdfproctools, r-base, ghostscript, perl (>= 5.8.0), libpdf-api2-perl
+Depends: ${shlibs:Depends}, ${misc:Depends}, r-base, datatabletools, pdfproctools, md5deep
 Replaces: netmeter (<= 0.5.1)
 Conflicts: netmeter (<= 0.5.1)
 Recommends: traceroute, iputils-tracepath, iputils-ping, rsplib-tools, subnetcalc (>= 2.0.2)

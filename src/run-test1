@@ -1,7 +1,7 @@
 #!/bin/bash
 
 Directory="TEST1"
-RemoteNode="127.0.0.1:9000"
+RemoteNode="87.139.124.106:9000"
 Variables="Run Runtime Flows OnlyOneAssoc FrameRate FrameSize"
 
 Run_VALUES="1"
@@ -125,7 +125,7 @@ make_runs ()
       done
       echo "====="
 
-      local runHash="`echo $runLabel | md5sum | sed -e "s/  -//g"`"
+      local runHash="`echo $runLabel | md5deep`"
       local runDirectory="$Directory/Run-$runHash"
       local runStatus="$runDirectory/status.txt"
 
