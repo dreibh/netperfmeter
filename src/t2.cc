@@ -7,6 +7,9 @@
 #include "netperfmeterpackets.h"
 
 
+unsigned int         gQuietMode       = 0;
+
+
 
 class Defragmenter
 {

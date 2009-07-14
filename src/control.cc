@@ -30,6 +30,8 @@
 #include <iostream>
 
 
+extern unsigned int gQuietMode;
+
 
 // ##########################################################################
 // #### Active Side Control                                              ####
@@ -237,8 +239,7 @@ bool performNetPerfMeterStart(MessageReader* messageReader,
                               const char*    passiveNodeName,
                               const char*    configName,
                               const char*    vectorNamePattern,
-                              const char*    scalarNamePattern,
-                              const bool     printFlows)
+                              const char*    scalarNamePattern)
 {
    // ====== Write config file ==============================================
    FILE* configFile = fopen(configName, "w");
@@ -306,7 +307,7 @@ bool performNetPerfMeterStart(MessageReader* messageReader,
                            hasSuffix(vectorNamePattern, ".bz2"),
                            scalarNamePattern,                                             
                            hasSuffix(scalarNamePattern, ".bz2"),
-                           printFlows);
+                           (gQuietMode < 1));
    if(success) {
       // ====== Tell passive node to start measurement ======================
       NetPerfMeterStartMessage startMsg;
@@ -372,8 +373,7 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
 // ###### Stop measurement ##################################################
 bool performNetPerfMeterStop(MessageReader* messageReader,
                              int            controlSocket,
-                             const uint64_t measurementID,
-                             const bool     printResults)
+                             const uint64_t measurementID)
 {
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
@@ -437,7 +437,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
             delete measurement;
             return(false);
          }
-         if(printResults) {
+         if(gQuietMode < 1) {
             flow->print(std::cout, true);
          }
          delete flow;
@@ -527,8 +527,10 @@ static bool uploadOutputFile(const int          controlSocket,
    sinfo.sinfo_ppid        = PPID_NETPERFMETER_CONTROL;
    resultsMsg->Header.Type = NETPERFMETER_RESULTS;
 
-   std::cout << std::endl << "Uploading results ";
-   std::cout.flush();
+   if(gQuietMode < 1) {
+      std::cout << std::endl << "Uploading results ";
+      std::cout.flush();
+   }
 
    // ====== Transmission loop ==============================================
    bool success = true;
@@ -554,7 +556,9 @@ static bool uploadOutputFile(const int          controlSocket,
          success = false;
          break;
       }
-      std::cout << ".";
+      if(gQuietMode < 1) {
+         std::cout << ".";
+      }
       std::cout.flush();
    } while(!(resultsMsg->Header.Flags & NPMRF_EOF));
 
@@ -562,7 +566,9 @@ static bool uploadOutputFile(const int          controlSocket,
    if(!success) {
       sendAbort(controlSocket, assocID);
    }
-   std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
+   if(gQuietMode < 1) {
+      std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
+   }
    return(success);
 }
 
@@ -704,7 +710,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
       measurementID, now,
       NULL, (startMsg->Header.Flags & NPMSF_COMPRESS_VECTORS) ? true : false,
       NULL, (startMsg->Header.Flags & NPMSF_COMPRESS_SCALARS) ? true : false,
-      true);
+      (gQuietMode < 1));
    
    return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                       measurementID, 0, 0,
@@ -733,7 +739,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
 
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
-   FlowManager::getFlowManager()->stopMeasurement(measurementID);
+   FlowManager::getFlowManager()->stopMeasurement(measurementID, (gQuietMode < 1));
    bool         success     = false;
    Measurement* measurement =
       FlowManager::getFlowManager()->findMeasurement(measurementID);

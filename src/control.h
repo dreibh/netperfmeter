@@ -45,12 +45,10 @@ bool performNetPerfMeterStart(MessageReader* messageReader,
                               const char*    passiveNodeName,
                               const char*    configName,
                               const char*    vectorNamePattern,
-                              const char*    scalarNamePattern,
-                              const bool     printFlows = false);
+                              const char*    scalarNamePattern);
 bool performNetPerfMeterStop(MessageReader* messageReader,
                              int            controlSocket,
-                             const uint64_t measurementID,
-                             const bool     printResults = false);
+                             const uint64_t measurementID);
 
 bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
                                   int            controlSocket,

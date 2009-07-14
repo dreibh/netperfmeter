@@ -43,6 +43,7 @@
 using namespace std;
 
 
+unsigned int         gQuietMode       = 0;
 static const char*   gActiveNodeName  = "Client";
 static const char*   gPassiveNodeName = "Server";
 static int           gControlSocket   = -1;
@@ -52,7 +53,6 @@ static int           gSCTPSocket      = -1;
 static int           gDCCPSocket      = -1;
 static double        gRuntime         = -1.0;
 static bool          gStopTimeReached = false;
-static unsigned int  gQuietMode       = 0;
 static MessageReader gMessageReader;
 
 
@@ -62,7 +62,6 @@ bool handleGlobalParameter(const char* parameter)
 {
    if(strncmp(parameter, "-runtime=", 9) == 0) {
       gRuntime = atof((const char*)&parameter[9]);
-      return(true);
    }
    else if(strncmp(parameter, "-activenodename=", 16) == 0) {
       gActiveNodeName = (const char*)&parameter[16];
@@ -70,7 +69,13 @@ bool handleGlobalParameter(const char* parameter)
    else if(strncmp(parameter, "-passivenodename=", 17) == 0) {
       gPassiveNodeName = (const char*)&parameter[17];
    }
-   return(false);
+   else if(strcmp(parameter, "-quiet") == 0) {
+      // Already handled before!
+   }
+   else {
+      return(false);
+   }
+   return(true);
 }
 
 
@@ -580,9 +585,6 @@ void activeMode(int argc, char** argv)
          else if(strcmp(argv[i], "-sctp") == 0) {
             protocol = IPPROTO_SCTP;
          }
-         else if(strcmp(argv[i], "-quiet") == 0) {
-            // Already handled above!
-         }
          else if(strcmp(argv[i], "-dccp") == 0) {
 #ifdef HAVE_DCCP
             protocol = IPPROTO_DCCP;
@@ -599,6 +601,10 @@ void activeMode(int argc, char** argv)
          }
          else if(strncmp(argv[i], "-config=", 8) == 0) {
             configName = (const char*)&argv[i][8];
+         }
+         else {
+            std::cerr << "Invalid argument: " << argv[i] << "!" << std::endl;
+            exit(1);
          }
       }
       else {
@@ -631,8 +637,7 @@ void activeMode(int argc, char** argv)
    // ====== Start measurement ==============================================
    if(!performNetPerfMeterStart(&gMessageReader, gControlSocket, measurementID,
                                 gActiveNodeName, gPassiveNodeName,
-                                configName, vectorNamePattern, scalarNamePattern,
-                                (gQuietMode < 1))) {
+                                configName, vectorNamePattern, scalarNamePattern)) {
       std::cerr << "ERROR: Failed to start measurement!" << std::endl;
       exit(1);
    }
@@ -663,8 +668,7 @@ void activeMode(int argc, char** argv)
    if(gQuietMode < 1) {
       cout << "Shutdown:" << endl;
    }
-   if(!performNetPerfMeterStop(&gMessageReader, gControlSocket,
-                               measurementID, (gQuietMode < 1))) {
+   if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID)) {
       std::cerr << "ERROR: Failed to stop measurement!" << std::endl;
       exit(1);
    }
