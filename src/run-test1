@@ -1,13 +1,100 @@
 #!/bin/bash
 
-Variables="Flows FrameRate FrameSize"
+Directory="TEST1"
+RemoteNode="127.0.0.1:9000"
+Variables="Run Runtime Flows OnlyOneAssoc FrameRate FrameSize"
 
-Flows_VALUES="1 2 5"
-FrameRate_VALUES="const0 const20"
+Run_VALUES="1"
+Runtime_VALUES="30"
+Flows_VALUES="1 3"
+OnlyOneAssoc_VALUES="0 1"
+FrameRate_VALUES="const25"
 FrameSize_VALUES="const1452"
 
 
+# ###### Perform a single run with current variable settings ################
 perform_run ()
+{
+   if [ -e "$runStatus" ] ; then
+      echo "Already existing."
+   else
+      local runDirectory="$1"
+      local runStatus="$2"
+      runScalar="$runDirectory/output.sca.bz2"
+      runVector="$runDirectory/output.vec.bz2"
+      runConfig="$runDirectory/output.config"
+
+      local command="./netperfmeter $RemoteNode"
+      command="$command -scalar=$runScalar"
+      command="$command -vector=$runVector"
+      command="$command -config=$runConfig"
+      command="$command -runtime=$Runtime"
+
+      if [ $OnlyOneAssoc -eq 1 ] ; then
+         command="$command -sctp "
+         local n=0
+         while [ $n -lt $Flows ] ; do
+            command="$command $FrameRate:$FrameSize:const0:const0 "
+            let n=$n+1
+         done
+      else
+         local n=0
+         while [ $n -lt $Flows ] ; do
+            command="$command -sctp $FrameRate:$FrameSize:const0:const0 "
+            let n=$n+1
+         done
+      fi
+
+      local n=0
+      while [ $n -lt $Flows ] ; do
+         command="$command -tcp $FrameRate:$FrameSize:const0:const0 "
+         let n=$n+1
+      done
+
+      echo $command
+      ( $command && touch $runStatus ) || exit 1
+   fi
+
+   additionalVariables="IsActive"   # Tell finish_runs() to add "IsActive"
+   runScalarActive="$runDirectory/output-active.sca.bz2"
+   runScalarPassive="$runDirectory/output-passive.sca.bz2"
+   echo "--values=$varSettings 1"   >>$summaryName
+   echo "--input=$runScalarActive"  >>$summaryName
+   echo "--values=$varSettings 0"   >>$summaryName
+   echo "--input=$runScalarPassive" >>$summaryName
+}
+
+
+# ###### Initialize directory and summary configuration #####################
+initialize_runs ()
+{
+   if [ ! -e "$Directory" ] ; then
+      mkdir "$Directory"
+   fi
+
+   resultsDirectory="$Directory/Results"
+   if [ ! -e "$resultsDirectory" ] ; then
+      mkdir "$resultsDirectory"
+   fi
+
+   summaryName="$Directory/summary.config"
+   if [ -e "$summaryName" ] ; then
+      rm $summaryName
+   fi
+   echo "--resultsdirectory=$resultsDirectory" >$summaryName
+   additionalVariables=""
+}
+
+
+# ###### Create summary #####################################################
+finish_runs ()
+{
+   createsummary "$@ $additionalVariables" <$summaryName
+}
+
+
+# ###### Create and perform all runs ########################################
+make_runs ()
 {
    # ====== Generate all setting of the current variable $1 =================
    if [ "$1" != "" ] ; then
@@ -22,20 +109,41 @@ perform_run ()
       for value in $varValues ; do
          # ====== Use setting $value and recursively set other variables ====
          eval "$varName=$value"
-         perform_run $@
+         make_runs $@
       done
 
    # ====== All variables have been set -> generate a run ===================
    else
-      echo -n -e "Run for:\t"
+      local runLabel=""
+      local varSettings=""
+      echo -n -e "===== Run for:\t"
       for vN in $Variables ; do
          eval "e=\$$vN"
          echo -n -e "$vN=$e\t"
+         runLabel="$runLabel--$e"
+         varSettings="$varSettings $e"
       done
-     echo ""
+      echo "====="
+
+      local runHash="`echo $runLabel | md5sum | sed -e "s/  -//g"`"
+      local runDirectory="$Directory/Run-$runHash"
+      local runStatus="$runDirectory/status.txt"
+
+      if [ ! -e "$runDirectory" ] ; then
+         mkdir "$runDirectory"
+      fi
+      perform_run $runDirectory $runStatus
    fi
 }
 
 
+# ###### Perform whole measurement ##########################################
+perform_measurements ()
+{
+   initialize_runs $Variables
+   make_runs $Variables
+   finish_runs $Variables
+}
 
-perform_run $Variables
+
+perform_measurements

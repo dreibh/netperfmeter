@@ -52,6 +52,7 @@ static int           gSCTPSocket      = -1;
 static int           gDCCPSocket      = -1;
 static double        gRuntime         = -1.0;
 static bool          gStopTimeReached = false;
+static unsigned int  gQuietMode       = 0;
 static MessageReader gMessageReader;
 
 
@@ -527,14 +528,15 @@ void activeMode(int argc, char** argv)
    // ====== Initialize IDs and print status ================================
    uint64_t measurementID = random64();
    
-   cout << "Active Mode:" << endl
-        << "   - Measurement ID  = " << format("%lx", measurementID) << endl
-        << "   - Remote Address  = "; printAddress(cout, &remoteAddress.sa, true); 
-   cout << endl
-        << "   - Control Address = "; printAddress(cout, &controlAddress.sa, true);
-   cout << " - connecting ... ";
-   cout.flush();
-
+   if(gQuietMode < 1) {
+      cout << "Active Mode:" << gQuietMode << endl
+         << "   - Measurement ID  = " << format("%lx", measurementID) << endl
+         << "   - Remote Address  = "; printAddress(cout, &remoteAddress.sa, true); 
+      cout << endl
+         << "   - Control Address = "; printAddress(cout, &controlAddress.sa, true);
+      cout << " - connecting ... ";
+      cout.flush();
+   }
 
    // ====== Initialize control socket ======================================
    gControlSocket = ext_socket(controlAddress.sa.sa_family, SOCK_STREAM, IPPROTO_SCTP);
@@ -548,7 +550,9 @@ void activeMode(int argc, char** argv)
            << strerror(errno) << "!" << endl;
       exit(1);
    }
-   cout << "okay; sd=" << gControlSocket << endl << endl;
+   if(gQuietMode < 1) {
+      cout << "okay; sd=" << gControlSocket << endl << endl;
+   }
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
 
@@ -571,6 +575,9 @@ void activeMode(int argc, char** argv)
          }
          else if(strcmp(argv[i], "-sctp") == 0) {
             protocol = IPPROTO_SCTP;
+         }
+         else if(strcmp(argv[i], "-quiet") == 0) {
+            // Already handled above!
          }
          else if(strcmp(argv[i], "-dccp") == 0) {
 #ifdef HAVE_DCCP
@@ -635,7 +642,9 @@ void activeMode(int argc, char** argv)
    bool                     aborted = false;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
-   FlowManager::getFlowManager()->enableDisplay();
+   if(gQuietMode < 2) {
+      FlowManager::getFlowManager()->enableDisplay();
+   }
 
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       if(!mainLoop(true, stopAt, measurementID)) {
@@ -649,7 +658,9 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Stop measurement ===============================================
-   cout << "Shutdown:" << endl;
+   if(gQuietMode < 1) {
+      cout << "Shutdown:" << endl;
+   }
    if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID, true)) {
       std::cerr << "ERROR: Failed to stop measurement!" << std::endl;
       exit(1);
@@ -668,8 +679,15 @@ int main(int argc, char** argv)
       exit(1);
    }
 
-   cout << "Network Performance Meter - Version 1.0" << endl
-        << "---------------------------------------" << endl << endl;
+   for(int i = 2;i < argc;i++) {
+      if(strcmp(argv[i], "-quiet") == 0) {
+         gQuietMode++;
+      }
+   }
+   if(gQuietMode < 1) {
+      cout << "Network Performance Meter - Version 1.0" << endl
+           << "---------------------------------------" << endl << endl;
+   }
 
    const uint16_t localPort = atol(argv[1]);
    if( (localPort >= 1024) && (localPort < 65535) ) {

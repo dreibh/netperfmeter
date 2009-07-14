@@ -446,6 +446,8 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
       iterator != FlowSet.end();iterator++) {
       Flow* flow = *iterator;
       flow->lock();
+   printf("WRITE-SC %llx  ==  %llx\n",flow->MeasurementID, measurementID);
+
       if(flow->MeasurementID == measurementID) {
          const double transmissionDuration = (flow->LastTransmission - flow->FirstTransmission) / 1000000.0;
          const double receptionDuration    = (flow->LastReception - flow->FirstReception) / 1000000.0;
