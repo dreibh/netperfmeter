@@ -1,4 +1,4 @@
-AC_INIT([NetPerfMeter], [0.8.7], [dreib@iem.uni-due.de])
+AC_INIT([NetPerfMeter], [0.8.9], [dreib@iem.uni-due.de])
 
 AM_INIT_AUTOMAKE
 AC_PREREQ(2.60)
@@ -142,6 +142,16 @@ AC_SEARCH_LIBS([BZ2_bzReadOpen], [bz2])
 bz2_LIBS=$LIBS
 AC_SUBST(bz2_LIBS)
 LIBS=$oldLIBS
+
+
+# ###### Maintainer mode ####################################################
+AC_ARG_ENABLE([maintainer-mode],
+[  --enable-maintainer-mode            enable maintainer mode ]
+[default=yes]],enable_maintainer_mode=$enableval,enable_maintainer_mode=yes)
+if test "$enable_maintainer_mode" = "yes"; then
+   CFLAGS="$CFLAGS -Wall -g3 -O0"
+   CXXFLAGS="$CXXFLAGS -Wall -g3 -O0"
+fi
 
 
 # ###### Check if kernel SCTP should be used ################################
@@ -331,7 +341,10 @@ AC_OUTPUT
 echo ""
 echo "The NetPerfMeter package has been configured with the following options:"
 echo ""
+echo "   Build in Maintainer Mode        : $enable_maintainer_mode"
 echo "   Build with Kernel SCTP          : $enable_kernel_sctp"
-echo "   sctplib Libraries               : $sctplib_LIBS"
-echo "   socketapi Libraries             : $socketapi_LIBS"
+echo "   SCTP Socket API Libraries       : $socketapi_LIBS"
+if test "$enable_kernel_sctp" = "no"; then
+   echo "   SCTPLIB Libraries               : $sctplib_LIBS"
+fi
 echo "   BZip2 Libraries                 : $bz2_LIBS"
