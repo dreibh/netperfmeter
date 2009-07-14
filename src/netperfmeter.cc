@@ -77,17 +77,19 @@ bool handleGlobalParameter(const char* parameter)
 // ###### Print global parameter settings ###################################
 void printGlobalParameters()
 {
-   std::cout << "Global Parameters:" << std::endl
-             << "   - Runtime           = ";
-   if(gRuntime >= 0.0) {
-      std::cout << gRuntime << "s" << std::endl;
+   if(gQuietMode < 1) {
+      std::cout << "Global Parameters:" << std::endl
+               << "   - Runtime           = ";
+      if(gRuntime >= 0.0) {
+         std::cout << gRuntime << "s" << std::endl;
+      }
+      else {
+         std::cout << "until manual stop" << std::endl;
+      }
+      std::cout << "   - Active Node Name  = " << gActiveNodeName  << std::endl
+               << "   - Passive Node Name = " << gPassiveNodeName << std::endl
+               << std::endl;
    }
-   else {
-      std::cout << "until manual stop" << std::endl;
-   }
-   std::cout << "   - Active Node Name  = " << gActiveNodeName  << std::endl
-             << "   - Passive Node Name = " << gPassiveNodeName << std::endl
-             << std::endl;
 }
 
 
@@ -246,7 +248,8 @@ static Flow* createFlow(Flow*              previousFlow,
    if(previousFlow) {
       originalSocketDescriptor = false;
       socketDescriptor         = previousFlow->getSocketDescriptor();
-      cout << "      - Connection okay (stream " << streamID << " on existing assoc); sd=" << socketDescriptor << endl;
+      cout << "Flow #" << flow->getFlowID()
+           << ": connection okay <sd=" << socketDescriptor << "> ";
    }
    else {
       originalSocketDescriptor = true;
@@ -267,7 +270,6 @@ static Flow* createFlow(Flow*              previousFlow,
            break;
 #endif
       }
-      flow->print(cout);
       if(socketDescriptor < 0) {
          cerr << "ERROR: Unable to create " << getProtocolName(protocol)
               << " socket - " << strerror(errno) << "!" << endl;
@@ -275,7 +277,8 @@ static Flow* createFlow(Flow*              previousFlow,
       }
 
       // ====== Establish connection ========================================
-      cout << "      - Connecting " << getProtocolName(protocol) << " socket to ";
+      cout << "Flow #" << flow->getFlowID() << ": connecting "
+           << getProtocolName(protocol) << " socket to ";
       printAddress(cout, remoteAddress, true);
       cout << " ... ";
       cout.flush();
@@ -296,8 +299,9 @@ static Flow* createFlow(Flow*              previousFlow,
               << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
       }
-      cout << "okay; sd=" << socketDescriptor << endl;
+      cout << "okay <sd=" << socketDescriptor << "> ";
    }
+   cout.flush();
    
    // ====== Update flow with socket descriptor =============================
    flow->setSocketDescriptor(socketDescriptor, originalSocketDescriptor);
@@ -607,8 +611,6 @@ void activeMode(int argc, char** argv)
          lastFlow = createFlow(lastFlow, argv[i], measurementID, vectorNamePattern,
                                protocol, &remoteAddress.sa);
 
-         cout << "      - Registering flow at remote node ... ";
-         cout.flush();
          if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
             cerr << endl << "ERROR: Failed to add flow to remote node!" << endl;
             exit(1);
@@ -623,14 +625,14 @@ void activeMode(int argc, char** argv)
    }
    cout << endl;
    
-   
    printGlobalParameters();
 
 
    // ====== Start measurement ==============================================
    if(!performNetPerfMeterStart(&gMessageReader, gControlSocket, measurementID,
                                 gActiveNodeName, gPassiveNodeName,
-                                configName, vectorNamePattern, scalarNamePattern)) {
+                                configName, vectorNamePattern, scalarNamePattern,
+                                (gQuietMode < 1))) {
       std::cerr << "ERROR: Failed to start measurement!" << std::endl;
       exit(1);
    }
@@ -661,7 +663,8 @@ void activeMode(int argc, char** argv)
    if(gQuietMode < 1) {
       cout << "Shutdown:" << endl;
    }
-   if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID, true)) {
+   if(!performNetPerfMeterStop(&gMessageReader, gControlSocket,
+                               measurementID, (gQuietMode < 1))) {
       std::cerr << "ERROR: Failed to stop measurement!" << std::endl;
       exit(1);
    }
@@ -696,7 +699,6 @@ int main(int argc, char** argv)
    else {
       activeMode(argc, argv);
    }
-   cout << endl;
 
    return 0;
 }

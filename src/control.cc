@@ -237,7 +237,8 @@ bool performNetPerfMeterStart(MessageReader* messageReader,
                               const char*    passiveNodeName,
                               const char*    configName,
                               const char*    vectorNamePattern,
-                              const char*    scalarNamePattern)
+                              const char*    scalarNamePattern,
+                              const bool     printFlows)
 {
    // ====== Write config file ==============================================
    FILE* configFile = fopen(configName, "w");
@@ -305,7 +306,7 @@ bool performNetPerfMeterStart(MessageReader* messageReader,
                            hasSuffix(vectorNamePattern, ".bz2"),
                            scalarNamePattern,                                             
                            hasSuffix(scalarNamePattern, ".bz2"),
-                           true);
+                           printFlows);
    if(success) {
       // ====== Tell passive node to start measurement ======================
       NetPerfMeterStartMessage startMsg;
@@ -423,7 +424,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       delete measurement;
       return(false);
    }
-   std::cout << " okay" << std::endl << std::endl;
+   std::cout << " okay" << std::endl;
 
    // ====== Download flow results and remove the flows =====================
    FlowManager::getFlowManager()->lock();
