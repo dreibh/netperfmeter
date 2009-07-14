@@ -37,7 +37,7 @@ plotConfigurations <- list(
         "Flows", "passive.flow-ReceivedBytes",
         "passive.flow", "OnlyOneAssoc", "",
         "", "", "",
-        "(data1$passive.flow == 1) | (data1$passive.flow == 1001)")
+        "(data1$passive.flow <= 2) | ((data1$passive.flow >= 1001) & (data1$passive.flow <= 1002))")
 )
 
 
