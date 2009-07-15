@@ -98,8 +98,8 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
          if(sendUnreliable) {
             sinfo.sinfo_timetolive = 1;
 #ifdef HAVE_SINFO_PR_POLICY
-            sinfo.sinfo_timetolive = flow->getTrafficSpec().RetransmissionTrails;
-            if(flow->getTrafficSpec().RetransmissionTrailsInMS) {
+            sinfo.sinfo_timetolive = flow->getTrafficSpec().RetransmissionTrials;
+            if(flow->getTrafficSpec().RetransmissionTrialsInMS) {
                sinfo.sinfo_pr_policy = SCTP_PR_SCTP_TTL;
             }
             else {
