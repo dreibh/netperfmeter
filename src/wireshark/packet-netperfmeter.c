@@ -35,26 +35,12 @@
 #include <epan/packet.h>
 
 
+static int  proto_npmp = -1;
+static gint ett_npmp   = -1;
+
+
 #define PPID_NETPERFMETER_CONTROL   0x29097605
 #define PPID_NETPERFMETER_DATA      0x29097606
-
-// struct NetPerfMeterDataMessage
-// {
-//    NetPerfMeterHeader Header;
-// 
-//    uint32_t           FlowID;
-//    uint64_t           MeasurementID;
-//    uint16_t           StreamID;
-//    uint16_t           Padding;
-//    
-//    uint32_t           FrameID;
-//    uint64_t           SeqNumber;
-//    uint64_t           ByteSeqNumber;
-//    uint64_t           TimeStamp;
-// 
-//    char               Payload[];
-// } __attribute__((packed));
-// 
 
 
 /* Initialize the protocol and registered fields */
@@ -63,10 +49,6 @@
    static const int offset_##variable = offset;    \
    static const int length_##variable = length;
    
-INIT_FIELD(message_type,   0, 1)
-INIT_FIELD(message_flags,  1, 1)
-INIT_FIELD(message_length, 2, 2)
-
 #define NETPERFMETER_ACKNOWLEDGE    0x01
 #define NETPERFMETER_ADD_FLOW       0x02
 #define NETPERFMETER_REMOVE_FLOW    0x03
@@ -77,133 +59,171 @@ INIT_FIELD(message_length, 2, 2)
 #define NETPERFMETER_RESULTS        0x08
 
 static const value_string message_type_values[] = {
-  { FRACTALGENERATOR_PARAMETER_MESSAGE_TYPE,        "FractalGenerator Parameter" },
-  { FRACTALGENERATOR_DATA_MESSAGE_TYPE,             "FractalGenerator Data" },
+  { NETPERFMETER_ACKNOWLEDGE,        "NetPerfMeter Acknowledge" },
+  { NETPERFMETER_ADD_FLOW,           "NetPerfMeter Add Flow" },
+  { NETPERFMETER_REMOVE_FLOW,        "NetPerfMeter Remove Flow" },
+  { NETPERFMETER_IDENTIFY_FLOW,      "NetPerfMeter Identify Flow" },
+  { NETPERFMETER_DATA,               "NetPerfMeter Data" },
+  { NETPERFMETER_START,              "NetPerfMeter Start Measurement" },
+  { NETPERFMETER_STOP,               "NetPerfMeter Stop Measurement" },
+  { NETPERFMETER_RESULTS,            "NetPerfMeter Results" },
   { 0, NULL }
 };
 
+INIT_FIELD(message_type,   0, 1)
+INIT_FIELD(message_flags,  1, 1)
+INIT_FIELD(message_length, 2, 2)
+
+INIT_FIELD(acknowledge_flowid,          4,  4)
+INIT_FIELD(acknowledge_measurementid,   8,  8)
+INIT_FIELD(acknowledge_streamid,       16,  2)
+INIT_FIELD(acknowledge_status,         18,  4)
 
 INIT_FIELD(addflow_flowid,          4,  4)
 INIT_FIELD(addflow_measurementid,   8,  8)
 INIT_FIELD(addflow_streamid,       16,  2)
 
+INIT_FIELD(removeflow_flowid,          4,  4)
+INIT_FIELD(removeflow_measurementid,   8,  8)
+INIT_FIELD(removeflow_streamid,       16,  2)
+
+INIT_FIELD(identifyflow_flowid,          4,  4)
+INIT_FIELD(identifyflow_magicnumber,     8,  8)
+INIT_FIELD(identifyflow_measurementid,  16,  8)
+INIT_FIELD(identifyflow_streamid,       24,  2)
+
+INIT_FIELD(data_flowid,           4,  4)
+INIT_FIELD(data_measurementid,    8,  8)
+INIT_FIELD(data_streamid,        16,  2)
+INIT_FIELD(data_padding,         18,  2)
+INIT_FIELD(data_frameid,         20,  4)
+INIT_FIELD(data_packetseqnumber, 24,  8)
+INIT_FIELD(data_byteseqnumber,   32,  8)
+INIT_FIELD(data_timestamp,       40,  8)
+INIT_FIELD(data_payload,         48,  0)
+
+INIT_FIELD(start_measurementid,  4,  8)
+
+INIT_FIELD(stop_measurementid,  4,  8)
+
+INIT_FIELD(results_data,  4,  0)
 
 
-// INIT_FIELD(data_flowid,        4, sizeof(uint32_t))
-// INIT_FIELD(data_measurementid, 8, sizeof(uint32_t))
+/* Setup list of header fields */
+static hf_register_info hf[] = {
+   { &hf_message_type,               { "Type",              "npmp.message_type",               FT_UINT8,  BASE_DEC,  VALS(message_type_values), 0x0, NULL, HFILL } },
+   { &hf_message_flags,              { "Flags",             "npmp.message_flags",              FT_UINT8,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_message_length,             { "Length",            "npmp.message_length",             FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
-static int proto_npmp = -1;
-// static int hf_message_type                = -1;
-// static int hf_message_flags               = -1;
-// static int hf_message_length              = -1;
-static int hf_data_start_x                = -1;
-static int hf_data_start_y                = -1;
-static int hf_data_points                 = -1;
-static int hf_parameter_width             = -1;
-static int hf_parameter_height            = -1;
-static int hf_parameter_maxiterations     = -1;
-static int hf_parameter_algorithmid       = -1;
-static int hf_parameter_c1real            = -1;
-static int hf_parameter_c1imag            = -1;
-static int hf_parameter_c2real            = -1;
-static int hf_parameter_c2imag            = -1;
-static int hf_parameter_n                 = -1;
-static int hf_buffer                      = -1;
+   { &hf_acknowledge_flowid,         { "Flow ID",           "npmp.acknowledge_flowid",         FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_acknowledge_measurementid,  { "Measurement ID",    "npmp.acknowledge_measurementid",  FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_acknowledge_streamid,       { "Stream ID",         "npmp.acknowledge_streamid",       FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_acknowledge_status,         { "Status",            "npmp.acknowledge_status",         FT_UINT32, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
+   { &hf_addflow_flowid,             { "Flow ID",           "npmp.addflow_flowid",             FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_measurementid,      { "Measurement ID",    "npmp.addflow_measurementid",      FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_streamid,           { "Stream ID",         "npmp.addflow_streamid",           FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
+   { &hf_removeflow_flowid,          { "Flow ID",           "npmp.removeflow_flowid",          FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_removeflow_measurementid,   { "Measurement ID",    "npmp.removeflow_measurementid",   FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_removeflow_streamid,        { "Stream ID",         "npmp.removeflow_streamid",        FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
-  /* Setup list of header fields */
-  static hf_register_info hf[] = {
-    { &hf_message_type,            { "Type",          "npmp.message_type",            FT_UINT8,  BASE_DEC, VALS(message_type_values), 0x0, NULL, HFILL } },
-    { &hf_message_flags,           { "Flags",         "npmp.message_flags",           FT_UINT8,  BASE_DEC, NULL,                      0x0, NULL, HFILL } },
-    { &hf_message_length,          { "Length",        "npmp.message_length",          FT_UINT16, BASE_DEC, NULL,                      0x0, NULL, HFILL } },
-    { &hf_parameter_algorithmid,   { "AlgorithmID",   "npmp.parameter_algorithmid",   FT_UINT32, BASE_DEC, NULL,                      0x0, NULL, HFILL } },
-    { &hf_parameter_n,             { "N",             "npmp.parameter_n",             FT_DOUBLE, BASE_NONE, NULL,                      0x0, NULL, HFILL } },
-    { &hf_buffer,                  { "Buffer",        "npmp.buffer",                  FT_BYTES,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
-  };
+   { &hf_identifyflow_flowid,        { "Flow ID",           "npmp.identifyflow_flowid",        FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_identifyflow_magicnumber,   { "Magic Number",      "npmp.identifyflow_magicnumber",   FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_identifyflow_measurementid, { "Measurement ID",    "npmp.identifyflow_measurementid", FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_identifyflow_streamid,      { "Stream ID",         "npmp.identifyflow_streamid",      FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
+   { &hf_data_flowid,                { "Flow ID",           "npmp.data_flowid",                FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_measurementid,         { "Measurement ID",    "npmp.data_measurementid",         FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_streamid,              { "Stream ID",         "npmp.data_streamid",              FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_padding,               { "Stream ID",         "npmp.data_padding",               FT_UINT16, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_frameid,               { "Frame ID",          "npmp.data_frameid",               FT_UINT32, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_packetseqnumber,       { "Packet Seq Number", "npmp.data_packetseqnumber",       FT_UINT64, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_byteseqnumber,         { "Byte Seq Number",   "npmp.data_byteseqnumber",         FT_UINT64, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_timestamp,             { "Time Stamp",        "npmp.data_timestamp",             FT_UINT64, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_payload,               { "Payload",           "npmp.data_payload",               FT_BYTES,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
 
+   { &hf_start_measurementid,        { "Measurement ID",    "npmp.start_measurementid",        FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
 
+   { &hf_stop_measurementid,         { "Measurement ID",    "npmp.stop_measurementid",         FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
 
-
-/* Initialize the subtree pointers */
-static gint ett_npmp = -1;
-
-static void
-dissect_npmp_message(tvbuff_t *, packet_info *, proto_tree *);
+   { &hf_results_data,               { "Data",              "npmp.results_data",               FT_BYTES,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+};
 
 
-/* Dissectors for messages. This is specific to NetPerfMeterProtocol */
-#define MESSAGE_TYPE_LENGTH    1
-#define MESSAGE_FLAGS_LENGTH   1
-#define MESSAGE_LENGTH_LENGTH  2
-
-#define MESSAGE_TYPE_OFFSET    0
-#define MESSAGE_FLAGS_OFFSET   (MESSAGE_TYPE_OFFSET    + MESSAGE_TYPE_LENGTH)
-#define MESSAGE_LENGTH_OFFSET  (MESSAGE_FLAGS_OFFSET   + MESSAGE_FLAGS_OFFSET)
-#define MESSAGE_VALUE_OFFSET   (MESSAGE_LENGTH_OFFSET  + MESSAGE_LENGTH_LENGTH)
-
-
-#define DATA_STARTX_LENGTH 4
-#define DATA_STARTY_LENGTH 4
-#define DATA_POINTS_LENGTH 4
-#define DATA_BUFFER_LENGTH 4
-
-#define DATA_STARTX_OFFSET MESSAGE_VALUE_OFFSET
-#define DATA_STARTY_OFFSET (DATA_STARTX_OFFSET + DATA_STARTX_LENGTH)
-#define DATA_POINTS_OFFSET (DATA_STARTY_OFFSET + DATA_STARTY_LENGTH)
-#define DATA_BUFFER_OFFSET (DATA_POINTS_OFFSET + DATA_POINTS_LENGTH)
-
-
-#define PARAMETER_WIDTH_LENGTH         4
-#define PARAMETER_HEIGHT_LENGTH        4
-#define PARAMETER_MAXITERATIONS_LENGTH 4
-#define PARAMETER_ALGORITHMID_LENGTH   4
-#define PARAMETER_C1REAL_LENGTH        8
-#define PARAMETER_C1IMAG_LENGTH        8
-#define PARAMETER_C2REAL_LENGTH        8
-#define PARAMETER_C2IMAG_LENGTH        8
-#define PARAMETER_N_LENGTH             8
-
-#define PARAMETER_WIDTH_OFFSET         MESSAGE_VALUE_OFFSET
-#define PARAMETER_HEIGHT_OFFSET        (PARAMETER_WIDTH_OFFSET + PARAMETER_WIDTH_LENGTH)
-#define PARAMETER_MAXITERATIONS_OFFSET (PARAMETER_HEIGHT_OFFSET + PARAMETER_HEIGHT_LENGTH)
-#define PARAMETER_ALGORITHMID_OFFSET   (PARAMETER_MAXITERATIONS_OFFSET + PARAMETER_MAXITERATIONS_LENGTH)
-#define PARAMETER_C1REAL_OFFSET        (PARAMETER_ALGORITHMID_OFFSET + PARAMETER_ALGORITHMID_LENGTH)
-#define PARAMETER_C1IMAG_OFFSET        (PARAMETER_C1REAL_OFFSET + PARAMETER_C1REAL_LENGTH)
-#define PARAMETER_C2REAL_OFFSET        (PARAMETER_C1IMAG_OFFSET + PARAMETER_C1IMAG_LENGTH)
-#define PARAMETER_C2IMAG_OFFSET        (PARAMETER_C2REAL_OFFSET + PARAMETER_C2REAL_LENGTH)
-#define PARAMETER_N_OFFSET             (PARAMETER_C2IMAG_OFFSET + PARAMETER_C2IMAG_LENGTH)
-
+#define ADD_FIELD(tree, field) proto_tree_add_item(tree, hf_##field, message_tvb, offset_##field, length_##field, FALSE)
 
 
 static void
-dissect_npmp_parameter_message(tvbuff_t *message_tvb, proto_tree *message_tree)
+dissect_npmp_acknowledge_message(tvbuff_t *message_tvb, proto_tree *message_tree)
 {
-  proto_tree_add_item(message_tree, hf_parameter_width,         message_tvb, PARAMETER_WIDTH_OFFSET,         PARAMETER_WIDTH_LENGTH,         FALSE);
-  proto_tree_add_item(message_tree, hf_parameter_height,        message_tvb, PARAMETER_HEIGHT_OFFSET,        PARAMETER_HEIGHT_LENGTH,        FALSE);
-  proto_tree_add_item(message_tree, hf_parameter_maxiterations, message_tvb, PARAMETER_MAXITERATIONS_OFFSET, PARAMETER_MAXITERATIONS_LENGTH, FALSE);
-  proto_tree_add_item(message_tree, hf_parameter_algorithmid,   message_tvb, PARAMETER_ALGORITHMID_OFFSET,   PARAMETER_ALGORITHMID_LENGTH,   FALSE);
-  proto_tree_add_item(message_tree, hf_parameter_c1real,        message_tvb, PARAMETER_C1REAL_OFFSET,        PARAMETER_C1REAL_LENGTH,        FALSE);
-  proto_tree_add_item(message_tree, hf_parameter_c1imag,        message_tvb, PARAMETER_C1IMAG_OFFSET,        PARAMETER_C1IMAG_LENGTH,        FALSE);
-  proto_tree_add_item(message_tree, hf_parameter_c2real,        message_tvb, PARAMETER_C2REAL_OFFSET,        PARAMETER_C2REAL_LENGTH,        FALSE);
-  proto_tree_add_item(message_tree, hf_parameter_c2imag,        message_tvb, PARAMETER_C2IMAG_OFFSET,        PARAMETER_C2IMAG_LENGTH,        FALSE);
-  proto_tree_add_item(message_tree, hf_parameter_n,             message_tvb, PARAMETER_N_OFFSET,             PARAMETER_N_LENGTH,             FALSE);
+  ADD_FIELD(message_tree, acknowledge_flowid);
+  ADD_FIELD(message_tree, acknowledge_measurementid);
+  ADD_FIELD(message_tree, acknowledge_streamid);
+  ADD_FIELD(message_tree, acknowledge_status);
+}
+
+
+static void
+dissect_npmp_remove_flow_message(tvbuff_t *message_tvb, proto_tree *message_tree)
+{
+  ADD_FIELD(message_tree, removeflow_flowid);
+  ADD_FIELD(message_tree, removeflow_measurementid);
+  ADD_FIELD(message_tree, removeflow_streamid);
+}
+
+
+static void
+dissect_npmp_identify_flow_message(tvbuff_t *message_tvb, proto_tree *message_tree)
+{
+  ADD_FIELD(message_tree, identifyflow_magicnumber);
+  ADD_FIELD(message_tree, identifyflow_flowid);
+  ADD_FIELD(message_tree, identifyflow_measurementid);
+  ADD_FIELD(message_tree, identifyflow_streamid);
 }
 
 
 static void
 dissect_npmp_data_message(tvbuff_t *message_tvb, proto_tree *message_tree)
 {
-  guint16 buffer_length;
+  const guint16 message_length = tvb_get_guint8(message_tvb, offset_message_length);
 
-  proto_tree_add_item(message_tree, hf_data_start_x, message_tvb, DATA_STARTX_OFFSET, DATA_STARTX_LENGTH, FALSE);
-  proto_tree_add_item(message_tree, hf_data_start_y, message_tvb, DATA_STARTY_OFFSET, DATA_STARTY_LENGTH, FALSE);
-  proto_tree_add_item(message_tree, hf_data_points,  message_tvb, DATA_POINTS_OFFSET, DATA_POINTS_LENGTH, FALSE);
+  ADD_FIELD(message_tree, data_flowid);
+  ADD_FIELD(message_tree, data_measurementid);
+  ADD_FIELD(message_tree, data_streamid);
+  ADD_FIELD(message_tree, data_padding);
+  ADD_FIELD(message_tree, data_frameid);
+  ADD_FIELD(message_tree, data_packetseqnumber);
+  ADD_FIELD(message_tree, data_byteseqnumber);
+  ADD_FIELD(message_tree, data_timestamp);
+  ADD_FIELD(message_tree, data_payload);
 
-  buffer_length = tvb_get_ntohl(message_tvb, DATA_POINTS_OFFSET)*4;
-  if (buffer_length > 0) {
-    proto_tree_add_item(message_tree, hf_buffer, message_tvb, DATA_BUFFER_OFFSET, buffer_length, FALSE);
+  if (message_length > offset_data_payload) {
+    proto_tree_add_item(message_tree, hf_data_payload, message_tvb, offset_data_payload, message_length - offset_data_payload, FALSE);
+  }
+}
+
+
+static void
+dissect_npmp_start_message(tvbuff_t *message_tvb, proto_tree *message_tree)
+{
+  ADD_FIELD(message_tree, start_measurementid);
+}
+
+
+static void
+dissect_npmp_stop_message(tvbuff_t *message_tvb, proto_tree *message_tree)
+{
+  ADD_FIELD(message_tree, stop_measurementid);
+}
+
+
+static void
+dissect_npmp_results_message(tvbuff_t *message_tvb, proto_tree *message_tree)
+{
+  const guint16 message_length = tvb_get_guint8(message_tvb, offset_message_length);
+  if (message_length > offset_results_data) {
+    proto_tree_add_item(message_tree, hf_results_data, message_tvb, offset_results_data, message_length - offset_results_data, FALSE);
   }
 }
 
@@ -213,19 +233,39 @@ dissect_npmp_message(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *npmp
 {
   guint8 type;
 
-  type = tvb_get_guint8(message_tvb, MESSAGE_TYPE_OFFSET);
+  type = tvb_get_guint8(message_tvb, offset_message_type);
   if (pinfo && (check_col(pinfo->cinfo, COL_INFO))) {
     col_add_fstr(pinfo->cinfo, COL_INFO, "%s ", val_to_str(type, message_type_values, "Unknown NetPerfMeterProtocol type"));
   }
-  proto_tree_add_item(npmp_tree, hf_message_type,   message_tvb, MESSAGE_TYPE_OFFSET,   MESSAGE_TYPE_LENGTH,   FALSE);
-  proto_tree_add_item(npmp_tree, hf_message_flags,  message_tvb, MESSAGE_FLAGS_OFFSET,  MESSAGE_FLAGS_LENGTH,  FALSE);
-  proto_tree_add_item(npmp_tree, hf_message_length, message_tvb, MESSAGE_LENGTH_OFFSET, MESSAGE_LENGTH_LENGTH, FALSE);
+  
+  ADD_FIELD(npmp_tree, message_type);
+  ADD_FIELD(npmp_tree, message_flags);
+  ADD_FIELD(npmp_tree, message_length);
+
   switch (type) {
-    case FRACTALGENERATOR_PARAMETER_MESSAGE_TYPE:
-      dissect_npmp_parameter_message(message_tvb, npmp_tree);
+    case NETPERFMETER_ACKNOWLEDGE:
+      dissect_npmp_acknowledge_message(message_tvb, npmp_tree);
      break;
-    case FRACTALGENERATOR_DATA_MESSAGE_TYPE:
+/*    case NETPERFMETER_ADD_FLOW:
+      dissect_npmp_add_flow_message(message_tvb, npmp_tree);
+     break;*/
+    case NETPERFMETER_REMOVE_FLOW:
+      dissect_npmp_remove_flow_message(message_tvb, npmp_tree);
+     break;
+    case NETPERFMETER_IDENTIFY_FLOW:
+      dissect_npmp_identify_flow_message(message_tvb, npmp_tree);
+     break;
+    case NETPERFMETER_DATA:
       dissect_npmp_data_message(message_tvb, npmp_tree);
+     break;
+    case NETPERFMETER_START:
+      dissect_npmp_start_message(message_tvb, npmp_tree);
+     break;
+    case NETPERFMETER_STOP:
+      dissect_npmp_stop_message(message_tvb, npmp_tree);
+     break;
+    case NETPERFMETER_RESULTS:
+      dissect_npmp_results_message(message_tvb, npmp_tree);
      break;
   }
 }
