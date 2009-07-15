@@ -4,6 +4,7 @@ Dependencies under FreeBSD:
          FreeBSD 7.1 fails to install it as dependency of R)
 - p5-PDF-API2
 - ghostscript8+
+- md5deep
 
 Command to install all dependencies (as root):
 pkg_add -r R gcc42 p5-PDF-API2 ghostscript8
