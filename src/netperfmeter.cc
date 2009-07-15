@@ -383,7 +383,7 @@ bool mainLoop(const bool               isActiveMode,
    addToPollFDs((pollfd*)&fds, gSCTPSocket, n, &sctpID);
    addToPollFDs((pollfd*)&fds, gDCCPSocket, n, &dccpID);
 
-   
+
    // ====== Use poll() to wait for events ==================================
    const int timeout = pollTimeout(now, 2,
                                    stopAt,
@@ -392,7 +392,7 @@ bool mainLoop(const bool               isActiveMode,
    // printf("timeout=%d\n",timeout);
    const int result = ext_poll_wrapper((pollfd*)&fds, n, timeout);
    // printf("result=%d\n",result);
-   
+
 
    // ====== Handle socket events ===========================================
    now = getMicroTime();   // Get current time.
@@ -410,7 +410,6 @@ bool mainLoop(const bool               isActiveMode,
       // ====== Incoming data message =======================================
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gTCPSocket, NULL, 0);
-printf("NEW TCP=%d\n",newSD);
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_TCP, newSD);
          }
@@ -422,7 +421,6 @@ printf("NEW TCP=%d\n",newSD);
       }
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gSCTPSocket, NULL, 0);
-printf("NEW SCTP=%d\n",newSD);
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_SCTP, newSD);
          }

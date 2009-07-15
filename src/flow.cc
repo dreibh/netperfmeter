@@ -804,7 +804,6 @@ Flow::~Flow()
    VectorFile.finish(true);
    if((SocketDescriptor >= 0) && (OriginalSocketDescriptor)) {
       ext_close(SocketDescriptor);
-      printf("CLOSE: %d\n",SocketDescriptor);
    }
 }
 

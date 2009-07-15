@@ -376,7 +376,7 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
                                        Flow*          flow)
 {
    flow->getVectorFile().finish(true);
-   
+
    NetPerfMeterRemoveFlowMessage removeFlowMsg;
    removeFlowMsg.Header.Type   = NETPERFMETER_REMOVE_FLOW;
    removeFlowMsg.Header.Flags  = 0x00;
