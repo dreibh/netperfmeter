@@ -43,7 +43,6 @@
 using namespace std;
 
 
-unsigned int         gQuietMode       = 0;
 static const char*   gActiveNodeName  = "Client";
 static const char*   gPassiveNodeName = "Server";
 static int           gControlSocket   = -1;
@@ -72,6 +71,12 @@ bool handleGlobalParameter(const char* parameter)
    else if(strcmp(parameter, "-quiet") == 0) {
       // Already handled before!
    }
+   else if(strcmp(parameter, "-verbose") == 0) {
+      // Already handled before!
+   }
+   else if(strncmp(parameter, "-verbosity=", 11) == 0) {
+      // Already handled before!
+   }
    else {
       return(false);
    }
@@ -82,7 +87,7 @@ bool handleGlobalParameter(const char* parameter)
 // ###### Print global parameter settings ###################################
 void printGlobalParameters()
 {
-   if(gQuietMode < 1) {
+   if(gOutputVerbosity >= NPFOV_STATUS) {
       std::cout << "Global Parameters:" << std::endl
                << "   - Runtime           = ";
       if(gRuntime >= 0.0) {
@@ -163,6 +168,14 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          exit(1);
       }
       trafficSpec.ReliableMode = dblValue;
+   }
+   else if(sscanf(parameters, "rtx_timeout=%u%n", &intValue, &n) == 1) {
+      trafficSpec.RetransmissionTrials     = (uint32_t)intValue;
+      trafficSpec.RetransmissionTrialsInMS = true;
+   }
+   else if(sscanf(parameters, "rtx_trials=%u%n", &intValue, &n) == 1) {
+      trafficSpec.RetransmissionTrials     = (uint32_t)intValue;
+      trafficSpec.RetransmissionTrialsInMS = false;
    }
    else if(sscanf(parameters, "description=%255[^:]s%n", (char*)&description, &n) == 1) {
       trafficSpec.Description = std::string(description);
@@ -263,8 +276,10 @@ static Flow* createFlow(Flow*              previousFlow,
    if(previousFlow) {
       originalSocketDescriptor = false;
       socketDescriptor         = previousFlow->getSocketDescriptor();
-      cout << "Flow #" << flow->getFlowID()
-           << ": connection okay <sd=" << socketDescriptor << "> ";
+      if(gOutputVerbosity >= NPFOV_STATUS) {
+         cout << "Flow #" << flow->getFlowID()
+            << ": connection okay <sd=" << socketDescriptor << "> ";
+      }
    }
    else {
       originalSocketDescriptor = true;
@@ -292,11 +307,13 @@ static Flow* createFlow(Flow*              previousFlow,
       }
 
       // ====== Establish connection ========================================
-      cout << "Flow #" << flow->getFlowID() << ": connecting "
-           << getProtocolName(protocol) << " socket to ";
-      printAddress(cout, remoteAddress, true);
-      cout << " ... ";
-      cout.flush();
+      if(gOutputVerbosity >= NPFOV_STATUS) {
+         cout << "Flow #" << flow->getFlowID() << ": connecting "
+            << getProtocolName(protocol) << " socket to ";
+         printAddress(cout, remoteAddress, true);
+         cout << " ... ";
+         cout.flush();
+      }
 
       if(protocol == IPPROTO_SCTP) {
          sctp_event_subscribe events;
@@ -314,7 +331,9 @@ static Flow* createFlow(Flow*              previousFlow,
               << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
       }
-      cout << "okay <sd=" << socketDescriptor << "> ";
+      if(gOutputVerbosity >= NPFOV_STATUS) {
+         cout << "okay <sd=" << socketDescriptor << "> ";
+      }
    }
    cout.flush();
    
@@ -547,8 +566,8 @@ void activeMode(int argc, char** argv)
    // ====== Initialize IDs and print status ================================
    uint64_t measurementID = random64();
    
-   if(gQuietMode < 1) {
-      cout << "Active Mode:" << gQuietMode << endl
+   if(gOutputVerbosity >= NPFOV_STATUS) {
+      cout << "Active Mode:" << endl
          << "   - Measurement ID  = " << format("%lx", measurementID) << endl
          << "   - Remote Address  = "; printAddress(cout, &remoteAddress.sa, true); 
       cout << endl
@@ -569,7 +588,7 @@ void activeMode(int argc, char** argv)
            << strerror(errno) << "!" << endl;
       exit(1);
    }
-   if(gQuietMode < 1) {
+   if(gOutputVerbosity >= NPFOV_STATUS) {
       cout << "okay; sd=" << gControlSocket << endl << endl;
    }
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
@@ -631,7 +650,9 @@ void activeMode(int argc, char** argv)
             cerr << endl << "ERROR: Failed to add flow to remote node!" << endl;
             exit(1);
          }
-         cout << "okay" << endl;
+         if(gOutputVerbosity >= NPFOV_STATUS) {
+            cout << "okay" << endl;
+         }
 
          if(protocol != IPPROTO_SCTP) {
             lastFlow = NULL;
@@ -639,7 +660,9 @@ void activeMode(int argc, char** argv)
          }
       }
    }
-   cout << endl;
+   if(gOutputVerbosity >= NPFOV_STATUS) {
+      cout << endl;
+   }
    
    printGlobalParameters();
 
@@ -659,7 +682,7 @@ void activeMode(int argc, char** argv)
    bool                     aborted = false;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
-   if(gQuietMode < 2) {
+   if(gOutputVerbosity >= NPFOV_BANDWIDTH_INFO) {
       FlowManager::getFlowManager()->enableDisplay();
    }
 
@@ -671,11 +694,16 @@ void activeMode(int argc, char** argv)
       }
    }
 
-   FlowManager::getFlowManager()->disableDisplay();
+   if(gOutputVerbosity >= NPFOV_BANDWIDTH_INFO) {
+      FlowManager::getFlowManager()->disableDisplay();
+      if(gStopTimeReached) {
+         cout << endl;
+      }
+   }
 
 
    // ====== Stop measurement ===============================================
-   if(gQuietMode < 1) {
+   if(gOutputVerbosity >= NPFOV_STATUS) {
       cout << "Shutdown:" << endl;
    }
    if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID)) {
@@ -698,10 +726,18 @@ int main(int argc, char** argv)
 
    for(int i = 2;i < argc;i++) {
       if(strcmp(argv[i], "-quiet") == 0) {
-         gQuietMode++;
+         if(gOutputVerbosity > 0) {
+            gOutputVerbosity--;
+         }
+      }
+      else if(strcmp(argv[i], "-verbose") == 0) {
+         gOutputVerbosity++;
+      }
+      else if(strncmp(argv[i], "-verbosity=", 11) == 0) {
+         gOutputVerbosity = atol((const char*)&argv[i][11]);
       }
    }
-   if(gQuietMode < 1) {
+   if(gOutputVerbosity >= NPFOV_STATUS) {
       cout << "Network Performance Meter - Version 1.0" << endl
            << "---------------------------------------" << endl << endl;
    }

@@ -78,8 +78,9 @@ struct NetPerfMeterAddFlowMessage
 
    char                 Description[NETPERFMETER_DESCRIPTION_SIZE];
 
-   uint32_t             ReliableMode;
    uint32_t             OrderedMode;
+   uint32_t             ReliableMode;
+   uint32_t             RetransmissionTrials;
 
    network_double_t     FrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
    network_double_t     FrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
@@ -91,6 +92,8 @@ struct NetPerfMeterAddFlowMessage
    uint16_t             OnOffEvents;
    unsigned int         OnOffEvent[];
 } __attribute__((packed));
+
+#define NPMAF_RTX_TRIALS_IN_MILLISECONDS (1 << 31)
 
 
 struct NetPerfMeterRemoveFlowMessage

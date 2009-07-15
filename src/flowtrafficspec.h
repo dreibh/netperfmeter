@@ -50,8 +50,10 @@ class FlowTrafficSpec
    uint8_t                Protocol;
    std::set<unsigned int> OnOffEvents;
 
-   double                 ReliableMode;
    double                 OrderedMode;
+   double                 ReliableMode;
+   uint32_t               RetransmissionTrials;
+   bool                   RetransmissionTrialsInMS;
 
    uint16_t               MaxMsgSize;
    

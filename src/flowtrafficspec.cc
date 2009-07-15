@@ -88,6 +88,15 @@ void FlowTrafficSpec::print(std::ostream& os) const
       snprintf((char*)&reliable, sizeof(reliable), "%1.2f%%", 100.0 * ReliableMode);
       os << "      - Ordered Mode:        " << ordered  << std::endl;
       os << "      - Reliable Mode:       " << reliable << std::endl;
+      os << "      - Retransmissions:     ";
+      if( (RetransmissionTrialsInMS) && (RetransmissionTrials == ~((uint32_t)0)) ) {
+         os << "unlimited";
+      }
+      else {
+         os << RetransmissionTrials
+            << (RetransmissionTrialsInMS ? "ms" : " trials");
+      }
+      os << std::endl;
    }
    os << "      - Start/Stop:          { ";
    if(OnOffEvents.size() > 0) {
@@ -113,9 +122,11 @@ void FlowTrafficSpec::print(std::ostream& os) const
 // ###### Reset FlowTrafficSpec #############################################
 void FlowTrafficSpec::reset()
 {
-   MaxMsgSize   = 16000;
-   OrderedMode  = 1.0;
-   ReliableMode = 1.0;
+   MaxMsgSize               = 16000;
+   OrderedMode              = 1.0;
+   ReliableMode             = 1.0;
+   RetransmissionTrials     = ~0;
+   RetransmissionTrialsInMS = true;
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
       OutboundFrameRate[i] = 0.0;
       OutboundFrameSize[i] = 0.0;

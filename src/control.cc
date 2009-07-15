@@ -30,7 +30,7 @@
 #include <iostream>
 
 
-extern unsigned int gQuietMode;
+unsigned int gOutputVerbosity = 9;
 
 
 // ##########################################################################
@@ -71,7 +71,9 @@ static bool downloadOutputFile(MessageReader* messageReader,
          // printf("%u + %u > %u\n", bytes, sizeof(NetPerfMeterResults), received);
          exit(1);
       }
-      std::cout << ".";
+      if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {
+         std::cout << ".";
+      }
       
       if(bytes > 0) {
          if(fwrite((char*)&resultsMsg->Data, bytes, 1, fh) != 1) {
@@ -107,8 +109,10 @@ static bool downloadResults(MessageReader*     messageReader,
          namePattern, "passive",
          format("-%08x-%04x", flow->getFlowID(), flow->getStreamID()));
 
-   std::cout << "Downloading results [" << outputName << "] ";
-   std::cout.flush();
+   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+      std::cout << "Downloading results [" << outputName << "] ";
+      std::cout.flush();
+   }
    bool success = awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                                flow->getMeasurementID(),
                                                flow->getFlowID(),
@@ -116,7 +120,9 @@ static bool downloadResults(MessageReader*     messageReader,
    if(success) {
       success = downloadOutputFile(messageReader, controlSocket, outputName.c_str());
    }
-   std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
+   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+      std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
+   }
    return(success);
 }
 
@@ -145,11 +151,14 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    }
    addFlowMsg->FrameRateRng  = flow->getTrafficSpec().InboundFrameRateRng;
    addFlowMsg->FrameSizeRng  = flow->getTrafficSpec().InboundFrameSizeRng;
-   addFlowMsg->ReliableMode  = htonl((uint32_t)((long long)rint(flow->getTrafficSpec().ReliableMode * (double)0xffffffff)));
    addFlowMsg->MaxMsgSize    = htons(flow->getTrafficSpec().MaxMsgSize);
    addFlowMsg->OrderedMode   = htonl((uint32_t)((long long)rint(flow->getTrafficSpec().OrderedMode * (double)0xffffffff)));
+   addFlowMsg->ReliableMode  = htonl((uint32_t)((long long)rint(flow->getTrafficSpec().ReliableMode * (double)0xffffffff)));
+   addFlowMsg->RetransmissionTrials =
+      htonl(flow->getTrafficSpec().RetransmissionTrials &
+            (flow->getTrafficSpec().RetransmissionTrialsInMS ? NPMAF_RTX_TRIALS_IN_MILLISECONDS : 0));
+
    addFlowMsg->OnOffEvents   = htons(flow->getTrafficSpec().OnOffEvents.size());
-   
    size_t i = 0;
    for(std::set<unsigned int>::iterator iterator = flow->getTrafficSpec().OnOffEvents.begin();
        iterator != flow->getTrafficSpec().OnOffEvents.end();iterator++, i++) {
@@ -163,13 +172,17 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    memset(&sinfo, 0, sizeof(sinfo));
    sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
            
-   std::cout << "<R1> "; std::cout.flush();
+   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+      std::cout << "<R1> "; std::cout.flush();
+   }
    if(sctp_send(controlSocket, addFlowMsg, addFlowMsgSize, &sinfo, 0) <= 0) {
       return(false);
    }
    
    // ====== Wait for NETPERFMETER_ACKNOWLEDGE ==============================
-   std::cout << "<R2> "; std::cout.flush();
+   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+      std::cout << "<R2> "; std::cout.flush();
+   }
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    flow->getMeasurementID(),
                                    flow->getFlowID(), flow->getStreamID()) == false) {
@@ -203,7 +216,9 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       identifyMsg.FlowID        = htonl(flow->getFlowID());
       identifyMsg.StreamID      = htons(flow->getStreamID());
       
-      std::cout << "<R3> "; std::cout.flush();
+      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+         std::cout << "<R3> "; std::cout.flush();
+      }
       if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
@@ -218,14 +233,18 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
             return(false);
          }
       }
-      std::cout << "<R4> "; std::cout.flush();
+      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+         std::cout << "<R4> "; std::cout.flush();
+      }
       if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                       flow->getMeasurementID(),
                                       flow->getFlowID(), flow->getStreamID(),
                                       IDENTIFY_TIMEOUT) == true) {
          return(true);
       }
-      std::cout << "<timeout> "; std::cout.flush();
+      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+         std::cout << "<timeout> "; std::cout.flush();
+      }
    }
    return(false);
 }
@@ -307,7 +326,7 @@ bool performNetPerfMeterStart(MessageReader* messageReader,
                            hasSuffix(vectorNamePattern, ".bz2"),
                            scalarNamePattern,                                             
                            hasSuffix(scalarNamePattern, ".bz2"),
-                           (gQuietMode < 1));
+                           (gOutputVerbosity >= NPFOV_FLOWS));
    if(success) {
       // ====== Tell passive node to start measurement ======================
       NetPerfMeterStartMessage startMsg;
@@ -326,16 +345,22 @@ bool performNetPerfMeterStart(MessageReader* messageReader,
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
 
-      std::cout << "Starting measurement ... <S1> "; std::cout.flush();
+      if(gOutputVerbosity >= NPFOV_STATUS) {
+         std::cout << "Starting measurement ... <S1> "; std::cout.flush();
+      }
       if(sctp_send(controlSocket, &startMsg, sizeof(startMsg), &sinfo, 0) < 0) {
          return(false);
       }
-      std::cout << "<S2> "; std::cout.flush();
+      if(gOutputVerbosity >= NPFOV_STATUS) {
+         std::cout << "<S2> "; std::cout.flush();
+      }
       if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                       measurementID, 0, 0) == false) {
          return(false);
       }
-      std::cout << "okay" << std::endl << std::endl;
+      if(gOutputVerbosity >= NPFOV_STATUS) {
+         std::cout << "okay" << std::endl << std::endl;
+      }
       return(true);
    }
    return(false);
@@ -394,11 +419,15 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    memset(&sinfo, 0, sizeof(sinfo));
    sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
 
-   std::cout << "Stopping measurement ... <S1> "; std::cout.flush();
+   if(gOutputVerbosity >= NPFOV_STATUS) {
+      std::cout << "Stopping measurement ... <S1> "; std::cout.flush();
+   }
    if(sctp_send(controlSocket, &stopMsg, sizeof(stopMsg), &sinfo, 0) < 0) {
       return(false);
    }
-   std::cout << "<S2> "; std::cout.flush();
+   if(gOutputVerbosity >= NPFOV_STATUS) {
+      std::cout << "<S2> "; std::cout.flush();
+   }
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    measurementID, 0, 0) == false) {
       return(false);
@@ -407,24 +436,32 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    // ====== Download passive node's vector file ============================
    const std::string vectorName = Flow::getNodeOutputName(
       measurement->getVectorNamePattern(), "passive");
-   std::cout << std::endl << "Downloading results [" << vectorName << "] ";
-   std::cout.flush();
+   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+      std::cout << std::endl << "Downloading results [" << vectorName << "] ";
+      std::cout.flush();
+   }
    if(downloadOutputFile(messageReader, controlSocket, vectorName.c_str()) == false) {
       delete measurement;
       return(false);
    }
-   std::cout << " ";
+   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+      std::cout << " ";
+   }
 
    // ====== Download passive node's scalar file ============================
    const std::string scalarName = Flow::getNodeOutputName(
       measurement->getScalarNamePattern(), "passive");
-   std::cout << std::endl << "Downloading results [" << scalarName << "] ";
-   std::cout.flush();
+   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+      std::cout << std::endl << "Downloading results [" << scalarName << "] ";
+      std::cout.flush();
+   }
    if(downloadOutputFile(messageReader, controlSocket, scalarName.c_str()) == false) {
       delete measurement;
       return(false);
    }
-   std::cout << " okay" << std::endl;
+   if(gOutputVerbosity >= NPFOV_STATUS) {
+      std::cout << " okay" << std::endl;
+   }
 
    // ====== Download flow results and remove the flows =====================
    FlowManager::getFlowManager()->lock();
@@ -437,7 +474,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
             delete measurement;
             return(false);
          }
-         if(gQuietMode < 1) {
+         if(gOutputVerbosity >= NPFOV_FLOWS) {
             flow->print(std::cout, true);
          }
          delete flow;
@@ -469,12 +506,16 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    pfd.events  = POLLIN;
    pfd.revents = 0;
    if(ext_poll_wrapper(&pfd, 1, timeout) < 1) {
-      std::cout << "<timeout> ";
-      std::cout.flush();
+      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+         std::cout << "<timeout> ";
+         std::cout.flush();
+      }
       return(false);
    }
    if(!(pfd.revents & POLLIN)) {
-      std::cout << "<no answer> ";
+      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+         std::cout << "<no answer> ";
+      }
       return(false);
    }
 
@@ -499,8 +540,10 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    }
 
    const uint32_t status = ntohl(ackMsg.Status);
-   std::cout << "<status=" << status << "> ";
-   std::cout.flush();
+   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+      std::cout << "<status=" << status << "> ";
+      std::cout.flush();
+   }
    return(status == NETPERFMETER_STATUS_OKAY);
 }
 
@@ -527,7 +570,7 @@ static bool uploadOutputFile(const int          controlSocket,
    sinfo.sinfo_ppid        = PPID_NETPERFMETER_CONTROL;
    resultsMsg->Header.Type = NETPERFMETER_RESULTS;
 
-   if(gQuietMode < 1) {
+   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       std::cout << std::endl << "Uploading results ";
       std::cout.flush();
    }
@@ -556,7 +599,7 @@ static bool uploadOutputFile(const int          controlSocket,
          success = false;
          break;
       }
-      if(gQuietMode < 1) {
+      if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {
          std::cout << ".";
       }
       std::cout.flush();
@@ -566,7 +609,7 @@ static bool uploadOutputFile(const int          controlSocket,
    if(!success) {
       sendAbort(controlSocket, assocID);
    }
-   if(gQuietMode < 1) {
+   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
    }
    return(success);
@@ -634,11 +677,13 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
          trafficSpec.OutboundFrameRate[i] = networkToDouble(addFlowMsg->FrameRate[i]);
          trafficSpec.OutboundFrameSize[i] = networkToDouble(addFlowMsg->FrameSize[i]);
       }
-      trafficSpec.OutboundFrameRateRng = addFlowMsg->FrameRateRng;
-      trafficSpec.OutboundFrameSizeRng = addFlowMsg->FrameSizeRng;
-      trafficSpec.MaxMsgSize           = ntohs(addFlowMsg->MaxMsgSize);
-      trafficSpec.OrderedMode          = ntohl(addFlowMsg->OrderedMode)  / (double)0xffffffff;
-      trafficSpec.ReliableMode         = ntohl(addFlowMsg->ReliableMode) / (double)0xffffffff;
+      trafficSpec.OutboundFrameRateRng     = addFlowMsg->FrameRateRng;
+      trafficSpec.OutboundFrameSizeRng     = addFlowMsg->FrameSizeRng;
+      trafficSpec.MaxMsgSize               = ntohs(addFlowMsg->MaxMsgSize);
+      trafficSpec.OrderedMode              = ntohl(addFlowMsg->OrderedMode)  / (double)0xffffffff;
+      trafficSpec.ReliableMode             = ntohl(addFlowMsg->ReliableMode) / (double)0xffffffff;
+      trafficSpec.RetransmissionTrials     = ntohl(addFlowMsg->RetransmissionTrials) & ~NPMAF_RTX_TRIALS_IN_MILLISECONDS;
+      trafficSpec.RetransmissionTrialsInMS = (ntohl(addFlowMsg->RetransmissionTrials) & NPMAF_RTX_TRIALS_IN_MILLISECONDS);
       for(size_t i = 0;i < startStopEvents;i++) {
          trafficSpec.OnOffEvents.insert(ntohl(addFlowMsg->OnOffEvent[i]));
       }
@@ -710,7 +755,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
       measurementID, now,
       NULL, (startMsg->Header.Flags & NPMSF_COMPRESS_VECTORS) ? true : false,
       NULL, (startMsg->Header.Flags & NPMSF_COMPRESS_SCALARS) ? true : false,
-      (gQuietMode < 1));
+      (gOutputVerbosity >= NPFOV_FLOWS));
    
    return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                       measurementID, 0, 0,
@@ -739,7 +784,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
 
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
-   FlowManager::getFlowManager()->stopMeasurement(measurementID, (gQuietMode < 1));
+   FlowManager::getFlowManager()->stopMeasurement(measurementID, (gOutputVerbosity >= NPFOV_FLOWS));
    bool         success     = false;
    Measurement* measurement =
       FlowManager::getFlowManager()->findMeasurement(measurementID);

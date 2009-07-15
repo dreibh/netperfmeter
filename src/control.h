@@ -28,6 +28,16 @@
 #include <ext_socket.h>
 
 
+#define NPFOV_BANDWIDTH_INFO 1
+#define NPFOV_STATUS         2
+#define NPFOV_MEASUREMENTS   3
+#define NPFOV_FLOWS          4
+#define NPFOV_CONNECTIONS    5
+#define NPFOV_REALLY_VERBOSE 6
+
+extern unsigned int gOutputVerbosity;
+
+
 // ##########################################################################
 // #### Active Side Control                                              ####
 // ##########################################################################

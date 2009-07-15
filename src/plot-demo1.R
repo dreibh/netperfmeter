@@ -37,6 +37,12 @@ plotConfigurations <- list(
         "Flows", "passive.flow-ReceivedBytes",
         "passive.flow", "OnlyOneAssoc", "",
         "", "", "",
+        "(data1$passive.flow <= 2) | ((data1$passive.flow >= 1001) & (data1$passive.flow <= 1002))"),
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedByteRate.pdf"),
+        "Receiver's Perspective", NA, NA, list(1,1),
+        "Flows", "passive.flow-ReceivedByteRate",
+        "passive.flow", "OnlyOneAssoc", "",
+        "", "", "",
         "(data1$passive.flow <= 2) | ((data1$passive.flow >= 1001) & (data1$passive.flow <= 1002))")
 )
 
@@ -62,10 +68,15 @@ plotVariables <- list(
    list("passive.flow",
            "Flow Number{F}", NA),
    list("passive.flow-ReceivedBytes",
-           "Received Bytes",
-           "data1$passive.flow.ReceivedBytes",
+           "Received Bytes [MiB]",
+           "data1$passive.flow.ReceivedBytes / (1024 * 1024)",
            "blue4",
-           list("passive.flow-ReceivedBytes"))
+           list("passive.flow-ReceivedBytes")),
+   list("passive.flow-ReceivedByteRate",
+           "Received Byte Rate[Kbit/s]",
+           "data1$passive.flow.ReceivedByteRate / 1000",
+           "blue2",
+           list("passive.flow-ReceivedByteRate"))
 
 )
 

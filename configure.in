@@ -23,6 +23,13 @@ fi
 
 
 # ###### Networking declarations ############################################
+AC_MSG_CHECKING(if stderr is a variable of type FILE* and not a macro)
+AC_TRY_COMPILE([#include <stdio.h>],
+               [FILE** stdlog = &stderr],
+               [AC_DEFINE(HAVE_STDERR_FILEPTR, 1, "Define to 1 if stderr is a pointer.")
+                AC_MSG_RESULT(yes)],
+               [AC_MSG_RESULT(no)])
+
 AC_CHECK_HEADERS(sys/types.h sys/socket.h netinet/in.h netinet/sctp.h)
 
 AC_MSG_CHECKING(for socklen_t)
@@ -34,13 +41,6 @@ AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
                [AC_MSG_RESULT(yes)],
                [AC_MSG_RESULT(int)
                 AC_DEFINE(socklen_t, int, [Define a type for socklen_t.])])
-
-AC_MSG_CHECKING(if stderr is a variable of type FILE* and not a macro)
-AC_TRY_COMPILE([#include <stdio.h>],
-               [FILE** stdlog = &stderr],
-               [AC_DEFINE(HAVE_STDERR_FILEPTR, 1, "Define to 1 if stderr is a pointer.")
-                AC_MSG_RESULT(yes)],
-               [AC_MSG_RESULT(no)])
 
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
                 AC_DEFINE(HAVE_SIN_LEN, 1, [Define this if your IPv4 has sin_len in sockaddr_in struct.]),,
@@ -275,7 +275,15 @@ else
    AC_CHECK_FUNCS(sctp_send, ,     AC_CHECK_LIB(sctp, sctp_send))
    AC_CHECK_FUNCS(sctp_sendx, ,    AC_CHECK_LIB(sctp, sctp_sendx))
    AC_CHECK_MEMBER(struct sctp_paddrparams.spp_flags,
-                   AC_DEFINE(HAVE_SPP_FLAGS, 1, [Define this if you support version 10 if the API ID.]),,
+                   AC_DEFINE(HAVE_SPP_FLAGS, 1, [Define this if sctp_paddrparams has the spp_flags field.]),,
+                   [#ifdef HAVE_SYS_TYPES_H
+                   #include <sys/types.h>
+                   #endif
+                   #ifdef HAVE_NETINET_SCTP_H
+                   #include <netinet/sctp.h>
+                   #endif])
+   AC_CHECK_MEMBER(struct sctp_sndrcvinfo.sinfo_pr_policy,
+                   AC_DEFINE(HAVE_SINFO_PR_POLICY, 1, [Define this if sctp_sndrcvinfo has the sinfo_pr_policy field.]),,
                    [#ifdef HAVE_SYS_TYPES_H
                    #include <sys/types.h>
                    #endif
@@ -288,7 +296,7 @@ else
                   [sctp_assoc_t id;
                    int result = sctp_connectx(0, NULL, 0, &id);],
                   [AC_MSG_RESULT(yes)
-                   AC_DEFINE(HAVE_CONNECTX_WITH_ID, 1, [Define to 1 if sctp_connectx has associd parameter.])],
+                   AC_DEFINE(HAVE_CONNECTX_WITH_ID, 1, [Define to 1 if sctp_connectx has the associd parameter.])],
                   AC_MSG_RESULT(no))
    AC_MSG_CHECKING(whether SCTP_DELAYED_SACK with sctp_sack_info is available)
    AC_TRY_COMPILE([#include <sys/types.h>
