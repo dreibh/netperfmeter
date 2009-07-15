@@ -69,6 +69,7 @@ void FlowManager::removeFlow(Flow* flow)
    lock();
    flow->deactivate();
 
+   // ====== Remove flow from flow set ======================================
    flow->PollFDEntry = NULL;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end();iterator++) {
@@ -77,6 +78,17 @@ void FlowManager::removeFlow(Flow* flow)
          break;
       }
    }
+   
+   // ====== Check whether the socket descriptor is still referenced ========
+   flow->OriginalSocketDescriptor = true;
+   for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
+       iterator != FlowSet.end();iterator++) {
+       if((*iterator)->SocketDescriptor == flow->SocketDescriptor) {
+          flow->OriginalSocketDescriptor = false;
+          break;
+       }
+   }
+
    unlock();
 }
 
@@ -790,6 +802,10 @@ Flow::~Flow()
    FlowManager::getFlowManager()->removeFlow(this);
    deactivate();
    VectorFile.finish(true);
+   if((SocketDescriptor >= 0) && (OriginalSocketDescriptor)) {
+      ext_close(SocketDescriptor);
+      printf("CLOSE: %d\n",SocketDescriptor);
+   }
 }
 
 

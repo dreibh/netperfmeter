@@ -410,6 +410,7 @@ bool mainLoop(const bool               isActiveMode,
       // ====== Incoming data message =======================================
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gTCPSocket, NULL, 0);
+printf("NEW TCP=%d\n",newSD);
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_TCP, newSD);
          }
@@ -421,6 +422,7 @@ bool mainLoop(const bool               isActiveMode,
       }
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gSCTPSocket, NULL, 0);
+printf("NEW SCTP=%d\n",newSD);
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_SCTP, newSD);
          }
