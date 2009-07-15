@@ -77,7 +77,8 @@ INIT_FIELD(message_length, 2, 2)
 INIT_FIELD(acknowledge_flowid,          4,  4)
 INIT_FIELD(acknowledge_measurementid,   8,  8)
 INIT_FIELD(acknowledge_streamid,       16,  2)
-INIT_FIELD(acknowledge_status,         18,  4)
+INIT_FIELD(acknowledge_padding,        18,  2)
+INIT_FIELD(acknowledge_status,         20,  4)
 
 INIT_FIELD(addflow_flowid,          4,  4)
 INIT_FIELD(addflow_measurementid,   8,  8)
@@ -102,9 +103,11 @@ INIT_FIELD(data_byteseqnumber,   32,  8)
 INIT_FIELD(data_timestamp,       40,  8)
 INIT_FIELD(data_payload,         48,  0)
 
-INIT_FIELD(start_measurementid,  4,  8)
+INIT_FIELD(start_padding,        4,  4)
+INIT_FIELD(start_measurementid,  8,  8)
 
-INIT_FIELD(stop_measurementid,  4,  8)
+INIT_FIELD(stop_padding,        4,  4)
+INIT_FIELD(stop_measurementid,  8,  8)
 
 INIT_FIELD(results_data,  4,  0)
 
@@ -118,6 +121,7 @@ static hf_register_info hf[] = {
    { &hf_acknowledge_flowid,         { "Flow ID",           "npmp.acknowledge_flowid",         FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_acknowledge_measurementid,  { "Measurement ID",    "npmp.acknowledge_measurementid",  FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_acknowledge_streamid,       { "Stream ID",         "npmp.acknowledge_streamid",       FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_acknowledge_padding,        { "Padding",           "npmp.acknowledge_padding",        FT_UINT16, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_acknowledge_status,         { "Status",            "npmp.acknowledge_status",         FT_UINT32, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
    { &hf_addflow_flowid,             { "Flow ID",           "npmp.addflow_flowid",             FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
@@ -136,15 +140,17 @@ static hf_register_info hf[] = {
    { &hf_data_flowid,                { "Flow ID",           "npmp.data_flowid",                FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_data_measurementid,         { "Measurement ID",    "npmp.data_measurementid",         FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_data_streamid,              { "Stream ID",         "npmp.data_streamid",              FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_data_padding,               { "Stream ID",         "npmp.data_padding",               FT_UINT16, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_padding,               { "Padding",           "npmp.data_padding",               FT_UINT16, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_data_frameid,               { "Frame ID",          "npmp.data_frameid",               FT_UINT32, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
    { &hf_data_packetseqnumber,       { "Packet Seq Number", "npmp.data_packetseqnumber",       FT_UINT64, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
    { &hf_data_byteseqnumber,         { "Byte Seq Number",   "npmp.data_byteseqnumber",         FT_UINT64, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
    { &hf_data_timestamp,             { "Time Stamp",        "npmp.data_timestamp",             FT_UINT64, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
    { &hf_data_payload,               { "Payload",           "npmp.data_payload",               FT_BYTES,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
 
+   { &hf_start_padding,              { "Padding",           "npmp.start_padding",              FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_start_measurementid,        { "Measurement ID",    "npmp.start_measurementid",        FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
 
+   { &hf_stop_padding,               { "Padding",           "npmp.stop_padding",              FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_stop_measurementid,         { "Measurement ID",    "npmp.stop_measurementid",         FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
 
    { &hf_results_data,               { "Data",              "npmp.results_data",               FT_BYTES,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
@@ -161,6 +167,15 @@ dissect_npmp_acknowledge_message(tvbuff_t *message_tvb, proto_tree *message_tree
   ADD_FIELD(message_tree, acknowledge_measurementid);
   ADD_FIELD(message_tree, acknowledge_streamid);
   ADD_FIELD(message_tree, acknowledge_status);
+}
+
+
+static void
+dissect_npmp_add_flow_message(tvbuff_t *message_tvb, proto_tree *message_tree)
+{
+  ADD_FIELD(message_tree, addflow_flowid);
+  ADD_FIELD(message_tree, addflow_measurementid);
+  ADD_FIELD(message_tree, addflow_streamid);
 }
 
 
@@ -246,9 +261,9 @@ dissect_npmp_message(tvbuff_t *message_tvb, packet_info *pinfo, proto_tree *npmp
     case NETPERFMETER_ACKNOWLEDGE:
       dissect_npmp_acknowledge_message(message_tvb, npmp_tree);
      break;
-/*    case NETPERFMETER_ADD_FLOW:
+    case NETPERFMETER_ADD_FLOW:
       dissect_npmp_add_flow_message(message_tvb, npmp_tree);
-     break;*/
+     break;
     case NETPERFMETER_REMOVE_FLOW:
       dissect_npmp_remove_flow_message(message_tvb, npmp_tree);
      break;
@@ -321,4 +336,5 @@ proto_reg_handoff_npmp(void)
 
   npmp_handle = new_create_dissector_handle(dissect_npmp, proto_npmp);
   dissector_add("sctp.ppi", PPID_NETPERFMETER_CONTROL, npmp_handle);
+  dissector_add("sctp.ppi", PPID_NETPERFMETER_DATA,    npmp_handle);
 }

@@ -55,6 +55,7 @@ struct NetPerfMeterAcknowledgeMessage
    uint32_t           FlowID;
    uint64_t           MeasurementID;
    uint16_t           StreamID;
+   uint16_t           Padding;
 
    uint32_t           Status;
 } __attribute__((packed));
@@ -145,6 +146,7 @@ struct NetPerfMeterStartMessage
 {
    NetPerfMeterHeader Header;
 
+   uint32_t           Padding;
    uint64_t           MeasurementID;
 } __attribute__((packed));
 
@@ -156,6 +158,7 @@ struct NetPerfMeterStopMessage
 {
    NetPerfMeterHeader Header;
 
+   uint32_t           Padding;
    uint64_t           MeasurementID;
 } __attribute__((packed));
 

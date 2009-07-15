@@ -170,7 +170,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
            
    sctp_sndrcvinfo sinfo;
    memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
+   sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
            
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       std::cout << "<R1> "; std::cout.flush();
@@ -223,7 +223,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
          sinfo.sinfo_stream = flow->getStreamID();
-         sinfo.sinfo_ppid   = PPID_NETPERFMETER_CONTROL;
+         sinfo.sinfo_ppid   = htonl(PPID_NETPERFMETER_CONTROL);
          if(sctp_send(flow->getSocketDescriptor(), &identifyMsg, sizeof(identifyMsg), &sinfo, 0) <= 0) {
             return(false);
          }
@@ -332,6 +332,7 @@ bool performNetPerfMeterStart(MessageReader* messageReader,
       NetPerfMeterStartMessage startMsg;
       startMsg.Header.Type   = NETPERFMETER_START;
       startMsg.Header.Length = htons(sizeof(startMsg));
+      startMsg.Padding       = 0x00000000;
       startMsg.MeasurementID = hton64(measurementID);
       startMsg.Header.Flags  = 0x00;
       if(hasSuffix(scalarNamePattern, ".bz2")) {
@@ -343,7 +344,7 @@ bool performNetPerfMeterStart(MessageReader* messageReader,
 
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
-      sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
+      sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
 
       if(gOutputVerbosity >= NPFOV_STATUS) {
          std::cout << "Starting measurement ... <S1> "; std::cout.flush();
@@ -385,7 +386,7 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
 
    sctp_sndrcvinfo sinfo;
    memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
+   sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
 
    if(sctp_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), &sinfo, 0) <= 0) {
       return(false);
@@ -413,11 +414,12 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    stopMsg.Header.Type   = NETPERFMETER_STOP;
    stopMsg.Header.Flags  = 0x00;
    stopMsg.Header.Length = htons(sizeof(stopMsg));
+   stopMsg.Padding       = 0x00000000;
    stopMsg.MeasurementID = hton64(measurementID);
 
    sctp_sndrcvinfo sinfo;
    memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = PPID_NETPERFMETER_CONTROL;
+   sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
 
    if(gOutputVerbosity >= NPFOV_STATUS) {
       std::cout << "Stopping measurement ... <S1> "; std::cout.flush();
@@ -567,7 +569,7 @@ static bool uploadOutputFile(const int          controlSocket,
    sctp_sndrcvinfo sinfo;
    memset(&sinfo, 0, sizeof(sinfo));
    sinfo.sinfo_assoc_id    = assocID;
-   sinfo.sinfo_ppid        = PPID_NETPERFMETER_CONTROL;
+   sinfo.sinfo_ppid        = htonl(PPID_NETPERFMETER_CONTROL);
    resultsMsg->Header.Type = NETPERFMETER_RESULTS;
 
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
@@ -975,12 +977,13 @@ bool sendNetPerfMeterAcknowledge(int            controlSocket,
    ackMsg.MeasurementID = hton64(measurementID);
    ackMsg.FlowID        = htonl(flowID);
    ackMsg.StreamID      = htons(streamID);
+   ackMsg.Padding       = 0x0000;
    ackMsg.Status        = htonl(status);
 
    sctp_sndrcvinfo sinfo;
    memset(&sinfo, 0, sizeof(sinfo));
    sinfo.sinfo_assoc_id = assocID;
-   sinfo.sinfo_ppid     = PPID_NETPERFMETER_CONTROL;
+   sinfo.sinfo_ppid     = htonl(PPID_NETPERFMETER_CONTROL);
 
    return(sctp_send(controlSocket, &ackMsg, sizeof(ackMsg), &sinfo, 0) > 0);
 }
