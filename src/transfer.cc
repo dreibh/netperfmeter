@@ -96,7 +96,6 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       if(flow->getTrafficSpec().ReliableMode < 1.0) {
          const bool sendUnreliable = (randomDouble() < flow->getTrafficSpec().ReliableMode);
          if(sendUnreliable) {
-            sinfo.sinfo_timetolive = 1;
 #ifdef HAVE_SINFO_PR_POLICY
             sinfo.sinfo_timetolive = flow->getTrafficSpec().RetransmissionTrials;
             if(flow->getTrafficSpec().RetransmissionTrialsInMS) {
@@ -107,6 +106,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
             }
 #else
 #warning The SCTP API does not support PR-SCTP policies! Using sinfo_timetolive=1 in unreliable mode.
+            sinfo.sinfo_timetolive = 1;
 #endif
          }
       }
