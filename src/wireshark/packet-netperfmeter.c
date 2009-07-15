@@ -149,8 +149,8 @@ static hf_register_info hf[] = {
    { &hf_addflow_protocol,           { "Protocol",          "npmp.addflow_protocol",           FT_UINT8,   BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_flags,              { "Flags",             "npmp.addflow_flags",              FT_UINT8,   BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_description,        { "Description",       "npmp.addflow_description",        FT_STRING,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
-   { &hf_addflow_ordered,            { "Ordered",           "npmp.addflow_ordered",            FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_addflow_reliable,           { "Reliable",          "npmp.addflow_reliable",           FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_ordered,            { "Ordered",           "npmp.addflow_ordered",            FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_reliable,           { "Reliable",          "npmp.addflow_reliable",           FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_retranstrials,      { "Retransmission Trials", "npmp.addflow_retranstrials",  FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_frameraterng,       { "Frame Rate RNG",    "npmp.addflow_frameraterng",       FT_UINT8,   BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_framerate1,         { "Frame Rate 1",      "npmp.addflow_framerate1",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
@@ -211,15 +211,27 @@ dissect_npmp_acknowledge_message(tvbuff_t *message_tvb, proto_tree *message_tree
 static void
 dissect_npmp_add_flow_message(tvbuff_t *message_tvb, proto_tree *message_tree)
 {
+  guint32 retranstrials;
+
   ADD_FIELD(message_tree, addflow_flowid);
   ADD_FIELD(message_tree, addflow_measurementid);
   ADD_FIELD(message_tree, addflow_streamid);
   ADD_FIELD(message_tree, addflow_protocol);
   ADD_FIELD(message_tree, addflow_flags);
   ADD_FIELD(message_tree, addflow_description);
-  ADD_FIELD(message_tree, addflow_ordered);
-  ADD_FIELD(message_tree, addflow_reliable);
-  ADD_FIELD(message_tree, addflow_retranstrials);
+
+  proto_tree_add_double_format_value(message_tree, hf_addflow_ordered, message_tvb, offset_addflow_ordered, length_addflow_ordered,
+                                     100.0 * tvb_get_ntohl(message_tvb, offset_addflow_ordered) / (double)0xffffffff, "%1.3f%%",
+                                     100.0 * tvb_get_ntohl(message_tvb, offset_addflow_ordered) / (double)0xffffffff);
+  proto_tree_add_double_format_value(message_tree, hf_addflow_reliable, message_tvb, offset_addflow_reliable, length_addflow_reliable,
+                                     100.0 * tvb_get_ntohl(message_tvb, offset_addflow_reliable) / (double)0xffffffff, "%1.3f%%",
+                                     100.0 * tvb_get_ntohl(message_tvb, offset_addflow_reliable) / (double)0xffffffff);
+
+  retranstrials = tvb_get_ntohl(message_tvb, offset_addflow_retranstrials);
+  proto_tree_add_uint_format_value(message_tree, hf_addflow_retranstrials, message_tvb, offset_addflow_retranstrials, length_addflow_retranstrials,
+                                   retranstrials, (retranstrials & (1 << 31)) ? "%u ms" : "%u trials",
+                                   retranstrials &~ (1 << 31));
+  
   ADD_FIELD(message_tree, addflow_frameraterng);
   ADD_FIELD(message_tree, addflow_framerate1);
   ADD_FIELD(message_tree, addflow_framerate2);

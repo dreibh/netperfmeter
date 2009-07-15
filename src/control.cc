@@ -155,8 +155,8 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    addFlowMsg->OrderedMode   = htonl((uint32_t)((long long)rint(flow->getTrafficSpec().OrderedMode * (double)0xffffffff)));
    addFlowMsg->ReliableMode  = htonl((uint32_t)((long long)rint(flow->getTrafficSpec().ReliableMode * (double)0xffffffff)));
    addFlowMsg->RetransmissionTrials =
-      htonl(flow->getTrafficSpec().RetransmissionTrials &
-            (flow->getTrafficSpec().RetransmissionTrialsInMS ? NPMAF_RTX_TRIALS_IN_MILLISECONDS : 0));
+      htonl((uint32_t)flow->getTrafficSpec().RetransmissionTrials |
+            (uint32_t)(flow->getTrafficSpec().RetransmissionTrialsInMS ? NPMAF_RTX_TRIALS_IN_MILLISECONDS : 0));
 
    addFlowMsg->Padding     = 0x0000;
    addFlowMsg->OnOffEvents = htons(flow->getTrafficSpec().OnOffEvents.size());
