@@ -89,9 +89,11 @@ struct NetPerfMeterAddFlowMessage
    uint8_t              FrameSizeRng;
 
    uint16_t             MaxMsgSize;
+
+   uint16_t             Padding;
    
    uint16_t             OnOffEvents;
-   unsigned int         OnOffEvent[];
+   uint32_t             OnOffEvent[];
 } __attribute__((packed));
 
 #define NPMAF_RTX_TRIALS_IN_MILLISECONDS (1 << 31)

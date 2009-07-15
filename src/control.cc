@@ -134,7 +134,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
 {
    // ====== Sent NETPERFMETER_ADD_FLOW to remote node ======================
    const size_t                addFlowMsgSize = sizeof(NetPerfMeterAddFlowMessage) +
-                                                   (sizeof(unsigned int) * flow->getTrafficSpec().OnOffEvents.size());
+                                                   (sizeof(uint32_t) * flow->getTrafficSpec().OnOffEvents.size());
    char                        addFlowMsgBuffer[addFlowMsgSize];
    NetPerfMeterAddFlowMessage* addFlowMsg = (NetPerfMeterAddFlowMessage*)&addFlowMsgBuffer;
    addFlowMsg->Header.Type   = NETPERFMETER_ADD_FLOW;
@@ -158,7 +158,8 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
       htonl(flow->getTrafficSpec().RetransmissionTrials &
             (flow->getTrafficSpec().RetransmissionTrialsInMS ? NPMAF_RTX_TRIALS_IN_MILLISECONDS : 0));
 
-   addFlowMsg->OnOffEvents   = htons(flow->getTrafficSpec().OnOffEvents.size());
+   addFlowMsg->Padding     = 0x0000;
+   addFlowMsg->OnOffEvents = htons(flow->getTrafficSpec().OnOffEvents.size());
    size_t i = 0;
    for(std::set<unsigned int>::iterator iterator = flow->getTrafficSpec().OnOffEvents.begin();
        iterator != flow->getTrafficSpec().OnOffEvents.end();iterator++, i++) {

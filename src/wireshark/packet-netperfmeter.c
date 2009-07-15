@@ -80,9 +80,28 @@ INIT_FIELD(acknowledge_streamid,       16,  2)
 INIT_FIELD(acknowledge_padding,        18,  2)
 INIT_FIELD(acknowledge_status,         20,  4)
 
-INIT_FIELD(addflow_flowid,          4,  4)
-INIT_FIELD(addflow_measurementid,   8,  8)
-INIT_FIELD(addflow_streamid,       16,  2)
+INIT_FIELD(addflow_flowid,           4,  4)
+INIT_FIELD(addflow_measurementid,    8,  8)
+INIT_FIELD(addflow_streamid,        16,  2)
+INIT_FIELD(addflow_protocol,        18,  1)
+INIT_FIELD(addflow_flags,           19,  1)
+INIT_FIELD(addflow_description,     20, 32)
+INIT_FIELD(addflow_ordered,         52,  4)
+INIT_FIELD(addflow_reliable,        56,  4)
+INIT_FIELD(addflow_retranstrials,   60,  4)
+INIT_FIELD(addflow_framerate1,      64,  8)
+INIT_FIELD(addflow_framerate2,      72,  8)
+INIT_FIELD(addflow_framerate3,      80,  8)
+INIT_FIELD(addflow_framerate4,      88,  8)
+INIT_FIELD(addflow_framesize1,      96,  8)
+INIT_FIELD(addflow_framesize2,     104,  8)
+INIT_FIELD(addflow_framesize3,     112,  8)
+INIT_FIELD(addflow_framesize4,     120,  8)
+INIT_FIELD(addflow_frameraterng,   128,  1)
+INIT_FIELD(addflow_framesizerng,   129,  1)
+INIT_FIELD(addflow_maxmsgsize,     130,  2)
+INIT_FIELD(addflow_padding,        132,  2)
+INIT_FIELD(addflow_onoffevents,    134,  2)
 
 INIT_FIELD(removeflow_flowid,          4,  4)
 INIT_FIELD(removeflow_measurementid,   8,  8)
@@ -114,46 +133,65 @@ INIT_FIELD(results_data,  4,  0)
 
 /* Setup list of header fields */
 static hf_register_info hf[] = {
-   { &hf_message_type,               { "Type",              "npmp.message_type",               FT_UINT8,  BASE_DEC,  VALS(message_type_values), 0x0, NULL, HFILL } },
-   { &hf_message_flags,              { "Flags",             "npmp.message_flags",              FT_UINT8,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_message_length,             { "Length",            "npmp.message_length",             FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_message_type,               { "Type",              "npmp.message_type",               FT_UINT8,   BASE_DEC,  VALS(message_type_values), 0x0, NULL, HFILL } },
+   { &hf_message_flags,              { "Flags",             "npmp.message_flags",              FT_UINT8,   BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_message_length,             { "Length",            "npmp.message_length",             FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
-   { &hf_acknowledge_flowid,         { "Flow ID",           "npmp.acknowledge_flowid",         FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_acknowledge_measurementid,  { "Measurement ID",    "npmp.acknowledge_measurementid",  FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_acknowledge_streamid,       { "Stream ID",         "npmp.acknowledge_streamid",       FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_acknowledge_padding,        { "Padding",           "npmp.acknowledge_padding",        FT_UINT16, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_acknowledge_status,         { "Status",            "npmp.acknowledge_status",         FT_UINT32, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_acknowledge_flowid,         { "Flow ID",           "npmp.acknowledge_flowid",         FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_acknowledge_measurementid,  { "Measurement ID",    "npmp.acknowledge_measurementid",  FT_UINT64,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_acknowledge_streamid,       { "Stream ID",         "npmp.acknowledge_streamid",       FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_acknowledge_padding,        { "Padding",           "npmp.acknowledge_padding",        FT_UINT16,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_acknowledge_status,         { "Status",            "npmp.acknowledge_status",         FT_UINT32,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
-   { &hf_addflow_flowid,             { "Flow ID",           "npmp.addflow_flowid",             FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_addflow_measurementid,      { "Measurement ID",    "npmp.addflow_measurementid",      FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_addflow_streamid,           { "Stream ID",         "npmp.addflow_streamid",           FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_flowid,             { "Flow ID",           "npmp.addflow_flowid",             FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_measurementid,      { "Measurement ID",    "npmp.addflow_measurementid",      FT_UINT64,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_streamid,           { "Stream ID",         "npmp.addflow_streamid",           FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_protocol,           { "Protocol",          "npmp.addflow_protocol",           FT_UINT8,   BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_flags,              { "Flags",             "npmp.addflow_flags",              FT_UINT8,   BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_description,        { "Description",       "npmp.addflow_description",        FT_STRING,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_ordered,            { "Ordered",           "npmp.addflow_ordered",            FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_reliable,           { "Reliable",          "npmp.addflow_reliable",           FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_retranstrials,      { "Retransmission Trials", "npmp.addflow_retranstrials",  FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_frameraterng,       { "Frame Rate RNG",    "npmp.addflow_frameraterng",       FT_UINT8,   BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_framerate1,         { "Frame Rate 1",      "npmp.addflow_framerate1",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_framerate2,         { "Frame Rate 2",      "npmp.addflow_framerate2",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_framerate3,         { "Frame Rate 3",      "npmp.addflow_framerate3",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_framerate4,         { "Frame Rate 4",      "npmp.addflow_framerate4",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_framesizerng,       { "Frame Size RNG",    "npmp.addflow_framesizerng",       FT_UINT8,   BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_framesize1,         { "Frame Size 1",      "npmp.addflow_framesize1",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_framesize2,         { "Frame Size 2",      "npmp.addflow_framesize2",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_framesize3,         { "Frame Size 3",      "npmp.addflow_framesize3",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_framesize4,         { "Frame Size 4",      "npmp.addflow_framesize4",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_maxmsgsize,         { "Max. Message Size", "npmp.addflow_maxmsgsize",         FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_padding,            { "Padding",           "npmp.addflow_padding",            FT_UINT16,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_onoffevents,        { "On/Off Events",     "npmp.addflow_onoffevents",        FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
-   { &hf_removeflow_flowid,          { "Flow ID",           "npmp.removeflow_flowid",          FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_removeflow_measurementid,   { "Measurement ID",    "npmp.removeflow_measurementid",   FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_removeflow_streamid,        { "Stream ID",         "npmp.removeflow_streamid",        FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_removeflow_flowid,          { "Flow ID",           "npmp.removeflow_flowid",          FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_removeflow_measurementid,   { "Measurement ID",    "npmp.removeflow_measurementid",   FT_UINT64,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_removeflow_streamid,        { "Stream ID",         "npmp.removeflow_streamid",        FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
-   { &hf_identifyflow_flowid,        { "Flow ID",           "npmp.identifyflow_flowid",        FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_identifyflow_magicnumber,   { "Magic Number",      "npmp.identifyflow_magicnumber",   FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_identifyflow_measurementid, { "Measurement ID",    "npmp.identifyflow_measurementid", FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_identifyflow_streamid,      { "Stream ID",         "npmp.identifyflow_streamid",      FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_identifyflow_flowid,        { "Flow ID",           "npmp.identifyflow_flowid",        FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_identifyflow_magicnumber,   { "Magic Number",      "npmp.identifyflow_magicnumber",   FT_UINT64,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_identifyflow_measurementid, { "Measurement ID",    "npmp.identifyflow_measurementid", FT_UINT64,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_identifyflow_streamid,      { "Stream ID",         "npmp.identifyflow_streamid",      FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
-   { &hf_data_flowid,                { "Flow ID",           "npmp.data_flowid",                FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_data_measurementid,         { "Measurement ID",    "npmp.data_measurementid",         FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_data_streamid,              { "Stream ID",         "npmp.data_streamid",              FT_UINT16, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_data_padding,               { "Padding",           "npmp.data_padding",               FT_UINT16, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_data_frameid,               { "Frame ID",          "npmp.data_frameid",               FT_UINT32, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_data_packetseqnumber,       { "Packet Seq Number", "npmp.data_packetseqnumber",       FT_UINT64, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_data_byteseqnumber,         { "Byte Seq Number",   "npmp.data_byteseqnumber",         FT_UINT64, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_data_timestamp,             { "Time Stamp",        "npmp.data_timestamp",             FT_UINT64, BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_data_payload,               { "Payload",           "npmp.data_payload",               FT_BYTES,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_flowid,                { "Flow ID",           "npmp.data_flowid",                FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_measurementid,         { "Measurement ID",    "npmp.data_measurementid",         FT_UINT64,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_streamid,              { "Stream ID",         "npmp.data_streamid",              FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_padding,               { "Padding",           "npmp.data_padding",               FT_UINT16,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_frameid,               { "Frame ID",          "npmp.data_frameid",               FT_UINT32,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_packetseqnumber,       { "Packet Seq Number", "npmp.data_packetseqnumber",       FT_UINT64,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_byteseqnumber,         { "Byte Seq Number",   "npmp.data_byteseqnumber",         FT_UINT64,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_timestamp,             { "Time Stamp",        "npmp.data_timestamp",             FT_UINT64,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_data_payload,               { "Payload",           "npmp.data_payload",               FT_BYTES,   BASE_NONE, NULL,                      0x0, NULL, HFILL } },
 
-   { &hf_start_padding,              { "Padding",           "npmp.start_padding",              FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_start_measurementid,        { "Measurement ID",    "npmp.start_measurementid",        FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_start_padding,              { "Padding",           "npmp.start_padding",              FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_start_measurementid,        { "Measurement ID",    "npmp.start_measurementid",        FT_UINT64,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
 
-   { &hf_stop_padding,               { "Padding",           "npmp.stop_padding",              FT_UINT32, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_stop_measurementid,         { "Measurement ID",    "npmp.stop_measurementid",         FT_UINT64, BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_stop_padding,               { "Padding",           "npmp.stop_padding",               FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_stop_measurementid,         { "Measurement ID",    "npmp.stop_measurementid",         FT_UINT64,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
 
-   { &hf_results_data,               { "Data",              "npmp.results_data",               FT_BYTES,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
+   { &hf_results_data,               { "Data",              "npmp.results_data",               FT_BYTES,   BASE_NONE, NULL,                      0x0, NULL, HFILL } },
 };
 
 
@@ -176,6 +214,25 @@ dissect_npmp_add_flow_message(tvbuff_t *message_tvb, proto_tree *message_tree)
   ADD_FIELD(message_tree, addflow_flowid);
   ADD_FIELD(message_tree, addflow_measurementid);
   ADD_FIELD(message_tree, addflow_streamid);
+  ADD_FIELD(message_tree, addflow_protocol);
+  ADD_FIELD(message_tree, addflow_flags);
+  ADD_FIELD(message_tree, addflow_description);
+  ADD_FIELD(message_tree, addflow_ordered);
+  ADD_FIELD(message_tree, addflow_reliable);
+  ADD_FIELD(message_tree, addflow_retranstrials);
+  ADD_FIELD(message_tree, addflow_frameraterng);
+  ADD_FIELD(message_tree, addflow_framerate1);
+  ADD_FIELD(message_tree, addflow_framerate2);
+  ADD_FIELD(message_tree, addflow_framerate3);
+  ADD_FIELD(message_tree, addflow_framerate4);
+  ADD_FIELD(message_tree, addflow_framesizerng);
+  ADD_FIELD(message_tree, addflow_framesize1);
+  ADD_FIELD(message_tree, addflow_framesize2);
+  ADD_FIELD(message_tree, addflow_framesize3);
+  ADD_FIELD(message_tree, addflow_framesize4);
+  ADD_FIELD(message_tree, addflow_maxmsgsize);
+  ADD_FIELD(message_tree, addflow_padding);
+  ADD_FIELD(message_tree, addflow_onoffevents);
 }
 
 
