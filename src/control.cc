@@ -39,7 +39,7 @@ unsigned int gOutputVerbosity = 9;
 
 
 #define IDENTIFY_MAX_TRIALS 10
-#define IDENTIFY_TIMEOUT    2500
+#define IDENTIFY_TIMEOUT    30000
 
 
 // ###### Download file #####################################################
@@ -168,18 +168,18 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    memset((char*)&addFlowMsg->Description, 0, sizeof(addFlowMsg->Description));
    strncpy((char*)&addFlowMsg->Description, flow->getTrafficSpec().Description.c_str(),
            std::min(sizeof(addFlowMsg->Description), flow->getTrafficSpec().Description.size()));
-           
+
    sctp_sndrcvinfo sinfo;
    memset(&sinfo, 0, sizeof(sinfo));
    sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
-           
+
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       std::cout << "<R1> "; std::cout.flush();
    }
    if(sctp_send(controlSocket, addFlowMsg, addFlowMsgSize, &sinfo, 0) <= 0) {
       return(false);
    }
-   
+
    // ====== Wait for NETPERFMETER_ACKNOWLEDGE ==============================
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       std::cout << "<R2> "; std::cout.flush();
@@ -202,7 +202,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
 {
    // ====== Sent NETPERFMETER_IDENTIFY_FLOW to remote node =================
    unsigned int maxTrials = 1;
-   if( (flow->getTrafficSpec().Protocol != IPPROTO_SCTP) ||
+   if( (flow->getTrafficSpec().Protocol != IPPROTO_SCTP) &&
        (flow->getTrafficSpec().Protocol != IPPROTO_TCP) ) {
       // SCTP and TCP are reliable transport protocols => no retransmissions
       maxTrials = IDENTIFY_MAX_TRIALS;
@@ -216,7 +216,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       identifyMsg.MeasurementID = hton64(flow->getMeasurementID());
       identifyMsg.FlowID        = htonl(flow->getFlowID());
       identifyMsg.StreamID      = htons(flow->getStreamID());
-      
+
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
          std::cout << "<R3> "; std::cout.flush();
       }
@@ -242,9 +242,6 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
                                       flow->getFlowID(), flow->getStreamID(),
                                       IDENTIFY_TIMEOUT) == true) {
          return(true);
-      }
-      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-         std::cout << "<timeout> "; std::cout.flush();
       }
    }
    return(false);
@@ -508,7 +505,8 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    pfd.fd      = controlSocket;
    pfd.events  = POLLIN;
    pfd.revents = 0;
-   if(ext_poll_wrapper(&pfd, 1, timeout) < 1) {
+   const int result = ext_poll_wrapper(&pfd, 1, timeout);
+   if(result < 1) {
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
          std::cout << "<timeout> ";
          std::cout.flush();
