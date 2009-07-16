@@ -100,13 +100,13 @@ bool MessageReader::deregisterSocket(const int sd)
          SocketMap.erase(found);
          delete [] socket->MessageBuffer;
          delete socket;
+         return(true);
       }
    }
    else {
       std::cerr << "ERROR: Socket is not registered!" << std::endl;
-      return(false);
    }
-   return(true);
+   return(false);
 }
 
 

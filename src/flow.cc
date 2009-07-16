@@ -359,7 +359,7 @@ void FlowManager::removeSocket(const int  socketDescriptor,
       UpdatedUnidentifiedSockets = true;
    }
    if(closeSocket) {
-      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(socketDescriptor);
+      assert(FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(socketDescriptor) == true);
       ext_close(socketDescriptor);
    }
    unlock();
@@ -803,6 +803,7 @@ Flow::~Flow()
    deactivate();
    VectorFile.finish(true);
    if((SocketDescriptor >= 0) && (OriginalSocketDescriptor)) {
+      assert(FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor) == true);
       ext_close(SocketDescriptor);
    }
 }
