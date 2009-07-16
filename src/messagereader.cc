@@ -102,11 +102,9 @@ bool MessageReader::deregisterSocket(const int sd)
          delete socket;
          return(true);
       }
+      return(false);   // Socket is still in use!
    }
-   else {
-      std::cerr << "ERROR: Socket is not registered!" << std::endl;
-   }
-   return(false);
+   return(true);
 }
 
 
