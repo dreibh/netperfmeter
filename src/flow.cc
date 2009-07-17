@@ -858,7 +858,6 @@ void Flow::setSocketDescriptor(const int  socketDescriptor,
    SocketDescriptor         = socketDescriptor;
    OriginalSocketDescriptor = originalSocketDescriptor;
    if(SocketDescriptor >= 0) {
-   printf("reg: %d\n", SocketDescriptor);
       FlowManager::getFlowManager()->getMessageReader()->registerSocket(
          TrafficSpec.Protocol, SocketDescriptor);
    }
