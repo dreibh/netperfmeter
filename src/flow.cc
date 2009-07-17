@@ -857,6 +857,11 @@ void Flow::setSocketDescriptor(const int  socketDescriptor,
    lock();
    SocketDescriptor         = socketDescriptor;
    OriginalSocketDescriptor = originalSocketDescriptor;
+   if(SocketDescriptor >= 0) {
+   printf("reg: %d\n", SocketDescriptor);
+      FlowManager::getFlowManager()->getMessageReader()->registerSocket(
+         TrafficSpec.Protocol, SocketDescriptor);
+   }
    unlock();
 }
 
@@ -946,8 +951,6 @@ bool Flow::activate()
 {
    deactivate();
    assert(SocketDescriptor >= 0);
-   FlowManager::getFlowManager()->getMessageReader()->registerSocket(
-      TrafficSpec.Protocol, SocketDescriptor);
    return(start());
 }
 

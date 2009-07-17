@@ -27,13 +27,14 @@ if [ -e $DIRECTORY ] ; then
 fi
 mkdir $DIRECTORY
 
-VALGRIND=
+# VALGRIND=
+# VALGRIND=valgrind
 # VALGRIND="valgrind --tool=helgrind"
-# VALGRIND=./debug
+VALGRIND=./debug
 
 make -j2 && $VALGRIND ./netperfmeter [::1]:9000 \
-   "-activenodename=Compute Client" \
-   "-passivenodename=Compute Server" \
+   "-activenodename=Client" \
+   "-passivenodename=Server" \
    -runtime=300 \
    -config=$DIRECTORY/output.config \
    -vector=$DIRECTORY/output.vec.bz2 \

@@ -638,8 +638,8 @@ void activeMode(int argc, char** argv)
       }
       else {
          if(protocol == 0) {
-            cerr << "ERROR: Protocol specification needed before flow specification "
-                 << argv[i] << "!" << endl;
+            cerr << "ERROR: Protocol specification needed before flow specification at argument \""
+                 << argv[i] << "\"!" << endl;
             exit(1);
          }
 
