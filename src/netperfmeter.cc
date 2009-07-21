@@ -316,6 +316,17 @@ static Flow* createFlow(Flow*              previousFlow,
       }
 
       if(protocol == IPPROTO_SCTP) {
+         sctp_initmsg initmsg;
+         memset((char*)&initmsg, 0 ,sizeof(initmsg));
+         initmsg.sinit_num_ostreams  = 65535;
+         initmsg.sinit_max_instreams = 65535;
+         if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
+                           &initmsg, sizeof(initmsg)) < 0) {
+            cerr << "ERROR: Failed to configure INIT parameters on SCTP socket - "
+                 << strerror(errno) << "!" << endl;
+            exit(1);
+         }
+
          sctp_event_subscribe events;
          memset((char*)&events, 0 ,sizeof(events));
          events.sctp_data_io_event = 1;
@@ -494,6 +505,16 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(gSCTPSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket - "
            << strerror(errno) << "!" << endl;
+      exit(1);
+   }
+   sctp_initmsg initmsg;
+   memset((char*)&initmsg, 0 ,sizeof(initmsg));
+   initmsg.sinit_num_ostreams  = 65535;
+   initmsg.sinit_max_instreams = 65535;
+   if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG,
+                     &initmsg, sizeof(initmsg)) < 0) {
+      cerr << "ERROR: Failed to configure INIT parameters on SCTP socket - "
+            << strerror(errno) << "!" << endl;
       exit(1);
    }
    memset((char*)&events, 0 ,sizeof(events));
