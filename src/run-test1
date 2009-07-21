@@ -5,7 +5,7 @@ RemoteNode="87.139.124.106:9000"
 Variables="Run Runtime Flows OnlyOneAssoc FrameRate FrameSize"
 
 Run_VALUES="1 2 3 4 5 6 7 8"
-Runtime_VALUES="150"
+Runtime_VALUES="500"
 Flows_VALUES="1 2 3 4 5 7 10"
 OnlyOneAssoc_VALUES="0 1"
 FrameRate_VALUES="const0"

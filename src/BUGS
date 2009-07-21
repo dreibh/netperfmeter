@@ -2,25 +2,9 @@ Network Performance Meter - Version 1.0
 ---------------------------------------
 
 Active Mode:
-   - Measurement ID  = 51dc2adcfeb72a5
-   - Remote Address  = 87.139.124.106:9000
-   - Control Address = 87.139.124.106:9001 - connecting ... okay; sd=4
-
-Flow #1: connecting TCP socket to 87.139.124.106:9000 ... okay <sd=6> <R1> <R2> <status=0> <R3> <R4> <status=0> okay
-Flow #2: connecting TCP socket to 87.139.124.106:9000 ... okay <sd=8> <R1> <R2> <status=0> <R3> <R4> ERROR: Unknown socket 8 given in call of MessageReader::receiveMessage()!
-<timeout> <timeout> <R3>
-ERROR: Failed to add flow to remote node!
-
-
-
-Network Performance Meter - Version 1.0
----------------------------------------
-
-Active Mode:
-   - Measurement ID  = 11cb8ed4a52f21e3
+   - Measurement ID  = 205d927be398d719
    - Remote Address  = 87.139.124.106:9000
    - Control Address = 87.139.124.106:9001 - connecting ... okay; sd=4
 
 Flow #1: connecting TCP socket to 87.139.124.106:9000 ... okay <sd=6> <R1> <R2> <status=0> <R3> <R4> ERROR: Unknown socket 6 given in call of MessageReader::receiveMessage()!
-<timeout> <timeout> <R3>
-ERROR: Failed to add flow to remote node!
+./run-test1a: line 17: 50031 Abort trap: 6           (core dumped) $command
