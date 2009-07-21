@@ -31,7 +31,7 @@ VALGRIND=
 # VALGRIND="valgrind --tool=helgrind"
 # VALGRIND=./debug
 
-make -j2 &&  $VALGRIND ./netperfmeter [127.0.0.1]:9000 \
+make -j2 &&  $VALGRIND ./netperfmeter [217.91.155.146]:9000 \
    "-activenodename=Audio-Client" \
    "-passivenodename=Audio-Server" \
    -runtime=30 \
@@ -40,13 +40,5 @@ make -j2 &&  $VALGRIND ./netperfmeter [127.0.0.1]:9000 \
    -scalar=$DIRECTORY/output.sca.bz2 \
    -sctp \
       const2:const1000:uniform3,0.10:const500:description="Audiodatenstrom #1":maxmsgsize=500:unordered=0.9:unreliable=0.3,rtx_timeout=250:onoff=2,8,12,15,18 \
-      exp6:const1200:exp5:const750:description="Audiodatenstrom #2":maxmsgsize=1400:unordered=0.95:unreliable=0.3,rtx_trials=2:onoff=+4+2,+2,+2,+2,+2,+2 \
-      const2:const1000:uniform3,0.10:const500:description="Audiodatenstrom #3":maxmsgsize=500:unordered=0.9:unreliable=0.3,rtx_timeout=250:onoff=+6 \
-      exp6:const1200:exp5:const750:description="Audiodatenstrom #4":maxmsgsize=1400:unordered=0.95:unreliable=0.3,rtx_trials=2:onoff=+8 \
-      const2:const1000:uniform3,0.10:const500:description="Audiodatenstrom #5":maxmsgsize=500:unordered=0.9:unreliable=0.3,rtx_timeout=250:onoff=+10 \
-      exp6:const1200:exp5:const750:description="Audiodatenstrom #6":maxmsgsize=1400:unordered=0.95:unreliable=0.3,rtx_trials=2:onoff=+12 \
-      const2:const1000:uniform3,0.10:const500:description="Audiodatenstrom #7":maxmsgsize=500:unordered=0.9:unreliable=0.3,rtx_timeout=250:onoff=+14 \
-      exp6:const1200:exp5:const750:description="Audiodatenstrom #8":maxmsgsize=1400:unordered=0.95:unreliable=0.3,rtx_trials=2:onoff=+16 \
-      const2:const1000:uniform3,0.10:const500:description="Audiodatenstrom #9":maxmsgsize=500:unordered=0.9:unreliable=0.3,rtx_timeout=250:onoff=+18 \
-      exp6:const1200:exp5:const750:description="Audiodatenstrom #10":maxmsgsize=1400:unordered=0.95:unreliable=0.3,rtx_trials=2:onoff=+20 \
+      exp6:const1200:exp5:const750:description="Audiodatenstrom #2":maxmsgsize=1400:unordered=0.95:unreliable=0.3,rtx_trials=2:onoff=+4+2,+2,+2,+2,+2,+2
    $@

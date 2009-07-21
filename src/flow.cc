@@ -803,7 +803,7 @@ Flow::~Flow()
    deactivate();
    VectorFile.finish(true);
    if((SocketDescriptor >= 0) && (OriginalSocketDescriptor)) {
-      assert(FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor) == true);
+      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
       ext_close(SocketDescriptor);
    }
 }
