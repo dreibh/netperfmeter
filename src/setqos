@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ $# -eq 4 ] ; then
+   echo >&2 "Usage: $0 [Destination] [Bandwidth in kbit/s] [Delay in ms]"
+   exit 1
+fi
+
+DESTINATION="$1"
+BANDWIDTH="$2"
+DELAY="$3"
+
+
+ipfw delete pipe 3000
+ipfw add pipe 3000 ip from any to "$DESTINATION" out
+# ipfw pipe 3000 config bw "$BANDWIDTH"Kbit/s queue 20 delay "$DELAY"ms
+ipfw pipe 3000 config bw 100Kbit/s queue 20 delay 10ms
