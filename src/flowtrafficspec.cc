@@ -67,6 +67,10 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
 // ###### Print FlowTrafficSpec #############################################
 void FlowTrafficSpec::print(std::ostream& os) const
 {
+   os << "      - Receive Buffer Size: "
+      << RcvBufferSize << std::endl;
+   os << "      - Send Buffer Size:    "
+      << SndBufferSize << std::endl;
    os << "      - Max. Message Size:   "
       << MaxMsgSize << std::endl;
    os << "      - Outbound Frame Rate: ";
@@ -123,6 +127,8 @@ void FlowTrafficSpec::print(std::ostream& os) const
 void FlowTrafficSpec::reset()
 {
    MaxMsgSize               = 16000;
+   SndBufferSize            = 525800;
+   RcvBufferSize            = 525800;
    OrderedMode              = 1.0;
    ReliableMode             = 1.0;
    RetransmissionTrials     = ~0;

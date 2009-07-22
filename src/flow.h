@@ -70,14 +70,14 @@ class FlowManager : public Thread
    }
 
    void addSocket(const int protocol, const int socketDescriptor);
-   bool identifySocket(const uint64_t        measurementID,
-                       const uint32_t        flowID,
-                       const uint16_t        streamID,
-                       const int             socketDescriptor,
-                       const sockaddr_union* from,
-                       const bool            compressVectorFile,
-                       int&                  controlSocketDescriptor,
-                       sctp_assoc_t&         controlAssocID);
+   Flow* identifySocket(const uint64_t        measurementID,
+                        const uint32_t        flowID,
+                        const uint16_t        streamID,
+                        const int             socketDescriptor,
+                        const sockaddr_union* from,
+                        const bool            compressVectorFile,
+                        int&                  controlSocketDescriptor,
+                        sctp_assoc_t&         controlAssocID);
    void removeSocket(const int  socketDescriptor,
                      const bool closeSocket = true);
 

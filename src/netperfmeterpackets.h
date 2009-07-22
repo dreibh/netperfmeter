@@ -88,6 +88,9 @@ struct NetPerfMeterAddFlowMessage
    uint8_t              FrameRateRng;
    uint8_t              FrameSizeRng;
 
+   uint32_t             RcvBufferSize;
+   uint32_t             SndBufferSize;
+ 
    uint16_t             MaxMsgSize;
 
    uint16_t             Padding;

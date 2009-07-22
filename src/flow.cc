@@ -316,14 +316,14 @@ void FlowManager::addSocket(const int protocol, const int socketDescriptor)
 
 
 // ###### Map socket to flow ################################################
-bool FlowManager::identifySocket(const uint64_t        measurementID,
-                                 const uint32_t        flowID,
-                                 const uint16_t        streamID,
-                                 const int             socketDescriptor,
-                                 const sockaddr_union* from,
-                                 const bool            compressVectorFile,
-                                 int&                  controlSocketDescriptor,
-                                 sctp_assoc_t&         controlAssocID)
+Flow* FlowManager::identifySocket(const uint64_t        measurementID,
+                                  const uint32_t        flowID,
+                                  const uint16_t        streamID,
+                                  const int             socketDescriptor,
+                                  const sockaddr_union* from,
+                                  const bool            compressVectorFile,
+                                  int&                  controlSocketDescriptor,
+                                  sctp_assoc_t&         controlAssocID)
 {
    bool success            = false;
    controlSocketDescriptor = -1;
@@ -344,7 +344,11 @@ bool FlowManager::identifySocket(const uint64_t        measurementID,
    }
    unlock();
 
-   return(success);
+   if(!success) {
+      flow = NULL;
+   }
+
+   return(flow);
 }
 
 

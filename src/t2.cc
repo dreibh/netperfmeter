@@ -48,9 +48,9 @@ class Defragmenter
    bool checkFrame(Frame* frame);
    
    std::map<uint32_t, Frame*> FrameSet;
-   uint64_t                   LastPacketSeqNumber;
-   uint64_t                   LastByteSeqNumber;
-   uint32_t                   LastFrameID;
+   uint64_t                   NextPacketSeqNumber;
+   uint64_t                   NextByteSeqNumber;
+   uint32_t                   NextFrameID;
    bool                       Synchronized;
 };
 
@@ -179,36 +179,54 @@ void Defragmenter::purge(const unsigned long long now,
    lostPackets = 0;
    lostFrames  = 0;
    
-   Frame*                               frame;
+   Frame*                                   frame;
    for(std::map<uint32_t, Frame*>::iterator frameIterator = FrameSet.begin();
        frameIterator != FrameSet.end(); frameIterator++) {
       Frame* frame = frameIterator->second;
 
-      size_t n        = 0;
-      bool   hasBegin = false;
-      bool   hasEnd   = false;
+      size_t   n                   = 0;
+      bool     hasBegin            = false;
+      bool     hasEnd              = false;
+      uint64_t nextByteSeqNumber   = 0;
+      uint64_t nextPacketSeqNumber = 0;
       for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
           fragmentIterator != frame->FragmentSet.end(); fragmentIterator++, n++) {
          Fragment* fragment = fragmentIterator->second;
       
          if( (n == 0) && (fragment->Flags & NPMDF_FRAME_BEGIN) ) {
-            hasBegin = true;
+            hasBegin            = true;
+            nextByteSeqNumber   = fragment->PacketSeqNumber + fragment->Length + 1;
+            nextPacketSeqNumber = fragment->PacketSeqNumber + 1;
+         }
+         else {
+            bool isInSequence = false;
+            if(fragment->PacketSeqNumber == nextPacketSeqNumber) {
+               nextPacketSeqNumber++;
+               isInSequence = true;
+            }
+            if(fragment->ByteSeqNumber == nextByteSeqNumber) {
+               nextByteSeqNumber +=fragment->Length + 1;
+               // PacketSeqNumber *must* be okay here!
+            }
+            if(!isInSequence) {
+               puts("OUT-OF-SEQ");
+               goto finished;
+            }
          }
          if(fragment->Flags & NPMDF_FRAME_END) {
             hasEnd = true;
          }
-         
-         
-      
-/*         if(!Synchronized) {
-            LastPacketSeqNumber = fragment->PacketSeqNumber;
-            LastByteSeqNumber   = fragment->ByteSeqNumber;
-            LastFrameID         = frame->FrameID;
-         }*/
-         
-         
       }
+      
+      NextPacketSeqNumber = nextPacketSeqNumber;
+      NextByteSeqNumber   = nextByteSeqNumber;
+      NextFrameID         = frame->FrameID;
+      Synchronized        = true;
+      printf("FULL FRAME %d\n", frame->FrameID);
    }
+   
+finished:
+   puts("Ende!");
 }
 
 

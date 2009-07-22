@@ -151,6 +151,8 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    }
    addFlowMsg->FrameRateRng  = flow->getTrafficSpec().InboundFrameRateRng;
    addFlowMsg->FrameSizeRng  = flow->getTrafficSpec().InboundFrameSizeRng;
+   addFlowMsg->RcvBufferSize = htonl(flow->getTrafficSpec().RcvBufferSize);
+   addFlowMsg->SndBufferSize = htonl(flow->getTrafficSpec().SndBufferSize);
    addFlowMsg->MaxMsgSize    = htons(flow->getTrafficSpec().MaxMsgSize);
    addFlowMsg->OrderedMode   = htonl((uint32_t)((long long)rint(flow->getTrafficSpec().OrderedMode * (double)0xffffffff)));
    addFlowMsg->ReliableMode  = htonl((uint32_t)((long long)rint(flow->getTrafficSpec().ReliableMode * (double)0xffffffff)));
@@ -681,10 +683,15 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       trafficSpec.OutboundFrameRateRng     = addFlowMsg->FrameRateRng;
       trafficSpec.OutboundFrameSizeRng     = addFlowMsg->FrameSizeRng;
       trafficSpec.MaxMsgSize               = ntohs(addFlowMsg->MaxMsgSize);
+      trafficSpec.RcvBufferSize            = ntohl(addFlowMsg->RcvBufferSize);
+      trafficSpec.SndBufferSize            = ntohl(addFlowMsg->SndBufferSize);
       trafficSpec.OrderedMode              = ntohl(addFlowMsg->OrderedMode)  / (double)0xffffffff;
       trafficSpec.ReliableMode             = ntohl(addFlowMsg->ReliableMode) / (double)0xffffffff;
       trafficSpec.RetransmissionTrials     = ntohl(addFlowMsg->RetransmissionTrials) & ~NPMAF_RTX_TRIALS_IN_MILLISECONDS;
       trafficSpec.RetransmissionTrialsInMS = (ntohl(addFlowMsg->RetransmissionTrials) & NPMAF_RTX_TRIALS_IN_MILLISECONDS);
+      if( (trafficSpec.RetransmissionTrialsInMS) && (trafficSpec.RetransmissionTrials == 0x7fffffff) ) {
+         trafficSpec.RetransmissionTrials = ~0;
+      }
       for(size_t i = 0;i < startStopEvents;i++) {
          trafficSpec.OnOffEvents.insert(ntohl(addFlowMsg->OnOffEvent[i]));
       }
@@ -937,16 +944,31 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
 {
    int          controlSocketDescriptor;
    sctp_assoc_t controlAssocID;
-   const bool success =
-      FlowManager::getFlowManager()->identifySocket(ntoh64(identifyMsg->MeasurementID),
-                                                    ntohl(identifyMsg->FlowID),
-                                                    ntohs(identifyMsg->StreamID),
-                                                    sd, from,
-                                                    (identifyMsg->Header.Flags & NPMIF_COMPRESS_VECTORS) ?
-                                                       true : false,
-                                                    controlSocketDescriptor,
-                                                    controlAssocID);
+   Flow*        flow;
+   
+   
+   flow = FlowManager::getFlowManager()->identifySocket(ntoh64(identifyMsg->MeasurementID),
+                                                        ntohl(identifyMsg->FlowID),
+                                                        ntohs(identifyMsg->StreamID),
+                                                        sd, from,
+                                                        (identifyMsg->Header.Flags & NPMIF_COMPRESS_VECTORS) ?
+                                                           true : false,
+                                                        controlSocketDescriptor,
+                                                        controlAssocID);
    if(controlAssocID != 0) {
+      bool success    = true;
+      int  bufferSize = flow->getTrafficSpec().RcvBufferSize;
+      if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
+         std::cerr << "ERROR: Failed to configure receive buffer size on SCTP socket (SO_RCVBUF option) - "
+                   << strerror(errno) << "!" << std::endl;
+         success = false;
+      }
+      bufferSize = flow->getTrafficSpec().SndBufferSize;
+      if(ext_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
+         std::cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
+                   << strerror(errno) << "!" << std::endl;
+         success = false;
+      }
       sendNetPerfMeterAcknowledge(controlSocketDescriptor, controlAssocID,
                                   ntoh64(identifyMsg->MeasurementID),
                                   ntohl(identifyMsg->FlowID),

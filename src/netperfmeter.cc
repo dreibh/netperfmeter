@@ -97,8 +97,8 @@ void printGlobalParameters()
          std::cout << "until manual stop" << std::endl;
       }
       std::cout << "   - Active Node Name  = " << gActiveNodeName  << std::endl
-               << "   - Passive Node Name = " << gPassiveNodeName << std::endl
-               << std::endl;
+                << "   - Passive Node Name = " << gPassiveNodeName << std::endl
+                << std::endl;
    }
 }
 
@@ -176,6 +176,18 @@ static const char* parseTrafficSpecOption(const char*      parameters,
    else if(sscanf(parameters, "rtx_trials=%u%n", &intValue, &n) == 1) {
       trafficSpec.RetransmissionTrials     = (uint32_t)intValue;
       trafficSpec.RetransmissionTrialsInMS = false;
+   }
+   else if(sscanf(parameters, "rcvbuf=%u%n", &intValue, &n) == 1) {
+      trafficSpec.RcvBufferSize = (uint32_t)intValue;
+      if(trafficSpec.RcvBufferSize < 4096) {
+         trafficSpec.RcvBufferSize = 4096;
+      }
+   }
+   else if(sscanf(parameters, "sndbuf=%u%n", &intValue, &n) == 1) {
+      trafficSpec.SndBufferSize = (uint32_t)intValue;
+      if(trafficSpec.SndBufferSize < 4096) {
+         trafficSpec.SndBufferSize = 4096;
+      }
    }
    else if(sscanf(parameters, "description=%255[^:]s%n", (char*)&description, &n) == 1) {
       trafficSpec.Description = std::string(description);
@@ -322,7 +334,7 @@ static Flow* createFlow(Flow*              previousFlow,
          initmsg.sinit_max_instreams = 65535;
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
                            &initmsg, sizeof(initmsg)) < 0) {
-            cerr << "ERROR: Failed to configure INIT parameters on SCTP socket - "
+            cerr << "ERROR: Failed to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - "
                  << strerror(errno) << "!" << endl;
             exit(1);
          }
@@ -332,11 +344,25 @@ static Flow* createFlow(Flow*              previousFlow,
          events.sctp_data_io_event = 1;
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
                            &events, sizeof(events)) < 0) {
-            cerr << "ERROR: Failed to configure events on SCTP socket - "
+            cerr << "ERROR: Failed to configure events on SCTP socket (SCTP_EVENTS option) - "
                  << strerror(errno) << "!" << endl;
             exit(1);
          }
       }
+
+      int bufferSize = flow->getTrafficSpec().RcvBufferSize;
+      if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
+         cerr << "ERROR: Failed to configure receive buffer size on SCTP socket (SO_RCVBUF option) - "
+              << strerror(errno) << "!" << endl;
+         exit(1);
+      }
+      bufferSize = flow->getTrafficSpec().SndBufferSize;
+      if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
+         cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
+              << strerror(errno) << "!" << endl;
+         exit(1);
+      }
+
       if(ext_connect(socketDescriptor, remoteAddress, getSocklen(remoteAddress)) < 0) {
          cerr << "ERROR: Unable to connect " << getProtocolName(protocol)
               << " socket - " << strerror(errno) << "!" << endl;

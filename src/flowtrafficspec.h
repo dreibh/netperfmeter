@@ -57,6 +57,9 @@ class FlowTrafficSpec
 
    uint16_t               MaxMsgSize;
    
+   unsigned int           RcvBufferSize;
+   unsigned int           SndBufferSize;
+   
    double                 OutboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
    double                 OutboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
    double                 InboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
