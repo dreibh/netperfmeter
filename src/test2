@@ -31,11 +31,12 @@ VALGRIND=
 # VALGRIND="valgrind --tool=helgrind"
 # VALGRIND=./debug
 
-make -j2 &&  $VALGRIND ./netperfmeter [127.0.0.1]:9000 \
+make -j2 &&  $VALGRIND ./netperfmeter 132.252.151.151:9000 \
    "-activenodename=Video-Client" \
    "-passivenodename=Video-Server" \
    -runtime=30 \
    -config=$DIRECTORY/output.config \
    -vector=$DIRECTORY/output.vec.bz2 \
    -scalar=$DIRECTORY/output.sca.bz2 \
+   -local=132.252.151.151 \
    -sctp const2:const1000:const3:const500:description="Videodatenstrom" $@

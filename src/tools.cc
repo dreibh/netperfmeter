@@ -562,17 +562,22 @@ bool setPort(struct sockaddr* address, uint16_t port)
 
 
 /* ###### Create server socket of appropriate family and bind it ######### */
-int createAndBindSocket(const int             type,
+int createAndBindSocket(int                   family,
+                        const int             type,
                         const int             protocol,
                         const uint16_t        localPort,
                         const unsigned int    localAddresses,
                         const sockaddr_union* localAddressArray,
                         const bool            listenMode)
 {
+   // ====== Get family =====================================================
+   if(family == AF_UNSPEC) {
+      family = checkIPv6() ? AF_INET6 : AF_INET;
+   }
+   
    sockaddr_union anyAddress;
-
    memset(&anyAddress, 0, sizeof(anyAddress));
-   if(checkIPv6()) {
+   if(family == AF_INET6) {
       anyAddress.in6.sin6_family = AF_INET6;
       anyAddress.in6.sin6_port   = htons(localPort);
    }
@@ -581,8 +586,7 @@ int createAndBindSocket(const int             type,
       anyAddress.in.sin_port   = htons(localPort);
    }
 
-   const int family = anyAddress.sa.sa_family;
-
+   // ====== Create socket ==================================================
    int sd = ext_socket(family, type, protocol);
    if(sd < 0) {
       return(-2);
@@ -595,7 +599,8 @@ int createAndBindSocket(const int             type,
    }
 #endif
 
-   if(localAddresses == 0) {
+   // ====== Bind socket ====================================================
+   if( (protocol != IPPROTO_SCTP) || (localAddresses == 0) ) {
       if(ext_bind(sd, &anyAddress.sa, getSocklen(&anyAddress.sa)) != 0) {
          ext_close(sd);
          return(-3);
@@ -603,34 +608,41 @@ int createAndBindSocket(const int             type,
    }
    else {
       if(protocol == IPPROTO_SCTP) {
-         sockaddr_storage buffer[localAddresses];
-         sockaddr*        ptr = (sockaddr*)&buffer;
+         // ====== SCTP bind: bind to specified addresses ===================
+         char   buffer[localAddresses * sizeof(sockaddr_union)];
+         char*  ptr = (char*)&buffer[0];
          for(unsigned int i = 0;i < localAddresses;i++) {
             if(localAddressArray[i].sa.sa_family == AF_INET) {
-               memcpy(ptr, (void*)&localAddressArray[i], sizeof(sockaddr_in));
-               ptr = (sockaddr*)((long)ptr + sizeof(sockaddr_in));
+               memcpy(ptr, (void*)&localAddressArray[i].in, sizeof(sockaddr_in));
+               ((sockaddr_in*)ptr)->sin_port = htons(localPort);
+               ptr += sizeof(sockaddr_in);
             }
             else if(localAddressArray[i].sa.sa_family == AF_INET6) {
-               memcpy(ptr, (void*)&localAddressArray[i], sizeof(sockaddr_in6));
-               ptr = (sockaddr*)((long)ptr + sizeof(sockaddr_in6));
+               memcpy(ptr, (void*)&localAddressArray[i].in6, sizeof(sockaddr_in6));
+               ((sockaddr_in6*)ptr)->sin6_port = htons(localPort);
+               ptr += sizeof(sockaddr_in6);
             }
             else {
                assert(false);
             }
-            if(sctp_bindx(sd, ptr, localAddresses, 0) != 0) {
-               ext_close(sd);
-               return(-3);
-            }
+         }
+         if(sctp_bindx(sd, (sockaddr*)&buffer, localAddresses,
+                       SCTP_BINDX_ADD_ADDR) != 0) {
+            ext_close(sd);
+            return(-3);
          }
       }
       else {
-         if(ext_bind(sd, &localAddressArray[0].sa, getSocklen(&localAddressArray[0].sa)) != 0) {
+         // ====== Non-SCTP bind: bind to ANY address =======================
+         if(ext_bind(sd, &localAddressArray[0].sa,
+                     getSocklen(&localAddressArray[0].sa)) != 0) {
             ext_close(sd);
             return(-3);
          }
       }
    }
 
+   // ====== Put socket into listening mode =================================
    if(listenMode) {
       ext_listen(sd, 10);
    }

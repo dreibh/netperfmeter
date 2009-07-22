@@ -335,17 +335,21 @@ static Flow* createFlow(Flow*              previousFlow,
       socketDescriptor          = -1;
       switch(protocol) {
          case IPPROTO_SCTP:
-            socketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_SCTP);
+            socketDescriptor = createAndBindSocket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_SCTP, 0,
+                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
          case IPPROTO_TCP:
-            socketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_TCP);
+            socketDescriptor = createAndBindSocket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_TCP, 0,
+                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
          case IPPROTO_UDP:
-            socketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+            socketDescriptor = createAndBindSocket(remoteAddress->sa_family, SOCK_DGRAM, IPPROTO_UDP, 0,
+                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
 #ifdef HAVE_DCCP
          case IPPROTO_DCCP:
-            socketDescriptor = ext_socket(remoteAddress->sa_family, SOCK_DCCP, IPPROTO_DCCP);
+            socketDescriptor = createAndBindSocket(remoteAddress->sa_family, SOCK_DCCP, IPPROTO_DCCP, 0,
+                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
 #endif
       }
@@ -522,9 +526,19 @@ bool mainLoop(const bool               isActiveMode,
 // ###### Passive Mode ######################################################
 void passiveMode(int argc, char** argv, const uint16_t localPort)
 {
+   // ====== Set options ====================================================
+   for(int i = 2;i < argc;i++) {
+      if(!handleGlobalParameter(argv[i])) {
+         std::cerr << "Invalid argument: " << argv[i] << "!" << std::endl;
+         exit(1);
+      }
+   }
+   printGlobalParameters();
+
+
    // ====== Initialize control socket ======================================
-   gControlSocket = createAndBindSocket(SOCK_SEQPACKET, IPPROTO_SCTP, localPort + 1,
-                                        gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
+   gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_SEQPACKET, IPPROTO_SCTP, localPort + 1,
+                                        0, NULL, true);
    if(gControlSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket for control port - "
            << strerror(errno) << "!" << endl;
@@ -542,7 +556,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
    // ====== Initialize data socket for each protocol =======================
-   gTCPSocket = createAndBindSocket(SOCK_STREAM, IPPROTO_TCP, localPort,
+   gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gTCPSocket < 0) {
       cerr << "ERROR: Failed to create and bind TCP socket - "
@@ -550,7 +564,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       exit(1);
    }
 
-   gUDPSocket = createAndBindSocket(SOCK_DGRAM, IPPROTO_UDP, localPort,
+   gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gUDPSocket < 0) {
       cerr << "ERROR: Failed to create and bind UDP socket - "
@@ -561,14 +575,14 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    FlowManager::getFlowManager()->addSocket(IPPROTO_UDP, gUDPSocket);
    
 #ifdef HAVE_DCCP
-   gDCCPSocket = createAndBindSocket(SOCK_DCCP, IPPROTO_DCCP, localPort,
+   gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
                                      gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gDCCPSocket < 0) {
       cerr << "NOTE: Your kernel does not provide DCCP support." << endl;
    }
 #endif
 
-   gSCTPSocket = createAndBindSocket(SOCK_STREAM, IPPROTO_SCTP, localPort,
+   gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
                                      gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gSCTPSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket - "
@@ -593,15 +607,6 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       exit(1);
    }
 
-
-   // ====== Set options ====================================================
-   for(int i = 2;i < argc;i++) {
-      if(!handleGlobalParameter(argv[i])) {
-         std::cerr << "Invalid argument: " << argv[i] << "!" << std::endl;
-         exit(1);
-      }
-   }
-   printGlobalParameters();
 
    // ====== Print status ===================================================
    cout << "Passive Mode: Accepting TCP/UDP/SCTP" << ((gDCCPSocket > 0) ? "/DCCP" : "")
