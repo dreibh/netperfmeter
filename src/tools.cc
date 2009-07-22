@@ -562,23 +562,26 @@ bool setPort(struct sockaddr* address, uint16_t port)
 
 
 /* ###### Create server socket of appropriate family and bind it ######### */
-int createAndBindSocket(const int      type,
-                        const int      protocol,
-                        const uint16_t localPort)
+int createAndBindSocket(const int             type,
+                        const int             protocol,
+                        const uint16_t        localPort,
+                        const unsigned int    localAddresses,
+                        const sockaddr_union* localAddressArray,
+                        const bool            listenMode)
 {
-   sockaddr_union localAddress;
+   sockaddr_union anyAddress;
 
-   memset(&localAddress, 0, sizeof(localAddress));
+   memset(&anyAddress, 0, sizeof(anyAddress));
    if(checkIPv6()) {
-      localAddress.in6.sin6_family = AF_INET6;
-      localAddress.in6.sin6_port   = htons(localPort);
+      anyAddress.in6.sin6_family = AF_INET6;
+      anyAddress.in6.sin6_port   = htons(localPort);
    }
    else {
-      localAddress.in.sin_family = AF_INET;
-      localAddress.in.sin_port   = htons(localPort);
+      anyAddress.in.sin_family = AF_INET;
+      anyAddress.in.sin_port   = htons(localPort);
    }
 
-   const int family = localAddress.sa.sa_family;
+   const int family = anyAddress.sa.sa_family;
 
    int sd = ext_socket(family, type, protocol);
    if(sd < 0) {
@@ -591,11 +594,49 @@ int createAndBindSocket(const int      type,
       setsockopt(sd, IPPROTO_IPV6, IPV6_BINDV6ONLY, (char *)&on, sizeof(on));
    }
 #endif
-   if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
-      ext_close(sd);
-      return(-3);
+
+   if(localAddresses == 0) {
+      if(ext_bind(sd, &anyAddress.sa, getSocklen(&anyAddress.sa)) != 0) {
+         ext_close(sd);
+         return(-3);
+      }
    }
-   ext_listen(sd, 10);
+   else {
+      if(protocol == IPPROTO_SCTP) {
+         sockaddr_storage buffer[localAddresses];
+         sockaddr*        ptr = (sockaddr*)&buffer;
+         for(unsigned int i = 0;i < localAddresses;i++) {
+            if(localAddressArray[i].sa.sa_family == AF_INET) {
+               memcpy(ptr, (void*)&localAddressArray[i], sizeof(sockaddr_in));
+               ptr = (sockaddr*)((long)ptr + sizeof(sockaddr_in));
+            }
+            else if(localAddressArray[i].sa.sa_family == AF_INET6) {
+               memcpy(ptr, (void*)&localAddressArray[i], sizeof(sockaddr_in6));
+               ptr = (sockaddr*)((long)ptr + sizeof(sockaddr_in6));
+            }
+            else {
+               assert(false);
+            }
+            if(sctp_bindx(sd, ptr, localAddresses, 0) != 0) {
+               ext_close(sd);
+               return(-3);
+            }
+         }
+      }
+      else {
+         if(ext_bind(sd, &localAddressArray[0].sa, getSocklen(&localAddressArray[0].sa)) != 0) {
+            ext_close(sd);
+            return(-3);
+         }
+      }
+   }
+
+   if(listenMode) {
+      if((ext_listen(sd, 10) < 0) && (errno != ENOTSUP)) {
+         ext_close(sd);
+         return(-4);
+      }
+   }
    return(sd);
 }
 

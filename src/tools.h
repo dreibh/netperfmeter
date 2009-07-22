@@ -86,9 +86,12 @@ const char* getProtocolName(const uint8_t protocol);
 uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
 bool sendAbort(int sd, sctp_assoc_t assocID);
-int createAndBindSocket(const int      type,
-                        const int      protocol,
-                        const uint16_t localPort);
+int createAndBindSocket(const int             type,
+                        const int             protocol,
+                        const uint16_t        localPort,
+                        const unsigned int    localAddresses,
+                        const sockaddr_union* localAddressArray,
+                        const bool            listenMode);
 uint64_t hton64(const uint64_t value);
 uint64_t ntoh64(const uint64_t value);
 

@@ -43,6 +43,11 @@
 using namespace std;
 
 
+#define MAX_LOCAL_ADDRESSES 16
+static unsigned int   gLocalAddresses = 0;
+static sockaddr_union gLocalAddressArray[MAX_LOCAL_ADDRESSES];
+
+
 static const char*   gActiveNodeName  = "Client";
 static const char*   gPassiveNodeName = "Server";
 static int           gControlSocket   = -1;
@@ -57,7 +62,7 @@ static MessageReader gMessageReader;
 
 
 // ###### Handle global command-line parameter ##############################
-bool handleGlobalParameter(const char* parameter)
+bool handleGlobalParameter(char* parameter)
 {
    if(strncmp(parameter, "-runtime=", 9) == 0) {
       gRuntime = atof((const char*)&parameter[9]);
@@ -76,6 +81,26 @@ bool handleGlobalParameter(const char* parameter)
    }
    else if(strncmp(parameter, "-verbosity=", 11) == 0) {
       // Already handled before!
+   }
+   else if(strncmp(parameter, "-local=", 7) == 0) {
+      gLocalAddresses = 0;
+      char* address = (char*)&parameter[7];
+      while(gLocalAddresses < MAX_LOCAL_ADDRESSES) {
+         char* idx = index(address, ',');
+         if(idx) {
+            *idx = 0x00;
+         }
+         if(!string2address(address, &gLocalAddressArray[gLocalAddresses])) {
+            fprintf(stderr, "ERROR: Bad address %s for local endpoint! Use format <address:port>.\n",address);
+            exit(1);
+         }
+         gLocalAddresses++;
+         if(!idx) {
+            break;
+         }
+         address = idx;
+         address++;
+      }
    }
    else {
       return(false);
@@ -97,8 +122,20 @@ void printGlobalParameters()
          std::cout << "until manual stop" << std::endl;
       }
       std::cout << "   - Active Node Name  = " << gActiveNodeName  << std::endl
-                << "   - Passive Node Name = " << gPassiveNodeName << std::endl
-                << std::endl;
+                << "   - Passive Node Name = " << gPassiveNodeName << std::endl;
+      std::cout << "   - Local Addresses   = ";
+      if(gLocalAddresses > 0) {
+         for(unsigned int i = 0;i < gLocalAddresses;i++) {
+            if(i > 0) {
+               std::cout << ", ";
+            }
+            printAddress(std::cout, &gLocalAddressArray[i].sa, false);
+         }
+      }
+      else {
+         std::cout << "(any)";
+      }
+      std::cout << std::endl << std::endl;
    }
 }
 
@@ -486,7 +523,8 @@ bool mainLoop(const bool               isActiveMode,
 void passiveMode(int argc, char** argv, const uint16_t localPort)
 {
    // ====== Initialize control socket ======================================
-   gControlSocket = createAndBindSocket(SOCK_SEQPACKET, IPPROTO_SCTP, localPort + 1);
+   gControlSocket = createAndBindSocket(SOCK_SEQPACKET, IPPROTO_SCTP, localPort + 1,
+                                        gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gControlSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket for control port - "
            << strerror(errno) << "!" << endl;
@@ -504,14 +542,16 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
    // ====== Initialize data socket for each protocol =======================
-   gTCPSocket = createAndBindSocket(SOCK_STREAM, IPPROTO_TCP, localPort);
+   gTCPSocket = createAndBindSocket(SOCK_STREAM, IPPROTO_TCP, localPort,
+                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gTCPSocket < 0) {
       cerr << "ERROR: Failed to create and bind TCP socket - "
            << strerror(errno) << "!" << endl;
       exit(1);
    }
 
-   gUDPSocket = createAndBindSocket(SOCK_DGRAM, IPPROTO_UDP, localPort);
+   gUDPSocket = createAndBindSocket(SOCK_DGRAM, IPPROTO_UDP, localPort,
+                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gUDPSocket < 0) {
       cerr << "ERROR: Failed to create and bind UDP socket - "
            << strerror(errno) << "!" << endl;
@@ -521,13 +561,15 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    FlowManager::getFlowManager()->addSocket(IPPROTO_UDP, gUDPSocket);
    
 #ifdef HAVE_DCCP
-   gDCCPSocket = createAndBindSocket(SOCK_DCCP, IPPROTO_DCCP, localPort);
+   gDCCPSocket = createAndBindSocket(SOCK_DCCP, IPPROTO_DCCP, localPort,
+                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gDCCPSocket < 0) {
       cerr << "NOTE: Your kernel does not provide DCCP support." << endl;
    }
 #endif
 
-   gSCTPSocket = createAndBindSocket(SOCK_STREAM, IPPROTO_SCTP, localPort);
+   gSCTPSocket = createAndBindSocket(SOCK_STREAM, IPPROTO_SCTP, localPort,
+                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gSCTPSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket - "
            << strerror(errno) << "!" << endl;

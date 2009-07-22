@@ -787,8 +787,8 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
    const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
 
    std::cout << std::endl << "Stopping measurement "
-              << format("$%llx", (unsigned long long)measurementID)
-              << " ..." << std::endl;
+             << format("$%llx", (unsigned long long)measurementID)
+             << " ..." << std::endl;
 
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
