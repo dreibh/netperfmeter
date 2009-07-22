@@ -21,23 +21,28 @@
 #
 
 DIRECTORY=test7b-output
-
+ESSEN=217.91.155.146
+BURGSTEINFURT=87.139.124.106
 if [ -e $DIRECTORY ] ; then
    rm -rf $DIRECTORY
 fi
 mkdir $DIRECTORY
 
+
+# ====== Options ============================================================
+LOCAL=$ESSEN
+REMOTE=$BURGSTEINFURT
+FLOW_SETTINGS="-sctp const0:const0:const0:const1452"
 VALGRIND=
 # VALGRIND="valgrind --tool=helgrind"
 # VALGRIND=./debug
+# ===========================================================================
 
 
-FLOW_SETTINGS="-sctp const0:const0:const0:const1452"
-
-
-make -j2 &&  $VALGRIND ./netperfmeter 87.139.124.106:9000 \
-   "-activenodename=Audio-Client" \
-   "-passivenodename=Audio-Server" \
+make -j2 &&  $VALGRIND ./netperfmeter $REMOTE:9000 \
+   "-activenodename=Streaming-Client" \
+   "-passivenodename=Streaming-Server" \
+   -local=$LOCAL \
    -runtime=300 \
    -verbosity=9 \
    -config=$DIRECTORY/output.config \

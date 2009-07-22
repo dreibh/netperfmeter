@@ -123,7 +123,7 @@ void printGlobalParameters()
       }
       std::cout << "   - Active Node Name  = " << gActiveNodeName  << std::endl
                 << "   - Passive Node Name = " << gPassiveNodeName << std::endl;
-      std::cout << "   - Local Addresses   = ";
+      std::cout << "   - Local Address(es) = ";
       if(gLocalAddresses > 0) {
          for(unsigned int i = 0;i < gLocalAddresses;i++) {
             if(i > 0) {
@@ -757,7 +757,7 @@ void activeMode(int argc, char** argv)
    if(gOutputVerbosity >= NPFOV_STATUS) {
       cout << endl;
    }
-   
+
    printGlobalParameters();
 
 
