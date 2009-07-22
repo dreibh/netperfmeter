@@ -632,10 +632,7 @@ int createAndBindSocket(const int             type,
    }
 
    if(listenMode) {
-      if((ext_listen(sd, 10) < 0) && (errno != ENOTSUP)) {
-         ext_close(sd);
-         return(-4);
-      }
+      ext_listen(sd, 10);
    }
    return(sd);
 }
