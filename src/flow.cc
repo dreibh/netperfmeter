@@ -363,7 +363,7 @@ void FlowManager::removeSocket(const int  socketDescriptor,
       UpdatedUnidentifiedSockets = true;
    }
    if(closeSocket) {
-      assert(FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(socketDescriptor) == true);
+      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(socketDescriptor);
       ext_close(socketDescriptor);
    }
    unlock();

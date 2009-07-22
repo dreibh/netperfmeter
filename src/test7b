@@ -39,6 +39,7 @@ make -j2 &&  $VALGRIND ./netperfmeter 87.139.124.106:9000 \
    "-activenodename=Audio-Client" \
    "-passivenodename=Audio-Server" \
    -runtime=300 \
+   -verbosity=9 \
    -config=$DIRECTORY/output.config \
    -vector=$DIRECTORY/output.vec.bz2 \
    -scalar=$DIRECTORY/output.sca.bz2 \

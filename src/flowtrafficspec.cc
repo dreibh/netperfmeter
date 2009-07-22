@@ -127,8 +127,8 @@ void FlowTrafficSpec::print(std::ostream& os) const
 void FlowTrafficSpec::reset()
 {
    MaxMsgSize               = 16000;
-   SndBufferSize            = 525800;
-   RcvBufferSize            = 525800;
+   SndBufferSize            = 233016;   // Upper limit for FreeBSD
+   RcvBufferSize            = 233016;   // Upper limit for FreeBSD
    OrderedMode              = 1.0;
    ReliableMode             = 1.0;
    RetransmissionTrials     = ~0;
