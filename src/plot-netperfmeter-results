@@ -149,4 +149,4 @@ R CMD BATCH --slave --vanilla \
 
 # ====== Remove temporary files =============================================
 echo "Cleaning up"
-rm -f $SUMMARY_NAME $FLOW_SUMMARY_NAME
+# rm -f $SUMMARY_NAME $FLOW_SUMMARY_NAME
