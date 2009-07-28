@@ -272,14 +272,16 @@ plotQoSStatistics <- function(inputData, flowSummaryData, nodeName) {
          data <- subset(flowSummaryData,
                         (flowSummaryData$FlowID == flowLevels[i]) &
                            (flowSummaryData$IsActive == isActive))
-         createPlot(data, paste(sep="", "Per-Message Delay for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
-                     data$Delay, "Delay [ms]", "orange2",
-                     c(), NA,   # data$NodeName, "Node{N}",
-                     type="p", bookmarkLevel=5)
-         createPlot(data, paste(sep="", "Per-Message Jitter for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
-                     data$Jitter, "Jitter [ms]", "gold4",
-                     c(), NA,   # data$NodeName, "Node{N}",
-                     type="p", bookmarkLevel=5)
+         if(length(data$FlowID) > 0) {   # May be empty, if no packets have been sent in this direction!
+            createPlot(data, paste(sep="", "Per-Message Delay for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+                       data$Delay, "Delay [ms]", "orange2",
+                       c(), NA,   # data$NodeName, "Node{N}",
+                       type="p", bookmarkLevel=5)
+            createPlot(data, paste(sep="", "Per-Message Jitter for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+                       data$Jitter, "Jitter [ms]", "gold4",
+                       c(), NA,   # data$NodeName, "Node{N}",
+                       type="p", bookmarkLevel=5)
+         }
       }
    }
 }

@@ -43,7 +43,7 @@ make -j2 &&  $VALGRIND ./netperfmeter $REMOTE:9000 \
    "-activenodename=Streaming-Client" \
    "-passivenodename=Streaming-Server" \
    -local=$LOCAL \
-   -runtime=300 \
+   -runtime=900 \
    -verbosity=9 \
    -config=$DIRECTORY/output.config \
    -vector=$DIRECTORY/output.vec.bz2 \
