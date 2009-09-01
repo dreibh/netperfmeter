@@ -27,12 +27,12 @@ if [ -e $DIRECTORY ] ; then
 fi
 mkdir $DIRECTORY
 
-# VALGRIND=
+VALGRIND=
 # VALGRIND=valgrind
 # VALGRIND="valgrind --tool=helgrind"
-VALGRIND=./debug
+# VALGRIND=./debug
 
-make -j2 && $VALGRIND ./netperfmeter [::1]:9000 \
+make -j2 && $VALGRIND ./netperfmeter 127.0.0.1:9000 \
    "-activenodename=Client" \
    "-passivenodename=Server" \
    -runtime=300 \
