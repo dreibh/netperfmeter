@@ -5,6 +5,7 @@ Dependencies under FreeBSD:
 - p5-PDF-API2
 - ghostscript8+
 - md5deep
+- glib 2.0 (for autoconf/automake)
 
 Command to install all dependencies (as root):
 pkg_add -r R gcc42 p5-PDF-API2 ghostscript8
