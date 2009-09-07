@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <string>
 #include <iostream>
 #include <map>
@@ -43,22 +44,32 @@ class Defragmenter
       uint32_t                      FrameID;
       unsigned long long            LastUpdate;
       std::map<uint64_t, Fragment*> FragmentSet;
+      bool                          Completed;
    };
 
-   bool checkFrame(Frame* frame);
-   
-   std::map<uint32_t, Frame*> FrameSet;
-   uint64_t                   NextPacketSeqNumber;
-   uint64_t                   NextByteSeqNumber;
-   uint32_t                   NextFrameID;
-   bool                       Synchronized;
+//    bool checkFrame(Frame* frame);
+//    void deleteObsoleteFragments(const unsigned long long now,
+//                                 const unsigned long long defragmentTimeout);
+
+   bool getFirstFragment(Frame*&    frame,
+                         Fragment*& fragment);
+   bool getNextFragment(Frame*&    frame,
+                        Fragment*& fragment,
+                        const bool eraseCurrentFrame);
+                                
+   std::map<uint32_t, Frame*>              FrameSet;
+   std::map<uint32_t, Frame*>::iterator    FrameIterator;
+   std::map<uint64_t, Fragment*>::iterator FragmentIterator;
+   uint64_t                                NextPacketSeqNumber;
+   uint64_t                                NextByteSeqNumber;
+   uint32_t                                NextFrameID;
 };
 
 
-// ###### Constructor #######################################################
+// ###### Constructor #################b######################################
 Defragmenter::Defragmenter()
 {
-   Synchronized = false;
+   NextFrameID = 0;
 }
 
 
@@ -75,7 +86,9 @@ void Defragmenter::print(std::ostream& os)
    for(std::map<uint32_t, Frame*>::iterator frameIterator = FrameSet.begin();
          frameIterator != FrameSet.end(); frameIterator++) {
       Frame* frame = frameIterator->second;
-      os << "   - Frame " << frame->FrameID << ":" << std::endl;
+      os << "   - Frame " << frame->FrameID
+         << ", LastUpdate=" << frame->LastUpdate
+         << ":" << std::endl;
       
       for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
           fragmentIterator != frame->FragmentSet.end(); fragmentIterator++) {
@@ -95,33 +108,33 @@ void Defragmenter::print(std::ostream& os)
 }
 
 
-// ###### Check whether a frame is complete #################################
-bool Defragmenter::checkFrame(Frame* frame)
-{
-   bool beginFound = false;
-   bool endFound   = false;
-   for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
-       fragmentIterator != frame->FragmentSet.end(); fragmentIterator++) {
-      const Fragment* fragment = fragmentIterator->second;
-      if(fragment->Flags & NPMDF_FRAME_BEGIN) {
-         if(beginFound) {
-            std::cout << "Malformed frame " << frame->FrameID
-                      << ": multiple NPMDF_FRAME_BEGIN!" << std::endl;
-            return(false);
-         }
-         beginFound = false;
-      }
-      if(fragment->Flags & NPMDF_FRAME_END) {
-         if(endFound) {
-            std::cout << "Malformed frame " << frame->FrameID
-                      << ": multiple NPMDF_FRAME_END!" << std::endl;
-            return(false);
-         }
-         endFound = false;
-      }
-   }
-   return(beginFound && endFound);
-}
+// // ###### Check whether a frame is complete #################################
+// bool Defragmenter::checkFrame(Frame* frame)
+// {
+//    bool beginFound = false;
+//    bool endFound   = false;
+//    for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
+//        fragmentIterator != frame->FragmentSet.end(); fragmentIterator++) {
+//       const Fragment* fragment = fragmentIterator->second;
+//       if(fragment->Flags & NPMDF_FRAME_BEGIN) {
+//          if(beginFound) {
+//             std::cout << "Malformed frame " << frame->FrameID
+//                       << ": multiple NPMDF_FRAME_BEGIN!" << std::endl;
+//             return(false);
+//          }
+//          beginFound = false;
+//       }
+//       if(fragment->Flags & NPMDF_FRAME_END) {
+//          if(endFound) {
+//             std::cout << "Malformed frame " << frame->FrameID
+//                       << ": multiple NPMDF_FRAME_END!" << std::endl;
+//             return(false);
+//          }
+//          endFound = false;
+//       }
+//    }
+//    return(beginFound && endFound);
+// }
 
 
 // ###### Add fragment to Defragmenter ######################################
@@ -142,6 +155,7 @@ void Defragmenter::addFragment(const unsigned long long       now,
       if(frame) {
          frame->LastUpdate = now;
          frame->FrameID    = frameID;
+         frame->Completed  = false;
          FrameSet.insert(std::pair<uint32_t, Frame*>(frame->FrameID, frame));
       }
    }
@@ -158,13 +172,85 @@ void Defragmenter::addFragment(const unsigned long long       now,
          fragment->Length          = ntohs(dataMsg->Header.Length) - sizeof(NetPerfMeterDataMessage);
          fragment->Flags           = dataMsg->Header.Flags;
          frame->FragmentSet.insert(std::pair<uint64_t, Fragment*>(fragment->PacketSeqNumber, fragment));
-      }
-      
-      checkFrame(frame);
+      }      
+// ?????      checkFrame(frame);
    }
    else {
       puts("Duplicate???");
    }
+}
+
+
+// // ====== Delete completed or out of date frames ============================
+// void Defragmenter::deleteObsoleteFragments(const unsigned long long now,
+//                                            const unsigned long long defragmentTimeout)
+// {
+//    std::map<uint32_t, Frame*>::iterator frameIterator = FrameSet.begin();
+//    while(frameIterator != FrameSet.end()) {
+//       Frame* frame = frameIterator->second;
+//       if((frame->Completed == false) &&
+//          (frame->LastUpdate <= now + defragmentTimeout)) {
+//          break;
+//       }
+//       FrameSet.erase(frameIterator);
+//       delete frame;
+//       frameIterator = FrameSet.begin();
+//    }
+// }
+
+
+// ====== Get first fragment from storage ===================================
+bool Defragmenter::getFirstFragment(Frame*&    frame,
+                                    Fragment*& fragment)
+{
+   FrameIterator = FrameSet.begin();
+   if(FrameIterator != FrameSet.end()) {
+      frame            = FrameIterator->second;
+      FragmentIterator = frame->FragmentSet.begin();
+      assert(FragmentIterator != frame->FragmentSet.end());
+      fragment = FragmentIterator->second;
+      return(true);
+   }
+   frame    = NULL;
+   fragment = NULL;
+   return(false);
+}
+
+
+// ====== Get next fragment from storage ====================================
+bool Defragmenter::getNextFragment(Frame*&    frame,
+                                   Fragment*& fragment,
+                                   const bool eraseCurrentFrame)
+{
+   Frame*                                  lastFrame            = frame;
+   Fragment*                               lastFragment         = fragment;
+   std::map<uint32_t, Frame*>::iterator    lastFrameIterator    = FrameIterator;
+   std::map<uint64_t, Fragment*>::iterator lastFragmentIterator = FragmentIterator;
+ 
+   FragmentIterator++;
+   if(FragmentIterator == frame->FragmentSet.end()) {
+      FrameIterator++;
+      if(FrameIterator == FrameSet.end()) {
+         frame    = NULL;
+         fragment = NULL;
+         return(false);
+      }
+      frame            = FrameIterator->second;
+      FragmentIterator = frame->FragmentSet.begin();
+      assert(FragmentIterator != frame->FragmentSet.end());
+   }
+   fragment = FragmentIterator->second;   
+
+   if(eraseCurrentFrame) {
+      lastFrame->FragmentSet.erase(lastFragmentIterator);
+      delete lastFragment;
+      if(lastFrame->FragmentSet.size() == 0) {
+         FrameSet.erase(lastFrameIterator);
+         delete lastFrame;
+      }
+   }
+   
+   return(true);
 }
 
 
@@ -179,10 +265,32 @@ void Defragmenter::purge(const unsigned long long now,
    lostPackets = 0;
    lostFrames  = 0;
    
+   Frame*    frame;
+   Fragment* fragment;
+   if(getFirstFragment(frame, fragment)) {
+      bool eraseCurrentFragment;
+      do {
+         eraseCurrentFragment = false;  
+         if(frame->LastUpdate + defragmentTimeout <= now) {
+            eraseCurrentFragment = true;
+            puts("+++");
+         }
+         else {
+          printf("ST: id=%u %llu %llu %llu\n",frame->FrameID,frame->LastUpdate,defragmentTimeout,now);
+            break;
+         }
+      } while(getNextFragment(frame, fragment, eraseCurrentFragment));
+   }
+
+#if 0
    Frame*                                   frame;
    for(std::map<uint32_t, Frame*>::iterator frameIterator = FrameSet.begin();
        frameIterator != FrameSet.end(); frameIterator++) {
       Frame* frame = frameIterator->second;
+      if(frame->FrameID != NextFrameID) {
+         puts("O-O-SYNC");
+         goto finished;
+      }
 
       size_t   n                   = 0;
       bool     hasBegin            = false;
@@ -220,13 +328,15 @@ void Defragmenter::purge(const unsigned long long now,
       
       NextPacketSeqNumber = nextPacketSeqNumber;
       NextByteSeqNumber   = nextByteSeqNumber;
-      NextFrameID         = frame->FrameID;
-      Synchronized        = true;
+      NextFrameID         = frame->FrameID + 1;
+      frame->Completed    = true;
       printf("FULL FRAME %d\n", frame->FrameID);
    }
    
 finished:
    puts("Ende!");
+   deleteObsoleteFragments(now, defragmentTimeout);
+#endif
 }
 
 
@@ -254,11 +364,13 @@ int main(int argc, char** argv)
 {
    size_t b,p,f;
 
-   add(1000000,   1,    0,   0, NPMDF_FRAME_BEGIN);
-   add(1000001,   1,    1,   1000);
-   add(1000002,   1,    2,   2000, NPMDF_FRAME_END);
+   add(1000000,   0,    0,   0, NPMDF_FRAME_BEGIN);
+   add(1000001,   0,    1,   1000);
+   add(1000002,   0,    2,   2000, NPMDF_FRAME_END);
 
-   add(1000002,   2,    4,   4000, NPMDF_FRAME_BEGIN);
+   add(1000002,   1,    3,   4000, NPMDF_FRAME_BEGIN);
+
+   add(1000003,   2,    8,   8000, NPMDF_FRAME_END);
    
    gDefrag.print(cout);
    gDefrag.purge(5000000, 1000000, b, p, f);
