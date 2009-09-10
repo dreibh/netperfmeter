@@ -19,7 +19,7 @@
 .\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd September 4, 2009
+.Dd September 10, 2009
 .Dt pdfembedfonts 8
 .Os pdfembedfonts
 .\" ###### Name #############################################################
@@ -36,8 +36,8 @@
 .Sh DESCRIPTION
 .Nm pdfembedfonts
 uses GhostScript to make a copy of a given PDF file which included all
-required font data. Optionally, the resulting PDF will also be linearized
-("fast web view", "optimized").
+required font data. Optionally, the resulting PDF will also be optimized
+("fast web view", "linearized").
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
@@ -47,8 +47,8 @@ The following arguments have to be provided:
 The input PDF file name.
 .It Output PDF
 The output PDF file name.
-.It Fl linearize
-Linearize the resulting PDF file.
+.It Fl optimize
+Optimize the resulting PDF file for fast web view.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES

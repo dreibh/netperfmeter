@@ -176,7 +176,7 @@ plotNodeStats <- function(inputData, nodeName)
 
    # ====== Input/Output Absolute ===========================================
    addBookmarkInPDFMetadata(2, "Input/Output Absolute")
-   data <- subset(inputData, (inputData$Action != "Lost"))
+   data <- subset(inputData, TRUE) # (inputData$Action != "Lost"))
    createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", nodeName, "''"),
               (data$AbsBytes * 8 / 1000), "Bits [Kbit]", "blue4",
               data$Description, "Flow{F}", data$Action, "Action{A}")
@@ -199,11 +199,17 @@ plotNodeStats <- function(inputData, nodeName)
 
    # ====== Loss ============================================================
    data <- subset(inputData, (inputData$Action == "Lost"))
+   createPlot(data, paste(sep="", "Bit Loss Rate at Node ''", nodeName, "''"),
+              (data$RelBytes * 8 / 1000) / data$Interval, "Byte Loss Rate [Kbit/s]", "red4",
+              data$Description, "Flow{F}")
    createPlot(data, paste(sep="", "Byte Loss Rate at Node ''", nodeName, "''"),
               data$RelBytes / data$Interval, "Byte Loss Rate [KiB/s]", "red2",
               data$Description, "Flow{F}")
    createPlot(data, paste(sep="", "Packet Loss Rate at Node ''", nodeName, "''"),
-              data$RelPackets / data$Interval, "Packet Loss Rate [Packets/s]", "red4",
+              data$RelPackets / data$Interval, "Packet Loss Rate [Packets/s]", "red3",
+              data$Description, "Flow{F}")
+   createPlot(data, paste(sep="", "Frame Loss Rate at Node ''", nodeName, "''"),
+              data$RelFrames / data$Interval, "Frame Loss Rate [Frames/s]", "red1",
               data$Description, "Flow{F}")
 }
 
@@ -252,8 +258,8 @@ plotQoSStatistics <- function(inputData, flowSummaryData, nodeName) {
          addBookmarkInPDFMetadata(4, "Input/Output Absolute")
          data <- subset(inputData,
                         (inputData$FlowID == flowLevels[i]) &
-                           (inputData$IsActive == isActive) & (inputData$FlowID != -1) &
-                           (inputData$Action != "Lost"))
+                           (inputData$IsActive == isActive) & (inputData$FlowID != -1) )
+                           # & (inputData$Action != "Lost"))
          createPlot(data, paste(sep="", "Bits Sent/Received for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
                     (data$AbsBytes * 8 / 1000), "Bits [Kbit]", "blue4",
                     data$Action, "Action{A}", data$Description, "Flow{F}", bookmarkLevel=5)

@@ -1,16 +1,69 @@
-#!/bin/bash
+#!/bin/sh
+# $Id$
+#
+# Network Performance Meter
+# Copyright (C) 2009 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
 
-if [ $# -eq 4 ] ; then
-   echo >&2 "Usage: $0 [Destination] [Bandwidth in kbit/s] [Delay in ms]"
+if [ $# -eq 6 ] ; then
+   echo >&2 "Usage: $0 [ID] [Source Network] [Destination Network] [Bandwidth in kbit/s] [Delay in ms]"
    exit 1
 fi
 
-DESTINATION="$1"
-BANDWIDTH="$2"
-DELAY="$3"
+
+# ====== Get parameters =====================================================
+SYSTEM=`uname`
+ID="$1"
+NETWORK_SRC="$2"
+NETWORK_DST="$3"
+BANDWIDTH=""
+DELAY=""
+addRule=0
+if [ $4 -gt 0 ] ; then
+   BANDWIDTH="bw $4Kbit/s"
+   addRule=1
+fi
+if [ $5 -gt 0 ] ; then
+   DELAY="delay $5ms"
+   addRule=1
+fi
 
 
-ipfw delete pipe 3000
-ipfw add pipe 3000 ip from any to "$DESTINATION" out
-# ipfw pipe 3000 config bw "$BANDWIDTH"Kbit/s queue 20 delay "$DELAY"ms
-ipfw pipe 3000 config bw 100Kbit/s queue 20 delay 10ms
+# ====== Linux QoS setup ====================================================
+if [ "$SYSTEM" = "Linux" ] ; then
+   echo "Linux"
+   INTERFACES=`eval "ifconfig -a" 2>/dev/null | sed -ne 's|^\('$cur'[^[:space:][:punct:]]\{1,\}\).*$|\1|p'`
+echo $INTERFACES
+
+
+# ====== FreeBSD QoS setup ==================================================
+elif [ "$SYSTEM" = "FreeBSD" ] ; then
+  echo "freebsd"
+   ipfw delete pipe $ID
+   if [ $addRule -eq 1 ] ; then
+      ipfw add pipe $ID ip from any to "$DESTINATION" out
+      # ipfw pipe 3000 config bw "$BANDWIDTH"Kbit/s queue 20 delay "$DELAY"ms
+      echo ipfw pipe $ID config $BANDWIDTH $DELAY
+   fi
+
+
+# ====== Other systems ======================================================
+else
+   echo >&2 "ERROR: Unsupported system $SYSTEM!"
+   exit 1
+fi

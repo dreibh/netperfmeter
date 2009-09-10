@@ -73,6 +73,8 @@ void FlowTrafficSpec::print(std::ostream& os) const
       << SndBufferSize << std::endl;
    os << "      - Max. Message Size:   "
       << MaxMsgSize << std::endl;
+   os << "      - Defragment Timeout:  "
+      << DefragmentTimeout / 1000 << "ms" << std::endl;
    os << "      - Outbound Frame Rate: ";
    showEntry(os, (const double*)&OutboundFrameRate, OutboundFrameRateRng);
    os << std::endl;
@@ -127,6 +129,7 @@ void FlowTrafficSpec::print(std::ostream& os) const
 void FlowTrafficSpec::reset()
 {
    MaxMsgSize               = 16000;
+   DefragmentTimeout        = 5000000;
    SndBufferSize            = 233016;   // Upper limit for FreeBSD
    RcvBufferSize            = 233016;   // Upper limit for FreeBSD
    OrderedMode              = 1.0;

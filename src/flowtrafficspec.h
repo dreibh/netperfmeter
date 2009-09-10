@@ -59,7 +59,9 @@ class FlowTrafficSpec
    
    unsigned int           RcvBufferSize;
    unsigned int           SndBufferSize;
-   
+
+   unsigned long long     DefragmentTimeout;
+
    double                 OutboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
    double                 OutboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
    double                 InboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];

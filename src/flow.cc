@@ -791,8 +791,8 @@ Flow::Flow(const uint64_t         measurementID,
    FirstReception                = 0;
    LastReception                 = 0;
    resetStatistics();
-   LastOutboundSeqNumber         = 0;
-   LastOutboundFrameID           = 0;
+   LastOutboundSeqNumber         = ~0;
+   LastOutboundFrameID           = ~0;
    NextStatusChangeEvent         = ~0ULL;
    unlock();
    

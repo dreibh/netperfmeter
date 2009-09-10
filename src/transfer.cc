@@ -242,7 +242,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
 
 
 // ###### Update flow statistics with incoming NETPERFMETER_DATA message ####
-static void updateStatistics(Flow*                      flow,
+static void updateStatistics(Flow*                          flow,
                              const unsigned long long       now,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   receivedBytes)
@@ -264,11 +264,14 @@ static void updateStatistics(Flow*                      flow,
    const double jitter = flow->getJitter() + (1.0/16.0) * (fabs(diff) - flow->getJitter());
 
    // ------ Loss calculation -----------------------------------------------
-   size_t receivedFrames = 1;   // ??? To be implemented ???
-   size_t lostFrames  = 0;   // ??? To be implemented ???
-   size_t lostPackets = 0;   // ??? To be implemented ???
-   size_t lostBytes   = 0;   // ??? To be implemented ???
-
+   flow->getDefragmenter()->addFragment(now, dataMsg);
+   size_t receivedFrames;
+   size_t lostFrames;
+   size_t lostPackets;
+   size_t lostBytes;
+   flow->getDefragmenter()->purge(now, flow->getTrafficSpec().DefragmentTimeout,
+                                  receivedFrames, lostFrames, lostPackets, lostBytes);
+   
    flow->updateReceptionStatistics(
       now, receivedFrames, receivedBytes,
       lostFrames, lostPackets, lostBytes,

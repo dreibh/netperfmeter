@@ -19,7 +19,7 @@
 .\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd September 4, 2009
+.Dd September 10, 2009
 .Dt netperfmeter 8
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -120,6 +120,8 @@ Sets an ID number for the flow. The IDs within a measurement must be unique!
 Sets a textual description of the flow (e.g. HTTP-Flow). Do not use spaces in the description!
 .It maxmsgsize=Bytes
 Splits frames into messages of at most the given number of bytes. Messages may not exceed 65535 bytes.
+.It defragtimeout=Milliseconds
+Messages not received within this timeout after the last successfully received message are accounted as lost. NOTE: this also happens if the transport protocol is reliable and the message is actually received later!
 .It unordered=Fraction
 Specifies the fraction of the messages that will be sent in unordered mode (SCTP only).
 .It unreliable=Fraction

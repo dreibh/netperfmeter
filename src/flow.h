@@ -27,6 +27,7 @@
 #include "outputfile.h"
 #include "flowbandwidthstats.h"
 #include "flowtrafficspec.h"
+#include "defragmenter.h"
 #include "measurement.h"
 #include "tools.h"
 
@@ -188,6 +189,9 @@ class Flow : public Thread
    }   
    inline int getSocketDescriptor() const {
       return(SocketDescriptor);
+   }
+   inline Defragmenter* getDefragmenter() {
+      return(&MyDefragmenter);
    }
    inline sctp_assoc_t getRemoteControlAssocID() const {
       return(RemoteControlAssocID);
@@ -352,6 +356,7 @@ class Flow : public Thread
    FlowBandwidthStats LastBandwidthStats;
    double             Delay;    // Transit time of latest received packet
    double             Jitter;   // Current jitter value
+   Defragmenter       MyDefragmenter;
 };
 
 #endif

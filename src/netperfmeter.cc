@@ -192,6 +192,9 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       trafficSpec.MaxMsgSize = intValue;
    }
+   else if(sscanf(parameters, "defragtimeout=%u%n", &intValue, &n) == 1) {
+      trafficSpec.DefragmentTimeout = 1000ULL * (uint32_t)intValue;
+   }
    else if(sscanf(parameters, "unordered=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
          cerr << "ERROR: Bad probability for \"unordered\" option in " << parameters << "!" << endl;
