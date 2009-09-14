@@ -20,7 +20,7 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-if [ $# -eq 6 ] ; then
+if [ $# -ne 5 ] ; then
    echo >&2 "Usage: $0 [ID] [Source Network] [Destination Network] [Bandwidth in kbit/s] [Delay in ms]"
    exit 1
 fi
@@ -53,12 +53,10 @@ echo $INTERFACES
 
 # ====== FreeBSD QoS setup ==================================================
 elif [ "$SYSTEM" = "FreeBSD" ] ; then
-  echo "freebsd"
-   ipfw delete pipe $ID
+   sudo ipfw $ID delete pipe $ID
    if [ $addRule -eq 1 ] ; then
-      ipfw add pipe $ID ip from any to "$DESTINATION" out
-      # ipfw pipe 3000 config bw "$BANDWIDTH"Kbit/s queue 20 delay "$DELAY"ms
-      echo ipfw pipe $ID config $BANDWIDTH $DELAY
+      sudo ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST
+      sudo ipfw pipe $ID config $BANDWIDTH $DELAY queue 20
    fi
 
 
