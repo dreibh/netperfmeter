@@ -40,8 +40,9 @@ Replaces: netmeter (<= 0.5.1)
 Conflicts: netmeter (<= 0.5.1)
 Recommends: traceroute, iputils-tracepath, iputils-ping, rsplib-tools, subnetcalc (>= 2.0.2)
 Description: Network Performance Meter
- NetPerfMeter is a network performance meter for the UDP, TCP, SCTP and
- DCCP transport protocols. It simultaneously transmits bidirectional
- flows to an endpoint and measures the resulting flow bandwidths. The
- results are written as vector and scalar files. The vector files can
- be used to create PDF plots of the results.
+ NetPerfMeter is a network performance meter for the UDP,
+ TCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
+ It simultaneously transmits bidirectional flows to an endpoint
+ and measures the resulting flow bandwidths and QoS. The
+ results are written as vector and scalar files. The vector
+ files can be used to create PDF plots of the results.
