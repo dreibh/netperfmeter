@@ -5,8 +5,8 @@ Entered-date:   2009-09-15
 Description:    NetPerfMeter is a network performance meter for the UDP,
                 TCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
                 It simultaneously transmits bidirectional flows to an endpoint
-                and measures the resulting flow bandwidths. The results are
-                written as vector and scalar files. The vector files can be
+                and measures the resulting flow bandwidths and QoS. The results
+                are written as vector and scalar files. The vector files can be
                 used to create PDF plots of the results.
 Keywords:       Network Performance, QoS, IPv4, IPv6, TCP, SCTP, UDP, DCCP.
 Author:         dreibh@iem.uni-due.de (Thomas Dreibholz)
