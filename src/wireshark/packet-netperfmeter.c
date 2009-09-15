@@ -1,4 +1,4 @@
-/* packet-npmp.c
+/* packet-netperfmeter.c
  * Routines for the NetPerfMeter Protocol used by the Open Source
  * network performance meter application NetPerfMeter:
  * http://www.exp-math.uni-essen.de/~dreibh/netperfmeter/
@@ -33,10 +33,12 @@
 #endif
 
 #include <epan/packet.h>
+#include <stdio.h>
 
 
-static int  proto_npmp = -1;
-static gint ett_npmp   = -1;
+static int  proto_npmp      = -1;
+static gint ett_npmp        = -1;
+static gint ett_onoffarray  = -1;
 
 
 #define PPID_NETPERFMETER_CONTROL   0x29097605
@@ -104,6 +106,7 @@ INIT_FIELD(addflow_sndbuffersize,     134,  4)
 INIT_FIELD(addflow_maxmsgsize,        138,  2)
 INIT_FIELD(addflow_padding,           140,  2)
 INIT_FIELD(addflow_onoffevents,       142,  2)
+INIT_FIELD(addflow_onoffeventarray,   144,  4)
 
 INIT_FIELD(removeflow_flowid,           4,  4)
 INIT_FIELD(removeflow_measurementid,    8,  8)
@@ -133,6 +136,14 @@ INIT_FIELD(stop_measurementid,    8,  8)
 INIT_FIELD(results_data,          4,  0)
 
 
+/* Setup list of random number generator types */
+static const value_string rng_type_values[] = {
+  { 0,              "Constant" },
+  { 1,              "Uniform" },
+  { 2,              "Neg. Exponential" },
+  { 0,              NULL }
+};
+
 /* Setup list of header fields */
 static hf_register_info hf[] = {
    { &hf_message_type,               { "Type",                  "npmp.message_type",               FT_UINT8,   BASE_DEC,  VALS(message_type_values), 0x0, NULL, HFILL } },
@@ -154,12 +165,12 @@ static hf_register_info hf[] = {
    { &hf_addflow_ordered,            { "Ordered",               "npmp.addflow_ordered",            FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_reliable,           { "Reliable",              "npmp.addflow_reliable",           FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_retranstrials,      { "Retransmission Trials", "npmp.addflow_retranstrials",      FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
-   { &hf_addflow_frameraterng,       { "Frame Rate RNG",        "npmp.addflow_frameraterng",       FT_UINT8,   BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_frameraterng,       { "Frame Rate RNG",        "npmp.addflow_frameraterng",       FT_UINT8,   BASE_DEC,  VALS(rng_type_values),     0x0, NULL, HFILL } },
    { &hf_addflow_framerate1,         { "Frame Rate 1",          "npmp.addflow_framerate1",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_framerate2,         { "Frame Rate 2",          "npmp.addflow_framerate2",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_framerate3,         { "Frame Rate 3",          "npmp.addflow_framerate3",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_framerate4,         { "Frame Rate 4",          "npmp.addflow_framerate4",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
-   { &hf_addflow_framesizerng,       { "Frame Size RNG",        "npmp.addflow_framesizerng",       FT_UINT8,   BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_framesizerng,       { "Frame Size RNG",        "npmp.addflow_framesizerng",       FT_UINT8,   BASE_DEC,  VALS(rng_type_values),     0x0, NULL, HFILL } },
    { &hf_addflow_framesize1,         { "Frame Size 1",          "npmp.addflow_framesize1",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_framesize2,         { "Frame Size 2",          "npmp.addflow_framesize2",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_framesize3,         { "Frame Size 3",          "npmp.addflow_framesize3",         FT_DOUBLE,  BASE_NONE, NULL,                      0x0, NULL, HFILL } },
@@ -169,6 +180,7 @@ static hf_register_info hf[] = {
    { &hf_addflow_maxmsgsize,         { "Max. Message Size",     "npmp.addflow_maxmsgsize",         FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_padding,            { "Padding",               "npmp.addflow_padding",            FT_UINT16,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_addflow_onoffevents,        { "On/Off Events",         "npmp.addflow_onoffevents",        FT_UINT16,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
+   { &hf_addflow_onoffeventarray,    { "On/Off Event",          "npmp.addflow_onoffeventarray",    FT_UINT32,  BASE_DEC,  NULL,                      0x0, NULL, HFILL } },
 
    { &hf_removeflow_flowid,          { "Flow ID",               "npmp.removeflow_flowid",          FT_UINT32,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
    { &hf_removeflow_measurementid,   { "Measurement ID",        "npmp.removeflow_measurementid",   FT_UINT64,  BASE_HEX,  NULL,                      0x0, NULL, HFILL } },
@@ -215,7 +227,12 @@ dissect_npmp_acknowledge_message(tvbuff_t *message_tvb, proto_tree *message_tree
 static void
 dissect_npmp_add_flow_message(tvbuff_t *message_tvb, proto_tree *message_tree)
 {
-  guint32 retranstrials;
+  guint32      retranstrials;
+  proto_item*  onoffitem;
+  proto_tree*  onofftree;
+  guint16      onoffevents;
+  guint32      onoffvalue;
+  unsigned int i;
 
   ADD_FIELD(message_tree, addflow_flowid);
   ADD_FIELD(message_tree, addflow_measurementid);
@@ -250,7 +267,19 @@ dissect_npmp_add_flow_message(tvbuff_t *message_tvb, proto_tree *message_tree)
   ADD_FIELD(message_tree, addflow_rcvbuffersize);
   ADD_FIELD(message_tree, addflow_sndbuffersize);
   ADD_FIELD(message_tree, addflow_padding);
-  ADD_FIELD(message_tree, addflow_onoffevents);
+
+  onoffitem = ADD_FIELD(message_tree, addflow_onoffevents);
+
+  onoffevents = tvb_get_ntohs(message_tvb, offset_addflow_onoffevents);
+  if (onoffevents > 0) {
+     onofftree = proto_item_add_subtree(onoffitem, ett_onoffarray);
+    for(i = 0;i < onoffevents;i++) {
+      onoffvalue = tvb_get_ntohl(message_tvb, offset_addflow_onoffeventarray + (sizeof(guint32) * i));
+      proto_tree_add_uint_format(onofftree, hf_addflow_onoffeventarray, message_tvb,
+                                 offset_addflow_onoffeventarray + (sizeof(guint32) * i), sizeof(guint32),
+                                 onoffvalue, "%1.3f s: set to %s", onoffvalue / 1000.0, (i & 1) ? "OFF" : "ON");
+    }
+  }
 }
 
 
@@ -390,7 +419,8 @@ proto_register_npmp(void)
 {
   /* Setup protocol subtree array */
   static gint *ett[] = {
-    &ett_npmp
+    &ett_npmp,
+    &ett_onoffarray
   };
 
   /* Register the protocol name and description */
