@@ -1,8 +1,8 @@
 #!/bin/bash
 
 Directory="TEST1"
-LocalOpts=""   # -local=132.252....
-RemoteNode="87.139.124.106:9000"
+LocalOpts="-local=132.252.153.10,132.252.153.138"
+RemoteNode="132.252.153.18:9000"
 Variables="Run Runtime Flows OnlyOneAssoc FrameRate FrameSize"
 
 Run_VALUES="1"
@@ -25,7 +25,7 @@ perform_run ()
       runVector="$runDirectory/output.vec.bz2"
       runConfig="$runDirectory/output.config"
 
-      local command="./netperfmeter $RemoteNode"
+      local command="./netperfmeter $RemoteNode $LocalOpts"
       command="$command -scalar=$runScalar"
       command="$command -vector=$runVector"
       command="$command -config=$runConfig"
