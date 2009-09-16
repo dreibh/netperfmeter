@@ -175,6 +175,6 @@ struct NetPerfMeterResults
 } __attribute__((packed));
 
 #define NPMRF_EOF                            (1 << 0)
-#define NETPERFMETER_RESULTS_MAX_DATA_LENGTH 16384
+#define NETPERFMETER_RESULTS_MAX_DATA_LENGTH 1400
 
 #endif
