@@ -94,7 +94,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       sinfo.sinfo_stream   = flow->getStreamID();
       sinfo.sinfo_ppid     = htonl(PPID_NETPERFMETER_DATA);
       if(flow->getTrafficSpec().ReliableMode < 1.0) {
-         const bool sendUnreliable = (randomDouble() < flow->getTrafficSpec().ReliableMode);
+         const bool sendUnreliable = (randomDouble() > flow->getTrafficSpec().ReliableMode);
          if(sendUnreliable) {
 #ifdef HAVE_SINFO_PR_POLICY
             sinfo.sinfo_timetolive = flow->getTrafficSpec().RetransmissionTrials;
@@ -111,7 +111,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
          }
       }
       if(flow->getTrafficSpec().OrderedMode < 1.0) {
-         const bool sendUnordered = (randomDouble() < flow->getTrafficSpec().OrderedMode);
+         const bool sendUnordered = (randomDouble() > flow->getTrafficSpec().OrderedMode);
          if(sendUnordered) {
             sinfo.sinfo_flags |= SCTP_UNORDERED;
          }
