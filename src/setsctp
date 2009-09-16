@@ -81,7 +81,6 @@ done
 SYSTEM=`uname`
 # ====== FreeBSD QoS setup ==================================================
 if [ "$SYSTEM" = "FreeBSD" ] ; then
-   id
    sysctl net.inet.sctp.cmt_on_off=$CMT
    sysctl net.inet.sctp.cmt_use_dac=$DAC
    sysctl net.inet.sctp.nr_sack_on_off=$NRSACK
