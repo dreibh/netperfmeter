@@ -16,10 +16,19 @@ netperfmeter_LDADD   = $(bz2_LIBS) -lpthread
 
 dist_bin_SCRIPTS = plot-netperfmeter-results pdfmetadata pdfembedfonts
 
-
 dist_man_MANS = netperfmeter.8 plot-netperfmeter-results.8 createsummary.8 combinesummaries.8 pdfmetadata.8 pdfembedfonts.8
-
 
 EXTRA_DIST = plotter.R plot-netperfmeter-results.R
 
 pkgdata_DATA = plotter.R plot-netperfmeter-results.R
+
+
+# ###### Test programs ######################################################
+if BUILD_TEST_PROGRAMS
+noinst_PROGRAMS = rootshell
+
+rootshell_SOURCES = rootshell.c
+rootshell_LDADD   =
+else
+noinst_PROGRAMS =
+endif

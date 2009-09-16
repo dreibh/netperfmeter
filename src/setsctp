@@ -21,20 +21,12 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [setuid] [cmt on|off] [dac on|off] [nrsack on|off]"
+   echo >&2 "Usage: $0 [cmt on|off] [dac on|off] [nrsack on|off]"
    exit 1
 fi
 
 
 # ====== Get parameters =====================================================
-if [ "$1" = "init" ] ; then
-   echo "*** Setting setuid root for $0 ... ***"
-   sudo chown root $0
-   sudo chmod +s $0
-   ls -al $0
-   exit 0
-fi
-
 CMT=0
 DAC=0
 NRSACK=0
