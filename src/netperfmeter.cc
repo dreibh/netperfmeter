@@ -195,19 +195,33 @@ static const char* parseTrafficSpecOption(const char*      parameters,
    else if(sscanf(parameters, "defragtimeout=%u%n", &intValue, &n) == 1) {
       trafficSpec.DefragmentTimeout = 1000ULL * (uint32_t)intValue;
    }
+   else if(sscanf(parameters, "ordered=%lf%n", &dblValue, &n) == 1) {
+      if((dblValue < 0.0) || (dblValue > 1.0)) {
+         cerr << "ERROR: Bad probability for \"ordered\" option in " << parameters << "!" << endl;
+         exit(1);
+      }
+      trafficSpec.OrderedMode = dblValue;
+   }
    else if(sscanf(parameters, "unordered=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
          cerr << "ERROR: Bad probability for \"unordered\" option in " << parameters << "!" << endl;
          exit(1);
       }
-      trafficSpec.OrderedMode = dblValue;
+      trafficSpec.OrderedMode = 1.0 - dblValue;
+   }
+   else if(sscanf(parameters, "reliable=%lf%n", &dblValue, &n) == 1) {
+      if((dblValue < 0.0) || (dblValue > 1.0)) {
+         cerr << "ERROR: Bad probability for \"reliable\" option in " << parameters << "!" << endl;
+         exit(1);
+      }
+      trafficSpec.ReliableMode = dblValue;
    }
    else if(sscanf(parameters, "unreliable=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
          cerr << "ERROR: Bad probability for \"unreliable\" option in " << parameters << "!" << endl;
          exit(1);
       }
-      trafficSpec.ReliableMode = dblValue;
+      trafficSpec.ReliableMode = 1.0 - dblValue;
    }
    else if(sscanf(parameters, "rtx_timeout=%u%n", &intValue, &n) == 1) {
       trafficSpec.RetransmissionTrials     = (uint32_t)intValue;

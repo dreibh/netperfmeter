@@ -68,7 +68,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
       }
       if(bytes + sizeof(NetPerfMeterResults) > (size_t)received) {
          std::cerr << "ERROR: Received malformed NETPERFMETER_RESULTS message!" << std::endl;
-         printf("%u + %u > %u\n", bytes, sizeof(NetPerfMeterResults), received);
+         printf("%u + %u > %u\n", (unsigned int)bytes, (unsigned int)sizeof(NetPerfMeterResults), (unsigned int)received);
          exit(1);
       }
       if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {

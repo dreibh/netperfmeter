@@ -124,6 +124,10 @@ Splits frames into messages of at most the given number of bytes. Messages may n
 Messages not received within this timeout after the last successfully received message are accounted as lost. NOTE: this also happens if the transport protocol is reliable and the message is actually received later!
 .It unordered=Fraction
 Specifies the fraction of the messages that will be sent in unordered mode (SCTP only).
+.It ordered=Fraction
+Specifies the fraction of the messages that will be sent in ordered mode (SCTP only).
+.It reliable=Fraction
+Specifies the fraction of the messages that will be sent in reliable mode (SCTP only).
 .It unreliable=Fraction
 Specifies the fraction of the messages that will be sent in unreliable mode (SCTP only).
 .It rtx_timeout=Milliseconds
