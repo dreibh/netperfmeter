@@ -21,7 +21,7 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [ID] [Source Network] [Destination Network] [Bandwidth in kbit/s] [Delay in ms] [Loss in %]"
+   echo >&2 "Usage: $0 [ID] [Source Network] [Destination Network] [Bandwidth in kbit/s] [Delay in ms] [Loss]"
    exit 1
 fi
 
@@ -75,13 +75,13 @@ if [ "$SYSTEM" = "Linux" ] ; then
          DELAY="delay ${DELAY}ms"
       fi
       if [ "$LOSS" != "" ] ; then
-         LOSS="loss ${LOSS}%"
+         LOSS="loss ${LOSS}"
       fi
       for iface in $INTERFACES ; do
          echo "=== Configuring interface $iface ... ========================="
          tc qdisc add dev $iface root handle 9$ID:0 prio
          tc qdisc add dev $iface parent 9$ID:3 handle 8$ID:0 netem $DELAY $LOSS
-         tc qdisc add dev $iface parent 8$ID:0 handle 7$ID:0 tbf $BANDWIDTH burst 16000 latency 50ms
+         tc qdisc add dev $iface parent 8$ID:0 handle 7$ID:0 tbf $BANDWIDTH burst 16000 latency limit 150000
          tc filter add dev $iface protocol ip parent 9$ID:0 prio 3 u32 match ip src $NETWORK_SRC match ip dst $NETWORK_DST flowid 9$ID:3
          tc -s qdisc ls dev $iface
       done
@@ -98,8 +98,11 @@ elif [ "$SYSTEM" = "FreeBSD" ] ; then
       if [ "$DELAY" != "" ] ; then
          DELAY="delay ${DELAY}ms"
       fi
+      if [ "$LOSS" != "" ] ; then
+         LOSS="plr ${LOSS}"
+      fi
       ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST
-      ipfw pipe $ID config $BANDWIDTH $DELAY queue 20
+      ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS queue 100
    fi
 
 
