@@ -1,0 +1,98 @@
+#!/bin/bash
+# $Id$
+#
+# Network Performance Meter
+# Copyright (C) 2009 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
+
+if [ $# -lt 1 ] ; then
+   echo >&2 "Usage: $0 [setuid] [cmt on|off] [dac on|off] [nrsack on|off]"
+   exit 1
+fi
+
+
+# ====== Get parameters =====================================================
+if [ "$1" = "init" ] ; then
+   echo "*** Setting setuid root for $0 ... ***"
+   sudo chown root $0
+   sudo chmod +s $0
+   ls -al $0
+   exit 0
+fi
+
+CMT=0
+DAC=0
+NRSACK=0
+
+while [ "$1" != "" ] ; do
+   if [ "$1" = "cmt" ] ; then
+      if [ "$2" = "on" -o "$2" = "true" ] ; then
+         CMT=1
+      elif [ "$2" = "off" -o "$2" = "false" ] ; then 
+         CMT=0
+      else
+         echo >&2 "ERROR: Bad setting for cmt!"
+         exit 1
+      fi
+      shift ; shift
+
+   elif [ "$1" = "dac" ] ; then
+      if [ "$2" = "on" -o "$2" = "true" ] ; then
+         DAC=1
+      elif [ "$2" = "off" -o "$2" = "false" ] ; then 
+         DAC=0
+      else
+         echo >&2 "ERROR: Bad setting for dac!"
+         exit 1
+      fi
+      shift ; shift
+
+   elif [ "$1" = "nrsack" ] ; then
+      if [ "$2" = "on" -o "$2" = "true" ] ; then
+         NRSACK=1
+      elif [ "$2" = "off" -o "$2" = "false" ] ; then 
+         NRSACK=0
+      else
+         echo >&2 "ERROR: Bad setting for nrsack!"
+         exit 1
+      fi
+      shift ; shift
+
+   else
+      echo >&2 "ERROR: Unknown setting $1!"
+      exit 1
+   fi
+done
+
+
+echo "SCTP Configuration:"
+echo " - CMT:    $CMT"
+echo " - DAC:    $DAC"
+echo " - NRSACK: $NRSACK"
+
+
+SYSTEM=`uname`
+# ====== FreeBSD QoS setup ==================================================
+if [ "$SYSTEM" = "FreeBSD" ] ; then
+   sysctl -a
+
+# ====== Other systems ======================================================
+else
+   echo >&2 "ERROR: Unsupported system $SYSTEM!"
+   exit 1
+fi

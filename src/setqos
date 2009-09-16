@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # $Id$
 #
 # Network Performance Meter
@@ -21,13 +21,20 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [ID] [Source Network] [Destination Network] [Bandwidth in kbit/s] [Delay in ms]"
+   echo >&2 "Usage: $0 [ID|setuid [Source Network] [Destination Network] [Bandwidth in kbit/s] [Delay in ms] [Loss in %]"
    exit 1
 fi
 
 
 # ====== Get parameters =====================================================
 SYSTEM=`uname`
+if [ "$1" = "init" ] ; then
+   echo "*** Setting setuid root for $0 ... ***"
+   sudo chown root $0
+   sudo chmod +s $0
+   ls -al $0
+   exit 0
+fi
 ID="$1"
 if [ "$2" != "" ] ; then
    NETWORK_SRC="$2"
@@ -41,13 +48,18 @@ else
 fi
 BANDWIDTH=""
 DELAY=""
+LOSS=""
 addRule=0
 if [ 0$4 -gt 0 ] ; then
-   BANDWIDTH="bw $4Kbit/s"
+   BANDWIDTH="$4"
    addRule=1
 fi
 if [ 0$5 -gt 0 ] ; then
-   DELAY="delay $5ms"
+   DELAY="$5"
+   addRule=1
+fi
+if [ 0$6 -gt 0 ] ; then
+   LOSS="$6"
    addRule=1
 fi
 
@@ -56,28 +68,43 @@ fi
 if [ "$SYSTEM" = "Linux" ] ; then
    echo "Linux"
    INTERFACES=`eval "ifconfig -a" 2>/dev/null | sed -ne 's|^\('$cur'[^[:space:][:punct:]]\{1,\}\).*$|\1|p'`
-INTERFACES="lo"
+# INTERFACES="lo eth0"
 
+   echo "=== Removing old configuration ... =============================="
    for iface in $INTERFACES ; do
-      tc qdisc del dev $iface root handle 9$ID:0
-tc qdisc del dev $iface root handle 8333$ID:0
+      tc qdisc del dev $iface root   # Ohne ID-Angabe wird Root mit jeder ID entfernt!
    done
    if [ $addRule -eq 1 ] ; then
-echo "ADD.."
-      tc qdisc add dev $iface root handle 9$ID:0 prio
-echo "x1"
-      tc qdisc add dev $iface parent 9$ID:3 handle 8$ID:0 netem delay 200ms
-echo "x2"
-      tc qdisc add dev $iface parent 8$ID:0 handle 7$ID:0 tbf rate 20kbit buffer 1600 limit 3000
-echo "x3"
-      tc filter add dev $iface protocol ip parent 9$ID:0 prio 3 u32 match ip src $NETWORK_SRC match ip dst $NETWORK_DST flowid 9$ID:3
+      if [ "$BANDWIDTH" != "" ] ; then
+         BANDWIDTH="rate ${BANDWIDTH}kbit"
+      fi
+      if [ "$DELAY" != "" ] ; then
+         DELAY="delay ${DELAY}ms"
+      fi
+      if [ "$LOSS" != "" ] ; then
+         LOSS="loss ${LOSS}%"
+      fi
+      for iface in $INTERFACES ; do
+         echo "=== Configuring interface $iface ... ========================="
+         tc qdisc add dev $iface root handle 9$ID:0 prio
+         tc qdisc add dev $iface parent 9$ID:3 handle 8$ID:0 netem $DELAY $LOSS
+         tc qdisc add dev $iface parent 8$ID:0 handle 7$ID:0 tbf $BANDWIDTH burst 16000 latency 50ms
+         tc filter add dev $iface protocol ip parent 9$ID:0 prio 3 u32 match ip src $NETWORK_SRC match ip dst $NETWORK_DST flowid 9$ID:3
+         tc -s qdisc ls dev $iface
+      done
    fi
-tc -s qdisc ls dev $iface
+
 
 # ====== FreeBSD QoS setup ==================================================
 elif [ "$SYSTEM" = "FreeBSD" ] ; then
    ipfw $ID delete pipe $ID
    if [ $addRule -eq 1 ] ; then
+      if [ "$BANDWIDTH" != "" ] ; then
+         BANDWIDTH="bw ${BANDWIDTH}Kbit/s"
+      fi
+      if [ "$DELAY" != "" ] ; then
+         DELAY="delay ${DELAY}ms"
+      fi
       ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST
       ipfw pipe $ID config $BANDWIDTH $DELAY queue 20
    fi
