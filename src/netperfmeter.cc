@@ -57,7 +57,7 @@ static int           gSCTPSocket      = -1;
 static int           gDCCPSocket      = -1;
 static double        gRuntime         = -1.0;
 static bool          gStopTimeReached = false;
-static MessageReader gMessageReader;
+MessageReader        gMessageReader;
 
 
 

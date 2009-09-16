@@ -30,7 +30,8 @@
 #include <iostream>
 
 
-unsigned int gOutputVerbosity = 9;
+unsigned int         gOutputVerbosity = 9;
+extern MessageReader gMessageReader;
 
 
 // ##########################################################################
@@ -58,40 +59,44 @@ static bool downloadOutputFile(MessageReader* messageReader,
       return(false);
    }
    bool success = false;
-   ssize_t received = ext_recv(controlSocket, resultsMsg, sizeof(messageBuffer), 0);
-   while(received >= (ssize_t)sizeof(NetPerfMeterResults)) {
-      const size_t bytes = ntohs(resultsMsg->Header.Length);
-      if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
-         std::cerr << "ERROR: Received unexpected message type "
-                   << (unsigned int)resultsMsg->Header.Type <<  "!" << std::endl;
-         exit(1);
-      }
-      if(bytes + sizeof(NetPerfMeterResults) > (size_t)received) {
-         std::cerr << "ERROR: Received malformed NETPERFMETER_RESULTS message!" << std::endl;
-         printf("%u + %u > %u\n", (unsigned int)bytes, (unsigned int)sizeof(NetPerfMeterResults), (unsigned int)received);
-         exit(1);
-      }
-      if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {
-         std::cout << ".";
-      }
-      
-      if(bytes > 0) {
-         if(fwrite((char*)&resultsMsg->Data, bytes, 1, fh) != 1) {
-            std::cerr << "ERROR: Unable to write results to file " << fileName
-                     << " - " << strerror(errno) << "!" << std::endl;
+   ssize_t received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer),
+                                                    NULL, NULL, NULL, NULL);
+   while( (received == MRRM_PARTIAL_READ) || (received >= (ssize_t)sizeof(NetPerfMeterResults)) ) {
+      if(received > 0) {
+         const size_t bytes = ntohs(resultsMsg->Header.Length);
+         if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
+            std::cerr << "ERROR: Received unexpected message type "
+                      << (unsigned int)resultsMsg->Header.Type <<  "!" << std::endl;
             exit(1);
          }
+         if(bytes != (size_t)received) {
+            std::cerr << "ERROR: Received malformed NETPERFMETER_RESULTS message!" << std::endl;
+            printf("%u + %u > %u\n", (unsigned int)bytes, (unsigned int)sizeof(NetPerfMeterResults), (unsigned int)received);
+            exit(1);
+         }
+         if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {
+            std::cout << ".";
+         }
+         
+         if(bytes > 0) {
+            if(fwrite((char*)&resultsMsg->Data, bytes, 1, fh) != 1) {
+               std::cerr << "ERROR: Unable to write results to file " << fileName
+                        << " - " << strerror(errno) << "!" << std::endl;
+               exit(1);
+            }
+         }
+         else {
+            std::cerr << "WARNING: No results received for "
+                      << fileName << "!" << std::endl;
+         }
+      
+         if(resultsMsg->Header.Flags & NPMRF_EOF) {
+            success = true;
+            break;
+         }
       }
-      else {
-         std::cerr << "WARNING: No results received for "
-                   << fileName << "!" << std::endl;
-      }
-   
-      if(resultsMsg->Header.Flags & NPMRF_EOF) {
-         success = true;
-         break;
-      }
-      received = ext_recv(controlSocket, resultsMsg, sizeof(messageBuffer), 0);
+      received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer),
+                                               NULL, NULL, NULL, NULL);
    }
    fclose(fh);
    return(success);
@@ -120,6 +125,7 @@ static bool downloadResults(MessageReader*     messageReader,
    if(success) {
       success = downloadOutputFile(messageReader, controlSocket, outputName.c_str());
    }
+
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       std::cout << " " << ((success == true) ? "okay": "FAILED") << std::endl;
    }
@@ -524,7 +530,12 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
 
    // ====== Read NETPERFMETER_ACKNOWLEDGE message ==========================
    NetPerfMeterAcknowledgeMessage ackMsg;
-   if(ext_recv(controlSocket, &ackMsg, sizeof(ackMsg), 0) < (ssize_t)sizeof(ackMsg)) {
+   ssize_t                        received;
+   do {
+      received = gMessageReader.receiveMessage(controlSocket, &ackMsg, sizeof(ackMsg),
+                                               NULL, NULL, NULL, NULL);
+   } while(received == MRRM_PARTIAL_READ);
+   if(received < (ssize_t)sizeof(ackMsg)) {
       return(false);
    }
    if(ackMsg.Header.Type != NETPERFMETER_ACKNOWLEDGE) {
@@ -586,7 +597,7 @@ static bool uploadOutputFile(const int          controlSocket,
                                  NETPERFMETER_RESULTS_MAX_DATA_LENGTH,
                                  outputFile.getFile());
       resultsMsg->Header.Flags  = feof(outputFile.getFile()) ? NPMRF_EOF : 0x00;
-      resultsMsg->Header.Length = htons(bytes);
+      resultsMsg->Header.Length = htons(sizeof(NetPerfMeterResults) + bytes);
       // printf("   -> b=%d   snd=%d\n",(int)bytes, (int)(sizeof(NetPerfMeterResults) + bytes));
       if(ferror(outputFile.getFile())) {
          std::cerr << "ERROR: Failed to read results from "

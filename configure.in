@@ -278,6 +278,7 @@ int main(int argc, char** argv)
 
 else
    # ====== Kernel SCTP =====================================================
+   oldLIBS=$LIBS
    AC_CHECK_FUNCS(sctp_sendmsg, ,  AC_CHECK_LIB(sctp, sctp_sendmsg))
    AC_CHECK_FUNCS(sctp_connectx, , AC_CHECK_LIB(sctp, sctp_connectx))
    AC_CHECK_FUNCS(sctp_send, ,     AC_CHECK_LIB(sctp, sctp_send))
@@ -314,6 +315,7 @@ else
                   [AC_MSG_RESULT(yes)
                    AC_DEFINE(HAVE_SCTP_DELAYED_SACK, 1, [Define to 1 if SCTP_DELAYED_SACK with sctp_sack_info is available.])],
                   AC_MSG_RESULT(no))
+   LIBS=$oldLIBS
 
    # ====== Check for Valgrind ==============================================
    # Needed to avoid false positives for sctp_getladdrs()/sctp_getpaddrs()

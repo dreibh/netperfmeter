@@ -7,7 +7,7 @@ combinesummaries_SOURCES = combinesummaries.cc
 combinesummaries_LDADD   = $(bz2_LIBS)
 
 netperfmeter_SOURCES = netperfmeter.cc ext_socket.h netperfmeterpackets.h thread.cc thread.h mutex.cc mutex.h tools.h tools.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc outputfile.h outputfile.cc flowtrafficspec.h flowtrafficspec.cc flowbandwidthstats.h flowbandwidthstats.cc flow.h flow.cc measurement.h measurement.cc defragmenter.h defragmenter.cc
-netperfmeter_LDADD   = $(bz2_LIBS) -lpthread
+netperfmeter_LDADD   = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread
 
 
 # t2_SOURCES = t2.cc ext_socket.h netperfmeterpackets.h thread.cc thread.h mutex.cc mutex.h tools.h tools.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc outputfile.h outputfile.cc flowtrafficspec.h flowtrafficspec.cc flowbandwidthstats.h flowbandwidthstats.cc flow.h flow.cc measurement.h measurement.cc defragmenter.h defragmenter.cc
