@@ -49,10 +49,10 @@ OptionCMT_VALUES="true"
 OptionDAC_VALUES="true"
 OptionNRSACK_VALUES="true"
 RateNorthernTrail_VALUES="1000"
-DelayNorthernTrail_VALUES="1"
+DelayNorthernTrail_VALUES="100"
 LossNorthernTrail_VALUES="0"
 RateSouthernTrail_VALUES="-1"
-DelaySouthernTrail_VALUES="-1"
+DelaySouthernTrail_VALUES="200"
 LossSouthernTrail_VALUES="-1"
 
 

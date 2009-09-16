@@ -34,7 +34,7 @@ else
    NETWORK_SRC="0.0.0.0/0"
 fi
 if [ "$3" != "" ] ; then
-   NETWORK_DST="$2"
+   NETWORK_DST="$3"
 else
    NETWORK_DST="0.0.0.0/0"
 fi
