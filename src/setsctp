@@ -72,10 +72,10 @@ while [ "$1" != "" ] ; do
 done
 
 
-echo "SCTP Configuration:"
-echo " - CMT:    $CMT"
-echo " - DAC:    $DAC"
-echo " - NRSACK: $NRSACK"
+# echo "SCTP Configuration:"
+# echo " - CMT:    $CMT"
+# echo " - DAC:    $DAC"
+# echo " - NRSACK: $NRSACK"
 
 
 SYSTEM=`uname`
