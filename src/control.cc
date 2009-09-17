@@ -59,8 +59,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
       return(false);
    }
    bool success = false;
-   ssize_t received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer),
-                                                    NULL, NULL, NULL, NULL);
+   ssize_t received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer));
    while( (received == MRRM_PARTIAL_READ) || (received >= (ssize_t)sizeof(NetPerfMeterResults)) ) {
       if(received > 0) {
          const size_t bytes = ntohs(resultsMsg->Header.Length);
@@ -95,8 +94,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
             break;
          }
       }
-      received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer),
-                                               NULL, NULL, NULL, NULL);
+      received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer));
    }
    fclose(fh);
    return(success);
@@ -532,8 +530,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    NetPerfMeterAcknowledgeMessage ackMsg;
    ssize_t                        received;
    do {
-      received = gMessageReader.receiveMessage(controlSocket, &ackMsg, sizeof(ackMsg),
-                                               NULL, NULL, NULL, NULL);
+      received = gMessageReader.receiveMessage(controlSocket, &ackMsg, sizeof(ackMsg));
    } while(received == MRRM_PARTIAL_READ);
    if(received < (ssize_t)sizeof(ackMsg)) {
       return(false);

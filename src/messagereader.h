@@ -47,10 +47,10 @@ class MessageReader
    ssize_t receiveMessage(const int        sd,
                           void*            buffer,
                           size_t           bufferSize,
-                          sockaddr*        from,
-                          socklen_t*       fromSize,
-                          sctp_sndrcvinfo* sinfo,
-                          int*             msgFlags);
+                          sockaddr*        from     = NULL,
+                          socklen_t*       fromSize = NULL,
+                          sctp_sndrcvinfo* sinfo    = NULL,
+                          int*             msgFlags = NULL);
 
    // ====== Private Data ===================================================
    private:
