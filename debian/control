@@ -6,36 +6,9 @@ Homepage: http://www.iem.uni-due.de/~dreibh/netperfmeter/
 Build-Depends: debhelper (>= 5), autotools-dev, libsctp-dev (>= 1.0.5), libbz2-dev (>= 1.0)
 Standards-Version: 3.8.1
 
-Package: pdfproctools
-Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, perl (>= 5.8.0), libpdf-api2-perl, ghostscript
-Replaces: pdfmetadata, pdftools
-Conflicts: pdfmetadata, pdftools
-Description: PDF Processing Tools
- This package contains tools for PDF file processing.
- .
- PDFMetadata updates the metadata of a PDF file. In particular, it can be
- used to add outlines (bookmarks) to a document. Furthermore, it can set the
- document properties (e.g. author, title, keywords, creator, producer).
- .
- PDFEmbedFonts embeds all referenced fonts into a PDF file. Optionally, it
- can also linearize the PDF file for online publication
- ("fast web view", "optimized").
-
-Package: datatabletools
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: r-base
-Replaces: scalartools
-Conflicts: scalartools
-Description: GNU R Data Table Processing Tools
- This package contains a tool to create GNU R data tables from scalar files
- (createsummary) and a tool to combine GNU R data tables. On-the-fly
- BZip2-decompression and compression is supported to reduce storage space.
-
 Package: netperfmeter
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, r-base, datatabletools, pdfproctools
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Replaces: netmeter (<= 0.5.1)
 Conflicts: netmeter (<= 0.5.1)
 Recommends: traceroute, iputils-tracepath, iputils-ping, rsplib-tools, subnetcalc (>= 2.0.2)
@@ -45,4 +18,4 @@ Description: Network Performance Meter
  It simultaneously transmits bidirectional flows to an endpoint
  and measures the resulting flow bandwidths and QoS. The
  results are written as vector and scalar files. The vector
- files can be used to create PDF plots of the results.
+ files can e.g. be used to create plots of the results.

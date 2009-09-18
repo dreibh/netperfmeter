@@ -1,4 +1,4 @@
-AC_INIT([NetPerfMeter], [0.9.3], [dreib@iem.uni-due.de])
+AC_INIT([NetPerfMeter], [0.9.4], [dreib@iem.uni-due.de])
 
 AM_INIT_AUTOMAKE
 AC_PREREQ(2.60)
@@ -26,8 +26,13 @@ fi
 
 AC_ARG_ENABLE([test-programs],
 [  --enable-test-programs              build with batch test programs ]
-[default=yes]],enable_test_programs=$enableval,enable_test_programs=yes)
+[default=no]],enable_test_programs=$enableval,enable_test_programs=no)
 AM_CONDITIONAL(BUILD_TEST_PROGRAMS, test x$enable_test_programs = xyes)
+
+AC_ARG_ENABLE([plotting-programs],
+[  --enable-plotting-programs              build with batch plotting programs ]
+[default=no]],enable_plotting_programs=$enableval,enable_plotting_programs=no)
+AM_CONDITIONAL(BUILD_PLOTTING_PROGRAMS, test x$enable_plotting_programs = xyes)
 
 
 # ###### Networking declarations ############################################

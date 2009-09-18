@@ -1,0 +1,4 @@
+debian/tmp/usr/bin/netperfmeter
+debian/tmp/usr/bin/plot-netperfmeter-results
+debian/tmp/usr/share/netperfmeter/plot-netperfmeter-results.R
+debian/tmp/usr/share/netperfmeter/plotter.R

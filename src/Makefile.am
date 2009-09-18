@@ -1,26 +1,32 @@
+if BUILD_PLOTTING_PROGRAMS
 bin_PROGRAMS = netperfmeter createsummary combinesummaries
+else
+bin_PROGRAMS = netperfmeter
+endif
 
-createsummary_SOURCES = createsummary.cc debug.h redblacktree.h redblacktree_impl.h simpleredblacktree.h simpleredblacktree.c
-createsummary_LDADD   = $(bz2_LIBS)
 
-combinesummaries_SOURCES = combinesummaries.cc
-combinesummaries_LDADD   = $(bz2_LIBS)
-
+# ###### NetPerfMeter program ###############################################
 netperfmeter_SOURCES = netperfmeter.cc ext_socket.h netperfmeterpackets.h thread.cc thread.h mutex.cc mutex.h tools.h tools.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc outputfile.h outputfile.cc flowtrafficspec.h flowtrafficspec.cc flowbandwidthstats.h flowbandwidthstats.cc flow.h flow.cc measurement.h measurement.cc defragmenter.h defragmenter.cc
 netperfmeter_LDADD   = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread
 
 
-# t2_SOURCES = t2.cc ext_socket.h netperfmeterpackets.h thread.cc thread.h mutex.cc mutex.h tools.h tools.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc outputfile.h outputfile.cc flowtrafficspec.h flowtrafficspec.cc flowbandwidthstats.h flowbandwidthstats.cc flow.h flow.cc measurement.h measurement.cc defragmenter.h defragmenter.cc
-# t2_LDADD   = $(bz2_LIBS) -lpthread
+# ###### Plotting programs ##################################################
+dist_man_MANS = netperfmeter.8
 
+if BUILD_PLOTTING_PROGRAMS
 
-dist_bin_SCRIPTS = plot-netperfmeter-results pdfmetadata pdfembedfonts
+nodist_bin_SCRIPTS = plot-netperfmeter-results pdfmetadata pdfembedfonts
+nodist_man_MANS  = plot-netperfmeter-results.8 createsummary.8 combinesummaries.8 pdfmetadata.8 pdfembedfonts.8
+nodist_EXTRA_DIST       = plotter.R plot-netperfmeter-results.R
+nodist_pkgdata_DATA     = plotter.R plot-netperfmeter-results.R
 
-dist_man_MANS = netperfmeter.8 plot-netperfmeter-results.8 createsummary.8 combinesummaries.8 pdfmetadata.8 pdfembedfonts.8
+nodist_createsummary_SOURCES = createsummary.cc debug.h redblacktree.h redblacktree_impl.h simpleredblacktree.h simpleredblacktree.c
+createsummary_LDADD   = $(bz2_LIBS)
 
-EXTRA_DIST = plotter.R plot-netperfmeter-results.R
+nodist_combinesummaries_SOURCES = combinesummaries.cc
+combinesummaries_LDADD   = $(bz2_LIBS)
 
-pkgdata_DATA = plotter.R plot-netperfmeter-results.R
+endif
 
 
 # ###### Test programs ######################################################

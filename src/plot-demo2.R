@@ -32,7 +32,7 @@ plotConfigurations <- list(
    #      "a-Axis Variable", "b-Axis Variable", "p-Axis Variable")
    # ------------------------------------------------------------------------
 
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedByteRate.pdf"),
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
         "Receiver's Perspective", NA, NA, list(1,0),
         "RateNorthernTrail", "passive.total-ReceivedBitRate",
         "OptionNRSACK", "Unordered", "",
@@ -53,10 +53,15 @@ plotVariables <- list(
    #             (simulationDirectory/Results/....data.tar.bz2 is added!)
    # ------------------------------------------------------------------------
 
-   list("Flows",
-           "Number of Flows{n}[1]", NA),
-   list("OnlyOneAssoc",
-           "Only One Assoc{A}", NA),
+   list("Flows",        "Number of Flows{n}[1]",     NA),
+   list("OnlyOneAssoc", "Only One Assoc{A}",         NA),
+   list("Unordered",    "Unordered{U}",              NA),
+   list("OptionCMT",    "Allow CMT {:mu:}",          NA),
+   list("OptionDAC",    "Delayed Ack CMT {:delta:}", NA),
+   list("OptionNRSACK", "Use NR-SACK{:nu:}",         NA),
+   list("SndBuf",       "Send Buffer{S}[Bytes]",     NA),
+   list("RcvBuf",       "Receive Buffer{R}[Bytes]",  NA),
+
    list("RateNorthernTrail",
            "Data Rate on Northern Trail {:rho[North]:}[Kbit/s]", NA),
    list("DelayNorthernTrail",
@@ -64,10 +69,13 @@ plotVariables <- list(
            NA, "black"),
    list("LossNorthernTrail",
            "Loss Rate on Northern Trail {:epsilon[North]:}"),
-   list("Unordered",
-           "Unordered{U}", NA),
-   list("OptionNRSACK",
-           "Use NR-SACK{:nu:}", NA),
+   list("RateSouthernTrail",
+           "Data Rate on Southern Trail {:rho[South]:}[Kbit/s]", NA),
+   list("DelaySouthernTrail",
+           "Delay on Southern Trail {:delta[South]:}[ms]",
+           NA, "black"),
+   list("LossSouthernTrail",
+           "Loss Rate on Southern Trail {:epsilon[South]:}"),
 
    list("passive.flow",
            "Flow Number{F}", NA),
@@ -92,7 +100,6 @@ plotVariables <- list(
            "8 * data1$passive.total.ReceivedByteRate / 1000",
            "blue2",
            list("passive.total-ReceivedByteRate"))
-
 )
 
 # ###########################################################################
