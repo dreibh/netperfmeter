@@ -1,7 +1,7 @@
 # $Id$
 # ###########################################################################
 #             Thomas Dreibholz's R Simulation Scripts Collection
-#                  Copyright (C) 2005-2009 Thomas Dreibholz
+#                  Copyright (C) 2005-2008 Thomas Dreibholz
 #
 #               Author: Thomas Dreibholz, dreibh@iem.uni-due.de
 # ###########################################################################
@@ -250,7 +250,7 @@ hbarHandlingSpeedAggregator <- function(xSet, ySet, hbarSet, zValue, confidence)
    return(c(mMean,mMin,mMax))
 }
 
-3
+
 # Plot x/y plot with different curves as z with confidence intervals in
 # y direction. x and z can be numeric or strings, y must be numeric since
 # confidence intervals have to be computed.
@@ -279,7 +279,7 @@ plotstd3 <- function(mainTitle,
                      colorMode         = cmColor,
                      zColorArray       = c(),
                      frameColor        = par("fg"),
-                     legendSize        = 0.8,
+                     legendSize  = 0.8,
                      xValueFilter      = "%s",
                      yValueFilter      = "%s",
                      zValueFilter      = "%s",
@@ -349,7 +349,7 @@ plotstd3 <- function(mainTitle,
    # ------ Create plot window ----------------------------------------------
    if(!inPlotStd6) {
       margins <- c(3.25,3.25,3,0.25) + 0.0   # Margins as c(bottom, left, top, right)
-                                             # Default is c(5, 4, 4, 2) + 0.1
+                                          # Default is c(5, 4, 4, 2) + 0.1
    }
    else {
       margins <- c(5, 5, 3, 2) + 0.0   # For usage within plotstd6()
@@ -459,14 +459,9 @@ plotstd3 <- function(mainTitle,
 
                # ----- Lines plot without confidence intervals --------------
                else if((type == "lx") || (type=="linesx")) {
-                  lineWidth <- 5
-                  if((length(vLevels) > 1) || (length(wLevels) > 1)) {
-                     lineWidth <- 3
-                  }
                   xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
                   ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
-                  lines(xSubset, ySubset, col=legendColor, lty=legendStyle,
-                        lwd=lineWidth*par("cex"), pch=legendDot)
+                  lines(xSubset, ySubset, col=legendColor, cex=par("cex"), pch=legendDot)
 
                   legendTexts <- append(legendTexts, legendText)
                   legendColors <- append(legendColors, legendColor)
@@ -882,8 +877,7 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel, pColor, co
 
    plot.new()   # Title
    plot.window(c(0, 1), c(0, 1))
-   text(0.5, 0.5, parse(text=getLabel(pTitle)),
-        adj=0.5, font=par("font.main"), cex=1.5*par("cex.main"))
+   text(0.5, 0.5, parse(text=getLabel(pTitle)), adj=0.5, font=par("font.main"), cex=1.5*par("cex.main"))
 
    plot.new()   # Sub-title
    plot.window(c(0, 1), c(0, 1))
@@ -949,17 +943,8 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
       # oldPar1 <- par(bg=getBackgroundColor(page, colorMode, pStart))
 
       pColor <- getBackgroundColor(page, colorMode, pStart)
-      if( (aLevels > 1) || (bLevels > 1) ) {
-         # For aLevels==1 and bLevels==1, there is no need to create the layout here!
-         # Otherwise, it would reduce cex => too small fonts!
-         makeLayout(aSet, bSet, aTitle, bTitle, mainTitle, pSubLabel, pColor, colorMode)
-         plotTitle    <- ""
-         largeMargins <- TRUE   # Leave some space around plotstd3() plot
-      }
-      else {
-         plotTitle <- mainTitle
-         largeMargins <- FALSE
-      }
+      makeLayout(aSet, bSet, aTitle, bTitle, mainTitle, pSubLabel, pColor, colorMode)
+
 
       # ------ Plot page ----------------------------------------------
       i<-1
@@ -977,7 +962,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
             oldPar2 <- par(cex=cexScaleFactor*par("cex"),
                            cex.main=cexScaleFactor*par("cex.main"),
                            cex.lab=cexScaleFactor*par("cex.lab"))
-            if(plotstd3(plotTitle,
+            if(plotstd3("",
                         xTitle, yTitle, zTitle,
                         xSubset, ySubset, zSubset,
                         vSubset, wSubset, vTitle, wTitle,
@@ -994,7 +979,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         legendPos = legendPos,
                         colorMode = colorMode,
                         frameColor = frameColor,
-                        inPlotStd6 = largeMargins) < 1) {
+                        inPlotStd6 = TRUE) < 1) {
                # No data for this field!
                plot.new()   # Must be here, otherwise the order will be wrong!
             }
@@ -1029,20 +1014,20 @@ plothist <- function(mainTitle,
                      xTitle, yTitle, zTitle,
                      xSet, ySet, zSet,
                      cSet,
-                     xAxisTicks     = getUsefulTicks(xSet),
-                     yAxisTicks     = c(),
-                     breakSpace     = 0.2,
-                     freq           = TRUE,
-                     hideLegend     = FALSE,
-                     legendPos      = c(1,1),
-                     colorMode      = cmColor,
-                     zColorArray    = c(),
-                     frameColor     = par("fg"),
-                     legendSize     = 0.8,
-                     showMinMax     = FALSE,
-                     showConfidence = TRUE,
-                     confidence     = 0.95,
-                     valueFilter    = plothist.valuefilter)
+                     xAxisTicks       = getUsefulTicks(xSet),
+                     yAxisTicks       = c(),
+                     breakSpace       = 0.2,
+                     freq             = TRUE,
+                     hideLegend       = FALSE,
+                     legendPos        = c(1,1),
+                     colorMode        = cmColor,
+                     zColorArray      = c(),
+                     frameColor       = par("fg"),
+                     legendSize = 0.8,
+                     showMinMax       = FALSE,
+                     showConfidence   = TRUE,
+                     confidence       = 0.95,
+                     valueFilter      = plothist.valuefilter)
 {
    # ------ Initialize variables --------------------------------------------
    cLevels <- levels(factor(cSet))
@@ -1368,6 +1353,7 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
           title=simulationDirectory)
    }
    for(i in 1:length(plotConfigurations)) {
+      cat(sep="", "* Plot configuration ", i, ":\n")
       plotConfiguration <- unlist(plotConfigurations[i], recursive=FALSE)
 
       # ------ Get configuration --------------------------------------------
@@ -1387,16 +1373,17 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
 
       frameColor <- "black"
       yManipulator <- "set"
-      xTitle <- "X-Axis" ; yTitle <- "Y-Axis" ; zTitle <- "Z-Axis"
+      xTitle <- "X-Axis" ; xFound <- FALSE
+      yTitle <- "Y-Axis" ; yFound <- FALSE
       xManipulator <- NA; yManipulator <- NA; zManipulator <- NA
       vManipulator <- NA; wManipulator <- NA;
       aManipulator <- NA; bManipulator <- NA; pManipulator <- NA
-      zColumn <- "" ; zSet <- c() ; zTitle <- "Z-Axis"
-      vColumn <- "" ; vSet <- c() ; vTitle <- "V-Axis"
-      wColumn <- "" ; wSet <- c() ; wTitle <- "W-Axis"
-      aColumn <- "" ; aSet <- c() ; aTitle <- "A-Axis"
-      bColumn <- "" ; bSet <- c() ; bTitle <- "B-Axis"
-      pColumn <- "" ; pSet <- c() ; pTitle <- "P-Axis"
+      zColumn <- "" ; zSet <- c() ; zTitle <- "Z-Axis" ; zFound <- FALSE
+      vColumn <- "" ; vSet <- c() ; vTitle <- "V-Axis" ; vFound <- FALSE
+      wColumn <- "" ; wSet <- c() ; wTitle <- "W-Axis" ; wFound <- FALSE
+      aColumn <- "" ; aSet <- c() ; aTitle <- "A-Axis" ; aFound <- FALSE
+      bColumn <- "" ; bSet <- c() ; bTitle <- "B-Axis" ; bFound <- FALSE
+      pColumn <- "" ; pSet <- c() ; pTitle <- "P-Axis" ; pFound <- FALSE
       rangeSet <- c()
       rangeColors <- c()
       filter <- parse(text="TRUE")
@@ -1427,10 +1414,12 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
          plotVariable <- unlist(plotVariables[j], recursive=FALSE)
          variableName <- as.character(plotVariable[1])
          if(xColumn == variableName) {
+            xFound       <- TRUE
             xTitle       <- as.character(plotVariable[2])
             xManipulator <- plotVariable[3]
          }
          else if(yColumn == variableName) {
+            yFound         <- TRUE
             yTitle         <- as.character(plotVariable[2])
             yManipulator   <- plotVariable[3]
             frameColor     <- as.character(plotVariable[4])
@@ -1439,76 +1428,111 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
             rangeColors    <- unlist(plotVariable[7], recursive=FALSE)
          }
          else if(zColumn == variableName) {
+            zFound       <- TRUE
             zTitle       <- as.character(plotVariable[2])
             zManipulator <- plotVariable[3]
          }
          else if(vColumn == variableName) {
+            vFound       <- TRUE
             vTitle       <- as.character(plotVariable[2])
             vManipulator <- plotVariable[3]
          }
          else if(wColumn == variableName) {
+            wFound       <- TRUE
             wTitle       <- as.character(plotVariable[2])
             wManipulator <- plotVariable[3]
          }
          else if(aColumn == variableName) {
+            aFound       <- TRUE
             aTitle       <- as.character(plotVariable[2])
             aManipulator <- plotVariable[3]
          }
          else if(bColumn == variableName) {
+            bFound       <- TRUE
             bTitle       <- as.character(plotVariable[2])
             bManipulator <- plotVariable[3]
          }
          else if(pColumn == variableName) {
+            pFound       <- TRUE
             pTitle       <- as.character(plotVariable[2])
             pManipulator <- plotVariable[3]
          }
       }
+      if( (xColumn != "") & (!is.na(xColumn)) & (xFound == FALSE) ) {
+         stop(paste(sep="", "ERROR: xSet not mapped - setting \"", xColumn, "\" is unknown!"))
+      }
+      if( (yColumn != "") & (!is.na(yColumn)) & (yFound == FALSE) ) {
+         stop(paste(sep="", "ERROR: ySet not mapped - setting \"", yColumn, "\" is unknown!"))
+      }
+      if( (zColumn != "") & (!is.na(zColumn)) & (zFound == FALSE) ) {
+         warning(paste(sep="", "ERROR: zSet not mapped - setting \"", zColumn, "\" is unknown!"))
+      }
+      if( (vColumn != "") & (!is.na(vColumn)) & (vFound == FALSE) ) {
+         warning(paste(sep="", "ERROR: vSet not mapped - setting \"", vColumn, "\" is unknown!"))
+      }
+      if( (wColumn != "") & (!is.na(wColumn)) & (wFound == FALSE) ) {
+         warning(paste(sep="", "ERROR: wSet not mapped - setting \"", wColumn, "\" is unknown!"))
+      }
+      if( (aColumn != "") & (!is.na(aColumn)) & (aFound == FALSE) ) {
+         warning(paste(sep="", "ERROR: aSet not mapped - setting \"", aColumn, "\" is unknown!"))
+      }
+      if( (bColumn != "") & (!is.na(bColumn)) & (bFound == FALSE) ) {
+         warning(paste(sep="", "ERROR: bSet not mapped - setting \"", bColumn, "\" is unknown!"))
+      }
+      if( (pColumn != "") & (!is.na(pColumn)) & (pFound == FALSE) ) {
+         warning(paste(sep="", "ERROR: pSet not mapped - setting \"", pColumn, "\" is unknown!"))
+      }
 
       # ------ Fill data vectors (parse() transforms string to expression) --
+      cat("   - Loading results for plot configuration", i, "...\n")
       data <- list()
       for(resultsName in resultsNameSet) {
          resultFileName  <- paste(sep="", simulationDirectory, "/Results/", resultsName, ".data.bz2")
-         cat(sep="", "  Loading results from ", resultFileName, " ...\n")
+         cat(sep="", "     + Loading results from ", resultFileName, " ...\n")
          data <- append(data, list(loadResults(resultFileName, quiet=FALSE, customFilter=customFilter)))
       }
+      if(length(data) < 1) {
+         stop("ERROR: No data has been loaded! Check plot configuration to ensure that some data is specified!\n")
+      }
 
-      cat(sep="", "* Plotting ", yColumn, " with:\n")
 
-      cat(sep="", "  + xSet = ", xColumn, "   ")
+      cat(sep="", "   - Plotting ", yColumn, " with:\n")
+
+      cat(sep="", "     + xSet = ", xColumn, "   ")
       xSet <- applyManipulator(xManipulator, data, xColumn, filter)
       cat(sep="", "(", length(xSet), " lines)\n")
 
-      cat(sep="", "  + ySet = ", yColumn, "   ")
+      cat(sep="", "     + ySet = ", yColumn, "   ")
       ySet <- applyManipulator(yManipulator, data, yColumn, filter)
       cat(sep="", "(", length(ySet), " lines)\n")
 
       if(zColumn != "") {
-         cat(sep="", "  + zSet = ", zColumn, "   ")
+         cat(sep="", "     + zSet = ", zColumn, "   ")
          zSet <- applyManipulator(zManipulator, data, zColumn, filter)
          cat(sep="", "(", length(zSet), " lines)\n")
       }
       if(vColumn != "") {
-         cat(sep="", "  + vSet = ", vColumn, "   ")
+         cat(sep="", "     + vSet = ", vColumn, "   ")
          vSet <- applyManipulator(vManipulator, data, vColumn, filter)
          cat(sep="", "(", length(vSet), " lines)\n")
       }
       if(wColumn != "") {
-         cat(sep="", "  + wSet = ", wColumn, "   ")
+         cat(sep="", "     + wSet = ", wColumn, "   ")
          wSet <- applyManipulator(wManipulator, data, wColumn, filter)
          cat(sep="", "(", length(wSet), " lines)\n")
       }
       if(aColumn != "") {
-         cat(sep="", "  + aSet = ", aColumn, "   ")
+         cat(sep="", "     + aSet = ", aColumn, "   ")
          aSet <- applyManipulator(aManipulator, data, aColumn, filter)
          cat(sep="", "(", length(aSet), " lines)\n")
       }
       if(bColumn != "") {
-         cat(sep="", "  + bSet = ", bColumn, "   ")
+         cat(sep="", "     + bSet = ", bColumn, "   ")
          bSet <- applyManipulator(bManipulator, data, bColumn, filter)
          cat(sep="", "(", length(bSet), " lines)\n")
       }
       if(pColumn != "") {
-         cat(sep="", "  + pSet = ", pColumn, "   ")
+         cat(sep="", "     + pSet = ", pColumn, "   ")
          pSet <- applyManipulator(pManipulator, data, pColumn, filter)
          cat(sep="", "(", length(pSet), " lines)\n")
       }
@@ -1533,16 +1557,30 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
             width=plotWidth, height=plotHeight, onefile=FALSE,
             family=plotFontFamily, pointsize=plotFontPointsize)
       }
-      plotstd6(title,
-               pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
-               pSet, aSet, bSet, xSet, ySet, zSet,
-               vSet, wSet, vTitle, wTitle,
-               xAxisTicks=xAxisTicks,yAxisTicks=yAxisTicks,
-               rangeSet=rangeSet, rangeColors=rangeColors,
-               type="l",
-               frameColor=frameColor,
-               legendSize=plotLegendSizeFactor, confidence=plotConfidence,
-               colorMode=plotColorMode, hideLegend=plotHideLegend, legendPos=legendPos)
+      if( (length(aSet) > 0) || (length(bSet) > 0) || (length(pSet) > 0)) {
+         plotstd6(title,
+                  pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
+                  pSet, aSet, bSet, xSet, ySet, zSet,
+                  vSet, wSet, vTitle, wTitle,
+                  xAxisTicks=xAxisTicks,yAxisTicks=yAxisTicks,
+                  rangeSet=rangeSet, rangeColors=rangeColors,
+                  type="l",
+                  frameColor=frameColor,
+                  legendSize=plotLegendSizeFactor, confidence=plotConfidence,
+                  colorMode=plotColorMode, hideLegend=plotHideLegend, legendPos=legendPos)
+      }
+      else {
+         plotstd3(title,
+                  xTitle, yTitle, zTitle,
+                  xSet, ySet, zSet,
+                  vSet, wSet, vTitle, wTitle,
+                  xAxisTicks=xAxisTicks,yAxisTicks=yAxisTicks,
+                  rangeSet=rangeSet, rangeColors=rangeColors,
+                  type="l",
+                  frameColor=frameColor,
+                  legendSize=plotLegendSizeFactor, confidence=plotConfidence,
+                  colorMode=plotColorMode, hideLegend=plotHideLegend, legendPos=legendPos)
+      }
       if(plotOwnOutput) {
          dev.off()
       }
@@ -1613,26 +1651,4 @@ analyseCounterResults <- function(data, lowerLimit, upperLimit,
       }
    }
    return(resultsSet)
-}
-
-
-# ====== Process PDF file with GhostScript (embed fonts and compression) ====
-processPDFbyGhostscript <- function(file)
-{
-   tempFile <- paste(sep="", tempfile("embedFontsIntoPDF"), ".eps")
-   cmd1 <- paste(sep="", "pdf2ps -dPDFSETTINGS=/prepress ", file, " ", tempFile,
-                         " || mv ", file, " ", tempFile)
-   cmd2 <- paste(sep="", "ps2pdf -dPDFSETTINGS=/prepress ", tempFile, " ", file,
-                         " || mv ", tempFile, " ", file)
-   ret1 <- system(cmd1)
-   if(ret1 != 0) {
-      stop(gettextf("status %d in running command '%s'", ret1, cmd1))
-   }
-   ret2 <- system(cmd2)
-   if(ret2 != 0) {
-      stop(gettextf("status %d in running command '%s'", ret2, cmd2))
-   }
-   if(file.exists(tempFile)) {
-      file.remove(tempFile)
-   }
 }
