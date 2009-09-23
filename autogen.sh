@@ -1,3 +1,3 @@
 #!/bin/bash
 
-./bootstrap && ./configure --with-test-programs --with-plotting-programs
+./bootstrap && ./configure --enable-test-programs --enable-plotting-programs && make
