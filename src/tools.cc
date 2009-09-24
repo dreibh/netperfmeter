@@ -41,7 +41,6 @@
 #include <net/if.h>
 #include <ext_socket.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <netdb.h>
 #include <time.h>
 
