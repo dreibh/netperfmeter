@@ -818,7 +818,7 @@ void activeMode(int argc, char** argv)
       cout << "Shutdown:" << endl;
    }
    if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID)) {
-      std::cerr << "ERROR: Failed to stop measurement!" << std::endl;
+      std::cerr << "ERROR: Failed to stop measurement and download the results!" << std::endl;
       exit(1);
    }
 }

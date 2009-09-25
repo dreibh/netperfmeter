@@ -80,7 +80,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
          if(bytes > 0) {
             if(fwrite((char*)&resultsMsg->Data, bytes, 1, fh) != 1) {
                std::cerr << "ERROR: Unable to write results to file " << fileName
-                        << " - " << strerror(errno) << "!" << std::endl;
+                         << " - " << strerror(errno) << "!" << std::endl;
                exit(1);
             }
          }
@@ -90,11 +90,19 @@ static bool downloadOutputFile(MessageReader* messageReader,
          }
       
          if(resultsMsg->Header.Flags & NPMRF_EOF) {
+            if(gOutputVerbosity >= NPFOV_STATUS) {
+               std::cout << " <done>"; std::cout.flush();
+            }
             success = true;
             break;
          }
       }
       received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer));
+   }
+   if(!success) {
+      std::cerr << std::endl
+                << "ERROR: Unable to download results (errno=" << errno << "): "
+                << strerror(errno) << std::endl;
    }
    fclose(fh);
    return(success);
@@ -121,6 +129,9 @@ static bool downloadResults(MessageReader*     messageReader,
                                                flow->getFlowID(),
                                                flow->getStreamID());
    if(success) {
+      if(gOutputVerbosity >= NPFOV_STATUS) {
+         std::cout << "<ack> "; std::cout.flush();
+      }
       success = downloadOutputFile(messageReader, controlSocket, outputName.c_str());
    }
 
@@ -392,6 +403,9 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
    memset(&sinfo, 0, sizeof(sinfo));
    sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
 
+   if(gOutputVerbosity >= NPFOV_STATUS) {
+      std::cout << "<flow " << flow->getFlowID() << "> "; std::cout.flush();
+   }
    if(sctp_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), &sinfo, 0) <= 0) {
       return(false);
    }
@@ -618,6 +632,9 @@ static bool uploadOutputFile(const int          controlSocket,
 
    // ====== Check results ==================================================
    if(!success) {
+      std::cerr << std::endl
+                << "WARNING: Unable to upload results (errno=" << errno << "): "
+                << strerror(errno) << std::endl;
       sendAbort(controlSocket, assocID);
    }
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
