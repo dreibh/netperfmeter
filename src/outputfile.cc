@@ -139,7 +139,7 @@ bool OutputFile::printf(const char* str, ...)
 
    // ====== Write string as plain text =====================================
    else if(File) {
-      if(fputs(buffer, File) <= 0) {
+      if(fputs(buffer, File) < 0) {
          std::cerr << "ERROR: Failed to write into file <"
                    << Name << ">!" << std::endl;
          return(false);
