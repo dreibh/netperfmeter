@@ -980,7 +980,7 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                                            true : false,
                                                         controlSocketDescriptor,
                                                         controlAssocID);
-   if(controlAssocID != 0) {
+   if((controlAssocID != 0) && (flow != NULL)) {
       bool success    = true;
       int  bufferSize = flow->getTrafficSpec().RcvBufferSize;
       if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
