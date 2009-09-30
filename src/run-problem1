@@ -14,7 +14,7 @@ RemoteNode="$HOST_EAST:9000"
 
 
 Run="1"
-Runtime="60"
+Runtime="5"
 Flows="1"
 OnlyOneAssoc="true"
 FrameRate="const0"
@@ -28,9 +28,9 @@ OptionNRSACK="true"
 RateNorthernTrail="1000"
 DelayNorthernTrail="0"
 LossNorthernTrail="0"
-RateSouthernTrail="1000"
-DelaySouthernTrail="0"
-LossSouthernTrail="0"
+RateSouthernTrail="$RateNorthernTrail"
+DelaySouthernTrail="$DelayNorthernTrail"
+LossSouthernTrail="$LossNorthernTrail"
 
 
 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK || exit 1
