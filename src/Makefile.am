@@ -1,5 +1,5 @@
 if BUILD_PLOTTING_PROGRAMS
-bin_PROGRAMS = netperfmeter createsummary combinesummaries
+bin_PROGRAMS = netperfmeter createsummary combinesummaries ldcalc
 else
 bin_PROGRAMS = netperfmeter
 endif
@@ -25,6 +25,9 @@ createsummary_LDADD   = $(bz2_LIBS)
 
 nodist_combinesummaries_SOURCES = combinesummaries.cc
 combinesummaries_LDADD   = $(bz2_LIBS)
+
+nodist_ldcalc_SOURCES = ldcalc.cc
+ldcalc_LDADD          =
 
 endif
 
