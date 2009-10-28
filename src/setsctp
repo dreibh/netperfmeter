@@ -21,7 +21,7 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [cmt on|off] [dac on|off] [nrsack on|off]"
+   echo >&2 "Usage: $0 [cmt on|off] [dac on|off] [nrsack on|off] [rp on|off]"
    exit 1
 fi
 
@@ -30,6 +30,7 @@ fi
 CMT=0
 DAC=0
 NRSACK=0
+RP=0
 
 while [ "$1" != "" ] ; do
    if [ "$1" = "cmt" ] ; then
@@ -65,6 +66,17 @@ while [ "$1" != "" ] ; do
       fi
       shift ; shift
 
+   elif [ "$1" = "rp" ] ; then
+      if [ "$2" = "on" -o "$2" = "true" ] ; then
+         NRSACK=1
+      elif [ "$2" = "off" -o "$2" = "false" ] ; then 
+         NRSACK=0
+      else
+         echo >&2 "ERROR: Bad setting for rp!"
+         exit 1
+      fi
+      shift ; shift
+
    else
       echo >&2 "ERROR: Unknown setting $1!"
       exit 1
@@ -72,10 +84,11 @@ while [ "$1" != "" ] ; do
 done
 
 
-# echo "SCTP Configuration:"
-# echo " - CMT:    $CMT"
-# echo " - DAC:    $DAC"
-# echo " - NRSACK: $NRSACK"
+echo "SCTP Configuration:"
+echo " - CMT:    $CMT"
+echo " - DAC:    $DAC"
+echo " - NRSACK: $NRSACK"
+echo " - CMT-RP: $RP"
 
 
 SYSTEM=`uname`
@@ -84,6 +97,8 @@ if [ "$SYSTEM" = "FreeBSD" ] ; then
    sysctl net.inet.sctp.cmt_on_off=$CMT
    sysctl net.inet.sctp.cmt_use_dac=$DAC
    sysctl net.inet.sctp.nr_sack_on_off=$NRSACK
+   echo "?????????????? CMT-RP HIER AUSKOMMENTIEREN!!!!!!"
+   # !!! sysctl net.inet.sctp.cmt_use_rp=$RP
 
 # ====== Other systems ======================================================
 else
