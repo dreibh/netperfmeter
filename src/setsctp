@@ -68,9 +68,9 @@ while [ "$1" != "" ] ; do
 
    elif [ "$1" = "rp" ] ; then
       if [ "$2" = "on" -o "$2" = "true" ] ; then
-         NRSACK=1
+         RP=1
       elif [ "$2" = "off" -o "$2" = "false" ] ; then 
-         NRSACK=0
+         RP=0
       else
          echo >&2 "ERROR: Bad setting for rp!"
          exit 1

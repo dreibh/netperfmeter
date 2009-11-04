@@ -24,7 +24,7 @@
 
 Directory="TEST3"
 
-Run_VALUES="1"
+Run_VALUES="1 2 3"
 Runtime_VALUES="60"
 Flows_VALUES="1"
 CompareWithTCP_VALUES="true"
@@ -35,7 +35,7 @@ Unordered_VALUES="0.0"
 SndBuf_VALUES="200000"
 RcvBuf_VALUES="200000"
 OptionCMT_VALUES="true"
-OptionRP_VALUES="false"
+OptionRP_VALUES="false true"
 OptionDAC_VALUES="true"
 OptionNRSACK_VALUES="false"   # !!!
 RateNorthernTrail_VALUES="10000"
