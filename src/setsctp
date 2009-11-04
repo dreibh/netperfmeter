@@ -97,8 +97,12 @@ if [ "$SYSTEM" = "FreeBSD" ] ; then
    sysctl net.inet.sctp.cmt_on_off=$CMT
    sysctl net.inet.sctp.cmt_use_dac=$DAC
    sysctl net.inet.sctp.nr_sack_on_off=$NRSACK
-   echo "?????????????? CMT-RP HIER AUSKOMMENTIEREN!!!!!!"
-   # !!! sysctl net.inet.sctp.cmt_use_rp=$RP
+   if [ $RP -eq 0 ] ; then
+      sysctl net.inet.sctp.default_cc_module=0
+   else
+      echo "!!!! CMT-RP ist eingeschaltet !!!!"
+      sysctl net.inet.sctp.default_cc_module=3
+   fi
 
 # ====== Other systems ======================================================
 else
