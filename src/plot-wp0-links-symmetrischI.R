@@ -35,8 +35,8 @@ plotConfigurations <- list(
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
         "Receiver's Perspective", NA, NA, list(1,0),
         "RateNorthernTrail", "passive.total-ReceivedBitRate",
-        "OptionCMT", "Unordered", "OptionNRSACK",
-        "", "", "")
+        "OptionCMT", "OptionDAC", "OptionNRSACK",
+        "", "", "Unordered")
 )
 
 

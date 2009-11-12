@@ -1557,7 +1557,9 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
             width=plotWidth, height=plotHeight, onefile=FALSE,
             family=plotFontFamily, pointsize=plotFontPointsize)
       }
-      if( (length(aSet) > 0) || (length(bSet) > 0) || (length(pSet) > 0)) {
+      if( ((length(aSet) > 0) && (length(levels(factor(aSet))) > 1)) ||
+          ((length(bSet) > 0) && (length(levels(factor(bSet))) > 1)) ||
+          ((length(pSet) > 0) && (length(levels(factor(pSet))) > 1)) ) {
          plotstd6(title,
                   pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                   pSet, aSet, bSet, xSet, ySet, zSet,

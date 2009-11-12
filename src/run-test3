@@ -24,14 +24,14 @@
 
 Directory="TEST3"
 
-Run_VALUES="1 2 3"
-Runtime_VALUES="60"
+Run_VALUES="1"
+Runtime_VALUES="600"
 Flows_VALUES="1"
 CompareWithTCP_VALUES="true"
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
-Unordered_VALUES="0.0"
+Unordered_VALUES="1.0"   # !!!
 SndBuf_VALUES="200000"
 RcvBuf_VALUES="200000"
 OptionCMT_VALUES="true"
