@@ -1,10 +1,10 @@
 # ###########################################################################
-# Name:        test1
-# Description:
-# Revision:    $Id: plot-demo1.R 415 2009-07-15 07:34:23Z dreibh $
+# Name:        plot-OMNeT++Workshop2010.R
+# Description: Plots for the OMNeT++Workshop 2010 paper
+# Revision:    $Id$
 # ###########################################################################
 
-source("plotter.R")
+source("plot-version1.R")
 
 
 # ------ Plotter Settings ---------------------------------------------------
@@ -33,15 +33,17 @@ plotConfigurations <- list(
    # ------------------------------------------------------------------------
 
    list("wp0-links-symmetrischI", "paper2-wp0-links-symmetrischI-Throughput.pdf",
-        "FreeBSD Measurement Results", seq(0,100000,10000), NA, list(1,0),
+        "FreeBSD Measurement Results", seq(0,100000,10000), NA, list(0,1),
         "RateNorthernTrail-CM", "passive.total-ReceivedBitRate",
         "OptionCMT", "OptionDAC", "OptionNRSACK",
-        "", "", "Unordered")
+        "", "", "Unordered",
+        "TRUE")
 )
 
 
 # ------ Variable templates -------------------------------------------------
-plotVariables <- list(
+plotVariables <- append(netPerfMeterPlotVariables,
+list(
    # ------ Format example --------------------------------------------------
    # list("Variable",
    #         "Unit[x]{v]"
@@ -56,55 +58,9 @@ plotVariables <- list(
    list("RateNorthernTrail-CM",
            "Common Data Rate {:rho:}[Kbit/s]", "data1$RateNorthernTrail"),
 
-
-   list("Flows",        "Number of Flows{n}[1]",     NA),
-   list("OnlyOneAssoc", "Only One Assoc{A}",         NA),
-   list("Unordered",    "Unordered{U}",              NA),
-   list("OptionCMT",    "Allow CMT {:mu:}",          NA),
-   list("OptionDAC",    "Delayed Ack CMT {:delta:}", NA),
-   list("OptionNRSACK", "Use NR-SACK{:nu:}",         NA),
-   list("SndBuf",       "Send Buffer{S}[Bytes]",     NA),
-   list("RcvBuf",       "Receive Buffer{R}[Bytes]",  NA),
-
-   list("RateNorthernTrail",
-           "Data Rate on Northern Trail {:rho[North]:}[Kbit/s]", NA),
-   list("DelayNorthernTrail",
-           "Delay on Northern Trail {:delta[North]:}[ms]",
-           NA, "black"),
-   list("LossNorthernTrail",
-           "Loss Rate on Northern Trail {:epsilon[North]:}"),
-   list("RateSouthernTrail",
-           "Data Rate on Southern Trail {:rho[South]:}[Kbit/s]", NA),
-   list("DelaySouthernTrail",
-           "Delay on Southern Trail {:delta[South]:}[ms]",
-           NA, "black"),
-   list("LossSouthernTrail",
-           "Loss Rate on Southern Trail {:epsilon[South]:}"),
-
-   list("passive.flow",
-           "Flow Number{F}", NA),
-   list("passive.flow-ReceivedBytes",
-           "Received Bytes [MiB]",
-           "data1$passive.flow.ReceivedBytes / (1024 * 1024)",
-           "blue4",
-           list("passive.flow-ReceivedBytes")),
-   list("passive.flow-ReceivedByteRate",
-           "Received Byte Rate[KiB/s]",
-           "data1$passive.flow.ReceivedByteRate / 1024",
-           "blue2",
-           list("passive.flow-ReceivedByteRate")),
-
-   list("passive.total-ReceivedBitRate",
-           "Received Bit Rate[Kbit/s]",
-           "8 * data1$passive.total.ReceivedByteRate / 1000",
-           "blue4",
-           list("passive.total-ReceivedByteRate")),
-   list("passive.total-ReceivedByteRate",
-           "Received Byte Rate[KiB/s]",
-           "data1$passive.total.ReceivedByteRate / 1024",
-           "blue2",
-           list("passive.total-ReceivedByteRate"))
-)
+   list("OptionCMT",    "CMT", "data1$OptionCMT"),
+   list("OptionDAC",    "DAC", "data1$OptionDAC")
+))
 
 # ###########################################################################
 

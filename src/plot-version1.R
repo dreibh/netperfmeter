@@ -1,47 +1,29 @@
-# ###########################################################################
-# Name:        test1
-# Description:
-# Revision:    $Id$
-# ###########################################################################
+#!/bin/bash
+# $Id$
+#
+# Network Performance Meter
+# Copyright (C) 2009 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
 
 source("plotter.R")
 
 
-# ------ Plotter Settings ---------------------------------------------------
-simulationDirectory  <- "TEST2"
-plotColorMode        <- cmColor
-plotHideLegend       <- FALSE
-plotLegendSizeFactor <- 0.8
-plotOwnOutput        <- FALSE
-plotFontFamily       <- "Helvetica"
-plotFontPointsize    <- 22
-plotWidth            <- 10
-plotHeight           <- 10
-plotConfidence       <- 0.95
-
-# ###########################################################################
-
-# ------ Plots --------------------------------------------------------------
-plotConfigurations <- list(
-   # ------ Format example --------------------------------------------------
-   # list(simulationDirectory, "output.pdf",
-   #      "Plot Title",
-   #      list(xAxisTicks) or NA, list(yAxisTicks) or NA, list(legendPos) or NA,
-   #      "x-Axis Variable", "y-Axis Variable",
-   #      "z-Axis Variable", "v-Axis Variable", "w-Axis Variable",
-   #      "a-Axis Variable", "b-Axis Variable", "p-Axis Variable")
-   # ------------------------------------------------------------------------
-
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
-        "Receiver's Perspective", NA, NA, list(1,0),
-        "RateNorthernTrail", "passive.total-ReceivedBitRate",
-        "OptionNRSACK", "Unordered", "",
-        "", "", "")
-)
-
-
-# ------ Variable templates -------------------------------------------------
-plotVariables <- list(
+netPerfMeterPlotVariables <- list(
    # ------ Format example --------------------------------------------------
    # list("Variable",
    #         "Unit[x]{v]"
@@ -52,6 +34,10 @@ plotVariables <- list(
    #          list("InputFile1", "InputFile2", ...))
    #             (simulationDirectory/Results/....data.tar.bz2 is added!)
    # ------------------------------------------------------------------------
+
+   list("RateNorthernTrail-CM",
+           "Common Data Rate {:rho:}[Kbit/s]", "data1$RateNorthernTrail"),
+
 
    list("Flows",        "Number of Flows{n}[1]",     NA),
    list("OnlyOneAssoc", "Only One Assoc{A}",         NA),
@@ -90,18 +76,14 @@ plotVariables <- list(
            "blue2",
            list("passive.flow-ReceivedByteRate")),
 
+   list("passive.total-ReceivedBitRate",
+           "Received Bit Rate[Kbit/s]",
+           "8 * data1$passive.total.ReceivedByteRate / 1000",
+           "blue4",
+           list("passive.total-ReceivedByteRate")),
    list("passive.total-ReceivedByteRate",
            "Received Byte Rate[KiB/s]",
            "data1$passive.total.ReceivedByteRate / 1024",
            "blue2",
-           list("passive.total-ReceivedByteRate")),
-   list("passive.total-ReceivedBitRate",
-           "Received Bit Rate[Kbit/s]",
-           "8 * data1$passive.total.ReceivedByteRate / 1000",
-           "blue2",
            list("passive.total-ReceivedByteRate"))
 )
-
-# ###########################################################################
-
-createPlots(simulationDirectory, plotConfigurations)
