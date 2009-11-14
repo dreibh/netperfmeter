@@ -461,12 +461,22 @@ plotstd3 <- function(mainTitle,
                else if((type == "lx") || (type=="linesx")) {
                   xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
                   ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
-                  lines(xSubset, ySubset, col=legendColor, cex=par("cex"), pch=legendDot)
+                  lineWidth <- 5
+                  if((length(vLevels) > 1) || (length(wLevels) > 1)) {
+                     lineWidth <- 3
+                  }
+                  lines(xSubset, ySubset, col=legendColor, lty=legendStyle, cex=lineWidth*par("cex"), pch=legendDot)
 
                   legendTexts <- append(legendTexts, legendText)
                   legendColors <- append(legendColors, legendColor)
                   legendStyles <- append(legendStyles, legendStyle)
                   legendDots <- append(legendDots, legendDot)
+
+                  points(xSubset, ySubset,
+                        col=legendColor, lty=legendStyle, pch=legendDot,
+                        lwd=par("cex"),
+                        cex=par("cex"), bg="yellow")
+                  legendDot <- legendDot + 1
                }
 
                # ----- Horizontal bars plot ---------------------------------
@@ -484,6 +494,8 @@ plotstd3 <- function(mainTitle,
                   legendColors <- append(legendColors, legendColor)
                   legendStyles <- append(legendStyles, legendStyle)
                   legendDots   <- append(legendDots, legendDot)
+
+                  legendDot <- legendDot + 1
                }
 
                # ----- Lines or Steps plot ----------------------------------
@@ -563,14 +575,10 @@ plotstd3 <- function(mainTitle,
                      legendStyles <- append(legendStyles, legendStyle)
                      legendDots <- append(legendDots, legendDot)
 
-                     pcex <- par("cex")
-                     # if(length(wLevels) > 1) {
-                        pcex <- 2 * pcex
-                     # }
                      points(xPlotSet, yPlotMeanSet,
                            col=legendColor, lty=legendStyle, pch=legendDot,
                            lwd=par("cex"),
-                           cex=pcex,bg="yellow")
+                           cex=2*par("cex"), bg="yellow")
                      legendDot <- legendDot + 1
                   }
                }
