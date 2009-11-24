@@ -24,7 +24,7 @@
 
 Directory="wp0-links-symmetrischI"
 
-Run_VALUES="1 2 3"
+Run_VALUES="1" # 2 3 4 5 6 7 8 9 10"
 Runtime_VALUES="60"
 Flows_VALUES="1"
 CompareWithTCP_VALUES="false"
@@ -36,9 +36,9 @@ Unreliable_VALUES="0.0"
 SndBuf_VALUES="233016"
 RcvBuf_VALUES="233016"
 OptionCMT_VALUES="false true"   # !!!
-OptionDAC_VALUES="true"   # !!!
+OptionDAC_VALUES="false true"   # !!!
 OptionNRSACK_VALUES="false"
-RateNorthernTrail_VALUES="10000 20000 35000 50000 62500 75000 87500 100000"
+RateNorthernTrail_VALUES="10000 100000"   # 20000 35000 50000 62500 75000 87500 
 DelayNorthernTrail_VALUES="0"
 LossNorthernTrail_VALUES="0"
 RateSouthernTrail_VALUES="-1"

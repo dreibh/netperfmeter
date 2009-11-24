@@ -113,7 +113,7 @@ elif [ "$SYSTEM" = "FreeBSD" ] ; then
          ERROR="ber ${ERROR}"
       fi
       ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST
-      ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR queue 100
+      ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR queue 10$ID red 0.002/5/50/0.02
    fi
 
 
