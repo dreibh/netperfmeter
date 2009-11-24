@@ -20,4 +20,5 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-make -j2 && ./netperfmeter 9000
+make -j2 && ./netperfmeter 9000 -local=132.252.153.18,132.252.153.146
+
