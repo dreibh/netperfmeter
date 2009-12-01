@@ -90,7 +90,7 @@ perform_run ()
       runVector="$runDirectory/output.vec.bz2"
       runConfig="$runDirectory/output.config"
 
-      local command="./netperfmeter $RemoteNode"
+      local command="./netperfmeter $RemoteNode $LocalOpts"
       command="$command -scalar=$runScalar"
       command="$command -vector=$runVector"
       command="$command -config=$runConfig"
