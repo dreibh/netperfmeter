@@ -285,12 +285,13 @@ static const char* parseTrafficSpecOption(const char*      parameters,
 
 
 // ###### Create Flow for new flow ##########################################
-static Flow* createFlow(Flow*              previousFlow,
-                        const char*        parameters,
-                        const uint64_t     measurementID,
-                        const char*        vectorNamePattern,
-                        const uint8_t      protocol,
-                        const sockaddr*    remoteAddress)
+static Flow* createFlow(Flow*                  previousFlow,
+                        const char*            parameters,
+                        const uint64_t         measurementID,
+                        const char*            vectorNamePattern,
+                        const OutputFileFormat vectorFileFormat,
+                        const uint8_t          protocol,
+                        const sockaddr*        remoteAddress)
 {
    // ====== Get flow ID and stream ID ======================================
    static uint32_t flowID   = 0; // will be increased with each successfull call
@@ -330,7 +331,7 @@ static Flow* createFlow(Flow*              previousFlow,
    const std::string vectorName = flow->getNodeOutputName(vectorNamePattern,
                                                           "active",
                                                           format("-%08x-%04x", flowID, streamID));
-   if(!flow->initializeVectorFile(vectorName.c_str(), hasSuffix(vectorNamePattern, ".bz2"))) {
+   if(!flow->initializeVectorFile(vectorName.c_str(), vectorFileFormat)) {
       std::cerr << "ERROR: Unable to create vector file <" << vectorName << ">!" << std::endl;
       exit(1);
    }
@@ -706,11 +707,13 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Handle command-line parameters =================================
-   const char* vectorNamePattern = "vector.vec.bz2";
-   const char* scalarNamePattern = "scalar.sca.bz2";
-   const char* configName        = "output.config";
-   uint8_t     protocol          = 0;
-   Flow*       lastFlow          = NULL;
+   const char*      vectorNamePattern = "";
+   OutputFileFormat vectorFileFormat  = OFF_None;
+   const char*      scalarNamePattern = "";
+   OutputFileFormat scalarFileFormat  = OFF_None;
+   const char*      configName        = "";
+   uint8_t          protocol          = 0;
+   Flow*            lastFlow          = NULL;
    for(int i = 2;i < argc;i++) {
       if(argv[i][0] == '-') {
          lastFlow = NULL;
@@ -735,9 +738,25 @@ void activeMode(int argc, char** argv)
          }
          else if(strncmp(argv[i], "-vector=", 8) == 0) {
             vectorNamePattern = (const char*)&argv[i][8];
+            if(vectorNamePattern[0] == 0x00)
+               vectorFileFormat = OFF_None;
+            else if(hasSuffix(vectorNamePattern, ".bz2")) {
+               vectorFileFormat = OFF_BZip2;
+            }
+            else {
+               vectorFileFormat = OFF_Plain;
+            }
          }
          else if(strncmp(argv[i], "-scalar=", 8) == 0) {
             scalarNamePattern = (const char*)&argv[i][8];
+            if(scalarNamePattern[0] == 0x00)
+               scalarFileFormat = OFF_None;
+            else if(hasSuffix(scalarNamePattern, ".bz2")) {
+               scalarFileFormat = OFF_BZip2;
+            }
+            else {
+               scalarFileFormat = OFF_Plain;
+            }
          }
          else if(strncmp(argv[i], "-config=", 8) == 0) {
             configName = (const char*)&argv[i][8];
@@ -754,7 +773,8 @@ void activeMode(int argc, char** argv)
             exit(1);
          }
 
-         lastFlow = createFlow(lastFlow, argv[i], measurementID, vectorNamePattern,
+         lastFlow = createFlow(lastFlow, argv[i], measurementID,
+                               vectorNamePattern, vectorFileFormat,
                                protocol, &remoteAddress.sa);
 
          if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
@@ -781,7 +801,9 @@ void activeMode(int argc, char** argv)
    // ====== Start measurement ==============================================
    if(!performNetPerfMeterStart(&gMessageReader, gControlSocket, measurementID,
                                 gActiveNodeName, gPassiveNodeName,
-                                configName, vectorNamePattern, scalarNamePattern)) {
+                                configName,
+                                vectorNamePattern, vectorFileFormat,
+                                scalarNamePattern, scalarFileFormat)) {
       std::cerr << "ERROR: Failed to start measurement!" << std::endl;
       exit(1);
    }

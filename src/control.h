@@ -48,14 +48,16 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
 bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
                                      int            controlSocket,
                                      const Flow*    flow);
-bool performNetPerfMeterStart(MessageReader* messageReader,
-                              int            controlSocket,
-                              const uint64_t measurementID,
-                              const char*    activeNodeName,
-                              const char*    passiveNodeName,
-                              const char*    configName,
-                              const char*    vectorNamePattern,
-                              const char*    scalarNamePattern);
+bool performNetPerfMeterStart(MessageReader*         messageReader,
+                              int                    controlSocket,
+                              const uint64_t         measurementID,
+                              const char*            activeNodeName,
+                              const char*            passiveNodeName,
+                              const char*            configName,
+                              const char*            vectorNamePattern,
+                              const OutputFileFormat vectorFileFormat,
+                              const char*            scalarNamePattern,
+                              const OutputFileFormat scalarFileFormat);
 bool performNetPerfMeterStop(MessageReader* messageReader,
                              int            controlSocket,
                              const uint64_t measurementID);
@@ -71,7 +73,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
 // ##########################################################################
 // #### Passive Side Control                                             ####
 // ##########################################################################
-                                  
+
 void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                 const int                          sd,
                                 const sockaddr_union*              from);

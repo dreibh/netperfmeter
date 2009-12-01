@@ -71,14 +71,14 @@ class FlowManager : public Thread
    }
 
    void addSocket(const int protocol, const int socketDescriptor);
-   Flow* identifySocket(const uint64_t        measurementID,
-                        const uint32_t        flowID,
-                        const uint16_t        streamID,
-                        const int             socketDescriptor,
-                        const sockaddr_union* from,
-                        const bool            compressVectorFile,
-                        int&                  controlSocketDescriptor,
-                        sctp_assoc_t&         controlAssocID);
+   Flow* identifySocket(const uint64_t         measurementID,
+                        const uint32_t         flowID,
+                        const uint16_t         streamID,
+                        const int              socketDescriptor,
+                        const sockaddr_union*  from,
+                        const OutputFileFormat vectorFileFormat,
+                        int&                   controlSocketDescriptor,
+                        sctp_assoc_t&          controlAssocID);
    void removeSocket(const int  socketDescriptor,
                      const bool closeSocket = true);
 
@@ -90,9 +90,9 @@ class FlowManager : public Thread
    bool startMeasurement(const uint64_t           measurementID,
                          const unsigned long long now,
                          const char*              vectorNamePattern,
-                         const bool               compressVectorFile,
+                         const OutputFileFormat   vectorFileFormat,
                          const char*              scalarNamePattern,
-                         const bool               compressScalarFile,
+                         const OutputFileFormat   scalarFileFormat,
                          const bool               printFlows = false);
    void stopMeasurement(const uint64_t            measurementID,
                         const bool                printFlows = false,
@@ -282,7 +282,7 @@ class Flow : public Thread
       return(result);
    }
 
-   bool initializeVectorFile(const char* name, const bool compressed);
+   bool initializeVectorFile(const char* name, const OutputFileFormat format);
    void updateTransmissionStatistics(const unsigned long long now,
                                      const size_t             addedFrames,
                                      const size_t             addedPackets,

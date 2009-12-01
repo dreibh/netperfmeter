@@ -179,9 +179,9 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
 bool FlowManager::startMeasurement(const uint64_t           measurementID,
                                    const unsigned long long now,
                                    const char*              vectorNamePattern,
-                                   const bool               compressVectorFile,
+                                   const OutputFileFormat   vectorFileFormat,
                                    const char*              scalarNamePattern,
-                                   const bool               compressScalarFile,
+                                   const OutputFileFormat   scalarFileFormat,
                                    const bool               printFlows)
 {
    bool success = false;
@@ -190,8 +190,8 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
    Measurement* measurement = new Measurement;
    if(measurement != NULL) {
       if(measurement->initialize(now, measurementID, 
-                                 vectorNamePattern, compressVectorFile,
-                                 scalarNamePattern, compressScalarFile)) {
+                                 vectorNamePattern, vectorFileFormat,
+                                 scalarNamePattern, scalarFileFormat)) {
          success = true;
          for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
             iterator != FlowSet.end();iterator++) {
@@ -316,14 +316,14 @@ void FlowManager::addSocket(const int protocol, const int socketDescriptor)
 
 
 // ###### Map socket to flow ################################################
-Flow* FlowManager::identifySocket(const uint64_t        measurementID,
-                                  const uint32_t        flowID,
-                                  const uint16_t        streamID,
-                                  const int             socketDescriptor,
-                                  const sockaddr_union* from,
-                                  const bool            compressVectorFile,
-                                  int&                  controlSocketDescriptor,
-                                  sctp_assoc_t&         controlAssocID)
+Flow* FlowManager::identifySocket(const uint64_t         measurementID,
+                                  const uint32_t         flowID,
+                                  const uint16_t         streamID,
+                                  const int              socketDescriptor,
+                                  const sockaddr_union*  from,
+                                  const OutputFileFormat vectorFileFormat,
+                                  int&                   controlSocketDescriptor,
+                                  sctp_assoc_t&          controlAssocID)
 {
    bool success            = false;
    controlSocketDescriptor = -1;
@@ -338,7 +338,7 @@ Flow* FlowManager::identifySocket(const uint64_t        measurementID,
       flow->RemoteAddressIsValid = true;
       controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
       controlAssocID             = flow->RemoteControlAssocID;
-      success = flow->initializeVectorFile(NULL, compressVectorFile);
+      success = flow->initializeVectorFile(NULL, vectorFileFormat);
       flow->unlock();
       removeSocket(socketDescriptor, false);   // Socket is now managed as flow!
    }
@@ -711,7 +711,8 @@ void FlowManager::run()
             if( (entry) && (entry->revents & POLLIN) ) {
                 // NOTE: FlowSet[i] may not be the actual Flow!
                 //       It may be another stream of the same SCTP assoc!
-                handleNetPerfMeterData(true, now, protocol, entry->fd);
+                while( handleNetPerfMeterData(true, now, protocol, entry->fd) > 0 ) {
+                }
             }
          }
 
@@ -870,12 +871,12 @@ void Flow::setSocketDescriptor(const int  socketDescriptor,
 
 
 // ###### Initialize flow's vector file #####################################
-bool Flow::initializeVectorFile(const char* name, const bool compressed)
+bool Flow::initializeVectorFile(const char* name, const OutputFileFormat format)
 {
    bool success = false;
    
    lock();
-   if(VectorFile.initialize(name, compressed)) {
+   if(VectorFile.initialize(name, format)) {
       VectorFile.nextLine();
       success = VectorFile.printf(
                    "AbsTime RelTime SeqNumber Delay PrevPacketDelayDiff Jitter\n");

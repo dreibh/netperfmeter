@@ -28,6 +28,15 @@
 #include <iostream>
 
 
+// Output File Formats
+enum OutputFileFormat
+{
+   OFF_None  = 0,
+   OFF_Plain = 1,
+   OFF_BZip2 = 2
+};
+
+
 class OutputFile
 {
    // ====== Methods ========================================================
@@ -35,7 +44,7 @@ class OutputFile
    OutputFile();
    ~OutputFile();
    
-   bool initialize(const char* name, const bool compressFile);
+   bool initialize(const char* name, const OutputFileFormat format);
    bool finish(const bool closeFile = true);
    bool printf(const char* str, ...);
    

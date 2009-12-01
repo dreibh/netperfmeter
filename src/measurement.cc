@@ -50,9 +50,9 @@ Measurement::~Measurement()
 bool Measurement::initialize(const unsigned long long now,
                              const uint64_t           measurementID,
                              const char*              vectorNamePattern,
-                             const bool               compressVectorFile,
+                             const OutputFileFormat   vectorFileFormat,
                              const char*              scalarNamePattern,
-                             const bool               compressScalarFile)
+                             const OutputFileFormat   scalarFileFormat)
 {
    MeasurementID        = measurementID;
    FirstStatisticsEvent = 0;
@@ -65,13 +65,13 @@ bool Measurement::initialize(const unsigned long long now,
       const bool s1 = VectorFile.initialize(
                          (vectorNamePattern != NULL) ?
                             Flow::getNodeOutputName(vectorNamePattern, "active").c_str() : NULL,
-                         compressVectorFile);
+                         vectorFileFormat);
       ScalarNamePattern = (scalarNamePattern != NULL) ?
                              std::string(scalarNamePattern) : std::string(); 
       const bool s2 = ScalarFile.initialize(
                          (scalarNamePattern != NULL) ?
                             Flow::getNodeOutputName(scalarNamePattern, "active").c_str() : NULL,
-                         compressScalarFile);
+                         scalarFileFormat);
       return(s1 && s2);
    }
    return(false);

@@ -266,14 +266,16 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
 
 
 // ###### Start measurement #################################################
-bool performNetPerfMeterStart(MessageReader* messageReader,
-                              int            controlSocket,
-                              const uint64_t measurementID,
-                              const char*    activeNodeName,
-                              const char*    passiveNodeName,
-                              const char*    configName,
-                              const char*    vectorNamePattern,
-                              const char*    scalarNamePattern)
+bool performNetPerfMeterStart(MessageReader*         messageReader,
+                              int                    controlSocket,
+                              const uint64_t         measurementID,
+                              const char*            activeNodeName,
+                              const char*            passiveNodeName,
+                              const char*            configName,
+                              const char*            vectorNamePattern,
+                              const OutputFileFormat vectorFileFormat,
+                              const char*            scalarNamePattern,
+                              const OutputFileFormat scalarFileFormat)
 {
    // ====== Write config file ==============================================
    FILE* configFile = fopen(configName, "w");
@@ -337,10 +339,8 @@ bool performNetPerfMeterStart(MessageReader* messageReader,
    // ====== Start flows ====================================================
    const bool success = FlowManager::getFlowManager()->startMeasurement(
                            measurementID, getMicroTime(),
-                           vectorNamePattern,                                       
-                           hasSuffix(vectorNamePattern, ".bz2"),
-                           scalarNamePattern,                                             
-                           hasSuffix(scalarNamePattern, ".bz2"),
+                           vectorNamePattern, vectorFileFormat,
+                           scalarNamePattern, scalarFileFormat,
                            (gOutputVerbosity >= NPFOV_FLOWS));
    if(success) {
       // ====== Tell passive node to start measurement ======================
@@ -783,13 +783,28 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    std::cout << std::endl << "Starting measurement "
                << format("$%llx", (unsigned long long)measurementID) << " ..." << std::endl;
 
+   OutputFileFormat scalarFileFormat = OFF_Plain;
+   if(startMsg->Header.Flags & NPMSF_COMPRESS_SCALARS) {
+      scalarFileFormat = OFF_BZip2;
+   }
+   if(startMsg->Header.Flags & NPMSF_NO_SCALARS) {
+      scalarFileFormat = OFF_None;
+   }
+   OutputFileFormat vectorFileFormat = OFF_Plain;
+   if(startMsg->Header.Flags & NPMSF_COMPRESS_VECTORS) {
+      vectorFileFormat = OFF_BZip2;
+   }
+   if(startMsg->Header.Flags & NPMSF_NO_VECTORS) {
+      vectorFileFormat = OFF_None;
+   }
+
    const unsigned long long now = getMicroTime();
    bool success = FlowManager::getFlowManager()->startMeasurement(
       measurementID, now,
-      NULL, (startMsg->Header.Flags & NPMSF_COMPRESS_VECTORS) ? true : false,
-      NULL, (startMsg->Header.Flags & NPMSF_COMPRESS_SCALARS) ? true : false,
+      NULL, vectorFileFormat,
+      NULL, scalarFileFormat,
       (gOutputVerbosity >= NPFOV_FLOWS));
-   
+
    return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                       measurementID, 0, 0,
                                       (success == true) ? NETPERFMETER_STATUS_OKAY :
@@ -970,14 +985,20 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
    int          controlSocketDescriptor;
    sctp_assoc_t controlAssocID;
    Flow*        flow;
-   
-   
+
+   OutputFileFormat vectorFileFormat = OFF_Plain;
+   if(identifyMsg->Header.Flags & NPMSF_COMPRESS_VECTORS) {
+      vectorFileFormat = OFF_BZip2;
+   }
+   if(identifyMsg->Header.Flags & NPMSF_NO_VECTORS) {
+      vectorFileFormat = OFF_None;
+   }
+
    flow = FlowManager::getFlowManager()->identifySocket(ntoh64(identifyMsg->MeasurementID),
                                                         ntohl(identifyMsg->FlowID),
                                                         ntohs(identifyMsg->StreamID),
                                                         sd, from,
-                                                        (identifyMsg->Header.Flags & NPMIF_COMPRESS_VECTORS) ?
-                                                           true : false,
+                                                        vectorFileFormat,
                                                         controlSocketDescriptor,
                                                         controlAssocID);
    if((controlAssocID != 0) && (flow != NULL)) {

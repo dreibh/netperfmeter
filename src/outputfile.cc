@@ -41,7 +41,7 @@ OutputFile::~OutputFile()
 
 
 // ###### Initialize output file ############################################
-bool OutputFile::initialize(const char* name, const bool compressFile)
+bool OutputFile::initialize(const char* name, const OutputFileFormat format)
 {
    // ====== Initialize object ==============================================
    finish();
@@ -54,30 +54,34 @@ bool OutputFile::initialize(const char* name, const bool compressFile)
    Line = 0;
 
    // ====== Initialize file ================================================
-   File = (name != NULL) ? fopen(name, "w+") : tmpfile();
-   if(File == NULL) {
-      std::cerr << "ERROR: Unable to create output file " << name << "!" << std::endl;
-      WriteError = true;
-      return(false);
-   }
-
-   // ====== Initialize BZip2 compressor ====================================
-   if(compressFile) {
-      int bzerror;
-      BZFile = BZ2_bzWriteOpen(&bzerror, File, 9, 0, 30);
-      if(bzerror != BZ_OK) {
-         std::cerr << "ERROR: Unable to initialize BZip2 compression on file <"
-                   << name << ">!" << std::endl
-                   << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << std::endl;
-         BZ2_bzWriteClose(&bzerror, BZFile, 0, NULL, NULL);
-         fclose(File);
-         File = NULL;
-         unlink(name);
+   File = NULL;
+   if(format != OFF_None) {
+      File = (name != NULL) ? fopen(name, "w+") : tmpfile();
+      if(File == NULL) {
+         std::cerr << "ERROR: Unable to create output file " << name << "!" << std::endl;
          WriteError = true;
          return(false);
       }
+   
+      // ====== Initialize BZip2 compressor ====================================
+      if(format == OFF_BZip2) {
+         int bzerror;
+         BZFile = BZ2_bzWriteOpen(&bzerror, File, 9, 0, 30);
+         if(bzerror != BZ_OK) {
+            std::cerr << "ERROR: Unable to initialize BZip2 compression on file <"
+                     << name << ">!" << std::endl
+                     << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << std::endl;
+            BZ2_bzWriteClose(&bzerror, BZFile, 0, NULL, NULL);
+            fclose(File);
+            File = NULL;
+            unlink(name);
+            WriteError = true;
+            return(false);
+         }
+      }
+      WriteError = false;
    }
-   WriteError = false;
+else printf("################# NONE\n");
    return(true);
 }
 

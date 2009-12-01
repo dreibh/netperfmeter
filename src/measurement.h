@@ -58,10 +58,10 @@ class Measurement : public Mutex
    
    bool initialize(const unsigned long long now,
                    const uint64_t           measurementID,
-                   const char*              vectorName,
-                   const bool               compressVectorFile,
-                   const char*              scalarName,
-                   const bool               compressScalarFile);
+                   const char*              vectorNamePattern,
+                   const OutputFileFormat   vectorFileFormat,
+                   const char*              scalarNamePattern,
+                   const OutputFileFormat   scalarFileFormat);
    bool finish(const bool closeFiles);
    
    void writeScalarStatistics(const unsigned long long now);

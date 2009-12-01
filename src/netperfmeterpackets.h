@@ -124,6 +124,7 @@ struct NetPerfMeterIdentifyMessage
 #define NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER 0x4bcdf3aa303c6774ULL
 
 #define NPMIF_COMPRESS_VECTORS (1 << 0)
+#define NPMIF_NO_VECTORS       (1 << 1)
 
 
 struct NetPerfMeterDataMessage
@@ -157,6 +158,8 @@ struct NetPerfMeterStartMessage
 
 #define NPMSF_COMPRESS_VECTORS (1 << 0)
 #define NPMSF_COMPRESS_SCALARS (1 << 1)
+#define NPMSF_NO_VECTORS       (1 << 2)
+#define NPMSF_NO_SCALARS       (1 << 3)
 
 
 struct NetPerfMeterStopMessage

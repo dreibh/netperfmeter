@@ -229,7 +229,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          std::cout << "WARNING: Received garbage!" << std::endl;
       }
    }
-   
+
    else if( (received <= 0) && (received != MRRM_PARTIAL_READ) ) {
       Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
       if(flow) {
