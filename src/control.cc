@@ -77,8 +77,8 @@ static bool downloadOutputFile(MessageReader* messageReader,
             std::cout << ".";
          }
 
-         if(bytes > 0) {
-            if(fwrite((char*)&resultsMsg->Data, bytes, 1, fh) != 1) {
+         if(bytes > sizeof(NetPerfMeterResults)) {
+            if(fwrite((char*)&resultsMsg->Data, bytes - sizeof(NetPerfMeterResults), 1, fh) != 1) {
                std::cerr << "ERROR: Unable to write results to file " << fileName
                          << " - " << strerror(errno) << "!" << std::endl;
                exit(1);
@@ -227,7 +227,17 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
    for(unsigned int trial = 0;trial < maxTrials;trial++) {
       NetPerfMeterIdentifyMessage identifyMsg;
       identifyMsg.Header.Type   = NETPERFMETER_IDENTIFY_FLOW;
-      identifyMsg.Header.Flags  = hasSuffix(flow->getVectorFile().getName(), ".bz2") ? NPMIF_COMPRESS_VECTORS : 0x00;
+      identifyMsg.Header.Flags  = 0x00;
+      if(flow->getVectorFile().getFormat() == OFF_None) {
+         identifyMsg.Header.Flags |= NPMIF_NO_VECTORS;
+         puts("---- OFF!!!");
+      }
+      else if(flow->getVectorFile().getFormat() == OFF_BZip2) {
+         identifyMsg.Header.Flags |= NPMIF_COMPRESS_VECTORS;
+         puts("BZIP2");
+      }
+printf("==============>> IDF=%04x\n",identifyMsg.Header.Flags);
+std::cout << "VN=" << flow->getVectorFile().getName() << std::endl;
       identifyMsg.Header.Length = htons(sizeof(identifyMsg));
       identifyMsg.MagicNumber   = hton64(NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER);
       identifyMsg.MeasurementID = hton64(flow->getMeasurementID());
@@ -354,8 +364,14 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       startMsg.Padding       = 0x00000000;
       startMsg.MeasurementID = hton64(measurementID);
       startMsg.Header.Flags  = 0x00;
+      if(scalarNamePattern[0] == 0x00) {
+         startMsg.Header.Flags |= NPMSF_NO_SCALARS;
+      }
       if(hasSuffix(scalarNamePattern, ".bz2")) {
          startMsg.Header.Flags |= NPMSF_COMPRESS_SCALARS;
+      }
+      if(vectorNamePattern[0] == 0x00) {
+         startMsg.Header.Flags |= NPMSF_NO_VECTORS;
       }
       if(hasSuffix(vectorNamePattern, ".bz2")) {
          startMsg.Header.Flags |= NPMSF_COMPRESS_VECTORS;
@@ -413,8 +429,11 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
    if(sctp_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), &sinfo, 0) <= 0) {
       return(false);
    }
-   return(downloadResults(messageReader, controlSocket,
-                          measurement->getVectorNamePattern(), flow));
+   if(measurement->getVectorNamePattern() != "") {
+      return(downloadResults(messageReader, controlSocket,
+                             measurement->getVectorNamePattern(), flow));
+   }
+   return(true);
 }
 
 
@@ -458,33 +477,37 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    }
 
    // ====== Download passive node's vector file ============================
-   const std::string vectorName = Flow::getNodeOutputName(
-      measurement->getVectorNamePattern(), "passive");
-   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-      std::cout << std::endl << "Downloading results [" << vectorName << "] ";
-      std::cout.flush();
-   }
-   if(downloadOutputFile(messageReader, controlSocket, vectorName.c_str()) == false) {
-      delete measurement;
-      return(false);
-   }
-   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-      std::cout << " ";
+   if(measurement->getVectorNamePattern() != "") {
+      const std::string vectorName = Flow::getNodeOutputName(
+         measurement->getVectorNamePattern(), "passive");
+      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+         std::cout << std::endl << "Downloading results [" << vectorName << "] ";
+         std::cout.flush();
+      }
+      if(downloadOutputFile(messageReader, controlSocket, vectorName.c_str()) == false) {
+         delete measurement;
+         return(false);
+      }
+      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+         std::cout << " ";
+      }
    }
 
    // ====== Download passive node's scalar file ============================
-   const std::string scalarName = Flow::getNodeOutputName(
-      measurement->getScalarNamePattern(), "passive");
-   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-      std::cout << std::endl << "Downloading results [" << scalarName << "] ";
-      std::cout.flush();
-   }
-   if(downloadOutputFile(messageReader, controlSocket, scalarName.c_str()) == false) {
-      delete measurement;
-      return(false);
-   }
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      std::cout << " okay" << std::endl;
+   if(measurement->getScalarNamePattern() != "") {
+      const std::string scalarName = Flow::getNodeOutputName(
+         measurement->getScalarNamePattern(), "passive");
+      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+         std::cout << std::endl << "Downloading results [" << scalarName << "] ";
+         std::cout.flush();
+      }
+      if(downloadOutputFile(messageReader, controlSocket, scalarName.c_str()) == false) {
+         delete measurement;
+         return(false);
+      }
+      if(gOutputVerbosity >= NPFOV_STATUS) {
+         std::cout << " okay" << std::endl;
+      }
    }
 
    // ====== Download flow results and remove the flows =====================
@@ -661,7 +684,9 @@ static bool uploadResults(const int          controlSocket,
                    (success == true) ? NETPERFMETER_STATUS_OKAY :
                                        NETPERFMETER_STATUS_ERROR);
       if(success) {
-         success = uploadOutputFile(controlSocket, assocID, flow->getVectorFile());
+         if(flow->getVectorFile().exists()) {
+            success = uploadOutputFile(controlSocket, assocID, flow->getVectorFile());
+         }
       }
    }
    flow->getVectorFile().finish(true);
@@ -764,7 +789,9 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
       FlowManager::getFlowManager()->removeFlow(flow);
       // ------ Upload statistics file --------------------------------
       flow->getVectorFile().finish(false);
-      uploadResults(controlSocket, assocID, flow);
+      if(flow->getVectorFile().exists()) {
+         uploadResults(controlSocket, assocID, flow);
+      }
       delete flow;
    }
    return(true);
@@ -803,12 +830,15 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    }
 
    const unsigned long long now = getMicroTime();
+printf("----START M: %d %d\n",(int)vectorFileFormat,(int)scalarFileFormat);
    bool success = FlowManager::getFlowManager()->startMeasurement(
       measurementID, now,
       NULL, vectorFileFormat,
       NULL, scalarFileFormat,
       (gOutputVerbosity >= NPFOV_FLOWS));
 
+   
+   std::cout << "Start Confirm!" << std::endl;
    return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                       measurementID, 0, 0,
                                       (success == true) ? NETPERFMETER_STATUS_OKAY :
@@ -867,8 +897,12 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
    // ====== Upload results =================================================
    if(measurement) {
       if(success) {
-         uploadOutputFile(controlSocket, assocID, measurement->getVectorFile());
-         uploadOutputFile(controlSocket, assocID, measurement->getScalarFile());
+         if(measurement->getVectorFile().exists()) {
+            uploadOutputFile(controlSocket, assocID, measurement->getVectorFile());
+         }
+         if(measurement->getScalarFile().exists()) {
+            uploadOutputFile(controlSocket, assocID, measurement->getScalarFile());
+         }
       }
       delete measurement;
    }

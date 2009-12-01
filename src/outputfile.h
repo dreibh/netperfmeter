@@ -48,6 +48,12 @@ class OutputFile
    bool finish(const bool closeFile = true);
    bool printf(const char* str, ...);
    
+   inline bool exists() const {
+      return(File || BZFile);
+   }
+   inline OutputFileFormat getFormat() const {
+      return(Format);
+   }
    inline FILE* getFile() const {
       return(File);
    }
@@ -63,6 +69,7 @@ class OutputFile
 
    // ====== Private Data ===================================================
    private:
+   OutputFileFormat   Format;
    std::string        Name;
    unsigned long long Line;
    FILE*              File;

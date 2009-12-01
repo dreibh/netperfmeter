@@ -135,7 +135,9 @@ void printGlobalParameters()
       else {
          std::cout << "(any)";
       }
-      std::cout << std::endl << std::endl;
+      std::cout << std::endl;
+      std::cout << "   - Logging Verbosity = " << gOutputVerbosity << std::endl
+                << std::endl;
    }
 }
 
@@ -737,6 +739,10 @@ void activeMode(int argc, char** argv)
 #endif
          }
          else if(strncmp(argv[i], "-vector=", 8) == 0) {
+            if(lastFlow != NULL) {
+               cerr << "ERROR: Vector file must be set *before* first flow!" << endl;
+               exit(1);
+            }
             vectorNamePattern = (const char*)&argv[i][8];
             if(vectorNamePattern[0] == 0x00)
                vectorFileFormat = OFF_None;
@@ -748,6 +754,10 @@ void activeMode(int argc, char** argv)
             }
          }
          else if(strncmp(argv[i], "-scalar=", 8) == 0) {
+            if(lastFlow != NULL) {
+               cerr << "ERROR: Scalar file must be set *before* first flow!" << endl;
+               exit(1);
+            }
             scalarNamePattern = (const char*)&argv[i][8];
             if(scalarNamePattern[0] == 0x00)
                scalarFileFormat = OFF_None;

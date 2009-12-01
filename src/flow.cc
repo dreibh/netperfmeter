@@ -709,10 +709,11 @@ void FlowManager::run()
             //       to another stream of the socket. handleNetPerfMeterData()
             //       will find and lock the actual FlowSet entry!
             if( (entry) && (entry->revents & POLLIN) ) {
-                // NOTE: FlowSet[i] may not be the actual Flow!
-                //       It may be another stream of the same SCTP assoc!
-                while( handleNetPerfMeterData(true, now, protocol, entry->fd) > 0 ) {
-                }
+               // NOTE: FlowSet[i] may not be the actual Flow!
+               //       It may be another stream of the same SCTP assoc!
+               handleNetPerfMeterData(true, now, protocol, entry->fd);
+/*               while( handleNetPerfMeterData(true, now, protocol, entry->fd) > 0 ) {
+               }*/
             }
          }
 

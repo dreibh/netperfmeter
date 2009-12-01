@@ -58,7 +58,7 @@ bool Measurement::initialize(const unsigned long long now,
    FirstStatisticsEvent = 0;
    LastStatisticsEvent  = 0;
    NextStatisticsEvent  = 0;
-
+   
    if(FlowManager::getFlowManager()->addMeasurement(this)) {
       VectorNamePattern = (vectorNamePattern != NULL) ?
                              std::string(vectorNamePattern) : std::string(); 

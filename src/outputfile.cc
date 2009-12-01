@@ -45,6 +45,8 @@ bool OutputFile::initialize(const char* name, const OutputFileFormat format)
 {
    // ====== Initialize object ==============================================
    finish();
+
+   Format = format;
    if(name != NULL) {
       Name = std::string(name);
    }
@@ -81,7 +83,6 @@ bool OutputFile::initialize(const char* name, const OutputFileFormat format)
       }
       WriteError = false;
    }
-else printf("################# NONE\n");
    return(true);
 }
 
@@ -121,32 +122,34 @@ bool OutputFile::finish(const bool closeFile)
 bool OutputFile::printf(const char* str, ...)
 {
    char buffer[16384];
-   
+
    va_list va;
    va_start(va, str);
    int bufferLength = vsnprintf(buffer, sizeof(buffer), str, va);
    buffer[sizeof(buffer) - 1] = 0x00;   // Just to be really sure ...
    va_end(va);
    
-   // ====== Compress string and write data =================================
-   if(BZFile) {
-      int bzerror;
-      BZ2_bzWrite(&bzerror, BZFile, (void*)&buffer, bufferLength);
-      if(bzerror != BZ_OK) {
-         std::cerr << std::endl
-                   << "ERROR: libbz2 failed to write into file <"
-                   << Name << ">!" << std::endl
-                   << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << std::endl;
-         return(false);
+   if(exists()) {
+      // ====== Compress string and write data =================================
+      if(BZFile) {
+         int bzerror;
+         BZ2_bzWrite(&bzerror, BZFile, (void*)&buffer, bufferLength);
+         if(bzerror != BZ_OK) {
+            std::cerr << std::endl
+                     << "ERROR: libbz2 failed to write into file <"
+                     << Name << ">!" << std::endl
+                     << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << std::endl;
+            return(false);
+         }
       }
-   }
 
-   // ====== Write string as plain text =====================================
-   else if(File) {
-      if(fputs(buffer, File) < 0) {
-         std::cerr << "ERROR: Failed to write into file <"
-                   << Name << ">!" << std::endl;
-         return(false);
+      // ====== Write string as plain text =====================================
+      else if(File) {
+         if(fputs(buffer, File) < 0) {
+            std::cerr << "ERROR: Failed to write into file <"
+                     << Name << ">!" << std::endl;
+            return(false);
+         }
       }
    }
    return(true);
