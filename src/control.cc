@@ -286,11 +286,9 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
                   << configName << ">!" << std::endl;
          return(false);
       }
-   }
 
-   FlowManager::getFlowManager()->lock();
-
-   if(configFile != NULL) {
+      FlowManager::getFlowManager()->lock();
+      
       fprintf(configFile, "NUM_FLOWS=%u\n", (unsigned int)FlowManager::getFlowManager()->getFlowSet().size());
       fprintf(configFile, "NAME_ACTIVE_NODE=\"%s\"\n", activeNodeName);
       fprintf(configFile, "NAME_PASSIVE_NODE=\"%s\"\n", passiveNodeName);
@@ -336,6 +334,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
                               Flow::getNodeOutputName(vectorNamePattern, "passive",
                                  format("-%08x-%04x", flow->getFlowID(), flow->getStreamID())).c_str());
       }         
+
       FlowManager::getFlowManager()->unlock();
       
       fclose(configFile);
