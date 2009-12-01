@@ -432,10 +432,10 @@ static Flow* createFlow(Flow*                  previousFlow,
       }
    }
    cout.flush();
-   
+
    // ====== Update flow with socket descriptor =============================
    flow->setSocketDescriptor(socketDescriptor, originalSocketDescriptor);
-   
+
    flowID++;
    return(flow);
 }

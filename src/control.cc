@@ -76,7 +76,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
          if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {
             std::cout << ".";
          }
-         
+
          if(bytes > 0) {
             if(fwrite((char*)&resultsMsg->Data, bytes, 1, fh) != 1) {
                std::cerr << "ERROR: Unable to write results to file " << fileName
@@ -88,7 +88,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
             std::cerr << "WARNING: No results received for "
                       << fileName << "!" << std::endl;
          }
-      
+
          if(resultsMsg->Header.Flags & NPMRF_EOF) {
             if(gOutputVerbosity >= NPFOV_STATUS) {
                std::cout << " <done>"; std::cout.flush();
@@ -278,63 +278,68 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
                               const OutputFileFormat scalarFileFormat)
 {
    // ====== Write config file ==============================================
-   FILE* configFile = fopen(configName, "w");
-   if(configFile == NULL) {
-      std::cerr << "ERROR: Unable to create config file <"
-                << configName << ">!" << std::endl;
-      return(false);
+   FILE* configFile = NULL;
+   if(configName[0] != 0x00) {
+      configFile = fopen(configName, "w");
+      if(configFile == NULL) {
+         std::cerr << "ERROR: Unable to create config file <"
+                  << configName << ">!" << std::endl;
+         return(false);
+      }
    }
 
    FlowManager::getFlowManager()->lock();
 
-   fprintf(configFile, "NUM_FLOWS=%u\n", (unsigned int)FlowManager::getFlowManager()->getFlowSet().size());
-   fprintf(configFile, "NAME_ACTIVE_NODE=\"%s\"\n", activeNodeName);
-   fprintf(configFile, "NAME_PASSIVE_NODE=\"%s\"\n", passiveNodeName);
-   fprintf(configFile, "SCALAR_ACTIVE_NODE=\"%s\"\n",
-                        Flow::getNodeOutputName(scalarNamePattern, "active").c_str());
-   fprintf(configFile, "SCALAR_PASSIVE_NODE=\"%s\"\n",
-                        Flow::getNodeOutputName(scalarNamePattern, "passive").c_str());
-   fprintf(configFile, "VECTOR_ACTIVE_NODE=\"%s\"\n",
-                        Flow::getNodeOutputName(vectorNamePattern, "active").c_str());
-   fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s\"\n\n",
-                        Flow::getNodeOutputName(vectorNamePattern, "passive").c_str());
-
-   for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
-      iterator != FlowManager::getFlowManager()->getFlowSet().end();
-      iterator++) {
-      const Flow* flow = *iterator;
-      char extension[32];
-      snprintf((char*)&extension, sizeof(extension), "-%08x-%04x",        flow->getFlowID(), flow->getStreamID());
-      fprintf(configFile, "FLOW%u_DESCRIPTION=\"%s\"\n",                  flow->getFlowID(), flow->getTrafficSpec().Description.c_str());
-      fprintf(configFile, "FLOW%u_PROTOCOL=\"%s\"\n",                     flow->getFlowID(), getProtocolName(flow->getTrafficSpec().Protocol));
-      for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
-         fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().OutboundFrameRate[i]);
-      }
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG_ID=%u\n",       flow->getFlowID(), flow->getTrafficSpec().OutboundFrameRateRng);
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG_NAME=\"%s\"\n", flow->getFlowID(), getRandomGeneratorName(flow->getTrafficSpec().OutboundFrameRateRng));
-      for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
-         fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().OutboundFrameSize[i]);
-      }
-      fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_RNG=%u\n",          flow->getFlowID(), flow->getTrafficSpec().OutboundFrameSizeRng);
-      for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
-         fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().InboundFrameRate[i]);
-      }
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG_ID=%u\n",        flow->getFlowID(), flow->getTrafficSpec().InboundFrameRateRng);
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG_NAME=\"%s\"\n",  flow->getFlowID(), getRandomGeneratorName(flow->getTrafficSpec().InboundFrameRateRng));
-      for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
-         fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().InboundFrameSize[i]);
-      }
-      fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_RNG=%u\n",           flow->getFlowID(), flow->getTrafficSpec().InboundFrameSizeRng);
-      fprintf(configFile, "FLOW%u_RELIABLE=%f\n",                         flow->getFlowID(), flow->getTrafficSpec().ReliableMode);
-      fprintf(configFile, "FLOW%u_ORDERED=%f\n",                          flow->getFlowID(), flow->getTrafficSpec().OrderedMode);
-      fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(), flow->getVectorFile().getName().c_str());
-      fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n",        flow->getFlowID(),
-                           Flow::getNodeOutputName(vectorNamePattern, "passive",
-                              format("-%08x-%04x", flow->getFlowID(), flow->getStreamID())).c_str());
-   }         
-   FlowManager::getFlowManager()->unlock();
+   if(configFile != NULL) {
+      fprintf(configFile, "NUM_FLOWS=%u\n", (unsigned int)FlowManager::getFlowManager()->getFlowSet().size());
+      fprintf(configFile, "NAME_ACTIVE_NODE=\"%s\"\n", activeNodeName);
+      fprintf(configFile, "NAME_PASSIVE_NODE=\"%s\"\n", passiveNodeName);
+      fprintf(configFile, "SCALAR_ACTIVE_NODE=\"%s\"\n",
+                           Flow::getNodeOutputName(scalarNamePattern, "active").c_str());
+      fprintf(configFile, "SCALAR_PASSIVE_NODE=\"%s\"\n",
+                           Flow::getNodeOutputName(scalarNamePattern, "passive").c_str());
+      fprintf(configFile, "VECTOR_ACTIVE_NODE=\"%s\"\n",
+                           Flow::getNodeOutputName(vectorNamePattern, "active").c_str());
+      fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s\"\n\n",
+                           Flow::getNodeOutputName(vectorNamePattern, "passive").c_str());
    
-   fclose(configFile);
+      for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+         iterator != FlowManager::getFlowManager()->getFlowSet().end();
+         iterator++) {
+         const Flow* flow = *iterator;
+         char extension[32];
+         snprintf((char*)&extension, sizeof(extension), "-%08x-%04x",        flow->getFlowID(), flow->getStreamID());
+         fprintf(configFile, "FLOW%u_DESCRIPTION=\"%s\"\n",                  flow->getFlowID(), flow->getTrafficSpec().Description.c_str());
+         fprintf(configFile, "FLOW%u_PROTOCOL=\"%s\"\n",                     flow->getFlowID(), getProtocolName(flow->getTrafficSpec().Protocol));
+         for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+            fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().OutboundFrameRate[i]);
+         }
+         fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG_ID=%u\n",       flow->getFlowID(), flow->getTrafficSpec().OutboundFrameRateRng);
+         fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_RATE_RNG_NAME=\"%s\"\n", flow->getFlowID(), getRandomGeneratorName(flow->getTrafficSpec().OutboundFrameRateRng));
+         for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+            fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().OutboundFrameSize[i]);
+         }
+         fprintf(configFile, "FLOW%u_OUTBOUND_FRAME_SIZE_RNG=%u\n",          flow->getFlowID(), flow->getTrafficSpec().OutboundFrameSizeRng);
+         for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+            fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().InboundFrameRate[i]);
+         }
+         fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG_ID=%u\n",        flow->getFlowID(), flow->getTrafficSpec().InboundFrameRateRng);
+         fprintf(configFile, "FLOW%u_INBOUND_FRAME_RATE_RNG_NAME=\"%s\"\n",  flow->getFlowID(), getRandomGeneratorName(flow->getTrafficSpec().InboundFrameRateRng));
+         for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+            fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_VALUE%u=%f\n",   flow->getFlowID(), i + 1, flow->getTrafficSpec().InboundFrameSize[i]);
+         }
+         fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_RNG=%u\n",           flow->getFlowID(), flow->getTrafficSpec().InboundFrameSizeRng);
+         fprintf(configFile, "FLOW%u_RELIABLE=%f\n",                         flow->getFlowID(), flow->getTrafficSpec().ReliableMode);
+         fprintf(configFile, "FLOW%u_ORDERED=%f\n",                          flow->getFlowID(), flow->getTrafficSpec().OrderedMode);
+         fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(), flow->getVectorFile().getName().c_str());
+         fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n",        flow->getFlowID(),
+                              Flow::getNodeOutputName(vectorNamePattern, "passive",
+                                 format("-%08x-%04x", flow->getFlowID(), flow->getStreamID())).c_str());
+      }         
+      FlowManager::getFlowManager()->unlock();
+      
+      fclose(configFile);
+   }
 
    // ====== Start flows ====================================================
    const bool success = FlowManager::getFlowManager()->startMeasurement(
