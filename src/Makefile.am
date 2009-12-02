@@ -1,5 +1,5 @@
 if BUILD_PLOTTING_PROGRAMS
-bin_PROGRAMS = netperfmeter createsummary combinesummaries ldcalc
+bin_PROGRAMS = netperfmeter createsummary combinesummaries extractvectors ldcalc
 else
 bin_PROGRAMS = netperfmeter
 endif
@@ -16,7 +16,7 @@ dist_man_MANS = netperfmeter.8
 if BUILD_PLOTTING_PROGRAMS
 
 nodist_bin_SCRIPTS = plot-netperfmeter-results pdfmetadata pdfembedfonts
-nodist_man_MANS  = plot-netperfmeter-results.8 createsummary.8 combinesummaries.8 pdfmetadata.8 pdfembedfonts.8
+nodist_man_MANS  = plot-netperfmeter-results.8 createsummary.8 combinesummaries.8 extractvectors.8 pdfmetadata.8 pdfembedfonts.8
 nodist_EXTRA_DIST       = plotter.R plot-netperfmeter-results.R
 nodist_pkgdata_DATA     = plotter.R plot-netperfmeter-results.R
 
@@ -25,6 +25,9 @@ createsummary_LDADD   = $(bz2_LIBS)
 
 nodist_combinesummaries_SOURCES = combinesummaries.cc
 combinesummaries_LDADD   = $(bz2_LIBS)
+
+nodist_extractvectors_SOURCES = extractvectors.cc
+extractvectors_LDADD   = $(bz2_LIBS)
 
 nodist_ldcalc_SOURCES = ldcalc.cc
 ldcalc_LDADD          =

@@ -121,10 +121,16 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
                        &sinfo, 0);
    }
    else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
-      sent = ext_sendto(flow->getSocketDescriptor(),
-                        (char*)&outputBuffer, bytesToSend, 0,
-                        flow->getRemoteAddress(),
-                        getSocklen(flow->getRemoteAddress()));
+      if(flow->isRemoteAddressValid()) {
+         sent = ext_sendto(flow->getSocketDescriptor(),
+                           (char*)&outputBuffer, bytesToSend, 0,
+                           flow->getRemoteAddress(),
+                           getSocklen(flow->getRemoteAddress()));
+      }
+      else {
+         sent = ext_send(flow->getSocketDescriptor(),
+                         (char*)&outputBuffer, bytesToSend, 0);
+      }
    }
    else {
       sent = ext_send(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, 0);
@@ -192,7 +198,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
    const ssize_t received =
       FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
          sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
-
+         
    if( (received > 0) && (!(flags & MSG_NOTIFICATION)) ) {
       const NetPerfMeterDataMessage*     dataMsg     =
          (const NetPerfMeterDataMessage*)&inputBuffer;

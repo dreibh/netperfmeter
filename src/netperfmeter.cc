@@ -325,8 +325,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       std::cerr << "ERROR: Flow ID " << flowID << " is used twice. Ensure correct id=<ID> parameters!" << std::endl;
       exit(1);
    }
-   Flow* flow = new Flow(measurementID,
-                         flowID, streamID, trafficSpec);
+   Flow* flow = new Flow(measurementID, flowID, streamID, trafficSpec);
    assert(flow != NULL);
 
    // ====== Initialize vector file =========================================
@@ -481,7 +480,7 @@ bool mainLoop(const bool               isActiveMode,
    addToPollFDs((pollfd*)&fds, gSCTPSocket, n, &sctpID);
    addToPollFDs((pollfd*)&fds, gDCCPSocket, n, &dccpID);
 
-
+   
    // ====== Use poll() to wait for events ==================================
    const int timeout = pollTimeout(now, 2,
                                    stopAt,
@@ -651,7 +650,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gMessageReader.deregisterSocket(gControlSocket);
    ext_close(gControlSocket);
    ext_close(gTCPSocket);
-   FlowManager::getFlowManager()->removeSocket(gUDPSocket);
+   FlowManager::getFlowManager()->removeSocket(gUDPSocket, false);
    ext_close(gUDPSocket);
    ext_close(gSCTPSocket);
    if(gDCCPSocket >= 0) {
@@ -709,6 +708,7 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Handle command-line parameters =================================
+   bool             hasFlow           = false;
    const char*      vectorNamePattern = "";
    OutputFileFormat vectorFileFormat  = OFF_None;
    const char*      scalarNamePattern = "";
@@ -739,7 +739,7 @@ void activeMode(int argc, char** argv)
 #endif
          }
          else if(strncmp(argv[i], "-vector=", 8) == 0) {
-            if(lastFlow != NULL) {
+            if(hasFlow) {
                cerr << "ERROR: Vector file must be set *before* first flow!" << endl;
                exit(1);
             }
@@ -754,7 +754,7 @@ void activeMode(int argc, char** argv)
             }
          }
          else if(strncmp(argv[i], "-scalar=", 8) == 0) {
-            if(lastFlow != NULL) {
+            if(hasFlow) {
                cerr << "ERROR: Scalar file must be set *before* first flow!" << endl;
                exit(1);
             }
@@ -786,6 +786,7 @@ void activeMode(int argc, char** argv)
          lastFlow = createFlow(lastFlow, argv[i], measurementID,
                                vectorNamePattern, vectorFileFormat,
                                protocol, &remoteAddress.sa);
+         hasFlow = true;
 
          if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
             cerr << endl << "ERROR: Failed to add flow to remote node!" << endl;

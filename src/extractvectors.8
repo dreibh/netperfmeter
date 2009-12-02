@@ -1,0 +1,106 @@
+.\" $Id$
+.\"
+.\" Network Performance Meter
+.\" Copyright (C) 2009 by Thomas Dreibholz
+.\"
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\"
+.\" Contact: dreibh@iem.uni-due.de
+.\"
+.\" ###### Setup ############################################################
+.Dd December 2, 2009
+.Dt extractvectors 8
+.Os ExtractVectors
+.\" ###### Name #############################################################
+.Sh NAME
+.Nm extractvectors
+.Nd Vector Extraction Tool for OMNeT++ Vector Files
+.\" ###### Synopsis #########################################################
+.Sh SYNOPSIS
+.Nm extractvectors
+.Op Input File
+.Op Output File
+.Op Vector Name Prefix
+.Op ...
+.Fl quiet
+.\" ###### Description ######################################################
+.Sh DESCRIPTION
+.Nm extractvectors
+is an extraction tool for vectors written by OMNeT++ to a data table.
+ExtractVectors supports on-the-fly BZip2 decompression and compression.
+.El 
+.Pp
+.\" ###### Arguments ########################################################
+.Sh ARGUMENTS
+The following arguments may be provided:
+.Bl -tag -width indent
+.It Input File
+The name of the input vector file.
+.It Output File
+The name of the output data table to be created.
+.It Vector Name Prefix
+Name prefix of vectors to be extracted. Multiple vector name prefixes may be
+specified. If no name prefix is given, all vectors will be extracted.
+.It Fl quiet
+Do not print verbose status information.
+.El
+.\" ###### Arguments ########################################################
+.Sh EXAMPLE
+Consider an OMNeT++ vector file containing the vectors
+"Slow Start Threshold <assoc>:<path>" and
+"Congestion Window <assoc>:<path>", contained with a lot of other vectors in
+the BZip2-compressed vector file results.vec.bz2.
+ExtractVectors can be used to extract all vectors beginning with
+"Slow Start Threshold" or "Congestion Window" into a BZip2-compressed data
+table results.data.bz2 by the following command:
+
+extractvectors results.vec.bz2 results.data.bz2 \\
+   "Slow Start Threshold" \\
+   "Congestion Window"
+   
+For each vector entry, an output line containing
+time (Time), event number (Event),
+object name (Object),
+vector name (Vector) and
+the vector value (Value) will be created.
+
+Example:
+
+Time     Event               Object Vector                          Value
+.br
+0.003672   174 "net.client[0].sctp" "Slow Start Threshold 2:Total"  10000000
+.br
+0.003672   174 "net.client[0].sctp" "Slow Start Threshold 2:Total"  10000000
+.br
+0.003672   174 "net.client[0].sctp" "Congestion Window 2:Total"     4380
+.br
+0.003672   174 "net.client[0].sctp" "Congestion Window 2:Total"     8760
+.br
+0.003913   238 "net.server[0].sctp" "Slow Start Threshold 4:Total"  10000000
+.br
+0.003913   238 "net.server[0].sctp" "Slow Start Threshold 4:Total"  10000000
+.br
+0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     3000
+.br
+0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     6000
+  
+.El
+.\" ###### Authors ##########################################################
+.Sh AUTHORS
+Thomas Dreibholz
+.br
+http://www.iem.uni-due.de/~dreibh/omnetpp
+.br
+mailto://dreibh@iem.uni-due.de
+.br

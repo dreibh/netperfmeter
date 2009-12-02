@@ -333,7 +333,8 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
    Flow* flow = findFlow(measurementID, flowID, streamID);
    if( (flow != NULL) && (flow->RemoteAddressIsValid == false) ) {
       flow->lock();
-      flow->setSocketDescriptor(socketDescriptor, false);
+      flow->setSocketDescriptor(socketDescriptor, false,
+                                (flow->getTrafficSpec().Protocol != IPPROTO_UDP));
       flow->RemoteAddress        = *from;
       flow->RemoteAddressIsValid = true;
       controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
@@ -364,7 +365,6 @@ void FlowManager::removeSocket(const int  socketDescriptor,
    }
    if(closeSocket) {
       FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(socketDescriptor);
-      ext_close(socketDescriptor);
    }
    unlock();
 }
@@ -655,13 +655,16 @@ void FlowManager::run()
          FlowSet[i]->lock();
          if( (FlowSet[i]->InputStatus != Flow::Off) &&
              (FlowSet[i]->SocketDescriptor >= 0) ) {
-            if(socketSet.find(FlowSet[i]->SocketDescriptor) == socketSet.end()) {
-               pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
-               pollFDs[n].events  = POLLIN;
-               pollFDs[n].revents = 0;
-               FlowSet[i]->PollFDEntry = &pollFDs[n];
-               n++;
-               socketSet.insert(FlowSet[i]->SocketDescriptor);
+            if(!((FlowSet[i]->getTrafficSpec().Protocol == IPPROTO_UDP) &&   // Global UDP socket is handled by main loop!
+                 (FlowSet[i]->RemoteControlSocketDescriptor >= 0)) ) {       // Incoming UDP association has RemoteControlSocketDescriptor >= 0.
+               if(socketSet.find(FlowSet[i]->SocketDescriptor) == socketSet.end()) {
+                  pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
+                  pollFDs[n].events  = POLLIN;
+                  pollFDs[n].revents = 0;
+                  FlowSet[i]->PollFDEntry = &pollFDs[n];
+                  n++;
+                  socketSet.insert(FlowSet[i]->SocketDescriptor);
+               }
             }
          }
          else {
@@ -701,7 +704,7 @@ void FlowManager::run()
       if(result > 0) {
          // ====== Handle read events of flows ==============================
          for(i = 0;i  < FlowSet.size();i++) {
-            // FlowSet[i]->lock();  --- not necessary: FlowManager is locked
+            FlowSet[i]->lock();
             const pollfd* entry    = FlowSet[i]->PollFDEntry;
             const int     protocol = FlowSet[i]->getTrafficSpec().Protocol;
             // FlowSet[i]->unlock(); --- not necessary: FlowManager is locked
@@ -712,9 +715,8 @@ void FlowManager::run()
                // NOTE: FlowSet[i] may not be the actual Flow!
                //       It may be another stream of the same SCTP assoc!
                handleNetPerfMeterData(true, now, protocol, entry->fd);
-/*               while( handleNetPerfMeterData(true, now, protocol, entry->fd) > 0 ) {
-               }*/
             }
+            FlowSet[i]->unlock();
          }
 
 
@@ -780,7 +782,7 @@ Flow::Flow(const uint64_t         measurementID,
    RemoteControlSocketDescriptor = controlSocketDescriptor;
    RemoteControlAssocID          = controlAssocID;
    RemoteAddressIsValid          = false;
-
+   
    InputStatus                   = WaitingForStartup;
    OutputStatus                  = WaitingForStartup;
    BaseTime                      = getMicroTime();
@@ -797,7 +799,7 @@ Flow::Flow(const uint64_t         measurementID,
    LastOutboundFrameID           = ~0;
    NextStatusChangeEvent         = ~0ULL;
    unlock();
-   
+
    FlowManager::getFlowManager()->addFlow(this);
 }
 
@@ -809,12 +811,15 @@ Flow::~Flow()
    deactivate();
    VectorFile.finish(true);
    if((SocketDescriptor >= 0) && (OriginalSocketDescriptor)) {
-      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
-      ext_close(SocketDescriptor);
+      if(DeleteWhenFinished) {
+         FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
+         ext_close(SocketDescriptor);
+      }
    }
 }
 
 
+// ###### Reset statistics ##################################################
 void Flow::resetStatistics()
 {
    lock();
@@ -857,12 +862,15 @@ void Flow::print(std::ostream& os, const bool printStatistics)
 
 // ###### Update socket descriptor ##########################################
 void Flow::setSocketDescriptor(const int  socketDescriptor,
-                               const bool originalSocketDescriptor)
+                               const bool originalSocketDescriptor,
+                               const bool deleteWhenFinished)
 {
    deactivate();
    lock();
    SocketDescriptor         = socketDescriptor;
    OriginalSocketDescriptor = originalSocketDescriptor;
+   DeleteWhenFinished       = deleteWhenFinished;
+   
    if(SocketDescriptor >= 0) {
       FlowManager::getFlowManager()->getMessageReader()->registerSocket(
          TrafficSpec.Protocol, SocketDescriptor);
@@ -1102,6 +1110,11 @@ void Flow::run()
                      break;
                   }
                } while(scheduleNextTransmissionEvent() <= now);
+               
+               if(TrafficSpec.Protocol == IPPROTO_UDP) {
+// ???????????                  result = true;   // Result is always true for UDP.
+                                   // result==false may e.g. be overload, etc.
+               }
             }
          }
       }

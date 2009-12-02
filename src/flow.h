@@ -303,7 +303,8 @@ class Flow : public Thread
    void resetStatistics();
 
    void setSocketDescriptor(const int  socketDescriptor,
-                            const bool originalSocketDescriptor = true);
+                            const bool originalSocketDescriptor = true,
+                            const bool deleteWhenFinished       = true);
    bool activate();
    void deactivate(const bool asyncStop = false);
 
@@ -325,7 +326,9 @@ class Flow : public Thread
 
    // ====== Socket Management ==============================================
    int                SocketDescriptor;
+   bool               AcceptedIncomingFlow;
    bool               OriginalSocketDescriptor;
+   bool               DeleteWhenFinished;
    pollfd*            PollFDEntry;   // For internal usage by FlowManager
 
    int                RemoteControlSocketDescriptor;

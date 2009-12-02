@@ -70,7 +70,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
          }
          if(bytes != (size_t)received) {
             std::cerr << "ERROR: Received malformed NETPERFMETER_RESULTS message!" << std::endl;
-            printf("%u + %u > %u\n", (unsigned int)bytes, (unsigned int)sizeof(NetPerfMeterResults), (unsigned int)received);
+            // printf("%u + %u > %u\n", (unsigned int)bytes, (unsigned int)sizeof(NetPerfMeterResults), (unsigned int)received);
             exit(1);
          }
          if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {
@@ -230,14 +230,10 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       identifyMsg.Header.Flags  = 0x00;
       if(flow->getVectorFile().getFormat() == OFF_None) {
          identifyMsg.Header.Flags |= NPMIF_NO_VECTORS;
-         puts("---- OFF!!!");
       }
       else if(flow->getVectorFile().getFormat() == OFF_BZip2) {
          identifyMsg.Header.Flags |= NPMIF_COMPRESS_VECTORS;
-         puts("BZIP2");
       }
-printf("==============>> IDF=%04x\n",identifyMsg.Header.Flags);
-std::cout << "VN=" << flow->getVectorFile().getName() << std::endl;
       identifyMsg.Header.Length = htons(sizeof(identifyMsg));
       identifyMsg.MagicNumber   = hton64(NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER);
       identifyMsg.MeasurementID = hton64(flow->getMeasurementID());
@@ -830,15 +826,12 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    }
 
    const unsigned long long now = getMicroTime();
-printf("----START M: %d %d\n",(int)vectorFileFormat,(int)scalarFileFormat);
    bool success = FlowManager::getFlowManager()->startMeasurement(
       measurementID, now,
       NULL, vectorFileFormat,
       NULL, scalarFileFormat,
       (gOutputVerbosity >= NPFOV_FLOWS));
-
    
-   std::cout << "Start Confirm!" << std::endl;
    return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                       measurementID, 0, 0,
                                       (success == true) ? NETPERFMETER_STATUS_OKAY :

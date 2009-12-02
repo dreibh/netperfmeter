@@ -415,7 +415,6 @@ bool string2address(const char*           string,
    if((sscanf(port, "%d", &portNumber) != 1) ||
       (portNumber < 0) ||
       (portNumber > 65535)) {
-      puts("q2");
       return(false);
    }
 
