@@ -97,8 +97,9 @@ if [ "$SYSTEM" = "FreeBSD" ] ; then
    sysctl net.inet.sctp.cmt_on_off=$CMT
    sysctl net.inet.sctp.cmt_use_dac=$DAC
    sysctl net.inet.sctp.nr_sack_on_off=$NRSACK
-   sysctl net.inet.sctp.sendspace=5000000
-   sysctl net.inet.sctp.recvspace=5000000
+   sysctl kern.ipc.maxsockbuf=100005000      # This is the absolute socket buffer limit!
+   sysctl net.inet.sctp.sendspace=10000000   # SCTP limit, seems to need full pages!
+   sysctl net.inet.sctp.recvspace=10000000   # SCTP limit, seems to need full pages!
    if [ $RP -eq 0 ] ; then
       sysctl net.inet.sctp.default_cc_module=0
    else
