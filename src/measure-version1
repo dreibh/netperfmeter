@@ -21,7 +21,8 @@
 #
 
 HOST_EAST="132.252.153.18"
-HOST_WEST="132.252.153.10,132.252.153.138"
+HOST_WEST="132.252.153.10,132.252.153.138"   # !!! Disjoint Links !!!
+# HOST_WEST="132.252.153.10,132.252.153.14"   # !!! Shared Bottleneck !!!
 ROUTER_NORTH="132.252.153.9"
 NETWORK_NW="132.252.153.8/29"
 NETWORK_NE="132.252.153.16/29"
@@ -48,8 +49,8 @@ FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
 Unordered_VALUES="0.0"
 Unreliable_VALUES="0.0"
-SndBuf_VALUES="15000"
-RcvBuf_VALUES="15000"
+SndBuf_VALUES="233016"
+RcvBuf_VALUES="233016"
 OptionCMT_VALUES="false"
 OptionRP_VALUES="false"
 OptionDAC_VALUES="false"
@@ -126,7 +127,10 @@ perform_run ()
       fi
 
       echo $command
-      ( $command && touch $runStatus ) || exit 1
+      ( $command && \
+        ssh $ROUTER_NORTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_NW $NETWORK_NE && \
+        ssh $ROUTER_SOUTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_SW $NETWORK_SE && \
+        touch $runStatus ) || exit 1
    fi
 
    additionalVariables="IsActive RunDirectory"   # Tell finish_runs() to add "IsActive"

@@ -42,6 +42,7 @@ netPerfMeterPlotVariables <- list(
    list("Flows",        "Number of Flows{n}[1]",     NA),
    list("OnlyOneAssoc", "Only One Assoc{A}",         NA),
    list("Unordered",    "Unordered{U}",              NA),
+   list("OptionRP",     "CMT-RP {:Gamma:}",          NA),
    list("OptionCMT",    "Allow CMT {:mu:}",          NA),
    list("OptionDAC",    "Delayed Ack CMT {:delta:}", NA),
    list("OptionNRSACK", "Use NR-SACK{:nu:}",         NA),
@@ -71,8 +72,8 @@ netPerfMeterPlotVariables <- list(
            "blue4",
            list("passive.flow-ReceivedBytes")),
    list("passive.flow-ReceivedByteRate",
-           "Received Byte Rate[KiB/s]",
-           "data1$passive.flow.ReceivedByteRate / 1024",
+           "Received Byte Rate[Kbit/s]",
+           "8* data1$passive.flow.ReceivedByteRate / 1024",
            "blue2",
            list("passive.flow-ReceivedByteRate")),
 
