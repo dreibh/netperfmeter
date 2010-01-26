@@ -35,13 +35,13 @@ plotConfigurations <- list(
    # ------------------------------------------------------------------------
 
    list("wp0-links-symmetrischI", "paper2-wp0-links-symmetrischI-Throughput.pdf",
-        "FreeBSD 8.0 Measurement Results", seq(0,100000,10000), NA, list(0,1),
+        "Measurement Results", seq(0,100000,10000), NA, list(0,1),
         "RateNorthernTrail-CM", "passive.total-ReceivedBitRate",
         "OptionCMT", "OptionDAC", "OptionNRSACK",
         "", "", "Unordered",
         "(data1$OptionDAC == \"true\")",
         NA,
-        "dotSet=c(10,15)")
+        "dotSet=c(1,5)")
 )
 
 
