@@ -1,7 +1,7 @@
 # $Id$
 # ###########################################################################
 #             Thomas Dreibholz's R Simulation Scripts Collection
-#                  Copyright (C) 2005-2008 Thomas Dreibholz
+#                  Copyright (C) 2005-2010 Thomas Dreibholz
 #
 #               Author: Thomas Dreibholz, dreibh@iem.uni-due.de
 # ###########################################################################
@@ -22,7 +22,36 @@
 # Contact: dreibh@iem.uni-due.de
 
 
-# Safe division
+# ###########################################################################
+# #### Utility Functions                                                 ####
+# ###########################################################################
+
+
+# ====== Check existence of global variable (given as name string) ==========
+existsGlobalVariable <- function(variable)
+{
+   globalEnv <- sys.frame()
+   return(exists(variable, envir=globalEnv))
+}
+
+
+# ====== Get value of global variable (given as name string) ================
+getGlobalVariable <- function(variable)
+{
+   globalEnv <- sys.frame()
+   return(get(variable, env=globalEnv))
+}
+
+
+# ====== Set global variable (given as name string) to given value ==========
+setGlobalVariable <- function(variable, value)
+{
+   globalEnv <- sys.frame()
+   assign(variable, value, envir=globalEnv)
+}
+
+
+# ====== Safe division ======================================================
 safeDiv <- function(a, b, zeroValue=0) {
    c <- a / b
    nullSet <- is.nan(c)
@@ -31,7 +60,14 @@ safeDiv <- function(a, b, zeroValue=0) {
 }
 
 
-# Get array of gray tones (equivalent of rainbow() for b/w laser printing)
+
+# ###########################################################################
+# #### Core Plotting Functions                                           ####
+# ###########################################################################
+
+
+# ====== Get array of gray tones
+# (equivalent of rainbow() for b/w laser printing) ==========================
 graybow <- function(n)
 {
    maxGray <- 0.5   # Light gray
@@ -40,7 +76,7 @@ graybow <- function(n)
 }
 
 
-# Modified rainbow() with colors improved for readability
+# ====== Modified rainbow() with colors improved for readability ============
 rainbow2 <- function(n)
 {
    if(n == 2) {
@@ -86,7 +122,7 @@ removeSpaceRegExpr <- "([[:space:]]*)([^ ]*)([[:space:]]*)"
 expressionExpr <- ":([^:]*):"
 
 
-# Extract variable from axis title
+# ====== Extract variable from axis title ===================================
 getVariable <- function(title)
 {
    result <- sub(extended=TRUE, titleRegExpr, "\\1", title)
@@ -98,7 +134,7 @@ getVariable <- function(title)
 }
 
 
-# Extract abbreviated variable name from axis title
+# ====== Extract abbreviated variable name from axis title ==================
 getAbbreviation <- function(title)
 {
    result <- sub(extended=TRUE, titleRegExpr, "\\3", title)
@@ -113,7 +149,7 @@ getAbbreviation <- function(title)
 }
 
 
-# Extract unit from axis title
+# ====== Extract unit from axis title =======================================
 getUnit <- function(title)
 {
    result <- sub(extended=TRUE, titleRegExpr, "\\6", title)
@@ -125,7 +161,7 @@ getUnit <- function(title)
 }
 
 
-# Extract label expression (as string!) from title
+# ====== Extract label expression (as string!) from title ===================
 getLabel <- function(title)
 {
    label <- getVariable(title)
@@ -140,8 +176,18 @@ getLabel <- function(title)
 }
 
 
+# ====== Get dot style from dot set =========================================
+getDot <- function(dotSet, dot)
+{   
+   if(length(dotSet) == 0) {
+      return(dot)
+   }
+   selectedDot <- dotSet[1 + ((dot - 1) %% length(dotSet))]
+   return(selectedDot)
+}
 
-# Check sets
+
+# ====== Check sets =========================================================
 checkSets <- function(data,
                       xSet=c(), ySet=c(), zSet=c(),
                       vSet=c(), wSet=c(),
@@ -217,7 +263,7 @@ checkSets <- function(data,
 }
 
 
-# Default hbar aggregator
+# ====== Default hbar aggregator ============================================
 hbarDefaultAggregator <- function(xSet, ySet, hbarSet, zValue, confidence)
 {
    mSet <- ySet
@@ -233,7 +279,7 @@ hbarDefaultAggregator <- function(xSet, ySet, hbarSet, zValue, confidence)
 }
 
 
-# Handling Speed aggregator
+# ====== Handling Speed aggregator ==========================================
 hbarHandlingSpeedAggregator <- function(xSet, ySet, hbarSet, zValue, confidence)
 {
    handlingTime  <- 60 * (xSet - hbarSet)
@@ -263,7 +309,17 @@ plotstd3 <- function(mainTitle,
                      wTitle            = "??wTitle??",
                      xAxisTicks        = c(),
                      yAxisTicks        = c(),
+                     type              = "lines",
                      confidence        = 0.95,
+                     legendPos         = c(0,1),
+                     legendSize        = 0.8,
+                     colorMode         = cmColor,
+                     frameColor        = par("fg"),
+                     zColorArray       = c(),
+                     zSortAscending    = TRUE,
+                     vSortAscending    = TRUE,
+                     wSortAscending    = TRUE,
+                     dotSet            = c(),
                      hbarSet           = c(),
                      hbarMeanSteps     = 10,
                      hbarAggregator    = hbarDefaultAggregator,
@@ -272,20 +328,14 @@ plotstd3 <- function(mainTitle,
                      xSeparatorsColors = c(),
                      rangeSet          = c(),
                      rangeColors       = c(),
-                     type              = "lines",
                      hideLegend        = FALSE,
                      legendOnly        = FALSE,
-                     legendPos         = c(0,1),
-                     colorMode         = cmColor,
-                     zColorArray       = c(),
-                     frameColor        = par("fg"),
-                     legendSize  = 0.8,
                      xValueFilter      = "%s",
                      yValueFilter      = "%s",
                      zValueFilter      = "%s",
                      vValueFilter      = "%s",
                      wValueFilter      = "%s",
-                     inPlotStd6        = FALSE)
+                     largeMargins      = FALSE)
 {
    xLevels <- levels(factor(xSet))
    yLevels <- levels(factor(ySet))
@@ -347,9 +397,10 @@ plotstd3 <- function(mainTitle,
 
 
    # ------ Create plot window ----------------------------------------------
-   if(!inPlotStd6) {
+   if(!largeMargins) {
       margins <- c(3.25,3.25,3,0.25) + 0.0   # Margins as c(bottom, left, top, right)
-                                          # Default is c(5, 4, 4, 2) + 0.1
+                                             # Default is c(5, 4, 4, 2) + 0.1
+      nextPageInPDFMetadata()
    }
    else {
       margins <- c(5, 5, 3, 2) + 0.0   # For usage within plotstd6()
@@ -419,11 +470,29 @@ plotstd3 <- function(mainTitle,
    legendStyles <- c()
    legendDots   <- c()
    legendDot    <- 1
-   for(zPosition in rev(seq(1, length(zLevels)))) {
+   if(zSortAscending) {
+      zSequence <- seq(1, length(zLevels))
+   }
+   else {
+      zSequence <- rev(seq(1, length(zLevels)))
+   }
+   if(vSortAscending) {
+      vSequence <- seq(1, length(vLevels))
+   }
+   else {
+      vSequence <- rev(seq(1, length(vLevels)))
+   }
+   if(wSortAscending) {
+      wSequence <- seq(1, length(wLevels))
+   }
+   else {
+      wSequence <- rev(seq(1, length(wLevels)))
+   }
+   for(zPosition in zSequence) {
       z <- zLevels[zPosition]
-      for(wPosition in seq(1, length(wLevels))) {
+      for(wPosition in wSequence) {
          w <- wLevels[wPosition]
-         for(vPosition in seq(1, length(vLevels))) {
+         for(vPosition in vSequence) {
             v <- vLevels[vPosition]
 
             # ----- Legend settings -----------------------------------------
@@ -449,34 +518,13 @@ plotstd3 <- function(mainTitle,
                if((type == "p") || (type=="points")) {
                   xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
                   ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
-                  points(xSubset, ySubset, col=legendColor, cex=par("cex"), pch=legendDot)
+                  points(xSubset, ySubset, col=legendColor, cex=par("cex"), pch=getDot(dotSet, legendDot))
 
-                  legendTexts <- append(legendTexts, legendText)
+                  legendTexts  <- append(legendTexts,  legendText)
                   legendColors <- append(legendColors, legendColor)
                   legendStyles <- append(legendStyles, legendStyle)
-                  legendDots <- append(legendDots, legendDot)
-               }
-
-               # ----- Lines plot without confidence intervals --------------
-               else if((type == "lx") || (type=="linesx")) {
-                  xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
-                  ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
-                  lineWidth <- 5
-                  if((length(vLevels) > 1) || (length(wLevels) > 1)) {
-                     lineWidth <- 3
-                  }
-                  lines(xSubset, ySubset, col=legendColor, lty=legendStyle, cex=lineWidth*par("cex"), pch=legendDot)
-
-                  legendTexts <- append(legendTexts, legendText)
-                  legendColors <- append(legendColors, legendColor)
-                  legendStyles <- append(legendStyles, legendStyle)
-                  legendDots <- append(legendDots, legendDot)
-
-                  points(xSubset, ySubset,
-                        col=legendColor, lty=legendStyle, pch=legendDot,
-                        lwd=par("cex"),
-                        cex=par("cex"), bg="yellow")
-                  legendDot <- legendDot + 1
+                  legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
+                  legendDot    <- legendDot + 1
                }
 
                # ----- Horizontal bars plot ---------------------------------
@@ -485,17 +533,51 @@ plotstd3 <- function(mainTitle,
                   ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
                   hbarSubset <- subset(hbarSet, (zSet == z) & (vSet == v) & (wSet == w))
                   for(x in seq(1, length(xSubset))) {
-                     # points(xSubset[x],ySubset[x], col=legendColor, cex=par("cex"), pch=legendDot)
+                     # points(xSubset[x],ySubset[x], col=legendColor, cex=par("cex"), pch=getDot(dotSet, legendDot))
                      lines(c(hbarSubset[x], xSubset[x]),
                            c(ySubset[x], ySubset[x]),
-                           col=legendColor, cex=par("cex"), pch=legendDot)
+                           col=legendColor, cex=par("cex"), pch=getDot(dotSet, legendDot))
                   }
-                  legendTexts  <- append(legendTexts, legendText)
+                  legendTexts  <- append(legendTexts,  legendText)
                   legendColors <- append(legendColors, legendColor)
                   legendStyles <- append(legendStyles, legendStyle)
-                  legendDots   <- append(legendDots, legendDot)
+                  legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
+                  legendDot    <- legendDot + 1
+               }
 
-                  legendDot <- legendDot + 1
+               # ----- Lines or Steps plot without confidence intervals -----
+               else if((type == "lx") || (type=="linesx") ||
+                       (type == "sx") || (type=="stepsx")) {
+                  xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
+                  ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
+                  lineWidth <- 5
+                  if((length(vLevels) > 1) || (length(wLevels) > 1)) {
+                     lineWidth <- 3
+                  }
+
+                  if((type == "lx") || (type=="linesx")) {
+                     lines(xSubset, ySubset,
+                           col=legendColor, lty=legendStyle, cex=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
+                  }
+                  else if((type == "sx") || (type=="stepsx")) {
+                     lines(xSubset, ySubset, type="s",
+                           col=legendColor, lty=legendStyle, cex=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
+                  }
+
+                  pcex <- par("cex")
+                  # if(length(wLevels) > 1) {
+                     pcex <- 2 * pcex
+                  # }
+                  points(xSubset, ySubset,
+                         col=legendColor, lty=legendStyle, pch=getDot(dotSet, legendDot),
+                         lwd=par("cex"),
+                         cex=pcex, bg="yellow")
+
+                  legendTexts  <- append(legendTexts,  legendText)
+                  legendColors <- append(legendColors, legendColor)
+                  legendStyles <- append(legendStyles, legendStyle)
+                  legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
+                  legendDot    <- legendDot + 1
                }
 
                # ----- Lines or Steps plot ----------------------------------
@@ -570,16 +652,16 @@ plotstd3 <- function(mainTitle,
                               col=legendColor, lty=legendStyle, lwd=1*par("cex"))
                      }
 
-                     legendTexts <- append(legendTexts, legendText)
+                     points(xPlotSet, yPlotMeanSet,
+                            col=legendColor, lty=legendStyle, pch=getDot(dotSet, legendDot),
+                            lwd=par("cex"),
+                            cex=2*par("cex"), bg="yellow")
+
+                     legendTexts  <- append(legendTexts,  legendText)
                      legendColors <- append(legendColors, legendColor)
                      legendStyles <- append(legendStyles, legendStyle)
-                     legendDots <- append(legendDots, legendDot)
-
-                     points(xPlotSet, yPlotMeanSet,
-                           col=legendColor, lty=legendStyle, pch=legendDot,
-                           lwd=par("cex"),
-                           cex=2*par("cex"), bg="yellow")
-                     legendDot <- legendDot + 1
+                     legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
+                     legendDot    <- legendDot + 1
                   }
                }
 
@@ -735,7 +817,7 @@ plotstd3 <- function(mainTitle,
 }
 
 
-# Prepare layout for plotstd6
+# ====== Prepare layout for plotstd6() ======================================
 makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel, pColor, colorMode)
 {
    aLevels <- levels(factor(aSet))
@@ -824,11 +906,15 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel, pColor, co
    }
 
    # ------ Creation of layout matrix ---------------------------------------
+   outputDimensions   <- graphics::par("din")
+   outputWidth        <- outputDimensions[1]
+   outputHeight       <- outputDimensions[2]
+   outputAspectRatio  <- outputWidth / outputHeight
    widthArray <- c()
    if(allocateBLabels > 0) {
       widthArray <- c(lcm(1), lcm(1))
    }
-   widthArray  <- append(widthArray, rep(1, w))
+   widthArray <- append(widthArray, rep(1.1*outputAspectRatio, w))
    if(pSubLabel != "") {
       heightArray <- append(c(lcm(1.5), lcm(1)), rep(1, h))
    }
@@ -839,12 +925,14 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel, pColor, co
       heightArray <- append(heightArray, c(lcm(1), lcm(1)))
    }
 
+   oldPar <- par(mar=c(0,0,0,0))
+
    m <- matrix(layoutMatrix, layoutHeight, layoutWidth, byrow = TRUE)
    # print(m)
    l <- layout(m, widths=widthArray, heights=heightArray, respect=TRUE)
    # layout.show(l)
-
-   oldPar <- par(mar=c(0,0,0,0))
+   # cat("widthArray="); print(widthArray)
+   # cat("heightArray="); print(heightArray)
 
    # ------ Print B-axis labels ---------------------------------------------
    if(allocateBLabels > 0) {
@@ -885,7 +973,8 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel, pColor, co
 
    plot.new()   # Title
    plot.window(c(0, 1), c(0, 1))
-   text(0.5, 0.5, parse(text=getLabel(pTitle)), adj=0.5, font=par("font.main"), cex=1.5*par("cex.main"))
+   text(0.5, 0.5, parse(text=getLabel(pTitle)),
+        adj=0.5, font=par("font.main"), cex=1.5*par("cex.main"))
 
    plot.new()   # Sub-title
    plot.window(c(0, 1), c(0, 1))
@@ -898,16 +987,25 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel, pColor, co
 }
 
 
-# multi-page 2-dimensional array of plotstd3 plots
+# ====== Multi-page 2-dimensional array of plotstd3 plots ===================
 plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                      pSet, aSet, bSet, xSet, ySet, zSet,
                      vSet              = c(),
                      wSet              = c(),
                      vTitle            = "??vTitle??",
                      wTitle            = "??wTitle??",
+                     type              = "lines",
+                     confidence        = 0.95,
+                     legendPos         = c(0,1),
+                     legendSize        = 0.8,
+                     colorMode         = cmColor,
+                     zColorArray       = c(),
                      xAxisTicks        = c(),
                      yAxisTicks        = c(),
-                     confidence        = 0.95,
+                     zSortAscending    = TRUE,
+                     vSortAscending    = TRUE,
+                     wSortAscending    = TRUE,
+                     dotSet            = c(),
                      hbarSet           = c(),
                      hbarMeanSteps     = 10,
                      xSeparatorsSet    = c(),
@@ -915,14 +1013,9 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                      xSeparatorsColors = c(),
                      rangeSet          = c(),
                      rangeColors       = c(),
-                     type              = "lines",
                      pStart            = 0,
                      hideLegend        = FALSE,
-                     legendPos         = c(0,1),
-                     legendSize        = 0.8,
-                     colorMode         = cmColor,
-                     frameColor        = par("fg"),
-                     simulationName    = "")
+                     frameColor        = par("fg"))
 {
    if(length(pSet) == 0) {
       pSet <- rep(1, length(xSet))
@@ -933,67 +1026,80 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
    if(length(bSet) == 0) {
       bSet <- rep(0, length(xSet))
    }
-   aLevels <- levels(factor(aSet))
-   bLevels <- levels(factor(bSet))
-   pLevels <- levels(factor(pSet))
+   aLevels   <- levels(factor(aSet))
+   bLevels   <- levels(factor(bSet))
+   pLevels   <- levels(factor(pSet))
 
    aLabel    <- getLabel(aTitle)
    bLabel    <- getLabel(bTitle)
    pLabel    <- getLabel(mainTitle)
    pSubLabel <- ""
 
+   singlePlotTitle <- mainTitle
+   if( ((length(aSet) > 0) && (length(levels(factor(aSet))) > 1)) ||
+       ((length(bSet) > 0) && (length(levels(factor(bSet))) > 1)) ||
+       ((length(pSet) > 0) && (length(levels(factor(pSet))) > 1)) ) {
+      singlePlotTitle <- ""
+   }
+   
    page <- 1
    for(p in pLevels) {
-      # ------ Prepare page -------------------------------------------
+      # ------ Prepare page -------------------------------------------------
       if(length(pLevels) > 1) {
          pSubLabel <- paste(sep="", "paste(sep=\"\", ", getLabel(pTitle), ", \" = ", p, "\")")
       }
       # oldPar1 <- par(bg=getBackgroundColor(page, colorMode, pStart))
 
       pColor <- getBackgroundColor(page, colorMode, pStart)
-      makeLayout(aSet, bSet, aTitle, bTitle, mainTitle, pSubLabel, pColor, colorMode)
+      if( (length(aLevels) > 1) || (length(bLevels) > 1) || (length(pLevels) > 1) ) {
+          # For aLevels==1 and bLevels==1, there is no need to create the layout here!
+          # Otherwise, it would reduce cex => too small fonts!
+          makeLayout(aSet, bSet, aTitle, bTitle, mainTitle, pSubLabel, pColor, colorMode)
+      }
+      nextPageInPDFMetadata()
 
-
-      # ------ Plot page ----------------------------------------------
+      # ------ Plot page ----------------------------------------------------
       i<-1
       for(b in rev(bLevels)) {
          for(a in aLevels) {
-            # ------ Get sets -----------------------------------------
+            # ------ Get sets -----------------------------------------------
             xSubset <- subset(xSet, (pSet == p) & (aSet == a) & (bSet == b))
             ySubset <- subset(ySet, (pSet == p) & (aSet == a) & (bSet == b))
             zSubset <- subset(zSet, (pSet == p) & (aSet == a) & (bSet == b))
             vSubset <- subset(vSet, (pSet == p) & (aSet == a) & (bSet == b))
             wSubset <- subset(wSet, (pSet == p) & (aSet == a) & (bSet == b))
 
-            cexScaleFactor <- 1.0
-
-            oldPar2 <- par(cex=cexScaleFactor*par("cex"),
-                           cex.main=cexScaleFactor*par("cex.main"),
-                           cex.lab=cexScaleFactor*par("cex.lab"))
-            if(plotstd3("",
+            # ------ Plot std3 figure ---------------------------------------
+            if(plotstd3(singlePlotTitle,
                         xTitle, yTitle, zTitle,
                         xSubset, ySubset, zSubset,
                         vSubset, wSubset, vTitle, wTitle,
-                        xAxisTicks = xAxisTicks, yAxisTicks = yAxisTicks,
-                        confidence = confidence,
-                        hbarSet = hbarSet, hbarMeanSteps = hbarMeanSteps,
-                        xSeparatorsSet = xSeparatorsSet,
+                        zSortAscending    = zSortAscending,
+                        vSortAscending    = vSortAscending,
+                        wSortAscending    = wSortAscending,
+                        dotSet            = dotSet,
+                        xAxisTicks        = xAxisTicks,
+                        yAxisTicks        = yAxisTicks,
+                        confidence        = confidence,
+                        hbarSet           = hbarSet,
+                        hbarMeanSteps     = hbarMeanSteps,
+                        xSeparatorsSet    = xSeparatorsSet,
                         xSeparatorsTitles = xSeparatorsTitles,
                         xSeparatorsColors = xSeparatorsColors,
-                        rangeSet=rangeSet, rangeColors=rangeColors,
-                        type = type,
-                        hideLegend = hideLegend,
-                        legendSize = legendSize,
-                        legendPos = legendPos,
-                        colorMode = colorMode,
-                        frameColor = frameColor,
-                        inPlotStd6 = TRUE) < 1) {
-               # No data for this field!
+                        rangeSet          = rangeSet,
+                        rangeColors       = rangeColors,
+                        type              = type,
+                        hideLegend        = hideLegend,
+                        legendSize        = legendSize,
+                        legendPos         = legendPos,
+                        colorMode         = colorMode,
+                        zColorArray       = zColorArray,
+                        frameColor        = frameColor,
+                        (singlePlotTitle == "")) < 1) {   # see below
+               # If singlePlotTitle=="", we have multiple std3 plots on the
+               # same page. Then, larger margins have to be used by plotstd3().
                plot.new()   # Must be here, otherwise the order will be wrong!
             }
-            # text(0, 0, paste(a,b), adj=c(0,0))
-
-            par(oldPar2)
          }
       }
 
@@ -1007,7 +1113,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
 }
 
 
-# Value filter for printing histogram plot values
+# ====== Value filter for printing histogram plot values ====================
 plothist.valuefilter <- function(value, confidence)
 {
    if(confidence != 0) {
@@ -1017,7 +1123,7 @@ plothist.valuefilter <- function(value, confidence)
 }
 
 
-# Plot a histogram.
+# ====== Plot a histogram. ==================================================
 plothist <- function(mainTitle,
                      xTitle, yTitle, zTitle,
                      xSet, ySet, zSet,
@@ -1236,7 +1342,7 @@ plothist <- function(mainTitle,
 }
 
 
-# Get "useful" ticks from given data set
+# ====== Get "useful" ticks from given data set =============================
 getUsefulTicks <- function(set, count = 10, integerOnly = FALSE)
 {
    if(length(set) < 1) {
@@ -1279,7 +1385,7 @@ getUsefulTicks <- function(set, count = 10, integerOnly = FALSE)
 }
 
 
-# Get "useful" integer ticks from given data set
+# ====== Get "useful" integer ticks from given data set =====================
 getIntegerTicks <- function(set, count = 10)
 {
    if(length(set) < 1) {
@@ -1289,7 +1395,7 @@ getIntegerTicks <- function(set, count = 10)
 }
 
 
-# Read table from results file
+# ====== Read table from results file =======================================
 loadResults <- function(name, customFilter="", quiet=FALSE)
 {
    filter <- "cat"
@@ -1378,6 +1484,10 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
       legendPos           <- unlist(plotConfiguration[6])
       xColumn             <- as.character(plotConfiguration[7])
       yColumn             <- as.character(plotConfiguration[8])
+      dotSet              <- c()
+      zSortAscending      <- TRUE
+      vSortAscending      <- TRUE
+      wSortAscending      <- TRUE
 
       frameColor <- "black"
       yManipulator <- "set"
@@ -1414,7 +1524,18 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
          pColumn <- as.character(plotConfiguration[14])
       }
       if(configLength >= 15) {
-         filter <- parse(text=as.character(plotConfiguration[15]))
+         if(is.na(plotConfiguration[15])) {
+            filter <- parse(text="TRUE")
+         }
+         else {
+            filter <- parse(text=as.character(plotConfiguration[15]))
+         }
+      }
+      if(configLength >= 16) {
+         for(j in seq(16, configLength, 1)) {
+            print(as.character(plotConfiguration[j]))
+            eval(parse(text=as.character(plotConfiguration[j])))
+         }
       }
 
       # ------ Get titles and manipulators ----------------------------------
@@ -1562,35 +1683,28 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
       # ------ Plot ---------------------------------------------------------
       if(plotOwnOutput) {
          pdf(pdfName,
-            width=plotWidth, height=plotHeight, onefile=FALSE,
-            family=plotFontFamily, pointsize=plotFontPointsize)
+             width=plotWidth, height=plotHeight, onefile=FALSE,
+             family=plotFontFamily, pointsize=plotFontPointsize)
       }
-      if( ((length(aSet) > 0) && (length(levels(factor(aSet))) > 1)) ||
-          ((length(bSet) > 0) && (length(levels(factor(bSet))) > 1)) ||
-          ((length(pSet) > 0) && (length(levels(factor(pSet))) > 1)) ) {
-         plotstd6(title,
-                  pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
-                  pSet, aSet, bSet, xSet, ySet, zSet,
-                  vSet, wSet, vTitle, wTitle,
-                  xAxisTicks=xAxisTicks,yAxisTicks=yAxisTicks,
-                  rangeSet=rangeSet, rangeColors=rangeColors,
-                  type="l",
-                  frameColor=frameColor,
-                  legendSize=plotLegendSizeFactor, confidence=plotConfidence,
-                  colorMode=plotColorMode, hideLegend=plotHideLegend, legendPos=legendPos)
-      }
-      else {
-         plotstd3(title,
-                  xTitle, yTitle, zTitle,
-                  xSet, ySet, zSet,
-                  vSet, wSet, vTitle, wTitle,
-                  xAxisTicks=xAxisTicks,yAxisTicks=yAxisTicks,
-                  rangeSet=rangeSet, rangeColors=rangeColors,
-                  type="l",
-                  frameColor=frameColor,
-                  legendSize=plotLegendSizeFactor, confidence=plotConfidence,
-                  colorMode=plotColorMode, hideLegend=plotHideLegend, legendPos=legendPos)
-      }
+      plotstd6(title,
+               pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
+               pSet, aSet, bSet, xSet, ySet, zSet,
+               vSet, wSet, vTitle, wTitle,
+               xAxisTicks     = xAxisTicks,
+               yAxisTicks     = yAxisTicks,
+               rangeSet       = rangeSet,
+               rangeColors    = rangeColors,
+               type           = "lines",
+               frameColor     = frameColor,
+               legendSize     = plotLegendSizeFactor,
+               confidence     = plotConfidence,
+               colorMode      = plotColorMode,
+               hideLegend     = plotHideLegend,
+               legendPos      = legendPos,
+               dotSet         = dotSet,
+               zSortAscending = zSortAscending,
+               vSortAscending = vSortAscending,
+               wSortAscending = wSortAscending)
       if(plotOwnOutput) {
          dev.off()
       }
@@ -1661,4 +1775,56 @@ analyseCounterResults <- function(data, lowerLimit, upperLimit,
       }
    }
    return(resultsSet)
+}
+
+
+
+# ###########################################################################
+# #### PDF Metadata Handling                                             ####
+# ###########################################################################
+
+pdfMetadataFile <- NA
+pdfMetadataPage <- NA
+
+# ###### Create PDF info ####################################################
+openPDFMetadata <- function(name)
+{
+   setGlobalVariable("pdfMetadataFile", file(paste(sep="", name, ".meta"), "w"))
+   setGlobalVariable("pdfMetadataPage", 0)
+
+   cat(sep="", "title NetPerfMeter Results Plots\n", file=pdfMetadataFile);
+   cat(sep="", "subject Measurement Results\n", file=pdfMetadataFile);
+   cat(sep="", "creator plot-netperfmeter-results\n", file=pdfMetadataFile);
+   cat(sep="", "producer GNU R/Ghostscript\n", file=pdfMetadataFile);
+   cat(sep="", "keywords: NetPerfMeter, Measurements, Results\n", file=pdfMetadataFile);
+}
+
+
+# ###### Finish current page and increase page counter ######################
+nextPageInPDFMetadata <- function()
+{
+   setGlobalVariable("pdfMetadataPage", pdfMetadataPage + 1)
+}
+
+
+# ###### Add entry into PDF info ############################################
+addBookmarkInPDFMetadata <- function(level, title)
+{
+   if(!is.na(pdfMetadataFile)) {
+      cat(sep="", "outline ", level, " ", pdfMetadataPage + 1, " ", title, "\n", file=pdfMetadataFile)
+    }
+}
+
+
+# ###### Close PDF info #####################################################
+closePDFMetadata <- function()
+{
+   if(!is.na(pdfMetadataFile)) {
+      close(pdfMetadataFile)
+      setGlobalVariable("pdfMetadataFile", NA)
+   }
+   if(!is.na(pdfMetadataFile)) {
+      close(pdfMetadataFile)
+      setGlobalVariable("pdfMetadataFile", NA)
+   }
 }

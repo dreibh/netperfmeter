@@ -30,6 +30,8 @@ plotConfigurations <- list(
    #      "x-Axis Variable", "y-Axis Variable",
    #      "z-Axis Variable", "v-Axis Variable", "w-Axis Variable",
    #      "a-Axis Variable", "b-Axis Variable", "p-Axis Variable")
+   #      "filter rule" or NA,
+   #      "variable=Value", ...)
    # ------------------------------------------------------------------------
 
    list("wp0-links-symmetrischI", "paper2-wp0-links-symmetrischI-Throughput.pdf",
@@ -37,7 +39,9 @@ plotConfigurations <- list(
         "RateNorthernTrail-CM", "passive.total-ReceivedBitRate",
         "OptionCMT", "OptionDAC", "OptionNRSACK",
         "", "", "Unordered",
-        "(data1$OptionDAC == \"true\")")
+        "(data1$OptionDAC == \"true\")",
+        NA,
+        "dotSet=c(10,15)")
 )
 
 
