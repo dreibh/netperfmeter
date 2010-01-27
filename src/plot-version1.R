@@ -35,10 +35,6 @@ netPerfMeterPlotVariables <- list(
    #             (simulationDirectory/Results/....data.tar.bz2 is added!)
    # ------------------------------------------------------------------------
 
-   list("RateNorthernTrail-CM",
-           "Common Data Rate {:rho:}[Kbit/s]", "data1$RateNorthernTrail"),
-
-
    list("Flows",        "Number of Flows{n}[1]",     NA),
    list("OnlyOneAssoc", "Only One Assoc{A}",         NA),
    list("Unordered",    "Unordered{U}",              NA),
@@ -51,6 +47,8 @@ netPerfMeterPlotVariables <- list(
 
    list("RateNorthernTrail",
            "Data Rate on Northern Trail {:rho[North]:}[Kbit/s]", NA),
+   list("RateNorthernTrail-Mbit",
+           "Common Data Rate{:rho:}[Mbit/s]", "data1$RateNorthernTrail / 1000"),
    list("DelayNorthernTrail",
            "Delay on Northern Trail {:delta[North]:}[ms]",
            NA, "black"),
