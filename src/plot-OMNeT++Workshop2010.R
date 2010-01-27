@@ -34,7 +34,7 @@ plotConfigurations <- list(
    #      "variable=Value", ...)
    # ------------------------------------------------------------------------
 
-   list("wp0-links-symmetrischI", "paper2-wp0-links-symmetrischI-Throughput.pdf",
+   list("wp0-links-symmetrischI", "OMNeT++Workshop2010-wp0-links-symmetrischI-Throughput.pdf",
         "Measurement Results", seq(0,100000,10000), NA, list(0,1),
         "RateNorthernTrail-CM", "passive.total-ReceivedBitRate",
         "OptionCMT", "OptionDAC", "OptionNRSACK",

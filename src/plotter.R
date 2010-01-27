@@ -320,6 +320,7 @@ plotstd3 <- function(mainTitle,
                      vSortAscending    = TRUE,
                      wSortAscending    = TRUE,
                      dotSet            = c(),
+                     dotScaleFactor    = 2,
                      hbarSet           = c(),
                      hbarMeanSteps     = 10,
                      hbarAggregator    = hbarDefaultAggregator,
@@ -437,6 +438,7 @@ plotstd3 <- function(mainTitle,
 
       # ------ Axis and labels ----------------------------------------------
       grid(20, 20, lty=1)
+      # grid(NULL, NULL, lty=3)
       box(col=frameColor)
       xLabel <- getLabel(xTitle)
       yLabel <- getLabel(yTitle)
@@ -470,31 +472,21 @@ plotstd3 <- function(mainTitle,
    legendStyles <- c()
    legendDots   <- c()
    legendDot    <- 1
-   if(zSortAscending) {
-      zSequence <- seq(1, length(zLevels))
+   if(!zSortAscending) {
+      zLevels <- rev(zLevels)
    }
-   else {
-      zSequence <- rev(seq(1, length(zLevels)))
+   if(!vSortAscending) {
+      vLevels <- rev(vLevels)
    }
-   if(vSortAscending) {
-      vSequence <- seq(1, length(vLevels))
+   if(!wSortAscending) {
+      wLevels <- rev(wLevels)
    }
-   else {
-      vSequence <- rev(seq(1, length(vLevels)))
-   }
-   if(wSortAscending) {
-      wSequence <- seq(1, length(wLevels))
-   }
-   else {
-      wSequence <- rev(seq(1, length(wLevels)))
-   }
-   for(zPosition in zSequence) {
+   for(zPosition in 1:length(zLevels)) {
       z <- zLevels[zPosition]
-      for(wPosition in wSequence) {
-         w <- wLevels[wPosition]
-         for(vPosition in vSequence) {
-            v <- vLevels[vPosition]
-
+      for(vPosition in 1:length(vLevels)) {
+         v <- vLevels[vPosition]
+         for(wPosition in 1:length(wLevels)) {
+            w <- wLevels[wPosition]
             # ----- Legend settings -----------------------------------------
             # Old behaviour: skip Z variable when there is no V/W axis.
             # if((length(vLevels) > 1) || (length(wLevels) > 1)) {
@@ -557,17 +549,14 @@ plotstd3 <- function(mainTitle,
 
                   if((type == "lx") || (type=="linesx")) {
                      lines(xSubset, ySubset,
-                           col=legendColor, lty=legendStyle, cex=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
+                           lwd=par("cex"), col=legendColor, lty=legendStyle, lwd=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
                   }
                   else if((type == "sx") || (type=="stepsx")) {
                      lines(xSubset, ySubset, type="s",
-                           col=legendColor, lty=legendStyle, cex=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
+                           col=legendColor, lty=legendStyle, lwd=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
                   }
 
-                  pcex <- par("cex")
-                  # if(length(wLevels) > 1) {
-                     pcex <- 2 * pcex
-                  # }
+                  pcex <- dotScaleFactor * par("cex")
                   points(xSubset, ySubset,
                          col=legendColor, lty=legendStyle, pch=getDot(dotSet, legendDot),
                          lwd=par("cex"),
@@ -1006,6 +995,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                      vSortAscending    = TRUE,
                      wSortAscending    = TRUE,
                      dotSet            = c(),
+                     dotScaleFactor    = 2,
                      hbarSet           = c(),
                      hbarMeanSteps     = 10,
                      xSeparatorsSet    = c(),
@@ -1078,6 +1068,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         vSortAscending    = vSortAscending,
                         wSortAscending    = wSortAscending,
                         dotSet            = dotSet,
+                        dotScaleFactor    = dotScaleFactor,
                         xAxisTicks        = xAxisTicks,
                         yAxisTicks        = yAxisTicks,
                         confidence        = confidence,
@@ -1485,6 +1476,7 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
       xColumn             <- as.character(plotConfiguration[7])
       yColumn             <- as.character(plotConfiguration[8])
       dotSet              <- c()
+      dotScaleFactor      <- 2
       zSortAscending      <- TRUE
       vSortAscending      <- TRUE
       wSortAscending      <- TRUE
@@ -1702,6 +1694,7 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
                hideLegend     = plotHideLegend,
                legendPos      = legendPos,
                dotSet         = dotSet,
+               dotScaleFactor = dotScaleFactor,
                zSortAscending = zSortAscending,
                vSortAscending = vSortAscending,
                wSortAscending = wSortAscending)
