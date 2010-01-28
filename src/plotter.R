@@ -483,6 +483,8 @@ plotstd3 <- function(mainTitle,
    }
    for(zPosition in 1:length(zLevels)) {
       z <- zLevels[zPosition]
+      legendColor <- zColorArray[zPosition]
+      legendStyle <- 1
       for(vPosition in 1:length(vLevels)) {
          v <- vLevels[vPosition]
          for(wPosition in 1:length(wLevels)) {
@@ -502,8 +504,6 @@ plotstd3 <- function(mainTitle,
             if(length(wLevels) > 1) {
                legendText <- paste(sep="", "paste(sep=\"\", ", legendText, ", \", \", ", getAbbreviation(wTitle), ", \"=", gettextf(wValueFilter, w), "\")")
             }
-            legendColor <- zColorArray[zPosition]
-            legendStyle <- vPosition %% 7
 
             if(!legendOnly) {
                # ----- Points plot ------------------------------------------
@@ -542,31 +542,34 @@ plotstd3 <- function(mainTitle,
                        (type == "sx") || (type=="stepsx")) {
                   xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
                   ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
-                  lineWidth <- 5
-                  if((length(vLevels) > 1) || (length(wLevels) > 1)) {
-                     lineWidth <- 3
-                  }
+                  if(length(xSubset) > 0) {
+                     lineWidth <- 5
+                     if((length(vLevels) > 1) || (length(wLevels) > 1)) {
+                        lineWidth <- 3
+                     }
 
-                  if((type == "lx") || (type=="linesx")) {
-                     lines(xSubset, ySubset,
-                           lwd=par("cex"), col=legendColor, lty=legendStyle, lwd=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
-                  }
-                  else if((type == "sx") || (type=="stepsx")) {
-                     lines(xSubset, ySubset, type="s",
-                           col=legendColor, lty=legendStyle, lwd=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
-                  }
+                     if((type == "lx") || (type=="linesx")) {
+                        lines(xSubset, ySubset,
+                              lwd=par("cex"), col=legendColor, lty=legendStyle, lwd=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
+                     }
+                     else if((type == "sx") || (type=="stepsx")) {
+                        lines(xSubset, ySubset, type="s",
+                              col=legendColor, lty=legendStyle, lwd=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
+                     }
 
-                  pcex <- dotScaleFactor * par("cex")
-                  points(xSubset, ySubset,
-                         col=legendColor, lty=legendStyle, pch=getDot(dotSet, legendDot),
-                         lwd=par("cex"),
-                         cex=pcex, bg="yellow")
+                     pcex <- dotScaleFactor * par("cex")
+                     points(xSubset, ySubset,
+                           col=legendColor, lty=legendStyle, pch=getDot(dotSet, legendDot),
+                           lwd=par("cex"),
+                           cex=pcex, bg="yellow")
 
-                  legendTexts  <- append(legendTexts,  legendText)
-                  legendColors <- append(legendColors, legendColor)
-                  legendStyles <- append(legendStyles, legendStyle)
-                  legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
-                  legendDot    <- legendDot + 1
+                     legendTexts  <- append(legendTexts,  legendText)
+                     legendColors <- append(legendColors, legendColor)
+                     legendStyles <- append(legendStyles, legendStyle)
+                     legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
+                     legendDot    <- legendDot + 1
+                     legendStyle <- (legendStyle + 1) %% 7
+                  }
                }
 
                # ----- Lines or Steps plot ----------------------------------
@@ -583,9 +586,9 @@ plotstd3 <- function(mainTitle,
                      # ------ Calculate confidence intervals for (z,x) pos. ----
                      ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w) & (xSet == x))
                      if(length(ySubset) > 0) {
-                        yMin <- min(ySubset)
+                        yMin  <- min(ySubset)
                         yMean <- mean(ySubset)
-                        yMax <- max(ySubset)
+                        yMax  <- max(ySubset)
                         if(yMax - yMin > 0.000001) {
                            yTest <- t.test(ySubset, conf.level=confidence)
                            yMin <- yTest$conf.int[1]
@@ -651,6 +654,7 @@ plotstd3 <- function(mainTitle,
                      legendStyles <- append(legendStyles, legendStyle)
                      legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
                      legendDot    <- legendDot + 1
+                     legendStyle <- (legendStyle + 1) %% 7
                   }
                }
 
