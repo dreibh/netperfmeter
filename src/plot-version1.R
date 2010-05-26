@@ -58,6 +58,8 @@ netPerfMeterPlotVariables <- list(
            "Loss Rate on Northern Trail {:epsilon[North]:}"),
    list("RateSouthernTrail",
            "Data Rate on Southern Trail {:rho[South]:}[Kbit/s]", NA),
+   list("RateSouthernTrail-Mbit",
+           "Data Rate on Southern Trail {:rho[South]:}[Mbit/s]", "data1$RateSouthernTrail / 1000"),
    list("DelaySouthernTrail",
            "Delay on Southern Trail {:delta[South]:}[ms]",
            NA, "black"),

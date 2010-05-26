@@ -43,7 +43,7 @@ BidirectionalQoS_VALUES="true"   # !!!!!!!!!
 RateNorthernTrail_VALUES="100000"
 DelayNorthernTrail_VALUES="0"   # !!!!!!!!
 LossNorthernTrail_VALUES="0"
-RateSouthernTrail_VALUES="1000 10000 50000 100000"
+RateSouthernTrail_VALUES="1000 10000 20000 30000 40000 50000 60000 70000 80000 90000 100000"
 DelaySouthernTrail_VALUES="-1"
 LossSouthernTrail_VALUES="-1"
 
