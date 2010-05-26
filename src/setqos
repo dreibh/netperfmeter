@@ -122,7 +122,6 @@ elif [ "$SYSTEM" = "FreeBSD" ] ; then
       fi
       ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST
       if [ $bidirectionalQoS -eq 1 ] ; then
-      echo "BIDIRECT!"
          ipfw add $ID pipe $ID out src-ip $NETWORK_DST dst-ip $NETWORK_SRC
       fi
       ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR queue 100 red 0.002/30/80/0.02
