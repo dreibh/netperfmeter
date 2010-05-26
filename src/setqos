@@ -43,6 +43,7 @@ DELAY=""
 LOSS=""
 ERROR=""
 addRule=0
+bidirectionalQoS=0
 if [ "$4" != "" ] ; then
    BANDWIDTH="$4"
    addRule=1
@@ -55,11 +56,10 @@ if [ "$6" != "" ] ; then
    LOSS="$6"
    addRule=1
 fi
-if [ "$7" != "" ] ; then
+if [ "$7" != "true" -o "$7" = "bidirectional" ] ; then
    ERROR="$7"
-   addRule=1
+   bidirectionalQoS=1
 fi
-BIDIRECTIONAL="$8"
 
 
 # ====== Linux QoS setup ====================================================
@@ -111,14 +111,15 @@ elif [ "$SYSTEM" = "FreeBSD" ] ; then
          LOSS="plr ${LOSS}"
       fi
       if [ "$ERROR" != "" ] ; then
-         ERROR="ber ${ERROR}"
+         if [ ! $ERROR -eq 0 ] ; then
+            ERROR="ber ${ERROR}"
+         else
+            ERROR=""
+         fi
       fi
-echo "X1"      
       ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST
-      if [ "$BIDIRECTIONAL" = "bidirectional" ] ; then
-      echo "X2"
+      if [ $bidirectionalQoS -eq 1 ] ; then
          ipfw add $ID pipe $ID out src-ip $NETWORK_DST dst-ip $NETWORK_SRC
-         echo "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
       fi
       ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR queue 100 red 0.002/30/80/0.02
    fi
