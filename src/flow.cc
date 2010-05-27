@@ -984,7 +984,13 @@ void Flow::deactivate(const bool asyncStop)
             // timeout.
          }
          else {
-            ext_shutdown(SocketDescriptor, 2);
+// ?????????????????????????????
+            const int shutdownOkay = sctp_sendmsg(SocketDescriptor, NULL, 0, NULL, 0, 0, SCTP_EOF, 0, 0, 0);
+            if(shutdownOkay < 0) {
+               perror("WARNING: Cannut shut association down");
+               
+               ext_shutdown(SocketDescriptor, 2);
+            }
          }
       }
       if(!asyncStop) {
