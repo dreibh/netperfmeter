@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    dataMsg->SeqNumber     = hton64(flow->nextOutboundSeqNumber());
    dataMsg->ByteSeqNumber = hton64(flow->getCurrentBandwidthStats().TransmittedBytes);
    dataMsg->TimeStamp     = hton64(now);
-   
+
    // ------ Create payload data pattern ------------------
    unsigned char c = 30;
    for(size_t i = 0;i < (bytesToSend - sizeof(NetPerfMeterDataMessage));i++) {
@@ -198,7 +198,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
    const ssize_t received =
       FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
          sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
-         
+
    if( (received > 0) && (!(flags & MSG_NOTIFICATION)) ) {
       const NetPerfMeterDataMessage*     dataMsg     =
          (const NetPerfMeterDataMessage*)&inputBuffer;
@@ -277,7 +277,7 @@ static void updateStatistics(Flow*                          flow,
    size_t lostBytes;
    flow->getDefragmenter()->purge(now, flow->getTrafficSpec().DefragmentTimeout,
                                   receivedFrames, lostFrames, lostPackets, lostBytes);
-   
+
    flow->updateReceptionStatistics(
       now, receivedFrames, receivedBytes,
       lostFrames, lostPackets, lostBytes,

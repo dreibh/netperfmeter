@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ class FlowManager : public Thread
    protected:
    FlowManager();
    virtual ~FlowManager();
-  
+
    public:
    inline static FlowManager* getFlowManager() {
       return(&FlowManagerSingleton);
@@ -58,7 +58,7 @@ class FlowManager : public Thread
    inline std::vector<Flow*>& getFlowSet() {   // Internal usage only!
       return(FlowSet);
    }
-   
+
    inline void enableDisplay() {
       lock();
       DisplayOn = true;
@@ -97,7 +97,7 @@ class FlowManager : public Thread
    void stopMeasurement(const uint64_t            measurementID,
                         const bool                printFlows = false,
                         const unsigned long long  now        = getMicroTime());
-                         
+
    void writeScalarStatistics(const uint64_t           measurementID,
                               const unsigned long long now,
                               OutputFile&              scalarFile,
@@ -117,18 +117,18 @@ class FlowManager : public Thread
                   uint16_t  streamID);
    Flow* findFlow(const struct sockaddr* from);
 
-   
+
    bool addMeasurement(Measurement* measurement);
    Measurement* findMeasurement(const uint64_t measurementID);
    void printMeasurements(std::ostream& os);
    void removeMeasurement(Measurement* measurement);
 
-      
+
    // ====== Protected Methods ==============================================
    protected:
    void run();
 
-   
+
    // ====== Private Methods ================================================
    unsigned long long getNextEvent();
    void handleEvents(const unsigned long long now);
@@ -160,7 +160,7 @@ class FlowManager : public Thread
 
 class Flow : public Thread
 {
-   friend class FlowManager;   
+   friend class FlowManager;
    enum FlowStatus {
       WaitingForStartup = 1,
       On                = 2,
@@ -176,7 +176,7 @@ class Flow : public Thread
         const int              controlSocketDescriptor = -1,
         const sctp_assoc_t     controlAssocID          = 0);
    virtual ~Flow();
-   
+
 
    inline uint64_t getMeasurementID() const {
       return(MeasurementID);
@@ -186,7 +186,7 @@ class Flow : public Thread
    }
    inline uint16_t getStreamID() const {
       return(StreamID);
-   }   
+   }
    inline int getSocketDescriptor() const {
       return(SocketDescriptor);
    }
@@ -298,7 +298,7 @@ class Flow : public Thread
                                   const double             delayDiff,
                                   const double             jitter);
 
-   
+
    void print(std::ostream& os, const bool printStatistics = false);
    void resetStatistics();
 
@@ -310,7 +310,7 @@ class Flow : public Thread
 
    protected:
    virtual void run();
-   
+
 
    // ====== Private Methods ================================================
    private:
@@ -318,7 +318,7 @@ class Flow : public Thread
    unsigned long long scheduleNextStatusChangeEvent(const unsigned long long now);
    void handleStatusChangeEvent(const unsigned long long now);
 
-      
+
    // ====== Flow Identification ============================================
    uint64_t           MeasurementID;
    uint32_t           FlowID;
@@ -351,7 +351,7 @@ class Flow : public Thread
    uint32_t           LastOutboundFrameID;     // ID of last outbound frame
    uint64_t           LastOutboundSeqNumber;   // ID of last outbound packet
    unsigned long long NextStatusChangeEvent;
-   
+
    // ====== Statistics =====================================================
    Measurement*       MyMeasurement;
    OutputFile         VectorFile;

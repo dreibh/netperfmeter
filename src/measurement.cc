@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,16 +58,16 @@ bool Measurement::initialize(const unsigned long long now,
    FirstStatisticsEvent = 0;
    LastStatisticsEvent  = 0;
    NextStatisticsEvent  = 0;
-   
+
    if(FlowManager::getFlowManager()->addMeasurement(this)) {
       VectorNamePattern = (vectorNamePattern != NULL) ?
-                             std::string(vectorNamePattern) : std::string(); 
+                             std::string(vectorNamePattern) : std::string();
       const bool s1 = VectorFile.initialize(
                          (vectorNamePattern != NULL) ?
                             Flow::getNodeOutputName(vectorNamePattern, "active").c_str() : NULL,
                          vectorFileFormat);
       ScalarNamePattern = (scalarNamePattern != NULL) ?
-                             std::string(scalarNamePattern) : std::string(); 
+                             std::string(scalarNamePattern) : std::string();
       const bool s2 = ScalarFile.initialize(
                          (scalarNamePattern != NULL) ?
                             Flow::getNodeOutputName(scalarNamePattern, "active").c_str() : NULL,
@@ -121,8 +121,8 @@ void Measurement::writeVectorStatistics(const unsigned long long now,
       MeasurementID, now, VectorFile,
       globalStats, relGlobalStats,
       FirstStatisticsEvent, LastStatisticsEvent);
-   
-   // ====== Update timing ==================================================   
+
+   // ====== Update timing ==================================================
    LastStatisticsEvent = now;
 
    unlock();

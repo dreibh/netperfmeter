@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -107,7 +107,7 @@ int pollTimeout(const unsigned long long now, const size_t n, ...)
       return((int)ceil(delta / 1000.0));
    }
 }
-                
+
 
 /* ###### Length-checking strcpy() ###################################### */
 int safestrcpy(char* dest, const char* src, const size_t size)
@@ -572,7 +572,7 @@ int createAndBindSocket(int                   family,
    if(family == AF_UNSPEC) {
       family = checkIPv6() ? AF_INET6 : AF_INET;
    }
-   
+
    sockaddr_union anyAddress;
    memset(&anyAddress, 0, sizeof(anyAddress));
    if(family == AF_INET6) {
@@ -655,7 +655,7 @@ bool sendAbort(int sd, sctp_assoc_t assocID)
    memset(&sinfo, 0, sizeof(sinfo));
    sinfo.sinfo_assoc_id = assocID;
    sinfo.sinfo_flags    = SCTP_ABORT;
-   
+
    return(sctp_send(sd, NULL, 0, &sinfo, 0) >= 0);
 }
 

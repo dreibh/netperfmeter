@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ class Measurement : public Mutex
    inline unsigned long long getFirstStatisticsEvent() const {
       return(FirstStatisticsEvent);
    }
-   
+
    bool initialize(const unsigned long long now,
                    const uint64_t           measurementID,
                    const char*              vectorNamePattern,
@@ -63,7 +63,7 @@ class Measurement : public Mutex
                    const char*              scalarNamePattern,
                    const OutputFileFormat   scalarFileFormat);
    bool finish(const bool closeFiles);
-   
+
    void writeScalarStatistics(const unsigned long long now);
    void writeVectorStatistics(const unsigned long long now,
                               FlowBandwidthStats&      globalStats,

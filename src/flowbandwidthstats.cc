@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ FlowBandwidthStats operator+(const FlowBandwidthStats& s1,
 
 
 // ###### "-" operator ######################################################
-FlowBandwidthStats operator-(const FlowBandwidthStats& s1, 
+FlowBandwidthStats operator-(const FlowBandwidthStats& s1,
                              const FlowBandwidthStats& s2)
 {
    FlowBandwidthStats result;
@@ -152,7 +152,7 @@ void FlowBandwidthStats::reset()
    ReceivedBytes      = 0;
    ReceivedPackets    = 0;
    ReceivedFrames     = 0;
-   
+
    LostBytes          = 0;
    LostPackets        = 0;
    LostFrames         = 0;

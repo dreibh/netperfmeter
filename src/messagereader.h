@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class MessageReader
    public:
    MessageReader();
    ~MessageReader();
-   
+
    bool registerSocket(const int    protocol,
                        const int    sd,
                        const size_t maxMessageSize = 65535);
@@ -83,7 +83,7 @@ class MessageReader
       }
       return(NULL);
    }
-   
+
    std::map<int, Socket*> SocketMap;
 };
 

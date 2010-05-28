@@ -1,7 +1,7 @@
-// $Id: createsummary.cc 328 2009-06-24 09:22:01Z dreibh $
+// $Id$
 // ###########################################################################
 //             Thomas Dreibholz's R Simulation Scripts Collection
-//                  Copyright (C) 2004-2009 Thomas Dreibholz
+//                  Copyright (C) 2004-2010 Thomas Dreibholz
 //
 //           Author: Thomas Dreibholz, dreibh@iem.uni-due.de
 // ###########################################################################
@@ -34,11 +34,11 @@ int main(int argc, char** argv)
       std::cerr << "Usage: " << argv[0] << " [Number 1] [Operator] [Number 2] {-exponential}" << std::endl;
       exit(1);
    }
-   
+
    const long double number1 = strtold(argv[1], NULL);
    const long double number2 = strtold(argv[3], NULL);
    long double       result  = 0.0;
-   
+
    if(strcmp(argv[2], "+") == 0) {
       result = number1 + number2;
    }
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
       std::cerr << "ERROR: Invalid operator " << argv[2] << "!" << std::endl;
       exit(1);
    }
-   
+
    char str[128];
    if( (argc > 4) && (strcmp(argv[4], "-exponential") == 0) ) {
       snprintf((char*)&str, sizeof(str), "%1.15Le", result);
@@ -64,6 +64,6 @@ int main(int argc, char** argv)
       snprintf((char*)&str, sizeof(str), "%1.15Lf", result);
    }
    std::cout << str << std::endl;
-   
+
    return 0;
 }

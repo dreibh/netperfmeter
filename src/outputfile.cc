@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,8 @@ bool OutputFile::initialize(const char* name, const OutputFileFormat format)
    Line = 0;
 
    // ====== Initialize file ================================================
-   File = NULL;
+   File   = NULL;
+   BZFile = NULL;
    if(format != OFF_None) {
       File = (name != NULL) ? fopen(name, "w+") : tmpfile();
       if(File == NULL) {
@@ -64,7 +65,7 @@ bool OutputFile::initialize(const char* name, const OutputFileFormat format)
          WriteError = true;
          return(false);
       }
-   
+
       // ====== Initialize BZip2 compressor ====================================
       if(format == OFF_BZip2) {
          int bzerror;
@@ -128,7 +129,7 @@ bool OutputFile::printf(const char* str, ...)
    int bufferLength = vsnprintf(buffer, sizeof(buffer), str, va);
    buffer[sizeof(buffer) - 1] = 0x00;   // Just to be really sure ...
    va_end(va);
-   
+
    if(exists()) {
       // ====== Compress string and write data =================================
       if(BZFile) {

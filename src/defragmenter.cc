@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ Defragmenter::~Defragmenter()
    std::map<uint32_t, Frame*>::iterator frameIterator = FrameSet.begin();
    while(frameIterator != FrameSet.end()) {
       Frame* frame = frameIterator->second;
-      
+
       std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
       while(fragmentIterator != frame->FragmentSet.end()) {
          Fragment* fragment = fragmentIterator->second;
@@ -50,7 +50,7 @@ Defragmenter::~Defragmenter()
          delete fragment;
          fragmentIterator = frame->FragmentSet.begin();
       }
-      
+
       FrameSet.erase(frameIterator);
       delete frame;
       frameIterator = FrameSet.begin();
@@ -68,7 +68,7 @@ void Defragmenter::print(std::ostream& os)
       os << "   - Frame " << frame->FrameID
          << ", LastUpdate=" << frame->LastUpdate
          << ":" << std::endl;
-      
+
       for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
           fragmentIterator != frame->FragmentSet.end(); fragmentIterator++) {
          Fragment* fragment = fragmentIterator->second;
@@ -92,7 +92,7 @@ void Defragmenter::addFragment(const unsigned long long       now,
                                const NetPerfMeterDataMessage* dataMsg)
 {
    const uint32_t frameID = ntohl(dataMsg->FrameID);
-   
+
    // ====== Find frame =====================================================
    Frame*                               frame;
    std::map<uint32_t, Frame*>::iterator foundFrame = FrameSet.find(frameID);
@@ -109,7 +109,7 @@ void Defragmenter::addFragment(const unsigned long long       now,
          FrameSet.insert(std::pair<uint32_t, Frame*>(frame->FrameID, frame));
       }
    }
-   
+
    // ====== Add fragment ===================================================
    const uint64_t packetSeqNumber = ntoh64(dataMsg->SeqNumber);
    std::map<uint64_t, Fragment*>::iterator foundFragment =
@@ -122,7 +122,7 @@ void Defragmenter::addFragment(const unsigned long long       now,
          fragment->Length          = ntohs(dataMsg->Header.Length);
          fragment->Flags           = dataMsg->Header.Flags;
          frame->FragmentSet.insert(std::pair<uint64_t, Fragment*>(fragment->PacketSeqNumber, fragment));
-      }      
+      }
    }
    else {
       // puts("Duplicate???");
@@ -157,7 +157,7 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
    Fragment*                               lastFragment         = fragment;
    std::map<uint32_t, Frame*>::iterator    lastFrameIterator    = FrameIterator;
    std::map<uint64_t, Fragment*>::iterator lastFragmentIterator = FragmentIterator;
- 
+
    FragmentIterator++;
    if(FragmentIterator == frame->FragmentSet.end()) {
       FrameIterator++;
@@ -169,11 +169,11 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
          frame            = FrameIterator->second;
          FragmentIterator = frame->FragmentSet.begin();
          assert(FragmentIterator != frame->FragmentSet.end());
-         fragment = FragmentIterator->second;   
+         fragment = FragmentIterator->second;
       }
    }
    else {
-      fragment = FragmentIterator->second;   
+      fragment = FragmentIterator->second;
    }
 
    if(eraseCurrentFrame) {
@@ -184,7 +184,7 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
          delete lastFrame;
       }
    }
-   
+
    return(fragment != NULL);
 }
 
@@ -201,27 +201,27 @@ void Defragmenter::purge(const unsigned long long now,
    lostBytes      = 0;
    lostPackets    = 0;
    lostFrames     = 0;
-   
+
    Frame*    frame;
    Fragment* fragment;
    if(getFirstFragment(frame, fragment)) {
       bool eraseCurrentFragment;
       do {
-         eraseCurrentFragment = false;  
+         eraseCurrentFragment = false;
          if(frame->LastUpdate + defragmentTimeout <= now) {
             eraseCurrentFragment = true;
 
             if(frame->FrameID >= NextFrameID) {
                receivedFrames++;
-               lostFrames += ((long long)frame->FrameID - (long long)NextFrameID);               
+               lostFrames += ((long long)frame->FrameID - (long long)NextFrameID);
                NextFrameID = frame->FrameID + 1;
             }
             if(fragment->ByteSeqNumber >= NextByteSeqNumber) {
-               lostBytes += ((long long)fragment->ByteSeqNumber - (long long)NextByteSeqNumber);               
+               lostBytes += ((long long)fragment->ByteSeqNumber - (long long)NextByteSeqNumber);
                NextByteSeqNumber = fragment->ByteSeqNumber + fragment->Length;
             }
             if(fragment->PacketSeqNumber >= NextPacketSeqNumber) {
-               lostPackets += ((long long)fragment->PacketSeqNumber - (long long)NextPacketSeqNumber);               
+               lostPackets += ((long long)fragment->PacketSeqNumber - (long long)NextPacketSeqNumber);
                NextPacketSeqNumber = fragment->PacketSeqNumber + 1;
             }
          }

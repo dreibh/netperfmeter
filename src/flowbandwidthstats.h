@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ class FlowBandwidthStats
    unsigned long long ReceivedBytes;
    unsigned long long ReceivedPackets;
    unsigned long long ReceivedFrames;
-   
+
    unsigned long long LostBytes;
    unsigned long long LostPackets;
    unsigned long long LostFrames;

@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -90,11 +90,11 @@ struct NetPerfMeterAddFlowMessage
 
    uint32_t             RcvBufferSize;
    uint32_t             SndBufferSize;
- 
+
    uint16_t             MaxMsgSize;
 
    uint16_t             Padding;
-   
+
    uint16_t             OnOffEvents;
    uint32_t             OnOffEvent[];
 } __attribute__((packed));
@@ -135,7 +135,7 @@ struct NetPerfMeterDataMessage
    uint64_t           MeasurementID;
    uint16_t           StreamID;
    uint16_t           Padding;
-   
+
    uint32_t           FrameID;
    uint64_t           SeqNumber;
    uint64_t           ByteSeqNumber;

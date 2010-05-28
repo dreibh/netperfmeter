@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ class FlowTrafficSpec
 
    void print(std::ostream& os) const;
    void reset();
-   
+
 
    // ====== Public Data ====================================================
    public:
@@ -56,7 +56,7 @@ class FlowTrafficSpec
    bool                   RetransmissionTrialsInMS;
 
    uint16_t               MaxMsgSize;
-   
+
    unsigned int           RcvBufferSize;
    unsigned int           SndBufferSize;
 

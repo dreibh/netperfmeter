@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2009 by Thomas Dreibholz
+ * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -175,8 +175,8 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
       htonl((uint32_t)flow->getTrafficSpec().RetransmissionTrials |
             (uint32_t)(flow->getTrafficSpec().RetransmissionTrialsInMS ? NPMAF_RTX_TRIALS_IN_MILLISECONDS : 0));
 
-   addFlowMsg->Padding     = 0x0000;
-   addFlowMsg->OnOffEvents = htons(flow->getTrafficSpec().OnOffEvents.size());
+   addFlowMsg->Padding       = 0x0000;
+   addFlowMsg->OnOffEvents   = htons(flow->getTrafficSpec().OnOffEvents.size());
    size_t i = 0;
    for(std::set<unsigned int>::iterator iterator = flow->getTrafficSpec().OnOffEvents.begin();
        iterator != flow->getTrafficSpec().OnOffEvents.end();iterator++, i++) {
@@ -294,7 +294,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       }
 
       FlowManager::getFlowManager()->lock();
-      
+
       fprintf(configFile, "NUM_FLOWS=%u\n", (unsigned int)FlowManager::getFlowManager()->getFlowSet().size());
       fprintf(configFile, "NAME_ACTIVE_NODE=\"%s\"\n", activeNodeName);
       fprintf(configFile, "NAME_PASSIVE_NODE=\"%s\"\n", passiveNodeName);
@@ -306,7 +306,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
                            Flow::getNodeOutputName(vectorNamePattern, "active").c_str());
       fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s\"\n\n",
                            Flow::getNodeOutputName(vectorNamePattern, "passive").c_str());
-   
+
       for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
          iterator != FlowManager::getFlowManager()->getFlowSet().end();
          iterator++) {
@@ -339,10 +339,10 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n",        flow->getFlowID(),
                               Flow::getNodeOutputName(vectorNamePattern, "passive",
                                  format("-%08x-%04x", flow->getFlowID(), flow->getStreamID())).c_str());
-      }         
+      }
 
       FlowManager::getFlowManager()->unlock();
-      
+
       fclose(configFile);
    }
 
@@ -745,7 +745,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       for(size_t i = 0;i < startStopEvents;i++) {
          trafficSpec.OnOffEvents.insert(ntohl(addFlowMsg->OnOffEvent[i]));
       }
-      
+
       Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
                             ntohs(addFlowMsg->StreamID), trafficSpec,
                             controlSocket, assocID);
@@ -788,6 +788,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
       if(flow->getVectorFile().exists()) {
          uploadResults(controlSocket, assocID, flow);
       }
+
       delete flow;
    }
    return(true);
@@ -831,7 +832,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
       NULL, vectorFileFormat,
       NULL, scalarFileFormat,
       (gOutputVerbosity >= NPFOV_FLOWS));
-   
+
    return(sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                       measurementID, 0, 0,
                                       (success == true) ? NETPERFMETER_STATUS_OKAY :
@@ -869,7 +870,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       success = measurement->finish(false);
       measurement->unlock();
    }
-   
+
    // ====== Remove pointer to Measurement from its flows ===================
    for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
       iterator != FlowManager::getFlowManager()->getFlowSet().end();
@@ -880,13 +881,13 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       }
    }
    FlowManager::getFlowManager()->unlock();
-      
+
    // ====== Acknowledge result =============================================
    sendNetPerfMeterAcknowledge(controlSocket, assocID,
                                measurementID, 0, 0,
-                               (success == true) ? NETPERFMETER_STATUS_OKAY : 
+                               (success == true) ? NETPERFMETER_STATUS_OKAY :
                                                    NETPERFMETER_STATUS_ERROR);
-                                                   
+
    // ====== Upload results =================================================
    if(measurement) {
       if(success) {
@@ -900,7 +901,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       delete measurement;
    }
    return(true);
-}   
+}
 
 
 // ###### Delete all flows owned by a given remote node #####################
@@ -917,13 +918,13 @@ static void handleControlAssocShutdown(const sctp_assoc_t assocID)
             delete measurement;
          }
          delete flow;
-         // Invalidated iterator. Is there a better solution?         
+         // Invalidated iterator. Is there a better solution?
          iterator = FlowManager::getFlowManager()->getFlowSet().begin();
          continue;
       }
       iterator++;
    }
-   
+
    FlowManager::getFlowManager()->unlock();
 }
 
@@ -1018,10 +1019,10 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
    Flow*        flow;
 
    OutputFileFormat vectorFileFormat = OFF_Plain;
-   if(identifyMsg->Header.Flags & NPMSF_COMPRESS_VECTORS) {
+   if(identifyMsg->Header.Flags & NPMIF_COMPRESS_VECTORS) {
       vectorFileFormat = OFF_BZip2;
    }
-   if(identifyMsg->Header.Flags & NPMSF_NO_VECTORS) {
+   if(identifyMsg->Header.Flags & NPMIF_NO_VECTORS) {
       vectorFileFormat = OFF_None;
    }
 

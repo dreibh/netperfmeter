@@ -1,7 +1,7 @@
 // $Id$
 // ###########################################################################
 //             Thomas Dreibholz's R Simulation Scripts Collection
-//                  Copyright (C) 2004-2009 Thomas Dreibholz
+//                  Copyright (C) 2004-2010 Thomas Dreibholz
 //
 //           Author: Thomas Dreibholz, dreibh@iem.uni-due.de
 // ###########################################################################
@@ -37,14 +37,26 @@
 using namespace std;
 
 
+class VectorInfo
+{
+   public:
+   VectorInfo(const std::string& vectorPrefix, const bool splitMode) :
+      VectorPrefix(vectorPrefix), SplitMode(splitMode) { }
+   std::string VectorPrefix;
+   bool        SplitMode;
+};
+
+
 // ###### Read and process data file ########################################
-size_t extractVectors(FILE*                     inFile,
-                      BZFILE*                   inBZFile,
-                      FILE*                     outFile,
-                      BZFILE*                   outBZFile,
-                      std::vector<std::string>& vectorsToExtract)
+size_t extractVectors(FILE*                    inFile,
+                      BZFILE*                  inBZFile,
+                      FILE*                    outFile,
+                      BZFILE*                  outBZFile,
+                      const bool               splitAll,
+                      std::vector<VectorInfo>& vectorsToExtract)
 {
    std::map<unsigned int, const std::string> vectorToNameMap;
+   std::map<unsigned int, const std::string> vectorToSplitMap;
    std::map<unsigned int, const std::string> vectorToObjectMap;
    size_t       inputLine  = 0;
    size_t       outputLine = 0;
@@ -108,7 +120,7 @@ size_t extractVectors(FILE*                     inFile,
                exit(1);
             }
             versionOkay = true;
-            snprintf((char*)&outBuffer, sizeof(outBuffer), "Time Event Object Vector Value\n");
+            snprintf((char*)&outBuffer, sizeof(outBuffer), "Time Event Object Vector Split Value\n");
          }
          else {
             cerr << "ERROR: Missing \"version\" entry in input file!" << endl;
@@ -120,12 +132,14 @@ size_t extractVectors(FILE*                     inFile,
          if(sscanf(inBuffer, "%u %u %lf %lf%n", &vectorID, &event, &simTime, &value, &n) == 4) {
             std::map<unsigned int, const std::string>::iterator found = vectorToNameMap.find(vectorID);
             if(found != vectorToNameMap.end()) {
-               snprintf((char*)&outBuffer, sizeof(outBuffer), "%u\t%lf\t%u\t\"%s\"\t\"%s\"\t%lf\n",
+               snprintf((char*)&outBuffer, sizeof(outBuffer), "%u\t%lf\t%u\t\"%s\"\t\"%s\" \"%s\"\t%lf\n",
                         (unsigned int)outputLine, simTime, event,
-                        vectorToObjectMap[vectorID].c_str(), found->second.c_str(), value);
+                        vectorToObjectMap[vectorID].c_str(),
+                        found->second.c_str(),
+                        vectorToSplitMap[vectorID].c_str(), value);
             }
          }
-         
+
          // ====== Handle vector definition =================================
          else if(strncmp(inBuffer, "vector ", 7) == 0) {
             char objectName[1024];
@@ -135,20 +149,38 @@ size_t extractVectors(FILE*                     inFile,
                 (sscanf(inBuffer, "vector %u %1022s %1022[^\\\"]s ETV",
                         &vectorID, (char*)&objectName, (char*)&vectorName) == 3) ) {
                bool includeVector = (vectorsToExtract.size() == 0);
+               bool splitMode     = splitAll;
                if(!includeVector) {
-                  for(vector<std::string>::iterator iterator = vectorsToExtract.begin();
+                  for(vector<VectorInfo>::iterator iterator = vectorsToExtract.begin();
                       iterator != vectorsToExtract.end(); iterator++) {
-                     if(strncmp((*iterator).c_str(), vectorName, (*iterator).size()) == 0) {
+                     const VectorInfo& vectorInfo = *iterator;
+                     if(strncmp(vectorInfo.VectorPrefix.c_str(), vectorName, vectorInfo.VectorPrefix.size()) == 0) {
                         includeVector = true;
                         foundVectors++;
                      }
                   }
                }
-                  
+
                if(includeVector) {
-                  cout << "Adding vector \"" << vectorName << "\" of object " << objectName << " ..." << endl;
-                
+                  const char* splitName = "";
+                  if(splitMode) {
+                     for(int i = strlen(vectorName); i >= 0; i--) {
+                        if(vectorName[i] == ' ') {
+                           splitName     = (const char*)&vectorName[i + 1];
+                           vectorName[i] = 0x00;
+                           break;
+                        }
+                     }
+                     cout << "Adding vector \"" << vectorName << "\", split \""
+                          << splitName << "\" of object " << objectName << " ..." << endl;
+                  }
+                  else {
+                     cout << "Adding vector \"" << vectorName << "\" of object "
+                          << objectName << " ..." << endl;
+                  }
+
                   vectorToNameMap.insert(std::pair<unsigned int, const std::string>(vectorID, std::string(vectorName)));
+                  vectorToSplitMap.insert(std::pair<unsigned int, const std::string>(vectorID, std::string(splitName)));
                   vectorToObjectMap.insert(std::pair<unsigned int, const std::string>(vectorID, std::string(objectName)));
                }
             }
@@ -195,8 +227,8 @@ size_t extractVectors(FILE*                     inFile,
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
-   int                      bzerror;
-   std::vector<std::string> vectorsToExtract;
+   int                     bzerror;
+   std::vector<VectorInfo> vectorsToExtract;
 
    if(argc < 4) {
       cerr << "Usage: " << argv[0]
@@ -231,7 +263,7 @@ int main(int argc, char** argv)
          inBZFile = NULL;
       }
    }
-    
+
    const char*  outFileName       = argv[2];
    const size_t outFileNameLength = strlen(outFileName);
    FILE* outFile = fopen(outFileName, "w");
@@ -256,10 +288,31 @@ int main(int argc, char** argv)
 
 
    // ====== Extract vectors ================================================
+   bool splitMode = false;
+   bool splitAll  = false;
    for(int i = 3;i < argc;i++) {
-      vectorsToExtract.push_back(std::string(argv[i]));
+      if(argv[i][0] == '-') {
+         if(strcmp(argv[i], "-split") == 0) {
+            splitMode = true;
+         }
+         else if(strcmp(argv[i], "-splitall") == 0) {
+            splitAll = true;
+         }
+         else {
+            cerr << "ERROR: Bad parameter \"" << argv[i] << "\"!" << endl;
+            exit(1);
+         }
+      }
+      else {
+         VectorInfo vectorInfo(argv[i], splitMode);
+         vectorsToExtract.push_back(vectorInfo);
+         if(!splitAll) {
+            splitMode = false;
+         }
+      }
    }
-   const size_t lines = extractVectors(inFile, inBZFile, outFile, outBZFile, vectorsToExtract);
+   const size_t lines = extractVectors(inFile, inBZFile, outFile, outBZFile,
+                                       splitAll, vectorsToExtract);
 
 
    // ====== Close files ====================================================
