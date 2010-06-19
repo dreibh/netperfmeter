@@ -1,6 +1,10 @@
-netperfmeter (0.9.6-1ubuntu1) lucid; urgency=low
+netperfmeter (1.0.0-1ubuntu1) maverick; urgency=low
 
+  [ Thomas Dreibholz ]
   * Closes Debian ITP bug with wnpp (Closes: #546738).
   * Initial Ubuntu package (LP: #430012).
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 28 Mar 2010 18:34:32 +0200
+  [ Thomas Dreibholz ]
+  * Switch to dpkg-source 3.0 (quilt) format
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sat, 19 Jun 2010 12:40:40 +0200

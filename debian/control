@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Thomas Dreibholz <dreibh@iem.uni-due.de>
 Homepage: http://www.iem.uni-due.de/~dreibh/netperfmeter/
 Build-Depends: debhelper (>= 5), autotools-dev, libsctp-dev (>= 1.0.5), libbz2-dev (>= 1.0)
-Standards-Version: 3.8.1
+Standards-Version: 3.8.4
 
 Package: netperfmeter
 Architecture: any
