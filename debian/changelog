@@ -1,4 +1,4 @@
-netperfmeter (1.0.0-1ubuntu1) maverick; urgency=low
+netperfmeter (1.0.0-2ubuntu1) maverick; urgency=low
 
   [ Thomas Dreibholz ]
   * Closes Debian ITP bug with wnpp (Closes: #546738).
