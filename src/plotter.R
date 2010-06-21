@@ -178,9 +178,10 @@ getLabel <- function(title)
 
 # ====== Get dot style from dot set =========================================
 getDot <- function(dotSet, dot)
-{   
+{
    if(length(dotSet) == 0) {
-      return(dot)
+      dotSet <- setdiff(seq(1, 99, 1),
+                        c(11))   # List of difficult to differentiate dots
    }
    selectedDot <- dotSet[1 + ((dot - 1) %% length(dotSet))]
    return(selectedDot)
@@ -331,12 +332,14 @@ plotstd3 <- function(mainTitle,
                      rangeColors       = c(),
                      hideLegend        = FALSE,
                      legendOnly        = FALSE,
+                     enumerateLines    = FALSE,
                      xValueFilter      = "%s",
                      yValueFilter      = "%s",
                      zValueFilter      = "%s",
                      vValueFilter      = "%s",
                      wValueFilter      = "%s",
-                     largeMargins      = FALSE)
+                     largeMargins      = FALSE,
+                     writeMetadata     = TRUE)
 {
    xLevels <- levels(factor(xSet))
    yLevels <- levels(factor(ySet))
@@ -401,13 +404,15 @@ plotstd3 <- function(mainTitle,
    if(!largeMargins) {
       margins <- c(3.25,3.25,3,0.25) + 0.0   # Margins as c(bottom, left, top, right)
                                              # Default is c(5, 4, 4, 2) + 0.1
-      nextPageInPDFMetadata()
    }
    else {
       margins <- c(5, 5, 3, 2) + 0.0   # For usage within plotstd6()
    }
    opar <- par(mar = margins)
 
+   if(writeMetadata) {
+      nextPageInPDFMetadata()
+   }
    plot.new()
    plot.window(xRange, yRange)
 
@@ -467,6 +472,7 @@ plotstd3 <- function(mainTitle,
    }
 
    # ------ Plot curves -----------------------------------------------------
+   lineNum      <- 1
    legendTexts  <- c()
    legendColors <- c()
    legendStyles <- c()
@@ -504,6 +510,12 @@ plotstd3 <- function(mainTitle,
             if(length(wLevels) > 1) {
                legendText <- paste(sep="", "paste(sep=\"\", ", legendText, ", \", \", ", getAbbreviation(wTitle), ", \"=", gettextf(wValueFilter, w), "\")")
             }
+            if(enumerateLines) {
+               lineNumText <- paste(sep="", lineNum)
+               lineNum <- lineNum + 1
+               legendText <- paste(sep="", "paste(sep=\"\", ", ", \"", lineNumText, ": \", ", legendText, ")")
+            }
+
 
             if(!legendOnly) {
                # ----- Points plot ------------------------------------------
@@ -1007,6 +1019,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                      xSeparatorsColors = c(),
                      rangeSet          = c(),
                      rangeColors       = c(),
+                     enumerateLines    = FALSE,
                      pStart            = 0,
                      hideLegend        = FALSE,
                      frameColor        = par("fg"))
@@ -1035,7 +1048,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
        ((length(pSet) > 0) && (length(levels(factor(pSet))) > 1)) ) {
       singlePlotTitle <- ""
    }
-   
+
    page <- 1
    for(p in pLevels) {
       # ------ Prepare page -------------------------------------------------
@@ -1083,6 +1096,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         xSeparatorsColors = xSeparatorsColors,
                         rangeSet          = rangeSet,
                         rangeColors       = rangeColors,
+                        enumerateLines    = enumerateLines,
                         type              = type,
                         hideLegend        = hideLegend,
                         legendSize        = legendSize,
@@ -1090,6 +1104,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         colorMode         = colorMode,
                         zColorArray       = zColorArray,
                         frameColor        = frameColor,
+                        writeMetadata     = FALSE,
                         (singlePlotTitle == "")) < 1) {   # see below
                # If singlePlotTitle=="", we have multiple std3 plots on the
                # same page. Then, larger margins have to be used by plotstd3().
@@ -1324,13 +1339,13 @@ plothist <- function(mainTitle,
          legendBackground <- "white"
       }
       legend(lx, ly,
-            xjust = lxjust,
-            yjust = lyjust,
-            zLevels,
-            bg=legendBackground,
-            col=zColorArray,
-            text.col=zColorArray,
-            lwd=10*par("cex"), cex=legendSize*par("cex"))
+             xjust = lxjust,
+             yjust = lyjust,
+             zLevels,
+             bg=legendBackground,
+             col=zColorArray,
+             text.col=zColorArray,
+             lwd=10*par("cex"), cex=legendSize*par("cex"))
    }
 
    par(opar)
@@ -1699,6 +1714,7 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
                legendPos      = legendPos,
                dotSet         = dotSet,
                dotScaleFactor = dotScaleFactor,
+               enumerateLines = plotEnumerateLines,
                zSortAscending = zSortAscending,
                vSortAscending = vSortAscending,
                wSortAscending = wSortAscending)
@@ -1825,3 +1841,20 @@ closePDFMetadata <- function()
       setGlobalVariable("pdfMetadataFile", NA)
    }
 }
+
+
+
+# ###########################################################################
+# #### Default Settings                                                  ####
+# ###########################################################################
+
+plotColorMode        <- cmColor
+plotHideLegend       <- FALSE
+plotLegendSizeFactor <- 0.8
+plotOwnOutput        <- FALSE
+plotFontFamily       <- "Helvetica"
+plotFontPointsize    <- 22
+plotWidth            <- 10
+plotHeight           <- 10
+plotConfidence       <- 0.95
+plotEnumerateLines   <- TRUE
