@@ -512,7 +512,7 @@ static bool handleScalarFile(const char* varNames,
       }
       else if( (!(strncmp(buffer, "bin", 3))) ||
                (!(strncmp(buffer, "attr", 4))) ||
-//                (!(strncmp(buffer, "field", 5))) ||
+               (!(strncmp(buffer, "field", 5))) ||
                (!(strncmp(buffer, "statistic", 9))) ) {
          // Skip this item
       }
