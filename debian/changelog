@@ -1,17 +1,7 @@
-netperfmeter (1.0.1-1ubuntu1) maverick; urgency=low
+netperfmeter (1.0.2-1ubuntu1) maverick; urgency=low
 
-  [ Thomas Dreibholz ]
-  * New upstream version.
-
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Mon, 21 Jun 2010 07:59:20 +0200
-
-netperfmeter (1.0.0-2ubuntu1) maverick; urgency=low
-
-  [ Thomas Dreibholz ]
   * Closes Debian ITP bug with wnpp (Closes: #546738).
   * Initial Ubuntu package (LP: #430012).
-
-  [ Thomas Dreibholz ]
   * Switch to dpkg-source 3.0 (quilt) format
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sat, 19 Jun 2010 12:40:40 +0200
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sat, 26 Jun 2010 17:46:40 +0200

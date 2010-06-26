@@ -6,7 +6,7 @@ http://www.iem.uni-due.de/~dreibh/netperfmeter/
 
 NetPerfMeter is
 
-  Copyright (C) 2009 Thomas Dreibholz
+  Copyright (C) 2009-2010 Thomas Dreibholz
 
 License:
 
@@ -15,12 +15,9 @@ License:
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  On Debian systems, the complete text of the GNU General
-  Public License can be found in `/usr/share/common-licenses/GPL-3'.
-
 The Debian/Ubuntu packaging is
 
-  Copyright (C) 2009 Thomas Dreibholz
+  Copyright (C) 2009-2010 Thomas Dreibholz
 
 License:
 
