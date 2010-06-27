@@ -19,7 +19,7 @@
 .\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd September 10, 2009
+.Dd June 27, 2010
 .Dt netperfmeter 8
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -48,7 +48,6 @@
 .Fl dccp
 .Op FLOWSPEC
 .Op ...
-
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm netperfmeter
@@ -60,14 +59,12 @@ resulting flow bandwidths. The results are written as vector and scalar files.
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-
 .It Port
 The port number for the passive side's data socket. The port number of the control socket will be port+1. Specifying a port number turns netperfmeter in passive mode, i.e. it will wait for incoming connections.
 .It Destination:Port
 Specifies the destination endpoint to connect to. This will turn netperfmeter in active mode, i.e. it will connect to the specified remote endpoint.
 .It local=Address[,Address,...]
 Specifies address(es) of the local endpoint. For TCP, UDP and DCCP, only the first address is used!
-
 .It runtime
 Specifies the measurement runtime in seconds. After the given time span, netperfmeter will finish the measurement.
 .It config=Name
@@ -78,19 +75,16 @@ Default is vector.vec.bz2, hence the name of the vector file for flow 5, stream 
 .It scalar=Name
 Specifies the name pattern of the scalar files to write. If the suffix of this name is .bz2, the file will be BZip2-compressed on the fly. The scalar name is automatically extended to name the flow scalar files by adding -<active|passive>-<flow_id>-<stream_id> before the suffix.
 Default is scalar.vec.bz2, hence the name of the scalar file for flow 5, stream 2 on the passive node will be scalar-passive-00000005-0002.vec.bz2.
-
 .It activenodename=Description
 Sets a textual description of the active node (e.g. Client).
 .It passivenodename=Description
 Sets a textual description of the passive node (e.g. Server).
-
 .It quiet
 Reduces verbosity of log output. May be specified multiple times.
 .It verbose
 Increases verbosity of log output. May be specified multiple times.
 .It verbosity=Level
 Sets the verbosity of the log output to a given level, from 1 (lowest) to 6 (highest).
-
 .It sctp
 Establish a new SCTP association. The streams of this association must be specified by one or more FLOWSPEC specifications as following parameters.
 .It tcp
@@ -99,7 +93,6 @@ Establish a new TCP connection. The flow of this connection must be specified by
 Establish a new UDP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
 .It dccp
 Establish a new DCCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter. Note, that DCCP is not available on all platforms yet.
-
 .It FLOWSPEC
 Specifies a new flow. The format is: outgoing_frame_rate:outgoing_frame_size:incoming_frame_size:incoming_frame_rate:option:...
 .Bl -tag -width indent
@@ -111,7 +104,6 @@ The frame size of the outgoing transfer (i.e. active node to passive node). If s
 The frame rate of the incoming transfer (i.e. passive node to active node). See outgoing_frame_rate for details.
 .It incoming_frame_size
 The frame size of the incoming transfer (i.e. active node to passive node). See outgoing_frame_size for details.
-
 .It Possible options:
 .Bl -tag -width indent
 .It id=Flow Identifier
@@ -142,7 +134,6 @@ Sets the sender buffer size to the given number of bytes.
 .It onoff=t1,t2,...
 A list of time stamps when the flow should be activated or deactivated. If onoff is given, the flow is off at startup. At t1, it will be turned on; at t2, it will be turned off, etc.. Time stamps can be given as absolute values (e.g. onoff=0,10,30 - to turn on at t=0, turn off at t=10 and turn on again at t=30 until end of measurement) or relative values (e.g. on=10,+30,+60 - to turn on at t=10, turn off at t=40 and turn on again at t=100 until end of measurement).
 .El
-
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
