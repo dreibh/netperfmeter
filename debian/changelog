@@ -1,4 +1,4 @@
-netperfmeter (1.0.3-1ubuntu1) maverick; urgency=low
+netperfmeter (1.0.3-2ubuntu1) maverick; urgency=low
 
   * Closes Debian ITP bug with wnpp (Closes: #546738).
   * Initial Ubuntu package (LP: #430012).
