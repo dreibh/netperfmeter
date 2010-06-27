@@ -130,9 +130,9 @@ Sets the retransmission trials for unreliable messages (SCTP only; not available
 Sets the receiver buffer size to the given number of bytes.
 .It sndbuf=Bytes
 Sets the sender buffer size to the given number of bytes.
-.It
 .It onoff=t1,t2,...
 A list of time stamps when the flow should be activated or deactivated. If onoff is given, the flow is off at startup. At t1, it will be turned on; at t2, it will be turned off, etc.. Time stamps can be given as absolute values (e.g. onoff=0,10,30 - to turn on at t=0, turn off at t=10 and turn on again at t=30 until end of measurement) or relative values (e.g. on=10,+30,+60 - to turn on at t=10, turn off at t=40 and turn on again at t=100 until end of measurement).
+.El
 .El
 .El
 .\" ###### Arguments ########################################################
