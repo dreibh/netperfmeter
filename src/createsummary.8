@@ -19,7 +19,7 @@
 .\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd June 23, 2009
+.Dd June 27, 2010
 .Dt createsummary 8
 .Os CreateSummary
 .\" ###### Name #############################################################
@@ -67,7 +67,7 @@ This option can be used to filter out unneeded results.
 Sets the directory where to find the scalar files.
 .It Fl Fl resultsdirectory=Directory
 Sets the directory where to write the summary tables to.
-.El 
+.El
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
@@ -85,18 +85,17 @@ Sets the BZip2 compression level; 1=none, 9=highest (default).
 .\" ###### Arguments ########################################################
 .Sh EXAMPLE
 Consider two simulation results
-test1.sca.bz2 (created with ParameterX=One) and 
+test1.sca.bz2 (created with ParameterX=One) and
 test2.sca.bz2 (created with ParameterX=Two). The scalar files are located in
 the current directory, the output tables should be written to /tmp with
 compression level 5:
-
+.br
 ( echo "--simulationsdirectory=."  && \\
   echo "--resultsdirectory=/tmp"   && \\
   echo "--values=One"              && \\
   echo "--input=test1.sca.bz2"     && \\
   echo "--values=Two"              && \\
   echo "--input=test2.sca.bz2" ) | createsummary "ParameterX" -compress=5
-.El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz

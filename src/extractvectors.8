@@ -19,7 +19,7 @@
 .\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd December 2, 2009
+.Dd June 27, 2010
 .Dt extractvectors 8
 .Os ExtractVectors
 .\" ###### Name #############################################################
@@ -39,7 +39,6 @@
 .Nm extractvectors
 is an extraction tool for vectors written by OMNeT++ to a data table.
 ExtractVectors supports on-the-fly BZip2 decompression and compression.
-.El 
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
@@ -64,19 +63,19 @@ the BZip2-compressed vector file results.vec.bz2.
 ExtractVectors can be used to extract all vectors beginning with
 "Slow Start Threshold" or "Congestion Window" into a BZip2-compressed data
 table results.data.bz2 by the following command:
-
+.br
 extractvectors results.vec.bz2 results.data.bz2 \\
    "Slow Start Threshold" \\
    "Congestion Window"
-   
+.br
 For each vector entry, an output line containing
 time (Time), event number (Event),
 object name (Object),
 vector name (Vector) and
 the vector value (Value) will be created.
-
+.br
 Example:
-
+.br
 Time     Event               Object Vector                          Value
 .br
 0.003672   174 "net.client[0].sctp" "Slow Start Threshold 2:Total"  10000000
@@ -94,8 +93,6 @@ Time     Event               Object Vector                          Value
 0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     3000
 .br
 0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     6000
-  
-.El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz

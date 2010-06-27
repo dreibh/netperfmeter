@@ -19,7 +19,7 @@
 .\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd June 23, 2009
+.Dd June 27, 2010
 .Dt combinesummaries 8
 .Os CombineSummaries
 .\" ###### Name #############################################################
@@ -48,7 +48,7 @@ provided.
 Process the given input file.
 .It Fl Fl simulationdirectory=Directory
 Sets the directory where to find the input files.
-.El 
+.El
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
@@ -64,15 +64,14 @@ Do not print verbose status information.
 .\" ###### Arguments ########################################################
 .Sh EXAMPLE
 Consider two data tables
-v1.data.bz2 (created with ParameterY=Alpha) and 
+v1.data.bz2 (created with ParameterY=Alpha) and
 v2.data.bz2 (created with ParameterY=Beta).
 The output data table should be written to output.data.bz2.
-
+.br
 ( echo "--values=\\"Alpha\\""   && \\
   echo "--input=v1.data.bz2"  && \\
   echo "--values=\\"Beta\\""    && \\
   echo "--input=v2.data.bz2" ) | combinesummaries output.data.bz2 "ParameterY"
-.El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz
