@@ -1,3 +1,10 @@
+netperfmeter (1.0.3-3ubuntu1) maverick; urgency=low
+
+  * Removed recommended package not being available in Debian.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 02 Jul 2010 14:46:18 +0200
+
+
 netperfmeter (1.0.3-2ubuntu1) maverick; urgency=low
 
   * Closes Debian ITP bug with wnpp (Closes: #546738).
