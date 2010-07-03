@@ -1,4 +1,4 @@
-netperfmeter (1.0.3-3ubuntu1) maverick; urgency=low
+netperfmeter (1.0.3-4ubuntu1) maverick; urgency=low
 
   * Removed recommended package not being available in Debian.
 
