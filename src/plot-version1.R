@@ -68,6 +68,11 @@ netPerfMeterPlotVariables <- list(
 
    list("passive.flow",
            "Flow Number{F}", NA),
+   list("passive.flow-ReceivedPackets",
+           "Received Packets [1]",
+           "data1$passive.flow.ReceivedPackets",
+           "green4",
+           list("passive.flow-ReceivedPackets")),
    list("passive.flow-ReceivedBytes",
            "Received Bytes [MiB]",
            "data1$passive.flow.ReceivedBytes / (1024 * 1024)",
