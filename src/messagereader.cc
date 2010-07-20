@@ -206,6 +206,9 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                   }
                   socket->Status = Socket::MRS_PartialRead;
                }
+               else {
+                  return(MRRM_PARTIAL_READ);
+               }
             }
             // Continue here with MRS_PartialRead status!
             // (will return MRRM_PARTIAL_READ, or message on header-only message)
