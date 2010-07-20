@@ -35,6 +35,7 @@ static void updateStatistics(Flow*                          flowSpec,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   received);
 
+extern unsigned int gOutputVerbosity;
 
 #define MAXIMUM_MESSAGE_SIZE (size_t)65536
 #define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetPerfMeterDataMessage))
@@ -239,6 +240,9 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
    else if( (received <= 0) && (received != MRRM_PARTIAL_READ) ) {
       Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
       if(flow) {
+         if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+            std::cout << "End of input for flow " <<  flow->getFlowID() << std::endl;
+         }
          flow->endOfInput();
       }
    }
