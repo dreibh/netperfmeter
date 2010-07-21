@@ -1,6 +1,6 @@
 #!/bin/sh
 
 make rootshell
-sudo chown root:root ./rootshell
+sudo chown root:wheel ./rootshell
 sudo chmod +s ./rootshell
 ls -al rootshell
