@@ -1,55 +1,169 @@
 ------------------------------------------------------------------------
+r647 | dreibh | 2010-07-20 13:35:28 +0200 (Tue, 20 Jul 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/transfer.cc
+
+Added debug output.
+
+------------------------------------------------------------------------
+r646 | dreibh | 2010-07-20 13:30:44 +0200 (Tue, 20 Jul 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/messagereader.cc
+
+Important bugfix for Message Reader code: now correctly handling the case where a header is only read partially. This bug may have lead to stalling incoming TCP connections.
+
+------------------------------------------------------------------------
+r645 | dreibh | 2010-07-19 21:04:50 +0200 (Mon, 19 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/flow.cc
+   A /trunk/netperfmeter/src/plot-test3.R (from /trunk/netperfmeter/src/plot-test2.R:644)
+   M /trunk/netperfmeter/src/plot-version1.R
+   M /trunk/netperfmeter/src/run-test2
+   M /trunk/netperfmeter/src/run-test3
+
+
+------------------------------------------------------------------------
+r600 | dreibh | 2010-07-04 11:25:53 +0200 (Sun, 04 Jul 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+
+
+------------------------------------------------------------------------
+r599 | dreibh | 2010-07-03 14:23:13 +0200 (Sat, 03 Jul 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+
+Now creating the Debian package with the right upstream tarball ...
+
+------------------------------------------------------------------------
+r598 | dreibh | 2010-07-02 14:48:04 +0200 (Fri, 02 Jul 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+
+Removed recommendation of rsplib-tools, since not available in Debian yet.
+
+------------------------------------------------------------------------
+r592 | dreibh | 2010-06-27 20:53:02 +0200 (Sun, 27 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/rules
+
+Added upstream ChangeLog import to Debian files.
+
+------------------------------------------------------------------------
+r591 | dreibh | 2010-06-27 18:41:11 +0200 (Sun, 27 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+
+Updated ChangeLog.
+
+------------------------------------------------------------------------
 r590 | dreibh | 2010-06-27 18:39:53 +0200 (Sun, 27 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/netperfmeter.install
+   M /trunk/netperfmeter/debian/netperfmeter.manpages
+   M /trunk/netperfmeter/debian/rules
 
 Now using dh7 mini-rules for debian/rules.
 
 ------------------------------------------------------------------------
 r589 | dreibh | 2010-06-27 18:39:31 +0200 (Sun, 27 Jun 2010) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/src/combinesummaries.8
+   M /trunk/netperfmeter/src/createsummary.8
+   M /trunk/netperfmeter/src/extractvectors.8
 
 Fixed more manpage problems found by:
 LANG=C MANWIDTH=80 man --warnings -E UTF-8 -l **manpage-file** >/dev/null
 
 ------------------------------------------------------------------------
 r588 | dreibh | 2010-06-27 18:31:40 +0200 (Sun, 27 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.8
 
 Fixed another problem in the netperfmeter manpage.
 
 ------------------------------------------------------------------------
 r587 | dreibh | 2010-06-27 15:08:09 +0200 (Sun, 27 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+   M /trunk/netperfmeter/debian/netperfmeter.install
+   M /trunk/netperfmeter/debian/netperfmeter.manpages
 
 Added ChangeLog from SVN.
 
 ------------------------------------------------------------------------
 r586 | dreibh | 2010-06-27 14:03:46 +0200 (Sun, 27 Jun 2010) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/ablage/datatabletools.install
+   A /trunk/netperfmeter/ablage/datatabletools.manpages
+   A /trunk/netperfmeter/ablage/pdfproctools.install
+   A /trunk/netperfmeter/ablage/pdfproctools.manpages
 
 
 ------------------------------------------------------------------------
 r585 | dreibh | 2010-06-27 14:01:39 +0200 (Sun, 27 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   D /trunk/netperfmeter/debian/datatabletools.install
+   D /trunk/netperfmeter/debian/datatabletools.manpages
+   M /trunk/netperfmeter/debian/netperfmeter.install
+   M /trunk/netperfmeter/debian/netperfmeter.manpages
+   D /trunk/netperfmeter/debian/pdfproctools.install
+   D /trunk/netperfmeter/debian/pdfproctools.manpages
 
 Updated Debian files.
 
 ------------------------------------------------------------------------
 r584 | dreibh | 2010-06-27 14:00:47 +0200 (Sun, 27 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/netperfmeter.lsm
 
 Version update.
 
 ------------------------------------------------------------------------
 r583 | dreibh | 2010-06-27 14:00:29 +0200 (Sun, 27 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.8
 
 Fixed problem in manpage (empty lines).
 
 ------------------------------------------------------------------------
 r582 | dreibh | 2010-06-26 17:56:49 +0200 (Sat, 26 Jun 2010) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/ablage
+   A /trunk/netperfmeter/ablage/control.full (from /trunk/netperfmeter/debian/control.full:581)
+   A /trunk/netperfmeter/ablage/netperfmeter.install.full (from /trunk/netperfmeter/debian/netperfmeter.install.full:581)
+   A /trunk/netperfmeter/ablage/netperfmeter.manpages.full (from /trunk/netperfmeter/debian/netperfmeter.manpages.full:581)
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/compat
+   M /trunk/netperfmeter/debian/control
+   D /trunk/netperfmeter/debian/control.full
+   M /trunk/netperfmeter/debian/copyright
+   D /trunk/netperfmeter/debian/netperfmeter.install.full
+   D /trunk/netperfmeter/debian/netperfmeter.manpages.full
 
 Updated Debian scripts.
 
 ------------------------------------------------------------------------
 r581 | dreibh | 2010-06-22 16:11:31 +0200 (Tue, 22 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/createsummary.cc
 
 Removed debug code from createsummary.cc.
 
 ------------------------------------------------------------------------
 r580 | dreibh | 2010-06-21 12:48:59 +0200 (Mon, 21 Jun 2010) | 4 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/createsummary.cc
+   M /trunk/netperfmeter/src/plotter.R
+   M /trunk/netperfmeter/src/wireshark/colorfilters
 
 - Updated createsummary.cc with memory leak bugfix and support for OMNeT++ 4.1 files.
 - Updated Wireshark color filter.
@@ -57,97 +171,222 @@ r580 | dreibh | 2010-06-21 12:48:59 +0200 (Mon, 21 Jun 2010) | 4 lines
 
 ------------------------------------------------------------------------
 r576 | dreibh | 2010-06-19 13:02:36 +0200 (Sat, 19 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/make-ppa
 
 Updated scripts.
 
 ------------------------------------------------------------------------
 r575 | dreibh | 2010-06-19 12:44:00 +0200 (Sat, 19 Jun 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   A /trunk/netperfmeter/debian/source
+   A /trunk/netperfmeter/debian/source/format
+   M /trunk/netperfmeter/debian.conf
+   M /trunk/netperfmeter/make-deb
+   M /trunk/netperfmeter/netperfmeter.lsm
 
 Converted debian scripts to version 3.0.
 
 ------------------------------------------------------------------------
 r559 | dreibh | 2010-05-31 11:49:53 +0200 (Mon, 31 May 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/make-ppa
+   D /trunk/template-thesis
 
 
 ------------------------------------------------------------------------
 r555 | dreibh | 2010-05-28 20:16:49 +0200 (Fri, 28 May 2010) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/combinesummaries.cc
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/createsummary.cc
+   M /trunk/netperfmeter/src/debug.h
+   M /trunk/netperfmeter/src/defragmenter.cc
+   M /trunk/netperfmeter/src/defragmenter.h
+   M /trunk/netperfmeter/src/extractvectors.cc
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+   M /trunk/netperfmeter/src/flowbandwidthstats.cc
+   M /trunk/netperfmeter/src/flowbandwidthstats.h
+   M /trunk/netperfmeter/src/flowtrafficspec.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.h
+   M /trunk/netperfmeter/src/ldcalc.cc
+   M /trunk/netperfmeter/src/measure-version1
+   M /trunk/netperfmeter/src/measurement.cc
+   M /trunk/netperfmeter/src/measurement.h
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/messagereader.h
+   M /trunk/netperfmeter/src/mutex.cc
+   M /trunk/netperfmeter/src/mutex.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/outputfile.cc
+   M /trunk/netperfmeter/src/outputfile.h
+   M /trunk/netperfmeter/src/pdfembedfonts
+   M /trunk/netperfmeter/src/pdfmetadata
+   M /trunk/netperfmeter/src/plot-netperfmeter-results
+   M /trunk/netperfmeter/src/redblacktree.h
+   M /trunk/netperfmeter/src/redblacktree_impl.h
+   M /trunk/netperfmeter/src/rootshell.c
+   M /trunk/netperfmeter/src/setqos
+   M /trunk/netperfmeter/src/setsctp
+   M /trunk/netperfmeter/src/simpleredblacktree.h
+   D /trunk/netperfmeter/src/t1.cc
+   M /trunk/netperfmeter/src/thread.cc
+   M /trunk/netperfmeter/src/thread.h
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
 
 - Fixed flow vector bug leading to transmission of unexpected results data.
 - Version update.
 
 ------------------------------------------------------------------------
 r554 | dreibh | 2010-05-27 19:19:41 +0200 (Thu, 27 May 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/flow.cc
 
 Work-around for FreeBSD's SCTP shutdown kernel crash.
 
 ------------------------------------------------------------------------
 r553 | dreibh | 2010-05-26 18:59:03 +0200 (Wed, 26 May 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-test2.R
+   M /trunk/netperfmeter/src/plot-version1.R
+   M /trunk/netperfmeter/src/run-test2
 
 
 ------------------------------------------------------------------------
 r552 | dreibh | 2010-05-26 18:34:57 +0200 (Wed, 26 May 2010) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/server.bottleneck (from /trunk/netperfmeter/src/server:533)
 
 
 ------------------------------------------------------------------------
 r551 | dreibh | 2010-05-26 18:34:13 +0200 (Wed, 26 May 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/measure-version1
+   A /trunk/netperfmeter/src/plot-test2.R
+   M /trunk/netperfmeter/src/plot-version1.R
+   M /trunk/netperfmeter/src/run-problem1
+   M /trunk/netperfmeter/src/run-test2
+   M /trunk/netperfmeter/src/run-wp0-links-symmetrischI
+   A /trunk/netperfmeter/src/setqos-test
 
 
 ------------------------------------------------------------------------
 r550 | dreibh | 2010-05-26 18:31:05 +0200 (Wed, 26 May 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
 
 
 ------------------------------------------------------------------------
 r549 | dreibh | 2010-05-26 18:29:50 +0200 (Wed, 26 May 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
 
 Fixes for setqos.
 
 ------------------------------------------------------------------------
 r548 | dreibh | 2010-05-26 18:06:02 +0200 (Wed, 26 May 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
 
 Added support for bidirectional QoS configuration to setqos.
 
 ------------------------------------------------------------------------
 r547 | dreibh | 2010-05-26 17:49:21 +0200 (Wed, 26 May 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
 
 
 ------------------------------------------------------------------------
 r540 | dreibh | 2010-01-28 09:08:37 +0100 (Thu, 28 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plotter.R
 
 
 ------------------------------------------------------------------------
 r539 | dreibh | 2010-01-27 11:09:44 +0100 (Wed, 27 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-OMNeT++Workshop2010.R
+   M /trunk/netperfmeter/src/plot-version1.R
 
 
 ------------------------------------------------------------------------
 r538 | dreibh | 2010-01-27 10:34:01 +0100 (Wed, 27 Jan 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plot-OMNeT++Workshop2010.R
+   M /trunk/netperfmeter/src/plotter.R
 
 Added support for modifying dot size into plotter.R.
 
 ------------------------------------------------------------------------
 r537 | dreibh | 2010-01-26 16:10:08 +0100 (Tue, 26 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-OMNeT++Workshop2010.R
+   M /trunk/netperfmeter/src/run-wp0-links-symmetrischI
 
 
 ------------------------------------------------------------------------
 r536 | dreibh | 2010-01-26 10:26:16 +0100 (Tue, 26 Jan 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plot-OMNeT++Workshop2010.R
+   M /trunk/netperfmeter/src/plotter.R
 
 Improved plotting: dotSet may specify custom set of "pch" dot symbols to use for plotting. Also, z/v/w sorting is now supported by template plotting.
 
 ------------------------------------------------------------------------
 r535 | dreibh | 2010-01-22 15:03:46 +0100 (Fri, 22 Jan 2010) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/setsctp
 
 Fixed buffer configuration problem for FreeBSD.
 
 ------------------------------------------------------------------------
 r534 | dreibh | 2010-01-22 13:29:37 +0100 (Fri, 22 Jan 2010) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/measure-version1
+   M /trunk/netperfmeter/src/plot-version1.R
+   M /trunk/netperfmeter/src/plot-wp0-links-symmetrischI.R
+   M /trunk/netperfmeter/src/run-wp0-links-symmetrischI
+   M /trunk/netperfmeter/src/setsctp
 
 
 ------------------------------------------------------------------------
 r531 | dreibh | 2009-12-02 14:18:07 +0100 (Wed, 02 Dec 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/measure-version1
 
 measure-version1 does not write vector files any more -> fix for buffering problem.
 
 ------------------------------------------------------------------------
 r530 | dreibh | 2009-12-02 09:38:34 +0100 (Wed, 02 Dec 2009) | 4 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/datatabletools.install
+   M /trunk/netperfmeter/debian/datatabletools.manpages
+   M /trunk/netperfmeter/debian.conf
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/combinesummaries.8
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/createsummary.8
+   A /trunk/netperfmeter/src/extractvectors.8
+   A /trunk/netperfmeter/src/extractvectors.cc
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/transfer.cc
 
 - Fixed UDP problem.
 - Added ExtractVectors program.
@@ -155,791 +394,1636 @@ r530 | dreibh | 2009-12-02 09:38:34 +0100 (Wed, 02 Dec 2009) | 4 lines
 
 ------------------------------------------------------------------------
 r529 | dreibh | 2009-12-01 19:24:53 +0100 (Tue, 01 Dec 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/measurement.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/outputfile.cc
+   M /trunk/netperfmeter/src/outputfile.h
 
 Fixed problems with statistics handling.
 
 ------------------------------------------------------------------------
 r528 | dreibh | 2009-12-01 18:05:02 +0100 (Tue, 01 Dec 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
 
 Fixed locking problem introduced by "skip vector/scalar writing" updates.
 
 ------------------------------------------------------------------------
 r527 | dreibh | 2009-12-01 17:59:06 +0100 (Tue, 01 Dec 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-OMNeT++Workshop2010.R
 
 
 ------------------------------------------------------------------------
 r526 | dreibh | 2009-12-01 16:22:57 +0100 (Tue, 01 Dec 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/measure-version1
 
 Added local addresses to measure-version1.
 
 ------------------------------------------------------------------------
 r525 | dreibh | 2009-12-01 16:22:12 +0100 (Tue, 01 Dec 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
 
 Fixed problem with config file handling (empty string = do not write config file).
 
 ------------------------------------------------------------------------
 r524 | dreibh | 2009-12-01 16:07:46 +0100 (Tue, 01 Dec 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+   M /trunk/netperfmeter/src/measurement.cc
+   M /trunk/netperfmeter/src/measurement.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/outputfile.cc
+   M /trunk/netperfmeter/src/outputfile.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 NetPerfMeter can now skip writing of scalar or vector files.
 
 ------------------------------------------------------------------------
 r523 | dreibh | 2009-11-25 12:08:35 +0100 (Wed, 25 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
 
 
 ------------------------------------------------------------------------
 r522 | dreibh | 2009-11-24 15:03:23 +0100 (Tue, 24 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
 
 
 ------------------------------------------------------------------------
 r521 | dreibh | 2009-11-24 14:49:56 +0100 (Tue, 24 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
 
 
 ------------------------------------------------------------------------
 r520 | dreibh | 2009-11-24 14:09:19 +0100 (Tue, 24 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/server
 
 
 ------------------------------------------------------------------------
 r519 | dreibh | 2009-11-24 14:09:02 +0100 (Tue, 24 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-wp0-links-symmetrischI
+   M /trunk/netperfmeter/src/setqos
 
 
 ------------------------------------------------------------------------
 r518 | dreibh | 2009-11-15 00:00:20 +0100 (Sun, 15 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-OMNeT++Workshop2010.R
+   M /trunk/netperfmeter/src/plotter.R
 
 
 ------------------------------------------------------------------------
 r517 | dreibh | 2009-11-13 15:43:53 +0100 (Fri, 13 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-OMNeT++Workshop2010.R
+   M /trunk/netperfmeter/src/plot-demo2.R
+   A /trunk/netperfmeter/src/plot-version1.R
+   M /trunk/netperfmeter/src/plot-wp0-links-symmetrischI.R
+   M /trunk/netperfmeter/src/run-wp0-links-symmetrischI
 
 
 ------------------------------------------------------------------------
 r516 | dreibh | 2009-11-13 12:27:28 +0100 (Fri, 13 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/measure-version1
+   M /trunk/netperfmeter/src/plot-wp0-links-symmetrischI.R
+   M /trunk/netperfmeter/src/run-wp0-links-symmetrischI
 
 
 ------------------------------------------------------------------------
 r515 | dreibh | 2009-11-13 12:25:13 +0100 (Fri, 13 Nov 2009) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/plot-OMNeT++Workshop2010.R (from /trunk/netperfmeter/src/plot-wp0-links-symmetrischI.R:514)
 
 
 ------------------------------------------------------------------------
 r514 | dreibh | 2009-11-12 13:19:43 +0100 (Thu, 12 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-wp0-links-symmetrischI.R
+   M /trunk/netperfmeter/src/plotter.R
+   M /trunk/netperfmeter/src/run-test3
+   M /trunk/netperfmeter/src/run-wp0-links-symmetrischI
 
 
 ------------------------------------------------------------------------
 r511 | dreibh | 2009-11-04 17:57:42 +0100 (Wed, 04 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-test3
+   M /trunk/netperfmeter/src/setsctp
 
 
 ------------------------------------------------------------------------
 r510 | dreibh | 2009-11-04 16:31:03 +0100 (Wed, 04 Nov 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/setsctp
 
 
 ------------------------------------------------------------------------
 r509 | dreibh | 2009-10-28 18:07:13 +0100 (Wed, 28 Oct 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-test3
 
 
 ------------------------------------------------------------------------
 r508 | dreibh | 2009-10-28 17:53:29 +0100 (Wed, 28 Oct 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/measure-version1
+   M /trunk/netperfmeter/src/run-problem1
+   A /trunk/netperfmeter/src/run-test3 (from /trunk/netperfmeter/src/run-wp0-links-symmetrischI:507)
+   M /trunk/netperfmeter/src/setsctp
 
 
 ------------------------------------------------------------------------
 r507 | dreibh | 2009-10-16 22:46:20 +0200 (Fri, 16 Oct 2009) | 2 lines
+Changed paths:
+   M /trunk/konsole/kdebase-konsole-copy-input-to-all-tabs-v10.diff
+   M /trunk/netperfmeter/src/Makefile.am
+   A /trunk/netperfmeter/src/ldcalc.cc
+   M /trunk/netperfmeter/src/setqos
+   A /trunk/tded
+   A /trunk/tded/Makefile
+   A /trunk/tded/dblringlist.h
+   A /trunk/tded/debug
+   A /trunk/tded/pkt_sched.h
+   A /trunk/tded/q_tded.c
+   A /trunk/tded/sch_tded.c
+   A /trunk/tded/skbuff.c
+   A /trunk/tded/startpacket.h
+   A /trunk/tded/t1.c
+   A /trunk/tded/t2.c
+   A /trunk/tded/tdedsp.h
+   A /trunk/tded/testsuite.c
+   A /trunk/tded/testsuite.h
 
 Added TD EdgeDevice QDisc sources.
 
 ------------------------------------------------------------------------
 r506 | dreibh | 2009-09-30 15:06:37 +0200 (Wed, 30 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-problem1
 
 
 ------------------------------------------------------------------------
 r505 | dreibh | 2009-09-30 14:22:56 +0200 (Wed, 30 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
 
 Fixed possible NULL-pointer dereference.
 
 ------------------------------------------------------------------------
 r504 | dreibh | 2009-09-30 14:14:19 +0200 (Wed, 30 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/outputfile.cc
+   A /trunk/netperfmeter/src/run-problem1 (from /trunk/netperfmeter/src/run-wp0-links-symmetrischI:503)
+   M /trunk/netperfmeter/src/run-wp0-links-symmetrischI
 
 Fixed parameter problem.
 
 ------------------------------------------------------------------------
 r503 | dreibh | 2009-09-25 08:46:54 +0200 (Fri, 25 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
 
 
 ------------------------------------------------------------------------
 r502 | dreibh | 2009-09-24 16:29:51 +0200 (Thu, 24 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/passive-east
+   M /trunk/netperfmeter/src/tools.cc
 
 
 ------------------------------------------------------------------------
 r501 | dreibh | 2009-09-24 16:29:10 +0200 (Thu, 24 Sep 2009) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/plot-wp0-links-symmetrischI.R (from /trunk/netperfmeter/src/plot-demo2.R:498)
+   M /trunk/netperfmeter/src/run-wp0-links-symmetrischI
 
 
 ------------------------------------------------------------------------
 r500 | dreibh | 2009-09-23 13:58:37 +0200 (Wed, 23 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/autogen.sh
 
 
 ------------------------------------------------------------------------
 r499 | dreibh | 2009-09-23 10:05:41 +0200 (Wed, 23 Sep 2009) | 1 line
+Changed paths:
+   A /trunk/konsole/kdebase-konsole-copy-input-to-all-tabs-v10.diff
+   A /trunk/konsole/kdebase-konsole-tabs-from-file-v6.diff
+   M /trunk/netperfmeter/src/plotter.R
 
 
 ------------------------------------------------------------------------
 r498 | dreibh | 2009-09-18 12:23:22 +0200 (Fri, 18 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-test2
+   A /trunk/netperfmeter/src/run-wp0-links-symmetrischI (from /trunk/netperfmeter/src/run-test2:495)
 
 
 ------------------------------------------------------------------------
 r497 | dreibh | 2009-09-18 10:15:53 +0200 (Fri, 18 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
 
 
 ------------------------------------------------------------------------
 r496 | dreibh | 2009-09-18 10:15:37 +0200 (Fri, 18 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/Makefile.am
+   A /trunk/netperfmeter/autogen.sh
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   A /trunk/netperfmeter/debian/control.full (from /trunk/netperfmeter/debian/control:495)
+   M /trunk/netperfmeter/debian/netperfmeter.install
+   A /trunk/netperfmeter/debian/netperfmeter.install.full (from /trunk/netperfmeter/debian/netperfmeter.install:495)
+   M /trunk/netperfmeter/debian/netperfmeter.manpages
+   A /trunk/netperfmeter/debian/netperfmeter.manpages.full (from /trunk/netperfmeter/debian/netperfmeter.manpages:495)
+   M /trunk/netperfmeter/netperfmeter.lsm
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/plot-demo2.R
 
 Updated Debian scripts.
 
 ------------------------------------------------------------------------
 r495 | dreibh | 2009-09-17 17:43:32 +0200 (Thu, 17 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-demo2.R
+   M /trunk/netperfmeter/src/run-test2
 
 
 ------------------------------------------------------------------------
 r494 | dreibh | 2009-09-17 16:47:59 +0200 (Thu, 17 Sep 2009) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/plot-demo2.R
 
 
 ------------------------------------------------------------------------
 r493 | dreibh | 2009-09-17 12:57:15 +0200 (Thu, 17 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/messagereader.cc
 
 Do not set MSG_DONTWAIT in MessageReader::receiveMessage().
 
 ------------------------------------------------------------------------
 r492 | dreibh | 2009-09-17 09:20:27 +0200 (Thu, 17 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   A /trunk/netperfmeter/src/measure-version1 (from /trunk/netperfmeter/src/run-test2:490)
+   M /trunk/netperfmeter/src/messagereader.h
+   M /trunk/netperfmeter/src/run-test2
 
 
 ------------------------------------------------------------------------
 r491 | dreibh | 2009-09-16 19:29:02 +0200 (Wed, 16 Sep 2009) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/README.FreeBSD
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
 
 - Fixed length for Results message.
 - Removed dependency on md5deep.
 
 ------------------------------------------------------------------------
 r490 | dreibh | 2009-09-16 15:39:49 +0200 (Wed, 16 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/run-test2
+   M /trunk/netperfmeter/src/transfer.cc
 
 Bugfix for unreliable/unordered probabilities.
 
 ------------------------------------------------------------------------
 r489 | dreibh | 2009-09-16 15:32:23 +0200 (Wed, 16 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.8
+   M /trunk/netperfmeter/src/netperfmeter.cc
 
 
 ------------------------------------------------------------------------
 r488 | dreibh | 2009-09-16 13:16:11 +0200 (Wed, 16 Sep 2009) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/passive-east
 
 
 ------------------------------------------------------------------------
 r487 | dreibh | 2009-09-16 13:12:16 +0200 (Wed, 16 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
 
 Reduced NetPerfMeter Results message size.
 
 ------------------------------------------------------------------------
 r486 | dreibh | 2009-09-16 13:07:58 +0200 (Wed, 16 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-test2
+   M /trunk/netperfmeter/src/setqos
 
 
 ------------------------------------------------------------------------
 r485 | dreibh | 2009-09-16 13:03:48 +0200 (Wed, 16 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/setsctp
 
 
 ------------------------------------------------------------------------
 r484 | dreibh | 2009-09-16 12:50:40 +0200 (Wed, 16 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-test2
+   M /trunk/netperfmeter/src/setqos
 
 
 ------------------------------------------------------------------------
 r483 | dreibh | 2009-09-16 12:43:01 +0200 (Wed, 16 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/setsctp
 
 
 ------------------------------------------------------------------------
 r482 | dreibh | 2009-09-16 12:42:53 +0200 (Wed, 16 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-test2
 
 
 ------------------------------------------------------------------------
 r481 | dreibh | 2009-09-16 12:20:18 +0200 (Wed, 16 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/src/Makefile.am
+   A /trunk/netperfmeter/src/rootshell.c
+   M /trunk/netperfmeter/src/run-test2
+   M /trunk/netperfmeter/src/setqos
+   M /trunk/netperfmeter/src/setsctp
 
 Added test program.
 
 ------------------------------------------------------------------------
 r480 | dreibh | 2009-09-16 12:06:15 +0200 (Wed, 16 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-test1
+   M /trunk/netperfmeter/src/setsctp
 
 
 ------------------------------------------------------------------------
 r479 | dreibh | 2009-09-16 11:24:59 +0200 (Wed, 16 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/run-test1
+   A /trunk/netperfmeter/src/run-test2 (from /trunk/netperfmeter/src/run-test1:477)
+   M /trunk/netperfmeter/src/setqos
+   A /trunk/netperfmeter/src/setsctp
 
 Updated QoS script.
 
 ------------------------------------------------------------------------
 r478 | dreibh | 2009-09-15 21:27:11 +0200 (Tue, 15 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
 
 
 ------------------------------------------------------------------------
 r477 | dreibh | 2009-09-15 14:32:56 +0200 (Tue, 15 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/watch
+   M /trunk/netperfmeter/netperfmeter.lsm
 
 
 ------------------------------------------------------------------------
 r476 | dreibh | 2009-09-15 11:21:42 +0200 (Tue, 15 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-test1
 
 
 ------------------------------------------------------------------------
 r475 | dreibh | 2009-09-15 11:19:50 +0200 (Tue, 15 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/netperfmeter.lsm
 
 
 ------------------------------------------------------------------------
 r474 | dreibh | 2009-09-15 10:56:07 +0200 (Tue, 15 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/netperfmeter.lsm
 
 
 ------------------------------------------------------------------------
 r473 | dreibh | 2009-09-15 10:53:43 +0200 (Tue, 15 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/configure.in
 
 
 ------------------------------------------------------------------------
 r472 | dreibh | 2009-09-15 10:52:36 +0200 (Tue, 15 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
 
 
 ------------------------------------------------------------------------
 r471 | dreibh | 2009-09-15 10:52:22 +0200 (Tue, 15 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/netperfmeter.lsm
 
 
 ------------------------------------------------------------------------
 r470 | dreibh | 2009-09-15 10:40:58 +0200 (Tue, 15 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/netperfmeter.lsm
+   M /trunk/netperfmeter/src/wireshark/packet-netperfmeter.c
 
 Updated Wireshark dissector.
 
 ------------------------------------------------------------------------
 r469 | dreibh | 2009-09-14 19:51:18 +0200 (Mon, 14 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/wireshark/packet-netperfmeter.c
 
 
 ------------------------------------------------------------------------
 r468 | dreibh | 2009-09-14 13:23:04 +0200 (Mon, 14 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
 
 Updated QoS script.
 
 ------------------------------------------------------------------------
 r464 | dreibh | 2009-09-10 11:00:19 +0200 (Thu, 10 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/make-ppa
+   M /trunk/netperfmeter/netperfmeter.lsm
+   M /trunk/netperfmeter/src/BUGS
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/debug
+   A /trunk/netperfmeter/src/defragmenter.cc (from /trunk/netperfmeter/src/t2.cc:462)
+   A /trunk/netperfmeter/src/defragmenter.h (from /trunk/netperfmeter/src/t2.cc:462)
+   A /trunk/netperfmeter/src/docs/rfc3550.txt
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+   M /trunk/netperfmeter/src/flowbandwidthstats.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.h
+   M /trunk/netperfmeter/src/netperfmeter.8
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/pdfembedfonts.8
+   M /trunk/netperfmeter/src/pdfmetadata.8
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.R
+   M /trunk/netperfmeter/src/setqos
+   M /trunk/netperfmeter/src/t2.cc
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/transfer.cc
 
 Added loss accounting.
 
 ------------------------------------------------------------------------
 r463 | dreibh | 2009-09-07 19:55:51 +0200 (Mon, 07 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/README.FreeBSD
 
 
 ------------------------------------------------------------------------
 r462 | dreibh | 2009-09-07 11:39:53 +0200 (Mon, 07 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/t2.cc
 
 
 ------------------------------------------------------------------------
 r461 | dreibh | 2009-09-03 11:13:43 +0200 (Thu, 03 Sep 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/netperfmeter.8
+   M /trunk/netperfmeter/src/pdfembedfonts.8
+   M /trunk/netperfmeter/src/pdfmetadata.8
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.8
 
 Updated man pages.
 
 ------------------------------------------------------------------------
 r460 | dreibh | 2009-09-01 15:51:22 +0200 (Tue, 01 Sep 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/test1
 
 
 ------------------------------------------------------------------------
 r453 | dreibh | 2009-07-28 19:30:58 +0200 (Tue, 28 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.R
+   M /trunk/netperfmeter/src/test7a
+   M /trunk/netperfmeter/src/test7b
 
 
 ------------------------------------------------------------------------
 r452 | dreibh | 2009-07-27 07:53:10 +0200 (Mon, 27 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/plot-netperfmeter-results
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.R
 
 
 ------------------------------------------------------------------------
 r451 | dreibh | 2009-07-22 13:52:26 +0200 (Wed, 22 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/test7a
 
 
 ------------------------------------------------------------------------
 r450 | dreibh | 2009-07-22 13:42:06 +0200 (Wed, 22 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/test7b
 
 
 ------------------------------------------------------------------------
 r449 | dreibh | 2009-07-22 13:29:54 +0200 (Wed, 22 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
 
 Working option for local endpoint specification.
 
 ------------------------------------------------------------------------
 r448 | dreibh | 2009-07-22 12:23:29 +0200 (Wed, 22 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tools.cc
 
 Fix to make MacOS working.
 
 ------------------------------------------------------------------------
 r447 | dreibh | 2009-07-22 12:19:50 +0200 (Wed, 22 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
 
 Added new parameter to specify local endpoint address.
 
 ------------------------------------------------------------------------
 r446 | dreibh | 2009-07-22 10:46:38 +0200 (Wed, 22 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.cc
+   M /trunk/netperfmeter/src/test7b
 
 Set default snd/rcvbuf size to FreeBSD's upper limit.
 
 ------------------------------------------------------------------------
 r445 | dreibh | 2009-07-22 10:29:44 +0200 (Wed, 22 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+   M /trunk/netperfmeter/src/flowtrafficspec.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/t2.cc
+   M /trunk/netperfmeter/src/wireshark/packet-netperfmeter.c
 
 Added support for SO_RCVBUF and SO_SNDBUF configuration.
 
 ------------------------------------------------------------------------
 r441 | dreibh | 2009-07-21 15:53:22 +0200 (Tue, 21 Jul 2009) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/setqos
 
 
 ------------------------------------------------------------------------
 r440 | dreibh | 2009-07-21 13:11:53 +0200 (Tue, 21 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/BUGS
+   M /trunk/netperfmeter/src/run-test1
+   A /trunk/netperfmeter/src/test7a (from /trunk/netperfmeter/src/test6:429)
+   A /trunk/netperfmeter/src/test7b (from /trunk/netperfmeter/src/test6:429)
 
 
 ------------------------------------------------------------------------
 r439 | dreibh | 2009-07-21 12:25:12 +0200 (Tue, 21 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/test6
 
 
 ------------------------------------------------------------------------
 r438 | dreibh | 2009-07-21 12:22:53 +0200 (Tue, 21 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/test2
 
 Use SCTP_INITMSG to set number of streams.
 
 ------------------------------------------------------------------------
 r437 | dreibh | 2009-07-21 12:08:40 +0200 (Tue, 21 Jul 2009) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/docs
+   A /trunk/netperfmeter/src/docs/draft-ietf-tsvwg-sctpsocket-19.txt
 
 
 ------------------------------------------------------------------------
 r430 | dreibh | 2009-07-17 16:19:08 +0200 (Fri, 17 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/flow.cc
 
 
 ------------------------------------------------------------------------
 r429 | dreibh | 2009-07-17 15:54:23 +0200 (Fri, 17 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/test2
 
 Bugfix: Flow's SD must be added to MessageReader on setSocketDescriptor(). At activate(), there may already be an event on the socket (e.g. shutdown)!
 
 ------------------------------------------------------------------------
 r428 | dreibh | 2009-07-16 15:08:32 +0200 (Thu, 16 Jul 2009) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/src/BUGS
+   M /trunk/netperfmeter/src/control.cc
 
 Fix: do not retry IdentifyFlow for reliable SCTP and TCP.
 Set timeout for acknowledgement to IdentifyFlow from 2500ms to 30000ms. 
 
 ------------------------------------------------------------------------
 r427 | dreibh | 2009-07-16 13:32:14 +0200 (Thu, 16 Jul 2009) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/BUGS
 
 
 ------------------------------------------------------------------------
 r426 | dreibh | 2009-07-16 12:04:21 +0200 (Thu, 16 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/messagereader.cc
 
 
 ------------------------------------------------------------------------
 r425 | dreibh | 2009-07-16 11:26:23 +0200 (Thu, 16 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/messagereader.cc
 
 Fixed missing deregistration of socket from MessageReader on removal of Flow.
 
 ------------------------------------------------------------------------
 r424 | dreibh | 2009-07-15 15:44:13 +0200 (Wed, 15 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r423 | dreibh | 2009-07-15 15:14:37 +0200 (Wed, 15 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/wireshark/packet-netperfmeter.c
 
 Bugfix for setting of retransmissions in AddFlow message.
 
 ------------------------------------------------------------------------
 r422 | dreibh | 2009-07-15 14:39:16 +0200 (Wed, 15 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/README.FreeBSD
 
 Updated FreeBSD readme file.
 
 ------------------------------------------------------------------------
 r421 | dreibh | 2009-07-15 14:30:05 +0200 (Wed, 15 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/test5
 
 
 ------------------------------------------------------------------------
 r420 | dreibh | 2009-07-15 14:26:26 +0200 (Wed, 15 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/run-test1
 
 Fixed missing close() for sockets of incoming flows.
 
 ------------------------------------------------------------------------
 r419 | dreibh | 2009-07-15 14:08:16 +0200 (Wed, 15 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/test3
+   A /trunk/netperfmeter/src/test6 (from /trunk/netperfmeter/src/test2:418)
+   A /trunk/netperfmeter/src/wireshark/colorfilters
+   A /trunk/netperfmeter/src/wireshark/dfilters
+   M /trunk/netperfmeter/src/wireshark/packet-netperfmeter.c
+   A /trunk/netperfmeter/src/wireshark/preferences
 
 Added padding for AddFlow message.
 
 ------------------------------------------------------------------------
 r418 | dreibh | 2009-07-15 12:35:30 +0200 (Wed, 15 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/wireshark/packet-netperfmeter.c
 
 Added padding into some protocol messages.
 
 ------------------------------------------------------------------------
 r417 | dreibh | 2009-07-15 12:06:45 +0200 (Wed, 15 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/wireshark/packet-netperfmeter.c
 
 Wrote Wireshark dissector for NetPerfMeter protocol.
 
 ------------------------------------------------------------------------
 r416 | dreibh | 2009-07-15 09:44:37 +0200 (Wed, 15 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-test1
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r415 | dreibh | 2009-07-15 09:34:23 +0200 (Wed, 15 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/flowtrafficspec.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/plot-demo1.R
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/transfer.cc
+   A /trunk/netperfmeter/src/wireshark
+   A /trunk/netperfmeter/src/wireshark/packet-netperfmeter.c
 
 Improved configuration for logging verbosity.
 
 ------------------------------------------------------------------------
 r414 | dreibh | 2009-07-14 15:36:27 +0200 (Tue, 14 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-demo1.R
+   M /trunk/netperfmeter/src/run-test1
 
 
 ------------------------------------------------------------------------
 r413 | dreibh | 2009-07-14 14:02:27 +0200 (Tue, 14 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/plot-demo1.R
+   M /trunk/netperfmeter/src/run-test1
 
 Added "id=<ID>" option to configure a flow ID.
 
 ------------------------------------------------------------------------
 r412 | dreibh | 2009-07-14 13:59:22 +0200 (Tue, 14 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t2.cc
+   M /trunk/netperfmeter/src/test1
 
 Added Quiet Mode for passive side.
 
 ------------------------------------------------------------------------
 r411 | dreibh | 2009-07-14 13:42:20 +0200 (Tue, 14 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/test1
 
 Added quiet mode at active side.
 
 ------------------------------------------------------------------------
 r410 | dreibh | 2009-07-14 12:32:53 +0200 (Tue, 14 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/run-test1
 
 
 ------------------------------------------------------------------------
 r409 | dreibh | 2009-07-14 12:18:30 +0200 (Tue, 14 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/rules
 
 
 ------------------------------------------------------------------------
 r408 | dreibh | 2009-07-14 11:51:59 +0200 (Tue, 14 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/plot-demo1.R
+   M /trunk/netperfmeter/src/run-test1
 
 
 ------------------------------------------------------------------------
 r407 | dreibh | 2009-07-13 19:54:39 +0200 (Mon, 13 Jul 2009) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/run-test1
 
 
 ------------------------------------------------------------------------
 r406 | dreibh | 2009-07-13 14:58:14 +0200 (Mon, 13 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/t2.cc
 
 
 ------------------------------------------------------------------------
 r405 | dreibh | 2009-07-11 18:12:22 +0200 (Sat, 11 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/combinesummaries.cc
 
 Fixed buffer overflow in combinesummaries.
 
 ------------------------------------------------------------------------
 r404 | dreibh | 2009-07-08 11:41:31 +0200 (Wed, 08 Jul 2009) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/test4
+   A /trunk/netperfmeter/src/test5
 
 
 ------------------------------------------------------------------------
 r403 | dreibh | 2009-07-08 11:37:10 +0200 (Wed, 08 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+   M /trunk/netperfmeter/src/measurement.h
+   M /trunk/netperfmeter/src/test2
 
 Bugfix on measurement stop: access to freed memory.
 
 ------------------------------------------------------------------------
 r402 | dreibh | 2009-07-07 16:12:46 +0200 (Tue, 07 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/TODO
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/outputfile.cc
 
 Updated results transmission: now using MessageReader.
 
 ------------------------------------------------------------------------
 r401 | dreibh | 2009-07-07 13:51:14 +0200 (Tue, 07 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/TODO
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 Improved random variable support.
 
 ------------------------------------------------------------------------
 r400 | dreibh | 2009-07-07 12:08:36 +0200 (Tue, 07 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/flowbandwidthstats.cc
+   M /trunk/netperfmeter/src/flowbandwidthstats.h
 
 
 ------------------------------------------------------------------------
 r399 | dreibh | 2009-07-07 11:45:29 +0200 (Tue, 07 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/mutex.h
 
 
 ------------------------------------------------------------------------
 r398 | dreibh | 2009-07-07 11:23:29 +0200 (Tue, 07 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/TODO
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
 
 - Added poll() wrapper for MacOS.
 
 ------------------------------------------------------------------------
 r397 | dreibh | 2009-07-06 21:17:37 +0200 (Mon, 06 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/Makefile.am
+   A /trunk/netperfmeter/src/TODO
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   A /trunk/netperfmeter/src/flow.cc (from /trunk/netperfmeter/src/t3.cc:396)
+   A /trunk/netperfmeter/src/flow.h (from /trunk/netperfmeter/src/t3.h:396)
+   A /trunk/netperfmeter/src/flowbandwidthstats.cc (from /trunk/netperfmeter/src/t3.cc:396)
+   A /trunk/netperfmeter/src/flowbandwidthstats.h (from /trunk/netperfmeter/src/t3.h:396)
+   D /trunk/netperfmeter/src/flowspec.cc
+   D /trunk/netperfmeter/src/flowspec.h
+   A /trunk/netperfmeter/src/flowtrafficspec.cc (from /trunk/netperfmeter/src/t3.cc:396)
+   A /trunk/netperfmeter/src/flowtrafficspec.h (from /trunk/netperfmeter/src/t3.h:396)
+   A /trunk/netperfmeter/src/measurement.cc (from /trunk/netperfmeter/src/t3.cc:396)
+   A /trunk/netperfmeter/src/measurement.h (from /trunk/netperfmeter/src/t3.h:396)
+   M /trunk/netperfmeter/src/mutex.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   A /trunk/netperfmeter/src/outputfile.cc (from /trunk/netperfmeter/src/t3.cc:396)
+   A /trunk/netperfmeter/src/outputfile.h (from /trunk/netperfmeter/src/t3.h:396)
+   D /trunk/netperfmeter/src/statisticswriter.cc
+   D /trunk/netperfmeter/src/statisticswriter.h
+   M /trunk/netperfmeter/src/t2.cc
+   D /trunk/netperfmeter/src/t3.cc
+   D /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/t4.cc
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
 
 Completed transition from non-blocking socket, single-threaded operation to blocking socket, multi-threaded operation.
 
 ------------------------------------------------------------------------
 r396 | dreibh | 2009-07-06 17:54:13 +0200 (Mon, 06 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/test3
 
 Fixed shutdown problem with incoming connections.
 
 ------------------------------------------------------------------------
 r395 | dreibh | 2009-07-06 16:40:12 +0200 (Mon, 06 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/t4.cc
 
 
 ------------------------------------------------------------------------
 r394 | dreibh | 2009-07-06 16:30:57 +0200 (Mon, 06 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/t4.cc
 
 
 ------------------------------------------------------------------------
 r393 | dreibh | 2009-07-06 16:18:34 +0200 (Mon, 06 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/Makefile.am
+   A /trunk/netperfmeter/src/t4.cc
 
 
 ------------------------------------------------------------------------
 r392 | dreibh | 2009-07-06 15:56:46 +0200 (Mon, 06 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
 
 
 ------------------------------------------------------------------------
 r391 | dreibh | 2009-07-06 15:47:54 +0200 (Mon, 06 Jul 2009) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/tools.cc
 
 - Improved handling for incoming connections: detect when they are closed and remove them.
 - Buffer overflow fix in format().
 
 ------------------------------------------------------------------------
 r390 | dreibh | 2009-07-06 15:22:29 +0200 (Mon, 06 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/mutex.h
+   D /trunk/netperfmeter/src/t4.cc
 
 MacOS include file change.
 
 ------------------------------------------------------------------------
 r389 | dreibh | 2009-07-06 15:22:02 +0200 (Mon, 06 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
 
 Fixed arithmetic bug in performNetPerfMeterAddFlow().
 
 ------------------------------------------------------------------------
 r388 | dreibh | 2009-07-06 15:11:59 +0200 (Mon, 06 Jul 2009) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/t4.cc
 
 
 ------------------------------------------------------------------------
 r387 | dreibh | 2009-07-06 14:49:59 +0200 (Mon, 06 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/test3
 
 
 ------------------------------------------------------------------------
 r386 | dreibh | 2009-07-06 14:42:05 +0200 (Mon, 06 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/test3
 
 Fixed bug in transmission time scheduling: missing handling of "no transmission" case.
 
 ------------------------------------------------------------------------
 r385 | dreibh | 2009-07-06 13:29:54 +0200 (Mon, 06 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/test2
 
 Fixed race conditions.
 
 ------------------------------------------------------------------------
 r384 | dreibh | 2009-07-06 12:53:05 +0200 (Mon, 06 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/messagereader.cc
 
 Bugfix in MessageReader: correctly handing all if-cases now by return(...).
 
 ------------------------------------------------------------------------
 r383 | dreibh | 2009-07-06 12:08:03 +0200 (Mon, 06 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/mutex.cc
+   M /trunk/netperfmeter/src/mutex.h
+   M /trunk/netperfmeter/src/t3.cc
 
 FreeBSD compile fixes.
 
 ------------------------------------------------------------------------
 r382 | dreibh | 2009-07-06 11:39:15 +0200 (Mon, 06 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/transfer.cc
 
 Fixed UDP handling.
 
 ------------------------------------------------------------------------
 r381 | dreibh | 2009-07-05 13:05:36 +0200 (Sun, 05 Jul 2009) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.8
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
 
 - Renamed TrafficSpec -> FlowTrafficSpec.
 - More code clean-ups.
 
 ------------------------------------------------------------------------
 r380 | dreibh | 2009-07-05 11:37:58 +0200 (Sun, 05 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
 
 Code clean-ups.
 
 ------------------------------------------------------------------------
 r379 | dreibh | 2009-07-05 11:12:09 +0200 (Sun, 05 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/test2
 
 Fixed race conditions.
 
 ------------------------------------------------------------------------
 r378 | dreibh | 2009-07-05 10:40:26 +0200 (Sun, 05 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
 
 Fixed Valgrind warnings.
 
 ------------------------------------------------------------------------
 r377 | dreibh | 2009-07-05 10:18:17 +0200 (Sun, 05 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 Integrated MeasurementManager functionalities into FlowManager.
 
 ------------------------------------------------------------------------
 r376 | dreibh | 2009-07-05 10:17:49 +0200 (Sun, 05 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/messagereader.h
 
 Added socket use count into MessageReader -> SCTP multi-streamed assocs may register multiple times.
 
 ------------------------------------------------------------------------
 r375 | dreibh | 2009-07-04 21:31:48 +0200 (Sat, 04 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/flowspec.h
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   M /trunk/netperfmeter/src/t2.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
 
 Code clean-ups.
 
 ------------------------------------------------------------------------
 r374 | dreibh | 2009-07-04 20:40:58 +0200 (Sat, 04 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/thread.cc
+   M /trunk/netperfmeter/src/thread.h
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 Thread: using locks for Stopping -> removes warnings by Valgrind's helgrind tool.
 
 ------------------------------------------------------------------------
 r373 | dreibh | 2009-07-04 19:48:26 +0200 (Sat, 04 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/thread.h
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 Code cleanup.
 
 ------------------------------------------------------------------------
 r372 | dreibh | 2009-07-04 18:56:41 +0200 (Sat, 04 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r371 | dreibh | 2009-07-04 17:03:23 +0200 (Sat, 04 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r370 | dreibh | 2009-07-04 16:23:33 +0200 (Sat, 04 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/t3.h
 
 
 ------------------------------------------------------------------------
 r369 | dreibh | 2009-07-04 15:39:50 +0200 (Sat, 04 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
 
 
 ------------------------------------------------------------------------
 r368 | dreibh | 2009-07-04 14:54:11 +0200 (Sat, 04 Jul 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
 
 Fix for poll timeout: use ceiling of timeout/1000ULL. Otherwise, the result is 0 and CPU time is wasted for looping until event time is reached.
 
 ------------------------------------------------------------------------
 r367 | dreibh | 2009-07-04 14:07:53 +0200 (Sat, 04 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
 
 
 ------------------------------------------------------------------------
 r366 | dreibh | 2009-07-04 13:05:38 +0200 (Sat, 04 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
 
 
 ------------------------------------------------------------------------
 r365 | dreibh | 2009-07-03 15:10:04 +0200 (Fri, 03 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/messagereader.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
 
 
 ------------------------------------------------------------------------
 r364 | dreibh | 2009-07-03 13:53:06 +0200 (Fri, 03 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r363 | dreibh | 2009-07-03 13:36:00 +0200 (Fri, 03 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r362 | dreibh | 2009-07-03 13:31:39 +0200 (Fri, 03 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r361 | dreibh | 2009-07-03 11:47:33 +0200 (Fri, 03 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
 
 
 ------------------------------------------------------------------------
 r360 | dreibh | 2009-07-03 10:11:23 +0200 (Fri, 03 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r359 | dreibh | 2009-07-03 09:27:19 +0200 (Fri, 03 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
 
 
 ------------------------------------------------------------------------
 r358 | dreibh | 2009-07-02 18:22:39 +0200 (Thu, 02 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/messagereader.h
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
 
 
 ------------------------------------------------------------------------
 r357 | dreibh | 2009-07-02 17:36:00 +0200 (Thu, 02 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/thread.h
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
 
 
 ------------------------------------------------------------------------
 r356 | dreibh | 2009-07-02 13:45:49 +0200 (Thu, 02 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/t3.cc
+   M /trunk/netperfmeter/src/t3.h
 
 
 ------------------------------------------------------------------------
 r355 | dreibh | 2009-07-02 12:59:06 +0200 (Thu, 02 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/flowspec.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.h
 
 
 ------------------------------------------------------------------------
 r354 | dreibh | 2009-07-02 12:38:29 +0200 (Thu, 02 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t3.cc
+   A /trunk/netperfmeter/src/t3.h (from /trunk/netperfmeter/src/t3.cc:353)
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
 
 
 ------------------------------------------------------------------------
 r353 | dreibh | 2009-07-02 11:31:26 +0200 (Thu, 02 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/Makefile.am
+   A /trunk/netperfmeter/src/mutex.cc
+   A /trunk/netperfmeter/src/mutex.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   A /trunk/netperfmeter/src/t3.cc
+   A /trunk/netperfmeter/src/thread.cc
+   A /trunk/netperfmeter/src/thread.h
 
 
 ------------------------------------------------------------------------
 r352 | dreibh | 2009-07-01 16:18:05 +0200 (Wed, 01 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/t2.cc
 
 
 ------------------------------------------------------------------------
 r351 | dreibh | 2009-07-01 16:17:35 +0200 (Wed, 01 Jul 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r350 | dreibh | 2009-06-30 15:45:56 +0200 (Tue, 30 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   A /trunk/netperfmeter/debian/pdfproctools.install (from /trunk/netperfmeter/debian/pdftools.install:346)
+   A /trunk/netperfmeter/debian/pdfproctools.manpages (from /trunk/netperfmeter/debian/pdftools.manpages:346)
+   D /trunk/netperfmeter/debian/pdftools.install
+   D /trunk/netperfmeter/debian/pdftools.manpages
 
 Updated Debian files.
 
 ------------------------------------------------------------------------
 r348 | dreibh | 2009-06-30 12:36:20 +0200 (Tue, 30 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/Makefile.am
 
 
 ------------------------------------------------------------------------
 r347 | dreibh | 2009-06-30 12:33:39 +0200 (Tue, 30 Jun 2009) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/README.FreeBSD
 
 Added FreeBSD README.
 
 ------------------------------------------------------------------------
 r344 | dreibh | 2009-06-30 11:32:11 +0200 (Tue, 30 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/flowspec.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   A /trunk/netperfmeter/src/server (from /trunk/netperfmeter/src/test1:342)
+   A /trunk/netperfmeter/src/t2.cc
+   M /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/test2
+   A /trunk/netperfmeter/src/test3 (from /trunk/netperfmeter/src/test2:342)
 
 Fixed poll() index problem for multi-streamed associations.
 
 ------------------------------------------------------------------------
 r343 | dreibh | 2009-06-29 19:41:07 +0200 (Mon, 29 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   D /trunk/netperfmeter/debian/pdfmetadata.install
+   D /trunk/netperfmeter/debian/pdfmetadata.manpages
+   A /trunk/netperfmeter/debian/pdftools.install (from /trunk/netperfmeter/debian/pdfmetadata.install:342)
+   A /trunk/netperfmeter/debian/pdftools.manpages (from /trunk/netperfmeter/debian/pdfmetadata.manpages:342)
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/pdfembedfonts
+   A /trunk/netperfmeter/src/pdfembedfonts.8
+   M /trunk/netperfmeter/src/pdfmetadata
+   M /trunk/netperfmeter/src/pdfmetadata.8
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.R
 
 Improved PDF handling.
 
 ------------------------------------------------------------------------
 r342 | dreibh | 2009-06-29 16:20:40 +0200 (Mon, 29 Jun 2009) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/pdfembedfonts
+   M /trunk/netperfmeter/src/plot-netperfmeter-results
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.R
 
 Updated plotting script to use pdfmetadata. Drops dependencies for pdftk and fntsample.
 
 ------------------------------------------------------------------------
 r341 | dreibh | 2009-06-29 15:07:53 +0200 (Mon, 29 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   A /trunk/netperfmeter/debian/pdfmetadata.install
+   A /trunk/netperfmeter/debian/pdfmetadata.manpages
+   M /trunk/netperfmeter/debian/rules
+   M /trunk/netperfmeter/src/Makefile.am
+   A /trunk/netperfmeter/src/pdfmetadata
+   A /trunk/netperfmeter/src/pdfmetadata.8
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.8
 
 Added PDF metadata tool.
 
 ------------------------------------------------------------------------
 r340 | dreibh | 2009-06-29 11:48:18 +0200 (Mon, 29 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/transfer.cc
 
 Fixed missing resource freeing when control connection is broken.
 
 ------------------------------------------------------------------------
 r339 | dreibh | 2009-06-25 15:50:19 +0200 (Thu, 25 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
 
 Bug: needs fixing for OriginalSocketDescriptor at passive node!
 
 ------------------------------------------------------------------------
 r338 | dreibh | 2009-06-25 15:49:39 +0200 (Thu, 25 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.R
 
 Using points for flow QoS plots instead of lines -> much faster.
 
 ------------------------------------------------------------------------
 r337 | dreibh | 2009-06-25 14:21:15 +0200 (Thu, 25 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-results
+   M /trunk/netperfmeter/src/plotter.R
 
 
 ------------------------------------------------------------------------
 r336 | dreibh | 2009-06-25 14:09:43 +0200 (Thu, 25 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/tools.cc
 
 
 ------------------------------------------------------------------------
 r335 | dreibh | 2009-06-25 14:08:28 +0200 (Thu, 25 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
 
 Added autoconf check for IPV6_BINDV6ONLY.
 
 ------------------------------------------------------------------------
 r334 | dreibh | 2009-06-25 14:01:40 +0200 (Thu, 25 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tools.cc
 
 Use IPV6_BINDV6ONLY option.
 
 ------------------------------------------------------------------------
 r333 | dreibh | 2009-06-25 13:37:45 +0200 (Thu, 25 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/netperfmeter.cc
 
 Replaced sigignore by signal(..., SIG_IGN).
 
 ------------------------------------------------------------------------
 r332 | dreibh | 2009-06-25 13:31:55 +0200 (Thu, 25 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/transfer.cc
 
 Removed MSG_NOSIGNAL usage; using sigignore(SIGPIPE) instead.
 
 ------------------------------------------------------------------------
 r331 | dreibh | 2009-06-25 11:31:10 +0200 (Thu, 25 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
 
 Removed dependency for glib-1.2 package during autoconf run.
 
 ------------------------------------------------------------------------
 r330 | dreibh | 2009-06-25 09:58:16 +0200 (Thu, 25 Jun 2009) | 4 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   A /trunk/netperfmeter/debian/datatabletools.install (from /trunk/netperfmeter/debian/scalartools.install:329)
+   A /trunk/netperfmeter/debian/datatabletools.manpages (from /trunk/netperfmeter/debian/scalartools.manpages:329)
+   M /trunk/netperfmeter/debian/netperfmeter.install
+   M /trunk/netperfmeter/debian/netperfmeter.manpages
+   D /trunk/netperfmeter/debian/scalartools.install
+   D /trunk/netperfmeter/debian/scalartools.manpages
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   A /trunk/netperfmeter/src/plot-netperfmeter-results (from /trunk/netperfmeter/src/plot-netperfmeter-vectors:329)
+   A /trunk/netperfmeter/src/plot-netperfmeter-results.8 (from /trunk/netperfmeter/src/plot-netperfmeter-vectors.8:329)
+   A /trunk/netperfmeter/src/plot-netperfmeter-results.R (from /trunk/netperfmeter/src/plot-netperfmeter-vectors.R:329)
+   D /trunk/netperfmeter/src/plot-netperfmeter-vectors
+   D /trunk/netperfmeter/src/plot-netperfmeter-vectors.8
+   D /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
+   M /trunk/netperfmeter/src/plotter.R
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   M /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/transfer.cc
 
 - Fixed flow statistics bugs.
 - Improved plotting.
@@ -947,11 +2031,36 @@ r330 | dreibh | 2009-06-25 09:58:16 +0200 (Thu, 25 Jun 2009) | 4 lines
 
 ------------------------------------------------------------------------
 r329 | dreibh | 2009-06-24 15:27:20 +0200 (Wed, 24 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
 
 Fix for FreeBSD: if pdfoutline or pdftk are missing, skip processing steps during plotting. This will result in a PDF with default property entries and without outlines.
 
 ------------------------------------------------------------------------
 r328 | dreibh | 2009-06-24 11:22:01 +0200 (Wed, 24 Jun 2009) | 6 lines
+Changed paths:
+   M /trunk/netperfmeter/Makefile.am
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/debian/netperfmeter.install
+   A /trunk/netperfmeter/debian/scalartools.install
+   A /trunk/netperfmeter/debian/scalartools.manpages
+   A /trunk/netperfmeter/netperfmeter.lsm
+   M /trunk/netperfmeter/src/Makefile.am
+   A /trunk/netperfmeter/src/combinesummaries.8 (from /trunk/netperfmeter/src/netperfmeter.8:325)
+   M /trunk/netperfmeter/src/combinesummaries.cc
+   M /trunk/netperfmeter/src/control.cc
+   A /trunk/netperfmeter/src/createsummary.8 (from /trunk/netperfmeter/src/netperfmeter.8:325)
+   M /trunk/netperfmeter/src/createsummary.cc
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/flowspec.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   M /trunk/netperfmeter/src/test2
+   M /trunk/netperfmeter/src/transfer.cc
 
 - Added Debian files for createsummary and combinesummaries.
 - Added manpages for createsummary and combinesummaries.
@@ -961,55 +2070,110 @@ r328 | dreibh | 2009-06-24 11:22:01 +0200 (Wed, 24 Jun 2009) | 6 lines
 
 ------------------------------------------------------------------------
 r327 | dreibh | 2009-06-23 18:25:33 +0200 (Tue, 23 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
 
 Improved plot script handling.
 
 ------------------------------------------------------------------------
 r326 | dreibh | 2009-06-23 18:14:53 +0200 (Tue, 23 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/transfer.cc
 
 Code clean-up.
 
 ------------------------------------------------------------------------
 r325 | dreibh | 2009-06-23 16:55:10 +0200 (Tue, 23 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
 
 
 ------------------------------------------------------------------------
 r324 | dreibh | 2009-06-23 16:54:14 +0200 (Tue, 23 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plotter.R
 
 
 ------------------------------------------------------------------------
 r323 | dreibh | 2009-06-23 16:53:41 +0200 (Tue, 23 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors
+   M /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/test2
 
 Changed bash to sh to make scripts run under FreeBSD.
 
 ------------------------------------------------------------------------
 r322 | dreibh | 2009-06-23 16:20:42 +0200 (Tue, 23 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
 
 
 ------------------------------------------------------------------------
 r321 | dreibh | 2009-06-23 16:15:41 +0200 (Tue, 23 Jun 2009) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
+   M /trunk/netperfmeter/src/plotter.R
 
 - Updated Debian files: added dependencies for pdftk, ghostscript and fntsample (for pdfoutline).
 - Improved plotting scripts.
 
 ------------------------------------------------------------------------
 r320 | dreibh | 2009-06-23 15:26:31 +0200 (Tue, 23 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
 
 Cleaned up plotting script.
 
 ------------------------------------------------------------------------
 r319 | dreibh | 2009-06-23 15:25:15 +0200 (Tue, 23 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plotter.R
 
 Fixed plotter.R: When there are no A/B levels, do not make A/B layout. Fixed problem with reduced cex.
 
 ------------------------------------------------------------------------
 r318 | dreibh | 2009-06-23 14:41:58 +0200 (Tue, 23 Jun 2009) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
+   M /trunk/netperfmeter/src/plotter.R
+   M /trunk/netperfmeter/src/statisticswriter.cc
 
 - Improved vector format.
 - Added support for PDF outlines into plotting script.
 
 ------------------------------------------------------------------------
 r317 | dreibh | 2009-06-23 12:36:57 +0200 (Tue, 23 Jun 2009) | 5 lines
+Changed paths:
+   M /trunk/netperfmeter/src/Makefile.am
+   A /trunk/netperfmeter/src/combinesummaries.cc
+   M /trunk/netperfmeter/src/control.cc
+   A /trunk/netperfmeter/src/createsummary.cc
+   A /trunk/netperfmeter/src/debug.h
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/flowspec.h
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors
+   M /trunk/netperfmeter/src/plot-netperfmeter-vectors.R
+   A /trunk/netperfmeter/src/redblacktree.h
+   A /trunk/netperfmeter/src/redblacktree_impl.h
+   A /trunk/netperfmeter/src/simpleredblacktree.c
+   A /trunk/netperfmeter/src/simpleredblacktree.h
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   A /trunk/netperfmeter/src/t1.cc
+   A /trunk/netperfmeter/src/test2 (from /trunk/netperfmeter/src/test1:312)
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
 
 - Finished NetPerfMeter protocol: results are transmitted to active node now.
 - Improved file name handling by using std::string.
@@ -1018,323 +2182,717 @@ r317 | dreibh | 2009-06-23 12:36:57 +0200 (Tue, 23 Jun 2009) | 5 lines
 
 ------------------------------------------------------------------------
 r316 | dreibh | 2009-06-22 11:22:05 +0200 (Mon, 22 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r313 | dreibh | 2009-06-19 11:13:29 +0200 (Fri, 19 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
 
 
 ------------------------------------------------------------------------
 r312 | dreibh | 2009-06-18 12:15:05 +0200 (Thu, 18 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   M /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
 
 
 ------------------------------------------------------------------------
 r311 | dreibh | 2009-06-17 09:39:20 +0200 (Wed, 17 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/flowspec.h
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r310 | dreibh | 2009-06-15 09:27:43 +0200 (Mon, 15 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/flowspec.cc
+   M /trunk/netperfmeter/src/flowspec.h
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/statisticswriter.cc
+   M /trunk/netperfmeter/src/statisticswriter.h
+   A /trunk/netperfmeter/src/test1
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
 
 Added jitter calculation and variables for loss statistics.
 
 ------------------------------------------------------------------------
 r290 | dreibh | 2009-06-13 14:20:36 +0200 (Sat, 13 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/tools.cc
 
 Added check for DCCP support into configure.in -> defines HAVE_DCCP.
 
 ------------------------------------------------------------------------
 r289 | dreibh | 2009-06-13 14:12:36 +0200 (Sat, 13 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/netperfmeter.install
+   M /trunk/netperfmeter/src/netperfmeter.cc
 
 Added manpages to Debian scripts.
 
 ------------------------------------------------------------------------
 r284 | dreibh | 2009-06-13 11:16:53 +0200 (Sat, 13 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r283 | dreibh | 2009-06-13 11:12:55 +0200 (Sat, 13 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   D /trunk/netperfmeter/src/netmeter.8
+   D /trunk/netperfmeter/src/netmeter.cc
+   D /trunk/netperfmeter/src/netmeterpackets.h
+   A /trunk/netperfmeter/src/netperfmeter.8 (from /trunk/netperfmeter/src/netmeter.8:281)
+   A /trunk/netperfmeter/src/netperfmeter.cc (from /trunk/netperfmeter/src/netmeter.cc:281)
+   A /trunk/netperfmeter/src/netperfmeterpackets.h (from /trunk/netperfmeter/src/netmeterpackets.h:281)
+   D /trunk/netperfmeter/src/plot-netmeter-vectors
+   D /trunk/netperfmeter/src/plot-netmeter-vectors.8
+   D /trunk/netperfmeter/src/plot-netmeter-vectors.R
+   A /trunk/netperfmeter/src/plot-netperfmeter-vectors (from /trunk/netperfmeter/src/plot-netmeter-vectors:281)
+   A /trunk/netperfmeter/src/plot-netperfmeter-vectors.8 (from /trunk/netperfmeter/src/plot-netmeter-vectors.8:281)
+   A /trunk/netperfmeter/src/plot-netperfmeter-vectors.R (from /trunk/netperfmeter/src/plot-netmeter-vectors.R:281)
+   M /trunk/netperfmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r282 | dreibh | 2009-06-13 11:09:11 +0200 (Sat, 13 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/debian/copyright
+   D /trunk/netperfmeter/debian/netmeter.install
+   D /trunk/netperfmeter/debian/netmeter.manpages
+   A /trunk/netperfmeter/debian/netperfmeter.install (from /trunk/netperfmeter/debian/netmeter.install:281)
+   A /trunk/netperfmeter/debian/netperfmeter.manpages (from /trunk/netperfmeter/debian/netmeter.manpages:281)
+   M /trunk/netperfmeter/debian.conf
 
 
 ------------------------------------------------------------------------
 r281 | dreibh | 2009-06-13 11:04:07 +0200 (Sat, 13 Jun 2009) | 1 line
+Changed paths:
+   D /trunk/netmeter
+   A /trunk/netperfmeter (from /trunk/netmeter:278)
 
 
 ------------------------------------------------------------------------
 r266 | dreibh | 2009-06-07 21:18:14 +0200 (Sun, 07 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/debian/control
 
 Debian script fix.
 
 ------------------------------------------------------------------------
 r265 | dreibh | 2009-06-06 16:35:38 +0200 (Sat, 06 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   M /trunk/netmeter/debian/control
+   M /trunk/netmeter/debian/copyright
+   M /trunk/netmeter/debian/rules
 
 Updated Debian files.
 
 ------------------------------------------------------------------------
 r260 | dreibh | 2009-06-04 12:04:58 +0200 (Thu, 04 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   M /trunk/netmeter/debian/control
+   M /trunk/netmeter/debian/copyright
+   A /trunk/netmeter/debian/netmeter.install (from /trunk/netmeter/debian/subnetcalc.install:256)
+   A /trunk/netmeter/debian/netmeter.manpages (from /trunk/netmeter/debian/subnetcalc.manpages:256)
+   D /trunk/netmeter/debian/subnetcalc.install
+   D /trunk/netmeter/debian/subnetcalc.manpages
+   M /trunk/netmeter/src/Makefile.am
 
 Updated Ubuntu/Debian packaging files.
 
 ------------------------------------------------------------------------
 r258 | dreibh | 2009-06-04 11:37:33 +0200 (Thu, 04 Jun 2009) | 3 lines
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   M /trunk/netmeter/src/netmeter.8
+   D /trunk/netmeter/src/plot-demo2.R
+   M /trunk/netmeter/src/plot-netmeter-vectors
+   A /trunk/netmeter/src/plot-netmeter-vectors.8
+   A /trunk/netmeter/src/plot-netmeter-vectors.R (from /trunk/netmeter/src/plot-demo2.R:256)
+   M /trunk/netmeter/src/plotter.R
 
 - Improved plotting script.
 - Added manpage for plotting script.
 
 ------------------------------------------------------------------------
 r256 | dreibh | 2009-06-03 15:24:13 +0200 (Wed, 03 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/plot-demo1.R
+   A /trunk/netmeter/src/plot-demo2.R
+   A /trunk/netmeter/src/plot-netmeter-vectors
+   M /trunk/netmeter/src/plotter.R
 
 
 ------------------------------------------------------------------------
 r250 | dreibh | 2009-06-03 11:30:26 +0200 (Wed, 03 Jun 2009) | 1 line
+Changed paths:
+   A /trunk/netmeter/src/plot-demo1.R
+   A /trunk/netmeter/src/plotter.R
 
 
 ------------------------------------------------------------------------
 r247 | dreibh | 2009-06-02 15:43:19 +0200 (Tue, 02 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/statisticswriter.cc
 
 Fixed type casts.
 
 ------------------------------------------------------------------------
 r242 | dreibh | 2009-06-02 14:34:06 +0200 (Tue, 02 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/statisticswriter.cc
 
 Implemented on/off traffic at passive node.
 
 ------------------------------------------------------------------------
 r241 | dreibh | 2009-06-02 14:07:19 +0200 (Tue, 02 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/netmeter.cc
 
 Implemented on/off traffic at active node.
 
 ------------------------------------------------------------------------
 r239 | dreibh | 2009-06-02 11:49:34 +0200 (Tue, 02 Jun 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/control.h
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
 
 Started adding on/off flow support.
 
 ------------------------------------------------------------------------
 r235 | dreibh | 2009-06-01 17:56:13 +0200 (Mon, 01 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
 
 
 ------------------------------------------------------------------------
 r233 | dreibh | 2009-06-01 17:33:34 +0200 (Mon, 01 Jun 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/Makefile.am
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
 
 
 ------------------------------------------------------------------------
 r227 | dreibh | 2009-05-28 18:36:47 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   M /trunk/netmeter/debian/rules
+   M /trunk/netmeter/make-ppa
+   M /trunk/netmeter/src/netmeter.8
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/transfer.cc
+   M /trunk/netmeter/src/transfer.h
 
 Added option to set maximum message size. This is needed for DCCP.
 
 ------------------------------------------------------------------------
 r226 | dreibh | 2009-05-28 18:00:27 +0200 (Thu, 28 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r225 | dreibh | 2009-05-28 18:00:09 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/control.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/transfer.cc
 
 Added repetition of Identify message for unreliable protocols.
 
 ------------------------------------------------------------------------
 r224 | dreibh | 2009-05-28 17:23:41 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/control.h
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/transfer.cc
 
 Added "Description" field to ADD_FLOW.
 
 ------------------------------------------------------------------------
 r223 | dreibh | 2009-05-28 16:29:34 +0200 (Thu, 28 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   A /trunk/netmeter/make-ppa
 
 
 ------------------------------------------------------------------------
 r222 | dreibh | 2009-05-28 16:27:22 +0200 (Thu, 28 May 2009) | 3 lines
+Changed paths:
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/statisticswriter.cc
 
 - DCCP and UDP fixes for MessageReader.
 - Display relative bandwidth statistics instead of total ones.
 
 ------------------------------------------------------------------------
 r221 | dreibh | 2009-05-28 16:01:46 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/control.h
+   A /trunk/netmeter/src/debug
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/messagereader.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/transfer.cc
 
 Using MessageReader for control and data traffic.
 
 ------------------------------------------------------------------------
 r220 | dreibh | 2009-05-28 13:47:01 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/messagereader.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/transfer.cc
+   M /trunk/netmeter/src/transfer.h
 
 Using MessageReader for data messages now.
 
 ------------------------------------------------------------------------
 r219 | dreibh | 2009-05-28 13:16:31 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/messagereader.cc
+   M /trunk/netmeter/src/messagereader.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/transfer.cc
 
 Prepared MessagerReader usage.
 
 ------------------------------------------------------------------------
 r218 | dreibh | 2009-05-28 11:57:32 +0200 (Thu, 28 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   A /trunk/netmeter/src/messagereader.cc
+   A /trunk/netmeter/src/messagereader.h
 
 Started adding MessageReader.
 
 ------------------------------------------------------------------------
 r217 | dreibh | 2009-05-21 13:16:20 +0200 (Thu, 21 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/statisticswriter.cc
 
 Improved vector output format.
 
 ------------------------------------------------------------------------
 r216 | dreibh | 2009-05-20 09:35:37 +0200 (Wed, 20 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/transfer.cc
 
 Added "unordered" and "unreliable" options to netmeter.
 
 ------------------------------------------------------------------------
 r215 | dreibh | 2009-05-19 10:20:57 +0200 (Tue, 19 May 2009) | 2 lines
+Changed paths:
+   M /trunk/netmeter/debian/control
+   M /trunk/netmeter/debian.conf
+   M /trunk/netmeter/src/Makefile.am
 
 Prepared pre-alpha version 0.0.1 of netmeter.
 
 ------------------------------------------------------------------------
 r214 | dreibh | 2009-05-19 10:04:28 +0200 (Tue, 19 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.8
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/statisticswriter.cc
+   M /trunk/netmeter/src/statisticswriter.h
 
 
 ------------------------------------------------------------------------
 r213 | dreibh | 2009-05-19 09:20:40 +0200 (Tue, 19 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/netmeterpackets.h
+   A /trunk/netmeter/src/statisticswriter.cc
+   A /trunk/netmeter/src/statisticswriter.h
+   M /trunk/netmeter/src/transfer.cc
+   M /trunk/netmeter/src/transfer.h
 
 
 ------------------------------------------------------------------------
 r212 | dreibh | 2009-05-18 16:02:36 +0200 (Mon, 18 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/configure.in
 
 
 ------------------------------------------------------------------------
 r211 | dreibh | 2009-05-18 15:47:39 +0200 (Mon, 18 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/configure.in
 
 
 ------------------------------------------------------------------------
 r210 | dreibh | 2009-05-18 09:51:30 +0200 (Mon, 18 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r209 | dreibh | 2009-05-15 16:09:40 +0200 (Fri, 15 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r208 | dreibh | 2009-05-15 15:57:00 +0200 (Fri, 15 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/transfer.cc
 
 
 ------------------------------------------------------------------------
 r207 | dreibh | 2009-05-14 14:01:31 +0200 (Thu, 14 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/control.cc
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r206 | dreibh | 2009-05-14 13:22:15 +0200 (Thu, 14 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   A /trunk/netmeter/src/control.cc
+   A /trunk/netmeter/src/control.h
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
+   A /trunk/netmeter/src/transfer.cc
+   A /trunk/netmeter/src/transfer.h
 
 
 ------------------------------------------------------------------------
 r205 | dreibh | 2009-05-14 11:56:04 +0200 (Thu, 14 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
 
 
 ------------------------------------------------------------------------
 r204 | dreibh | 2009-05-14 11:27:02 +0200 (Thu, 14 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/flowspec.cc
+   M /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r203 | dreibh | 2009-05-14 11:24:17 +0200 (Thu, 14 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   A /trunk/netmeter/src/flowspec.cc
+   A /trunk/netmeter/src/flowspec.h
+   M /trunk/netmeter/src/netmeter.cc
+   A /trunk/netmeter/src/netmeterpackets.h
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
 
 
 ------------------------------------------------------------------------
 r202 | dreibh | 2009-05-13 23:03:28 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r201 | dreibh | 2009-05-13 22:39:23 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r200 | dreibh | 2009-05-13 21:06:35 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r199 | dreibh | 2009-05-13 20:25:25 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
 
 
 ------------------------------------------------------------------------
 r198 | dreibh | 2009-05-13 16:12:21 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r197 | dreibh | 2009-05-13 16:10:01 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r196 | dreibh | 2009-05-13 15:55:33 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r195 | dreibh | 2009-05-13 15:12:21 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r194 | dreibh | 2009-05-13 13:57:38 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
 
 
 ------------------------------------------------------------------------
 r193 | dreibh | 2009-05-13 11:35:03 +0200 (Wed, 13 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
 
 
 ------------------------------------------------------------------------
 r192 | dreibh | 2009-05-12 19:25:47 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
 
 
 ------------------------------------------------------------------------
 r191 | dreibh | 2009-05-12 15:47:11 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/netmeter.cc
+   M /trunk/netmeter/src/tools.cc
+   M /trunk/netmeter/src/tools.h
 
 
 ------------------------------------------------------------------------
 r190 | dreibh | 2009-05-12 14:52:32 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   A /trunk/netmeter/src/ext_socket.h
+   M /trunk/netmeter/src/netmeter.cc
+   A /trunk/netmeter/src/tools.cc
+   A /trunk/netmeter/src/tools.h
 
 
 ------------------------------------------------------------------------
 r187 | dreibh | 2009-05-12 11:58:51 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/src/Makefile.am
+   A /trunk/netmeter/src/netmeter.8 (from /trunk/netmeter/src/subnetcalc.8:185)
+   A /trunk/netmeter/src/netmeter.cc (from /trunk/netmeter/src/subnetcalc.cc:185)
+   D /trunk/netmeter/src/subnetcalc.8
+   D /trunk/netmeter/src/subnetcalc.cc
 
 
 ------------------------------------------------------------------------
 r186 | dreibh | 2009-05-12 11:58:15 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   M /trunk/netmeter/configure.in
+   M /trunk/netmeter/debian/changelog
 
 
 ------------------------------------------------------------------------
 r185 | dreibh | 2009-05-12 11:57:40 +0200 (Tue, 12 May 2009) | 1 line
+Changed paths:
+   A /trunk/netmeter (from /trunk/subnetcalc:184)
 
 
 ------------------------------------------------------------------------
 r181 | dreibh | 2009-04-30 11:24:57 +0200 (Thu, 30 Apr 2009) | 1 line
+Changed paths:
+   M /trunk/subnetcalc/ChangeLog
+   M /trunk/subnetcalc/configure.in
+   M /trunk/subnetcalc/debian/changelog
 
 
 ------------------------------------------------------------------------
 r171 | dreibh | 2009-02-21 14:40:08 +0100 (Sat, 21 Feb 2009) | 2 lines
+Changed paths:
+   M /trunk/subnetcalc/debian/changelog
+   M /trunk/subnetcalc/debian/control
 
 Updated Debian scripts.
 
 ------------------------------------------------------------------------
 r168 | dreibh | 2009-02-15 20:25:12 +0100 (Sun, 15 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/subnetcalc/configure.in
+   M /trunk/subnetcalc/debian/changelog
+   M /trunk/subnetcalc/src/subnetcalc.8
 
 
 ------------------------------------------------------------------------
 r166 | dreibh | 2009-02-15 20:04:21 +0100 (Sun, 15 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/subnetcalc/debian.conf
+   M /trunk/subnetcalc/make-deb
 
 
 ------------------------------------------------------------------------
 r165 | dreibh | 2009-02-15 19:54:04 +0100 (Sun, 15 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/subnetcalc/configure.in
+   M /trunk/subnetcalc/debian/changelog
 
 
 ------------------------------------------------------------------------
 r153 | dreibh | 2009-02-06 09:33:21 +0100 (Fri, 06 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/subnetcalc/configure.in
+   M /trunk/subnetcalc/debian/changelog
+   M /trunk/subnetcalc/src/subnetcalc.8
+   M /trunk/wireshark-experimental/renew-debian-changelog
 
 
 ------------------------------------------------------------------------
 r152 | dreibh | 2009-02-05 15:56:09 +0100 (Thu, 05 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/subnetcalc/debian/changelog
+   M /trunk/subnetcalc/debian/watch
+   A /trunk/wireshark-experimental
+   A /trunk/wireshark-experimental/clean-deb
+   A /trunk/wireshark-experimental/debian.conf
+   A /trunk/wireshark-experimental/make-deb
+   A /trunk/wireshark-experimental/renew-debian-changelog
 
 
 ------------------------------------------------------------------------
 r151 | dreibh | 2009-02-04 14:38:00 +0100 (Wed, 04 Feb 2009) | 1 line
+Changed paths:
+   M /trunk/subnetcalc/debian/changelog
+   M /trunk/subnetcalc/debian.conf
 
 
 ------------------------------------------------------------------------
 r149 | dreibh | 2009-01-30 09:34:07 +0100 (Fri, 30 Jan 2009) | 1 line
+Changed paths:
+   M /trunk/subnetcalc/ChangeLog
 
 
 ------------------------------------------------------------------------
 r148 | dreibh | 2009-01-30 09:25:43 +0100 (Fri, 30 Jan 2009) | 2 lines
+Changed paths:
+   A /trunk/subnetcalc
+   A /trunk/subnetcalc/AUTHORS
+   A /trunk/subnetcalc/BUGS
+   A /trunk/subnetcalc/COPYING
+   A /trunk/subnetcalc/ChangeLog
+   A /trunk/subnetcalc/INSTALL
+   A /trunk/subnetcalc/Makefile.am
+   A /trunk/subnetcalc/NEWS
+   A /trunk/subnetcalc/README
+   A /trunk/subnetcalc/bootstrap
+   A /trunk/subnetcalc/clean-deb
+   A /trunk/subnetcalc/configure.in
+   A /trunk/subnetcalc/debian
+   A /trunk/subnetcalc/debian/changelog
+   A /trunk/subnetcalc/debian/compat
+   A /trunk/subnetcalc/debian/control
+   A /trunk/subnetcalc/debian/copyright
+   A /trunk/subnetcalc/debian/rules
+   A /trunk/subnetcalc/debian/subnetcalc.install
+   A /trunk/subnetcalc/debian/subnetcalc.manpages
+   A /trunk/subnetcalc/debian/watch
+   A /trunk/subnetcalc/debian.conf
+   A /trunk/subnetcalc/make-deb
+   A /trunk/subnetcalc/src
+   A /trunk/subnetcalc/src/Makefile.am
+   A /trunk/subnetcalc/src/subnetcalc.8
+   A /trunk/subnetcalc/src/subnetcalc.cc
 
 Added subnetcalc.
 
