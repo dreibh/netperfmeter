@@ -1,3 +1,12 @@
+netperfmeter (1.0.4-1ubuntu1) maverick; urgency=low
+
+  * New upstream version.
+  * Removed "conflict" and "replaces" to netmeter (old name of
+    netperfmeter).
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 21 Jul 2010 15:22:22 +0200
+
+
 netperfmeter (1.0.3-3ubuntu1) maverick; urgency=low
 
   * Removed recommended package not being available in Debian.
