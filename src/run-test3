@@ -25,19 +25,19 @@
 Directory="TEST3"
 
 Run_VALUES="1"
-Runtime_VALUES="30"
+Runtime_VALUES="120"
 Flows_VALUES="1"
 CompareWithTCP_VALUES="true"
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"   # !!!
-SndBuf_VALUES="200000"
-RcvBuf_VALUES="200000"
+SndBuf_VALUES="50000"
+RcvBuf_VALUES="50000"
 OptionCMT_VALUES="true"
 OptionRP_VALUES="false true"
 OptionDAC_VALUES="true"
-OptionNRSACK_VALUES="false"   # !!!
+OptionNRSACK_VALUES="true"   # !!!
 # First route
 RateNorthernTrail_VALUES="10000 100000"
 DelayNorthernTrail_VALUES="0"
