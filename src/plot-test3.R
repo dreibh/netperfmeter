@@ -33,7 +33,7 @@ plotConfigurations <- list(
    # ------------------------------------------------------------------------
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
-        "Received Bit Rate per Flow", NA, seq(0,200,25), list(0,1),
+        "Received Bit Rate per Flow", NA, NA, list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "OptionRP", "OptionNRSACK", "BidirectionalQoS",
         "passive.flow", "OptionCMT", "Unordered"),
