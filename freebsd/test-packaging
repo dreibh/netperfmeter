@@ -21,4 +21,6 @@ make deinstall && \
 echo "7. ###### make reinstall ##############################################" && \
 make reinstall && \
 echo "8. ###### make package ################################################" && \
-make package
+make package && \
+echo "9. ###### tar tzvf *.tbz ##############################################" && \
+tar tzvf *.tbz

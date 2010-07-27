@@ -17,6 +17,8 @@ PATCHFILES=
 
 MAINTAINER=	dreibh@iem.uni-due.de
 COMMENT=	Network Performance Meter
+LICENSE=        GPLv3
+LICENSE_FILE=   ${WRKSRC}/COPYING
 
 RUN_DEPENDS=	bzip2:${PORTSDIR}/archivers/bzip2
 LIB_DEPENDS=	bz2.1:${PORTSDIR}/archivers/bzip2
