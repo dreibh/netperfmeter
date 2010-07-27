@@ -21,12 +21,8 @@ COMMENT=	Network Performance Meter
 RUN_DEPENDS=	bzip2:${PORTSDIR}/archivers/bzip2
 LIB_DEPENDS=	bz2.1:${PORTSDIR}/archivers/bzip2
 
-#MAN8=          netperfmeter.8
-#MANCOMPRESSED= yes
-
 IS_INTERACTIVE=	no
 GNU_CONFIGURE=	yes
-USE_GMAKE=	yes
 
 
 pre-fetch:
