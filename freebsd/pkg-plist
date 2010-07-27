@@ -1,1 +1,2 @@
-local/bin/netperfmeter
+bin/netperfmeter
+man/man8/netperfmeter.8
