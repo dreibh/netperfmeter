@@ -952,6 +952,7 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
         }
        break;
       default:
+         value = 0.0;   // Avoids warning of uninitialized variable.
          assert(false);
        break;
    }
