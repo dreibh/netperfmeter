@@ -1,0 +1,22 @@
+#!/bin/sh
+
+if [ -e work ] ; then
+   rm -rf work
+fi
+find . -name "*.tbz" | xargs rm
+
+
+echo "###### make install ################################################" && \
+make install && \
+echo "###### make package ################################################" && \
+make package && \
+echo "###### make deinstall ##############################################" && \
+make deinstall && \
+echo "###### pkg_add #####################################################" && \
+pkg_add netperfmeter-*.tbz
+echo "###### make deinstall ##############################################" && \
+make deinstall && \
+echo "###### make reinstall ##############################################" && \
+make reinstall && \
+echo "###### make package ################################################" && \
+make package
