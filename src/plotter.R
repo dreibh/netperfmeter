@@ -125,8 +125,8 @@ expressionExpr <- ":([^:]*):"
 # ====== Extract variable from axis title ===================================
 getVariable <- function(title)
 {
-   result <- sub(extended=TRUE, titleRegExpr, "\\1", title)
-   e <- sub(extended=TRUE, expressionExpr, "\\1", result)
+   result <- sub(titleRegExpr, "\\1", title)
+   e <- sub(expressionExpr, "\\1", result)
    if(e == result) {
       return(paste(sep="", "paste(\"", result, "\")"))
    }
@@ -137,11 +137,11 @@ getVariable <- function(title)
 # ====== Extract abbreviated variable name from axis title ==================
 getAbbreviation <- function(title)
 {
-   result <- sub(extended=TRUE, titleRegExpr, "\\3", title)
+   result <- sub(titleRegExpr, "\\3", title)
    if(result == "") {
       return(getVariable(title))
    }
-   e <- sub(extended=TRUE, expressionExpr, "\\1", result)
+   e <- sub(expressionExpr, "\\1", result)
    if(e == result) {
       return(paste(sep="", "paste(\"", result, "\")"))
    }
@@ -152,8 +152,8 @@ getAbbreviation <- function(title)
 # ====== Extract unit from axis title =======================================
 getUnit <- function(title)
 {
-   result <- sub(extended=TRUE, titleRegExpr, "\\6", title)
-   e <- sub(extended=TRUE, expressionExpr, "\\1", result)
+   result <- sub(titleRegExpr, "\\6", title)
+   e <- sub(expressionExpr, "\\1", result)
    if(e == result) {
       return(paste(sep="", "paste(\"", result, "\")"))
    }
