@@ -3,14 +3,12 @@ Section: net
 Priority: optional
 Maintainer: Thomas Dreibholz <dreibh@iem.uni-due.de>
 Homepage: http://www.iem.uni-due.de/~dreibh/netperfmeter/
-Build-Depends: debhelper (>= 5), autotools-dev, libsctp-dev (>= 1.0.5), libbz2-dev (>= 1.0)
-Standards-Version: 3.8.1
+Build-Depends: debhelper (>= 7.0.50~), autotools-dev, libsctp-dev (>= 1.0.5), libbz2-dev (>= 1.0)
+Standards-Version: 3.9.1
 
 Package: pdfproctools
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, perl (>= 5.8.0), libpdf-api2-perl, ghostscript
-Replaces: pdfmetadata, pdftools
-Conflicts: pdfmetadata, pdftools
 Description: PDF Processing Tools
  This package contains tools for PDF file processing.
  .
@@ -26,8 +24,6 @@ Package: datatabletools
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: r-base
-Replaces: scalartools
-Conflicts: scalartools
 Description: GNU R Data Table Processing Tools
  This package contains a tool to create GNU R data tables from scalar files
  (createsummary) and a tool to combine GNU R data tables. On-the-fly
@@ -36,9 +32,7 @@ Description: GNU R Data Table Processing Tools
 Package: netperfmeter
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, r-base, datatabletools, pdfproctools
-Replaces: netmeter (<= 0.5.1)
-Conflicts: netmeter (<= 0.5.1)
-Recommends: traceroute, iputils-tracepath, iputils-ping, rsplib-tools, subnetcalc (>= 2.0.2)
+Recommends: traceroute, iputils-tracepath, iputils-ping, subnetcalc (>= 2.0.2)
 Description: Network Performance Meter
  NetPerfMeter is a network performance meter for the UDP,
  TCP, SCTP and DCCP transport protocols over IPv4 and IPv6.

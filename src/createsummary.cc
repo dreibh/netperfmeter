@@ -21,11 +21,15 @@
 //
 // Contact: dreibh@iem.uni-due.de
 
+#include <string.h>
+
 #include <iostream>
 #include <vector>
-#include <bzlib.h>
-#include <string.h>
+#include <string>
+
 #include "simpleredblacktree.h"
+#include "inputfile.h"
+#include "outputfile.h"
 
 
 using namespace std;
@@ -49,7 +53,6 @@ class ScalarNode
    ~ScalarNode();
 
    struct SimpleRedBlackTreeNode Node;
-
    char*                         ScalarName;
    char*                         AggNames;
    char*                         AggValues;
@@ -436,307 +439,297 @@ static void addScalar(const char*  scalarName,
 }
 
 
-// ###### Read and process scalar file ######################################
-static bool handleScalarFile(const char* varNames,
-                             const char* varValues,
-                             const char* fileName,
-                             const bool  interactive)
+// ###### Handle scalar #####################################################
+static void handleScalar(const std::string& varNames,
+                         const std::string& varValues,
+                         const unsigned int run,
+                         const bool         interactiveMode,
+                         char*              objectName,
+                         char*              statName,
+                         const double       value)
 {
-   FILE* inFile = fopen(fileName, "r");
-   if(inFile == NULL) {
-      cerr << "ERROR: Unable to open scalar file \"" << fileName << "\"!" << endl;
+/*
+   cout << "Object=" << objectName << endl;
+   cout << "Statistic=" << statName << endl;
+   cout << "Value=" << value << endl;
+*/
+
+   // ====== Get scalar name ==========================================
+   removeSpaces(statName);
+   replaceSlashes(statName);
+   removeBrackets(objectName);
+
+   char scalarName[4096];
+   char aggNames[MAX_NAME_SIZE];
+   char aggValues[MAX_VALUES_SIZE];
+   getAggregate(objectName, statName,
+                (char*)&scalarName, sizeof(scalarName),
+                (char*)&aggNames, sizeof(aggNames),
+                (char*)&aggValues, sizeof(aggValues));
+
+   // ====== Reconciliate with skip list ==============================
+   SkipListNode* skipListNode = SkipList;
+   while(skipListNode != NULL) {
+      if(strncmp(scalarName, skipListNode->Prefix, strlen(skipListNode->Prefix)) == 0) {
+         break;
+      }
+      skipListNode = skipListNode->Next;;
+   }
+   if(skipListNode == NULL) {
+      addScalar(scalarName, aggNames, aggValues, varNames.c_str(), varValues.c_str(), run, value);
+   }
+   else {
+      if(interactiveMode) {
+         cout << "Skipping entry " << scalarName << endl;
+      }
+   }
+}
+
+
+// ###### Read and process scalar file ######################################
+static bool handleScalarFile(const std::string& varNames,
+                             const std::string& varValues,
+                             const std::string& fileName,
+                             const bool         interactiveMode)
+{
+   InputFile       inputFile;
+   InputFileFormat inputFileFormat = IFF_Plain;
+
+   // ====== Open input file ================================================
+   if( (fileName.rfind(".bz2") == fileName.size() - 4) ||
+       (fileName.rfind(".BZ2") == fileName.size() - 4) ) {
+       inputFileFormat = IFF_BZip2;
+   }
+   if(inputFile.initialize(fileName.c_str(), inputFileFormat) == false) {
       return(false);
    }
 
-   size_t fileNameLength = strlen(fileName);
-   int bzerror;
-   BZFILE* inBZFile = NULL;
-   if((fileNameLength > 4) &&
-      (fileName[fileNameLength - 4] == '.') &&
-      (toupper(fileName[fileNameLength - 3]) == 'B') &&
-      (toupper(fileName[fileNameLength - 2]) == 'Z') &&
-      (fileName[fileNameLength - 1] == '2')) {
-      inBZFile = BZ2_bzReadOpen(&bzerror, inFile, 0, 0, NULL, 0);
-      if(bzerror != BZ_OK) {
-         cerr << "ERROR: Unable to initialize BZip2 decompression on file <" << fileName << ">!" << endl;
-         fclose(inFile);
-         return(false);
-      }
-   }
 
-   unsigned int line;
-   unsigned int run;
+   // ====== Process input file =============================================
    double       value;
-   size_t       i;
-   size_t       bytesRead;
-   size_t       storageSize = 0;
-   char         storage[4096];
+   bool         hasStatistic = false;
    char         buffer[4097];
    char         objectName[4096];
    char         statName[4096];
-
-   run  = 0;
-   line = 0;
-   bool success = true;
+   char         fieldName[4096];
+   char         statisticObjectName[4096];
+   char         statisticBlockName[4096];
+   unsigned int run     = 0;
+   bool         success = true;
    for(;;) {
-      memcpy((char*)&buffer, storage, storageSize);
-      if(inBZFile) {
-         bytesRead = BZ2_bzRead(&bzerror, inBZFile, (char*)&buffer[storageSize], sizeof(buffer) - storageSize);
-      }
-      else {
-         bytesRead = fread((char*)&buffer[storageSize], 1, sizeof(buffer) - storageSize, inFile);
-      }
-      if(bytesRead <= 0) {
-         bytesRead = 0;
-      }
-      bytesRead += storageSize;
-      buffer[bytesRead] = 0x00;
-
-      if(bytesRead == 0) {
+      // ====== Read line from input file ===================================
+      bool eof;
+      const ssize_t bytesRead = inputFile.readLine((char*)&buffer, sizeof(buffer), eof);
+      if((bytesRead < 0) || (eof)) {
          break;
       }
 
-      storageSize = 0;
-      for(i = 0;i < bytesRead;i++) {
-         if(buffer[i] == '\n') {
-            storageSize = bytesRead - i - 1;
-            memcpy((char*)&storage, &buffer[i + 1], storageSize);
-            buffer[i] = 0x00;
-            break;
-         }
-      }
-
-      line++;
-
-      if(buffer[0] == '#') {
-      }
-      else if( (!(strncmp(buffer, "bin", 3))) ||
-               (!(strncmp(buffer, "attr", 4))) ||
-               (!(strncmp(buffer, "field", 5))) ||
-               (!(strncmp(buffer, "statistic", 9))) ) {
-         // Skip this item
-      }
-      else if(!(strncmp(buffer, "run", 3))) {
-         run++;
-      }
-      else if(!(strncmp(buffer, "version", 7))) {
-         // Skip this item
-      }
-      else if( (!(strncmp(buffer, "scalar ",  7))) ||
-               (!(strncmp(buffer, "scalar\t", 7))) ) {
+      // ====== Process lineNumber ==========================================
+      if( (!(strncmp(buffer, "scalar ",  7))) ||
+          (!(strncmp(buffer, "scalar\t", 7))) ) {
          // ====== Parse scalar line ========================================
          char* s = getWord((char*)&buffer[7], (char*)&objectName);
          if(s) {
             s = getWord(s, (char*)&statName);
             if(s) {
                if(sscanf(s, "%lf", &value) != 1) {
-                  cerr << "ERROR: File \"" << fileName << "\", line " << line << " - Value expected!" << endl;
+                  cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                       << " - Value expected!" << endl;
                   success = false;
                   break;
                }
             }
             else {
-               cerr << "ERROR: File \"" << fileName << "\", line " << line << " - Statistics name expected!" << endl;
+               cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                    << " - Statistics name expected!" << endl;
                success = false;
                break;
             }
          }
          else {
-            cerr << "ERROR: File \"" << fileName << "\", line " << line << " - Object name expected!" << endl;
+            cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                 << " - Object name expected!" << endl;
             success = false;
             break;
          }
          removeScenarioName((char*)&objectName);
-
-/*
-         cout << "Object=" << objectName << endl;
-         cout << "Statistic=" << statName << endl;
-         cout << "Value=" << value << endl;
-*/
-
-         // ====== Get scalar name ==========================================
-         removeSpaces((char*)&statName);
-         replaceSlashes((char*)&statName);
-         removeBrackets((char*)&objectName);
-
-         char scalarName[4096];
-         char aggNames[MAX_NAME_SIZE];
-         char aggValues[MAX_VALUES_SIZE];
-         getAggregate(objectName, statName,
-                      (char*)&scalarName, sizeof(scalarName),
-                      (char*)&aggNames, sizeof(aggNames),
-                      (char*)&aggValues, sizeof(aggValues));
-
-         // ====== Reconciliate with skip list ==============================
-         SkipListNode* skipListNode = SkipList;
-         while(skipListNode != NULL) {
-            if(strncmp(scalarName, skipListNode->Prefix, strlen(skipListNode->Prefix)) == 0) {
-               break;
+         handleScalar(varNames, varValues, run, interactiveMode,
+                      (char*)&objectName, (char*)&statName, value);
+      }
+      else if(buffer[0] == '#') {
+      }
+      else if( (!(strncmp(buffer, "bin", 3))) ||
+               (!(strncmp(buffer, "attr", 4))) ) {
+         // Skip this item
+      }
+      else if(!(strncmp(buffer, "run", 3))) {
+         run++;
+      }
+      else if(!(strncmp(buffer, "field ", 6))) {
+         if(hasStatistic) {
+            char* s = getWord((char*)&buffer[6], (char*)&fieldName);
+            if(s) {
+               if(sscanf(s, "%lf", &value) != 1) {
+                  cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                       << " - Value expected!" << endl;
+                  success = false;
+                  break;
+               }
+               std::string newStatName = fieldName;
+               if(newStatName == "stddev") {
+                  newStatName = "StdDev";
+               }
+               else if(newStatName == "sqrsum") {
+                  newStatName = "SqrSum";
+               }
+               else {
+                  newStatName[0] = toupper(newStatName[0]);
+               }
+               newStatName = newStatName + statisticBlockName;
+               // handleScalar() will overwrite the fields object/stat => make copies first!
+               snprintf((char*)&statName,   sizeof(statName),   "%s", newStatName.c_str());
+               snprintf((char*)&objectName, sizeof(objectName), "%s", statisticObjectName);
+               handleScalar(varNames, varValues, run, interactiveMode,
+                           (char*)&objectName, (char*)&statName, value);
             }
-            skipListNode = skipListNode->Next;;
-         }
-         if(skipListNode == NULL) {
-            addScalar(scalarName, aggNames, aggValues, varNames, varValues, run, value);
          }
          else {
-            if(interactive) {
-               cout << "Skipping entry " << scalarName << endl;
-            }
+            cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                 << " - \"field\" without \"statistic\"!" << endl;
+            success = false;
+            break;
          }
       }
+      else if(!(strncmp(buffer, "statistic ", 10))) {
+         // ====== Parse scalar lineNumber ========================================
+         char* s = getWord((char*)&buffer[10], (char*)&statisticObjectName);
+         if(s) {
+            s = getWord(s, (char*)&statisticBlockName);
+            if(s == NULL) {
+               cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                    << " - Statistics name expected!" << endl;
+               success = false;
+               break;
+            }
+         }
+         else {
+            cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                 << " - Object name expected!" << endl;
+            success = false;
+            break;
+         }
+         removeScenarioName((char*)&statisticObjectName);
+         hasStatistic = true;
+      }
       else if(buffer[0] == 0x00) {
+         // Empty lineNumber
+      }
+      else if(!(strncmp(buffer, "version", 7))) {
+         // Skip this item
       }
       else {
-         cerr << "NOTE: " << fileName << ":" << line << " - Ignoring line \"" << buffer << "\"" << endl;
+         cerr << "NOTE: " << fileName << ":" << inputFile.getLine()
+              << " - Ignoring line \"" << buffer << "\"" << endl;
          // Skip this item
       }
    }
 
-   if(inBZFile) {
-      BZ2_bzReadClose(&bzerror, inBZFile);
-   }
-   fclose(inFile);
+
+   // ====== Close input file ===============================================
+   inputFile.finish();
    return(success);
 }
 
 
-// ###### Dump scalars to output files ######################################
-static void dumpScalars(const char*        simulationsDirectory,
-                        const char*        resultsDirectory,
-                        const char*        varNames,
-                        const unsigned int compressionLevel,
-                        const bool         interactive)
+// ###### Close output file #################################################
+static void closeOutputFile(OutputFile&              outputFile,
+                            const std::string&       outputFileName,
+                            const unsigned long long lineNumber,
+                            unsigned long long&      totalIn,
+                            unsigned long long&      totalOut,
+                            unsigned long long&      totalLines,
+                            size_t                   totalFiles,
+                            const bool               interactiveMode)
 {
+   if(outputFile.exists()) {
+      unsigned long long in, out;
+      if(!outputFile.finish(true, &in, &out)) {
+         exit(1);
+      }
+      totalIn    += in;
+      totalOut   += out;
+      totalLines += lineNumber;
+      totalFiles++;
+      if(interactiveMode) {
+         cout << " (" << lineNumber << " lines";
+         if(in > 0) {
+            cout << ", " << in << " -> " << out << " - "
+                  << ((double)out * 100.0 / in) << "%";
+         }
+         cout << ")" << endl;
+      }
+   }
+}
+
+
+// ###### Dump scalars to output files ######################################
+static void dumpScalars(const std::string& simulationsDirectory,
+                        const std::string& resultsDirectory,
+                        const std::string& varNames,
+                        const unsigned int compressionLevel,
+                        const bool         interactiveMode)
+{
+   std::string        fileName           = "";
+   std::string        lastStatisticsName = "";
+   unsigned long long totalIn            = 0;
+   unsigned long long totalOut           = 0;
+   unsigned long long totalLines         = 0;
+   unsigned int       totalFiles         = 0;
+   unsigned long long lineNumber         = 0;
+   OutputFile         outputFile;
+
    // simpleRedBlackTreePrint(&StatisticsStorage, stdout);
 
-   FILE*              outFile   = NULL;
-   BZFILE*            outBZFile = NULL;
-   size_t             line      = 0;
-   int                bzerror;
-   char               fileName[4096];
-   char               lastStatisticsName[MAX_NAME_SIZE];
-   char               buffer[16384];
-   unsigned int       inLow;
-   unsigned int       inHigh;
-   unsigned int       outLow;
-   unsigned int       outHigh;
-   unsigned long long in;
-   unsigned long long out;
-   unsigned long long totalIn;
-   unsigned long long totalOut;
-   unsigned long long totalLines;
-   size_t             totalFiles;
-
-   totalIn = totalOut = totalLines = totalFiles = 0;
-   lastStatisticsName[0] = 0x00;
    SimpleRedBlackTreeNode* node = simpleRedBlackTreeGetFirst(&StatisticsStorage);
    while(node != NULL) {
       ScalarNode* scalarNode = getScalarNodeFromStorageNode(node);
 
-      if(strcmp(lastStatisticsName, scalarNode->ScalarName) != 0) {
+      if(strcmp(lastStatisticsName.c_str(), scalarNode->ScalarName) != 0) {
          // ====== Close output file ========================================
-         if(outBZFile) {
-            BZ2_bzWriteClose64(&bzerror, outBZFile, 0, &inLow, &inHigh, &outLow, &outHigh);
-            if(bzerror == BZ_OK) {
-               outBZFile = NULL;
-               in  = ((unsigned long long)inHigh << 32) + inLow;
-               out = ((unsigned long long)outHigh << 32) + outLow;
-               totalIn += in;
-               totalOut += out;
-               totalLines += line;
-               totalFiles++;
-               if(interactive) {
-                  cout << " (" << line << " lines, "
-                       << in << " -> " << out << " - " << ((double)out * 100.0 / in) << "%)" << endl;
-               }
-            }
-            else {
-               cerr << endl
-                    << "ERROR: libbz2 failed to close file <" << fileName << ">!" << endl;
-               fclose(outFile);
-               unlink(fileName);
-               outFile = NULL;
-            }
-         }
-         else if(outFile) {
-            cout << " (" << line << " lines)" << endl;
-         }
-         if(outFile) {
-            fclose(outFile);
-            outFile = NULL;
-         }
-
+         closeOutputFile(outputFile, fileName, lineNumber,
+                         totalIn, totalOut, totalLines, totalFiles,
+                         interactiveMode);
 
          // ====== Open output file =========================================
          if(compressionLevel > 0) {
-            snprintf((char*)&fileName, sizeof(fileName), "%s/%s.data", resultsDirectory, scalarNode->ScalarName);
-            unlink(fileName);
-            snprintf((char*)&fileName, sizeof(fileName), "%s/%s.data.bz2", resultsDirectory, scalarNode->ScalarName);
+            fileName = resultsDirectory + "/" + scalarNode->ScalarName + ".data";
+            unlink(fileName.c_str());
+            fileName += ".bz2";
          }
          else {
-            snprintf((char*)&fileName, sizeof(fileName), "%s/%s.data.bz2", resultsDirectory, scalarNode->ScalarName);
-            unlink(fileName);
-            snprintf((char*)&fileName, sizeof(fileName), "%s/%s.data", resultsDirectory, scalarNode->ScalarName);
+            fileName = resultsDirectory + "/" + scalarNode->ScalarName + ".data.bz2";
+            unlink(fileName.c_str());
+            fileName = resultsDirectory + "/" + scalarNode->ScalarName + ".data";
          }
-         if(interactive) {
+         if(interactiveMode) {
             cout << "Statistics \"" << scalarNode->ScalarName << "\" ...";
          }
          cout.flush();
-         outFile = fopen(fileName, "w");
-         if(outFile == NULL) {
-            cerr << endl
-                 << "ERROR: Unable to create file <" << fileName << ">!" << endl;
+         if(outputFile.initialize(fileName.c_str(),
+                                  (compressionLevel > 0) ? OFF_BZip2 : OFF_Plain,
+                                  compressionLevel) == false) {
             exit(1);
          }
-         if(compressionLevel > 0) {
-            outBZFile = BZ2_bzWriteOpen(&bzerror, outFile, compressionLevel, 0, 30);
-            if(bzerror != BZ_OK) {
-               cerr << endl
-                    << "ERROR: Unable to initialize BZip2 compression on file <" << fileName << ">!" << endl
-                    << "Reason: " << BZ2_bzerror(outBZFile, &bzerror) << endl;
-               BZ2_bzWriteClose(&bzerror, outBZFile, 0, NULL, NULL);
-               fclose(outFile);
-               unlink(fileName);
-               outBZFile = NULL;
-               outFile   = NULL;
-            }
-         }
-         else {
-            outBZFile = NULL;
-         }
-         line = 1;
-
+         lineNumber = 1;
 
          // ====== Write table header =======================================
-         if((outBZFile) || (outFile)) {
-            snprintf((char*)&buffer, sizeof(buffer),
-                     "RunNo ValueNo\t%s\t%s\t%s\n",
-                     scalarNode->AggNames,
-                     varNames,
-                     scalarNode->ScalarName);
-            if(outBZFile) {
-               BZ2_bzWrite(&bzerror, outBZFile, buffer, strlen(buffer));
-               if(bzerror != BZ_OK) {
-                  cerr << endl
-                        << "ERROR: libbz2 failed to write into file <" << fileName << ">!" << endl
-                        << "Reason: " << BZ2_bzerror(outBZFile, &bzerror) << endl;
-                  BZ2_bzWriteClose(&bzerror, outBZFile, 0, NULL, NULL);
-                  fclose(outFile);
-                  unlink(fileName);
-                  outBZFile = NULL;
-                  outFile   = NULL;
-               }
-            }
-            else if(outFile) {
-               if(fputs(buffer, outFile) <= 0) {
-                  cerr << "ERROR: Failed to write into file <" << fileName << ">!" << endl;
-                  fclose(outFile);
-                  unlink(fileName);
-                  outFile = NULL;
-               }
-            }
+         if(outputFile.printf("RunNo ValueNo\t%s\t%s\t%s\n",
+                              scalarNode->AggNames,
+                              varNames.c_str(),
+                              scalarNode->ScalarName) == false) {
+            exit(1);
          }
-         strcpy((char*)&lastStatisticsName, scalarNode->ScalarName);
+         lastStatisticsName = scalarNode->ScalarName;
       }
 
 
@@ -744,82 +737,37 @@ static void dumpScalars(const char*        simulationsDirectory,
       size_t valueNumber = 1;
       vector<double>::iterator valueIterator = scalarNode->ValueSet.begin();
       while(valueIterator != scalarNode->ValueSet.end()) {
-         snprintf((char*)&buffer, sizeof(buffer),
-                  "%07u %04u %04u\t%s\t%s\t%1.12f\n",
-                  (unsigned int)line,
-                  (unsigned int)scalarNode->Run,
-                  (unsigned int)valueNumber,
-                  scalarNode->AggValues,
-                  scalarNode->VarValues,
-                  *valueIterator);
-         if(outBZFile) {
-            BZ2_bzWrite(&bzerror, outBZFile, buffer, strlen(buffer));
-            if(bzerror != BZ_OK) {
-               cerr << endl
-                     << "ERROR: Writing to file <" << fileName << "> failed!" << endl
-                     << "Reason: " << BZ2_bzerror(outBZFile, &bzerror) << endl;
-               BZ2_bzWriteClose(&bzerror, outBZFile, 0, NULL, NULL);
-               fclose(outFile);
-               unlink(fileName);
-               outBZFile = NULL;
-               outFile   = NULL;
-               break;
-            }
+         if(outputFile.printf("%07llu %04u %04u\t%s\t%s\t%1.12f\n",
+                              lineNumber,
+                              (unsigned int)scalarNode->Run,
+                              (unsigned int)valueNumber,
+                              scalarNode->AggValues,
+                              scalarNode->VarValues,
+                              *valueIterator) == false) {
+            exit(1);
          }
-         else if(outFile) {
-            if(fputs(buffer, outFile) <= 0) {
-               cerr << endl
-                     << "ERROR: Failed to write into file <" << fileName << ">!" << endl;
-               fclose(outFile);
-               unlink(fileName);
-               outFile = NULL;
-               break;
-            }
-         }
-
          valueNumber++;
-         line++;
+         lineNumber++;
          valueIterator++;
       }
 
       node = simpleRedBlackTreeGetNext(&StatisticsStorage, node);
    }
 
-
    // ====== Close last output file =========================================
-   if(outBZFile) {
-      BZ2_bzWriteClose64(&bzerror, outBZFile, 0, &inLow, &inHigh, &outLow, &outHigh);
-      if(bzerror == BZ_OK) {
-         in  = ((unsigned long long)inHigh << 32) + inLow;
-         out = ((unsigned long long)outHigh << 32) + outLow;
-         totalIn += in;
-         totalOut += out;
-         totalLines += line;
-         totalFiles++;
-         if(interactive) {
-            cout << " (" << line << " lines, "
-                 << in << " -> " << out << " - " << ((double)out * 100.0 / in) << "%)" << endl;
-         }
-     }
-     else {
-         cerr << endl
-              << "ERROR: libbz2 failed to close file <" << fileName << ">!" << endl
-              << "Reason: " << BZ2_bzerror(outBZFile, &bzerror) << endl;
-         fclose(outFile);
-         unlink(fileName);
-         outFile = NULL;
-      }
-   }
-   else if(outFile) {
-      cout << " (" << line << " lines)" << endl;
-   }
-   if(outFile) {
-      fclose(outFile);
-      outFile = NULL;
-   }
+   closeOutputFile(outputFile, fileName, lineNumber,
+                     totalIn, totalOut, totalLines, totalFiles,
+                     interactiveMode);
 
-   cout << "Wrote " << totalLines << " lines into " << totalFiles << " files, "
-        << totalIn << " -> " << totalOut << " - " << ((double)totalOut * 100.0 / totalIn) << "%" << endl;
+   // ====== Display some compression information ===========================
+   cout << "Wrote " << totalLines << " lines into "
+        << totalFiles << " files";
+   if(totalIn > 0) {
+      cout << ", "
+           << totalIn << " -> " << totalOut << " - "
+           << ((double)totalOut * 100.0 / totalIn) << "%";
+   }
+   cout << endl;
 }
 
 
@@ -835,21 +783,20 @@ static void usage(const char* name)
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
-   unsigned int compressionLevel = 9;
-   bool         interactive      = true;
-   const char*  varNames         = "_NoVarNamesGiven_";
-   char         varValues[4096];
-   char         varNamesBuffer[2048];
-   char         simulationsDirectory[4096];
-   char         resultsDirectory[4096];
-   char         logFileName[4096];
-   char         statusFileName[4096];
+   unsigned int compressionLevel     = 9;
+   bool         interactiveMode      = true;
+   std::string  varNames             = "_NoVarNamesGiven_";
+   std::string  varValues            = "";
+   std::string  simulationsDirectory = ".";
+   std::string  resultsDirectory     = ".";
+   std::string  logFileName          = "";
+   std::string  statusFileName       = "";
    char         buffer[4096];
    char*        command;
 
    simpleRedBlackTreeNew(&StatisticsStorage,
-                             scalarNodePrintFunction,
-                             scalarNodeComparisonFunction);
+                         scalarNodePrintFunction,
+                         scalarNodeComparisonFunction);
 
 
    // ====== Handle command-line arguments ==================================
@@ -863,10 +810,10 @@ int main(int argc, char** argv)
             }
          }
          else if(!(strcmp(argv[i], "-batch"))) {
-            interactive = false;
+            interactiveMode = false;
          }
          else if(!(strcmp(argv[i], "-interactive"))) {
-            interactive = true;
+            interactiveMode = true;
          }
          else {
             usage(argv[0]);
@@ -878,20 +825,15 @@ int main(int argc, char** argv)
    }
 
 
-   cout << "CreateSummary - Version 4.00" << endl
+   cout << "CreateSummary - Version 4.20" << endl
         << "============================" << endl << endl
         << "Compression Level: " << compressionLevel << endl
-        << "Interactive Mode:  " << (interactive ? "on" : "off") << endl
+        << "Interactive Mode:  " << (interactiveMode ? "on" : "off") << endl
         << endl;
 
 
-   // ====== Handle interactive commands ====================================
-   varValues[0]      = 0x00;
-   logFileName[0]    = 0x00;
-   statusFileName[0] = 0x00;
-   strcpy((char*)&simulationsDirectory, ".");
-   strcpy((char*)&resultsDirectory, ".");
-   if(interactive) {
+   // ====== Handle interactiveMode commands ====================================
+   if(interactiveMode) {
       cout << "Ready> ";
       cout.flush();
    }
@@ -906,59 +848,46 @@ int main(int argc, char** argv)
          break;
       }
 
-      if(interactive) {
+      if(interactiveMode) {
          cout << command << endl;
       }
 
       if(!(strncmp(command, "--varnames=", 11))) {
-         if(command[11] != '\"') {
-            snprintf((char*)&varNamesBuffer, sizeof(varNamesBuffer), "%s", (char*)&command[11]);
+         varNames = (const char*)&command[11];
+         if(varNames[0] == '\"') {
+            varNames = varNames.substr(1, varNames.size() - 2);
          }
-         else {
-            snprintf((char*)&varNamesBuffer, sizeof(varNamesBuffer), "%s", (char*)&command[12]);
-            size_t l = strlen(varNamesBuffer);
-            if(l > 0) {
-               varNamesBuffer[l - 1] = 0x00;
-            }
-         }
-         varNames = (const char*)&varNamesBuffer;
       }
       else if(!(strncmp(command, "--values=", 9))) {
-         if(command[9] != '\"') {
-            snprintf((char*)&varValues, sizeof(varValues), "%s", (char*)&command[9]);
-         }
-         else {
-            snprintf((char*)&varValues, sizeof(varValues), "%s", (char*)&command[10]);
-            size_t l = strlen(varValues);
-            if(l > 0) {
-               varValues[l - 1] = 0x00;
-            }
+         varValues = (const char*)&command[9];
+         if(varValues[0] == '\"') {
+            varValues = varValues.substr(1, varValues.size() - 2);
          }
       }
       else if(!(strncmp(command, "--logfile=", 10))) {
-         snprintf((char*)&logFileName, sizeof(logFileName), "%s", (char*)&command[10]);
+         logFileName = (const char*)&command[10];
       }
       else if(!(strncmp(command, "--statusfile=", 13))) {
-         snprintf((char*)&statusFileName, sizeof(statusFileName), "%s", (char*)&command[13]);
+         statusFileName = (const char*)&command[13];
       }
       else if(!(strncmp(command, "--input=", 8))) {
-         if(varValues[0] == 0x00) {
+         if(varValues == "") {
             cerr << "ERROR: No values given (parameter --values=...)!" << endl;
             exit(1);
          }
-         if(!handleScalarFile(varNames, varValues, (char*)&command[8], interactive)) {
+         if(!handleScalarFile(varNames, varValues, (char*)&command[8], interactiveMode)) {
             scalarFileError = true;
-            if(logFileName[0] != 0x00) {
-               fprintf(stderr, " => see logfile %s\n", logFileName);
+            if(logFileName != "") {
+               cerr << " => see logfile " << logFileName << endl;
             }
-            if(statusFileName[0] != 0x00) {
-               fputs(" Removing status file; restart simulation to re-create this run!\n", stderr);
-               unlink(statusFileName);
+            if(statusFileName != "") {
+               cerr << " Removing status file; restart simulation to re-create this run!" << endl;
+               unlink(statusFileName.c_str());
             }
          }
-         varValues[0]      = 0x00;
-         logFileName[0]    = 0x00;
-         statusFileName[0] = 0x00;
+         varValues      = "";
+         logFileName    = "";
+         statusFileName = "";
       }
       else if(!(strncmp(command, "--skip=", 7))) {
          SkipListNode* skipListNode = new SkipListNode;
@@ -972,10 +901,10 @@ int main(int argc, char** argv)
          SkipList = skipListNode;
       }
       else if(!(strncmp(command, "--simulationsdirectory=", 23))) {
-         snprintf((char*)&simulationsDirectory, sizeof(simulationsDirectory), "%s", (char*)&command[23]);
+         simulationsDirectory = (const char*)&command[23];
       }
       else if(!(strncmp(command, "--resultsdirectory=", 19))) {
-         snprintf((char*)&resultsDirectory, sizeof(resultsDirectory), "%s", (char*)&command[19]);
+         resultsDirectory = (const char*)&command[19];
       }
       else if(!(strncmp(command, "--level=", 8))) {
          // Deprecated, ignore ...
@@ -991,12 +920,12 @@ int main(int argc, char** argv)
               << "   --values=alpha100 beta200 gamma300" << endl
               << "   --input=simulations/scalar-file.sca.bz2" << endl
               << "   (Ctrl-D, EOF)" << endl;
-         if(!interactive) {
+         if(!interactiveMode) {
             exit(1);
          }
       }
 
-      if(interactive) {
+      if(interactiveMode) {
          cout << "Ready> ";
          cout.flush();
       }
@@ -1004,12 +933,13 @@ int main(int argc, char** argv)
 
 
    // ====== Write results ==================================================
-   if(interactive) {
+   if(interactiveMode) {
       cout << endl << endl;
    }
    if(!scalarFileError) {
       cout << "Writing scalar files..." << endl;
-      dumpScalars(simulationsDirectory, resultsDirectory, varNames, compressionLevel, interactive);
+      dumpScalars(simulationsDirectory, resultsDirectory, varNames,
+                  compressionLevel, interactiveMode);
    }
    else {
       cerr << "Not all scalar files have been read -> aborting!" << endl;

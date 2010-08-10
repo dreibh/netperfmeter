@@ -1,2 +1,2 @@
-debian/tmp/usr/share/man/man8/pdfmetadata.8
-debian/tmp/usr/share/man/man8/pdfembedfonts.8
+src/pdfmetadata.8
+src/pdfembedfonts.8

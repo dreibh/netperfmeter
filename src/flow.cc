@@ -984,13 +984,10 @@ void Flow::deactivate(const bool asyncStop)
             // timeout.
          }
          else {
-#ifdef __linux__
-#warning Using shutdown() instead of sctp_sengmsg() with SCTP_EOF flag.
             const int shutdownOkay = ext_shutdown(SocketDescriptor, 2);
-#else
-            const int shutdownOkay = ext_shutdown(SocketDescriptor, 2);
-//            const int shutdownOkay = sctp_sendmsg(SocketDescriptor, NULL, 0, NULL, 0, 0, SCTP_EOF, 0, 0, 0);
-#endif
+/*
+            const int shutdownOkay = sctp_sendmsg(SocketDescriptor, NULL, 0, NULL, 0, 0, SCTP_EOF, 0, 0, 0);
+*/
             if(shutdownOkay < 0) {
                perror("WARNING: Cannut shut association down");
             }

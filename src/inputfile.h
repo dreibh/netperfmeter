@@ -1,6 +1,6 @@
 /* $Id$
  *
- * Plain/BZip2 File Output
+ * Plain/BZip2 File Input
  * Copyright (C) 2009-2010 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,8 +19,8 @@
  * Contact: dreibh@iem.uni-due.de
  */
 
-#ifndef OUTPUTFILE_H
-#define OUTPUTFILE_H
+#ifndef INPUTFILE_H
+#define INPUTFILE_H
 
 #include <stdio.h>
 #include <bzlib.h>
@@ -28,35 +28,29 @@
 #include <iostream>
 
 
-// Output File Formats
-enum OutputFileFormat
+// Input File Formats
+enum InputFileFormat
 {
-   OFF_None  = 0,
-   OFF_Plain = 1,
-   OFF_BZip2 = 2
+   IFF_Plain = 1,
+   IFF_BZip2 = 2
 };
 
 
-class OutputFile
+class InputFile
 {
    // ====== Methods ========================================================
    public:
-   OutputFile();
-   ~OutputFile();
+   InputFile();
+   ~InputFile();
 
    bool initialize(const char*            name,
-                   const OutputFileFormat format,
-                   const unsigned int     compressionLevel = 9);
-   bool finish(const bool          closeFile    = true,
-               unsigned long long* bytesIn      = NULL,
-               unsigned long long* bytesOut     = NULL);
-   bool printf(const char* str, ...);
-   bool write(const char* buffer, const size_t bufferLength);
+                   const InputFileFormat format);
+   bool finish(const bool closeFile = true);
 
    inline bool exists() const {
       return(File || BZFile);
    }
-   inline OutputFileFormat getFormat() const {
+   inline InputFileFormat getFormat() const {
       return(Format);
    }
    inline FILE* getFile() const {
@@ -68,18 +62,18 @@ class OutputFile
    inline unsigned long long getLine() const {
       return(Line);
    }
-   inline unsigned long long nextLine() {
-      return(++Line);
-   }
+   ssize_t readLine(char* buffer, size_t bufferSize, bool& eof);
 
    // ====== Private Data ===================================================
    private:
-   OutputFileFormat   Format;
+   InputFileFormat    Format;
    std::string        Name;
    unsigned long long Line;
    FILE*              File;
    BZFILE*            BZFile;
-   bool               WriteError;
+   bool               ReadError;
+   size_t             StoragePos;
+   char               Storage[16384];
 };
 
 #endif
