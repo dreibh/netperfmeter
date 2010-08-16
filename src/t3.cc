@@ -1,21 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <set>
 #include <vector>
 #include <iostream>
 
 
-struct StatEntry
+class QoSStats
 {
-   double       TimeStamp;
-   unsigned int Value;
-};
-
-
-class Stat
-{
+   // ====== Public methods =================================================
    public:
-      Stat();
+   QoSStats();
+   ~QoSStats();
 
    double getTrackingInterval() const {
       return(TrackingInterval);
@@ -27,59 +23,87 @@ class Stat
    void add(const double now, const unsigned int value);
    void dump(const double now);
 
-
+   // ====== Private data ===================================================
    private:
-   struct Less
+   struct QoSStatsEntry {
+      double       TimeStamp;
+      unsigned int Value;
+   };
+   struct QoSStatsEntryLess
    {
-      inline bool operator()(const StatEntry* a, const StatEntry* b) const {
+      inline bool operator()(const QoSStatsEntry* a, const QoSStatsEntry* b) const {
          return(a->TimeStamp < b->TimeStamp);
       }
    };
-   typedef std::set<StatEntry*, Less> StatEntryType;
+   typedef std::set<QoSStatsEntry*, QoSStatsEntryLess> QoSStatsEntryType;
 
    void purge(const double now);
 
    double             TrackingInterval;
    unsigned long long ValueSum;
-   StatEntryType      StatSet;
+   QoSStatsEntryType  QoSStatsSet;
 };
 
 
-Stat::Stat()
+// ###### Constructor #######################################################
+QoSStats::QoSStats()
 {
    TrackingInterval = 1.0;
    ValueSum         = 0;
 }
 
-void Stat::purge(const double now)
+
+// ###### Destructor ########################################################
+QoSStats::~QoSStats()
 {
-   StatEntryType::iterator first = StatSet.begin();
-   while(first != StatSet.end()) {
-      if((*first)->TimeStamp >= now - TrackingInterval) {
-         break;
-      }
-      puts("---del---");
+   QoSStatsEntryType::iterator first = QoSStatsSet.begin();
+   while(first != QoSStatsSet.end()) {
       delete *first;
-      StatSet.erase(first);
-      first = StatSet.begin();
+      QoSStatsSet.erase(first);
+      first = QoSStatsSet.begin();
    }
 }
 
-void Stat::add(const double now, const unsigned int value)
+
+// ###### Purge out-of-date values ##########################################
+void QoSStats::purge(const double now)
 {
-   StatEntry* statEntry = new StatEntry;
+   QoSStatsEntryType::iterator first = QoSStatsSet.begin();
+   while(first != QoSStatsSet.end()) {
+
+      QoSStatsEntry* statEntry = *first;
+      if(statEntry->TimeStamp >= now - TrackingInterval) {
+         break;
+      }
+      assert(ValueSum >=  statEntry->Value);
+      ValueSum -= statEntry->Value;
+      delete statEntry;
+      QoSStatsSet.erase(first);
+
+      first = QoSStatsSet.begin();
+   }
+}
+
+
+// ###### Add value #########################################################
+void QoSStats::add(const double now, const unsigned int value)
+{
+   // ====== Add new entry ==================================================
+   QoSStatsEntry* statEntry = new QoSStatsEntry;
    statEntry->TimeStamp = now;
    statEntry->Value     = value;
-   StatSet.insert(statEntry);
+   QoSStatsSet.insert(statEntry);
    ValueSum += statEntry->Value;
 
+   // ====== Get rid of out-of-date entries =================================
    purge(now);
 }
 
-void Stat::dump(const double now)
+
+void QoSStats::dump(const double now)
 {
-   const StatEntryType::iterator first = StatSet.begin();
-   StatEntryType::iterator       last  = StatSet.end();
+   const QoSStatsEntryType::iterator first = QoSStatsSet.begin();
+   QoSStatsEntryType::iterator       last  = QoSStatsSet.end();
    if(first != last) {
       last--;   // There must be at least one element ...
       if(first != last) {   // There are at least two elements ...
@@ -92,7 +116,7 @@ void Stat::dump(const double now)
 
 int main(int argc, char** argv)
 {
-   Stat stat;
+   QoSStats stat;
 
    stat.dump(4);
 
