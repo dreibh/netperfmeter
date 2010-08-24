@@ -65,7 +65,6 @@ class FlowTrafficSpec
    bool                   UseNRSACK;
    bool                   UseCMT;
    bool                   UseRP;
-   bool                   UseDAC;
    
    double                 OutboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
    double                 OutboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];

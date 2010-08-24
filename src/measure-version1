@@ -21,8 +21,8 @@
 #
 
 HOST_EAST="132.252.153.18"
-HOST_WEST="132.252.153.10,132.252.153.138"   # !!! Disjoint Links !!!
-# HOST_WEST="132.252.153.10,132.252.153.14"   # !!! Shared Bottleneck !!!
+#HOST_WEST="132.252.153.10,132.252.153.138"   # !!! Disjoint Links !!!
+HOST_WEST="132.252.153.10,132.252.153.14"   # !!! Shared Bottleneck !!!
 ROUTER_NORTH="132.252.153.9"
 NETWORK_NW="132.252.153.8/29"
 NETWORK_NE="132.252.153.16/29"
@@ -36,14 +36,15 @@ RemoteNode="$HOST_EAST:9000"
 
 Directory="UNDEFINED"
 
-Variables="Run Runtime Flows CompareWithTCP OnlyOneAssoc Unordered Unreliable FrameRate FrameSize SndBuf RcvBuf OptionCMT OptionDAC OptionNRSACK OptionRP BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail"
+Variables="Run Runtime Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable FrameRate FrameSize SndBuf RcvBuf OptionCMT OptionDAC OptionNRSACK OptionRP BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail"
 
 
 # ###### Defaults #############################################################
 Run_VALUES="1"
 Runtime_VALUES="60"
 Flows_VALUES="1"
-CompareWithTCP_VALUES="false"
+CompareWithReference_VALUES="false"
+ReferenceFlowProtocol_VALUES="SCTP"
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
@@ -105,12 +106,25 @@ perform_run ()
       command="$command -config=$runConfig"
       command="$command -runtime=$Runtime"
 
+      cmt="off"
+      rp="off"
+      nrsack="off"
+      if [ "$OptionCMT" = "true" ] ; then
+         cmt="on"
+      fi
+      if [ "$OptionRP" = "true" ] ; then
+         rp="on"
+      fi
+      if [ "$OptionNRSACK" = "true" ] ; then
+         nrsack="on"
+      fi
+
       if [ "$OnlyOneAssoc" = "true" ] ; then
          local n=0
          local id=1
          command="$command -sctp "
          while [ $n -lt $Flows ] ; do
-            command="$command $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf "
+            command="$command $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=$cmt:rp=$rp:nrsack=$nrsack "
             let n=$n+1
             let id=$id+1
          done
@@ -124,11 +138,20 @@ perform_run ()
          done
       fi
 
-      if [ "$CompareWithTCP" = "true" ] ; then
+      if [ "$CompareWithReference" = "true" ] ; then
+         protocolSelector="-bad"
+         if [ "$ReferenceFlowProtocol" = "TCP" ] ; then
+            protocolSelector="-tcp"
+         elif [ "$ReferenceFlowProtocol" = "SCTP" ] ; then
+            protocolSelector="-sctp"
+         else
+            echo >&2 "ERROR: Bad setting of ReferenceFlowProtocol: $ReferenceFlowProtocol!"
+            exit 1
+         fi
          local n=0
          local id=1001
          while [ $n -lt $Flows ] ; do
-            command="$command -tcp $FrameRate:$FrameSize:const0:const0:id=$id:sndbuf=$SndBuf:rcvbuf=$RcvBuf "
+            command="$command $protocolSelector $FrameRate:$FrameSize:const0:const0:id=$id:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=off:rp=off:nrsack=off "
             let n=$n+1
             let id=$id+1
          done

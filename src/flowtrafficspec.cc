@@ -128,8 +128,6 @@ void FlowTrafficSpec::print(std::ostream& os) const
       << ((UseRP == true) ? "yes" : "no") << std::endl;
    os << "      - Use NR-SACK:         "
       << ((UseNRSACK == true) ? "yes" : "no") << std::endl;
-   os << "      - Use DAC:             "
-      << ((UseDAC == true) ? "yes" : "no") << std::endl;
 }
 
 
@@ -147,7 +145,6 @@ void FlowTrafficSpec::reset()
    UseNRSACK                = false;
    UseCMT                   = false;
    UseRP                    = false;
-   UseDAC                   = false;
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
       OutboundFrameRate[i] = 0.0;
       OutboundFrameSize[i] = 0.0;
