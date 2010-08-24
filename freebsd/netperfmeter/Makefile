@@ -1,5 +1,5 @@
 # New ports collection makefile for: netperfmeter
-# Date created:                      23 August 2010
+# Date created:                      24 August 2010
 # Whom:                              Thomas Dreibholz <dreibh@iem.uni-due.de>
 #
 # $FreeBSD$
@@ -15,8 +15,12 @@ DISTNAME=	${PORTNAME}-${PORTVERSION}
 MAINTAINER=     dreibh@iem.uni-due.de
 COMMENT=        Network Performance Meter
 
-RUN_DEPENDS=    bzip2:${PORTSDIR}/archivers/bzip2
-LIB_DEPENDS=    bz2.1:${PORTSDIR}/archivers/bzip2
+.if !exists(/usr/bin/bzip2)
+RUN_DEPENDS+=   bzip2:${PORTSDIR}/archivers/bzip2
+.endif
+.if !exists(/usr/lib/libbz2.so)
+LIB_DEPENDS+=   bz2:${PORTSDIR}/archivers/bzip2
+.endif
 
 GNU_CONFIGURE=  yes
 USE_GMAKE=      yes
