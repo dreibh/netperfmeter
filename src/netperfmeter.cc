@@ -245,6 +245,62 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          trafficSpec.SndBufferSize = 4096;
       }
    }
+   else if(strncmp(parameters, "cmt=", 4) == 0) {
+      if(strncmp((const char*)&parameters[4], "on", 2) == 0) {
+         trafficSpec.UseCMT = true;
+         n = 4 + 2;
+      }
+      else if(strncmp((const char*)&parameters[4], "off", 3) == 0) {
+         trafficSpec.UseCMT = false;
+         n = 4 + 3;
+      }
+      else { 
+         cerr << "ERROR: Invalid \"cmt\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         exit(1);         
+      }
+   }
+   else if(strncmp(parameters, "rp=", 3) == 0) {
+      if(strncmp((const char*)&parameters[3], "on", 2) == 0) {
+         trafficSpec.UseRP = true;
+         n = 3 + 2;
+      }
+      else if(strncmp((const char*)&parameters[3], "off", 3) == 0) {
+         trafficSpec.UseRP = false;
+         n = 3 + 3;
+      }
+      else { 
+         cerr << "ERROR: Invalid \"rp\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         exit(1);         
+      }
+   }
+   else if(strncmp(parameters, "nrsack=", 7) == 0) {
+      if(strncmp((const char*)&parameters[7], "on", 2) == 0) {
+         trafficSpec.UseNRSACK = true;
+         n = 7 + 2;
+      }
+      else if(strncmp((const char*)&parameters[7], "off", 3) == 0) {
+         trafficSpec.UseNRSACK = false;
+         n = 7 + 3;
+      }
+      else { 
+         cerr << "ERROR: Invalid \"nrsack\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         exit(1);         
+      }
+   }
+   else if(strncmp(parameters, "dac=", 4) == 0) {
+      if(strncmp((const char*)&parameters[4], "on", 2) == 0) {
+         trafficSpec.UseDAC = true;
+         n = 4 + 2;
+      }
+      else if(strncmp((const char*)&parameters[4], "off", 3) == 0) {
+         trafficSpec.UseDAC = false;
+         n = 4 + 3;
+      }
+      else { 
+         cerr << "ERROR: Invalid \"dac\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         exit(1);         
+      }
+   }
    else if(sscanf(parameters, "description=%255[^:]s%n", (char*)&description, &n) == 1) {
       trafficSpec.Description = std::string(description);
       n = 12 + strlen(description);
@@ -428,6 +484,53 @@ static Flow* createFlow(Flow*                  previousFlow,
               << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
       }
+   
+#ifdef SCTP_CMT_ON_OFF
+      struct sctp_assoc_value cmtOnOff;
+      cmtOnOff.assoc_id    = 0;
+      cmtOnOff.assoc_value = (flow->getTrafficSpec().UseCMT == true) ? 1 : 0;
+      if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
+         cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
+              << strerror(errno) << "!" << endl;
+         exit(1);
+      }
+#else
+      if(flow->getTrafficSpec().UseCMT == true) {
+         cerr << "ERROR: CMT usage configured, but not supported by this system!" << endl;
+	 exit(1);
+      }
+#endif
+#ifdef SCTP_RP_ON_OFF
+      struct sctp_assoc_value rpOnOff;
+      rpOnOff.assoc_id    = 0;
+      rpOnOff.assoc_value = (flow->getTrafficSpec().UseRP == true) ? 1 : 0;
+      if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_RP_ON_OFF, &rpOnOff, sizeof(rpOnOff)) < 0) {
+         cerr << "ERROR: Failed to configure RP usage on SCTP socket (SCTP_RP_ON_OFF option) - "
+              << strerror(errno) << "!" << endl;
+         exit(1);
+      }
+#else
+      if(flow->getTrafficSpec().UseRP == true) {
+         cerr << "ERROR: RP usage configured, but not supported by this system!" << endl;
+	 exit(1);
+      }
+#endif
+#ifdef SCTP_NR_SACK_ON_OFF
+      struct sctp_assoc_value mrSackOnOff;
+      mrSackOnOff.assoc_id    = 0;
+      mrSackOnOff.assoc_value = (flow->getTrafficSpec().UseNRSACK == true) ? 1 : 0;
+      if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NR_SACK_ON_OFF, &mrSackOnOff, sizeof(mrSackOnOff)) < 0) {
+         cerr << "ERROR: Failed to configure NR_SACK usage on SCTP socket (SCTP_NR_SACK_ON_OFF option) - "
+              << strerror(errno) << "!" << endl;
+         exit(1);
+      }
+#else
+      if(flow->getTrafficSpec().UseNR_SACK == true) {
+         cerr << "ERROR: NR_SACK usage configured, but not supported by this system!" << endl;
+	 exit(1);
+      }
+#endif
+
       if(gOutputVerbosity >= NPFOV_STATUS) {
          cout << "okay <sd=" << socketDescriptor << "> ";
       }

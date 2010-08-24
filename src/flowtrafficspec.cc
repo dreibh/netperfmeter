@@ -121,7 +121,15 @@ void FlowTrafficSpec::print(std::ostream& os) const
    else {
       os << "*0 ";
    }
-   os << "}" << std::endl;
+   os << "}" << std::endl;   
+   os << "      - Use CMT:             "
+      << ((UseCMT == true) ? "yes" : "no") << std::endl;
+   os << "      - Use RP:              "
+      << ((UseRP == true) ? "yes" : "no") << std::endl;
+   os << "      - Use NR-SACK:         "
+      << ((UseNRSACK == true) ? "yes" : "no") << std::endl;
+   os << "      - Use DAC:             "
+      << ((UseDAC == true) ? "yes" : "no") << std::endl;
 }
 
 
@@ -136,6 +144,10 @@ void FlowTrafficSpec::reset()
    ReliableMode             = 1.0;
    RetransmissionTrials     = ~0;
    RetransmissionTrialsInMS = true;
+   UseNRSACK                = false;
+   UseCMT                   = false;
+   UseRP                    = false;
+   UseDAC                   = false;
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
       OutboundFrameRate[i] = 0.0;
       OutboundFrameSize[i] = 0.0;
