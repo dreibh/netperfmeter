@@ -100,6 +100,10 @@ struct NetPerfMeterAddFlowMessage
 } __attribute__((packed));
 
 #define NPMAF_RTX_TRIALS_IN_MILLISECONDS (1 << 31)
+#define NPMAF_USE_CMT                    (1 << 30)
+#define NPMAF_USE_RP                     (1 << 29)
+#define NPMAF_USE_NRSACK                 (1 << 28)
+#define NPMAF_USE_DAC                    (1 << 27)
 
 
 struct NetPerfMeterRemoveFlowMessage

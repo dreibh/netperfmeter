@@ -32,7 +32,7 @@ class QoSStats
    struct QoSStatsEntryLess
    {
       inline bool operator()(const QoSStatsEntry* a, const QoSStatsEntry* b) const {
-         return(a->TimeStamp < b->TimeStamp);
+         return(a->TimeStamp <= b->TimeStamp);
       }
    };
    typedef std::set<QoSStatsEntry*, QoSStatsEntryLess> QoSStatsEntryType;
@@ -72,7 +72,7 @@ void QoSStats::purge(const double now)
    while(first != QoSStatsSet.end()) {
 
       QoSStatsEntry* statEntry = *first;
-      if(statEntry->TimeStamp >= now - TrackingInterval) {
+      if(now - statEntry->TimeStamp <= TrackingInterval) {
          break;
       }
       assert(ValueSum >=  statEntry->Value);
@@ -107,6 +107,7 @@ void QoSStats::dump(const double now)
    if(first != last) {
       last--;   // There must be at least one element ...
       if(first != last) {   // There are at least two elements ...
+printf("VS=%llu  A=%1.6f  B=%1.6f\n",ValueSum,(*last)->TimeStamp,(*first)->TimeStamp);
          printf("INT=%1.3f\n", (*last)->TimeStamp - (*first)->TimeStamp);
       }
    }
@@ -123,6 +124,10 @@ int main(int argc, char** argv)
    stat.add(1, 1000);
    stat.add(2, 1000);
    stat.add(3, 1000);
+   stat.add(3.4, 1000);
+   stat.add(3.7, 1000);
+   stat.add(4, 1000);
+   stat.add(5, 1000);
 
    stat.dump(4);
 }

@@ -154,6 +154,19 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    NetPerfMeterAddFlowMessage* addFlowMsg = (NetPerfMeterAddFlowMessage*)&addFlowMsgBuffer;
    addFlowMsg->Header.Type   = NETPERFMETER_ADD_FLOW;
    addFlowMsg->Header.Flags  = 0x00;
+   if(flow->getTrafficSpec().UseCMT) {
+      addFlowMsg->Header.Flags |= NPMAF_USE_CMT;
+   }
+   if(flow->getTrafficSpec().UseRP) {
+      addFlowMsg->Header.Flags |= NPMAF_USE_RP;
+   }
+   if(flow->getTrafficSpec().UseNRSACK) {
+      addFlowMsg->Header.Flags |= NPMAF_USE_NRSACK;
+   }
+   if(flow->getTrafficSpec().UseDAC) {
+      addFlowMsg->Header.Flags |= NPMAF_USE_DAC;
+   }
+
    addFlowMsg->Header.Length = htons(addFlowMsgSize);
    addFlowMsg->MeasurementID = hton64(flow->getMeasurementID());
    addFlowMsg->FlowID        = htonl(flow->getFlowID());
@@ -730,6 +743,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
          trafficSpec.OutboundFrameRate[i] = networkToDouble(addFlowMsg->FrameRate[i]);
          trafficSpec.OutboundFrameSize[i] = networkToDouble(addFlowMsg->FrameSize[i]);
       }
+      trafficSpec.ErrorOnAbort             = false;
       trafficSpec.OutboundFrameRateRng     = addFlowMsg->FrameRateRng;
       trafficSpec.OutboundFrameSizeRng     = addFlowMsg->FrameSizeRng;
       trafficSpec.MaxMsgSize               = ntohs(addFlowMsg->MaxMsgSize);
@@ -745,6 +759,10 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       for(size_t i = 0;i < startStopEvents;i++) {
          trafficSpec.OnOffEvents.insert(ntohl(addFlowMsg->OnOffEvent[i]));
       }
+      trafficSpec.UseCMT    = (addFlowMsg->Header.Flags & NPMAF_USE_CMT)    ? true : false;
+      trafficSpec.UseRP     = (addFlowMsg->Header.Flags & NPMAF_USE_RP)     ? true : false;
+      trafficSpec.UseNRSACK = (addFlowMsg->Header.Flags & NPMAF_USE_NRSACK) ? true : false;
+      trafficSpec.UseDAC    = (addFlowMsg->Header.Flags & NPMAF_USE_DAC)    ? true : false;
 
       Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
                             ntohs(addFlowMsg->StreamID), trafficSpec,

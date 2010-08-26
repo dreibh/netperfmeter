@@ -160,6 +160,7 @@ class FlowManager : public Thread
 
 class Flow : public Thread
 {
+   public:
    friend class FlowManager;
    enum FlowStatus {
       WaitingForStartup = 1,
@@ -204,6 +205,9 @@ class Flow : public Thread
    }
    inline FlowStatus getInputStatus() const {
       return(InputStatus);
+   }
+   inline bool isAcceptedIncomingFlow() const {
+      return(AcceptedIncomingFlow);
    }
 
    inline void endOfInput() {

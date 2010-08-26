@@ -136,6 +136,18 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    else {
       sent = ext_send(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, 0);
    }
+
+   // ====== Check, whether flow has been aborted unintentionally ===========
+   if((sent < 0) &&
+      (errno != EAGAIN) &&
+      (!flow->isAcceptedIncomingFlow()) &&
+      (flow->getTrafficSpec().ErrorOnAbort) &&
+      (flow->getOutputStatus() == Flow::On)) {
+      std::cerr << "ERROR: Flow #" << flow->getFlowID() << " has been aborted - "
+                  << strerror(errno) << "!" << std::endl;
+      exit(1);
+   }
+
    return(sent);
 }
 

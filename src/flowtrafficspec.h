@@ -62,10 +62,6 @@ class FlowTrafficSpec
 
    unsigned long long     DefragmentTimeout;
 
-   bool                   UseNRSACK;
-   bool                   UseCMT;
-   bool                   UseRP;
-   
    double                 OutboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
    double                 OutboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
    double                 InboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
@@ -74,6 +70,12 @@ class FlowTrafficSpec
    uint8_t                OutboundFrameSizeRng;
    uint8_t                InboundFrameRateRng;
    uint8_t                InboundFrameSizeRng;
+
+   bool                   UseNRSACK;
+   bool                   UseCMT;
+   bool                   UseRP;
+   bool                   UseDAC;
+   bool                   ErrorOnAbort;
 };
 
 #endif

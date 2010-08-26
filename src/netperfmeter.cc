@@ -254,9 +254,9 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          trafficSpec.UseCMT = false;
          n = 4 + 3;
       }
-      else { 
+      else {
          cerr << "ERROR: Invalid \"cmt\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
-         exit(1);         
+         exit(1);
       }
    }
    else if(strncmp(parameters, "rp=", 3) == 0) {
@@ -268,9 +268,9 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          trafficSpec.UseRP = false;
          n = 3 + 3;
       }
-      else { 
+      else {
          cerr << "ERROR: Invalid \"rp\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
-         exit(1);         
+         exit(1);
       }
    }
    else if(strncmp(parameters, "nrsack=", 7) == 0) {
@@ -282,9 +282,37 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          trafficSpec.UseNRSACK = false;
          n = 7 + 3;
       }
-      else { 
+      else {
          cerr << "ERROR: Invalid \"nrsack\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
-         exit(1);         
+         exit(1);
+      }
+   }
+   else if(strncmp(parameters, "dac=", 4) == 0) {
+      if(strncmp((const char*)&parameters[4], "on", 2) == 0) {
+         trafficSpec.UseCMT = true;
+         n = 4 + 2;
+      }
+      else if(strncmp((const char*)&parameters[4], "off", 3) == 0) {
+         trafficSpec.UseCMT = false;
+         n = 4 + 3;
+      }
+      else {
+         cerr << "ERROR: Invalid \"dac\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         exit(1);
+      }
+   }
+   else if(strncmp(parameters, "error_on_abort=", 15) == 0) {
+      if(strncmp((const char*)&parameters[15], "on", 2) == 0) {
+         trafficSpec.ErrorOnAbort = true;
+         n = 15 + 2;
+      }
+      else if(strncmp((const char*)&parameters[15], "off", 3) == 0) {
+         trafficSpec.ErrorOnAbort = false;
+         n = 15 + 3;
+      }
+      else {
+         cerr << "ERROR: Invalid \"error_on_abort\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         exit(1);
       }
    }
    else if(sscanf(parameters, "description=%255[^:]s%n", (char*)&description, &n) == 1) {
@@ -470,7 +498,7 @@ static Flow* createFlow(Flow*                  previousFlow,
               << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
       }
-   
+
 #ifdef SCTP_CMT_ON_OFF
       struct sctp_assoc_value cmtOnOff;
       cmtOnOff.assoc_id    = 0;
