@@ -2,7 +2,7 @@
 # $Id$
 #
 # Network Performance Meter
-# Copyright (C) 2009 by Thomas Dreibholz
+# Copyright (C) 2009-2010 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,13 +35,13 @@ FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"   # !!!
 SndBuf_VALUES="12500000"
 RcvBuf_VALUES="12500000"
-OptionCMT_VALUES="false true"
-OptionRP_VALUES="false"
+OptionCMT_VALUES="true"
+OptionRP_VALUES="false true"
 OptionDAC_VALUES="true"
 OptionNRSACK_VALUES="true"
 
 # First trail
-RateNorthernTrail_VALUES="10000 25000 50000"
+RateNorthernTrail_VALUES="10000 25000 40000 50000"
 DelayNorthernTrail_VALUES="0"
 LossNorthernTrail_VALUES="0"
 # Second trail
