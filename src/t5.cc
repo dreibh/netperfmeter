@@ -1,16 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
+#include <string.h>
 #include <errno.h>
-
+#include <assert.h>
 #include <sys/types.h>
 #include <sys/sysctl.h>
+#ifdef __FreeBSD__
 #include <sys/proc.h>
-
+#endif
 #include <iostream>
+
 
 class CPUStatus
 {
+   // ====== Public methods =================================================
    public:
    CPUStatus();
    ~CPUStatus();
@@ -35,14 +38,18 @@ class CPUStatus
       return(Percentages[index]);
    }
 
+   // ====== Private data ===================================================
    private:
 #ifdef __FreeBSD__
+   typedef unsigned long long tick_t;
    static bool getSysCtl(const char* name, void* ptr, size_t len);
+#elif defined __linux__
+   typedef unsigned long long tick_t;
+   FILE*               ProcStatFD;
 #endif
-
    unsigned int        CPUs;
-   long*               CpuTimes;
-   long*               OldCpuTimes;
+   tick_t*             CpuTimes;
+   tick_t*             OldCpuTimes;
    float*              Percentages;
    unsigned int        CpuStates;
    static const char*  CpuStateNames[];
@@ -53,12 +60,26 @@ class CPUStatus
 const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Interrupt", "Idle"
 };
+#elif defined __linux__
+const char* CPUStatus::CpuStateNames[] = {
+   "User",
+   "Nice",
+   "System",
+   "Idle",
+   "IOWait",
+   "Hardware Interrupts",
+   "Software Interrupts",
+   "Hypervisor"
+};
+#endif
 
+#ifdef __FreeBSD__
 bool CPUStatus::getSysCtl(const char* name, void* ptr, size_t len)
 {
    size_t nlen = len;
    if(sysctlbyname(name, ptr, &nlen, NULL, 0) < 0) {
-      std::cerr << "ERROR: sysctlbyname(" << name << ") failed: " << strerror(errno) << std::endl;
+      std::cerr << "ERROR: sysctlbyname(" << name << ") failed: "
+                << strerror(errno) << std::endl;
       exit(1);
    }
    if(nlen != len) {
@@ -72,39 +93,55 @@ bool CPUStatus::getSysCtl(const char* name, void* ptr, size_t len)
 // ###### Constructor #######################################################
 CPUStatus::CPUStatus()
 {
-   int maxCPUs;
+   // ====== Initialize =====================================================
 #ifdef __FreeBSD__
+   int maxCPUs;
    CpuStates = CPUSTATES;
    getSysCtl("kern.smp.maxcpus", &maxCPUs, sizeof(maxCPUs));
-#else
-#error FIXME: I do not know what to do here!
-#endif
-   size_t cpuTimesSize = sizeof(long) * (maxCPUs + 1) * CpuStates;
-   CpuTimes = (long*)calloc(1, cpuTimesSize);
-   assert(CpuTimes != NULL);
+#elif defined __linux__
+   CpuStates = 8;
+   CPUs = sysconf(_SC_NPROCESSORS_CONF);
+   if(CPUs < 1) {
+      CPUs = 1;
+   }
+   const int maxCPUs = CPUs;
 
+   ProcStatFD = fopen("/proc/stat", "r");
+   if(ProcStatFD == NULL) {
+      std::cerr << "ERROR: Unable to open /proc/stat!" << std::endl;
+      exit(1);
+   }
+#endif
+
+   // ====== Allocate current times array ===================================
+   size_t cpuTimesSize = sizeof(tick_t) * (maxCPUs + 1) * CpuStates;
+   CpuTimes = (tick_t*)calloc(1, cpuTimesSize);
+   assert(CpuTimes != NULL);
 #ifdef __FreeBSD__
    if(sysctlbyname("kern.cp_times", CpuTimes, &cpuTimesSize, NULL, 0) < 0) {
       std::cerr << "ERROR: sysctlbyname(kern.cp_times) failed: "
                 << strerror(errno) << std::endl;
       exit(1);
    }
-   CPUs = cpuTimesSize / CpuStates / sizeof(long);
-#else
-#error FIXME: I do not know what to do here!
+   CPUs = cpuTimesSize / CpuStates / sizeof(tick_t);
 #endif
 
-   cpuTimesSize = sizeof(long) * (CPUs + 1) * CpuStates;
-   OldCpuTimes = (long*)malloc(cpuTimesSize);
+   // ====== Allocate old times array =======================================
+   cpuTimesSize = sizeof(tick_t) * (CPUs + 1) * CpuStates;
+   OldCpuTimes = (tick_t*)malloc(cpuTimesSize);
    assert(OldCpuTimes != NULL);
    memcpy(OldCpuTimes, CpuTimes, cpuTimesSize);
 
+   // ====== Allocate percentages array =====================================
    const size_t percentagesSize = sizeof(float) * (CPUs + 1) * CpuStates;
    Percentages = (float*)malloc(percentagesSize);
    assert(Percentages != NULL);
    for(unsigned int i = 0; i < (CPUs + 1) * CpuStates; i++) {
       Percentages[i] = 100.0 / CpuStates;
    }
+#ifdef __linux__
+   update();
+#endif
 }
 
 
@@ -117,6 +154,10 @@ CPUStatus::~CPUStatus()
    OldCpuTimes = NULL;
    delete Percentages;
    Percentages = NULL;
+#ifdef __linux__
+   fclose(ProcStatFD);
+   ProcStatFD = NULL;
+#endif
 }
 
 
@@ -124,15 +165,15 @@ CPUStatus::~CPUStatus()
 void CPUStatus::update()
 {
    // ====== Save old values ================================================
-   size_t cpuTimesSize = sizeof(long) * (CPUs + 1) * CpuStates;
+   size_t cpuTimesSize = sizeof(tick_t) * (CPUs + 1) * CpuStates;
    memcpy(OldCpuTimes, CpuTimes, cpuTimesSize);
 
 
    // ====== Get counters ===================================================
-#ifdef __FreeBSD__
    unsigned int i, j;
-   cpuTimesSize = sizeof(long) * CPUs * CpuStates;   /* Total is calculated later! */
-   if(sysctlbyname("kern.cp_times", (long*)&CpuTimes[CpuStates], &cpuTimesSize, NULL, 0) < 0) {
+#ifdef __FreeBSD__
+   cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
+   if(sysctlbyname("kern.cp_times", (tick_t*)&CpuTimes[CpuStates], &cpuTimesSize, NULL, 0) < 0) {
       std::cerr << "ERROR: sysctlbyname(kern.cp_times) failed: " << strerror(errno) << std::endl;
       exit(1);
    }
@@ -145,15 +186,54 @@ void CPUStatus::update()
          CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
       }
    }
-#else
-#error FIXME: I do not know what to do here!
+
+#elif defined __linux__
+   rewind(ProcStatFD);
+   fflush(ProcStatFD);
+
+   for(unsigned int i = 0; i <= CPUs; i++) {
+      char buffer[1024];
+      if(fgets(buffer, sizeof(buffer), ProcStatFD) == 0) {
+         std::cerr << "ERROR: Unable to read from /proc/stat!" << std::endl;
+         exit(1);
+      }
+      int result;
+      if(i == 0) {   // Get totals
+         result = sscanf(buffer, "cpu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+                         &CpuTimes[0],
+                         &CpuTimes[1],
+                         &CpuTimes[2],
+                         &CpuTimes[3],
+                         &CpuTimes[4],
+                         &CpuTimes[5],
+                         &CpuTimes[6],
+                         &CpuTimes[7]);
+      }
+      else {
+         unsigned int id;
+         result = sscanf(buffer, "cpu%u %llu %llu %llu %llu %llu %llu %llu %llu\n",
+                         &id,
+                         &CpuTimes[(i * CpuStates) + 0],
+                         &CpuTimes[(i * CpuStates) + 1],
+                         &CpuTimes[(i * CpuStates) + 2],
+                         &CpuTimes[(i * CpuStates) + 3],
+                         &CpuTimes[(i * CpuStates) + 4],
+                         &CpuTimes[(i * CpuStates) + 5],
+                         &CpuTimes[(i * CpuStates) + 6],
+                         &CpuTimes[(i * CpuStates) + 7]);
+      }
+      if( ((i == 0) && (result < 8)) || ((i > 0) && (result < 9)) ) {
+         std::cerr << "ERROR: Bad input fromat in /proc/stat!" << std::endl;
+         exit(1);
+      }
+   }
 #endif
 
 
    // ====== Calculate percentages ==========================================
    for(i = 0; i < CPUs + 1; i++) {
-      long diffTotal = 0;
-      long diff[CpuStates];
+      tick_t diffTotal = 0;
+      tick_t diff[CpuStates];
       for(j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
          diff[j] = CpuTimes[index] - OldCpuTimes[index];
