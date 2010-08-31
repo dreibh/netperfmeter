@@ -160,12 +160,6 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    if(flow->getTrafficSpec().UseRP) {
       addFlowMsg->Header.Flags |= NPMAF_USE_RP;
    }
-   if(flow->getTrafficSpec().UseNRSACK) {
-      addFlowMsg->Header.Flags |= NPMAF_USE_NRSACK;
-   }
-   if(flow->getTrafficSpec().UseDAC) {
-      addFlowMsg->Header.Flags |= NPMAF_USE_DAC;
-   }
 
    addFlowMsg->Header.Length = htons(addFlowMsgSize);
    addFlowMsg->MeasurementID = hton64(flow->getMeasurementID());
@@ -759,10 +753,8 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       for(size_t i = 0;i < startStopEvents;i++) {
          trafficSpec.OnOffEvents.insert(ntohl(addFlowMsg->OnOffEvent[i]));
       }
-      trafficSpec.UseCMT    = (addFlowMsg->Header.Flags & NPMAF_USE_CMT)    ? true : false;
-      trafficSpec.UseRP     = (addFlowMsg->Header.Flags & NPMAF_USE_RP)     ? true : false;
-      trafficSpec.UseNRSACK = (addFlowMsg->Header.Flags & NPMAF_USE_NRSACK) ? true : false;
-      trafficSpec.UseDAC    = (addFlowMsg->Header.Flags & NPMAF_USE_DAC)    ? true : false;
+      trafficSpec.UseCMT = (addFlowMsg->Header.Flags & NPMAF_USE_CMT)    ? true : false;
+      trafficSpec.UseRP  = (addFlowMsg->Header.Flags & NPMAF_USE_RP)     ? true : false;
 
       Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
                             ntohs(addFlowMsg->StreamID), trafficSpec,

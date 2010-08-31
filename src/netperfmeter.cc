@@ -273,34 +273,6 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          exit(1);
       }
    }
-   else if(strncmp(parameters, "nrsack=", 7) == 0) {
-      if(strncmp((const char*)&parameters[7], "on", 2) == 0) {
-         trafficSpec.UseNRSACK = true;
-         n = 7 + 2;
-      }
-      else if(strncmp((const char*)&parameters[7], "off", 3) == 0) {
-         trafficSpec.UseNRSACK = false;
-         n = 7 + 3;
-      }
-      else {
-         cerr << "ERROR: Invalid \"nrsack\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
-         exit(1);
-      }
-   }
-   else if(strncmp(parameters, "dac=", 4) == 0) {
-      if(strncmp((const char*)&parameters[4], "on", 2) == 0) {
-         trafficSpec.UseCMT = true;
-         n = 4 + 2;
-      }
-      else if(strncmp((const char*)&parameters[4], "off", 3) == 0) {
-         trafficSpec.UseCMT = false;
-         n = 4 + 3;
-      }
-      else {
-         cerr << "ERROR: Invalid \"dac\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
-         exit(1);
-      }
-   }
    else if(strncmp(parameters, "error_on_abort=", 15) == 0) {
       if(strncmp((const char*)&parameters[15], "on", 2) == 0) {
          trafficSpec.ErrorOnAbort = true;
@@ -531,22 +503,6 @@ static Flow* createFlow(Flow*                  previousFlow,
       if(flow->getTrafficSpec().UseRP == true) {
          cerr << "ERROR: RP usage configured, but not supported by this system!" << endl;
 	 exit(1);
-      }
-#endif
-#ifdef SCTP_NR_SACK_ON_OFF
-      struct sctp_assoc_value mrSackOnOff;
-      mrSackOnOff.assoc_id    = 0;
-      mrSackOnOff.assoc_value = (flow->getTrafficSpec().UseNRSACK == true) ? 1 : 0;
-      if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NR_SACK_ON_OFF, &mrSackOnOff, sizeof(mrSackOnOff)) < 0) {
-         cerr << "ERROR: Failed to configure NR_SACK usage on SCTP socket (SCTP_NR_SACK_ON_OFF option) - "
-              << strerror(errno) << "!" << endl;
-         if(flow->getTrafficSpec().UseNRSACK == true) {
-            exit(1);
-         }
-      }
-#else
-      if(flow->getTrafficSpec().UseNRSACK == true) {
-         cerr << "ERROR: NR_SACK usage configured, but not supported by this system!" << endl;
       }
 #endif
 

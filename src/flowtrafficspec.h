@@ -71,10 +71,8 @@ class FlowTrafficSpec
    uint8_t                InboundFrameRateRng;
    uint8_t                InboundFrameSizeRng;
 
-   bool                   UseNRSACK;
    bool                   UseCMT;
    bool                   UseRP;
-   bool                   UseDAC;
    bool                   ErrorOnAbort;
 };
 
