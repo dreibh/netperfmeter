@@ -554,7 +554,7 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
       }
    }
    for(unsigned int j = 0; j < CPULoadStats.getCpuStates(); j++) {
-      scalarFile.printf("scalar \"%s.TotalCPU\" \"%s\" %1.3f\n",
+      scalarFile.printf("scalar \"%s.totalCPU\" \"%s\" %1.3f\n",
                         objectName.c_str(),
                         CPULoadStats.getCpuStateName(j),
                         CPULoadStats.getCpuStatePercentage(0, j));
