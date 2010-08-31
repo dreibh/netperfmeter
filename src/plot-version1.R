@@ -103,5 +103,31 @@ netPerfMeterPlotVariables <- list(
            "Received Byte Rate[KiB/s]",
            "data1$passive.total.ReceivedByteRate / 1024",
            "blue2",
-           list("passive.total-ReceivedByteRate"))
+           list("passive.total-ReceivedByteRate")),
+
+   list("passive.CPU",
+           "CPU{:Zeta:}", NA),
+   list("passive.CPU-Utilization",
+           "CPU Utilization[%]",
+           "100.0 - data1$passive.CPU.Idle",
+           "red4",
+           list("passive.CPU-Idle")),
+   list("passive.CPU-System",
+           "CPU Load by System[%]",
+           "data1$passive.CPU.System",
+           "cyan4",
+           list("passive.CPU-System")),
+
+   list("active.CPU",
+           "CPU{:Zeta:}", NA),
+   list("active.CPU-Utilization",
+           "CPU Utilization[%]",
+           "100.0 - data1$active.CPU.Idle",
+           "red4",
+           list("active.CPU-Idle")),
+   list("active.CPU-System",
+           "CPU Load by System[%]",
+           "data1$active.CPU.System",
+           "cyan4",
+           list("active.CPU-System"))
 )
