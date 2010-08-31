@@ -1136,8 +1136,8 @@ void Flow::run()
                } while(scheduleNextTransmissionEvent() <= now);
 
                if(TrafficSpec.Protocol == IPPROTO_UDP) {
-// ???????????                  result = true;   // Result is always true for UDP.
-                                   // result==false may e.g. be overload, etc.
+                  // Keep sending, even if there is a temporary failure.
+                  result = true;
                }
             }
          }
