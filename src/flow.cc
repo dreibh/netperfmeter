@@ -215,6 +215,7 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
       }
    }
    unlock();
+   CPULoadStats.update();
 
    return(success);
 }
@@ -225,6 +226,7 @@ void FlowManager::stopMeasurement(const uint64_t           measurementID,
                                   const bool               printFlows,
                                   const unsigned long long now)
 {
+   CPULoadStats.update();
    lock();
    // We make a two-staged stopping process here:
    // In stage 0, the flows' sender threads are told to stop.
@@ -541,6 +543,22 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
       objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.LostFrames  / totalDuration : 0.0
       );
    unlock();
+
+   // ====== Write CPU statistics ===========================================
+   for(unsigned int i = 1; i <= CPULoadStats.getNumberOfCPUs(); i++) {
+      for(unsigned int j = 0; j < CPULoadStats.getCpuStates(); j++) {
+         scalarFile.printf("scalar \"%s.CPU[%u]\" \"%s\" %1.3f\n",
+                           objectName.c_str(), i,
+                           CPULoadStats.getCpuStateName(j),
+                           CPULoadStats.getCpuStatePercentage(i, j));
+      }
+   }
+   for(unsigned int j = 0; j < CPULoadStats.getCpuStates(); j++) {
+      scalarFile.printf("scalar \"%s.TotalCPU\" \"%s\" %1.3f\n",
+                        objectName.c_str(),
+                        CPULoadStats.getCpuStateName(j),
+                        CPULoadStats.getCpuStatePercentage(0, j));
+   }
 }
 
 

@@ -29,6 +29,7 @@
 #include "flowtrafficspec.h"
 #include "defragmenter.h"
 #include "measurement.h"
+#include "cpustatus.h"
 #include "tools.h"
 
 #include <poll.h>
@@ -153,8 +154,9 @@ class FlowManager : public Thread
    unsigned long long               FirstDisplayEvent;
    unsigned long long               LastDisplayEvent;
    unsigned long long               NextDisplayEvent;
+   CPUStatus                        CPULoadStats;
    FlowBandwidthStats               GlobalStats;      // For displaying only
-   FlowBandwidthStats               RelGlobalStats;   // For displaying only
+   FlowBandwidthStats               RelGlobalStats;   // For displaying only   
 };
 
 
