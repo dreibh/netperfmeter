@@ -52,6 +52,7 @@ class CPUStatus
       const unsigned int index = (cpuIndex * CpuStates) + stateIndex;
       return(Percentages[index]);
    }
+   float getCpuUtilization(const unsigned int cpuIndex) const;
 
    // ====== Private data ===================================================
    private:

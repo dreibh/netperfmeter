@@ -20,6 +20,7 @@
  */
 
 #include "flow.h"
+#include "control.h"
 #include "transfer.h"
 
 #include <signal.h>
@@ -417,26 +418,68 @@ void FlowManager::handleEvents(const unsigned long long now)
          LastDisplayEvent  = now;
       }
 
-      // ====== Print bandwidth information line ============================
-      if(DisplayOn) {
-         const double       duration      = (now - LastDisplayEvent) / 1000000.0;
-         const unsigned int totalDuration = (unsigned int)((now - FirstDisplayEvent) / 1000000ULL);
+      // ====== Print bandwidth/CPU information line ========================
+      if((DisplayOn) && (gOutputVerbosity >= NPFOV_BANDWIDTH_INFO)) {
+         static const unsigned int cpuDisplayLimit = 4;
+         static const char* colorOff         = "\x1b[0m";
+         static const char* colorDuration    = "\x1b[34m";
+         static const char* colorFlows       = "\x1b[32m";
+         static const char* colorTransmitted = "\x1b[33m";
+         static const char* colorReceived    = "\x1b[36m";
+         static const char* colorCPU         = "\x1b[0m\x1b[31m";
+         static const char* colorCPUHighLoad = "\x1b[31;47;21m";
+         const double       duration         = (now - LastDisplayEvent) / 1000000.0;
+         const unsigned int totalDuration    = (unsigned int)((now - FirstDisplayEvent) / 1000000ULL);
+
+         char cpuUtilization[160];
+         cpuUtilization[0] = 0x00;
+         CPUDisplayStats.update();
+         if(CPUDisplayStats.getNumberOfCPUs() <= cpuDisplayLimit) {
+            for(unsigned int i = 1; i <= CPUDisplayStats.getNumberOfCPUs(); i++) {
+               const unsigned int load = (unsigned int)rint(10 * CPUDisplayStats.getCpuUtilization(i));
+               char str[32];
+               snprintf((char*)&str, sizeof(str), "%s%s%3u.%u%%%s",
+                        (i > 1) ? "/" : "",
+                        (load < 900) ? colorCPU : colorCPUHighLoad,
+                        load / 10, load % 10,
+                        colorCPU);
+               safestrcat((char*)&cpuUtilization, str, sizeof(cpuUtilization));
+            }
+         }
+         const unsigned int load = (unsigned int)rint(10 * CPUDisplayStats.getCpuUtilization(0));
+         char str[48];
+         snprintf((char*)&str, sizeof(str), "%s%s%3u.%u%%%s%s",
+                  (CPUDisplayStats.getNumberOfCPUs() > cpuDisplayLimit) ? "" : " [",
+                  (load < 900) ? colorCPU : colorCPUHighLoad,
+                  load / 10, load % 10,
+                  colorCPU,
+                  (CPUDisplayStats.getNumberOfCPUs() > cpuDisplayLimit) ? " total" : "]");
+         safestrcat((char*)&cpuUtilization, str, sizeof(cpuUtilization));
 
          // NOTE: ostream/cout has race condition problem according to helgrind.
          //       => simply using stdout instead.
          fprintf(stdout,
-                 "\r<-- Duration: %2u:%02u:%02u   "
-                 "Flows: %u   "
-                 "Transmitted: %1.2f MiB at %1.1f Kbit/s   "
-                 "Received: %1.2f MiB at %1.1f Kbit/s -->\x1b[0K",
+                 "\r<-- %sDuration: %2u:%02u:%02u   "
+                 "%sFlows: %u   "
+                 "%sTransmitted: %1.2f MiB at %1.1f Kbit/s   "
+                 "%sReceived: %1.2f MiB at %1.1f Kbit/s   "
+                 "%sCPU: %s "
+                 "%s-->\x1b[0K",
+                 colorDuration,
                  totalDuration / 3600,
                  (totalDuration / 60) % 60,
                  totalDuration % 60,
+                 colorFlows,
                  (unsigned int)FlowSet.size(),
+                 colorTransmitted,
                  GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
                  (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
+                 colorReceived,
                  GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
-                 (duration > 0.0) ? (8 * RelGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0);
+                 (duration > 0.0) ? (8 * RelGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0,
+                 colorCPU,
+                 cpuUtilization,
+                 colorOff);
          fflush(stdout);
       }
 

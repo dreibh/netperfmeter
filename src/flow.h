@@ -156,7 +156,8 @@ class FlowManager : public Thread
    unsigned long long               NextDisplayEvent;
    CPUStatus                        CPULoadStats;
    FlowBandwidthStats               GlobalStats;      // For displaying only
-   FlowBandwidthStats               RelGlobalStats;   // For displaying only   
+   FlowBandwidthStats               RelGlobalStats;   // For displaying only
+   CPUStatus                        CPUDisplayStats;  // For displaying only
 };
 
 

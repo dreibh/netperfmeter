@@ -35,19 +35,15 @@
 
 
 #ifdef __FreeBSD__
+#define IDLE_INDEX 4
 const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Interrupt", "Idle"
 };
 #elif defined __linux__
+#define IDLE_INDEX 3
 const char* CPUStatus::CpuStateNames[] = {
-   "User",
-   "Nice",
-   "System",
-   "Idle",
-   "IOWait",
-   "Hardware Interrupts",
-   "Software Interrupts",
-   "Hypervisor"
+   "User", "Nice", "System", "Idle", "IOWait",
+   "Hardware Interrupts", "Software Interrupts", "Hypervisor"
 };
 #endif
 
@@ -225,4 +221,11 @@ void CPUStatus::update()
          Percentages[index] = 100.0 * (float)diff[j] / (float)diffTotal;
       }
    }
+}
+
+
+// ###### Get CPU utilization ###############################################
+float CPUStatus::getCpuUtilization(const unsigned int cpuIndex) const
+{
+   return(100.0 - getCpuStatePercentage(cpuIndex, IDLE_INDEX));
 }

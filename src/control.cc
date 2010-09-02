@@ -818,8 +818,10 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    }
    const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
 
-   std::cout << std::endl << "Starting measurement "
-               << format("$%llx", (unsigned long long)measurementID) << " ..." << std::endl;
+   if(gOutputVerbosity >= NPFOV_STATUS) {
+      std::cout << std::endl << "Starting measurement "
+                << format("$%llx", (unsigned long long)measurementID) << " ..." << std::endl;
+   }
 
    OutputFileFormat scalarFileFormat = OFF_Plain;
    if(startMsg->Header.Flags & NPMSF_COMPRESS_SCALARS) {
@@ -864,9 +866,11 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
    }
    const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
 
-   std::cout << std::endl << "Stopping measurement "
-             << format("$%llx", (unsigned long long)measurementID)
-             << " ..." << std::endl;
+   if(gOutputVerbosity >= NPFOV_STATUS) {
+      std::cout << std::endl << "Stopping measurement "
+               << format("$%llx", (unsigned long long)measurementID)
+               << " ..." << std::endl;
+   }
 
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
