@@ -95,7 +95,7 @@ rainbow2 <- function(n)
 }
 
 
-# Get background color
+# ====== Get background color ===============================================
 cmColor <- 2
 cmGrayScale <- 1
 cmBlackAndWhite <- 0
@@ -110,8 +110,7 @@ getBackgroundColor <- function(index, colorMode = cmColor, pStart = 0)
    else {
       bgColorSet <- c("#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff")
    }
-
-   bgColor <- bgColorSet[1 + ((pStart + index) %% length(bgColorSet))]
+   bgColor <- bgColorSet[(pStart + (index - 1)) %% length(bgColorSet)]
    return(bgColor)
 }
 
@@ -402,13 +401,15 @@ plotstd3 <- function(mainTitle,
 
    # ------ Create plot window ----------------------------------------------
    if(!largeMargins) {
-      margins <- c(3.25,3.25,3,0.25) + 0.0   # Margins as c(bottom, left, top, right)
+      margins <- c(3.25,3.25,3,0.5) + 0.0   # Margins as c(bottom, left, top, right)
                                              # Default is c(5, 4, 4, 2) + 0.1
+      newCEX  <- par("cex")
    }
    else {
-      margins <- c(5, 5, 3, 2) + 0.0   # For usage within plotstd6()
+      margins <- c(4, 4, 2, 2) + 0.0   # For usage within plotstd6()
+      newCEX  <- 0.925 * par("cex")
    }
-   opar <- par(mar = margins)
+   opar <- par(mar = margins, cex=newCEX)
 
    if(writeMetadata) {
       nextPageInPDFMetadata()
@@ -450,13 +451,13 @@ plotstd3 <- function(mainTitle,
 
       mtext(parse(text=xLabel), col=frameColor,
             side = 1, adj=0.5, line=2.25,
-            xpd = NA, font = par("font.main"), cex = par("cex.lab"))
+            xpd = NA, font = par("font.main"), cex = par("cex"))
       mtext(parse(text=yLabel), col=frameColor,
             side = 2, adj=0.5, line=2.25,
-            xpd = NA, font = par("font.main"), cex = par("cex.lab"))
+            xpd = NA, font = par("font.main"), cex = par("cex"))
       mtext(parse(text=getLabel(mainTitle)), col=frameColor,
             side = 3, adj=0.5, line=1.75,
-            xpd = NA, font = par("font.main"), cex = 1.2 * par("cex.main"))
+            xpd = NA, font = par("font.main"), cex = 1.5 * par("cex"))
 
       zvwLabel <- getLabel(zTitle)
       if(length(vLevels) > 1) {
@@ -468,7 +469,7 @@ plotstd3 <- function(mainTitle,
 
       mtext(parse(text=zvwLabel), col=frameColor,
             side = 3, line=0.5, adj=1,
-            xpd = NA, font = par("font.main"), cex = par("cex.lab"))
+            xpd = NA, font = par("font.main"), cex = par("cex"))
    }
 
    # ------ Plot curves -----------------------------------------------------
@@ -814,7 +815,7 @@ plotstd3 <- function(mainTitle,
              lty=legendStyles,
              pch=legendDots,
              text.col=legendColors,
-             lwd=1, cex=legendSize)
+             lwd=1, cex=par("cex")*legendSize)
    }
 
    par(opar)
@@ -823,7 +824,8 @@ plotstd3 <- function(mainTitle,
 
 
 # ====== Prepare layout for plotstd6() ======================================
-makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel, pColor, colorMode)
+makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel,
+                       pColor, frameColor, colorMode)
 {
    aLevels <- levels(factor(aSet))
    bLevels <- rev(levels(factor(bSet)))   # Reverse B-set levels!
@@ -930,14 +932,12 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel, pColor, co
       heightArray <- append(heightArray, c(lcm(1), lcm(1)))
    }
 
-   oldPar <- par(mar=c(0,0,0,0))
-
    m <- matrix(layoutMatrix, layoutHeight, layoutWidth, byrow = TRUE)
    # print(m)
    l <- layout(m, widths=widthArray, heights=heightArray, respect=TRUE)
-   # layout.show(l)
    # cat("widthArray="); print(widthArray)
    # cat("heightArray="); print(heightArray)
+   oldPar <- par(mar=c(0,0,0,0))
 
    # ------ Print B-axis labels ---------------------------------------------
    if(allocateBLabels > 0) {
@@ -978,7 +978,7 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel, pColor, co
 
    plot.new()   # Title
    plot.window(c(0, 1), c(0, 1))
-   text(0.5, 0.5, parse(text=getLabel(pTitle)),
+   text(0.5, 0.5, parse(text=getLabel(pTitle)), col=frameColor,
         adj=0.5, font=par("font.main"), cex=1.5*par("cex.main"))
 
    plot.new()   # Sub-title
@@ -989,6 +989,7 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel, pColor, co
    }
 
    par(oldPar)
+   return(l)
 }
 
 
@@ -1043,9 +1044,9 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
    pSubLabel <- ""
 
    singlePlotTitle <- mainTitle
-   if( ((length(aSet) > 0) && (length(levels(factor(aSet))) > 1)) ||
-       ((length(bSet) > 0) && (length(levels(factor(bSet))) > 1)) ||
-       ((length(pSet) > 0) && (length(levels(factor(pSet))) > 1)) ) {
+   if( ((length(aSet) > 0) && (length(aLevels) > 1)) ||
+       ((length(bSet) > 0) && (length(bLevels) > 1)) ||
+       ((length(pSet) > 0) && (length(pLevels) > 1)) ) {
       singlePlotTitle <- ""
    }
 
@@ -1055,17 +1056,22 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
       if(length(pLevels) > 1) {
          pSubLabel <- paste(sep="", "paste(sep=\"\", ", getLabel(pTitle), ", \" = ", p, "\")")
       }
-      # oldPar1 <- par(bg=getBackgroundColor(page, colorMode, pStart))
 
       pColor <- getBackgroundColor(page, colorMode, pStart)
+      oldPar1 <- par(bg=getBackgroundColor(page, colorMode, pStart))
       if( (length(aLevels) > 1) || (length(bLevels) > 1) || (length(pLevels) > 1) ) {
           # For aLevels==1 and bLevels==1, there is no need to create the layout here!
           # Otherwise, it would reduce cex => too small fonts!
-          makeLayout(aSet, bSet, aTitle, bTitle, mainTitle, pSubLabel, pColor, colorMode)
+          l <- makeLayout(aSet, bSet, aTitle, bTitle, mainTitle, pSubLabel, pColor, frameColor, colorMode)
       }
+      else {
+         l <- layout(c(1))   # Dummy layout, in order to reset settings!
+      }
+      # layout.show(l)
       nextPageInPDFMetadata()
 
       # ------ Plot page ----------------------------------------------------
+      useLargeMargins <- ((length(aLevels) > 1) || (length(bLevels) > 1))
       i<-1
       for(b in rev(bLevels)) {
          for(a in aLevels) {
@@ -1105,6 +1111,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         zColorArray       = zColorArray,
                         frameColor        = frameColor,
                         writeMetadata     = FALSE,
+                        largeMargins      = useLargeMargins,
                         (singlePlotTitle == "")) < 1) {   # see below
                # If singlePlotTitle=="", we have multiple std3 plots on the
                # same page. Then, larger margins have to be used by plotstd3().
@@ -1113,13 +1120,11 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
          }
       }
 
-
       #  ------ Reset page settings -----------------------------------
-      # if(length(pLevels) > 1) {
-      #    par(oldPar1)
-      # }
+      par(oldPar1)
       page <- page + 1
    }
+   return(page - 1)
 }
 
 
@@ -1216,18 +1221,18 @@ plothist <- function(mainTitle,
 
    mtext(parse(text=xLabel), col=frameColor,
          side = 1, adj=0.5, line=2.25,
-         xpd = NA, font = par("font.main"), cex = par("cex.lab"))
+         xpd = NA, font = par("font.main"), cex = par("cex"))
    mtext(parse(text=yLabel), col=frameColor,
          side = 2, adj=0.5, line=2.25,
-         xpd = NA, font = par("font.main"), cex = par("cex.lab"))
+         xpd = NA, font = par("font.main"), cex = par("cex"))
    mtext(parse(text=getLabel(mainTitle)), col=frameColor,
          side = 3, adj=0.5, line=1.75,
-         xpd = NA, font = par("font.main"), cex = 1.2 * par("cex.main"))
+         xpd = NA, font = par("font.main"), cex = 1.2 * par("cex"))
    if(length(zLevels) > 1) {
       zLabel <- getLabel(zTitle)
       mtext(parse(text=zLabel), col=frameColor,
             side = 3, at = max(xRange), line=0.5, adj=1,
-            xpd = NA, font = par("font.lab"), cex = par("cex.lab"))
+            xpd = NA, font = par("font.lab"), cex = par("cex"))
    }
 
 
@@ -1470,15 +1475,19 @@ applyManipulator <- function(manipulator, inputDataTable, columnName, filter)
 # ====== Create plots =======================================================
 createPlots <- function(simulationDirectory, plotConfigurations, customFilter="")
 {
+   inputDirectorySet <- c()
+   inputFileSet      <- c()
    if(!plotOwnOutput) {
       pdf(paste(sep="", simulationDirectory, ".pdf"),
           width=plotWidth, height=plotHeight, onefile=TRUE,
           family=plotFontFamily, pointsize=plotFontPointsize,
           title=simulationDirectory)
    }
+#    orig <- par()
    for(i in 1:length(plotConfigurations)) {
       cat(sep="", "* Plot configuration ", i, ":\n")
       plotConfiguration <- unlist(plotConfigurations[i], recursive=FALSE)
+#       par(orig)
 
       # ------ Get configuration --------------------------------------------
       configLength <- length(plotConfiguration)
@@ -1630,6 +1639,8 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
          resultFileName  <- paste(sep="", simulationDirectory, "/Results/", resultsName, ".data.bz2")
          cat(sep="", "     + Loading results from ", resultFileName, " ...\n")
          data <- append(data, list(loadResults(resultFileName, quiet=FALSE, customFilter=customFilter)))
+         inputDirectorySet <- unique(append(inputDirectorySet, c(paste(sep="", simulationDirectory, "/Results"))))
+         inputFileSet      <- unique(append(inputFileSet, c(resultFileName)))
       }
       if(length(data) < 1) {
          stop("ERROR: No data has been loaded! Check plot configuration to ensure that some data is specified!\n")
@@ -1724,6 +1735,14 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
    }
    if(!plotOwnOutput) {
       dev.off()
+   }
+   cat(sep="", "* Commands to back up required input files:\n")
+   cat(sep="", "   DESTINATION=<my backup path>\n")
+   for(d in inputDirectorySet) {
+      cat(sep="", "   mkdir -p $DESTINATION/", d, "\n")
+   }
+   for(f in inputFileSet) {
+      cat(sep="", "   cp ", f, " \\\n      $DESTINATION/", f, "\n")
    }
 }
 
