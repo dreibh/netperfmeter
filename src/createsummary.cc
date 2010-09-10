@@ -54,6 +54,7 @@ class ScalarNode
 
    struct SimpleRedBlackTreeNode Node;
    char*                         ScalarName;
+   char*                         SplitName;
    char*                         AggNames;
    char*                         AggValues;
    char*                         VarValues;
@@ -69,6 +70,7 @@ ScalarNode::ScalarNode()
    Run        = 0;
    Entries    = 0;
    ScalarName = NULL;
+   SplitName  = NULL;
    VarValues  = NULL;
    AggNames   = NULL;
    AggValues  = NULL;
@@ -81,15 +83,23 @@ ScalarNode::~ScalarNode()
 {
    if(ScalarName) {
       free(ScalarName);
+      ScalarName = NULL;
+   }
+   if(SplitName) {
+      free(SplitName);
+      SplitName = NULL;
    }
    if(VarValues) {
       free(VarValues);
+      VarValues = NULL;
    }
    if(AggNames) {
       free(AggNames);
+      AggNames = NULL;
    }
    if(AggValues) {
       free(AggValues);
+      AggValues = NULL;
    }
 }
 
@@ -106,8 +116,9 @@ static inline ScalarNode* getScalarNodeFromStorageNode(struct SimpleRedBlackTree
 static void scalarNodePrintFunction(const void* node, FILE* fd)
 {
    ScalarNode* scalarNode = getScalarNodeFromStorageNode((struct SimpleRedBlackTreeNode*)node);
-   fprintf(fd, "Run%u.%s[%s].%s = { ",
-           (unsigned int)scalarNode->Run, scalarNode->ScalarName, scalarNode->AggValues, scalarNode->VarValues);
+   fprintf(fd, "Run%u.%s|%s[%s].%s = { ",
+           (unsigned int)scalarNode->Run, scalarNode->ScalarName, scalarNode->SplitName,
+           scalarNode->AggValues, scalarNode->VarValues);
 
    vector<double>::iterator valueIterator = scalarNode->ValueSet.begin();
    while(valueIterator != scalarNode->ValueSet.end()) {
@@ -125,6 +136,10 @@ static int scalarNodeComparisonFunction(const void* node1, const void* node2)
    const ScalarNode* scalarNode1 = getScalarNodeFromStorageNode((struct SimpleRedBlackTreeNode*)node1);
    const ScalarNode* scalarNode2 = getScalarNodeFromStorageNode((struct SimpleRedBlackTreeNode*)node2);
    int result = strcmp(scalarNode1->ScalarName, scalarNode2->ScalarName);
+   if(result != 0) {
+      return(result);
+   }
+   result = strcmp(scalarNode1->SplitName, scalarNode2->SplitName);
    if(result != 0) {
       return(result);
    }
@@ -379,6 +394,7 @@ static char* getWord(char* str, char* word)
 
 // ###### Add scalar to storage #############################################
 static void addScalar(const char*  scalarName,
+                      const char*  splitName,
                       const char*  aggNames,
                       const char*  aggValues,
                       const char*  varNames,
@@ -386,8 +402,8 @@ static void addScalar(const char*  scalarName,
                       const size_t runNumber,
                       const double value)
 {
-   // printf("addScalar: statName=<%s> aggN=<%s> aggV=<%s> varN=<%s> varV=<%s> run=%d val=%f\n",
-   //        scalarName, aggNames, aggValues, varNames, varValues, runNumber, value);
+   // printf("addScalar: scalarName=<%s> splitName=<%s> aggN=<%s> aggV=<%s> varN=<%s> varV=<%s> run=%lu val=%f\n",
+   //        scalarName, splitName, aggNames, aggValues, varNames, varValues, runNumber, value);
 
    if(NextScalarNode == NULL) {
       NextScalarNode = new ScalarNode;
@@ -399,26 +415,22 @@ static void addScalar(const char*  scalarName,
 
    NextScalarNode->Run        = runNumber;
    NextScalarNode->ScalarName = (char*)scalarName;   // WARNING: String MUST be duplicated when node is added!
+   NextScalarNode->SplitName  = (char*)splitName;    // WARNING: String MUST be duplicated when node is added!
    NextScalarNode->AggNames   = (char*)aggNames;     // WARNING: String MUST be duplicated when node is added!
    NextScalarNode->AggValues  = (char*)aggValues;    // WARNING: String MUST be duplicated when node is added!
    NextScalarNode->VarValues  = (char*)varValues;    // WARNING: String MUST be duplicated when node is added!
-   if( (NextScalarNode->ScalarName == NULL) ||
-       (NextScalarNode->AggNames   == NULL) ||
-       (NextScalarNode->AggValues  == NULL) ||
-       (NextScalarNode->VarValues  == NULL) ) {
-      cerr << "ERROR: Out of memory!" << endl;
-      exit(1);
-   }
 
    ScalarNode* scalarNode = (ScalarNode*)
       simpleRedBlackTreeInsert(&StatisticsStorage, &NextScalarNode->Node);
    if(scalarNode == NextScalarNode) {
       // ====== Duplicate string, so that no temporary copies are linked ====
       NextScalarNode->ScalarName = strdup(scalarName);
+      NextScalarNode->SplitName  = strdup(splitName);
       NextScalarNode->AggNames   = strdup(aggNames);
       NextScalarNode->AggValues  = strdup(aggValues);
       NextScalarNode->VarValues  = strdup(varValues);
       if( (NextScalarNode->ScalarName == NULL) ||
+          (NextScalarNode->SplitName  == NULL) ||
           (NextScalarNode->AggNames   == NULL) ||
           (NextScalarNode->AggValues  == NULL) ||
           (NextScalarNode->VarValues  == NULL) ) {
@@ -429,6 +441,7 @@ static void addScalar(const char*  scalarName,
    }
    else {
       NextScalarNode->ScalarName = NULL;
+      NextScalarNode->SplitName  = NULL;
       NextScalarNode->AggNames   = NULL;
       NextScalarNode->AggValues  = NULL;
       NextScalarNode->VarValues  = NULL;
@@ -444,6 +457,7 @@ static void handleScalar(const std::string& varNames,
                          const std::string& varValues,
                          const unsigned int run,
                          const bool         interactiveMode,
+                         const bool         splitMode,
                          char*              objectName,
                          char*              statName,
                          const double       value)
@@ -454,7 +468,21 @@ static void handleScalar(const std::string& varNames,
    cout << "Value=" << value << endl;
 */
 
-   // ====== Get scalar name ==========================================
+   // ====== Try to split scalar name =======================================
+   const char* splitName = "";
+   if(splitMode) {
+      for(int i = strlen(statName) - 1; i >= 0; i--) {
+         if(statName[i] == ' ') {
+            if(isdigit(statName[i + 1])) {
+               splitName     = (const char*)&statName[i + 1];
+               statName[i] = 0x00;
+            }
+            break;
+         }
+      }
+   }
+
+   // ====== Get scalar name ================================================
    removeSpaces(statName);
    replaceSlashes(statName);
    removeBrackets(objectName);
@@ -467,16 +495,18 @@ static void handleScalar(const std::string& varNames,
                 (char*)&aggNames, sizeof(aggNames),
                 (char*)&aggValues, sizeof(aggValues));
 
-   // ====== Reconciliate with skip list ==============================
+   // ====== Reconciliate with skip list ====================================
    SkipListNode* skipListNode = SkipList;
    while(skipListNode != NULL) {
-      if(strncmp(scalarName, skipListNode->Prefix, strlen(skipListNode->Prefix)) == 0) {
+      if(strncmp(scalarName, skipListNode->Prefix,
+                 strlen(skipListNode->Prefix)) == 0) {
          break;
       }
       skipListNode = skipListNode->Next;;
    }
    if(skipListNode == NULL) {
-      addScalar(scalarName, aggNames, aggValues, varNames.c_str(), varValues.c_str(), run, value);
+      addScalar(scalarName, splitName, aggNames, aggValues,
+                varNames.c_str(), varValues.c_str(), run, value);
    }
    else {
       if(interactiveMode) {
@@ -490,7 +520,8 @@ static void handleScalar(const std::string& varNames,
 static bool handleScalarFile(const std::string& varNames,
                              const std::string& varValues,
                              const std::string& fileName,
-                             const bool         interactiveMode)
+                             const bool         interactiveMode,
+                             const bool         splitAll)
 {
    InputFile       inputFile;
    InputFileFormat inputFileFormat = IFF_Plain;
@@ -514,8 +545,8 @@ static bool handleScalarFile(const std::string& varNames,
    char         fieldName[4096];
    char         statisticObjectName[4096];
    char         statisticBlockName[4096];
-   unsigned int run     = 0;
-   bool         success = true;
+   unsigned int run      = 0;
+   bool         success  = true;
    for(;;) {
       // ====== Read line from input file ===================================
       bool eof;
@@ -553,7 +584,7 @@ static bool handleScalarFile(const std::string& varNames,
             break;
          }
          removeScenarioName((char*)&objectName);
-         handleScalar(varNames, varValues, run, interactiveMode,
+         handleScalar(varNames, varValues, run, interactiveMode, splitAll,
                       (char*)&objectName, (char*)&statName, value);
       }
       else if(buffer[0] == '#') {
@@ -589,7 +620,7 @@ static bool handleScalarFile(const std::string& varNames,
                // handleScalar() will overwrite the fields object/stat => make copies first!
                snprintf((char*)&statName,   sizeof(statName),   "%s", newStatName.c_str());
                snprintf((char*)&objectName, sizeof(objectName), "%s", statisticObjectName);
-               handleScalar(varNames, varValues, run, interactiveMode,
+               handleScalar(varNames, varValues, run, interactiveMode, splitAll,
                            (char*)&objectName, (char*)&statName, value);
             }
          }
@@ -648,7 +679,7 @@ static void closeOutputFile(OutputFile&              outputFile,
                             unsigned long long&      totalIn,
                             unsigned long long&      totalOut,
                             unsigned long long&      totalLines,
-                            size_t                   totalFiles,
+                            unsigned int&            totalFiles,
                             const bool               interactiveMode)
 {
    if(outputFile.exists()) {
@@ -723,7 +754,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
          lineNumber = 1;
 
          // ====== Write table header =======================================
-         if(outputFile.printf("RunNo ValueNo\t%s\t%s\t%s\n",
+         if(outputFile.printf("RunNo ValueNo Split \t%s\t%s\t%s\n",
                               scalarNode->AggNames,
                               varNames.c_str(),
                               scalarNode->ScalarName) == false) {
@@ -737,10 +768,11 @@ static void dumpScalars(const std::string& simulationsDirectory,
       size_t valueNumber = 1;
       vector<double>::iterator valueIterator = scalarNode->ValueSet.begin();
       while(valueIterator != scalarNode->ValueSet.end()) {
-         if(outputFile.printf("%07llu %04u %04u\t%s\t%s\t%1.12f\n",
+         if(outputFile.printf("%07llu %04u %04u \"%s\"\t%s\t%s\t%1.12f\n",
                               lineNumber,
                               (unsigned int)scalarNode->Run,
                               (unsigned int)valueNumber,
+                              scalarNode->SplitName,
                               scalarNode->AggValues,
                               scalarNode->VarValues,
                               *valueIterator) == false) {
@@ -775,7 +807,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
 static void usage(const char* name)
 {
    cerr << "Usage: "
-        << name << " [Var Names] {-compress=0-9} {-interactive|-batch}" << endl;
+        << name << " [Var Names] {-compress=0-9} {-interactive|-batch|-splitall}" << endl;
    exit(1);
 }
 
@@ -785,6 +817,7 @@ int main(int argc, char** argv)
 {
    unsigned int compressionLevel     = 9;
    bool         interactiveMode      = true;
+   bool         splitAll             = false;
    std::string  varNames             = "_NoVarNamesGiven_";
    std::string  varValues            = "";
    std::string  simulationsDirectory = ".";
@@ -815,6 +848,9 @@ int main(int argc, char** argv)
          else if(!(strcmp(argv[i], "-interactive"))) {
             interactiveMode = true;
          }
+         else if(!(strcmp(argv[i], "-splitall"))) {
+            splitAll = true;
+         }
          else {
             usage(argv[0]);
          }
@@ -825,8 +861,8 @@ int main(int argc, char** argv)
    }
 
 
-   cout << "CreateSummary - Version 4.20" << endl
-        << "============================" << endl << endl
+   cout << "CreateSummary - Version 4.3" << endl
+        << "===========================" << endl << endl
         << "Compression Level: " << compressionLevel << endl
         << "Interactive Mode:  " << (interactiveMode ? "on" : "off") << endl
         << endl;
@@ -875,7 +911,7 @@ int main(int argc, char** argv)
             cerr << "ERROR: No values given (parameter --values=...)!" << endl;
             exit(1);
          }
-         if(!handleScalarFile(varNames, varValues, (char*)&command[8], interactiveMode)) {
+         if(!handleScalarFile(varNames, varValues, (char*)&command[8], interactiveMode, splitAll)) {
             scalarFileError = true;
             if(logFileName != "") {
                cerr << " => see logfile " << logFileName << endl;
@@ -905,6 +941,9 @@ int main(int argc, char** argv)
       }
       else if(!(strncmp(command, "--resultsdirectory=", 19))) {
          resultsDirectory = (const char*)&command[19];
+      }
+      else if(!(strcmp(command, "--splitall"))) {
+         splitAll = true;
       }
       else if(!(strncmp(command, "--level=", 8))) {
          // Deprecated, ignore ...
