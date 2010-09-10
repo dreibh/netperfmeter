@@ -457,7 +457,7 @@ plotstd3 <- function(mainTitle,
             xpd = NA, font = par("font.main"), cex = par("cex"))
       mtext(parse(text=getLabel(mainTitle)), col=frameColor,
             side = 3, adj=0.5, line=1.75,
-            xpd = NA, font = par("font.main"), cex = 1.5 * par("cex"))
+            xpd = NA, font = par("font.main"), cex = sqrt(2) * par("cex"))
 
       zvwLabel <- getLabel(zTitle)
       if(length(vLevels) > 1) {
@@ -1483,11 +1483,9 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
           family=plotFontFamily, pointsize=plotFontPointsize,
           title=simulationDirectory)
    }
-#    orig <- par()
    for(i in 1:length(plotConfigurations)) {
       cat(sep="", "* Plot configuration ", i, ":\n")
       plotConfiguration <- unlist(plotConfigurations[i], recursive=FALSE)
-#       par(orig)
 
       # ------ Get configuration --------------------------------------------
       configLength <- length(plotConfiguration)
@@ -1562,49 +1560,79 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
       for(j in 1:length(plotVariables)) {
          plotVariable <- unlist(plotVariables[j], recursive=FALSE)
          variableName <- as.character(plotVariable[1])
+         if(length(plotVariable) < 2) {
+            cat("Invalid plot variable specification:\n")
+            print(plotVariable)
+            stop("ERROR: Bad plot variable specification!")
+         }
          if(xColumn == variableName) {
             xFound       <- TRUE
             xTitle       <- as.character(plotVariable[2])
-            xManipulator <- plotVariable[3]
+            if(length(plotVariable) >= 3) {
+               xManipulator <- plotVariable[3]
+            }
          }
          else if(yColumn == variableName) {
+            if(length(plotVariable) < 4) {
+               cat("Invalid plot variable specification for y-axis:\n")
+               print(plotVariable)
+               stop("ERROR: Bad plot variable specification for y-axis!")
+            }
             yFound         <- TRUE
             yTitle         <- as.character(plotVariable[2])
             yManipulator   <- plotVariable[3]
             frameColor     <- as.character(plotVariable[4])
-            resultsNameSet <- unlist(plotVariable[5], recursive=FALSE)
-            rangeSet       <- unlist(plotVariable[6], recursive=FALSE)
-            rangeColors    <- unlist(plotVariable[7], recursive=FALSE)
+            if(length(plotVariable) >= 5) {
+               resultsNameSet <- unlist(plotVariable[5], recursive=FALSE)
+            }
+            if(length(plotVariable) >= 6) {
+               rangeSet       <- unlist(plotVariable[6], recursive=FALSE)
+            }
+            if(length(plotVariable) >= 7) {
+               rangeColors    <- unlist(plotVariable[7], recursive=FALSE)
+            }
          }
          else if(zColumn == variableName) {
             zFound       <- TRUE
             zTitle       <- as.character(plotVariable[2])
-            zManipulator <- plotVariable[3]
+            if(length(plotVariable) >= 3) {
+               zManipulator <- plotVariable[3]
+            }
          }
          else if(vColumn == variableName) {
             vFound       <- TRUE
             vTitle       <- as.character(plotVariable[2])
-            vManipulator <- plotVariable[3]
+            if(length(plotVariable) >= 3) {
+               vManipulator <- plotVariable[3]
+            }
          }
          else if(wColumn == variableName) {
             wFound       <- TRUE
             wTitle       <- as.character(plotVariable[2])
-            wManipulator <- plotVariable[3]
+            if(length(plotVariable) >= 3) {
+               wManipulator <- plotVariable[3]
+            }
          }
          else if(aColumn == variableName) {
             aFound       <- TRUE
             aTitle       <- as.character(plotVariable[2])
-            aManipulator <- plotVariable[3]
+            if(length(plotVariable) >= 3) {
+               aManipulator <- plotVariable[3]
+            }
          }
          else if(bColumn == variableName) {
             bFound       <- TRUE
             bTitle       <- as.character(plotVariable[2])
-            bManipulator <- plotVariable[3]
+            if(length(plotVariable) >= 3) {
+               bManipulator <- plotVariable[3]
+            }
          }
          else if(pColumn == variableName) {
             pFound       <- TRUE
             pTitle       <- as.character(plotVariable[2])
-            pManipulator <- plotVariable[3]
+            if(length(plotVariable) >= 3) {
+               pManipulator <- plotVariable[3]
+            }
          }
       }
       if( (xColumn != "") & (!is.na(xColumn)) & (xFound == FALSE) ) {
