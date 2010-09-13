@@ -14,12 +14,12 @@ int main(int argc, char** argv)
    if(argc <= 1) {
       puts("SERVER MODE");
 
-      sockaddr_in6 local;
+      sockaddr_in local;
       memset(&local, 0, sizeof(local));
-      local.sin6_family = AF_INET6;
-      local.sin6_port   = htons(8000);
+      local.sin_family = AF_INET;
+      local.sin_port   = htons(8000);
 
-      int sd = socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP);
+      int sd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
       if(sd < 0) {
          perror("socket()");
          exit(1);
@@ -56,16 +56,16 @@ int main(int argc, char** argv)
    else {
       puts("CLIENT MODE");
 
-      sockaddr_in6 remote;
+      sockaddr_in remote;
       memset(&remote, 0, sizeof(remote));
-      remote.sin6_family = AF_INET6;
-      remote.sin6_port   = htons(8000);
-      if(inet_pton(AF_INET6, argv[1], &remote.sin6_addr) != 1) {
+      remote.sin_family = AF_INET;
+      remote.sin_port   = htons(8000);
+      if(inet_pton(AF_INET, argv[1], &remote.sin_addr) != 1) {
          perror("inet_pton()");
          exit(1);
       }
 
-      int sd = socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP);
+      int sd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
       if(sd < 0) {
          perror("socket()");
          exit(1);
