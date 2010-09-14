@@ -14,12 +14,12 @@ int main(int argc, char** argv)
    if(argc <= 1) {
       puts("SERVER MODE");
 
-      sockaddr_in local;
+      sockaddr_in6 local;
       memset(&local, 0, sizeof(local));
-      local.sin_family = AF_INET;
-      local.sin_port   = htons(8000);
+      local.sin6_family = AF_INET6;
+      local.sin6_port   = htons(8000);
 
-      int sd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
+      int sd = socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP);
       if(sd < 0) {
          perror("socket()");
          exit(1);
@@ -65,7 +65,7 @@ int main(int argc, char** argv)
          exit(1);
       }
 
-      int sd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
+      int sd = socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP);
       if(sd < 0) {
          perror("socket()");
          exit(1);
@@ -76,6 +76,9 @@ int main(int argc, char** argv)
          exit(1);
       }
 
+      int n = 0;
+      while(n < 1000000) {
+
          struct sctp_paddrparams paddrparams;
          memset(&paddrparams, 0, sizeof(paddrparams));
          paddrparams.spp_hbinterval = 250;
@@ -85,9 +88,6 @@ int main(int argc, char** argv)
             perror("setsockopt()");
             exit(1);
          }
-
-      int n = 0;
-      while(n < 1000000) {
 
          fd_set rset;
          FD_ZERO(&rset);
