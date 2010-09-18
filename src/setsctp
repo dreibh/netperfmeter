@@ -21,7 +21,7 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [cmt on|off] [dac on|off] [nrsack on|off] [rp on|off]"
+   echo >&2 "Usage: $0 [cmt on|off] [dac on|off] [nrsack on|off] [rp on|off] [bufferSplitting off|senderOnly|reeiverOnly|bothSides] [initialCwnd SIZE_IN_MTU]"
    exit 1
 fi
 
@@ -31,6 +31,8 @@ CMT=0
 DAC=0
 NRSACK=0
 RP=0
+BUFFERSPLITTING=0
+INITIAL_CWND=3
 
 while [ "$1" != "" ] ; do
    if [ "$1" = "cmt" ] ; then
@@ -77,6 +79,25 @@ while [ "$1" != "" ] ; do
       fi
       shift ; shift
 
+   elif [ "$1" = "bufferSplitting" ] ; then
+      if [ "$2" = "off" ] ; then
+         BUFFERSPLITTING=0
+      elif [ "$2" = "senderOnly" ] ; then 
+         BUFFERSPLITTING=1
+      elif [ "$2" = "receiverOnly" ] ; then 
+         BUFFERSPLITTING=2
+      elif [ "$2" = "bothSides" ] ; then 
+         BUFFERSPLITTING=3
+      else
+         echo >&2 "ERROR: Bad setting for bufferSplitting!"
+         exit 1
+      fi
+      shift ; shift
+
+   elif [ "$1" = "initialCwnd" ] ; then
+      INITIAL_CWND=$2
+      shift ; shift
+
    else
       echo >&2 "ERROR: Unknown setting $1!"
       exit 1
@@ -85,10 +106,11 @@ done
 
 
 echo "SCTP Configuration:"
-echo " - CMT:    $CMT"
-echo " - DAC:    $DAC"
-echo " - NRSACK: $NRSACK"
-echo " - CMT-RP: $RP"
+echo " - CMT:             $CMT"
+echo " - DAC:             $DAC"
+echo " - NRSACK:          $NRSACK"
+echo " - CMT-RP:          $RP"
+echo " - BUFFERSPLITTING: $BUFFERSPLITTING"
 
 
 SYSTEM=`uname`
@@ -98,6 +120,8 @@ if [ "$SYSTEM" = "FreeBSD" ] ; then
    sysctl net.inet.sctp.rp_on_off=$RP
    sysctl net.inet.sctp.cmt_use_dac=$DAC
    sysctl net.inet.sctp.nr_sack_on_off=$NRSACK
+   sysctl net.inet.sctp.buffer_splitting=$BUFFERSPLITTING
+   sysctl net.inet.sctp.initial_cwnd=$INITIAL_CWND
    sysctl kern.ipc.maxsockbuf=100005000      # This is the absolute socket buffer limit!
    sysctl net.inet.sctp.sendspace=10000000   # SCTP limit, seems to need full pages!
    sysctl net.inet.sctp.recvspace=10000000   # SCTP limit, seems to need full pages!
