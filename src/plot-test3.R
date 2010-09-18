@@ -46,7 +46,29 @@ plotConfigurations <- list(
         "Received Packets per Flow", NA, NA, list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedPackets",
         "OptionRP", "OptionNRSACK", "BidirectionalQoS",
-        "passive.flow", "OptionCMT", "Unordered")
+        "passive.flow", "OptionCMT", "Unordered"),
+
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUIdle.pdf"),
+        "Sender's Perspective", NA, seq(0, 100, 10), list(0,0),
+        "RateNorthernTrail-Mbit", "active.CPU-Utilization",
+        "active.CPU", "OptionRP", "OptionNRSACK",
+        "", "", ""),
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUIdle.pdf"),
+        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,0),
+        "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
+        "passive.CPU", "OptionRP", "OptionNRSACK",
+        "", "", ""),
+
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
+        "Sender's Perspective", NA, seq(0, 100, 10), list(0,0),
+        "RateNorthernTrail-Mbit", "active.CPU-System",
+        "active.CPU", "OptionRP", "OptionNRSACK",
+        "", "", ""),
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
+        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,0),
+        "RateNorthernTrail-Mbit", "passive.CPU-System",
+        "passive.CPU", "OptionRP", "OptionNRSACK",
+        "", "", "")
 )
 
 
