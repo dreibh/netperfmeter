@@ -21,8 +21,8 @@
 #
 
 HOST_EAST="132.252.153.18"
-HOST_WEST="132.252.153.10,132.252.153.138"   # !!! Disjoint Links !!!
-# HOST_WEST="132.252.153.10,132.252.153.14"   # !!! Shared Bottleneck !!!
+# HOST_WEST="132.252.153.10,132.252.153.138"   # !!! Disjoint Links !!!
+HOST_WEST="132.252.153.10,132.252.153.14"   # !!! Shared Bottleneck !!!
 ROUTER_NORTH="132.252.153.9"
 NETWORK_NW="132.252.153.8/29"
 NETWORK_NE="132.252.153.16/29"
@@ -36,7 +36,7 @@ RemoteNode="$HOST_EAST:9000"
 
 Directory="UNDEFINED"
 
-Variables="Run Runtime Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable FrameRate FrameSize SndBuf RcvBuf OptionCMT OptionDAC OptionNRSACK OptionRP BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail"
+Variables="Run Runtime Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd OptionCMT OptionDAC OptionNRSACK OptionRP OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail"
 
 
 # ###### Defaults #############################################################
@@ -52,10 +52,12 @@ Unordered_VALUES="0.0"
 Unreliable_VALUES="0.0"
 SndBuf_VALUES="233016"
 RcvBuf_VALUES="233016"
+InitialCwnd_VALUES="3"
 OptionCMT_VALUES="false"
 OptionRP_VALUES="false"
 OptionDAC_VALUES="false"
 OptionNRSACK_VALUES="false"
+OptionBufferSplitting_VALUES="off"
 BidirectionalQoS_VALUES="false"
 RateNorthernTrail_VALUES="1000"
 DelayNorthernTrail_VALUES="0"
@@ -86,8 +88,8 @@ perform_run ()
       if [ $ErrorSouthernTrail -eq -1 ] ; then
          ErrorSouthernTrail=$ErrorNorthernTrail
       fi
-      ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP || exit 1
-      ssh $HOST_EAST ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP || exit 1
+      ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd || exit 1
+      ssh $HOST_EAST ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd || exit 1
       echo "===== QoS: ssh $ROUTER_NORTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_NW $NETWORK_NE $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS ====="
       ssh $ROUTER_NORTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_NW $NETWORK_NE $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS || exit 1
       echo "===== QoS: ssh $ROUTER_SOUTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_SW $NETWORK_SE $RateSouthernTrail $DelaySouthernTrail $LossSouthernTrail $ErrorSouthernTrail $BidirectionalQoS ====="
@@ -115,16 +117,13 @@ perform_run ()
       if [ "$OptionRP" = "true" ] ; then
          rp="on"
       fi
-      if [ "$OptionNRSACK" = "true" ] ; then
-         nrsack="on"
-      fi
 
       if [ "$OnlyOneAssoc" = "true" ] ; then
          local n=0
          local id=1
          command="$command -sctp "
          while [ $n -lt $Flows ] ; do
-            command="$command $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=$cmt:rp=$rp:nrsack=$nrsack "
+            command="$command $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=$cmt:rp=$rp "
             let n=$n+1
             let id=$id+1
          done
@@ -151,7 +150,7 @@ perform_run ()
          local n=0
          local id=1001
          while [ $n -lt $Flows ] ; do
-            command="$command $protocolSelector $FrameRate:$FrameSize:const0:const0:id=$id:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=off:rp=off:nrsack=off "
+            command="$command $protocolSelector $FrameRate:$FrameSize:const0:const0:id=$id:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=off:rp=off "
             let n=$n+1
             let id=$id+1
          done

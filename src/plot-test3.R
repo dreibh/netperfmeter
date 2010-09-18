@@ -15,8 +15,8 @@ plotLegendSizeFactor <- 0.8
 plotOwnOutput        <- FALSE
 plotFontFamily       <- "Helvetica"
 plotFontPointsize    <- 22
-plotWidth            <- 20
-plotHeight           <- 20
+plotWidth            <- 10
+plotHeight           <- 10
 plotConfidence       <- 0.95
 
 # ###########################################################################
@@ -49,23 +49,23 @@ plotConfigurations <- list(
         "passive.flow", "OptionCMT", "Unordered"),
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUIdle.pdf"),
-        "Sender's Perspective", NA, seq(0, 100, 10), list(0,0),
+        "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "active.CPU-Utilization",
         "active.CPU", "OptionRP", "OptionNRSACK",
         "", "", ""),
    list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUIdle.pdf"),
-        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,0),
+        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
         "passive.CPU", "OptionRP", "OptionNRSACK",
         "", "", ""),
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
-        "Sender's Perspective", NA, seq(0, 100, 10), list(0,0),
+        "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "active.CPU-System",
         "active.CPU", "OptionRP", "OptionNRSACK",
         "", "", ""),
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
-        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,0),
+        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "passive.CPU-System",
         "passive.CPU", "OptionRP", "OptionNRSACK",
         "", "", "")
