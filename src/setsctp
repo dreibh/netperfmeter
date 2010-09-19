@@ -21,7 +21,7 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [cmt on|off] [dac on|off] [nrsack on|off] [rp on|off] [bufferSplitting off|senderOnly|reeiverOnly|bothSides] [initialCwnd SIZE_IN_MTU]"
+   echo >&2 "Usage: $0 [cmt on|off] [dac on|off] [nrsack on|off] [rp on|off] [bufferSplitting none|senderOnly|reeiverOnly|bothSides] [initialCwnd SIZE_IN_MTU]"
    exit 1
 fi
 
@@ -80,7 +80,7 @@ while [ "$1" != "" ] ; do
       shift ; shift
 
    elif [ "$1" = "bufferSplitting" ] ; then
-      if [ "$2" = "off" ] ; then
+      if [ "$2" = "none" ] ; then
          BUFFERSPLITTING=0
       elif [ "$2" = "senderOnly" ] ; then 
          BUFFERSPLITTING=1
