@@ -30,19 +30,22 @@ Flows_VALUES="1"
 CompareWithReference_VALUES="false"
 ReferenceFlowProtocol_VALUES="SCTP"
 OnlyOneAssoc_VALUES="true"
+
+BidirectionalQoS_VALUES="true"
+
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"
 SndBuf_VALUES="250000"
 RcvBuf_VALUES="125000"
 OptionCMT_VALUES="true"
-OptionRP_VALUES="false true"
+OptionRP_VALUES="false"
 OptionDAC_VALUES="true"
 OptionNRSACK_VALUES="false true"
 OptionBufferSplitting_VALUES="none bothSides"
 
 # First trail
-RateNorthernTrail_VALUES="100 1000 10000 20000 30000 40000 50000"
+RateNorthernTrail_VALUES="250 1000 10000 20000 30000 40000 50000"
 DelayNorthernTrail_VALUES="1"
 LossNorthernTrail_VALUES="0"
 # Second trail
