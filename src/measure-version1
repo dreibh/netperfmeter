@@ -21,8 +21,8 @@
 #
 
 HOST_EAST="132.252.153.18"
-# HOST_WEST="132.252.153.10,132.252.153.138"   # !!! Disjoint Links !!!
-HOST_WEST="132.252.153.10,132.252.153.14"   # !!! Shared Bottleneck !!!
+HOST_WEST="132.252.153.10,132.252.153.138"   # !!! Disjoint Links !!!
+# HOST_WEST="132.252.153.10,132.252.153.14"   # !!! Shared Bottleneck !!!
 ROUTER_NORTH="132.252.153.9"
 NETWORK_NW="132.252.153.8/29"
 NETWORK_NE="132.252.153.16/29"
@@ -57,7 +57,7 @@ OptionCMT_VALUES="false"
 OptionRP_VALUES="false"
 OptionDAC_VALUES="false"
 OptionNRSACK_VALUES="false"
-OptionBufferSplitting_VALUES="off"
+OptionBufferSplitting_VALUES="none"
 BidirectionalQoS_VALUES="false"
 RateNorthernTrail_VALUES="1000"
 DelayNorthernTrail_VALUES="0"

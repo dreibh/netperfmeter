@@ -1635,28 +1635,28 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
             }
          }
       }
-      if( (xColumn != "") & (!is.na(xColumn)) & (xFound == FALSE) ) {
+      if( (xColumn != "") && (!is.na(xColumn)) && (xFound == FALSE) ) {
          stop(paste(sep="", "ERROR: xSet not mapped - setting \"", xColumn, "\" is unknown!"))
       }
-      if( (yColumn != "") & (!is.na(yColumn)) & (yFound == FALSE) ) {
+      if( (yColumn != "") && (!is.na(yColumn)) && (yFound == FALSE) ) {
          stop(paste(sep="", "ERROR: ySet not mapped - setting \"", yColumn, "\" is unknown!"))
       }
-      if( (zColumn != "") & (!is.na(zColumn)) & (zFound == FALSE) ) {
+      if( (zColumn != "") && (!is.na(zColumn)) && (zFound == FALSE) ) {
          warning(paste(sep="", "ERROR: zSet not mapped - setting \"", zColumn, "\" is unknown!"))
       }
-      if( (vColumn != "") & (!is.na(vColumn)) & (vFound == FALSE) ) {
+      if( (vColumn != "") && (!is.na(vColumn)) && (vFound == FALSE) ) {
          warning(paste(sep="", "ERROR: vSet not mapped - setting \"", vColumn, "\" is unknown!"))
       }
-      if( (wColumn != "") & (!is.na(wColumn)) & (wFound == FALSE) ) {
+      if( (wColumn != "") && (!is.na(wColumn)) && (wFound == FALSE) ) {
          warning(paste(sep="", "ERROR: wSet not mapped - setting \"", wColumn, "\" is unknown!"))
       }
-      if( (aColumn != "") & (!is.na(aColumn)) & (aFound == FALSE) ) {
+      if( (aColumn != "") && (!is.na(aColumn)) && (aFound == FALSE) ) {
          warning(paste(sep="", "ERROR: aSet not mapped - setting \"", aColumn, "\" is unknown!"))
       }
-      if( (bColumn != "") & (!is.na(bColumn)) & (bFound == FALSE) ) {
+      if( (bColumn != "") && (!is.na(bColumn)) && (bFound == FALSE) ) {
          warning(paste(sep="", "ERROR: bSet not mapped - setting \"", bColumn, "\" is unknown!"))
       }
-      if( (pColumn != "") & (!is.na(pColumn)) & (pFound == FALSE) ) {
+      if( (pColumn != "") && (!is.na(pColumn)) && (pFound == FALSE) ) {
          warning(paste(sep="", "ERROR: pSet not mapped - setting \"", pColumn, "\" is unknown!"))
       }
 

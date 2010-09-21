@@ -22,30 +22,31 @@
 
 . ./measure-version1
 
-Directory="TEST3"
+Directory="wp3-unordered-bandwidthI"
 
-Run_VALUES="1 2 3"
+Run_VALUES="1 2 3 4 5"
 Runtime_VALUES="60"
 Flows_VALUES="1"
-CompareWithReference_VALUES="true"
+CompareWithReference_VALUES="false"
 ReferenceFlowProtocol_VALUES="SCTP"
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
-Unordered_VALUES="1.0"   # !!!
-SndBuf_VALUES="12500000"
-RcvBuf_VALUES="12500000"
+Unordered_VALUES="1.0"
+SndBuf_VALUES="250000"
+RcvBuf_VALUES="125000"
 OptionCMT_VALUES="true"
 OptionRP_VALUES="false true"
 OptionDAC_VALUES="true"
-OptionNRSACK_VALUES="false"
+OptionNRSACK_VALUES="false true"
+OptionBufferSplitting_VALUES="none bothSides"
 
 # First trail
-RateNorthernTrail_VALUES="10000 25000 40000 50000"
-DelayNorthernTrail_VALUES="0"
+RateNorthernTrail_VALUES="100 1000 10000 20000 30000 40000 50000"
+DelayNorthernTrail_VALUES="1"
 LossNorthernTrail_VALUES="0"
 # Second trail
-RateSouthernTrail_VALUES="-1"
+RateSouthernTrail_VALUES="50000"
 DelaySouthernTrail_VALUES="-1"
 LossSouthernTrail_VALUES="-1"
 
