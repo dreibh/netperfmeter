@@ -504,12 +504,12 @@ plotstd3 <- function(mainTitle,
             # else {
             #    legendText <- paste(sep="", "\"", z, "\"")
             # }
-            legendText <- paste(sep="", "paste(sep=\"\", ", getAbbreviation(zTitle), ", \"=", gettextf(zValueFilter, z), "\")")
+            legendText <- paste(sep="", "paste(sep=\"\", ", getAbbreviation(zTitle), ", '=", gettextf(zValueFilter, z), "')")
             if(length(vLevels) > 1) {
-               legendText <- paste(sep="", "paste(sep=\"\", ", legendText, ", \", \", ", getAbbreviation(vTitle), ", \"=", gettextf(vValueFilter, v), "\")")
+               legendText <- paste(sep="", "paste(sep=\"\", ", legendText, ", \", \", ", getAbbreviation(vTitle), ", '=", gettextf(vValueFilter, v), "')")
             }
             if(length(wLevels) > 1) {
-               legendText <- paste(sep="", "paste(sep=\"\", ", legendText, ", \", \", ", getAbbreviation(wTitle), ", \"=", gettextf(wValueFilter, w), "\")")
+               legendText <- paste(sep="", "paste(sep=\"\", ", legendText, ", \", \", ", getAbbreviation(wTitle), ", '=", gettextf(wValueFilter, w), "')")
             }
             if(enumerateLines) {
                lineNumText <- paste(sep="", lineNum)
@@ -945,7 +945,7 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel,
          plot.new()
          plot.window(c(0, 1), c(0, 1))
          rect(0, 0, 1, 1, col=bLevelsColorArray[b])
-         value <- paste(sep="", "paste(", getAbbreviation(bTitle), ", \"=", bLevels[b], "\")")
+         value <- paste(sep="", "paste(", getAbbreviation(bTitle), ", '=", bLevels[b], "')")
          text(0.5, 0.5, parse(text=value), srt=90)
       }
 
@@ -961,7 +961,7 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel,
          plot.new()
          plot.window(c(0, 1), c(0, 1))
          rect(0, 0, 1, 1, col=aLevelsColorArray[a])
-         value <- paste(sep="", "paste(", getAbbreviation(aTitle), ", \"=", aLevels[a], "\")")
+         value <- paste(sep="", "paste(", getAbbreviation(aTitle), ", '=", aLevels[a], "')")
          text(0.5, 0.5, parse(text=value))
       }
 
@@ -1054,7 +1054,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
    for(p in pLevels) {
       # ------ Prepare page -------------------------------------------------
       if(length(pLevels) > 1) {
-         pSubLabel <- paste(sep="", "paste(sep=\"\", ", getLabel(pTitle), ", \" = ", p, "\")")
+         pSubLabel <- paste(sep="", "paste(sep=\"\", ", getLabel(pTitle), ", ' = ", p, "')")
       }
 
       pColor <- getBackgroundColor(page, colorMode, pStart)
@@ -1635,28 +1635,28 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
             }
          }
       }
-      if( (xColumn != "") && (!is.na(xColumn)) && (xFound == FALSE) ) {
+      if( (xColumn != "") & (!is.na(xColumn)) & (xFound == FALSE) ) {
          stop(paste(sep="", "ERROR: xSet not mapped - setting \"", xColumn, "\" is unknown!"))
       }
-      if( (yColumn != "") && (!is.na(yColumn)) && (yFound == FALSE) ) {
+      if( (yColumn != "") & (!is.na(yColumn)) & (yFound == FALSE) ) {
          stop(paste(sep="", "ERROR: ySet not mapped - setting \"", yColumn, "\" is unknown!"))
       }
-      if( (zColumn != "") && (!is.na(zColumn)) && (zFound == FALSE) ) {
+      if( (zColumn != "") & (!is.na(zColumn)) & (zFound == FALSE) ) {
          warning(paste(sep="", "ERROR: zSet not mapped - setting \"", zColumn, "\" is unknown!"))
       }
-      if( (vColumn != "") && (!is.na(vColumn)) && (vFound == FALSE) ) {
+      if( (vColumn != "") & (!is.na(vColumn)) & (vFound == FALSE) ) {
          warning(paste(sep="", "ERROR: vSet not mapped - setting \"", vColumn, "\" is unknown!"))
       }
-      if( (wColumn != "") && (!is.na(wColumn)) && (wFound == FALSE) ) {
+      if( (wColumn != "") & (!is.na(wColumn)) & (wFound == FALSE) ) {
          warning(paste(sep="", "ERROR: wSet not mapped - setting \"", wColumn, "\" is unknown!"))
       }
-      if( (aColumn != "") && (!is.na(aColumn)) && (aFound == FALSE) ) {
+      if( (aColumn != "") & (!is.na(aColumn)) & (aFound == FALSE) ) {
          warning(paste(sep="", "ERROR: aSet not mapped - setting \"", aColumn, "\" is unknown!"))
       }
-      if( (bColumn != "") && (!is.na(bColumn)) && (bFound == FALSE) ) {
+      if( (bColumn != "") & (!is.na(bColumn)) & (bFound == FALSE) ) {
          warning(paste(sep="", "ERROR: bSet not mapped - setting \"", bColumn, "\" is unknown!"))
       }
-      if( (pColumn != "") && (!is.na(pColumn)) && (pFound == FALSE) ) {
+      if( (pColumn != "") & (!is.na(pColumn)) & (pFound == FALSE) ) {
          warning(paste(sep="", "ERROR: pSet not mapped - setting \"", pColumn, "\" is unknown!"))
       }
 
