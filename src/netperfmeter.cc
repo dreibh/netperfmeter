@@ -476,16 +476,16 @@ static Flow* createFlow(Flow*                  previousFlow,
       cmtOnOff.assoc_id    = 0;
       cmtOnOff.assoc_value = (flow->getTrafficSpec().UseCMT == true) ? 1 : 0;
       if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-         cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
-              << strerror(errno) << "!" << endl;
          if(flow->getTrafficSpec().UseCMT == true) {
+            cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
+                 << strerror(errno) << "!" << endl;
             exit(1);
          }
       }
 #else
       if(flow->getTrafficSpec().UseCMT == true) {
          cerr << "ERROR: CMT usage configured, but not supported by this system!" << endl;
-	 exit(1);
+         exit(1);
       }
 #endif
 #ifdef SCTP_RP_ON_OFF
@@ -493,16 +493,16 @@ static Flow* createFlow(Flow*                  previousFlow,
       rpOnOff.assoc_id    = 0;
       rpOnOff.assoc_value = (flow->getTrafficSpec().UseRP == true) ? 1 : 0;
       if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_RP_ON_OFF, &rpOnOff, sizeof(rpOnOff)) < 0) {
-         cerr << "ERROR: Failed to configure RP usage on SCTP socket (SCTP_RP_ON_OFF option) - "
-              << strerror(errno) << "!" << endl;
          if(flow->getTrafficSpec().UseRP == true) {
+            cerr << "ERROR: Failed to configure RP usage on SCTP socket (SCTP_RP_ON_OFF option) - "
+                 << strerror(errno) << "!" << endl;
             exit(1);
          }
       }
 #else
       if(flow->getTrafficSpec().UseRP == true) {
          cerr << "ERROR: RP usage configured, but not supported by this system!" << endl;
-	 exit(1);
+         exit(1);
       }
 #endif
 
