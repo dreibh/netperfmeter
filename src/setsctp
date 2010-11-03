@@ -105,12 +105,12 @@ while [ "$1" != "" ] ; do
 done
 
 
-echo "SCTP Configuration:"
-echo " - CMT:             $CMT"
-echo " - DAC:             $DAC"
-echo " - NRSACK:          $NRSACK"
-echo " - CMT-RP:          $RP"
-echo " - BUFFERSPLITTING: $BUFFERSPLITTING"
+# echo "SCTP Configuration:"
+# echo " - CMT:             $CMT"
+# echo " - DAC:             $DAC"
+# echo " - NRSACK:          $NRSACK"
+# echo " - CMT-RP:          $RP"
+# echo " - BUFFERSPLITTING: $BUFFERSPLITTING"
 
 
 SYSTEM=`uname`

@@ -26,20 +26,21 @@ Scenario="SharedBottleneck"
 
 
 Run_VALUES="1"
-Runtime_VALUES="30"
+Runtime_VALUES="60"
 Flows_VALUES="1"
 CompareWithReference_VALUES="true"
-ReferenceFlowProtocol_VALUES="SCTP" ## !!!!!!!!!!!!!!!!!!!!!!!!!
+ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"   # !!!
-SndBuf_VALUES="12500000"
-RcvBuf_VALUES="12500000"
+SndBuf_VALUES="1000000"
+RcvBuf_VALUES="1000000"
 OptionCMT_VALUES="true"
 OptionRP_VALUES="false true"
 OptionDAC_VALUES="true"
 OptionNRSACK_VALUES="false"
+OptionBufferSplitting_VALUES="bothSides"
 
 # First trail
 RateNorthernTrail_VALUES="10000 25000 40000 50000"
