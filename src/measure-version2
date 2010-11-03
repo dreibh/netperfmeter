@@ -21,25 +21,38 @@
 #
 
 HOST_EAST="132.252.153.18"
-# HOST_WEST="132.252.153.10,132.252.153.138"   # !!! Disjoint Links !!!
-HOST_WEST="132.252.153.10,132.252.153.14"   # !!! Shared Bottleneck !!!
 ROUTER_NORTH="132.252.153.9"
 NETWORK_NW="132.252.153.8/29"
 NETWORK_NE="132.252.153.16/29"
 ROUTER_SOUTH="132.252.153.137"
 NETWORK_SW="132.252.153.136/29"
 NETWORK_SE="132.252.153.144/29"
+LocalOpts="-verbosity=1"
 
-LocalOpts="-local=$HOST_WEST"
-RemoteNode="$HOST_EAST:9000"
+if [ "$Scenario" = "DisjointPaths" ] ; then
+  HOST_WEST="132.252.153.10,132.252.153.138"
+  LocalOpts="$LocalOpts -local=$HOST_WEST"
+  RemoteNode="$HOST_EAST:7010"
+elif [ "$Scenario" = "SharedBottleneck" ] ; then
+  HOST_WEST="132.252.153.10,132.252.153.14"
+  LocalOpts="$LocalOpts -local=$HOST_WEST"
+  RemoteNode="$HOST_EAST:7020"
+else
+   echo >&2 "ERROR: Bad scenario setting $Scenario!"
+   exit 1
+fi
+
+if [ "$Directory" = "" ] ; then
+   echo >&2 "ERROR: Bad directory setting $Directory!"
+   exit 1
+fi
 
 
-Directory="UNDEFINED"
-
+# ###### Variables ##########################################################
 Variables="Run Runtime Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd OptionCMT OptionDAC OptionNRSACK OptionRP OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail"
 
 
-# ###### Defaults #############################################################
+# ###### Defaults ###########################################################
 Run_VALUES="1"
 Runtime_VALUES="60"
 Flows_VALUES="1"

@@ -20,15 +20,16 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-. ./measure-version1
+Directory="test4"
+Scenario="SharedBottleneck"
+. ./measure-version2
 
-Directory="TEST3"
 
 Run_VALUES="1"
-Runtime_VALUES="60"
+Runtime_VALUES="30"
 Flows_VALUES="1"
 CompareWithReference_VALUES="true"
-ReferenceFlowProtocol_VALUES="TCP" ## !!!!!!!!!!!!!!!!!!!!!!!!!
+ReferenceFlowProtocol_VALUES="SCTP" ## !!!!!!!!!!!!!!!!!!!!!!!!!
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
@@ -48,5 +49,6 @@ LossNorthernTrail_VALUES="0"
 RateSouthernTrail_VALUES="-1"
 DelaySouthernTrail_VALUES="-1"
 LossSouthernTrail_VALUES="-1"
+
 
 perform_measurements
