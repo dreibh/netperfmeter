@@ -70,7 +70,6 @@ SYSTEM=`uname`
 if [ "$SYSTEM" = "Linux" ] ; then
    echo "Linux"
    INTERFACES=`eval "ifconfig -a" 2>/dev/null | sed -ne 's|^\('$cur'[^[:space:][:punct:]]\{1,\}\).*$|\1|p'`
-# INTERFACES="lo eth0"
 
    echo "=== Removing old configuration ... =============================="
    for iface in $INTERFACES ; do
@@ -102,7 +101,7 @@ if [ "$SYSTEM" = "Linux" ] ; then
 
 # ====== FreeBSD QoS setup ==================================================
 elif [ "$SYSTEM" = "FreeBSD" ] ; then
-   ipfw $ID delete pipe $ID
+   ipfw $ID delete pipe $ID 2>/dev/null   # Delete old configuration
    if [ $addRule -eq 1 ] ; then
       if [ "$BANDWIDTH" != "" ] ; then
          BANDWIDTH="bw ${BANDWIDTH}Kbit/s"
