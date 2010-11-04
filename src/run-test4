@@ -25,7 +25,7 @@ Scenario="SharedBottleneck"
 . ./measure-version2
 
 
-Run_VALUES="1"
+Run_VALUES="1 2 3 4"
 Runtime_VALUES="60"
 Flows_VALUES="1"
 CompareWithReference_VALUES="true"
@@ -34,13 +34,13 @@ OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"   # !!!
-SndBuf_VALUES="1000000"
-RcvBuf_VALUES="1000000"
+SndBuf_VALUES="250000"
+RcvBuf_VALUES="125000"
 OptionCMT_VALUES="true"
 OptionRP_VALUES="false true"
 OptionDAC_VALUES="true"
-OptionNRSACK_VALUES="false"
-OptionBufferSplitting_VALUES="bothSides"
+OptionNRSACK_VALUES="true false"
+OptionBufferSplitting_VALUES="none bothSides"
 
 # First trail
 RateNorthernTrail_VALUES="10000 25000 40000 50000"
