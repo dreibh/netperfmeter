@@ -21,7 +21,7 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [cmt on|off] [dac on|off] [nrsack on|off] [rp on|off] [bufferSplitting none|senderOnly|reeiverOnly|bothSides] [initialCwnd SIZE_IN_MTU]"
+   echo >&2 "Usage: $0 [cmt on|off] [dac on|off] [nrsack on|off] [rp on|off] [bufferSplitting none|senderOnly|reeiverOnly|bothSides] [initialCwnd SIZE_IN_MTU] [cwndMaxBurst on|off"
    exit 1
 fi
 
@@ -33,6 +33,7 @@ NRSACK=0
 RP=0
 BUFFERSPLITTING=0
 INITIAL_CWND=3
+CWND_MAXBURST=0
 
 while [ "$1" != "" ] ; do
    if [ "$1" = "cmt" ] ; then
@@ -79,6 +80,17 @@ while [ "$1" != "" ] ; do
       fi
       shift ; shift
 
+   elif [ "$1" = "cwndMaxBurst" ] ; then
+      if [ "$2" = "on" -o "$2" = "true" ] ; then
+         CWND_MAXBURST=1
+      elif [ "$2" = "off" -o "$2" = "false" ] ; then 
+         CWND_MAXBURST=0
+      else
+         echo >&2 "ERROR: Bad setting for cwndMaxBurst!"
+         exit 1
+      fi
+      shift ; shift
+
    elif [ "$1" = "bufferSplitting" ] ; then
       if [ "$2" = "none" ] ; then
          BUFFERSPLITTING=0
@@ -111,6 +123,7 @@ done
 # echo " - NRSACK:          $NRSACK"
 # echo " - CMT-RP:          $RP"
 # echo " - BUFFERSPLITTING: $BUFFERSPLITTING"
+# echo " - CWND_MAXBURST:   $CWND_MAXBURST"
 
 
 SYSTEM=`uname`
@@ -122,6 +135,7 @@ if [ "$SYSTEM" = "FreeBSD" ] ; then
    sysctl net.inet.sctp.nr_sack_on_off=$NRSACK >/dev/null
    sysctl net.inet.sctp.buffer_splitting=$BUFFERSPLITTING >/dev/null
    sysctl net.inet.sctp.initial_cwnd=$INITIAL_CWND >/dev/null
+   sysctl net.inet.sctp.cwnd_maxburst=$CWND_MAXBURST >/dev/null
    sysctl kern.ipc.maxsockbuf=100005000 >/dev/null      # This is the absolute socket buffer limit!
    sysctl net.inet.sctp.sendspace=10000000 >/dev/null   # SCTP limit, seems to need full pages!
    sysctl net.inet.sctp.recvspace=10000000 >/dev/null   # SCTP limit, seems to need full pages!
