@@ -119,11 +119,14 @@ elif [ "$SYSTEM" = "FreeBSD" ] ; then
             ERROR=""
          fi
       fi
+      queueParameters="queue 80 red 0.002/20/80/0.02"
       ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST
+      ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR $queueParameters
       if [ $bidirectionalQoS -eq 1 ] ; then
-         ipfw add $ID pipe $ID out src-ip $NETWORK_DST dst-ip $NETWORK_SRC
+        let ID2=$ID+1
+        ipfw add $ID2 pipe $ID2 out src-ip $NETWORK_DST dst-ip $NETWORK_SRC
+        ipfw pipe $ID2 config $BANDWIDTH $DELAY $LOSS $ERROR $queueParameters
       fi
-      ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR queue 100 red 0.002/30/80/0.02
    fi
 
 
