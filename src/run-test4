@@ -25,7 +25,7 @@ Scenario="SharedBottleneck"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3 4"
+Run_VALUES="1 2 3 4 5"
 Runtime_VALUES="60"
 Flows_VALUES="1"
 CompareWithReference_VALUES="true"
@@ -34,6 +34,9 @@ OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"   # !!!
+
+ReferenceUnordered_VALUES="0.0"   # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 SndBuf_VALUES="250000"
 RcvBuf_VALUES="125000"
 OptionCMT_VALUES="true"

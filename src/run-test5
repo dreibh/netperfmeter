@@ -45,7 +45,7 @@ OptionBufferSplitting_VALUES="none bothSides"
 BidirectionalQoS_VALUES="false"   # !!!!
 
 # First trail
-RateNorthernTrail_VALUES="500 1000 10000 17500 25000 32500 40000 50000 70000"
+RateNorthernTrail_VALUES="500 1000 10000 17500 25000 32500 40000 50000"
 DelayNorthernTrail_VALUES="0"
 LossNorthernTrail_VALUES="0"
 # Second trail
