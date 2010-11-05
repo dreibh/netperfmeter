@@ -504,12 +504,24 @@ plotstd3 <- function(mainTitle,
             # else {
             #    legendText <- paste(sep="", "\"", z, "\"")
             # }
-            legendText <- paste(sep="", "paste(sep=\"\", ", getAbbreviation(zTitle), ", '=", gettextf(zValueFilter, z), "')")
+            zBinder <- ""
+            if( (!is.null(zTitle)) && (zTitle != "") ) {
+               zBinder <- "="
+            }
+            legendText <- paste(sep="", "paste(sep=\"\", ", getAbbreviation(zTitle), ", '", zBinder, gettextf(zValueFilter, z), "')")
+            vBinder <- ""
+            if( (!is.null(vTitle)) && (vTitle != "") ) {
+               vBinder <- "="
+            }
             if(length(vLevels) > 1) {
-               legendText <- paste(sep="", "paste(sep=\"\", ", legendText, ", \", \", ", getAbbreviation(vTitle), ", '=", gettextf(vValueFilter, v), "')")
+               legendText <- paste(sep="", "paste(sep=\"\", ", legendText, ", \", \", ", getAbbreviation(vTitle), ", '", vBinder, gettextf(vValueFilter, v), "')")
+            }
+            wBinder <- ""
+            if( (!is.null(wTitle)) && (wTitle != "") ) {
+               wBinder <- "="
             }
             if(length(wLevels) > 1) {
-               legendText <- paste(sep="", "paste(sep=\"\", ", legendText, ", \", \", ", getAbbreviation(wTitle), ", '=", gettextf(wValueFilter, w), "')")
+               legendText <- paste(sep="", "paste(sep=\"\", ", legendText, ", \", \", ", getAbbreviation(wTitle), ", '", wBinder, gettextf(wValueFilter, w), "')")
             }
             if(enumerateLines) {
                lineNumText <- paste(sep="", lineNum)
