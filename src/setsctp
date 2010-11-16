@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # $Id$
 #
 # Network Performance Meter
@@ -129,16 +129,16 @@ done
 SYSTEM=`uname`
 # ====== FreeBSD QoS setup ==================================================
 if [ "$SYSTEM" = "FreeBSD" ] ; then
-   sysctl net.inet.sctp.cmt_on_off=$CMT >/dev/null
-   sysctl net.inet.sctp.rp_on_off=$RP >/dev/null
-   sysctl net.inet.sctp.cmt_use_dac=$DAC >/dev/null
-   sysctl net.inet.sctp.nr_sack_on_off=$NRSACK >/dev/null
-   sysctl net.inet.sctp.buffer_splitting=$BUFFERSPLITTING >/dev/null
-   sysctl net.inet.sctp.initial_cwnd=$INITIAL_CWND >/dev/null
-   sysctl net.inet.sctp.cwnd_maxburst=$CWND_MAXBURST >/dev/null
-   sysctl kern.ipc.maxsockbuf=100005000 >/dev/null      # This is the absolute socket buffer limit!
-   sysctl net.inet.sctp.sendspace=10000000 >/dev/null   # SCTP limit, seems to need full pages!
-   sysctl net.inet.sctp.recvspace=10000000 >/dev/null   # SCTP limit, seems to need full pages!
+   /sbin/sysctl net.inet.sctp.cmt_on_off=$CMT >/dev/null
+   /sbin/sysctl net.inet.sctp.rp_on_off=$RP >/dev/null
+   /sbin/sysctl net.inet.sctp.cmt_use_dac=$DAC >/dev/null
+   /sbin/sysctl net.inet.sctp.nr_sack_on_off=$NRSACK >/dev/null
+   /sbin/sysctl net.inet.sctp.buffer_splitting=$BUFFERSPLITTING >/dev/null
+   /sbin/sysctl net.inet.sctp.initial_cwnd=$INITIAL_CWND >/dev/null
+   /sbin/sysctl net.inet.sctp.cwnd_maxburst=$CWND_MAXBURST >/dev/null
+   /sbin/sysctl kern.ipc.maxsockbuf=100005000 >/dev/null      # This is the absolute socket buffer limit!
+   /sbin/sysctl net.inet.sctp.sendspace=10000000 >/dev/null   # SCTP limit, seems to need full pages!
+   /sbin/sysctl net.inet.sctp.recvspace=10000000 >/dev/null   # SCTP limit, seems to need full pages!
 
 # ====== Other systems ======================================================
 else
