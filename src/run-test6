@@ -20,7 +20,7 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-Directory="test5"
+Directory="test6"
 Scenario="DisjointPaths"
 . ./measure-version2
 

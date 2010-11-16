@@ -47,6 +47,7 @@ netPerfMeterPlotVariables <- list(
    list("InitialCwnd",           "Initial Cwnd{:i:}[Bytes]"),
    list("OptionBufferSplitting", "Buffer Splitting{:B:}"),
    list("BidirectionalQoS",      "Bidirectional QoS{Q}"),
+   list("CwndMaxBurst",          "Cwnd MaxBurst{c}"),
 
    list("RateNorthernTrail",
            "Data Rate on Northern Trail{:rho[North]:}[Kbit/s]"),

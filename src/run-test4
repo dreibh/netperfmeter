@@ -25,8 +25,8 @@ Scenario="SharedBottleneck"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3 4 5"
-Runtime_VALUES="60"
+Run_VALUES="1"
+Runtime_VALUES="30"
 Flows_VALUES="1"
 CompareWithReference_VALUES="true"
 ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom

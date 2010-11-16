@@ -20,8 +20,8 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-Directory="test5"
-Scenario="DisjointPaths"
+Directory="test7"
+Scenario="Burgsteinfurt"
 . ./measure-version2
 
 
@@ -32,28 +32,27 @@ CompareWithReference_VALUES="false"
 ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
-FrameSize_VALUES="const1452"
+FrameSize_VALUES="const1444"   # !!!!!!!!!!!!!!!!!!!!!
 Unordered_VALUES="1.0"   # !!!
-SndBuf_VALUES="250000"
-RcvBuf_VALUES="125000"
+SndBuf_VALUES="300000"
+RcvBuf_VALUES="100000"
 OptionCMT_VALUES="true"
 OptionRP_VALUES="false"
 OptionDAC_VALUES="true"
-OptionNRSACK_VALUES="false true"
+OptionNRSACK_VALUES="true"
 OptionBufferSplitting_VALUES="none bothSides"
 
 BidirectionalQoS_VALUES="true"   # !!!!
-CwndMaxBurst_VALUES="false true" # !!!!
+CwndMaxBurst_VALUES="true" # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 # First trail
-RateNorthernTrail_VALUES="1000 10000 20000 50000"
-#500 1000 10000 17500 25000 32500 40000 50000"
+RateNorthernTrail_VALUES="10000"
 DelayNorthernTrail_VALUES="1"
-LossNorthernTrail_VALUES="0.0"
+LossNorthernTrail_VALUES="0"
 # Second trail
-RateSouthernTrail_VALUES="50000"
-DelaySouthernTrail_VALUES="-1"
-LossSouthernTrail_VALUES="-1"
+RateSouthernTrail_VALUES="100000"
+DelaySouthernTrail_VALUES="1"
+LossSouthernTrail_VALUES="0"
 
 
 perform_measurements
