@@ -95,6 +95,7 @@ Establish a new UDP connection. The flow of this connection must be specified by
 Establish a new DCCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter. Note, that DCCP is not available on all platforms yet. Currently, only Linux provides DCCP in its official kernel.
 .It FLOWSPEC
 Specifies a new flow. The format is: outgoing_frame_rate:outgoing_frame_size:incoming_frame_size:incoming_frame_rate:option:...
+The first four parameters (outgoing_frame_rate:outgoing_frame_size:incoming_frame_size:incoming_frame_rate:option) may be substituted by the option "default", creating a flow with some more or less useful default parameters.
 .Bl -tag -width indent
 .It outgoing_frame_rate
 The frame rate of the outgoing transfer (i.e. active node to passive node). If set to const0, the sender will be saturarted, i.e. it will try to send as much as possible.

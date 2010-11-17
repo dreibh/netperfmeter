@@ -344,15 +344,41 @@ static Flow* createFlow(Flow*                  previousFlow,
    // ====== Get FlowTrafficSpec ============================================
    FlowTrafficSpec trafficSpec;
    trafficSpec.Protocol = protocol;
-   parameters = parseNextEntry(parameters, (double*)&trafficSpec.OutboundFrameRate, &trafficSpec.OutboundFrameRateRng);
-   if(parameters) {
-      parameters = parseNextEntry(parameters, (double*)&trafficSpec.OutboundFrameSize, &trafficSpec.OutboundFrameSizeRng);
+   if(strncmp(parameters, "default", 7) == 0) {
+      trafficSpec.OutboundFrameRateRng = RANDOM_CONSTANT;
+      trafficSpec.OutboundFrameRate[0] = 0.0;
+      switch(trafficSpec.Protocol) {
+         case IPPROTO_TCP:
+            trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 20;
+          break;
+         case IPPROTO_UDP:
+            trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 8;
+            trafficSpec.OutboundFrameRate[0] = 25;
+          break;
+         case IPPROTO_DCCP:
+            trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 40;   // 1420B for IPv6 via 1500B MTU!
+          break;
+         default:
+            trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 12 - 16;
+          break;
+      }
+      parameters = (char*)&parameters[7];
+      if(parameters[0] != 0x00) {
+         parameters++;
+         while( (parameters = parseTrafficSpecOption(parameters, trafficSpec, flowID)) ) { }
+      }
+   }
+   else {
+      parameters = parseNextEntry(parameters, (double*)&trafficSpec.OutboundFrameRate, &trafficSpec.OutboundFrameRateRng);
       if(parameters) {
-         parameters = parseNextEntry(parameters, (double*)&trafficSpec.InboundFrameRate, &trafficSpec.InboundFrameRateRng);
+         parameters = parseNextEntry(parameters, (double*)&trafficSpec.OutboundFrameSize, &trafficSpec.OutboundFrameSizeRng);
          if(parameters) {
-            parameters = parseNextEntry(parameters, (double*)&trafficSpec.InboundFrameSize, &trafficSpec.InboundFrameSizeRng);
+            parameters = parseNextEntry(parameters, (double*)&trafficSpec.InboundFrameRate, &trafficSpec.InboundFrameRateRng);
             if(parameters) {
-               while( (parameters = parseTrafficSpecOption(parameters, trafficSpec, flowID)) ) {
+               parameters = parseNextEntry(parameters, (double*)&trafficSpec.InboundFrameSize, &trafficSpec.InboundFrameSizeRng);
+               if(parameters) {
+                  while( (parameters = parseTrafficSpecOption(parameters, trafficSpec, flowID)) ) {
+                  }
                }
             }
          }

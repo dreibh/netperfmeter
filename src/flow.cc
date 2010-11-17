@@ -514,12 +514,14 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
             "scalar \"%s.flow[%u]\" \"Transmitted Bytes\"       %llu\n"
             "scalar \"%s.flow[%u]\" \"Transmitted Packets\"     %llu\n"
             "scalar \"%s.flow[%u]\" \"Transmitted Frames\"      %llu\n"
+            "scalar \"%s.flow[%u]\" \"Transmitted Bit Rate\"    %1.6f\n"
             "scalar \"%s.flow[%u]\" \"Transmitted Byte Rate\"   %1.6f\n"
             "scalar \"%s.flow[%u]\" \"Transmitted Packet Rate\" %1.6f\n"
             "scalar \"%s.flow[%u]\" \"Transmitted Frame Rate\"  %1.6f\n"
             "scalar \"%s.flow[%u]\" \"Received Bytes\"          %llu\n"
             "scalar \"%s.flow[%u]\" \"Received Packets\"        %llu\n"
             "scalar \"%s.flow[%u]\" \"Received Frames\"         %llu\n"
+            "scalar \"%s.flow[%u]\" \"Received Bit Rate\"       %1.6f\n"
             "scalar \"%s.flow[%u]\" \"Received Byte Rate\"      %1.6f\n"
             "scalar \"%s.flow[%u]\" \"Received Packet Rate\"    %1.6f\n"
             "scalar \"%s.flow[%u]\" \"Received Frame Rate\"     %1.6f\n"
@@ -527,12 +529,14 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedBytes,
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedPackets,
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedFrames,
+            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? 8ULL * flow->CurrentBandwidthStats.TransmittedBytes / transmissionDuration : 0.0,
             objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedBytes   / transmissionDuration : 0.0,
             objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedPackets / transmissionDuration : 0.0,
             objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedFrames  / transmissionDuration : 0.0,
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedBytes,
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedPackets,
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedFrames,
+            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? 8ULL * flow->CurrentBandwidthStats.ReceivedBytes / receptionDuration : 0.0,
             objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? flow->CurrentBandwidthStats.ReceivedBytes   / receptionDuration : 0.0,
             objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? flow->CurrentBandwidthStats.ReceivedPackets / receptionDuration : 0.0,
             objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? flow->CurrentBandwidthStats.ReceivedFrames  / receptionDuration : 0.0
