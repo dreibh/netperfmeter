@@ -102,8 +102,8 @@ if [ "$SYSTEM" = "Linux" ] ; then
 # ====== FreeBSD QoS setup ==================================================
 elif [ "$SYSTEM" = "FreeBSD" ] ; then
    let ID2=$ID+1
-   ipfw $ID  delete pipe $ID  2>/dev/null   # Delete old configuration
-   ipfw $ID2 delete pipe $ID2 2>/dev/null   # Delete old configuration
+   /sbin/ipfw $ID  delete pipe $ID  2>/dev/null   # Delete old configuration
+   /sbin/ipfw $ID2 delete pipe $ID2 2>/dev/null   # Delete old configuration
    if [ $addRule -eq 1 ] ; then
       if [ "$BANDWIDTH" != "" ] ; then
          BANDWIDTH="bw ${BANDWIDTH}Kbit/s"
@@ -122,11 +122,11 @@ elif [ "$SYSTEM" = "FreeBSD" ] ; then
          fi
       fi
       queueParameters="queue 80 red 0.002/20/80/0.02"
-      ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST
-      ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR $queueParameters
+      /sbin/ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST
+      /sbin/ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR $queueParameters
       if [ $bidirectionalQoS -eq 1 ] ; then
-        ipfw add $ID2 pipe $ID2 out src-ip $NETWORK_DST dst-ip $NETWORK_SRC
-        ipfw pipe $ID2 config $BANDWIDTH $DELAY $LOSS $ERROR $queueParameters
+        /sbin/ipfw add $ID2 pipe $ID2 out src-ip $NETWORK_DST dst-ip $NETWORK_SRC
+        /sbin/ipfw pipe $ID2 config $BANDWIDTH $DELAY $LOSS $ERROR $queueParameters
       fi
    fi
 
