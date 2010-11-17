@@ -1,0 +1,22 @@
+#!/bin/sh
+
+OptionCMT="true"
+OptionNRSACK="false"
+OptionRP="false"
+OptionDAC="true"
+OptionNRSACK="false"
+OptionRP="false"
+OptionBufferSplitting="bothSides"
+InitialCwnd="3"
+CwndMaxBurst="true"
+
+BandwidthDFN="10000"
+
+
+ssh 132.252.153.9   ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 132.252.153.8/29 212.201.121.87/27  $BandwidthDFN 0 0 0 true
+ssh 132.252.153.137 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 89.246.242.228/32 87.139.124.106/32 100000 0 0 0 true
+
+~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd cwndMaxBurst $CwndMaxBurst || exit 1
+ssh 87.139.124.106 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd cwndMaxBurst $CwndMaxBurst || exit 1
+
+./netperfmeter 87.139.124.106:7000 -local=132.252.153.10,89.246.242.228 -sctp const0:const1444:const0:const0:id=1:unordered=1.0:unreliable=0.0:sndbuf=300000:rcvbuf=100000:cmt=on:rp=off
