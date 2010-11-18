@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # $Id$
 #
 # Network Performance Meter
@@ -20,6 +20,7 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
+# ###### Testbed in Essen #################################
 # West:
 # N1=132.252.153.10/29
 # N2=132.252.153.14/29
@@ -39,6 +40,7 @@
 # South:
 # Sw=132.252.153.137/29
 # Se=132.252.153.145/29
+# #########################################################
 
 
 LocalOpts="-verbosity=1"
@@ -146,12 +148,15 @@ perform_run ()
       if [ $ErrorSouthernTrail -eq -1 ] ; then
          ErrorSouthernTrail=$ErrorNorthernTrail
       fi
-      if [ "$ReferenceUnreliable" = "-1" ] ; then
-         ReferenceUnreliable=$Unreliable
+      SETTING_ReferenceUnreliable=$ReferenceUnreliable
+      if [ "$SETTING_ReferenceUnreliable" = "-1" ] ; then
+         SETTING_ReferenceUnreliable=$Unreliable
       fi
-      if [ "$ReferenceUnordered" = "-1" ] ; then
-         ReferenceUnordered=$Unordered
+      SETTING_ReferenceUnordered=$ReferenceUnordered
+      if [ "$SETTING_ReferenceUnordered" = "-1" ] ; then
+         SETTING_ReferenceUnordered=$Unordered
       fi
+
       ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd cwndMaxBurst $CwndMaxBurst || exit 1
       ssh $HOST_EAST ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd cwndMaxBurst $CwndMaxBurst || exit 1
       echo "===== QoS: ssh $ROUTER_NORTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_NW $NETWORK_NE $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS ====="
@@ -214,7 +219,7 @@ perform_run ()
          local n=0
          local id=1001
          while [ $n -lt $Flows ] ; do
-            command="$command $protocolSelector $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$ReferenceUnordered:unreliable=$ReferenceUnreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=off:rp=off "
+            command="$command $protocolSelector $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$SETTING_ReferenceUnordered:unreliable=$SETTING_ReferenceUnreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=off:rp=off "
             let n=$n+1
             let id=$id+1
          done
@@ -261,7 +266,7 @@ initialize_runs ()
 # ###### Create summary #####################################################
 finish_runs ()
 {
-   createsummary "$@ $additionalVariables" <$summaryName
+   createsummary "$@ $additionalVariables" -batch <$summaryName
 }
 
 
