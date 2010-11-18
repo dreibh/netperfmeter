@@ -337,8 +337,10 @@ plotstd3 <- function(mainTitle,
                      zValueFilter      = "%s",
                      vValueFilter      = "%s",
                      wValueFilter      = "%s",
+                     writeMetadata     = TRUE,
                      largeMargins      = FALSE,
-                     writeMetadata     = TRUE)
+                     aLevels           = 1,
+                     bLevels           = 1)
 {
    xLevels <- levels(factor(xSet))
    yLevels <- levels(factor(ySet))
@@ -402,12 +404,13 @@ plotstd3 <- function(mainTitle,
    # ------ Create plot window ----------------------------------------------
    if(!largeMargins) {
       margins <- c(3.25,3.25,3,0.5) + 0.0   # Margins as c(bottom, left, top, right)
-                                             # Default is c(5, 4, 4, 2) + 0.1
+                                            # Default is c(5, 4, 4, 2) + 0.1
       newCEX  <- par("cex")
    }
    else {
       margins <- c(4, 4, 2, 2) + 0.0   # For usage within plotstd6()
-      newCEX  <- 0.925 * par("cex")
+      q <- 0.5 * max(aLevels, bLevels)
+      newCEX  <- par("cex") / q
    }
    opar <- par(mar = margins, cex=newCEX)
 
@@ -1124,6 +1127,8 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         frameColor        = frameColor,
                         writeMetadata     = FALSE,
                         largeMargins      = useLargeMargins,
+                        aLevels           = length(aLevels),
+                        bLevels           = length(bLevels),
                         (singlePlotTitle == "")) < 1) {   # see below
                # If singlePlotTitle=="", we have multiple std3 plots on the
                # same page. Then, larger margins have to be used by plotstd3().
@@ -1480,6 +1485,13 @@ applyManipulator <- function(manipulator, inputDataTable, columnName, filter)
       result <- eval(parse(text=manipulator))
    }
    result <- subset(result, eval(filter))
+
+   if(length(result) == 1) {   # No result, if result==c(NA)!
+      if(is.na(result[1])) {
+         result <- c()
+      }
+   }
+
    return(result)
 }
 
