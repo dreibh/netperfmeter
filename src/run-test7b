@@ -1,0 +1,58 @@
+#!/bin/bash
+# $Id: run-test7 790 2010-11-17 08:54:59Z dreibh $
+#
+# Network Performance Meter
+# Copyright (C) 2009-2010 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
+
+Directory="test7"
+Scenario="Burgsteinfurt"
+. ./measure-version2
+
+
+Run_VALUES="888"
+Runtime_VALUES="60"
+Flows_VALUES="1"
+CompareWithReference_VALUES="false"
+ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
+OnlyOneAssoc_VALUES="true"
+FrameRate_VALUES="const0"
+FrameSize_VALUES="const1444"   # !!!!!!!!!!!!!!!!!!!!!
+Unordered_VALUES="1.0"   # !!!
+SndBuf_VALUES="300000"
+RcvBuf_VALUES="100000"
+OptionCMT_VALUES="true"
+OptionRP_VALUES="false"
+OptionDAC_VALUES="true"
+OptionNRSACK_VALUES="false true"
+OptionBufferSplitting_VALUES="bothSides none senderOnly receiverOnly"
+
+BidirectionalQoS_VALUES="true"   # !!!!
+CwndMaxBurst_VALUES="true" # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# First trail
+RateNorthernTrail_VALUES="1000 5000 10000"
+DelayNorthernTrail_VALUES="0"
+LossNorthernTrail_VALUES="0"
+# Second trail
+RateSouthernTrail_VALUES="100000"
+DelaySouthernTrail_VALUES="0"
+LossSouthernTrail_VALUES="0"
+
+
+perform_measurements
