@@ -1,156 +1,50 @@
 #!/bin/bash
+# $Id$
+#
+# Network Performance Meter
+# Copyright (C) 2009-2010 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
 
-Directory="TEST1"
-LocalOpts=""
-RemoteNode="127.0.0.1:9000"
-Variables="Run Runtime Flows OnlyOneAssoc FrameRate FrameSize"
+Directory="test1"
+Scenario="TestLocal"
+. ./measure-version2
+
 
 Run_VALUES="1"
-Runtime_VALUES="10"
-Flows_VALUES="1 2"
-OnlyOneAssoc_VALUES="0"
+Runtime_VALUES="5"
+Flows_VALUES="1"
 FrameRate_VALUES="const0"
-FrameSize_VALUES="const1452"
+FrameSize_VALUES="const1444"   # !!!
+Unordered_VALUES="1.0"   # !!!
+SndBuf_VALUES="300000"
+RcvBuf_VALUES="100000"
 
+BidirectionalQoS_VALUES="true"
 
-# ###### Perform a single run with current variable settings ################
-perform_run ()
-{
-   if [ -e "$runStatus" ] ; then
-      echo "Already existing."
-   else
-      local runDirectory="$1"
-      local runStatus="$2"
-      runScalar="$runDirectory/output.sca.bz2"
-      runVector="$runDirectory/output.vec.bz2"
-      runConfig="$runDirectory/output.config"
+# First trail
+RateNorthernTrail_VALUES="1000 10000"
+DelayNorthernTrail_VALUES="1"
+LossNorthernTrail_VALUES="0"
 
-      local command="./netperfmeter $RemoteNode $LocalOpts"
-      command="$command -scalar=$runScalar"
-      command="$command -vector=$runVector"
-      command="$command -config=$runConfig"
-      command="$command -runtime=$Runtime"
-
-      if [ $OnlyOneAssoc -eq 1 ] ; then
-         local n=0
-         local id=1
-         command="$command -sctp "
-         while [ $n -lt $Flows ] ; do
-            command="$command $FrameRate:$FrameSize:const0:const0:id=$id "
-            let n=$n+1
-            let id=$id+1
-         done
-      else
-         local n=0
-         local id=1
-         while [ $n -lt $Flows ] ; do
-            command="$command -sctp $FrameRate:$FrameSize:const0:const0:id=$id "
-            let n=$n+1
-            let id=$id+1
-         done
-      fi
-
-      local n=0
-      local id=1001
-      while [ $n -lt $Flows ] ; do
-         command="$command -tcp $FrameRate:$FrameSize:const0:const0:id=$id "
-         let n=$n+1
-         let id=$id+1
-      done
-
-      echo $command
-      ( $command && touch $runStatus ) || exit 1
-   fi
-
-   additionalVariables="IsActive"   # Tell finish_runs() to add "IsActive"
-   runScalarActive="$runDirectory/output-active.sca.bz2"
-   runScalarPassive="$runDirectory/output-passive.sca.bz2"
-   echo "--values=$varSettings 1"   >>$summaryName
-   echo "--input=$runScalarActive"  >>$summaryName
-   echo "--values=$varSettings 0"   >>$summaryName
-   echo "--input=$runScalarPassive" >>$summaryName
-}
-
-
-# ###### Initialize directory and summary configuration #####################
-initialize_runs ()
-{
-   if [ ! -e "$Directory" ] ; then
-      mkdir "$Directory"
-   fi
-
-   resultsDirectory="$Directory/Results"
-   if [ ! -e "$resultsDirectory" ] ; then
-      mkdir "$resultsDirectory"
-   fi
-
-   summaryName="$Directory/summary.config"
-   if [ -e "$summaryName" ] ; then
-      rm $summaryName
-   fi
-   echo "--resultsdirectory=$resultsDirectory" >$summaryName
-   additionalVariables=""
-}
-
-
-# ###### Create summary #####################################################
-finish_runs ()
-{
-   ./createsummary "$@ $additionalVariables" <$summaryName
-}
-
-
-# ###### Create and perform all runs ########################################
-make_runs ()
-{
-   # ====== Generate all setting of the current variable $1 =================
-   if [ "$1" != "" ] ; then
-      local varName="$1"
-      local varValues=`eval "echo \\\$$varName""_VALUES"`
-      local value
-      if [ "$varValues" = "" ] ; then
-         echo >&2 "ERROR: No settings for variable $varName found!"
-         exit 1
-      fi
-      shift
-      for value in $varValues ; do
-         # ====== Use setting $value and recursively set other variables ====
-         eval "$varName=$value"
-         make_runs $@
-      done
-
-   # ====== All variables have been set -> generate a run ===================
-   else
-      local runLabel=""
-      local varSettings=""
-      echo -n -e "===== Run for:\t"
-      for vN in $Variables ; do
-         eval "e=\$$vN"
-         echo -n -e "$vN=$e\t"
-         runLabel="$runLabel--$e"
-         varSettings="$varSettings $e"
-      done
-      echo "====="
-
-      local runHash="`echo $runLabel | md5sum | awk '{ print zz $1 }'`"
-      local runDirectory="$Directory/Run-$runHash"
-      local runStatus="$runDirectory/status.txt"
-
-      if [ ! -e "$runDirectory" ] ; then
-         mkdir "$runDirectory"
-      fi
-      perform_run $runDirectory $runStatus
-   fi
-}
-
-
-# ###### Perform whole measurement ##########################################
-perform_measurements ()
-{
-   initialize_runs $Variables
-   make_runs $Variables
-   finish_runs $Variables
-}
+# Second trail
+RateSouthernTrail_VALUES="-1"
+DelaySouthernTrail_VALUES="-1"
+LossSouthernTrail_VALUES="-1"
 
 
 perform_measurements

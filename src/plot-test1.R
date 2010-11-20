@@ -8,7 +8,7 @@ source("plot-version1.R")
 
 
 # ------ Plotter Settings ---------------------------------------------------
-simulationDirectory  <- "TEST1"
+simulationDirectory  <- "test1"
 plotColorMode        <- cmColor
 plotHideLegend       <- FALSE
 plotLegendSizeFactor <- 0.8
@@ -34,29 +34,29 @@ plotConfigurations <- list(
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
         "Receiver's Perspective", NA, NA, list(0,0),
-        "Flows", "passive.flow-ReceivedBitRate-Mbit",
+        "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "passive.flow", "", "",
         "", "", ""),
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUIdle.pdf"),
         "Sender's Perspective", NA, seq(0, 100, 10), list(0,0),
-        "Flows", "active.CPU-Utilization",
+        "RateNorthernTrail-Mbit", "active.CPU-Utilization",
         "active.CPU", "", "",
         "", "", ""),
    list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUIdle.pdf"),
         "Receiver's Perspective", NA, seq(0, 100, 10), list(0,0),
-        "Flows", "passive.CPU-Utilization",
+        "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
         "passive.CPU", "", "",
         "", "", ""),
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
         "Sender's Perspective", NA, seq(0, 100, 10), list(0,0),
-        "Flows", "active.CPU-System",
+        "RateNorthernTrail-Mbit", "active.CPU-System",
         "active.CPU", "", "",
         "", "", ""),
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
         "Receiver's Perspective", NA, seq(0, 100, 10), list(0,0),
-        "Flows", "passive.CPU-System",
+        "RateNorthernTrail-Mbit", "passive.CPU-System",
         "passive.CPU", "", "",
         "", "", "")
 )

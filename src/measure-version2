@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # $Id$
 #
 # Network Performance Meter
@@ -57,6 +57,7 @@ if [ "$Scenario" = "DisjointPaths" ] ; then
   HOST_WEST="132.252.153.10,132.252.153.138"
   LocalOpts="$LocalOpts -local=$HOST_WEST"
   RemoteNode="$HOST_EAST:7010"
+
 elif [ "$Scenario" = "SharedBottleneck" ] ; then
   HOST_EAST="132.252.153.18"
   ROUTER_NORTH="132.252.153.9"
@@ -69,18 +70,33 @@ elif [ "$Scenario" = "SharedBottleneck" ] ; then
   HOST_WEST="132.252.153.10,132.252.153.14"
   LocalOpts="$LocalOpts -local=$HOST_WEST"
   RemoteNode="$HOST_EAST:7020"
+
 elif [ "$Scenario" = "Burgsteinfurt" ] ; then
   HOST_EAST="87.139.124.106"   #   DFN=212.201.121.87
   ROUTER_NORTH="132.252.153.9"
   NETWORK_NW="132.252.153.8/29"
   NETWORK_NE="212.201.121.87/27"
-  ROUTER_SOUTH="132.252.153.137"
-  NETWORK_SW="89.246.242.228/32"
-  NETWORK_SE="87.139.124.106/32"
+  ROUTER_SOUTH=""
+  NETWORK_SW=""
+  NETWORK_SE=""
 
   HOST_WEST="132.252.153.10,89.246.242.228"
   LocalOpts="$LocalOpts -local=$HOST_WEST"
   RemoteNode="$HOST_EAST:7000"
+
+elif [ "$Scenario" = "TestLocal" ] ; then
+  HOST_EAST="127.0.0.1"
+  ROUTER_NORTH="127.0.0.1"
+  NETWORK_NW="127.0.0.1/32"
+  NETWORK_NE="127.0.0.1/32"
+  ROUTER_SOUTH=""
+  NETWORK_SW="--OFF--"
+  NETWORK_SE="--OFF--"
+
+  HOST_WEST="127.0.0.1"
+  LocalOpts="$LocalOpts -local=$HOST_WEST"
+  RemoteNode="$HOST_EAST:7000"
+
 else
    echo >&2 "ERROR: Bad scenario setting $Scenario!"
    exit 1
@@ -93,8 +109,11 @@ fi
 
 
 # ###### Variables ##########################################################
-Variables="Run Runtime Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst OptionCMT OptionDAC OptionNRSACK OptionRP OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail"
+Variables="Runtime Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst OptionCMT OptionDAC OptionNRSACK OptionRP OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail Run"
 
+# ###### Control ############################################################
+MaxTrials=10            # If something goes wrong, try again up to 10 times
+PauseBetweenTrials=60   # If something goes wrong, retry after 60s
 
 # ###### Defaults ###########################################################
 Run_VALUES="1"
@@ -135,101 +154,150 @@ perform_run ()
    if [ -e "$runStatus" ] ; then
       echo "Already existing."
    else
-      # ====== QoS setup ====================================================
-      if [ $RateSouthernTrail -eq -1 ] ; then
-         RateSouthernTrail=$RateNorthernTrail
-      fi
-      if [ $DelaySouthernTrail -eq -1 ] ; then
-         DelaySouthernTrail=$DelayNorthernTrail
-      fi
-      if [ $LossSouthernTrail -eq -1 ] ; then
-         LossSouthernTrail=$LossNorthernTrail
-      fi
-      if [ $ErrorSouthernTrail -eq -1 ] ; then
-         ErrorSouthernTrail=$ErrorNorthernTrail
-      fi
-      SETTING_ReferenceUnreliable=$ReferenceUnreliable
-      if [ "$SETTING_ReferenceUnreliable" = "-1" ] ; then
-         SETTING_ReferenceUnreliable=$Unreliable
-      fi
-      SETTING_ReferenceUnordered=$ReferenceUnordered
-      if [ "$SETTING_ReferenceUnordered" = "-1" ] ; then
-         SETTING_ReferenceUnordered=$Unordered
-      fi
-
-      ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd cwndMaxBurst $CwndMaxBurst || exit 1
-      ssh $HOST_EAST ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd cwndMaxBurst $CwndMaxBurst || exit 1
-      echo "===== QoS: ssh $ROUTER_NORTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_NW $NETWORK_NE $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS ====="
-      ssh $ROUTER_NORTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_NW $NETWORK_NE $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS || exit 1
-      echo "===== QoS: ssh $ROUTER_SOUTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_SW $NETWORK_SE $RateSouthernTrail $DelaySouthernTrail $LossSouthernTrail $ErrorSouthernTrail $BidirectionalQoS ====="
-      ssh $ROUTER_SOUTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_SW $NETWORK_SE $RateSouthernTrail $DelaySouthernTrail $LossSouthernTrail $ErrorSouthernTrail $BidirectionalQoS || exit 1
-
-      # ====== NetPerfMeter run =============================================
-      local runDirectory="$1"
-      local runStatus="$2"
-      runScalar="$runDirectory/output.sca.bz2"
-      # --- runVector="$runDirectory/output.vec.bz2"
-      runConfig="$runDirectory/output.config"
-
-      local command="./netperfmeter $RemoteNode $LocalOpts"
-      command="$command -scalar=$runScalar"
-      # --- command="$command -vector=$runVector"
-      command="$command -config=$runConfig"
-      command="$command -runtime=$Runtime"
-
-      cmt="off"
-      rp="off"
-      nrsack="off"
-      if [ "$OptionCMT" = "true" ] ; then
-         cmt="on"
-      fi
-      if [ "$OptionRP" = "true" ] ; then
-         rp="on"
-      fi
-
-      if [ "$OnlyOneAssoc" = "true" ] ; then
-         local n=0
-         local id=1
-         command="$command -sctp "
-         while [ $n -lt $Flows ] ; do
-            command="$command $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=$cmt:rp=$rp "
-            let n=$n+1
-            let id=$id+1
-         done
-      else
-         local n=0
-         local id=1
-         while [ $n -lt $Flows ] ; do
-            command="$command -sctp $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf "
-            let n=$n+1
-            let id=$id+1
-         done
-      fi
-
-      if [ "$CompareWithReference" = "true" ] ; then
-         protocolSelector="-bad"
-         if [ "$ReferenceFlowProtocol" = "TCP" ] ; then
-            protocolSelector="-tcp"
-         elif [ "$ReferenceFlowProtocol" = "SCTP" ] ; then
-            protocolSelector="-sctp"
-         else
-            echo >&2 "ERROR: Bad setting of ReferenceFlowProtocol: $ReferenceFlowProtocol!"
-            exit 1
+      local trial=1
+      local success=0
+      while [ $success -eq 0 -a $trial -le $MaxTrials ] ; do
+         success=1
+         if [ $trial -gt 1 ] ; then
+            echo "##### TRIAL $trial/$MaxTrials #####"
+            echo "Waiting $PauseBetweenTrials s ..."
+            sleep $PauseBetweenTrials
          fi
-         local n=0
-         local id=1001
-         while [ $n -lt $Flows ] ; do
-            command="$command $protocolSelector $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$SETTING_ReferenceUnordered:unreliable=$SETTING_ReferenceUnreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=off:rp=off "
-            let n=$n+1
-            let id=$id+1
-         done
-      fi
 
-      echo $command
-      ( $command && \
-        ssh $ROUTER_NORTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_NW $NETWORK_NE && \
-        ssh $ROUTER_SOUTH ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 $NETWORK_SW $NETWORK_SE && \
-        touch $runStatus ) || exit 1
+         # ====== Configure QoS settings ====================================
+         SETTING_RateSouthernTrail=$RateSouthernTrail
+         if [ $SETTING_RateSouthernTrail -eq -1 ] ; then
+            SETTING_RateSouthernTrail=$RateNorthernTrail
+         fi
+         SETTING_DelaySouthernTrail=$DelaySouthernTrail
+         if [ $SETTING_DelaySouthernTrail -eq -1 ] ; then
+            SETTING_DelaySouthernTrail=$DelayNorthernTrail
+         fi
+         SETTING_LossSouthernTrail=$LossSouthernTrail
+         if [ $SETTING_LossSouthernTrail -eq -1 ] ; then
+            SETTING_LossSouthernTrail=$LossNorthernTrail
+         fi
+         SETTING_ErrorSouthernTrail=$ErrorSouthernTrail
+         if [ $SETTING_ErrorSouthernTrail -eq -1 ] ; then
+            SETTING_ErrorSouthernTrail=$ErrorNorthernTrail
+         fi
+         SETTING_ReferenceUnreliable=$ReferenceUnreliable
+         if [ "$SETTING_ReferenceUnreliable" = "-1" ] ; then
+            SETTING_ReferenceUnreliable=$Unreliable
+         fi
+         SETTING_ReferenceUnordered=$ReferenceUnordered
+         if [ "$SETTING_ReferenceUnordered" = "-1" ] ; then
+            SETTING_ReferenceUnordered=$Unordered
+         fi
+
+         echo -e "$HOST_WEST:\tsetsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd cwndMaxBurst $CwndMaxBurst"
+         ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp \
+            cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP \
+            bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd \
+            cwndMaxBurst $CwndMaxBurst || success=0
+
+         echo -e "$HOST_EAST:\tsetsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd cwndMaxBurst $CwndMaxBurst"
+         ssh $HOST_EAST ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp \
+            cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP \
+            bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd \
+            cwndMaxBurst $CwndMaxBurst || success=0
+
+         echo -e "### $ROUTER_NORTH:\tsetqos 1 $NETWORK_NW $NETWORK_NE $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS"
+         ssh $ROUTER_NORTH ~/src/netperfmeter/src/rootshell -chdir=src/netperfmeter/src/ \
+            ./setqos 1 $NETWORK_NW $NETWORK_NE \
+            $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS || success=0
+
+         if [ "$ROUTER_SOUTH" != "" ] ; then
+            echo -e "### $ROUTER_SOUTH:\tsetqos 1 $NETWORK_SW $NETWORK_SE $SETTING_RateSouthernTrail $SETTING_DelaySouthernTrail $SETTING_LossSouthernTrail $SETTING_ErrorSouthernTrail $BidirectionalQoS"
+            ssh $ROUTER_SOUTH ~/src/netperfmeter/src/rootshell -chdir=src/netperfmeter/src/ \
+               ./setqos 1 $NETWORK_SW $NETWORK_SE \
+               $SETTING_RateSouthernTrail $SETTING_DelaySouthernTrail \
+               $SETTING_LossSouthernTrail $SETTING_ErrorSouthernTrail $BidirectionalQoS || success=0
+         else
+            echo -e "### NO SOUTHERN TRAIL"
+         fi
+
+         # ====== NetPerfMeter run ==========================================
+         if [ $success -eq 1 ] ; then
+            local runDirectory="$1"
+            local runStatus="$2"
+            runScalar="$runDirectory/output.sca.bz2"
+            # --- runVector="$runDirectory/output.vec.bz2"
+            runConfig="$runDirectory/output.config"
+
+            local command="./netperfmeter $RemoteNode $LocalOpts"
+            command="$command -scalar=$runScalar"
+            # --- command="$command -vector=$runVector"
+            command="$command -config=$runConfig"
+            command="$command -runtime=$Runtime"
+
+            cmt="off"
+            rp="off"
+            nrsack="off"
+            if [ "$OptionCMT" = "true" ] ; then
+               cmt="on"
+            fi
+            if [ "$OptionRP" = "true" ] ; then
+               rp="on"
+            fi
+
+            if [ "$OnlyOneAssoc" = "true" ] ; then
+               local n=0
+               local id=1
+               command="$command -sctp "
+               while [ $n -lt $Flows ] ; do
+                  command="$command $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=$cmt:rp=$rp "
+                  n=$(($n+1))
+                  id=$(($id+1))
+               done
+            else
+               local n=0
+               local id=1
+               while [ $n -lt $Flows ] ; do
+                  command="$command -sctp $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf "
+                  n=$(($n+1))
+                  id=$(($id+1))
+               done
+            fi
+
+            if [ "$CompareWithReference" = "true" ] ; then
+               protocolSelector="-bad"
+               if [ "$ReferenceFlowProtocol" = "TCP" ] ; then
+                  protocolSelector="-tcp"
+               elif [ "$ReferenceFlowProtocol" = "SCTP" ] ; then
+                  protocolSelector="-sctp"
+               else
+                  echo >&2 "ERROR: Bad setting of ReferenceFlowProtocol: $ReferenceFlowProtocol!"
+                  exit 1
+               fi
+               local n=0
+               local id=1001
+               while [ $n -lt $Flows ] ; do
+                  command="$command $protocolSelector $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$SETTING_ReferenceUnordered:unreliable=$SETTING_ReferenceUnreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=off:rp=off "
+                  n=$(($n+1))
+                  id=$(($id+1))
+               done
+            fi
+
+            # ====== NetPerfMeter run =======================================
+            echo $command
+            $command || success=0
+         fi
+
+         # ====== Remove QoS settings =======================================
+         ssh $ROUTER_NORTH ~/src/netperfmeter/src/rootshell -chdir=src/netperfmeter/src/ ./setqos 1 $NETWORK_NW $NETWORK_NE || success=0
+         if [ "$ROUTER_SOUTH" != "" ] ; then
+            ssh $ROUTER_SOUTH ~/src/netperfmeter/src/rootshell -chdir=src/netperfmeter/src/ ./setqos 1 $NETWORK_SW $NETWORK_SE || success=0
+         fi
+
+         trial=$(($trial+1))
+      done
+
+      if [ $success -eq 0 ] ; then
+         echo >&2 "====== ERROR: MEASUREMENT HAS FAILED! ======"
+         exit 1
+      fi
+      touch $runStatus
    fi
 
    additionalVariables="IsActive RunDirectory"   # Tell finish_runs() to add "IsActive"
@@ -266,7 +334,35 @@ initialize_runs ()
 # ###### Create summary #####################################################
 finish_runs ()
 {
-   createsummary "$@ $additionalVariables" -batch <$summaryName
+   ./createsummary "$@ $additionalVariables" -batch -quiet <$summaryName
+}
+
+
+# ###### Obtain total number of runs ########################################
+# Stores total runs in TotalRuns variable
+# Stores number of variations for variable VAR in NumberOfVariations_VAR
+count_runs ()
+{
+   # ====== Count all setting of the current variable $1 ====================
+   if [ "$1" != "" ] ; then
+      local varName="$1"
+      local varValues=`eval "echo \\\$$varName""_VALUES"`
+      if [ "$varValues" = "" ] ; then
+         echo >&2 "ERROR: No settings for variable $varName found!"
+         exit 1
+      fi
+      shift
+      local i=0
+      for value in $varValues ; do
+         i=$(($i+1))
+         count_runs $@
+      done
+      eval "export NumberOfVariations_$varName=$i"
+
+   # ====== All variables have been set -> count this run ===================
+   else
+      TotalRuns=$(($TotalRuns+1))
+   fi
 }
 
 
@@ -301,26 +397,31 @@ make_runs ()
 
    # ====== All variables have been set -> generate a run ===================
    else
+      CurrentRun=$(($CurrentRun+1))
       local runLabel=""
       local varSettings=""
-      echo -e "===== Run =================="
-      echo "Variables:"
+      echo -e "=================================== Run $CurrentRun/$TotalRuns ========================================"
+      echo -en "Variables:"
       for vN in $Variables ; do
          eval "e=\$$vN"
-         echo " - $vN=$e"
+         eval "numVar=\$NumberOfVariations_$vN"
          runLabel="$runLabel--$e"
          varSettings="$varSettings $e"
+         if [ $numVar -ne 1 ] ; then
+            echo -en "\t$vN=$e"
+         fi
       done
-      echo "============================"
+      echo ""
 
       local runHash="`echo $runLabel | $MD5 | awk '{ print zz $1 }'`"
       local runDirectory="$Directory/Run-$runHash"
       local runStatus="$runDirectory/status.txt"
-
       if [ ! -e "$runDirectory" ] ; then
          mkdir "$runDirectory"
       fi
       perform_run $runDirectory $runStatus
+
+      ./runtimeestimator $runtimeName $TotalRuns $CurrentRun || exit 1
    fi
 }
 
@@ -329,6 +430,16 @@ make_runs ()
 perform_measurements ()
 {
    initialize_runs $Variables
+
+   export TotalRuns=0
+   count_runs $Variables
+
+   export CurrentRun=0
+   runtimeName="$Directory/runtime.dat"
+   if [ ! -e "$runtimeName" ] ; then
+      ./runtimeestimator $runtimeName $TotalRuns 0 || exit 1
+   fi
+
    make_runs $Variables
    finish_runs $Variables
 }
