@@ -39,7 +39,7 @@ while [ "$1" != "" ] ; do
    if [ "$1" = "cmt" ] ; then
       if [ "$2" = "on" -o "$2" = "true" ] ; then
          CMT=1
-      elif [ "$2" = "off" -o "$2" = "false" ] ; then 
+      elif [ "$2" = "off" -o "$2" = "false" ] ; then
          CMT=0
       else
          echo >&2 "ERROR: Bad setting for cmt!"
@@ -50,7 +50,7 @@ while [ "$1" != "" ] ; do
    elif [ "$1" = "dac" ] ; then
       if [ "$2" = "on" -o "$2" = "true" ] ; then
          DAC=1
-      elif [ "$2" = "off" -o "$2" = "false" ] ; then 
+      elif [ "$2" = "off" -o "$2" = "false" ] ; then
          DAC=0
       else
          echo >&2 "ERROR: Bad setting for dac!"
@@ -61,7 +61,7 @@ while [ "$1" != "" ] ; do
    elif [ "$1" = "nrsack" ] ; then
       if [ "$2" = "on" -o "$2" = "true" ] ; then
          NRSACK=1
-      elif [ "$2" = "off" -o "$2" = "false" ] ; then 
+      elif [ "$2" = "off" -o "$2" = "false" ] ; then
          NRSACK=0
       else
          echo >&2 "ERROR: Bad setting for nrsack!"
@@ -72,7 +72,7 @@ while [ "$1" != "" ] ; do
    elif [ "$1" = "rp" ] ; then
       if [ "$2" = "on" -o "$2" = "true" ] ; then
          RP=1
-      elif [ "$2" = "off" -o "$2" = "false" ] ; then 
+      elif [ "$2" = "off" -o "$2" = "false" ] ; then
          RP=0
       else
          echo >&2 "ERROR: Bad setting for rp!"
@@ -83,7 +83,7 @@ while [ "$1" != "" ] ; do
    elif [ "$1" = "cwndMaxBurst" ] ; then
       if [ "$2" = "on" -o "$2" = "true" ] ; then
          CWND_MAXBURST=1
-      elif [ "$2" = "off" -o "$2" = "false" ] ; then 
+      elif [ "$2" = "off" -o "$2" = "false" ] ; then
          CWND_MAXBURST=0
       else
          echo >&2 "ERROR: Bad setting for cwndMaxBurst!"
@@ -94,11 +94,11 @@ while [ "$1" != "" ] ; do
    elif [ "$1" = "bufferSplitting" ] ; then
       if [ "$2" = "none" ] ; then
          BUFFERSPLITTING=0
-      elif [ "$2" = "senderOnly" ] ; then 
+      elif [ "$2" = "senderOnly" ] ; then
          BUFFERSPLITTING=1
-      elif [ "$2" = "receiverOnly" ] ; then 
+      elif [ "$2" = "receiverOnly" ] ; then
          BUFFERSPLITTING=2
-      elif [ "$2" = "bothSides" ] ; then 
+      elif [ "$2" = "bothSides" ] ; then
          BUFFERSPLITTING=3
       else
          echo >&2 "ERROR: Bad setting for bufferSplitting!"
@@ -126,22 +126,40 @@ done
 # echo " - CWND_MAXBURST:   $CWND_MAXBURST"
 
 
+success=1
 SYSTEM=`uname`
 # ====== FreeBSD QoS setup ==================================================
 if [ "$SYSTEM" = "FreeBSD" ] ; then
-   /sbin/sysctl net.inet.sctp.cmt_on_off=$CMT >/dev/null
-   /sbin/sysctl net.inet.sctp.rp_on_off=$RP >/dev/null
-   /sbin/sysctl net.inet.sctp.cmt_use_dac=$DAC >/dev/null
-   /sbin/sysctl net.inet.sctp.nr_sack_on_off=$NRSACK >/dev/null
-   /sbin/sysctl net.inet.sctp.buffer_splitting=$BUFFERSPLITTING >/dev/null
-   /sbin/sysctl net.inet.sctp.initial_cwnd=$INITIAL_CWND >/dev/null
-   /sbin/sysctl net.inet.sctp.cwnd_maxburst=$CWND_MAXBURST >/dev/null
-   /sbin/sysctl kern.ipc.maxsockbuf=100005000 >/dev/null      # This is the absolute socket buffer limit!
-   /sbin/sysctl net.inet.sctp.sendspace=10000000 >/dev/null   # SCTP limit, seems to need full pages!
-   /sbin/sysctl net.inet.sctp.recvspace=10000000 >/dev/null   # SCTP limit, seems to need full pages!
+   /sbin/sysctl net.inet.sctp.cmt_on_off=$CMT >/dev/null || success=0
+   /sbin/sysctl net.inet.sctp.rp_on_off=$RP >/dev/null || success=0
+   /sbin/sysctl net.inet.sctp.cmt_use_dac=$DAC >/dev/null || success=0
+   /sbin/sysctl net.inet.sctp.nr_sack_on_off=$NRSACK >/dev/null || success=0
+   /sbin/sysctl net.inet.sctp.buffer_splitting=$BUFFERSPLITTING >/dev/null || success=0
+   /sbin/sysctl net.inet.sctp.initial_cwnd=$INITIAL_CWND >/dev/null || success=0
+   /sbin/sysctl net.inet.sctp.cwnd_maxburst=$CWND_MAXBURST >/dev/null || success=0
+   /sbin/sysctl kern.ipc.maxsockbuf=100005000 >/dev/null || success=0      # This is the absolute socket buffer limit!
+   /sbin/sysctl net.inet.sctp.sendspace=10000000 >/dev/null || success=0   # SCTP limit, seems to need full pages!
+   /sbin/sysctl net.inet.sctp.recvspace=10000000 >/dev/null || success=0   # SCTP limit, seems to need full pages!
+
+# ====== Linux ==============================================================
+elif [ "$SYSTEM" = "Linux" ] ; then
+   # echo >&2 "###### WARNING! setsctp does not usefully support Linux yet ######"
+
+   modprobe sctp
+
+   # /sbin/sysctl net.sctp.auth_enable=1
+   # /sbin/sysctl net.sctp.addip_enable=1
 
 # ====== Other systems ======================================================
 else
    echo >&2 "ERROR: Unsupported system $SYSTEM!"
+   exit 1
+fi
+
+
+# ====== Check whether SCTP configuration has been successful ===============
+if [ $success -ne 1 ] ; then
+   echo >&2 "ERROR: setsctp has failed to configure sysctl settings!"
+   echo >&2 "Command on `hostname`: $0 $@"
    exit 1
 fi
