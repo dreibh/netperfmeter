@@ -1,0 +1,46 @@
+#!/bin/sh
+# $Id$
+#
+# Network Performance Meter
+# Copyright (C) 2009-2010 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
+
+if [ ! -e run-$1 ] ; then
+   echo "ERROR: run-$1 does not exist!"
+   exit
+fi
+if [ ! -e plot-$1.R ] ; then
+   echo "ERROR: plot-$1.R does not exist!"
+   exit
+fi
+if [ ! -e $1 ] ; then
+   echo "ERROR: $1 directory does not exist!"
+   exit
+fi
+
+
+DESTINATION=$2
+if [ x$DESTINATION = "x" ] ; then
+   DESTINATION=.
+fi
+
+R --vanilla <plot-$1.R && \
+echo "Step 1: Archiving results only to $DESTINATION/$1.tar.bz2 ..." && \
+tar cjf $DESTINATION/$1.tar.bz2 run-$1 plot-$1.R $1.pdf $1/Results && \
+echo "Step 2: Archiving everything to $DESTINATION/$1-complete.tar.bz2 ..." && \
+tar cjf $DESTINATION/$1-complete.tar.bz2 run-$1 plot-$1.R $1.pdf $1
