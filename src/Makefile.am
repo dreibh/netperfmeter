@@ -1,5 +1,5 @@
 if BUILD_PLOTTING_PROGRAMS
-bin_PROGRAMS = netperfmeter createsummary combinesummaries extractvectors ldcalc
+bin_PROGRAMS = netperfmeter createsummary combinesummaries extractvectors ldcalc runtimeestimator
 else
 bin_PROGRAMS = netperfmeter
 endif
@@ -31,6 +31,9 @@ extractvectors_LDADD          = $(bz2_LIBS)
 
 nodist_ldcalc_SOURCES = ldcalc.cc
 ldcalc_LDADD          =
+
+nodist_runtimeestimator_SOURCES = runtimeestimator.cc
+runtimeestimator_LDADD          =
 
 endif
 
