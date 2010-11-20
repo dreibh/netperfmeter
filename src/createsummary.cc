@@ -818,6 +818,7 @@ int main(int argc, char** argv)
    unsigned int compressionLevel     = 9;
    bool         interactiveMode      = true;
    bool         splitAll             = false;
+   bool         quietMode            = false;
    std::string  varNames             = "_NoVarNamesGiven_";
    std::string  varValues            = "";
    std::string  simulationsDirectory = ".";
@@ -851,6 +852,9 @@ int main(int argc, char** argv)
          else if(!(strcmp(argv[i], "-splitall"))) {
             splitAll = true;
          }
+         else if(!(strcmp(argv[i], "-quiet"))) {
+            quietMode = true;
+         }
          else {
             usage(argv[0]);
          }
@@ -861,11 +865,13 @@ int main(int argc, char** argv)
    }
 
 
-   cout << "CreateSummary - Version 4.3" << endl
-        << "===========================" << endl << endl
-        << "Compression Level: " << compressionLevel << endl
-        << "Interactive Mode:  " << (interactiveMode ? "on" : "off") << endl
-        << endl;
+   if(!quietMode) {
+      cout << "CreateSummary - Version 4.3.1" << endl
+           << "=============================" << endl << endl
+           << "Compression Level: " << compressionLevel << endl
+           << "Interactive Mode:  " << (interactiveMode ? "on" : "off") << endl
+           << endl;
+   }
 
 
    // ====== Handle interactiveMode commands ====================================
