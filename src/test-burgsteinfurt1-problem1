@@ -19,4 +19,10 @@ ssh 132.252.153.137 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setq
 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd cwndMaxBurst $CwndMaxBurst || exit 1
 ssh 87.139.124.106 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK rp $OptionRP bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd cwndMaxBurst $CwndMaxBurst || exit 1
 
+
+# 212.201.121.87
+#./netperfmeter 212.201.121.87:7000 -local=132.252.153.10,89.246.242.228 -sctp const0:const1444:const0:const0:id=1:unordered=1.0:unreliable=0.0:sndbuf=200000:rcvbuf=100000:cmt=on:rp=off
+
+
+
 ./netperfmeter 87.139.124.106:7000 -local=132.252.153.10,89.246.242.228 -sctp const0:const1444:const0:const0:id=1:unordered=1.0:unreliable=0.0:sndbuf=300000:rcvbuf=100000:cmt=on:rp=off

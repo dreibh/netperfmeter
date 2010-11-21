@@ -8,7 +8,7 @@ source("plot-version1.R")
 
 
 # ------ Plotter Settings ---------------------------------------------------
-simulationDirectory  <- "wp3-dsl-bufferSplittingI"
+simulationDirectory  <- "wp3-dsl-unordered-bandwidthI"
 plotColorMode        <- cmColor
 plotHideLegend       <- FALSE
 plotLegendSizeFactor <- 0.8

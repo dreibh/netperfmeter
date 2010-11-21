@@ -25,7 +25,7 @@ Scenario="Burgsteinfurt"
 . ./measure-version2
 
 
-Run_VALUES="1"
+Run_VALUES="1 2"
 Runtime_VALUES="60"
 Flows_VALUES="1"
 CompareWithReference_VALUES="false"
@@ -37,7 +37,7 @@ Unordered_VALUES="1.0"   # !!!
 SndBuf_VALUES="300000"
 RcvBuf_VALUES="100000"
 OptionCMT_VALUES="true"
-OptionRP_VALUES="false"
+OptionRP_VALUES="false true"
 OptionDAC_VALUES="true"
 OptionNRSACK_VALUES="false true"
 OptionBufferSplitting_VALUES="bothSides none senderOnly receiverOnly"

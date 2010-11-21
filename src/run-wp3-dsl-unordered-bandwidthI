@@ -20,7 +20,7 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-Directory="wp3-dsl-bufferSplittingI"
+Directory="wp3-dsl-unordered-bandwidthI"
 Scenario="Burgsteinfurt"
 . ./measure-version2
 
