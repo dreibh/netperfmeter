@@ -32,7 +32,7 @@ plotConfigurations <- list(
    #      "a-Axis Variable", "b-Axis Variable", "p-Axis Variable")
    # ------------------------------------------------------------------------
 
-   list("wp3-dsl-unordered-bandwidthI", "PAMS2011-measurement-wp3-dsl-unordered-bandwidthI",
+   list("wp3-dsl-unordered-bandwidthI", "PAMS2011-measurement-wp3-dsl-unordered-bandwidthI.pdf",
         "Received Bit Rate per Flow", seq(0,10,1), seq(0,11,1), list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "OptionBufferSplitting", "OptionNRSACK", "",
