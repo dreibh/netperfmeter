@@ -33,7 +33,7 @@ plotConfigurations <- list(
    # ------------------------------------------------------------------------
 
    list("wp3-dsl-unordered-bandwidthI", "PAMS2011-measurement-wp3-dsl-unordered-bandwidthI.pdf",
-        "Received Bit Rate per Flow", seq(0,10,1), seq(0,11,1), list(0,1),
+        "Measurement in Testbed Setup", seq(0,10,1), seq(0,11,1), list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "OptionBufferSplitting", "OptionNRSACK", "",
         "passive.flow", "OptionRP", "CwndMaxBurst",
@@ -45,8 +45,16 @@ plotConfigurations <- list(
 
 
 # ------ Variable templates -------------------------------------------------
-plotVariables <- append(list(
-), netPerfMeterPlotVariables)
+plotVariables <- append(netPerfMeterPlotVariables, list(
+   list("RateNorthernTrail-Mbit",
+           "Bandwidth on High-Speed Path{:beta:}[Mbit/s]",
+           "data1$RateNorthernTrail / 1000"),
+   list("passive.flow-ReceivedBitRate-Mbit",
+           "CMT-SCTP Payload Throughput [Mbit/s]",
+           "8 * data1$passive.flow.ReceivedByteRate / 1000000",
+           "blue4",
+           list("passive.flow-ReceivedByteRate"))
+))
 
 # ###########################################################################
 
