@@ -53,7 +53,9 @@ plotVariables <- append(netPerfMeterPlotVariables, list(
            "CMT-SCTP Payload Throughput [Mbit/s]",
            "8 * data1$passive.flow.ReceivedByteRate / 1000000",
            "blue4",
-           list("passive.flow-ReceivedByteRate"))
+           list("passive.flow-ReceivedByteRate")),
+   list("OptionBufferSplitting", "Buffer Splitting{:Pi:}"),
+   list("OptionNRSACK",          "Use NR-SACK{:rho:}")
 ))
 
 # ###########################################################################
