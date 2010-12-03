@@ -1,8 +1,8 @@
-netperfmeter (1.1.0~beta4.2-1ubuntu1) maverick; urgency=low
+netperfmeter (1.1.0-1ubuntu1) maverick; urgency=low
 
   * New upstream version.
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 17 Nov 2010 06:06:06 +0200
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 03 Dec 2010 12:12:12 +0200
 
 
 netperfmeter (1.0.4-1ubuntu1) maverick; urgency=low
