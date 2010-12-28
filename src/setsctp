@@ -130,7 +130,13 @@ success=1
 SYSTEM=`uname`
 # ====== FreeBSD QoS setup ==================================================
 if [ "$SYSTEM" = "FreeBSD" ] ; then
-   /sbin/sysctl net.inet.sctp.cmt_on_off=$CMT >/dev/null || success=0
+   cmt_on_off=0
+   if [ $CMT -eq 1 -a $RP -eq 1 ] ; then
+      cmt_on_off=2
+   elif [ $CMT -eq 1 ] ; then
+      cmt_on_off=1
+   fi
+   /sbin/sysctl net.inet.sctp.cmt_on_off=$cmt_on_off >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.rp_on_off=$RP >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.cmt_use_dac=$DAC >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.nr_sack_on_off=$NRSACK >/dev/null || success=0
