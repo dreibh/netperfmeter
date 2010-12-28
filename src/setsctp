@@ -137,7 +137,6 @@ if [ "$SYSTEM" = "FreeBSD" ] ; then
       cmt_on_off=1
    fi
    /sbin/sysctl net.inet.sctp.cmt_on_off=$cmt_on_off >/dev/null || success=0
-   /sbin/sysctl net.inet.sctp.rp_on_off=$RP >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.cmt_use_dac=$DAC >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.nr_sack_on_off=$NRSACK >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.buffer_splitting=$BUFFERSPLITTING >/dev/null || success=0
