@@ -1,7 +1,7 @@
 // $Id$
 // ###########################################################################
 //             Thomas Dreibholz's R Simulation Scripts Collection
-//                  Copyright (C) 2004-2010 Thomas Dreibholz
+//                  Copyright (C) 2004-2011 Thomas Dreibholz
 //
 //           Author: Thomas Dreibholz, dreibh@exp-math.uni-essen.de
 // ###########################################################################
