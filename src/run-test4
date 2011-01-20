@@ -21,11 +21,11 @@
 #
 
 Directory="test4"
-Scenario="SharedBottleneck"
 . ./measure-version2
 
 
 Run_VALUES="1"
+Scenario_VALUES="SharedBottleneck"   # !!!
 Runtime_VALUES="30"
 Flows_VALUES="1"
 CompareWithReference_VALUES="true"

@@ -21,11 +21,11 @@
 #
 
 Directory="test1"
-Scenario="TestLocal"
 . ./measure-version2
 
 
 Run_VALUES="1"
+Scenario_VALUES="TestLocal"   # !!!
 Runtime_VALUES="5"
 Flows_VALUES="1"
 FrameRate_VALUES="const0"

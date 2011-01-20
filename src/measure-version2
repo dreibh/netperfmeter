@@ -43,65 +43,6 @@
 # #########################################################
 
 
-LocalOpts="-verbosity=1"
-
-if [ "$Scenario" = "DisjointPaths" ] ; then
-  HOST_EAST="132.252.153.18"
-  ROUTER_NORTH="132.252.153.9"
-  NETWORK_NW="132.252.153.8/29"
-  NETWORK_NE="132.252.153.16/29"
-  ROUTER_SOUTH="132.252.153.137"
-  NETWORK_SW="132.252.153.136/29"
-  NETWORK_SE="132.252.153.144/29"
-
-  HOST_WEST="132.252.153.10,132.252.153.138"
-  LocalOpts="$LocalOpts -local=$HOST_WEST"
-  RemoteNode="$HOST_EAST:7010"
-
-elif [ "$Scenario" = "SharedBottleneck" ] ; then
-  HOST_EAST="132.252.153.18"
-  ROUTER_NORTH="132.252.153.9"
-  NETWORK_NW="132.252.153.8/29"
-  NETWORK_NE="132.252.153.16/29"
-  ROUTER_SOUTH="132.252.153.137"
-  NETWORK_SW="132.252.153.136/29"
-  NETWORK_SE="132.252.153.144/29"
-
-  HOST_WEST="132.252.153.10,132.252.153.14"
-  LocalOpts="$LocalOpts -local=$HOST_WEST"
-  RemoteNode="$HOST_EAST:7020"
-
-elif [ "$Scenario" = "Burgsteinfurt" ] ; then
-  HOST_EAST="87.139.124.106"   #   DFN=212.201.121.87
-  ROUTER_NORTH="132.252.153.9"
-  NETWORK_NW="132.252.153.8/29"
-  NETWORK_NE="212.201.121.87/27"
-  ROUTER_SOUTH=""
-  NETWORK_SW=""
-  NETWORK_SE=""
-
-  HOST_WEST="132.252.153.10,89.246.242.228"
-  LocalOpts="$LocalOpts -local=$HOST_WEST"
-  RemoteNode="$HOST_EAST:7000"
-
-elif [ "$Scenario" = "TestLocal" ] ; then
-  HOST_EAST="127.0.0.1"
-  ROUTER_NORTH="127.0.0.1"
-  NETWORK_NW="127.0.0.1/32"
-  NETWORK_NE="127.0.0.1/32"
-  ROUTER_SOUTH=""
-  NETWORK_SW="--OFF--"
-  NETWORK_SE="--OFF--"
-
-  HOST_WEST="127.0.0.1"
-  LocalOpts="$LocalOpts -local=$HOST_WEST"
-  RemoteNode="$HOST_EAST:7000"
-
-else
-   echo >&2 "ERROR: Bad scenario setting $Scenario!"
-   exit 1
-fi
-
 if [ "$Directory" = "" ] ; then
    echo >&2 "ERROR: Bad directory setting $Directory!"
    exit 1
@@ -109,7 +50,7 @@ fi
 
 
 # ###### Variables ##########################################################
-Variables="Runtime Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst OptionCMT OptionDAC OptionNRSACK OptionRP OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail Run"
+Variables="Runtime Scenario Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst OptionCMT OptionDAC OptionNRSACK OptionRP OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail Run"
 
 # ###### Control ############################################################
 MaxTrials=10            # If something goes wrong, try again up to 10 times
@@ -117,6 +58,7 @@ PauseBetweenTrials=60   # If something goes wrong, retry after 60s
 
 # ###### Defaults ###########################################################
 Run_VALUES="1"
+Scenario_Values="TestLocal"
 Runtime_VALUES="60"
 Flows_VALUES="1"
 CompareWithReference_VALUES="false"
@@ -162,6 +104,66 @@ perform_run ()
             echo "##### TRIAL $trial/$MaxTrials #####"
             echo "Waiting $PauseBetweenTrials s ..."
             sleep $PauseBetweenTrials
+         fi
+
+         # ====== Configure QoS settings ====================================
+         LocalOpts="-verbosity=1"
+
+         if [ "$Scenario" = "DisjointPaths" ] ; then
+            HOST_EAST="132.252.153.18"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="132.252.153.16/29"
+            ROUTER_SOUTH="132.252.153.137"
+            NETWORK_SW="132.252.153.136/29"
+            NETWORK_SE="132.252.153.144/29"
+
+            HOST_WEST="132.252.153.10,132.252.153.138"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7010"
+
+         elif [ "$Scenario" = "SharedBottleneck" ] ; then
+            HOST_EAST="132.252.153.18"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="132.252.153.16/29"
+            ROUTER_SOUTH="132.252.153.137"
+            NETWORK_SW="132.252.153.136/29"
+            NETWORK_SE="132.252.153.144/29"
+
+            HOST_WEST="132.252.153.10,132.252.153.14"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7020"
+
+         elif [ "$Scenario" = "Burgsteinfurt" ] ; then
+            HOST_EAST="87.139.124.106"   #   DFN=212.201.121.87
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="212.201.121.87/27"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE=""
+
+            HOST_WEST="132.252.153.10,89.246.242.228"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+         elif [ "$Scenario" = "TestLocal" ] ; then
+            HOST_EAST="127.0.0.1"
+            ROUTER_NORTH="127.0.0.1"
+            NETWORK_NW="127.0.0.1/32"
+            NETWORK_NE="127.0.0.1/32"
+            ROUTER_SOUTH=""
+            NETWORK_SW="--OFF--"
+            NETWORK_SE="--OFF--"
+
+            HOST_WEST="127.0.0.1"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+         else
+            echo >&2 "ERROR: Bad scenario setting $Scenario!"
+            exit 1
          fi
 
          # ====== Configure QoS settings ====================================

@@ -21,11 +21,11 @@
 #
 
 Directory="test7"
-Scenario="Burgsteinfurt"
 . ./measure-version2
 
 
 Run_VALUES="1"
+Scenario_VALUES="Burgsteinfurt"
 Runtime_VALUES="60"
 Flows_VALUES="1"
 CompareWithReference_VALUES="false"

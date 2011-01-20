@@ -25,6 +25,7 @@
 Directory="wp3-unordered-bandwidthI"
 
 Run_VALUES="1 2 3 4 5"
+Scenario_VALUES="DisjointPaths"
 Runtime_VALUES="60"
 Flows_VALUES="1"
 CompareWithReference_VALUES="false"

@@ -1,2 +1,0 @@
-#!/bin/sh
-make -j2 && ./netperfmeter 9000 -local=132.252.153.18,132.252.153.146 -verbosity=9

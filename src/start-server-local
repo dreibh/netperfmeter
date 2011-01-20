@@ -20,4 +20,7 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-make -j2 && ./netperfmeter 9000 -local=132.252.153.18,132.252.153.22
+make -j2 || exit 1
+
+# Burgsteinfurt
+nohup ./netperfmeter 7000 -verbosity=0 >server-local.log 2>&1 &
