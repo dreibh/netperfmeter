@@ -21,16 +21,16 @@
 #
 
 if [ ! -e run-$1 ] ; then
-   echo "ERROR: run-$1 does not exist!"
-   exit
+   echo 2>&1 "ERROR: run-$1 does not exist!"
+   exit 1
 fi
 if [ ! -e plot-$1.R ] ; then
-   echo "ERROR: plot-$1.R does not exist!"
-   exit
+   echo 2>&1 "ERROR: plot-$1.R does not exist!"
+   exit 1
 fi
 if [ ! -e $1 ] ; then
-   echo "ERROR: $1 directory does not exist!"
-   exit
+   echo 2>&1 "ERROR: $1 directory does not exist!"
+   exit 1
 fi
 
 
@@ -39,8 +39,12 @@ if [ x$DESTINATION = "x" ] ; then
    DESTINATION=.
 fi
 
+result=1
 R --vanilla <plot-$1.R && \
 echo "Step 1: Archiving results only to $DESTINATION/$1.tar.bz2 ..." && \
 tar cjf $DESTINATION/$1.tar.bz2 run-$1 plot-$1.R $1.pdf $1/Results && \
 echo "Step 2: Archiving everything to $DESTINATION/$1-complete.tar.bz2 ..." && \
-tar cjf $DESTINATION/$1-complete.tar.bz2 run-$1 plot-$1.R $1.pdf $1
+tar cjf $DESTINATION/$1-complete.tar.bz2 run-$1 plot-$1.R $1.pdf $1 && \
+result=0
+
+exit $result
