@@ -20,33 +20,38 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-Directory="test4"
+Directory="wp1-rp-sharedBottleneckI"
 . ./measure-version2
+
+# ###########################################################################
+# BESCHREIBUNG:
+# Variation der Bandbreite von 2 symmetrischen Pfaden über Shared Bottleneck
+# ZIEL:
+# Effekt von Resource Pooling zeigen
+# ###########################################################################
 
 
 Run_VALUES="1"
 Scenario_VALUES="SharedBottleneck"   # !!!
-Runtime_VALUES="30"
+Runtime_VALUES="60"
 Flows_VALUES="1"
 CompareWithReference_VALUES="true"
-ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
+ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll fuer Referenzstrom
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"   # !!!
 
-ReferenceUnordered_VALUES="0.0"   # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-SndBuf_VALUES="250000"
-RcvBuf_VALUES="125000"
+SndBuf_VALUES="500000"
+RcvBuf_VALUES="250000"
 OptionCMT_VALUES="true"
 OptionRP_VALUES="false true"
 OptionDAC_VALUES="true"
-OptionNRSACK_VALUES="true false"
-OptionBufferSplitting_VALUES="none bothSides"
+OptionNRSACK_VALUES="false true"   # !!!
+OptionBufferSplitting_VALUES="bothSides"   # !!!
 
 # First trail
-RateNorthernTrail_VALUES="10000 25000 40000 50000"
+RateNorthernTrail_VALUES="1000 10000"
 DelayNorthernTrail_VALUES="0"
 LossNorthernTrail_VALUES="0"
 # Second trail

@@ -1,5 +1,5 @@
 # ###########################################################################
-# Name:        test1
+# Name:        wp1-rp-sharedBottleneckI
 # Description:
 # Revision:    $Id$
 # ###########################################################################
@@ -8,7 +8,7 @@ source("plot-version1.R")
 
 
 # ------ Plotter Settings ---------------------------------------------------
-simulationDirectory  <- "test4"
+simulationDirectory  <- "wp1-rp-sharedBottleneckI"
 plotColorMode        <- cmColor
 plotHideLegend       <- FALSE
 plotLegendSizeFactor <- 0.8
@@ -35,40 +35,19 @@ plotConfigurations <- list(
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
         "Received Bit Rate per Flow", NA, NA, list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
-        "OptionRP", "OptionNRSACK", "",
-        "passive.flow", "OptionBufferSplitting", "Unordered"),
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBytes.pdf"),
-        "Received Bytes per Flow", NA, NA, list(0,1),
-        "RateNorthernTrail-Mbit", "passive.flow-ReceivedBytes",
-        "OptionRP", "OptionNRSACK", "",
-        "passive.flow", "OptionBufferSplitting", "Unordered"),
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBytes.pdf"),
-        "Received Packets per Flow", NA, NA, list(0,1),
-        "RateNorthernTrail-Mbit", "passive.flow-ReceivedPackets",
-        "OptionRP", "OptionNRSACK", "",
-        "passive.flow", "OptionBufferSplitting", "Unordered"),
+        "OptionRP", "OptionBufferSplitting", "",
+        "passive.flow", "OptionNRSACK", "Unordered"),
 
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUIdle.pdf"),
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUUtilization.pdf"),
         "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "active.CPU-Utilization",
-        "active.CPU", "OptionRP", "OptionNRSACK",
-        "", "OptionBufferSplitting", ""),
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUIdle.pdf"),
+        "OptionRP", "OptionNRSACK", "",
+        "active.CPU", "", ""),
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUUtilization.pdf"),
         "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
-        "passive.CPU", "OptionRP", "OptionNRSACK",
-        "", "OptionBufferSplitting", ""),
-
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
-        "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
-        "RateNorthernTrail-Mbit", "active.CPU-System",
-        "active.CPU", "OptionRP", "OptionNRSACK",
-        "", "OptionBufferSplitting", ""),
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
-        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
-        "RateNorthernTrail-Mbit", "passive.CPU-System",
-        "passive.CPU", "OptionRP", "OptionNRSACK",
-        "", "OptionBufferSplitting", "")
+        "OptionRP", "OptionNRSACK", "",
+        "passive.CPU", "", "")
 )
 
 

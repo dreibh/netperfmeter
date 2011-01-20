@@ -107,7 +107,7 @@ perform_run ()
          # Sw=132.252.153.137/29
          # Se=132.252.153.145/29
          # #########################################################
-echo "S=$Scenario"
+
          if [ "$Scenario" = "DisjointPaths" ] ; then
             HOST_EAST="132.252.153.18"
             ROUTER_NORTH="132.252.153.9"

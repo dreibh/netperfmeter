@@ -1,5 +1,5 @@
 # ###########################################################################
-# Name:        wp0-links-symmetrischI
+# Name:        wp1-rp-disjointPathsI
 # Description:
 # Revision:    $Id$
 # ###########################################################################
@@ -8,7 +8,7 @@ source("plot-version1.R")
 
 
 # ------ Plotter Settings ---------------------------------------------------
-simulationDirectory  <- "wp0-links-symmetrischI"
+simulationDirectory  <- "wp1-rp-disjointPathsI"
 plotColorMode        <- cmColor
 plotHideLegend       <- FALSE
 plotLegendSizeFactor <- 0.8
@@ -33,43 +33,26 @@ plotConfigurations <- list(
    # ------------------------------------------------------------------------
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
-        "Receiver's Perspective", NA, NA, list(0,1),
+        "Received Bit Rate per Flow", NA, NA, list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
-        "OptionCMT", "OptionNRSACK", "OptionRP",
-        "passive.flow", "", "Unordered",
-        "TRUE",
-        "zSortAscending<-FALSE;"),
+        "OptionRP", "OptionBufferSplitting", "",
+        "passive.flow", "OptionNRSACK", "Unordered"),
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUUtilization.pdf"),
         "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "active.CPU-Utilization",
-        "OptionCMT", "OptionNRSACK", "",
-        "active.CPU", "", "",
-        "TRUE",
-        "zSortAscending<-FALSE;"),
+        "OptionRP", "OptionNRSACK", "",
+        "active.CPU", "", ""),
    list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUUtilization.pdf"),
         "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
-        "OptionCMT", "OptionNRSACK", "",
-        "passive.CPU", "", "",
-        "TRUE",
-        "zSortAscending<-FALSE;")
+        "OptionRP", "OptionNRSACK", "",
+        "passive.CPU", "", "")
 )
 
 
 # ------ Variable templates -------------------------------------------------
 plotVariables <- append(list(
-   # ------ Format example --------------------------------------------------
-   # list("Variable",
-   #         "Unit[x]{v]"
-   #          "100.0 * data1$x / data1$y", <- Manipulator expression:
-   #                                           "data" is the data table
-   #                                        NA here means: use data1$Variable.
-   #          "myColor",
-   #          list("InputFile1", "InputFile2", ...))
-   #             (simulationDirectory/Results/....data.tar.bz2 is added!)
-   # ------------------------------------------------------------------------
-
 ), netPerfMeterPlotVariables)
 
 # ###########################################################################

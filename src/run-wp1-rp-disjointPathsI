@@ -20,41 +20,44 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-Directory="wp0-links-symmetrischI"
+Directory="wp1-rp-disjointPathsI"
 . ./measure-version2
 
 # ###########################################################################
 # BESCHREIBUNG:
-# Variation der Bandbreite von 2 symmetrischen Links
+# Variation der Bandbreite von 2 symmetrischen Pfaden über disjunkte Pfade
 # ZIEL:
-# Mit CMT gesamte Bandbreite ausnutzen
+# Effekt von Resource Pooling zeigen
 # ###########################################################################
 
 
 Run_VALUES="1"
-Scenario_VALUES="DisjointPaths"
+Scenario_VALUES="DisjointPaths"   # !!!
 Runtime_VALUES="60"
 Flows_VALUES="1"
-CompareWithTCP_VALUES="false"
+CompareWithReference_VALUES="true"
+ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll fuer Referenzstrom
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"   # !!!
-Unreliable_VALUES="0.0"
 
-SndBuf_VALUES="1000000"
-RcvBuf_VALUES="1000000"
-OptionCMT_VALUES="false true"   # !!!
-OptionDAC_VALUES="true"   # !!!
-OptionNRSACK_VALUES="false true"
+SndBuf_VALUES="500000"
+RcvBuf_VALUES="250000"
+OptionCMT_VALUES="true"
+OptionRP_VALUES="false true"
+OptionDAC_VALUES="true"
+OptionNRSACK_VALUES="false true"   # !!!
+OptionBufferSplitting_VALUES="bothSides"   # !!!
 
 # First trail
-RateNorthernTrail_VALUES="1000 25000 50000 75000 100000"
+RateNorthernTrail_VALUES="1000 10000"
 DelayNorthernTrail_VALUES="0"
 LossNorthernTrail_VALUES="0"
 # Second trail
 RateSouthernTrail_VALUES="-1"
 DelaySouthernTrail_VALUES="-1"
 LossSouthernTrail_VALUES="-1"
+
 
 perform_measurements
