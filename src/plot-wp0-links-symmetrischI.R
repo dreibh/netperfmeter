@@ -15,7 +15,7 @@ plotLegendSizeFactor <- 0.8
 plotOwnOutput        <- FALSE
 plotFontFamily       <- "Helvetica"
 plotFontPointsize    <- 22
-plotWidth            <- 20
+plotWidth            <- 10
 plotHeight           <- 10
 plotConfidence       <- 0.95
 
@@ -34,9 +34,41 @@ plotConfigurations <- list(
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
         "Receiver's Perspective", NA, NA, list(0,1),
-        "RateNorthernTrail", "passive.flow-ReceivedByteRate",
-        "passive.flow", "OptionRP", "OptionNRSACK",
-        "OptionCMT", "", "Unordered")
+        "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
+        "OptionCMT", "OptionNRSACK", "OptionRP",
+        "passive.flow", "", "Unordered",
+        "TRUE",
+        "zSortAscending<-FALSE;"),
+
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUIdle.pdf"),
+        "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
+        "RateNorthernTrail-Mbit", "active.CPU-Utilization",
+        "OptionCMT", "OptionNRSACK", "OptionRP",
+        "active.CPU", "passive.flow", "Unordered",
+        "TRUE",
+        "zSortAscending<-FALSE;"),
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUIdle.pdf"),
+        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
+        "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
+        "OptionCMT", "OptionNRSACK", "OptionRP",
+        "passive.CPU", "passive.flow", "Unordered",
+        "TRUE",
+        "zSortAscending<-FALSE;"),
+
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
+        "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
+        "RateNorthernTrail-Mbit", "active.CPU-System",
+        "OptionCMT", "OptionNRSACK", "OptionRP",
+        "active.CPU", "passive.flow", "Unordered",
+        "TRUE",
+        "zSortAscending<-FALSE;"),
+   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
+        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
+        "RateNorthernTrail-Mbit", "passive.CPU-System",
+        "OptionCMT", "OptionNRSACK", "OptionRP",
+        "passive.CPU", "passive.flow", "Unordered",
+        "TRUE",
+        "zSortAscending<-FALSE;")
 )
 
 

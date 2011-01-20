@@ -2,7 +2,7 @@
 # $Id$
 #
 # Network Performance Meter
-# Copyright (C) 2009 by Thomas Dreibholz
+# Copyright (C) 2009-2011 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,11 +20,11 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-. ./measure-version1
-
 Directory="wp0-links-symmetrischI"
+. ./measure-version2
 
-Run_VALUES="1 2 3 4 5 6 7 8 9 10 11 12"
+
+Run_VALUES="1"
 Scenario_VALUES="DisjointPaths"
 Runtime_VALUES="60"
 Flows_VALUES="1"
@@ -34,12 +34,12 @@ FrameRate_VALUES="const0"
 FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"   # !!!
 Unreliable_VALUES="0.0"
-SndBuf_VALUES="5000000"
-RcvBuf_VALUES="5000000"
+SndBuf_VALUES="1000000"
+RcvBuf_VALUES="1000000"
 OptionCMT_VALUES="false true"   # !!!
 OptionDAC_VALUES="true"   # !!!
-OptionNRSACK_VALUES="false"
-RateNorthernTrail_VALUES="1000 10000 20000 35000 50000 62500 75000 87500 100000"
+OptionNRSACK_VALUES="false true"
+RateNorthernTrail_VALUES="1000 20000 50000 75000 100000"
 DelayNorthernTrail_VALUES="0"
 LossNorthernTrail_VALUES="0"
 RateSouthernTrail_VALUES="-1"
