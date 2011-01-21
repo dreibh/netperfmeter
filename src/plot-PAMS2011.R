@@ -36,7 +36,7 @@ plotConfigurations <- list(
         "Measurement in Testbed Setup", seq(0,10,1), seq(0,11,1), list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "OptionBufferSplitting", "OptionNRSACK", "",
-        "passive.flow", "OptionRP", "CwndMaxBurst",
+        "passive.flow", "CMTCCVariant", "CwndMaxBurst",
         "
             ((data1$OptionBufferSplitting == \"none\") | (data1$OptionBufferSplitting == \"bothSides\"))
         ",

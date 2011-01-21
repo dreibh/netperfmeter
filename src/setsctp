@@ -21,7 +21,7 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [cmt on|off] [dac on|off] [nrsack on|off] [rp on|off] [bufferSplitting none|senderOnly|reeiverOnly|bothSides] [initialCwnd SIZE_IN_MTU] [cwndMaxBurst on|off"
+   echo >&2 "Usage: $0 [cmt off|normal|rp] [dac on|off] [nrsack on|off] [bufferSplitting none|senderOnly|reeiverOnly|bothSides] [initialCwnd SIZE_IN_MTU] [cwndMaxBurst on|off"
    exit 1
 fi
 
@@ -30,17 +30,20 @@ fi
 CMT=0
 DAC=0
 NRSACK=0
-RP=0
 BUFFERSPLITTING=0
 INITIAL_CWND=3
 CWND_MAXBURST=0
 
 while [ "$1" != "" ] ; do
    if [ "$1" = "cmt" ] ; then
-      if [ "$2" = "on" -o "$2" = "true" ] ; then
-         CMT=1
-      elif [ "$2" = "off" -o "$2" = "false" ] ; then
+      if [ "$2" = "off" ] ; then
          CMT=0
+      elif [ "$2" = "normal" ] ; then
+         CMT=1
+      elif [ "$2" = "rp" ] ; then
+         CMT=2
+      elif [ $2 -ge 2 -o $2 -lt 256 ] ; then
+         CMT=$2
       else
          echo >&2 "ERROR: Bad setting for cmt!"
          exit 1
@@ -65,17 +68,6 @@ while [ "$1" != "" ] ; do
          NRSACK=0
       else
          echo >&2 "ERROR: Bad setting for nrsack!"
-         exit 1
-      fi
-      shift ; shift
-
-   elif [ "$1" = "rp" ] ; then
-      if [ "$2" = "on" -o "$2" = "true" ] ; then
-         RP=1
-      elif [ "$2" = "off" -o "$2" = "false" ] ; then
-         RP=0
-      else
-         echo >&2 "ERROR: Bad setting for rp!"
          exit 1
       fi
       shift ; shift
@@ -121,7 +113,6 @@ done
 # echo " - CMT:             $CMT"
 # echo " - DAC:             $DAC"
 # echo " - NRSACK:          $NRSACK"
-# echo " - CMT-RP:          $RP"
 # echo " - BUFFERSPLITTING: $BUFFERSPLITTING"
 # echo " - CWND_MAXBURST:   $CWND_MAXBURST"
 
@@ -130,13 +121,7 @@ success=1
 SYSTEM=`uname`
 # ====== FreeBSD QoS setup ==================================================
 if [ "$SYSTEM" = "FreeBSD" ] ; then
-   cmt_on_off=0
-   if [ $CMT -eq 1 -a $RP -eq 1 ] ; then
-      cmt_on_off=2
-   elif [ $CMT -eq 1 ] ; then
-      cmt_on_off=1
-   fi
-   /sbin/sysctl net.inet.sctp.cmt_on_off=$cmt_on_off >/dev/null || success=0
+   /sbin/sysctl net.inet.sctp.cmt_on_off=$CMT >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.cmt_use_dac=$DAC >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.nr_sack_on_off=$NRSACK >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.buffer_splitting=$BUFFERSPLITTING >/dev/null || success=0

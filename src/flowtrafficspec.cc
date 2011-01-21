@@ -124,10 +124,20 @@ void FlowTrafficSpec::print(std::ostream& os) const
    os << "}" << std::endl;
    os << "      - Error on Abort:      "
       << ((ErrorOnAbort == true) ? "yes" : "no") << std::endl;
-   os << "      - Use CMT:             "
-      << ((UseCMT == true) ? "yes" : "no") << std::endl;
-   os << "      - Use RP:              "
-      << ((UseRP == true) ? "yes" : "no") << std::endl;
+   os << "      - CMT:                 #" << (unsigned int)CMT << " ";
+   switch(CMT) {
+      case NPAF_PRIMARY_PATH:
+         os << "(off)";
+       break;
+      case NPAF_CMT:
+         os << "(CMT)";
+       break;
+      case NPAF_CMTRP:
+         os << "(CMT/RP)";
+       break;
+   }
+   os << std::endl;
+   os << "      - CCID:                #" << (unsigned int)CCID << std::endl;
 }
 
 
@@ -143,8 +153,8 @@ void FlowTrafficSpec::reset()
    RetransmissionTrials     = ~0;
    RetransmissionTrialsInMS = true;
    ErrorOnAbort             = true;
-   UseCMT                   = false;
-   UseRP                    = false;
+   CMT                      = 0x00;
+   CCID                     = 0x00;
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
       OutboundFrameRate[i] = 0.0;
       OutboundFrameSize[i] = 0.0;

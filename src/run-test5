@@ -36,9 +36,7 @@ FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"   # !!!
 SndBuf_VALUES="250000"
 RcvBuf_VALUES="125000"
-OptionCMT_VALUES="true"
-OptionRP_VALUES="false"
-OptionDAC_VALUES="true"
+CMTCCVariant_VALUES="normal"
 OptionNRSACK_VALUES="false true"
 OptionBufferSplitting_VALUES="none bothSides"
 

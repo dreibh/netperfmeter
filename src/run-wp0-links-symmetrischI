@@ -44,8 +44,7 @@ Unreliable_VALUES="0.0"
 
 SndBuf_VALUES="1000000"
 RcvBuf_VALUES="1000000"
-OptionCMT_VALUES="false true"   # !!!
-OptionDAC_VALUES="true"   # !!!
+CMTCCVariant_VALUES="off normal"   # !!!
 OptionNRSACK_VALUES="false true"
 
 # First trail

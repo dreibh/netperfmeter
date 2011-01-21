@@ -37,7 +37,7 @@ plotConfigurations <- list(
    list("wp0-links-symmetrischI", "OMNeT++Workshop2010-wp0-links-symmetrischI-Throughput.pdf",
         "Measurement Results", NA, NA, list(0,1),
         "RateNorthernTrail-Common", "passive.total-ReceivedBitRate",
-        "OptionCMT", "OptionDAC", "OptionNRSACK",
+        "CMTCCVariant", "OptionDAC", "OptionNRSACK",
         "", "", "Unordered",
         "(data1$OptionDAC == \"true\")",
         NA,
@@ -62,7 +62,7 @@ list(
    list("RateNorthernTrail-Common",
            "Common Data Rate{:rho:}[Mbit/s]", "data1$RateNorthernTrail / 1000"),
 
-   list("OptionCMT",    "CMT", "data1$OptionCMT"),
+   list("CMTCCVariant", "CMT", "data1$CMTCCVariant"),
    list("OptionDAC",    "DAC", "data1$OptionDAC")
 ))
 

@@ -71,8 +71,9 @@ class FlowTrafficSpec
    uint8_t                InboundFrameRateRng;
    uint8_t                InboundFrameSizeRng;
 
-   bool                   UseCMT;
-   bool                   UseRP;
+   uint8_t                CMT;
+   uint8_t                CCID;
+
    bool                   ErrorOnAbort;
 };
 

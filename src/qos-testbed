@@ -1,0 +1,41 @@
+#!/bin/sh
+# $Id$
+#
+# Network Performance Meter
+# Copyright (C) 2009 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
+
+OptionCMT=normal
+OptionDAC=on
+OptionNRSACK=off
+
+Bandwidth=50000
+Delay=1
+Loss=0
+Error=0
+Bidirectional=false
+
+echo WEST:
+                   ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK
+echo EAST:
+ssh 132.252.153.18 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK
+
+echo NORTH:
+ssh 132.252.153.9   ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 132.252.153.8/29 132.252.153.16/29    $Bandwidth $Delay $Loss $Error $Bidirectional
+echo SOUTH:
+ssh 132.252.153.137 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 132.252.153.136/29 132.252.153.144/29 $Bandwidth $Delay $Loss $Error $Bidirectional

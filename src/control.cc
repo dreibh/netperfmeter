@@ -154,11 +154,12 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    NetPerfMeterAddFlowMessage* addFlowMsg = (NetPerfMeterAddFlowMessage*)&addFlowMsgBuffer;
    addFlowMsg->Header.Type   = NETPERFMETER_ADD_FLOW;
    addFlowMsg->Header.Flags  = 0x00;
-   if(flow->getTrafficSpec().UseCMT) {
-      addFlowMsg->Header.Flags |= NPMAF_USE_CMT;
+   addFlowMsg->CCID          = flow->getTrafficSpec().CCID;
+   if(flow->getTrafficSpec().CMT > 0) {
+      addFlowMsg->Header.Flags |= NPMAF_USE_CMT;   /* Backward compatibility */
    }
-   if(flow->getTrafficSpec().UseRP) {
-      addFlowMsg->Header.Flags |= NPMAF_USE_RP;
+   if(flow->getTrafficSpec().CCID > 0) {
+      addFlowMsg->Header.Flags |= NPMAF_USE_RP;    /* Backward compatibility */
    }
 
    addFlowMsg->Header.Length = htons(addFlowMsgSize);
@@ -182,7 +183,6 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
       htonl((uint32_t)flow->getTrafficSpec().RetransmissionTrials |
             (uint32_t)(flow->getTrafficSpec().RetransmissionTrialsInMS ? NPMAF_RTX_TRIALS_IN_MILLISECONDS : 0));
 
-   addFlowMsg->Padding       = 0x0000;
    addFlowMsg->OnOffEvents   = htons(flow->getTrafficSpec().OnOffEvents.size());
    size_t i = 0;
    for(std::set<unsigned int>::iterator iterator = flow->getTrafficSpec().OnOffEvents.begin();
@@ -753,8 +753,17 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       for(size_t i = 0;i < startStopEvents;i++) {
          trafficSpec.OnOffEvents.insert(ntohl(addFlowMsg->OnOffEvent[i]));
       }
-      trafficSpec.UseCMT = (addFlowMsg->Header.Flags & NPMAF_USE_CMT)    ? true : false;
-      trafficSpec.UseRP  = (addFlowMsg->Header.Flags & NPMAF_USE_RP)     ? true : false;
+      trafficSpec.CMT  = addFlowMsg->CMT;
+      trafficSpec.CCID = addFlowMsg->CCID;
+
+      if(trafficSpec.CMT == 0x00) {   /* Backward compatibility */
+         if(addFlowMsg->Header.Flags & (NPMAF_USE_CMT|NPMAF_USE_RP)) {
+            trafficSpec.CMT = NPAF_CMTRP;
+         }
+         else if(addFlowMsg->Header.Flags & NPMAF_USE_CMT) {
+            trafficSpec.CMT = NPAF_CMT;
+         }
+      }
 
       Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
                             ntohs(addFlowMsg->StreamID), trafficSpec,

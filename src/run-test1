@@ -34,7 +34,7 @@ Unordered_VALUES="1.0"   # !!!
 SndBuf_VALUES="300000"
 RcvBuf_VALUES="100000"
 
-BidirectionalQoS_VALUES="true"
+CMTCCVariant_VALUES="off"
 
 # First trail
 RateNorthernTrail_VALUES="1000 10000"

@@ -19,7 +19,7 @@
 .\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd September 1, 2010
+.Dd January 21, 2011
 .Dt netperfmeter 8
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -135,10 +135,9 @@ Sets the sender buffer size to the given number of bytes.
 A list of time stamps when the flow should be activated or deactivated. If onoff is given, the flow is off at startup. At t1, it will be turned on; at t2, it will be turned off, etc.. Time stamps can be given as absolute values (e.g. onoff=0,10,30 - to turn on at t=0, turn off at t=10 and turn on again at t=30 until end of measurement) or relative values (e.g. on=10,+30,+60 - to turn on at t=10, turn off at t=40 and turn on again at t=100 until end of measurement).
 .It error_on_abort=on|off
 By default, the active side stops with an error when a transmission tails (e.g. on connection abort). This parameter turns this behaviour on or off.
-.It cmt=on|off
-Turns usage of Concurrent Multipath Transfer (CMT) on/off (currently only supported by CMT-SCTP on FreeBSD).
-.It rp=on|off
-Turns usage of Resource Pooling (RP) on/off (currently only supported by CMT/RP-SCTP on FreeBSD).
+.It cmt=off|normal|rp|0-255
+Configures usage of Concurrent Multipath Transfer (CMT): off (turned off), normal (independent paths), rp (resource-pooled), 0-255 (custom value).
+Currently only supported by CMT-SCTP on FreeBSD systems.
 .El
 .El
 .El

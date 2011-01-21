@@ -35,18 +35,18 @@ plotConfigurations <- list(
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
         "Received Bit Rate per Flow", NA, NA, list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
-        "OptionRP", "OptionBufferSplitting", "",
+        "CMTCCVariant", "OptionBufferSplitting", "",
         "passive.flow", "OptionNRSACK", "Unordered"),
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUUtilization.pdf"),
         "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "active.CPU-Utilization",
-        "OptionRP", "OptionNRSACK", "",
+        "CMTCCVariant", "OptionNRSACK", "",
         "active.CPU", "", ""),
    list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUUtilization.pdf"),
         "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
-        "OptionRP", "OptionNRSACK", "",
+        "CMTCCVariant", "OptionNRSACK", "",
         "passive.CPU", "", "")
 )
 

@@ -44,9 +44,7 @@ Unordered_VALUES="1.0"   # !!!
 
 SndBuf_VALUES="500000"
 RcvBuf_VALUES="250000"
-OptionCMT_VALUES="true"
-OptionRP_VALUES="false true"
-OptionDAC_VALUES="true"
+CMTCCVariant_VALUES="normal rp"
 OptionNRSACK_VALUES="false true"   # !!!
 OptionBufferSplitting_VALUES="bothSides"   # !!!
 

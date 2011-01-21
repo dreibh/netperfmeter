@@ -93,15 +93,20 @@ struct NetPerfMeterAddFlowMessage
 
    uint16_t             MaxMsgSize;
 
-   uint16_t             Padding;
+   uint8_t              CMT;
+   uint8_t              CCID;
 
    uint16_t             OnOffEvents;
    uint32_t             OnOffEvent[];
 } __attribute__((packed));
 
 #define NPMAF_RTX_TRIALS_IN_MILLISECONDS (1 << 31)
-#define NPMAF_USE_CMT                    (1 << 30)
-#define NPMAF_USE_RP                     (1 << 29)
+#define NPMAF_USE_CMT                    (1 << 30)   /* DEPRECATED! */
+#define NPMAF_USE_RP                     (1 << 29)   /* DEPRECATED! */
+
+#define NPAF_PRIMARY_PATH 0x00
+#define NPAF_CMT          0x01
+#define NPAF_CMTRP        0x02
 
 
 struct NetPerfMeterRemoveFlowMessage

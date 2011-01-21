@@ -36,9 +36,7 @@ FrameSize_VALUES="const1444"   # DSL-MTU!
 Unordered_VALUES="0.0"
 SndBuf_VALUES="300000"
 RcvBuf_VALUES="100000"
-OptionCMT_VALUES="true"
-OptionRP_VALUES="false"
-OptionDAC_VALUES="true"
+CMTCCVariant_VALUES="normal"
 OptionNRSACK_VALUES="false true"
 OptionBufferSplitting_VALUES="bothSides none senderOnly receiverOnly"
 

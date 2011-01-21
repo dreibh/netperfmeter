@@ -37,6 +37,8 @@
 
 #ifndef HAVE_DCCP
 #warning DCCP is not supported by the API of this system!
+#else
+#include <linux/dccp.h>
 #endif
 
 
@@ -246,30 +248,38 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
    }
    else if(strncmp(parameters, "cmt=", 4) == 0) {
-      if(strncmp((const char*)&parameters[4], "on", 2) == 0) {
-         trafficSpec.UseCMT = true;
+      unsigned int cmt;
+      int          pos;
+      if(strncmp((const char*)&parameters[4], "off", 3) == 0) {
+         trafficSpec.CMT = NPAF_PRIMARY_PATH;
+         n = 4 + 3;
+      }
+      else if(strncmp((const char*)&parameters[4], "normal", 6) == 0) {
+         trafficSpec.CMT = NPAF_CMT;
+         n = 4 + 6;
+      }
+      else if(strncmp((const char*)&parameters[4], "rp", 2) == 0) {
+         trafficSpec.CMT = NPAF_CMTRP;
          n = 4 + 2;
       }
-      else if(strncmp((const char*)&parameters[4], "off", 3) == 0) {
-         trafficSpec.UseCMT = false;
-         n = 4 + 3;
+      else if(sscanf((const char*)&parameters[4], "%u%n", &cmt, &pos) == 1) {
+         trafficSpec.CMT = cmt;
+         n = 4 + pos;
       }
       else {
          cerr << "ERROR: Invalid \"cmt\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
          exit(1);
       }
    }
-   else if(strncmp(parameters, "rp=", 3) == 0) {
-      if(strncmp((const char*)&parameters[3], "on", 2) == 0) {
-         trafficSpec.UseRP = true;
-         n = 3 + 2;
-      }
-      else if(strncmp((const char*)&parameters[3], "off", 3) == 0) {
-         trafficSpec.UseRP = false;
-         n = 3 + 3;
+   else if(strncmp(parameters, "ccid=", 5) == 0) {
+      unsigned int ccid;
+      int          pos;
+      if(sscanf((const char*)&parameters[5], "%u%n", &ccid, &pos) == 1) {
+         trafficSpec.CCID = ccid;
+         n = 5 + pos;
       }
       else {
-         cerr << "ERROR: Invalid \"rp\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         cerr << "ERROR: Invalid \"ccid\" setting: " << (const char*)&parameters[5] << "!" << std::endl;
          exit(1);
       }
    }
@@ -499,27 +509,35 @@ static Flow* createFlow(Flow*                  previousFlow,
          exit(1);
       }
 
+      if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
 #ifdef SCTP_CMT_ON_OFF
-      struct sctp_assoc_value cmtOnOff;
-      cmtOnOff.assoc_id    = 0;
-      cmtOnOff.assoc_value = 0;
-      if(flow->getTrafficSpec().UseCMT == true) {
-         cmtOnOff.assoc_value = 1;
-         if(flow->getTrafficSpec().UseRP == true) {
-            cmtOnOff.assoc_value = 2;
+         struct sctp_assoc_value cmtOnOff;
+         cmtOnOff.assoc_id    = 0;
+         cmtOnOff.assoc_value = flow->getTrafficSpec().CMT;
+         if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
+            if(flow->getTrafficSpec().CMT != NPAF_PRIMARY_PATH) {
+               cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
+                  << strerror(errno) << "!" << endl;
+               exit(1);
+            }
          }
+#else
+         if(flow->getTrafficSpec().CMT != NPAF_PRIMARY_PATH) {
+            cerr << "ERROR: CMT usage configured, but not supported by this system!" << endl;
+            exit(1);
+         }
+#endif
       }
-      if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-         if(flow->getTrafficSpec().UseCMT == true) {
-            cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
+
+#ifdef DCCP_SOCKOPT_CCID
+      if(flow->getTrafficSpec().Protocol == IPPROTO_DCCP) {
+         const uint8_t value = flow->getTrafficSpec().CCID;
+         if(ext_setsockopt(socketDescriptor, 0, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
+            cerr << "ERROR: Failed to configure CCID #" << (unsigned int)value
+                 << " on DCCP socket (DCCP_SOCKOPT_CCID option) - "
                  << strerror(errno) << "!" << endl;
             exit(1);
          }
-      }
-#else
-      if(flow->getTrafficSpec().UseCMT == true) {
-         cerr << "ERROR: CMT usage configured, but not supported by this system!" << endl;
-         exit(1);
       }
 #endif
 

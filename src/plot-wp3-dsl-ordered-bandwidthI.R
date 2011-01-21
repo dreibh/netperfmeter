@@ -36,35 +36,35 @@ plotConfigurations <- list(
         "Received Bit Rate per Flow", NA, NA, list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "OptionBufferSplitting", "OptionNRSACK", "",
-        "passive.flow", "OptionRP", "CwndMaxBurst",
+        "passive.flow", "CMTCCVariant", "CwndMaxBurst",
         "TRUE", "vSortAscending<-FALSE"),
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
         "Received Bit Rate per Flow", NA, NA, list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "OptionNRSACK", "", "",
-        "OptionBufferSplitting", "OptionRP", "CwndMaxBurst",
+        "OptionBufferSplitting", "CMTCCVariant", "CwndMaxBurst",
         "TRUE", "zSortAscending<-FALSE")
 
 #    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUIdle.pdf"),
 #         "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
 #         "RateNorthernTrail-Mbit", "active.CPU-Utilization",
-#         "active.CPU", "OptionRP", "OptionNRSACK",
+#         "active.CPU", "CMTCCVariant", "OptionNRSACK",
 #         "", "OptionBufferSplitting", ""),
 #    list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUIdle.pdf"),
 #         "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
 #         "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
-#         "passive.CPU", "OptionRP", "OptionNRSACK",
+#         "passive.CPU", "CMTCCVariant", "OptionNRSACK",
 #         "", "OptionBufferSplitting", ""),
-# 
+#
 #    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
 #         "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
 #         "RateNorthernTrail-Mbit", "active.CPU-System",
-#         "active.CPU", "OptionRP", "OptionNRSACK",
+#         "active.CPU", "CMTCCVariant", "OptionNRSACK",
 #         "", "OptionBufferSplitting", ""),
 #    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
 #         "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
 #         "RateNorthernTrail-Mbit", "passive.CPU-System",
-#         "passive.CPU", "OptionRP", "OptionNRSACK",
+#         "passive.CPU", "CMTCCVariant", "OptionNRSACK",
 #         "", "OptionBufferSplitting", "")
 )
 
