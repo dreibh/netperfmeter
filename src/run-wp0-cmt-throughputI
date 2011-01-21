@@ -31,7 +31,7 @@ Directory="wp0-cmt-throughputI"
 # ###########################################################################
 
 
-Run_VALUES="1"
+Run_VALUES="1 2 3"
 Scenario_VALUES="DisjointPaths"
 Runtime_VALUES="60"
 Flows_VALUES="1"
@@ -48,7 +48,7 @@ OptionNRSACK_VALUES="false true"
 CMTCCVariant_VALUES="off normal"   # !!!
 
 # First trail
-RateNorthernTrail_VALUES="1000 10000 25000 50000" #  75000 100000
+RateNorthernTrail_VALUES="1000 10000 25000 50000 75000 100000"
 DelayNorthernTrail_VALUES="0"
 LossNorthernTrail_VALUES="0"
 # Second trail

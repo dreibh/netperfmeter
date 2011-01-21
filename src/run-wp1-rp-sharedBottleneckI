@@ -31,7 +31,7 @@ Directory="wp1-rp-sharedBottleneckI"
 # ###########################################################################
 
 
-Run_VALUES="1"
+Run_VALUES="1 2 3"
 Scenario_VALUES="SharedBottleneck"   # !!!
 Runtime_VALUES="60"
 Flows_VALUES="1"
@@ -49,7 +49,7 @@ OptionNRSACK_VALUES="false true"   # !!!
 OptionBufferSplitting_VALUES="bothSides"   # !!!
 
 # First trail
-RateNorthernTrail_VALUES="1000 10000"
+RateNorthernTrail_VALUES="1000 5000 10000 15000 20000"
 DelayNorthernTrail_VALUES="0"
 LossNorthernTrail_VALUES="0"
 # Second trail

@@ -28,7 +28,7 @@ fi
 # ------ List test scripts here ---------------------------
 # Test script naming: $TEST -> run-$TEST and plot-$TEST.R
 # Corresponding results directory name: $TEST
-ALL_TESTS="test1"
+ALL_TESTS="wp0-cmt-throughputI wp1-rp-disjointPathsI wp1-rp-sharedBottleneckI"
 
 # ------ Enter kernel sources directory here --------------
 KERNEL_SRC_DIRECTORY="$HOME/src/KERN"
