@@ -1,0 +1,59 @@
+#!/bin/bash
+# $Id$
+#
+# Network Performance Meter
+# Copyright (C) 2009-2011 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
+
+Directory="wp0-links-symmetrischI"
+. ./measure-version2
+
+# ###########################################################################
+# BESCHREIBUNG:
+# Variation der Bandbreite von 2 symmetrischen Links
+# ZIEL:
+# Mit CMT gesamte Bandbreite ausnutzen
+# ###########################################################################
+
+
+Run_VALUES="1"
+Scenario_VALUES="DisjointPaths"
+Runtime_VALUES="60"
+Flows_VALUES="1"
+CompareWithTCP_VALUES="false"
+OnlyOneAssoc_VALUES="true"
+FrameRate_VALUES="const0"
+FrameSize_VALUES="const1452"
+Unordered_VALUES="1.0"   # !!!
+Unreliable_VALUES="0.0"
+
+SndBuf_VALUES="1000000"
+RcvBuf_VALUES="1000000"
+CMTCCVariant_VALUES="off normal"   # !!!
+OptionNRSACK_VALUES="false true"
+
+# First trail
+RateNorthernTrail_VALUES="1000 25000 50000 75000 100000"
+DelayNorthernTrail_VALUES="0"
+LossNorthernTrail_VALUES="0"
+# Second trail
+RateSouthernTrail_VALUES="-1"
+DelaySouthernTrail_VALUES="-1"
+LossSouthernTrail_VALUES="-1"
+
+perform_measurements
