@@ -20,7 +20,7 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-Directory="wp0-links-symmetrischI"
+Directory="wp0-cmt-throughputI"
 . ./measure-version2
 
 # ###########################################################################
@@ -42,13 +42,13 @@ FrameSize_VALUES="const1452"
 Unordered_VALUES="1.0"   # !!!
 Unreliable_VALUES="0.0"
 
-SndBuf_VALUES="1000000"
-RcvBuf_VALUES="1000000"
-CMTCCVariant_VALUES="off normal"   # !!!
+SndBuf_VALUES="500000"
+RcvBuf_VALUES="250000"
 OptionNRSACK_VALUES="false true"
+CMTCCVariant_VALUES="off normal"   # !!!
 
 # First trail
-RateNorthernTrail_VALUES="1000 25000 50000 75000 100000"
+RateNorthernTrail_VALUES="1000 10000 25000 50000" #  75000 100000
 DelayNorthernTrail_VALUES="0"
 LossNorthernTrail_VALUES="0"
 # Second trail

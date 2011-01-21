@@ -8,7 +8,7 @@ source("plot-version1.R")
 
 
 # ------ Plotter Settings ---------------------------------------------------
-simulationDirectory  <- "wp0-links-symmetrischI"
+simulationDirectory  <- "wp0-cmt-throughputI"
 plotColorMode        <- cmColor
 plotHideLegend       <- FALSE
 plotLegendSizeFactor <- 0.8
@@ -38,7 +38,7 @@ plotConfigurations <- list(
         "CMTCCVariant", "OptionNRSACK", "",
         "passive.flow", "", "Unordered",
         "TRUE",
-        "zSortAscending<-TRUE;"),
+        "zSortAscending<-TRUE; vSortAscending<-FALSE"),
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUUtilization.pdf"),
         "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
@@ -46,14 +46,14 @@ plotConfigurations <- list(
         "CMTCCVariant", "OptionNRSACK", "",
         "active.CPU", "", "",
         "TRUE",
-        "zSortAscending<-TRUE;"),
+        "zSortAscending<-TRUE; vSortAscending<-FALSE"),
    list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUUtilization.pdf"),
         "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
         "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
         "CMTCCVariant", "OptionNRSACK", "",
         "passive.CPU", "", "",
         "TRUE",
-        "zSortAscending<-TRUE;")
+        "zSortAscending<-TRUE; vSortAscending<-FALSE")
 )
 
 
