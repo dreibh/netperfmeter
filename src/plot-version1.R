@@ -37,7 +37,7 @@ netPerfMeterPlotVariables <- list(
    list("Flows",                 "Number of Flows{n}[1]"),
    list("OnlyOneAssoc",          "Only One Assoc{A}"),
    list("Unordered",             "Unordered{U}"),
-   list("CMTCCVariant",          "CMT{:Gamma:}"),
+   list("CMTCCVariant",          "CMT{:G:}"),
    list("OptionDAC",             "Delayed Ack CMT{:D:}"),
    list("OptionNRSACK",          "Use NR-SACK{:n:}"),
    list("SndBuf",                "Send Buffer{S}[Bytes]"),
