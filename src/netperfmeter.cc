@@ -35,10 +35,10 @@
 #include "transfer.h"
 
 
-#ifndef HAVE_DCCP
-#warning DCCP is not supported by the API of this system!
-#else
+#ifdef HAVE_DCCP
 #include <linux/dccp.h>
+#else
+#warning DCCP is not supported by the API of this system!
 #endif
 
 

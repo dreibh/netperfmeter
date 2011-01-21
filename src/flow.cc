@@ -23,10 +23,17 @@
 #include "control.h"
 #include "transfer.h"
 
+#include <string.h>
 #include <signal.h>
 #include <poll.h>
 #include <assert.h>
 #include <math.h>
+
+#ifdef HAVE_DCCP
+#include <linux/dccp.h>
+#else
+#warning DCCP is not supported by the API of this system!
+#endif
 
 
 // Flow Manager Singleton object
@@ -1234,7 +1241,7 @@ bool Flow::configureSocket(const int socketDescriptor)
 #endif
    }
 
-#ifdef DCCP_SOCKOPT_CCID
+#ifdef HAVE_DCCP
     if(TrafficSpec.Protocol == IPPROTO_DCCP) {
         const uint8_t value = TrafficSpec.CCID;
         if(ext_setsockopt(socketDescriptor, 0, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
