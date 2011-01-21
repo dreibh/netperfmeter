@@ -1196,3 +1196,54 @@ void Flow::run()
       }
    } while( (result == true) && (!isStopping()) );
 }
+
+
+// ###### Configure socket parameters #######################################
+bool Flow::configureSocket(const int socketDescriptor)
+{
+    int bufferSize = TrafficSpec.RcvBufferSize;
+    if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
+        std::cerr << "ERROR: Failed to configure receive buffer size on SCTP socket (SO_RCVBUF option) - "
+                  << strerror(errno) << "!" << std::endl;
+        return(false);
+    }
+    bufferSize = TrafficSpec.SndBufferSize;
+    if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
+        std::cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
+                  << strerror(errno) << "!" << std::endl;
+        return(false);
+    }
+
+    if(TrafficSpec.Protocol == IPPROTO_SCTP) {
+#ifdef SCTP_CMT_ON_OFF
+        struct sctp_assoc_value cmtOnOff;
+        cmtOnOff.assoc_id    = 0;
+        cmtOnOff.assoc_value = TrafficSpec.CMT;
+        if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
+          if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
+              std::cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
+                        << strerror(errno) << "!" << std::endl;
+             return(false);
+          }
+        }
+#else
+        if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
+          std::cerr << "ERROR: CMT usage configured, but not supported by this system!" << std::endl;
+          return(false);
+        }
+#endif
+   }
+
+#ifdef DCCP_SOCKOPT_CCID
+    if(TrafficSpec.Protocol == IPPROTO_DCCP) {
+        const uint8_t value = TrafficSpec.CCID;
+        if(ext_setsockopt(socketDescriptor, 0, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
+          std::cerr << "ERROR: Failed to configure CCID #" << (unsigned int)value
+                    << " on DCCP socket (DCCP_SOCKOPT_CCID option) - "
+                    << strerror(errno) << "!" << std::endl;
+          return(false);
+        }
+    }
+#endif
+   return(true);
+}

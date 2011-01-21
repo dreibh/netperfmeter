@@ -24,8 +24,8 @@ OptionCMT=normal
 OptionDAC=on
 OptionNRSACK=off
 
-Bandwidth=50000
-Delay=1
+Bandwidth=10000
+Delay=0
 Loss=0
 Error=0
 Bidirectional=false

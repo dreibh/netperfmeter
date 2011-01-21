@@ -1057,19 +1057,7 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                                         controlSocketDescriptor,
                                                         controlAssocID);
    if((controlAssocID != 0) && (flow != NULL)) {
-      bool success    = true;
-      int  bufferSize = flow->getTrafficSpec().RcvBufferSize;
-      if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-         std::cerr << "ERROR: Failed to configure receive buffer size on SCTP socket (SO_RCVBUF option) - "
-                   << strerror(errno) << "!" << std::endl;
-         success = false;
-      }
-      bufferSize = flow->getTrafficSpec().SndBufferSize;
-      if(ext_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-         std::cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
-                   << strerror(errno) << "!" << std::endl;
-         success = false;
-      }
+      const bool success = flow->configureSocket(sd);
       sendNetPerfMeterAcknowledge(controlSocketDescriptor, controlAssocID,
                                   ntoh64(identifyMsg->MeasurementID),
                                   ntohl(identifyMsg->FlowID),

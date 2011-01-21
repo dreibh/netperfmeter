@@ -309,6 +309,7 @@ class Flow : public Thread
    void print(std::ostream& os, const bool printStatistics = false);
    void resetStatistics();
 
+   bool configureSocket(const int socketDescriptor);
    void setSocketDescriptor(const int  socketDescriptor,
                             const bool originalSocketDescriptor = true,
                             const bool deleteWhenFinished       = true);

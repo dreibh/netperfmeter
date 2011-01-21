@@ -490,16 +490,7 @@ static Flow* createFlow(Flow*                  previousFlow,
          }
       }
 
-      int bufferSize = flow->getTrafficSpec().RcvBufferSize;
-      if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-         cerr << "ERROR: Failed to configure receive buffer size on SCTP socket (SO_RCVBUF option) - "
-              << strerror(errno) << "!" << endl;
-         exit(1);
-      }
-      bufferSize = flow->getTrafficSpec().SndBufferSize;
-      if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-         cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
-              << strerror(errno) << "!" << endl;
+      if(flow->configureSocket(socketDescriptor) == false) {
          exit(1);
       }
 
@@ -508,38 +499,6 @@ static Flow* createFlow(Flow*                  previousFlow,
               << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
       }
-
-      if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
-#ifdef SCTP_CMT_ON_OFF
-         struct sctp_assoc_value cmtOnOff;
-         cmtOnOff.assoc_id    = 0;
-         cmtOnOff.assoc_value = flow->getTrafficSpec().CMT;
-         if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-            if(flow->getTrafficSpec().CMT != NPAF_PRIMARY_PATH) {
-               cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
-                  << strerror(errno) << "!" << endl;
-               exit(1);
-            }
-         }
-#else
-         if(flow->getTrafficSpec().CMT != NPAF_PRIMARY_PATH) {
-            cerr << "ERROR: CMT usage configured, but not supported by this system!" << endl;
-            exit(1);
-         }
-#endif
-      }
-
-#ifdef DCCP_SOCKOPT_CCID
-      if(flow->getTrafficSpec().Protocol == IPPROTO_DCCP) {
-         const uint8_t value = flow->getTrafficSpec().CCID;
-         if(ext_setsockopt(socketDescriptor, 0, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
-            cerr << "ERROR: Failed to configure CCID #" << (unsigned int)value
-                 << " on DCCP socket (DCCP_SOCKOPT_CCID option) - "
-                 << strerror(errno) << "!" << endl;
-            exit(1);
-         }
-      }
-#endif
 
       if(gOutputVerbosity >= NPFOV_STATUS) {
          cout << "okay <sd=" << socketDescriptor << "> ";
