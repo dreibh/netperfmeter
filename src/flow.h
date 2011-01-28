@@ -34,6 +34,15 @@
 
 #include <poll.h>
 
+#ifdef HAVE_DCCP
+#include <linux/dccp.h>
+#ifndef SOL_DCCP
+#define SOL_DCCP 269
+#endif
+#else
+#warning DCCP is not supported by the API of this system!
+#endif
+
 #include <vector>
 #include <map>
 

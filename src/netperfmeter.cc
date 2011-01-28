@@ -35,13 +35,6 @@
 #include "transfer.h"
 
 
-#ifdef HAVE_DCCP
-#include <linux/dccp.h>
-#else
-#warning DCCP is not supported by the API of this system!
-#endif
-
-
 using namespace std;
 
 
@@ -670,6 +663,12 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                      gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gDCCPSocket < 0) {
       cerr << "NOTE: Your kernel does not provide DCCP support." << endl;
+   }
+   const uint32_t service[1] = { htonl(DSC_NETPERFMETER_DATA) };
+   if(ext_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
+      std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
+               << strerror(errno) << "!" << std::endl;
+      exit(1);
    }
 #endif
 

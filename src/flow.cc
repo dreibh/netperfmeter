@@ -29,12 +29,6 @@
 #include <assert.h>
 #include <math.h>
 
-#ifdef HAVE_DCCP
-#include <linux/dccp.h>
-#else
-#warning DCCP is not supported by the API of this system!
-#endif
-
 
 // Flow Manager Singleton object
 FlowManager FlowManager::FlowManagerSingleton;
@@ -1242,15 +1236,23 @@ bool Flow::configureSocket(const int socketDescriptor)
    }
 
 #ifdef HAVE_DCCP
-    if(TrafficSpec.Protocol == IPPROTO_DCCP) {
-        const uint8_t value = TrafficSpec.CCID;
-        if(ext_setsockopt(socketDescriptor, 0, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
-          std::cerr << "ERROR: Failed to configure CCID #" << (unsigned int)value
-                    << " on DCCP socket (DCCP_SOCKOPT_CCID option) - "
-                    << strerror(errno) << "!" << std::endl;
-          return(false);
-        }
-    }
+   if(TrafficSpec.Protocol == IPPROTO_DCCP) {
+      const uint8_t value = TrafficSpec.CCID;
+      if(value != 0) {
+         if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
+            std::cerr << "WARNING: Failed to configure CCID #" << (unsigned int)value
+                      << " on DCCP socket (DCCP_SOCKOPT_CCID option) - "
+                      << strerror(errno) << "!" << std::endl;
+            // return(false);
+         }
+      }
+      const uint32_t service[1] = { htonl(DSC_NETPERFMETER_DATA) };
+      if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
+        std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
+                  << strerror(errno) << "!" << std::endl;
+        return(false);
+      }
+   }
 #endif
    return(true);
 }
