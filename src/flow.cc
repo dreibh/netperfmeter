@@ -1246,7 +1246,7 @@ bool Flow::configureSocket(const int socketDescriptor)
             // return(false);
          }
       }
-      const uint32_t service[1] = { htonl(DSC_NETPERFMETER_DATA) };
+      const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
         std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
                   << strerror(errno) << "!" << std::endl;

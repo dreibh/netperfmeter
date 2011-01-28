@@ -664,7 +664,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(gDCCPSocket < 0) {
       cerr << "NOTE: Your kernel does not provide DCCP support." << endl;
    }
-   const uint32_t service[1] = { htonl(DSC_NETPERFMETER_DATA) };
+   const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };
    if(ext_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
       std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
                << strerror(errno) << "!" << std::endl;

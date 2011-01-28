@@ -5,7 +5,7 @@ Thomas Dreibholz
 dreibh@iem.uni-due.de
 
 ## What type of assignment/registration are you requesting?
-DCCP Service Code for the NetPerfMeter Protocol (NPMP) on the Data Channel (NPMP-DATA)
+DCCP Service Code for the NetPerfMeter Protocol on the Data Channel (NPMP-DATA)
 
 ## Which registry are you requesting this assignment/registration be made in?
 DCCP Parameters -> Service Codes
