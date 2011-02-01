@@ -3,13 +3,20 @@ Section: net
 Priority: optional
 Maintainer: Thomas Dreibholz <dreibh@iem.uni-due.de>
 Homepage: http://www.iem.uni-due.de/~dreibh/netperfmeter/
-Build-Depends: debhelper (>= 7.0.50~), autotools-dev, libsctp-dev (>= 1.0.5), libbz2-dev (>= 1.0)
+Build-Depends: autotools-dev,
+               debhelper (>= 7.0.50~),
+               libbz2-dev (>= 1.0),
+               libsctp-dev (>= 1.0.5)
 Standards-Version: 3.9.1
 
 Package: netperfmeter
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: traceroute, iputils-tracepath, iputils-ping, subnetcalc (>= 2.0.2)
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Recommends: iputils-ping,
+            iputils-tracepath,
+            subnetcalc (>= 2.0.2),
+            traceroute
 Description: Network Performance Meter
  NetPerfMeter is a network performance meter for the UDP,
  TCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
