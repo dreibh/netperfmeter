@@ -1,9 +1,34 @@
 #!/bin/sh
+# $Id: make-deb 2491 2011-02-02 14:18:35Z dreibh $
+#
+# Free Packaging Test Script
+# Copyright (C) 2010-2011 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+
+
+# #########################################################
+PACKAGE=netperfmeter
+# #########################################################
+
 
 if [ -e work ] ; then
    rm -rf work
 fi
-find . -name "*.tbz" | xargs rm
+find /usr/ports/packages -name "${PACKAGE}*.tbz" | xargs rm -f
 
 
 echo "1. ###### make deinstall ##############################################" && \
@@ -15,7 +40,7 @@ make package && \
 echo "4. ###### make deinstall ##############################################" && \
 make deinstall && \
 echo "5. ###### pkg_add #####################################################" && \
-pkg_add netperfmeter-*.tbz && \
+pkg_add /usr/ports/packages/All/${PACKAGE}-*.tbz && \
 echo "6. ###### make deinstall ##############################################" && \
 make deinstall && \
 echo "7. ###### make reinstall ##############################################" && \
@@ -23,4 +48,4 @@ make reinstall && \
 echo "8. ###### make package ################################################" && \
 make package && \
 echo "9. ###### tar tzvf *.tbz ##############################################" && \
-tar tzvf *.tbz
+tar tzvf /usr/ports/packages/All/${PACKAGE}-*.tbz
