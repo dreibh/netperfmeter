@@ -34,9 +34,9 @@ struct NetPerfMeterHeader
    uint16_t Length;
 } __attribute__((packed));
 
-#define PPID_NETPERFMETER_CONTROL   36   /* Old value: 0x29097605 */
-#define PPID_NETPERFMETER_DATA      37   /* Old value: 0x29097606 */
-#define SC_NETPERFMETER_DATA        0x29097606
+#define PPID_NETPERFMETER_CONTROL   36           /* Old value: 0x29097605 */
+#define PPID_NETPERFMETER_DATA      37           /* Old value: 0x29097606 */
+#define SC_NETPERFMETER_DATA        1852861808   /* Old value: 0x29097606 */
 
 
 #define NETPERFMETER_ACKNOWLEDGE    0x01
