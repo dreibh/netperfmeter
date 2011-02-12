@@ -6,7 +6,7 @@
 #
 
 PORTNAME=	netperfmeter
-PORTVERSION=	1.1.5
+PORTVERSION=	1.1.7
 CATEGORIES=	benchmarks
 MASTER_SITES=	http://www.iem.uni-due.de/~dreibh/netperfmeter/download/ http://www.exp-math.uni-essen.de/~dreibh/netperfmeter/download/
 
