@@ -18,7 +18,7 @@ if BUILD_PLOTTING_PROGRAMS
 nodist_bin_SCRIPTS  = plot-netperfmeter-results pdfmetadata pdfembedfonts
 nodist_man_MANS     = plot-netperfmeter-results.8 createsummary.8 combinesummaries.8 extractvectors.8 pdfmetadata.8 pdfembedfonts.8
 nodist_EXTRA_DIST   = plotter.R plot-netperfmeter-results.R
-nodist_pkgdata_DATA = plotter.R plot-netperfmeter-results.R
+# nodist_pkgdata_DATA = plotter.R plot-netperfmeter-results.R
 
 nodist_createsummary_SOURCES = createsummary.cc inputfile.h inputfile.cc outputfile.h outputfile.cc debug.h redblacktree.h redblacktree_impl.h simpleredblacktree.h simpleredblacktree.c
 createsummary_LDADD          = $(bz2_LIBS)

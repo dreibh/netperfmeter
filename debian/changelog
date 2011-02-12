@@ -1,9 +1,9 @@
-netperfmeter (1.1.6-0ubuntu1) natty; urgency=low
+netperfmeter (1.1.7-1ubuntu1) natty; urgency=low
 
   * New upstream version.
   * Changed package format to 3.0 (quilt).
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 11 Feb 2011 11:11:11 +0200
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sat, 12 Feb 2011 11:11:11 +0200
 
 
 netperfmeter (1.1.0-1ubuntu1) maverick; urgency=low
