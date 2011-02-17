@@ -17,7 +17,6 @@ GNU_CONFIGURE=	yes
 USE_GMAKE=	yes
 
 PLIST_FILES=	bin/netperfmeter
-
 MAN8=		netperfmeter.8
 
 LICENSE=	GPLv3
@@ -30,8 +29,5 @@ MAKE_JOBS_SAFE=	yes
 .if ${OSVERSION} < 700000
 IGNORE=	not supported on systems earlier than 7.x
 .endif
-
-post-install:
-	@${RMDIR} ${DATADIR}
 
 .include <bsd.port.post.mk>
