@@ -40,8 +40,10 @@ for file in $PACKAGING_FILES ; do
    if [ -e /usr/ports/$CATEGORY/$PACKAGE/$file -a -e $file ] ; then
       diff -uN /usr/ports/$CATEGORY/$PACKAGE/$file $file >>$PACKAGE.diff
    else
-      echo >&2 "ERROR: Unable to compare /usr/ports/$CATEGORY/$PACKAGE/$file and $file"
-      exit 1
+      if [ -e /usr/ports/$CATEGORY/$PACKAGE/$file ] ; then
+         echo >&2 "ERROR: Unable to compare /usr/ports/$CATEGORY/$PACKAGE/$file and $file"
+         exit 1
+      fi
    fi
 done
 
