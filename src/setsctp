@@ -38,10 +38,14 @@ while [ "$1" != "" ] ; do
    if [ "$1" = "cmt" ] ; then
       if [ "$2" = "off" ] ; then
          CMT=0
-      elif [ "$2" = "normal" ] ; then
+      elif [ "$2" = "cmt" -o "$2" = "normal" ] ; then
          CMT=1
-      elif [ "$2" = "rp" ] ; then
+      elif [ "$2" = "cmtrpv1" -o "$2" = "rp" ] ; then
          CMT=2
+      elif [ "$2" = "cmtrpv2" ] ; then
+         CMT=3
+      elif [ "$2" = "like-mptcp" ] ; then
+         CMT=4
       elif [ $2 -ge 2 -o $2 -lt 256 ] ; then
          CMT=$2
       else
@@ -109,12 +113,12 @@ while [ "$1" != "" ] ; do
 done
 
 
-# echo "SCTP Configuration:"
-# echo " - CMT:             $CMT"
-# echo " - DAC:             $DAC"
-# echo " - NRSACK:          $NRSACK"
-# echo " - BUFFERSPLITTING: $BUFFERSPLITTING"
-# echo " - CWND_MAXBURST:   $CWND_MAXBURST"
+echo "SCTP Configuration:"
+echo " - CMT:             $CMT"
+echo " - DAC:             $DAC"
+echo " - NRSACK:          $NRSACK"
+echo " - BUFFERSPLITTING: $BUFFERSPLITTING"
+echo " - CWND_MAXBURST:   $CWND_MAXBURST"
 
 
 success=1

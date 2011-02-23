@@ -21,7 +21,7 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [ID] [Source Network] [Destination Network] [Bandwidth in kbit/s] [Delay in ms] [Loss Rate] [Error Rate] [bidirectional]"
+   echo >&2 "Usage: $0 [ID] [Source Network] [Destination Network] [Bandwidth in kbit/s] [Delay in ms] [Loss Rate] [Error Rate] [bidirectional] {options} ..."
    exit 1
 fi
 
@@ -38,30 +38,65 @@ if [ "$3" != "" ] ; then
 else
    NETWORK_DST="0.0.0.0/0"
 fi
+QUEUE_TYPE=red
+FRAME_CAPACITY=80
+RED_MINTH=20
+RED_MAXTH=80
+RED_MAXP=0.02
+RED_WQ=0.002
 BANDWIDTH=""
 DELAY=""
 LOSS=""
 ERROR=""
 addRule=0
 bidirectionalQoS=0
-if [ "$4" != "" ] ; then
-   BANDWIDTH="$4"
-   addRule=1
-fi
-if [  "$5" != "" ] ; then
-   DELAY="$5"
-   addRule=1
-fi
-if [ "$6" != "" ] ; then
-   LOSS="$6"
-   addRule=1
-fi
-if [ "$7" != "" ] ; then
-   ERROR="$7"
-   addRule=1
-fi
-if [ "$8" = "true" -o "$8" = "bidirectional" ] ; then
-   bidirectionalQoS=1
+if [ $# -ge 4 ] ; then
+   if [ $# -lt 8 ] ; then
+     echo >&2 "ERROR: Too few arguments!"
+     exit 1
+   fi
+   if [ "$4" != "" ] ; then
+     BANDWIDTH="$4"
+     addRule=1
+   fi
+   if [  "$5" != "" ] ; then
+     DELAY="$5"
+     addRule=1
+   fi
+   if [ "$6" != "" ] ; then
+     LOSS="$6"
+     addRule=1
+   fi
+   if [ "$7" != "" ] ; then
+     ERROR="$7"
+     addRule=1
+   fi
+   if [ "$8" = "true" -o "$8" = "bidirectional" ] ; then
+      bidirectionalQoS=1
+   fi
+
+   shift ; shift ; shift ; shift ; shift ; shift ; shift ; shift
+   while [ "$1" != "" ] ; do      
+      if [ "$1" = "queueType" ] ; then
+         QUEUE_TYPE="$2"
+      elif [ "$1" = "redMinTh" ] ; then
+         RED_MINTH="$2"    
+      elif [ "$1" = "redMaxTh" ] ; then
+         RED_MAXTH="$2"     
+      elif [ "$1" = "redMaxP" ] ; then
+         RED_MAXP="$2"      
+      elif [ "$1" = "redWq" ] ; then
+         RED_WQ="$2"
+      elif [ "$1" = "frameCapacity" ] ; then
+         FRAME_CAPACITY="$2"
+      else
+         echo >&2 "ERROR: Invalid option $1!"
+         exit 1
+      fi
+      shift ; shift
+   done
+
+#   exit 1
 fi
 
 
@@ -141,7 +176,19 @@ elif [ "$SYSTEM" = "FreeBSD" ] ; then
             ERROR=""
          fi
       fi
-      queueParameters="queue 80 red 0.002/20/80/0.02"
+
+      queueParameters=
+      if [ "$QUEUE_TYPE" = "red" ] ; then
+         queueParameters="queue $FRAME_CAPACITY red $RED_WQ/$RED_MINTH/$RED_MAXTH/$RED_MAXP"
+      elif [ "$QUEUE_TYPE" = "fifo" ] ; then
+         queueParameters="queue $FRAME_CAPACITY"
+      else
+         echo >&2 "ERROR: Invalid queue type $QUEUE_TYPE!"
+         exit 1
+      fi
+
+      echo "XXX: $queueParameters ; ERR=$ERROR"
+
       /sbin/ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST || success=0
       /sbin/ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR $queueParameters || success=0
       if [ $bidirectionalQoS -eq 1 ] ; then
