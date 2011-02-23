@@ -132,8 +132,14 @@ void FlowTrafficSpec::print(std::ostream& os) const
       case NPAF_CMT:
          os << "(CMT)";
        break;
-      case NPAF_CMTRP:
-         os << "(CMT/RP)";
+      case NPAF_CMTRPv1:
+         os << "(CMT/RPv1)";
+       break;
+      case NPAF_CMTRPv2:
+         os << "(CMT/RPv2)";
+       break;
+      case NPAF_LikeMPTCP:
+         os << "(Like MPTCP)";
        break;
    }
    os << std::endl;

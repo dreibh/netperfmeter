@@ -758,7 +758,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
 
       if(trafficSpec.CMT == 0x00) {   /* Backward compatibility */
          if(addFlowMsg->Header.Flags & (NPMAF_USE_CMT|NPMAF_USE_RP)) {
-            trafficSpec.CMT = NPAF_CMTRP;
+            trafficSpec.CMT = NPAF_CMTRPv1;
          }
          else if(addFlowMsg->Header.Flags & NPMAF_USE_CMT) {
             trafficSpec.CMT = NPAF_CMT;

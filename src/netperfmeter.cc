@@ -247,12 +247,28 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          trafficSpec.CMT = NPAF_PRIMARY_PATH;
          n = 4 + 3;
       }
-      else if(strncmp((const char*)&parameters[4], "normal", 6) == 0) {
+      else if(strncmp((const char*)&parameters[4], "cmtrpv1", 7) == 0) {
+         trafficSpec.CMT = NPAF_CMTRPv1;
+         n = 4 + 7;
+      }
+      else if(strncmp((const char*)&parameters[4], "cmtrpv2", 7) == 0) {
+         trafficSpec.CMT = NPAF_CMTRPv2;
+         n = 4 + 7;
+      }
+      else if(strncmp((const char*)&parameters[4], "cmt", 3) == 0) {
+         trafficSpec.CMT = NPAF_CMT;
+         n = 4 + 3;
+      }
+      else if(strncmp((const char*)&parameters[4], "like-mptcp", 10) == 0) {
+         trafficSpec.CMT = NPAF_LikeMPTCP;
+         n = 4 + 10;
+      }
+      else if(strncmp((const char*)&parameters[4], "normal", 6) == 0) {   // Legacy: use "cmt"!
          trafficSpec.CMT = NPAF_CMT;
          n = 4 + 6;
       }
-      else if(strncmp((const char*)&parameters[4], "rp", 2) == 0) {
-         trafficSpec.CMT = NPAF_CMTRP;
+      else if(strncmp((const char*)&parameters[4], "rp", 2) == 0) {   // Legacy: use "cmtrpv1"!
+         trafficSpec.CMT = NPAF_CMTRPv1;
          n = 4 + 2;
       }
       else if(sscanf((const char*)&parameters[4], "%u%n", &cmt, &pos) == 1) {

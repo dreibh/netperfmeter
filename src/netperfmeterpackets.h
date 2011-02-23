@@ -107,7 +107,9 @@ struct NetPerfMeterAddFlowMessage
 
 #define NPAF_PRIMARY_PATH 0x00
 #define NPAF_CMT          0x01
-#define NPAF_CMTRP        0x02
+#define NPAF_CMTRPv1      0x02
+#define NPAF_CMTRPv2      0x03
+#define NPAF_LikeMPTCP    0x04
 
 
 struct NetPerfMeterRemoveFlowMessage
