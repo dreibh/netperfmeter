@@ -27,7 +27,7 @@ fi
 
 
 # ###### Variables ##########################################################
-Variables="Runtime Scenario Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst CMTCCVariant OptionDAC OptionNRSACK OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail Run"
+Variables="Runtime Scenario Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst CMTCCVariant OptionDAC OptionNRSACK OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail QueueTypeNorthernTrail FrameCapacityNorthernTrail RedMinThNorthernTrail RedMaxThNorthernTrail RedMaxPNorthernTrail RedWqNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail QueueTypeSouthernTrail FrameCapacitySouthernTrail RedMinThSouthernTrail RedMaxThSouthernTrail RedMaxPSouthernTrail RedWqSouthernTrail Run"
 
 # ###### Control ############################################################
 MaxTrials=10            # If something goes wrong, try again up to 10 times
@@ -37,6 +37,7 @@ PauseBetweenTrials=60   # If something goes wrong, retry after 60s
 Run_VALUES="1"
 Scenario_Values="TestLocal"
 Runtime_VALUES="60"
+
 Flows_VALUES="1"
 CompareWithReference_VALUES="false"
 ReferenceFlowProtocol_VALUES="SCTP"
@@ -47,23 +48,41 @@ Unordered_VALUES="0.0"
 Unreliable_VALUES="0.0"
 ReferenceUnordered_VALUES="-1"
 ReferenceUnreliable_VALUES="-1"
+
+CMTCCVariant_VALUES="off"
 SndBuf_VALUES="233016"
 RcvBuf_VALUES="233016"
 InitialCwnd_VALUES="3"
 CwndMaxBurst_VALUES="false"
-CMTCCVariant_VALUES="off"
 OptionDAC_VALUES="true"
 OptionNRSACK_VALUES="false"
 OptionBufferSplitting_VALUES="none"
 BidirectionalQoS_VALUES="false"
+
 RateNorthernTrail_VALUES="1000"
 DelayNorthernTrail_VALUES="0"
 LossNorthernTrail_VALUES="0"
 ErrorNorthernTrail_VALUES="0"
+
+QueueTypeNorthernTrail_VALUES="red"
+FrameCapacityNorthernTrail_VALUES="80"
+RedMinThNorthernTrail_VALUES="20"
+RedMaxThNorthernTrail_VALUES="80"
+RedMaxPNorthernTrail_VALUES="0.02"
+RedWqNorthernTrail_VALUES="0.002"
+
 RateSouthernTrail_VALUES="-1"
 DelaySouthernTrail_VALUES="-1"
 LossSouthernTrail_VALUES="-1"
-ErrorSouthernTrail_VALUES="-1"
+ErrorSouthernTrail_VALUES="0"
+
+QueueTypeSouthernTrail_VALUES="-1"
+FrameCapacitySouthernTrail_VALUES="-1"
+RedMinThSouthernTrail_VALUES="-1"
+RedMaxThSouthernTrail_VALUES="-1"
+RedMaxPSouthernTrail_VALUES="-1"
+RedWqSouthernTrail_VALUES="-1"
+
 
 
 # ###### Perform a single run with current variable settings ################
@@ -165,6 +184,31 @@ perform_run ()
          fi
 
          # ====== Configure QoS settings ====================================
+         SETTING_FrameCapacitySouthernTrail=$FrameCapacitySouthernTrail
+         if [ $SETTING_FrameCapacitySouthernTrail -eq -1 ] ; then
+            SETTING_FrameCapacitySouthernTrail=$FrameCapacityNorthernTrail
+         fi
+         SETTING_QueueTypeSouthernTrail=$QueueTypeSouthernTrail
+         if [ $SETTING_QueueTypeSouthernTrail -eq -1 ] ; then
+            SETTING_QueueTypeSouthernTrail=$QueueTypeNorthernTrail
+         fi
+         SETTING_RedMinThSouthernTrail=$RedMinThSouthernTrail
+         if [ $SETTING_RedMinThSouthernTrail -eq -1 ] ; then
+            SETTING_RedMinThSouthernTrail=$RedMinThNorthernTrail
+         fi
+         SETTING_RedMaxThSouthernTrail=$RedMaxThSouthernTrail
+         if [ $SETTING_RedMaxThSouthernTrail -eq -1 ] ; then
+            SETTING_RedMaxThSouthernTrail=$RedMaxThNorthernTrail
+         fi
+         SETTING_RedMaxPSouthernTrail=$RedMaxPSouthernTrail
+         if [ $SETTING_RedMaxPSouthernTrail -eq -1 ] ; then
+            SETTING_RedMaxPSouthernTrail=$RedMaxPNorthernTrail
+         fi
+         SETTING_RedWqSouthernTrail=$RedWqSouthernTrail
+         if [ $SETTING_RedWqSouthernTrail -eq -1 ] ; then
+            SETTING_RedWqSouthernTrail=$RedWqNorthernTrail
+         fi
+
          SETTING_RateSouthernTrail=$RateSouthernTrail
          if [ $SETTING_RateSouthernTrail -eq -1 ] ; then
             SETTING_RateSouthernTrail=$RateNorthernTrail
@@ -202,17 +246,24 @@ perform_run ()
             bufferSplitting $OptionBufferSplitting initialCwnd $InitialCwnd \
             cwndMaxBurst $CwndMaxBurst || success=0
 
-         echo -e "### $ROUTER_NORTH:\tsetqos 1 $NETWORK_NW $NETWORK_NE $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS"
+         echo -e "### $ROUTER_NORTH:\tsetqos 1 $NETWORK_NW $NETWORK_NE $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS queueType $QueueTypeNorthernTrail frameCapacity $FrameCapacityNorthernTrail redMinTh $RedMinThNorthernTrail redMaxTh $RedMaxThNorthernTrail redMaxP $RedMaxPNorthernTrail redWq $RedWqNorthernTrail"
+
          ssh $ROUTER_NORTH ~/src/netperfmeter/src/rootshell -chdir=src/netperfmeter/src/ \
             ./setqos 1 $NETWORK_NW $NETWORK_NE \
-            $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS || success=0
+            $RateNorthernTrail $DelayNorthernTrail $LossNorthernTrail $ErrorNorthernTrail $BidirectionalQoS \
+            queueType $QueueTypeNorthernTrail frameCapacity $FrameCapacityNorthernTrail \
+            redMinTh $RedMinThNorthernTrail redMaxTh $RedMaxThNorthernTrail \
+            redMaxP $RedMaxPNorthernTrail redWq $RedWqNorthernTrail || success=0
 
          if [ "$ROUTER_SOUTH" != "" ] ; then
-            echo -e "### $ROUTER_SOUTH:\tsetqos 1 $NETWORK_SW $NETWORK_SE $SETTING_RateSouthernTrail $SETTING_DelaySouthernTrail $SETTING_LossSouthernTrail $SETTING_ErrorSouthernTrail $BidirectionalQoS"
+            echo -e "### $ROUTER_SOUTH:\tsetqos 1 $NETWORK_SW $NETWORK_SE $SETTING_RateSouthernTrail $SETTING_DelaySouthernTrail $SETTING_LossSouthernTrail $SETTING_ErrorSouthernTrail $BidirectionalQoS queueType $SETTING_QueueTypeSouthernTrail frameCapacity $SETTING_FrameCapacitySouthernTrail redMinTh $SETTING_RedMinThSouthernTrail redMaxTh $SETTING_RedMaxThSouthernTrail redMaxP $SETTING_RedMaxPSouthernTrail redWq $SETTING_RedWqSouthernTrail"
             ssh $ROUTER_SOUTH ~/src/netperfmeter/src/rootshell -chdir=src/netperfmeter/src/ \
                ./setqos 1 $NETWORK_SW $NETWORK_SE \
                $SETTING_RateSouthernTrail $SETTING_DelaySouthernTrail \
-               $SETTING_LossSouthernTrail $SETTING_ErrorSouthernTrail $BidirectionalQoS || success=0
+               $SETTING_LossSouthernTrail $SETTING_ErrorSouthernTrail $BidirectionalQoS \
+               queueType $SETTING_QueueTypeSouthernTrail frameCapacity $SETTING_FrameCapacitySouthernTrail \
+               redMinTh $SETTING_RedMinThSouthernTrail redMaxTh $SETTING_RedMaxThSouthernTrail \
+               redMaxP $SETTING_RedMaxPSouthernTrail redWq $SETTING_RedWqSouthernTrail || success=0
          else
             echo -e "### NO SOUTHERN TRAIL"
          fi
