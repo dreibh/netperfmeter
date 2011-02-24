@@ -36,7 +36,7 @@ FrameSize_VALUES="const1444"   # DSL-MTU!
 Unordered_VALUES="1.0"   # !!!
 SndBuf_VALUES="1000000"
 RcvBuf_VALUES="500000"
-CMTCCVariant_VALUES="cmtrpv1"   # cmt
+CMTCCVariant_VALUES="cmt cmtrpv1"
 OptionNRSACK_VALUES="true"
 OptionBufferSplitting_VALUES="bothSides"
 
@@ -44,12 +44,12 @@ BidirectionalQoS_VALUES="true"
 CwndMaxBurst_VALUES="true"
 
 # First trail
-RateNorthernTrail_VALUES="100 1000 10000"
-# 800 1000 2000 3000 4000 5000 6000 7000 8000 9000 10000"
-DelayNorthernTrail_VALUES="10"
+RateNorthernTrail_VALUES="800 20000"
+DelayNorthernTrail_VALUES="50"
 LossNorthernTrail_VALUES="0"
 QueueTypeNorthernTrail_VALUES="fifo"      ## !!!
-FrameCapacityNorthernTrail_VALUES="100"   ## !!!
+FrameCapacityNorthernTrail_VALUES="10"   ## !!!
+
 # Second trail
 RateSouthernTrail_VALUES="800"
 DelaySouthernTrail_VALUES="26"

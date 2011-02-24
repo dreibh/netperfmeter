@@ -22,13 +22,24 @@
 
 OptionCMT=normal
 OptionDAC=on
-OptionNRSACK=off
+OptionNRSACK=on
 
-Bandwidth=10000
-Delay=0
-Loss=0
-Error=0
-Bidirectional=false
+NorthernTrailQueueType="fifo"
+NorthernTrailFrameCapacity=100
+NorthernTrailBandwidth=10000
+NorthernTrailDelay=2
+NorthernTrailLoss=0
+NorthernTrailError=0
+NorthernTrailBidirectional=true
+
+SouthernTrailQueueType="fifo"
+SouthernTrailFrameCapacity=100
+SouthernTrailBandwidth=800
+SouthernTrailDelay=26
+SouthernTrailLoss=0
+SouthernTrailError=0
+SouthernTrailBidirectional=true
+
 
 echo WEST:
                    ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK
@@ -36,6 +47,7 @@ echo EAST:
 ssh 132.252.153.18 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setsctp cmt $OptionCMT dac $OptionDAC nrsack $OptionNRSACK
 
 echo NORTH:
-ssh 132.252.153.9   ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 132.252.153.8/29 132.252.153.16/29    $Bandwidth $Delay $Loss $Error $Bidirectional
+ssh 132.252.153.9   ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 132.252.153.8/29 132.252.153.16/29    $NorthernTrailBandwidth $NorthernTrailDelay $NorthernTrailLoss $NorthernTrailError $NorthernTrailBidirectional queueType $NorthernTrailQueueType frameCapacity $NorthernTrailFrameCapacity
+
 echo SOUTH:
-ssh 132.252.153.137 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 132.252.153.136/29 132.252.153.144/29 $Bandwidth $Delay $Loss $Error $Bidirectional
+ssh 89.246.242.226 ~/src/netperfmeter/src/rootshell ~/src/netperfmeter/src/setqos 1 89.246.242.228/29 89.246.242.228/29 $SouthernTrailBandwidth $SouthernTrailDelay $SouthernTrailLoss $SouthernTrailError $SouthernTrailBidirectional queueType $SouthernTrailQueueType frameCapacity $SouthernTrailFrameCapacity
