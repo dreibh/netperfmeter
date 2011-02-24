@@ -191,7 +191,7 @@ perform_run ()
             SETTING_FrameCapacitySouthernTrail=$FrameCapacityNorthernTrail
          fi
          SETTING_QueueTypeSouthernTrail=$QueueTypeSouthernTrail
-         if [ $SETTING_QueueTypeSouthernTrail -eq -1 ] ; then
+         if [ "$SETTING_QueueTypeSouthernTrail" = "-1" ] ; then
             SETTING_QueueTypeSouthernTrail=$QueueTypeNorthernTrail
          fi
          SETTING_RedMinThSouthernTrail=$RedMinThSouthernTrail
