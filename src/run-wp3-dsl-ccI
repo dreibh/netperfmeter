@@ -24,11 +24,11 @@ Directory="wp3-dsl-ccI"
 . ./measure-version2
 
 
-Run_VALUES="1"
-Scenario_VALUES="DisjointPaths"
-Runtime_VALUES="60"
+Run_VALUES="1 2 3"
+Scenario_VALUES="Burgsteinfurt"
+Runtime_VALUES="300"
 Flows_VALUES="1"
-CompareWithReference_VALUES="false"
+CompareWithReference_VALUES="true"
 ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
@@ -36,7 +36,8 @@ FrameSize_VALUES="const1444"   # DSL-MTU!
 Unordered_VALUES="1.0"   # !!!
 SndBuf_VALUES="1000000"
 RcvBuf_VALUES="500000"
-CMTCCVariant_VALUES="cmt cmtrpv1"
+# CMTCCVariant_VALUES="cmtrpv2"
+CMTCCVariant_VALUES="cmt cmtrpv1 cmtrpv2"
 OptionNRSACK_VALUES="true"
 OptionBufferSplitting_VALUES="bothSides"
 
@@ -44,15 +45,15 @@ BidirectionalQoS_VALUES="true"
 CwndMaxBurst_VALUES="true"
 
 # First trail
-RateNorthernTrail_VALUES="800 20000"
-DelayNorthernTrail_VALUES="50"
+RateNorthernTrail_VALUES="800 10000 20000"
+DelayNorthernTrail_VALUES="2"
 LossNorthernTrail_VALUES="0"
-QueueTypeNorthernTrail_VALUES="fifo"      ## !!!
-FrameCapacityNorthernTrail_VALUES="10"   ## !!!
+QueueTypeNorthernTrail_VALUES="red"      ## !!!
+FrameCapacityNorthernTrail_VALUES="100"   ## !!!
 
 # Second trail
-RateSouthernTrail_VALUES="800"
-DelaySouthernTrail_VALUES="26"
+RateSouthernTrail_VALUES="0"
+DelaySouthernTrail_VALUES="0"
 LossSouthernTrail_VALUES="0"
 QueueTypeSouthernTrail_VALUES="fifo"   ## !!!
 FrameCapacityNorthernTrail_VALUES="100"   ## !!!

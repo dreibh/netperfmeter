@@ -25,7 +25,7 @@ OptionDAC=on
 OptionNRSACK=on
 
 NorthernTrailQueueType="fifo"
-NorthernTrailFrameCapacity=100
+NorthernTrailFrameCapacity=20
 NorthernTrailBandwidth=10000
 NorthernTrailDelay=2
 NorthernTrailLoss=0
