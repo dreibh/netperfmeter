@@ -27,7 +27,7 @@ fi
 
 
 # ###### Variables ##########################################################
-Variables="Runtime Scenario Flows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst CMTCCVariant OptionDAC OptionNRSACK OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail QueueTypeNorthernTrail FrameCapacityNorthernTrail RedMinThNorthernTrail RedMaxThNorthernTrail RedMaxPNorthernTrail RedWqNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail QueueTypeSouthernTrail FrameCapacitySouthernTrail RedMinThSouthernTrail RedMaxThSouthernTrail RedMaxPSouthernTrail RedWqSouthernTrail Run"
+Variables="Runtime Scenario Flows ReferenceFlows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst CMTCCVariant OptionDAC OptionNRSACK OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail QueueTypeNorthernTrail FrameCapacityNorthernTrail RedMinThNorthernTrail RedMaxThNorthernTrail RedMaxPNorthernTrail RedWqNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail QueueTypeSouthernTrail FrameCapacitySouthernTrail RedMinThSouthernTrail RedMaxThSouthernTrail RedMaxPSouthernTrail RedWqSouthernTrail Run"
 
 # ###### Control ############################################################
 MaxTrials=10            # If something goes wrong, try again up to 10 times
@@ -39,6 +39,7 @@ Scenario_Values="TestLocal"
 Runtime_VALUES="60"
 
 Flows_VALUES="1"
+ReferenceFlows_VALUES="1"
 CompareWithReference_VALUES="false"
 ReferenceFlowProtocol_VALUES="SCTP"
 OnlyOneAssoc_VALUES="true"
@@ -315,7 +316,7 @@ perform_run ()
                fi
                local n=0
                local id=1001
-               while [ $n -lt $Flows ] ; do
+               while [ $n -lt $ReferenceFlows ] ; do
                   command="$command $protocolSelector $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$SETTING_ReferenceUnordered:unreliable=$SETTING_ReferenceUnreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=off "
                   n=$(($n+1))
                   id=$(($id+1))
@@ -456,6 +457,7 @@ make_runs ()
       done
       echo ""
 
+echo $runLabel
       local runHash="`echo $runLabel | $MD5 | awk '{ print zz $1 }'`"
       local runDirectory="$Directory/Run-$runHash"
       local runStatus="$runDirectory/status.txt"
