@@ -24,7 +24,7 @@ Directory="wp3-dsl-ccI"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3"
+Run_VALUES="1 2 3 4"
 Scenario_VALUES="Burgsteinfurt"
 Runtime_VALUES="300"
 Flows_VALUES="1"
@@ -45,7 +45,7 @@ BidirectionalQoS_VALUES="true"
 CwndMaxBurst_VALUES="true"
 
 # First trail
-RateNorthernTrail_VALUES="800 10000 20000"
+RateNorthernTrail_VALUES="800 2500 5000 7500 10000 12500 15000 17500 20000"
 DelayNorthernTrail_VALUES="2"
 LossNorthernTrail_VALUES="0"
 QueueTypeNorthernTrail_VALUES="red"      ## !!!
@@ -56,7 +56,7 @@ RateSouthernTrail_VALUES="0"
 DelaySouthernTrail_VALUES="0"
 LossSouthernTrail_VALUES="0"
 QueueTypeSouthernTrail_VALUES="fifo"   ## !!!
-FrameCapacityNorthernTrail_VALUES="100"   ## !!!
+# FrameCapacitySouthernTrail_VALUES="100"   ## !!!
 
 
 perform_measurements

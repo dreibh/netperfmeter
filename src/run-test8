@@ -24,12 +24,13 @@ Directory="test8"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3 4 5 6"
+Run_VALUES="1"
 Scenario_VALUES="Burgsteinfurt"
 Runtime_VALUES="60"
 Flows_VALUES="1"
+ReferenceFlows_VALUES="1"
 CompareWithReference_VALUES="true"
-ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
+ReferenceFlowProtocol_VALUES="TCP"   ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Protokoll für Referenzstrom
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1444"   # DSL-MTU!
@@ -37,7 +38,6 @@ Unordered_VALUES="1.0"   # !!!
 SndBuf_VALUES="1000000"
 RcvBuf_VALUES="500000"
 CMTCCVariant_VALUES="cmt cmtrpv1 cmtrpv2"
-# CMTCCVariant_VALUES="cmt cmtrpv1 cmtrpv2"
 OptionNRSACK_VALUES="true"
 OptionBufferSplitting_VALUES="bothSides"
 
@@ -45,25 +45,24 @@ BidirectionalQoS_VALUES="true"
 CwndMaxBurst_VALUES="true"
 
 # First trail
-RateNorthernTrail_VALUES="800 10000 20000"
-DelayNorthernTrail_VALUES="0"
+RateNorthernTrail_VALUES="800 20000"
+DelayNorthernTrail_VALUES="2"
 LossNorthernTrail_VALUES="0"
+QueueTypeNorthernTrail_VALUES="red"      ## !!!
+#FrameCapacityNorthernTrail_VALUES="20"   ## !!!
 
-QueueTypeNorthernTrail_VALUES="fifo"      ## !!!
+RedMinThNorthernTrail_VALUES="20"
+RedMaxThNorthernTrail_VALUES="80"
+RedMaxPNorthernTrail_VALUES="0.01"
+RedWqNorthernTrail_VALUES="0.002"
 
-FrameCapacityNorthernTrail_VALUES="10"   ## !!!
-
-# RedMinThNorthernTrail_VALUES="30"
-# RedMaxThNorthernTrail_VALUES="90"
-# RedMaxPNorthernTrail_VALUES="0.01"
-# RedWqNorthernTrail_VALUES="0.002"
 
 # Second trail
-RateSouthernTrail_VALUES="0"
-DelaySouthernTrail_VALUES="0"
-LossSouthernTrail_VALUES="0"
-QueueTypeSouthernTrail_VALUES="fifo"   ## !!!
-FrameCapacitySouthernTrail_VALUES="100"   ## !!!
+# RateSouthernTrail_VALUES="800"
+# DelaySouthernTrail_VALUES="28"
+# LossSouthernTrail_VALUES="0"
+# QueueTypeSouthernTrail_VALUES="fifo"      ## !!!
+# FrameCapacitySouthernTrail_VALUES="100"   ## !!!
 
 
 perform_measurements
