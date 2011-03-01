@@ -122,11 +122,11 @@ CPUStatus::CPUStatus()
 // ###### Destructor ########################################################
 CPUStatus::~CPUStatus()
 {
-   delete CpuTimes;
+   free(CpuTimes);
    CpuTimes = NULL;
-   delete OldCpuTimes;
+   free(OldCpuTimes);
    OldCpuTimes = NULL;
-   delete Percentages;
+   free(Percentages);
    Percentages = NULL;
 #ifdef __linux__
    fclose(ProcStatFD);
