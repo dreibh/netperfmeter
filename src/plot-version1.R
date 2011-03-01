@@ -35,6 +35,8 @@ netPerfMeterPlotVariables <- list(
    # ------------------------------------------------------------------------
 
    list("Flows",                 "Number of Flows{n}[1]"),
+   list("Reference Flows",       "Number of Reference Flows{n}[1]"),
+   list("ReferenceFlowProtocol", "Reference Flow Protocol{P}"),
    list("OnlyOneAssoc",          "Only One Assoc{A}"),
    list("Unordered",             "Unordered{U}"),
    list("CMTCCVariant",          "CMT{:G:}"),

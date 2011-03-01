@@ -24,12 +24,12 @@ Directory="wp3-dsl-ccI"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3 4"
+Run_VALUES="1 2 3 4 5"
 Scenario_VALUES="Burgsteinfurt"
 Runtime_VALUES="300"
 Flows_VALUES="1"
 CompareWithReference_VALUES="true"
-ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
+ReferenceFlowProtocol_VALUES="SCTP TCP"   # Protokoll für Referenzstrom
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1444"   # DSL-MTU!
@@ -37,7 +37,7 @@ Unordered_VALUES="1.0"   # !!!
 SndBuf_VALUES="1000000"
 RcvBuf_VALUES="500000"
 # CMTCCVariant_VALUES="cmtrpv2"
-CMTCCVariant_VALUES="cmt cmtrpv1 cmtrpv2"
+CMTCCVariant_VALUES="cmt cmtrpv1 cmtrpv2 like-mptcp"
 OptionNRSACK_VALUES="true"
 OptionBufferSplitting_VALUES="bothSides"
 
