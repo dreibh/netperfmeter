@@ -10,7 +10,7 @@ source("plot-version1.R")
 plotColorMode        <- cmColor
 plotHideLegend       <- FALSE
 plotLegendSizeFactor <- 0.8
-plotOwnOutput        <- FALSE
+plotOwnOutput        <- TRUE
 plotFontFamily       <- "Helvetica"
 plotFontPointsize    <- 22
 plotWidth            <- 10
@@ -30,7 +30,7 @@ plotConfigurations <- list(
    #      "a-Axis Variable", "b-Axis Variable", "p-Axis Variable")
    # ------------------------------------------------------------------------
 
-   list("wp3-dsl-ccI", "NetPerfMeterPaper-wp3-dsl-ccI-SCTP-Main-SCTP.pdf",
+   list("wp3-dsl-ccI", "NetPerfMeterPaper-wp3-dsl-ccI-SCTP-Main.pdf",
         "CMT-SCTP Flow", seq(0,20,2), seq(0,16,2), list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
@@ -47,7 +47,7 @@ plotConfigurations <- list(
          (data1$passive.flow == 1001)",
         "vSortAscending<-FALSE"),
 
-   list("wp3-dsl-ccI", "NetPerfMeterPaper-wp3-dsl-ccI-TCP-Main-TCP.pdf",
+   list("wp3-dsl-ccI", "NetPerfMeterPaper-wp3-dsl-ccI-TCP-Main.pdf",
         "CMT-SCTP Flow", seq(0,20,2), seq(0,16,2), list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
