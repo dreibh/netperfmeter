@@ -210,8 +210,10 @@ void CPUStatus::update()
       tick_t diff[CpuStates];
       for(j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
-         diff[j] = CpuTimes[index] - OldCpuTimes[index];
-         if(diff[j] < 0) {   // Counter wrap!
+         if(CpuTimes[index] >= OldCpuTimes[index]) {
+            diff[j] = CpuTimes[index] - OldCpuTimes[index];
+         }
+         else {   // Counter wrap!
             diff[j] = OldCpuTimes[index] - CpuTimes[index];
          }
          diffTotal += diff[j];
@@ -219,6 +221,7 @@ void CPUStatus::update()
       for(j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
          Percentages[index] = 100.0 * (float)diff[j] / (float)diffTotal;
+         assert( (Percentages[index] >= 0.0) && (Percentages[index] <= 100.0) );
       }
    }
 }
