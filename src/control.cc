@@ -877,8 +877,8 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
 
    if(gOutputVerbosity >= NPFOV_STATUS) {
       std::cout << std::endl << "Stopping measurement "
-               << format("$%llx", (unsigned long long)measurementID)
-               << " ..." << std::endl;
+                << format("$%llx", (unsigned long long)measurementID)
+                << " ..." << std::endl;
    }
 
    // ====== Stop flows =====================================================
@@ -921,6 +921,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
             uploadOutputFile(controlSocket, assocID, measurement->getScalarFile());
          }
       }
+      printf("delete1=%p\n", measurement);
       delete measurement;
    }
    return(true);
@@ -938,6 +939,7 @@ static void handleControlAssocShutdown(const sctp_assoc_t assocID)
       if(flow->getRemoteControlAssocID() == assocID) {
          Measurement* measurement = flow->getMeasurement();
          if(measurement) {
+            printf("delete2=%p\n", measurement);
             delete measurement;
          }
          delete flow;
