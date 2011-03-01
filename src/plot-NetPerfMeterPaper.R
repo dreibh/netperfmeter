@@ -69,6 +69,9 @@ plotConfigurations <- list(
 
 # ------ Variable templates -------------------------------------------------
 plotVariables <- append(netPerfMeterPlotVariables, list(
+   list("CMTCCVariant", "Congestion Control Variant{:Gamma:}"),
+   list("RateNorthernTrail-Mbit",
+           "Data Rate on DFN Path{:rho[DFN]:}[Mbit/s]", "data1$RateNorthernTrail / 1000"),
    list("passive.flow-ReceivedBitRate-Mbit",
            "Application Payload Throughput[Mbit/s]",
            "8 * data1$passive.flow.ReceivedByteRate / 1000000",
