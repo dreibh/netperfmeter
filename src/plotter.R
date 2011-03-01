@@ -1,7 +1,7 @@
 # $Id$
 # ###########################################################################
 #             Thomas Dreibholz's R Simulation Scripts Collection
-#                  Copyright (C) 2005-2011 Thomas Dreibholz
+#                  Copyright (C) 2005-2010 Thomas Dreibholz
 #
 #               Author: Thomas Dreibholz, dreibh@iem.uni-due.de
 # ###########################################################################
@@ -121,13 +121,22 @@ removeSpaceRegExpr <- "([[:space:]]*)([^ ]*)([[:space:]]*)"
 expressionExpr <- ":([^:]*):"
 
 
+# ====== Strip whitespaces from front and back of string ====================
+trim <- function(str)
+{
+   str <- sub("^ +", "", str)
+   str <- sub(" +$", "", str)
+   return(str)
+}
+
+
 # ====== Extract variable from axis title ===================================
 getVariable <- function(title)
 {
    result <- sub(titleRegExpr, "\\1", title)
    e <- sub(expressionExpr, "\\1", result)
    if(e == result) {
-      return(paste(sep="", "paste(\"", result, "\")"))
+      return(paste(sep="", "paste(\"", trim(result), "\")"))
    }
    return(e)
 }
@@ -142,7 +151,7 @@ getAbbreviation <- function(title)
    }
    e <- sub(expressionExpr, "\\1", result)
    if(e == result) {
-      return(paste(sep="", "paste(\"", result, "\")"))
+      return(paste(sep="", "paste(\"", trim(result), "\")"))
    }
    return(e)
 }
@@ -154,7 +163,7 @@ getUnit <- function(title)
    result <- sub(titleRegExpr, "\\6", title)
    e <- sub(expressionExpr, "\\1", result)
    if(e == result) {
-      return(paste(sep="", "paste(\"", result, "\")"))
+      return(paste(sep="", "\"", trim(result), "\""))
    }
    return(e)
 }
@@ -167,7 +176,7 @@ getLabel <- function(title)
    if(getAbbreviation(title) != getVariable(title)) {
       label <- paste(sep="", "paste(sep=\"\", ", label, ", \" \", ", getAbbreviation(title), ")")
    }
-   if(getUnit(title) != "paste(\"\")") {   # unit is "empty string expression"
+   if(getUnit(title) != "\"\"") {   # unit is "empty string expression"
       label <- paste(sep="", "paste(sep=\"\", ", label, ", \" [\", ", getUnit(title), ", \"]\")")
    }
 
@@ -303,44 +312,45 @@ hbarHandlingSpeedAggregator <- function(xSet, ySet, hbarSet, zValue, confidence)
 plotstd3 <- function(mainTitle,
                      xTitle, yTitle, zTitle,
                      xSet, ySet, zSet,
-                     vSet              = c(),
-                     wSet              = c(),
-                     vTitle            = "??vTitle??",
-                     wTitle            = "??wTitle??",
-                     xAxisTicks        = c(),
-                     yAxisTicks        = c(),
-                     type              = "lines",
-                     confidence        = 0.95,
-                     legendPos         = c(0,1),
-                     legendSize        = 0.8,
-                     colorMode         = cmColor,
-                     frameColor        = par("fg"),
-                     zColorArray       = c(),
-                     zSortAscending    = TRUE,
-                     vSortAscending    = TRUE,
-                     wSortAscending    = TRUE,
-                     dotSet            = c(),
-                     dotScaleFactor    = 2,
-                     hbarSet           = c(),
-                     hbarMeanSteps     = 10,
-                     hbarAggregator    = hbarDefaultAggregator,
-                     xSeparatorsSet    = c(),
-                     xSeparatorsTitles = c(),
-                     xSeparatorsColors = c(),
-                     rangeSet          = c(),
-                     rangeColors       = c(),
-                     hideLegend        = FALSE,
-                     legendOnly        = FALSE,
-                     enumerateLines    = FALSE,
-                     xValueFilter      = "%s",
-                     yValueFilter      = "%s",
-                     zValueFilter      = "%s",
-                     vValueFilter      = "%s",
-                     wValueFilter      = "%s",
-                     writeMetadata     = TRUE,
-                     largeMargins      = FALSE,
-                     aLevels           = 1,
-                     bLevels           = 1)
+                     vSet                 = c(),
+                     wSet                 = c(),
+                     vTitle               = "??vTitle??",
+                     wTitle               = "??wTitle??",
+                     xAxisTicks           = c(),
+                     yAxisTicks           = c(),
+                     type                 = "lines",
+                     confidence           = 0.95,
+                     legendPos            = c(0,1),
+                     legendSize           = 0.8,
+                     lineWidthScaleFactor = 1.0,
+                     colorMode            = cmColor,
+                     frameColor           = par("fg"),
+                     zColorArray          = c(),
+                     zSortAscending       = TRUE,
+                     vSortAscending       = TRUE,
+                     wSortAscending       = TRUE,
+                     dotSet               = c(),
+                     dotScaleFactor       = 2,
+                     hbarSet              = c(),
+                     hbarMeanSteps        = 10,
+                     hbarAggregator       = hbarDefaultAggregator,
+                     xSeparatorsSet       = c(),
+                     xSeparatorsTitles    = c(),
+                     xSeparatorsColors    = c(),
+                     rangeSet             = c(),
+                     rangeColors          = c(),
+                     hideLegend           = FALSE,
+                     legendOnly           = FALSE,
+                     enumerateLines       = FALSE,
+                     xValueFilter         = "%s",
+                     yValueFilter         = "%s",
+                     zValueFilter         = "%s",
+                     vValueFilter         = "%s",
+                     wValueFilter         = "%s",
+                     writeMetadata        = TRUE,
+                     largeMargins         = FALSE,
+                     aLevels              = 1,
+                     bLevels              = 1)
 {
    xLevels <- levels(factor(xSet))
    yLevels <- levels(factor(ySet))
@@ -571,9 +581,9 @@ plotstd3 <- function(mainTitle,
                   xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
                   ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
                   if(length(xSubset) > 0) {
-                     lineWidth <- 5
+                     lineWidth <- 5*lineWidthScaleFactor
                      if((length(vLevels) > 1) || (length(wLevels) > 1)) {
-                        lineWidth <- 3
+                        lineWidth <- 3*lineWidthScaleFactor
                      }
 
                      if((type == "lx") || (type=="linesx")) {
@@ -638,9 +648,9 @@ plotstd3 <- function(mainTitle,
 
                   # ------ Plot line and confidence intervals ---------------
                   if(length(xPlotSet) > 0) {
-                     lineWidth <- 5
+                     lineWidth <- 5*lineWidthScaleFactor
                      if((length(vLevels) > 1) || (length(wLevels) > 1)) {
-                        lineWidth <- 3
+                        lineWidth <- 3*lineWidthScaleFactor
                      }
                      if((type == "l") || (type=="lines")) {
                         lines(xPlotSet, yPlotMeanSet,
@@ -1011,34 +1021,35 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel,
 # ====== Multi-page 2-dimensional array of plotstd3 plots ===================
 plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                      pSet, aSet, bSet, xSet, ySet, zSet,
-                     vSet              = c(),
-                     wSet              = c(),
-                     vTitle            = "??vTitle??",
-                     wTitle            = "??wTitle??",
-                     type              = "lines",
-                     confidence        = 0.95,
-                     legendPos         = c(0,1),
-                     legendSize        = 0.8,
-                     colorMode         = cmColor,
-                     zColorArray       = c(),
-                     xAxisTicks        = c(),
-                     yAxisTicks        = c(),
-                     zSortAscending    = TRUE,
-                     vSortAscending    = TRUE,
-                     wSortAscending    = TRUE,
-                     dotSet            = c(),
-                     dotScaleFactor    = 2,
-                     hbarSet           = c(),
-                     hbarMeanSteps     = 10,
-                     xSeparatorsSet    = c(),
-                     xSeparatorsTitles = c(),
-                     xSeparatorsColors = c(),
-                     rangeSet          = c(),
-                     rangeColors       = c(),
-                     enumerateLines    = FALSE,
-                     pStart            = 0,
-                     hideLegend        = FALSE,
-                     frameColor        = par("fg"))
+                     vSet                 = c(),
+                     wSet                 = c(),
+                     vTitle               = "??vTitle??",
+                     wTitle               = "??wTitle??",
+                     type                 = "lines",
+                     confidence           = 0.95,
+                     legendPos            = c(0,1),
+                     legendSize           = 0.8,
+                     lineWidthScaleFactor = 1.0,
+                     colorMode            = cmColor,
+                     zColorArray          = c(),
+                     xAxisTicks           = c(),
+                     yAxisTicks           = c(),
+                     zSortAscending       = TRUE,
+                     vSortAscending       = TRUE,
+                     wSortAscending       = TRUE,
+                     dotSet               = c(),
+                     dotScaleFactor       = 2,
+                     hbarSet              = c(),
+                     hbarMeanSteps        = 10,
+                     xSeparatorsSet       = c(),
+                     xSeparatorsTitles    = c(),
+                     xSeparatorsColors    = c(),
+                     rangeSet             = c(),
+                     rangeColors          = c(),
+                     enumerateLines       = FALSE,
+                     pStart               = 0,
+                     hideLegend           = FALSE,
+                     frameColor           = par("fg"))
 {
    if(length(pSet) == 0) {
       pSet <- rep(1, length(xSet))
@@ -1102,33 +1113,34 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         xTitle, yTitle, zTitle,
                         xSubset, ySubset, zSubset,
                         vSubset, wSubset, vTitle, wTitle,
-                        zSortAscending    = zSortAscending,
-                        vSortAscending    = vSortAscending,
-                        wSortAscending    = wSortAscending,
-                        dotSet            = dotSet,
-                        dotScaleFactor    = dotScaleFactor,
-                        xAxisTicks        = xAxisTicks,
-                        yAxisTicks        = yAxisTicks,
-                        confidence        = confidence,
-                        hbarSet           = hbarSet,
-                        hbarMeanSteps     = hbarMeanSteps,
-                        xSeparatorsSet    = xSeparatorsSet,
-                        xSeparatorsTitles = xSeparatorsTitles,
-                        xSeparatorsColors = xSeparatorsColors,
-                        rangeSet          = rangeSet,
-                        rangeColors       = rangeColors,
-                        enumerateLines    = enumerateLines,
-                        type              = type,
-                        hideLegend        = hideLegend,
-                        legendSize        = legendSize,
-                        legendPos         = legendPos,
-                        colorMode         = colorMode,
-                        zColorArray       = zColorArray,
-                        frameColor        = frameColor,
-                        writeMetadata     = FALSE,
-                        largeMargins      = useLargeMargins,
-                        aLevels           = length(aLevels),
-                        bLevels           = length(bLevels),
+                        zSortAscending       = zSortAscending,
+                        vSortAscending       = vSortAscending,
+                        wSortAscending       = wSortAscending,
+                        dotSet               = dotSet,
+                        dotScaleFactor       = dotScaleFactor,
+                        xAxisTicks           = xAxisTicks,
+                        yAxisTicks           = yAxisTicks,
+                        confidence           = confidence,
+                        hbarSet              = hbarSet,
+                        hbarMeanSteps        = hbarMeanSteps,
+                        xSeparatorsSet       = xSeparatorsSet,
+                        xSeparatorsTitles    = xSeparatorsTitles,
+                        xSeparatorsColors    = xSeparatorsColors,
+                        rangeSet             = rangeSet,
+                        rangeColors          = rangeColors,
+                        enumerateLines       = enumerateLines,
+                        type                 = type,
+                        hideLegend           = hideLegend,
+                        legendSize           = legendSize,
+                        legendPos            = legendPos,
+                        lineWidthScaleFactor = lineWidthScaleFactor,
+                        colorMode            = colorMode,
+                        zColorArray          = zColorArray,
+                        frameColor           = frameColor,
+                        writeMetadata        = FALSE,
+                        largeMargins         = useLargeMargins,
+                        aLevels              = length(aLevels),
+                        bLevels              = length(bLevels),
                         (singlePlotTitle == "")) < 1) {   # see below
                # If singlePlotTitle=="", we have multiple std3 plots on the
                # same page. Then, larger margins have to be used by plotstd3().
@@ -1491,13 +1503,19 @@ applyManipulator <- function(manipulator, inputDataTable, columnName, filter)
          result <- c()
       }
    }
+   if(length(levels(factor(result))) == 0) {
+      result <- c()
+   }
 
    return(result)
 }
 
 
 # ====== Create plots =======================================================
-createPlots <- function(simulationDirectory, plotConfigurations, customFilter="")
+createPlots <- function(simulationDirectory,
+                        plotConfigurations,
+                        customFilter="",
+                        zColorArray=c())
 {
    inputDirectorySet <- c()
    inputFileSet      <- c()
@@ -1770,6 +1788,7 @@ createPlots <- function(simulationDirectory, plotConfigurations, customFilter=""
                rangeColors    = rangeColors,
                type           = "lines",
                frameColor     = frameColor,
+               zColorArray    = zColorArray,
                legendSize     = plotLegendSizeFactor,
                confidence     = plotConfidence,
                colorMode      = plotColorMode,

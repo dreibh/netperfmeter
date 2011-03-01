@@ -69,16 +69,11 @@ plotConfigurations <- list(
 
 # ------ Variable templates -------------------------------------------------
 plotVariables <- append(netPerfMeterPlotVariables, list(
-#    list("RateNorthernTrail-Mbit",
-#            "Bandwidth on High-Speed Path{:beta:}[Mbit/s]",
-#            "data1$RateNorthernTrail / 1000"),
-#    list("passive.flow-ReceivedBitRate-Mbit",
-#            "CMT-SCTP Payload Throughput [Mbit/s]",
-#            "8 * data1$passive.flow.ReceivedByteRate / 1000000",
-#            "blue4",
-#            list("passive.flow-ReceivedByteRate")),
-#    list("OptionBufferSplitting", "Buffer Splitting{:Pi:}"),
-#    list("OptionNRSACK",          "Use NR-SACK{:rho:}")
+   list("passive.flow-ReceivedBitRate-Mbit",
+           "Application Payload Throughput[Mbit/s]",
+           "8 * data1$passive.flow.ReceivedByteRate / 1000000",
+           "blue4",
+           list("passive.flow-ReceivedByteRate"))
 ))
 
 # ###########################################################################
