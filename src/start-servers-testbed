@@ -23,7 +23,7 @@
 make -j2 || exit 1
 
 # Disjoint Paths
-nohup ./netperfmeter 7010 -verbosity=0 -local=132.252.153.18,132.252.153.146 >server-DisjointPaths.log 2>&1 &
+nohup ./netperfmeter 7010 -verbosity=0 -local=132.252.153.18,89.246.242.230 >server-DisjointPaths.log 2>&1 &
 
 # Shared Bottleneck
 nohup ./netperfmeter 7020 -verbosity=0 -local=132.252.153.18,132.252.153.22 >server-SharedBottleneck.log 2>&1 &
