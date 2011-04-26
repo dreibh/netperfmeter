@@ -24,12 +24,12 @@ Directory="wp3-dsl-ccII"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3 4"
+Run_VALUES="1 2 3"
 Scenario_VALUES="Burgsteinfurt"
-Runtime_VALUES="60"   # !!!
+Runtime_VALUES="900"   # !!!
 Flows_VALUES="1"
 CompareWithReference_VALUES="true"
-ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
+ReferenceFlowProtocol_VALUES="TCP"   # Protokoll für Referenzstrom
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1444"   # DSL-MTU!
@@ -45,7 +45,8 @@ BidirectionalQoS_VALUES="true"
 CwndMaxBurst_VALUES="true"
 
 # First trail
-RateNorthernTrail_VALUES="200 250 300 350 400 800 1000 2000"
+#RateNorthernTrail_VALUES="100 400 600 700 750 800 900 1000 1100 1200 1300 1400 1600 2000 3000 4000 5000"
+RateNorthernTrail_VALUES="1000 1200 1400 1600 2000 2200 2400 2600"
 DelayNorthernTrail_VALUES="28"
 LossNorthernTrail_VALUES="0"
 QueueTypeNorthernTrail_VALUES="red"      ## !!!

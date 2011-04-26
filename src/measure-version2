@@ -157,6 +157,7 @@ perform_run ()
 
          elif [ "$Scenario" = "Burgsteinfurt" ] ; then
             HOST_EAST="212.201.121.87"   #   DFN=212.201.121.87   DSL=87.139.124.106
+#            HOST_EAST="87.139.124.106"   #   DFN=212.201.121.87   DSL=87.139.124.106
             ROUTER_NORTH="132.252.153.9"
             NETWORK_NW="132.252.153.8/29"
             NETWORK_NE="212.201.121.87/27"
