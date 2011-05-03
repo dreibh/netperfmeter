@@ -1,3 +1,10 @@
+netperfmeter (1.1.8-0ubuntu1) natty; urgency=low
+
+  * New upstream version.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 01 Mar 2011 08:08:08 +0200
+
+
 netperfmeter (1.1.7-1ubuntu1) natty; urgency=low
 
   * New upstream version.
