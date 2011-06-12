@@ -31,7 +31,7 @@ plotConfigurations <- list(
    # ------------------------------------------------------------------------
 
    list("wp3-dsl-ccI", "NetPerfMeterPaper-wp3-dsl-ccI-SCTP-Main.pdf",
-        "CMT-SCTP Flow", seq(0,20,2), seq(0,18,2), list(0,1),
+        "CMT-SCTP Flow", seq(0,20,2), seq(0,16,2), list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
         "passive.flow", "ReferenceFlowProtocol", "",
@@ -39,7 +39,7 @@ plotConfigurations <- list(
          (data1$passive.flow == 1)",
         "vSortAscending<-FALSE"),
    list("wp3-dsl-ccI", "NetPerfMeterPaper-wp3-dsl-ccI-SCTP-Reference.pdf",
-        "SCTP Reference Flow", seq(0,20,2), seq(0,18,2), list(0,1),
+        "SCTP Reference Flow", seq(0,20,2), seq(0,16,2), list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
         "passive.flow", "ReferenceFlowProtocol", "",
@@ -48,7 +48,7 @@ plotConfigurations <- list(
         "vSortAscending<-FALSE"),
 
    list("wp3-dsl-ccI", "NetPerfMeterPaper-wp3-dsl-ccI-TCP-Main.pdf",
-        "CMT-SCTP Flow", seq(0,20,2), seq(0,18,2), list(0,1),
+        "CMT-SCTP Flow", seq(0,20,2), seq(0,16,2), list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
         "passive.flow", "ReferenceFlowProtocol", "",
@@ -56,7 +56,7 @@ plotConfigurations <- list(
          (data1$passive.flow == 1)",
         "vSortAscending<-FALSE"),
    list("wp3-dsl-ccI", "NetPerfMeterPaper-wp3-dsl-ccI-TCP-Reference.pdf",
-        "TCP Reference Flow", seq(0,20,2), seq(0,18,2), list(0,1),
+        "TCP Reference Flow", seq(0,20,2), seq(0,16,2), list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
         "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
         "passive.flow", "ReferenceFlowProtocol", "",

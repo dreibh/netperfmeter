@@ -45,7 +45,8 @@ BidirectionalQoS_VALUES="true"
 CwndMaxBurst_VALUES="true"
 
 # First trail
-RateNorthernTrail_VALUES="800 2500 5000 7500 10000 12500 15000 17500 20000"
+RateNorthernTrail_VALUES="800 2500 5000 7500 10000 12500 15002 17502 20002"
+#RateNorthernTrail_VALUES="800 2500 5000 10000 15000 20000"
 DelayNorthernTrail_VALUES="2"
 LossNorthernTrail_VALUES="0"
 QueueTypeNorthernTrail_VALUES="red"      ## !!!

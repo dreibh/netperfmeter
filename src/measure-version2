@@ -27,7 +27,7 @@ fi
 
 
 # ###### Variables ##########################################################
-Variables="Runtime Scenario Flows ReferenceFlows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst CMTCCVariant OptionDAC OptionNRSACK OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail QueueTypeNorthernTrail FrameCapacityNorthernTrail RedMinThNorthernTrail RedMaxThNorthernTrail RedMaxPNorthernTrail RedWqNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail QueueTypeSouthernTrail FrameCapacitySouthernTrail RedMinThSouthernTrail RedMaxThSouthernTrail RedMaxPSouthernTrail RedWqSouthernTrail Run"
+Variables="Run Runtime Scenario Flows ReferenceFlows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst CMTCCVariant OptionDAC OptionNRSACK OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail QueueTypeNorthernTrail FrameCapacityNorthernTrail RedMinThNorthernTrail RedMaxThNorthernTrail RedMaxPNorthernTrail RedWqNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail QueueTypeSouthernTrail FrameCapacitySouthernTrail RedMinThSouthernTrail RedMaxThSouthernTrail RedMaxPSouthernTrail RedWqSouthernTrail"
 
 # ###### Control ############################################################
 MaxTrials=10            # If something goes wrong, try again up to 10 times
@@ -157,7 +157,7 @@ perform_run ()
 
          elif [ "$Scenario" = "Burgsteinfurt" ] ; then
             HOST_EAST="212.201.121.87"   #   DFN=212.201.121.87   DSL=87.139.124.106
-#            HOST_EAST="87.139.124.106"   #   DFN=212.201.121.87   DSL=87.139.124.106
+            # HOST_EAST="87.139.124.106"   #   DFN=212.201.121.87   DSL=87.139.124.106
             ROUTER_NORTH="132.252.153.9"
             NETWORK_NW="132.252.153.8/29"
             NETWORK_NE="212.201.121.87/27"

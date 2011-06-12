@@ -26,7 +26,7 @@ Directory="wp3-dsl-ccII"
 
 Run_VALUES="1 2 3"
 Scenario_VALUES="Burgsteinfurt"
-Runtime_VALUES="900"   # !!!
+Runtime_VALUES="300"   # !!!
 Flows_VALUES="1"
 CompareWithReference_VALUES="true"
 ReferenceFlowProtocol_VALUES="TCP"   # Protokoll für Referenzstrom
@@ -36,8 +36,7 @@ FrameSize_VALUES="const1444"   # DSL-MTU!
 Unordered_VALUES="1.0"   # !!!
 SndBuf_VALUES="1000000"
 RcvBuf_VALUES="500000"
-# CMTCCVariant_VALUES="cmtrpv2"
-CMTCCVariant_VALUES="cmt cmtrpv2 like-mptcp" # cmtrpv1 cmtrpv2 like-mptcp"
+CMTCCVariant_VALUES="cmt cmtrpv2 like-mptcp"
 OptionNRSACK_VALUES="true"
 OptionBufferSplitting_VALUES="bothSides"
 
