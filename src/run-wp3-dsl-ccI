@@ -24,7 +24,7 @@ Directory="wp3-dsl-ccI"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3 4 5"
+Run_VALUES="1 2 3 4 5 6 7 8"
 Scenario_VALUES="Burgsteinfurt"
 Runtime_VALUES="300"
 Flows_VALUES="1"
