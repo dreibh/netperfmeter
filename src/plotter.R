@@ -1009,7 +1009,7 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel,
    plot.new()   # Sub-title
    plot.window(c(0, 1), c(0, 1))
    if(pSubLabel != "") {
-      rect(0, 0, 1.02, 1, col=pColor)
+      rect(0, 0, 1, 1, col=pColor)
       text(0.5, 0.5, parse(text=pSubLabel), adj=0.5, font=3)
    }
 
@@ -1037,6 +1037,9 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                      zSortAscending       = TRUE,
                      vSortAscending       = TRUE,
                      wSortAscending       = TRUE,
+                     aSortAscending       = TRUE,
+                     bSortAscending       = TRUE,
+                     pSortAscending       = TRUE,
                      dotSet               = c(),
                      dotScaleFactor       = 2,
                      hbarSet              = c(),
@@ -1063,6 +1066,15 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
    aLevels   <- levels(factor(aSet))
    bLevels   <- levels(factor(bSet))
    pLevels   <- levels(factor(pSet))
+   if(!aSortAscending) {
+      aLevels <- rev(aLevels)
+   }
+   if(!bSortAscending) {
+      bLevels <- rev(bLevels)
+   }
+   if(!pSortAscending) {
+      pLevels <- rev(pLevels)
+   }
 
    aLabel    <- getLabel(aTitle)
    bLabel    <- getLabel(bTitle)
@@ -1548,6 +1560,9 @@ createPlots <- function(simulationDirectory,
       zSortAscending      <- TRUE
       vSortAscending      <- TRUE
       wSortAscending      <- TRUE
+      aSortAscending      <- TRUE
+      bSortAscending      <- TRUE
+      pSortAscending      <- TRUE
 
       frameColor <- "black"
       yManipulator <- "set"
@@ -1799,7 +1814,10 @@ createPlots <- function(simulationDirectory,
                enumerateLines = plotEnumerateLines,
                zSortAscending = zSortAscending,
                vSortAscending = vSortAscending,
-               wSortAscending = wSortAscending)
+               wSortAscending = wSortAscending,
+               aSortAscending = aSortAscending,
+               bSortAscending = bSortAscending,
+               pSortAscending = pSortAscending)
       if(plotOwnOutput) {
          dev.off()
       }
