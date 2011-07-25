@@ -100,7 +100,7 @@ netPerfMeterPlotVariables <- list(
            "blue4",
            list("passive.total-ReceivedByteRate")),
    list("passive.total-ReceivedBitRate-Mbit",
-           "Received Bit Rate[Kbit/s]",
+           "Received Bit Rate[Mbit/s]",
            "8 * data1$passive.total.ReceivedByteRate / 1000000",
            "blue4",
            list("passive.total-ReceivedByteRate")),
