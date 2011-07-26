@@ -326,6 +326,7 @@ plotstd3 <- function(mainTitle,
                      colorMode            = cmColor,
                      frameColor           = par("fg"),
                      zColorArray          = c(),
+                     zReverseColors       = FALSE,
                      zSortAscending       = TRUE,
                      vSortAscending       = TRUE,
                      wSortAscending       = TRUE,
@@ -352,14 +353,23 @@ plotstd3 <- function(mainTitle,
                      aLevels              = 1,
                      bLevels              = 1)
 {
+   if(length(zSet) < 1) {
+      zSet   <- rep(0, length(ySet))
+      zTitle <- ""
+      hideLegend <- FALSE
+   }
+   if(length(wSet) < 1) {
+      wSet <- rep(0, length(zSet))
+   }
+   if(length(vSet) < 1) {
+      vSet <- rep(0, length(zSet))
+   }
+
    xLevels <- levels(factor(xSet))
    yLevels <- levels(factor(ySet))
-   if(length(zSet) < 1) {
-      zSet <- rep(0, length(ySet))
-      zTitle     <- ""
-      hideLegend <- TRUE
-   }
    zLevels <- levels(factor(zSet))
+   vLevels <- levels(factor(vSet))
+   wLevels <- levels(factor(wSet))
    if(length(xLevels) < 1) {
       cat("WARNING: plotstd3() - xLevels=c()\n")
       return(0);
@@ -372,14 +382,6 @@ plotstd3 <- function(mainTitle,
       cat("WARNING: plotstd3() - zLevels=c()\n")
       return(0);
    }
-   if(length(vSet) < 1) {
-      vSet <- rep(0, length(zSet))
-   }
-   vLevels <- levels(factor(vSet))
-   if(length(wSet) < 1) {
-      wSet <- rep(0, length(zSet))
-   }
-   wLevels <- levels(factor(wSet))
 
    if(length(zColorArray) == 0) {
       if(colorMode == cmColor) {
@@ -495,6 +497,9 @@ plotstd3 <- function(mainTitle,
    if(!zSortAscending) {
       zLevels <- rev(zLevels)
    }
+   if(zReverseColors) {
+      zColorArray <- rev(zColorArray)
+   }
    if(!vSortAscending) {
       vLevels <- rev(vLevels)
    }
@@ -510,18 +515,14 @@ plotstd3 <- function(mainTitle,
          for(wPosition in 1:length(wLevels)) {
             w <- wLevels[wPosition]
             # ----- Legend settings -----------------------------------------
-            # Old behaviour: skip Z variable when there is no V/W axis.
-            # if((length(vLevels) > 1) || (length(wLevels) > 1)) {
-            #    legendText <- paste(sep="", "paste(sep=\"\", ", getAbbreviation(zTitle), ", \"=", gettextf(zValueFilter, z), "\")")
-            # }
-            # else {
-            #    legendText <- paste(sep="", "\"", z, "\"")
-            # }
+            legendText <- ""
             zBinder <- ""
             if( (!is.null(zTitle)) && (zTitle != "") ) {
                zBinder <- "="
             }
-            legendText <- paste(sep="", "paste(sep=\"\", ", getAbbreviation(zTitle), ", '", zBinder, gettextf(zValueFilter, z), "')")
+            if( (zBinder != "") || (length(levels(factor(zSet))) > 1) ) {
+               legendText <- paste(sep="", "paste(sep=\"\", ", getAbbreviation(zTitle), ", '", zBinder, gettextf(zValueFilter, z), "')")
+            }
             vBinder <- ""
             if( (!is.null(vTitle)) && (vTitle != "") ) {
                vBinder <- "="
@@ -538,7 +539,6 @@ plotstd3 <- function(mainTitle,
             }
             if(enumerateLines) {
                lineNumText <- paste(sep="", lineNum)
-               lineNum <- lineNum + 1
                legendText <- paste(sep="", "paste(sep=\"\", ", ", \"", lineNumText, ": \", ", legendText, ")")
             }
 
@@ -555,6 +555,7 @@ plotstd3 <- function(mainTitle,
                   legendStyles <- append(legendStyles, legendStyle)
                   legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
                   legendDot    <- legendDot + 1
+                  lineNum      <- lineNum + 1
                }
 
                # ----- Horizontal bars plot ---------------------------------
@@ -573,6 +574,7 @@ plotstd3 <- function(mainTitle,
                   legendStyles <- append(legendStyles, legendStyle)
                   legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
                   legendDot    <- legendDot + 1
+                  lineNum      <- lineNum + 1
                }
 
                # ----- Lines or Steps plot without confidence intervals -----
@@ -606,7 +608,8 @@ plotstd3 <- function(mainTitle,
                      legendStyles <- append(legendStyles, legendStyle)
                      legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
                      legendDot    <- legendDot + 1
-                     legendStyle <- (legendStyle + 1) %% 7
+                     legendStyle  <- (legendStyle + 1) %% 7
+                     lineNum      <- lineNum + 1
                   }
                }
 
@@ -692,7 +695,8 @@ plotstd3 <- function(mainTitle,
                      legendStyles <- append(legendStyles, legendStyle)
                      legendDots   <- append(legendDots,   getDot(dotSet, legendDot))
                      legendDot    <- legendDot + 1
-                     legendStyle <- (legendStyle + 1) %% 7
+                     legendStyle  <- (legendStyle + 1) %% 7
+                     lineNum      <- lineNum + 1
                   }
                }
 
@@ -1009,7 +1013,7 @@ makeLayout <- function(aSet, bSet, aTitle, bTitle, pTitle, pSubLabel,
    plot.new()   # Sub-title
    plot.window(c(0, 1), c(0, 1))
    if(pSubLabel != "") {
-      rect(0, 0, 1, 1, col=pColor)
+      rect(0, 0, 1.02, 1, col=pColor)
       text(0.5, 0.5, parse(text=pSubLabel), adj=0.5, font=3)
    }
 
@@ -1034,6 +1038,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                      zColorArray          = c(),
                      xAxisTicks           = c(),
                      yAxisTicks           = c(),
+                     zReverseColors       = FALSE,
                      zSortAscending       = TRUE,
                      vSortAscending       = TRUE,
                      wSortAscending       = TRUE,
@@ -1125,6 +1130,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         xTitle, yTitle, zTitle,
                         xSubset, ySubset, zSubset,
                         vSubset, wSubset, vTitle, wTitle,
+                        zReverseColors       = zReverseColors,
                         zSortAscending       = zSortAscending,
                         vSortAscending       = vSortAscending,
                         wSortAscending       = wSortAscending,
@@ -1452,7 +1458,7 @@ getIntegerTicks <- function(set, count = 10)
 
 
 # ====== Read table from results file =======================================
-loadResults <- function(name, customFilter="", quiet=FALSE)
+loadResults <- function(name, customFilter="", customFormatter=applyFormatter, quiet=FALSE)
 {
    filter <- "cat"
    if(any(grep(".bz2", name))) {
@@ -1471,6 +1477,7 @@ loadResults <- function(name, customFilter="", quiet=FALSE)
       cat(sep="", "Loading from pipe [", dataInputCommand, "] ...\n")
    }
    data <- read.table(pipe(dataInputCommand))
+   data <- customFormatter(data)
    return(data)
 }
 
@@ -1523,10 +1530,19 @@ applyManipulator <- function(manipulator, inputDataTable, columnName, filter)
 }
 
 
+# ====== Apply formatter ====================================================
+applyFormatter <- function (data)
+{
+   print(data)
+   return(data)
+}
+
+
 # ====== Create plots =======================================================
 createPlots <- function(simulationDirectory,
                         plotConfigurations,
                         customFilter="",
+                        customFormatter=applyFormatter,
                         zColorArray=c())
 {
    inputDirectorySet <- c()
@@ -1557,6 +1573,8 @@ createPlots <- function(simulationDirectory,
       yColumn             <- as.character(plotConfiguration[8])
       dotSet              <- c()
       dotScaleFactor      <- 2
+      zColorArray         <- c()
+      zReverseColors      <- FALSE
       zSortAscending      <- TRUE
       vSortAscending      <- TRUE
       wSortAscending      <- TRUE
@@ -1723,7 +1741,9 @@ createPlots <- function(simulationDirectory,
       for(resultsName in resultsNameSet) {
          resultFileName  <- paste(sep="", simulationDirectory, "/Results/", resultsName, ".data.bz2")
          cat(sep="", "     + Loading results from ", resultFileName, " ...\n")
-         data <- append(data, list(loadResults(resultFileName, quiet=FALSE, customFilter=customFilter)))
+         data <- append(data, list(loadResults(resultFileName, quiet=FALSE,
+                                               customFilter=customFilter,
+                                               customFormatter=customFormatter)))
          inputDirectorySet <- unique(append(inputDirectorySet, c(paste(sep="", simulationDirectory, "/Results"))))
          inputFileSet      <- unique(append(inputFileSet, c(resultFileName)))
       }
@@ -1804,14 +1824,15 @@ createPlots <- function(simulationDirectory,
                type           = "lines",
                frameColor     = frameColor,
                zColorArray    = zColorArray,
-               legendSize     = plotLegendSizeFactor,
                confidence     = plotConfidence,
                colorMode      = plotColorMode,
                hideLegend     = plotHideLegend,
                legendPos      = legendPos,
+               legendSize     = plotLegendSizeFactor,
                dotSet         = dotSet,
                dotScaleFactor = dotScaleFactor,
                enumerateLines = plotEnumerateLines,
+               zReverseColors = zReverseColors,
                zSortAscending = zSortAscending,
                vSortAscending = vSortAscending,
                wSortAscending = wSortAscending,
