@@ -921,7 +921,6 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
             uploadOutputFile(controlSocket, assocID, measurement->getScalarFile());
          }
       }
-      printf("delete1=%p\n", measurement);
       delete measurement;
    }
    return(true);

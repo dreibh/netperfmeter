@@ -1533,7 +1533,6 @@ applyManipulator <- function(manipulator, inputDataTable, columnName, filter)
 # ====== Apply formatter ====================================================
 applyFormatter <- function (data)
 {
-   print(data)
    return(data)
 }
 
