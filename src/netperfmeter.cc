@@ -910,7 +910,6 @@ void activeMode(int argc, char** argv)
    // ====== Main loop ======================================================
    const unsigned long long stopAt  = (gRuntime > 0) ?
       (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
-   bool                     aborted = false;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
    if(gOutputVerbosity >= NPFOV_BANDWIDTH_INFO) {
@@ -920,7 +919,6 @@ void activeMode(int argc, char** argv)
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       if(!mainLoop(true, stopAt, measurementID)) {
          cout << endl << "*** Aborted ***" << endl;
-         aborted = true;
          break;
       }
    }

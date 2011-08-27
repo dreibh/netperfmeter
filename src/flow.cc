@@ -397,13 +397,11 @@ void FlowManager::handleEvents(const unsigned long long now)
    lock();
 
    // ====== Handle statistics events =======================================
-   bool hasUpdate = false;
    for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
        Measurement* measurement = iterator->second;
        if(measurement->NextStatisticsEvent <= now) {
           measurement->writeVectorStatistics(now, GlobalStats, RelGlobalStats);
-          hasUpdate = true;
        }
    }
 
