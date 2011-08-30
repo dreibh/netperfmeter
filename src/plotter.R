@@ -306,6 +306,22 @@ hbarHandlingSpeedAggregator <- function(xSet, ySet, hbarSet, zValue, confidence)
 }
 
 
+# ====== Default Pre-Plot Function ==========================================
+defaultPrePlotFunction <- function(xRange, yRange, zColorArray,
+                                   lineWidthScaleFactor, dotScaleFactor,
+                                   xSet, ySet, zSet, vSet, wSet)
+{
+}
+
+
+# ====== Default Pre-Plot Function ==========================================
+defaultPostPlotFunction <- function(xRange, yRange, zColorArray,
+                                   lineWidthScaleFactor, dotScaleFactor,
+                                   xSet, ySet, zSet, vSet, wSet)
+{
+}
+
+
 # Plot x/y plot with different curves as z with confidence intervals in
 # y direction. x and z can be numeric or strings, y must be numeric since
 # confidence intervals have to be computed.
@@ -348,6 +364,8 @@ plotstd3 <- function(mainTitle,
                      zValueFilter         = "%s",
                      vValueFilter         = "%s",
                      wValueFilter         = "%s",
+                     prePlotFunction      = defaultPrePlotFunction,
+                     postPlotFunction     = defaultPostPlotFunction,
                      writeMetadata        = TRUE,
                      largeMargins         = FALSE,
                      aLevels              = 1,
@@ -486,6 +504,11 @@ plotstd3 <- function(mainTitle,
             side = 3, line=0.5, adj=1,
             xpd = NA, font = par("font.main"), cex = par("cex"))
    }
+   lineWidth <- lineWidthScaleFactor
+
+   # ------ Call to pre-plot function ---------------------------------------
+   prePlotFunction(xRange, yRange, zColorArray, lineWidth, dotScaleFactor, xSet, ySet, zSet, vSet, wSet)
+
 
    # ------ Plot curves -----------------------------------------------------
    lineNum      <- 1
@@ -733,8 +756,8 @@ plotstd3 <- function(mainTitle,
                            hbarAggSubset, zValue,
                            confidence)
             mMean <- aggregate[1]
-            mMin <- aggregate[2]
-            mMax <- aggregate[3]
+            mMin  <- aggregate[2]
+            mMax  <- aggregate[3]
 
             # ------ Plot line segment -----------------------------------------
             if(colorMode == cmColor) {
@@ -809,6 +832,10 @@ plotstd3 <- function(mainTitle,
          i <- i + 1
       }
    }
+
+
+   # ------ Call to post-plot function --------------------------------------
+   postPlotFunction(xRange, yRange, zColorArray, lineWidth, dotScaleFactor, xSet, ySet, zSet, vSet, wSet)
 
 
    # ------ Plot legend -----------------------------------------------------
@@ -1057,7 +1084,9 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                      enumerateLines       = FALSE,
                      pStart               = 0,
                      hideLegend           = FALSE,
-                     frameColor           = par("fg"))
+                     frameColor           = par("fg"),
+                     prePlotFunction      = defaultPrePlotFunction,
+                     postPlotFunction     = defaultPostPlotFunction)
 {
    if(length(pSet) == 0) {
       pSet <- rep(1, length(xSet))
@@ -1159,6 +1188,8 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         largeMargins         = useLargeMargins,
                         aLevels              = length(aLevels),
                         bLevels              = length(bLevels),
+                        prePlotFunction      = prePlotFunction,
+                        postPlotFunction     = postPlotFunction,
                         (singlePlotTitle == "")) < 1) {   # see below
                # If singlePlotTitle=="", we have multiple std3 plots on the
                # same page. Then, larger margins have to be used by plotstd3().
@@ -1580,8 +1611,10 @@ createPlots <- function(simulationDirectory,
       aSortAscending      <- TRUE
       bSortAscending      <- TRUE
       pSortAscending      <- TRUE
+      prePlotFunction     <- defaultPrePlotFunction
+      postPlotFunction    <- defaultPostPlotFunction
 
-      frameColor <- "black"
+      frameColor   <- "black"
       yManipulator <- "set"
       xTitle <- "X-Axis" ; xFound <- FALSE
       yTitle <- "Y-Axis" ; yFound <- FALSE
@@ -1816,28 +1849,30 @@ createPlots <- function(simulationDirectory,
                pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                pSet, aSet, bSet, xSet, ySet, zSet,
                vSet, wSet, vTitle, wTitle,
-               xAxisTicks     = xAxisTicks,
-               yAxisTicks     = yAxisTicks,
-               rangeSet       = rangeSet,
-               rangeColors    = rangeColors,
-               type           = "lines",
-               frameColor     = frameColor,
-               zColorArray    = zColorArray,
-               confidence     = plotConfidence,
-               colorMode      = plotColorMode,
-               hideLegend     = plotHideLegend,
-               legendPos      = legendPos,
-               legendSize     = plotLegendSizeFactor,
-               dotSet         = dotSet,
-               dotScaleFactor = dotScaleFactor,
-               enumerateLines = plotEnumerateLines,
-               zReverseColors = zReverseColors,
-               zSortAscending = zSortAscending,
-               vSortAscending = vSortAscending,
-               wSortAscending = wSortAscending,
-               aSortAscending = aSortAscending,
-               bSortAscending = bSortAscending,
-               pSortAscending = pSortAscending)
+               xAxisTicks       = xAxisTicks,
+               yAxisTicks       = yAxisTicks,
+               rangeSet         = rangeSet,
+               rangeColors      = rangeColors,
+               type             = "lines",
+               frameColor       = frameColor,
+               zColorArray      = zColorArray,
+               confidence       = plotConfidence,
+               colorMode        = plotColorMode,
+               hideLegend       = plotHideLegend,
+               legendPos        = legendPos,
+               legendSize       = plotLegendSizeFactor,
+               dotSet           = dotSet,
+               dotScaleFactor   = dotScaleFactor,
+               enumerateLines   = plotEnumerateLines,
+               zReverseColors   = zReverseColors,
+               zSortAscending   = zSortAscending,
+               vSortAscending   = vSortAscending,
+               wSortAscending   = wSortAscending,
+               aSortAscending   = aSortAscending,
+               bSortAscending   = bSortAscending,
+               pSortAscending   = pSortAscending,
+               prePlotFunction  = prePlotFunction,
+               postPlotFunction = postPlotFunction)
       if(plotOwnOutput) {
          dev.off()
       }
