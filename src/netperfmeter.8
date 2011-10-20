@@ -19,7 +19,7 @@
 .\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd January 21, 2011
+.Dd October 20, 2011
 .Dt netperfmeter 8
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -137,7 +137,7 @@ A list of time stamps when the flow should be activated or deactivated. If onoff
 By default, the active side stops with an error when a transmission tails (e.g. on connection abort). This parameter turns this behaviour on or off.
 .It cmt=off|normal|rp|0-255
 Configures usage of Concurrent Multipath Transfer (CMT): off (turned off), normal (independent paths), rp (resource-pooled), 0-255 (custom value).
-Currently only supported by CMT-SCTP on FreeBSD systems.
+Currently only supported by CMT-SCTP on FreeBSD systems and MPTCP on Linux systems. Note: CMT for MPTCP always uses MPTCP congestion control.
 .El
 .El
 .El
