@@ -79,6 +79,15 @@ AC_TRY_COMPILE([#ifdef HAVE_SYS_TYPES_H
                 AC_DEFINE(HAVE_DCCP, 1, "Define to 1 if DCCP is supported.")],
                [AC_MSG_RESULT(no)])
 
+# !!! Since only Linux supports MPTCP at the moment, the following code
+# !!! is Linux-specific!
+AC_MSG_CHECKING(for MPTCP support)
+AC_TRY_COMPILE([#include <linux/tcp.h>],
+               [int x = MPTCP_ENABLE; return 0;],
+               [AC_MSG_RESULT(yes)
+                AC_DEFINE(HAVE_MPTCP, 1, "Define to 1 if MPTCP is supported.")],
+               [AC_MSG_RESULT(no)])
+
 AC_MSG_CHECKING(for IPV6_BINDV6ONLY)
 AC_TRY_COMPILE([#include <netinet/in.h>],
                [int x = IPV6_BINDV6ONLY],

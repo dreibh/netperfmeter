@@ -43,6 +43,15 @@
 #warning DCCP is not supported by the API of this system!
 #endif
 
+#ifdef HAVE_MPTCP
+#warning linux/tcp.h does not work with C++ code. Using ugly workaround!
+// #include <linux/tcp.h>
+#define TCP_MULTIPATH_ENABLE   19   /* MPTCP_ENABLE */
+// FIXME: This should really be set within a standard include file!
+#else
+#warning MPTCP is not supported by the API of this system!
+#endif
+
 #include <vector>
 #include <map>
 
