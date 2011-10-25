@@ -6,6 +6,7 @@ Homepage: http://www.iem.uni-due.de/~dreibh/netperfmeter/
 Build-Depends: autotools-dev,
                debhelper (>= 7.0.50~),
                libbz2-dev (>= 1.0),
+               libglib2.0-dev (>= 2.0.0),
                libsctp-dev (>= 1.0.5)
 Standards-Version: 3.9.2
 
