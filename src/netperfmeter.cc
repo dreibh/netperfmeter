@@ -34,6 +34,13 @@
 #include "control.h"
 #include "transfer.h"
 
+#ifdef HAVE_MPTCP
+#warning linux/tcp.h does not work with C++ code. Using ugly workaround!
+// #include <linux/tcp.h>
+#define TCP_MULTIPATH_ENABLE   19   /* MPTCP_ENABLE */
+// FIXME: This should really be set within a standard include file!
+#endif
+
 
 using namespace std;
 
@@ -47,6 +54,7 @@ static const char*   gActiveNodeName  = "Client";
 static const char*   gPassiveNodeName = "Server";
 static int           gControlSocket   = -1;
 static int           gTCPSocket       = -1;
+static int           gMPTCPSocket     = -1;
 static int           gUDPSocket       = -1;
 static int           gSCTPSocket      = -1;
 static int           gDCCPSocket      = -1;
@@ -354,7 +362,7 @@ static Flow* createFlow(Flow*                  previousFlow,
                         const char*            vectorNamePattern,
                         const OutputFileFormat vectorFileFormat,
                         const uint8_t          protocol,
-                        const sockaddr*        remoteAddress)
+                        sockaddr*              remoteAddress)
 {
    // ====== Get flow ID and stream ID ======================================
    static uint32_t flowID   = 0; // will be increased with each successfull call
@@ -368,6 +376,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       trafficSpec.OutboundFrameRate[0] = 0.0;
       switch(trafficSpec.Protocol) {
          case IPPROTO_TCP:
+         case IPPROTO_MPTCP:
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 20;
           break;
          case IPPROTO_UDP:
@@ -446,6 +455,10 @@ static Flow* createFlow(Flow*                  previousFlow,
             socketDescriptor = createAndBindSocket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_SCTP, 0,
                                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
+         case IPPROTO_MPTCP:
+            assert(getPort(remoteAddress) > 1);
+            setPort(remoteAddress, getPort(remoteAddress) - 1);
+            // Do *not* break here. Rest is as for TCP!
          case IPPROTO_TCP:
             socketDescriptor = createAndBindSocket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_TCP, 0,
                                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
@@ -460,6 +473,9 @@ static Flow* createFlow(Flow*                  previousFlow,
                                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
 #endif
+         default:
+            abort();
+          break;
       }
       if(socketDescriptor < 0) {
          cerr << "ERROR: Unable to create " << getProtocolName(protocol)
@@ -547,6 +563,7 @@ bool mainLoop(const bool               isActiveMode,
    int                    n         = 0;
    int                    controlID = -1;
    int                    tcpID     = -1;
+   int                    mptcpID   = -1;
    int                    udpID     = -1;
    int                    sctpID    = -1;
    int                    dccpID    = -1;
@@ -556,10 +573,11 @@ bool mainLoop(const bool               isActiveMode,
 
    // ====== Get parameters for poll() ======================================
    addToPollFDs((pollfd*)&fds, gControlSocket, n, &controlID);
-   addToPollFDs((pollfd*)&fds, gTCPSocket,  n, &tcpID);
-   addToPollFDs((pollfd*)&fds, gUDPSocket,  n, &udpID);
-   addToPollFDs((pollfd*)&fds, gSCTPSocket, n, &sctpID);
-   addToPollFDs((pollfd*)&fds, gDCCPSocket, n, &dccpID);
+   addToPollFDs((pollfd*)&fds, gTCPSocket,     n, &tcpID);
+   addToPollFDs((pollfd*)&fds, gMPTCPSocket,   n, &mptcpID);
+   addToPollFDs((pollfd*)&fds, gUDPSocket,     n, &udpID);
+   addToPollFDs((pollfd*)&fds, gSCTPSocket,    n, &sctpID);
+   addToPollFDs((pollfd*)&fds, gDCCPSocket,    n, &dccpID);
 
 
    // ====== Use poll() to wait for events ==================================
@@ -590,6 +608,12 @@ bool mainLoop(const bool               isActiveMode,
          const int newSD = ext_accept(gTCPSocket, NULL, 0);
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_TCP, newSD);
+         }
+      }
+      if( (mptcpID >= 0) && (fds[mptcpID].revents & POLLIN) ) {
+         const int newSD = ext_accept(gMPTCPSocket, NULL, 0);
+         if(newSD >= 0) {
+            FlowManager::getFlowManager()->addSocket(IPPROTO_MPTCP, newSD);
          }
       }
       if( (udpID >= 0) && (fds[udpID].revents & POLLIN) ) {
@@ -664,6 +688,23 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       exit(1);
    }
 
+#ifdef HAVE_MPTCP
+   gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort - 1,
+                                      gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
+   if(gMPTCPSocket < 0) {
+      cerr << "ERROR: Failed to create and bind MPTCP socket - "
+           << strerror(errno) << "!" << endl;
+      exit(1);
+   }
+   int cmtOnOff = 1;
+   if(ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
+      std::cerr << "NOTE: Compiled with MPTCP support, but unable to initialize it: "
+                << strerror(errno) << "!" << endl;
+      ext_close(gMPTCPSocket);
+      gMPTCPSocket = -1;
+   }
+#endif
+
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gUDPSocket < 0) {
@@ -715,7 +756,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 
    // ====== Print status ===================================================
-   cout << "Passive Mode: Accepting TCP/UDP/SCTP" << ((gDCCPSocket > 0) ? "/DCCP" : "")
+   cout << "Passive Mode: Accepting TCP"
+        << ((gMPTCPSocket > 0) ? "/MPTCP" : "")
+        << "/UDP/SCTP" << ((gDCCPSocket > 0) ? "/DCCP" : "")
         << " connections on port " << localPort << endl << endl;
 
 
@@ -737,6 +780,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gMessageReader.deregisterSocket(gControlSocket);
    ext_close(gControlSocket);
    ext_close(gTCPSocket);
+   if(gMPTCPSocket >= 0) {
+      ext_close(gMPTCPSocket);
+   }
    FlowManager::getFlowManager()->removeSocket(gUDPSocket, false);
    ext_close(gUDPSocket);
    ext_close(gSCTPSocket);
@@ -756,8 +802,11 @@ void activeMode(int argc, char** argv)
       cerr << "ERROR: Invalid remote address " << argv[1] << "!" << endl;
       exit(1);
    }
-   if(getPort(&remoteAddress.sa) == 0) {
+   if(getPort(&remoteAddress.sa) < 2) {
       setPort(&remoteAddress.sa, 9000);
+   }
+   else if(getPort(&remoteAddress.sa) > 65534) {
+      setPort(&remoteAddress.sa, 65534);
    }
    sockaddr_union controlAddress = remoteAddress;
    setPort(&controlAddress.sa, getPort(&remoteAddress.sa) + 1);
@@ -811,6 +860,11 @@ void activeMode(int argc, char** argv)
          else if(strcmp(argv[i], "-tcp") == 0) {
             protocol = IPPROTO_TCP;
          }
+#ifdef HAVE_MPTCP
+         else if(strcmp(argv[i], "-mptcp") == 0) {
+            protocol = IPPROTO_MPTCP;
+         }
+#endif
          else if(strcmp(argv[i], "-udp") == 0) {
             protocol = IPPROTO_UDP;
          }

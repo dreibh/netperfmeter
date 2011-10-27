@@ -19,7 +19,7 @@
 .\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd October 20, 2011
+.Dd October 27, 2011
 .Dt netperfmeter 8
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -43,17 +43,19 @@
 .Fl verbose
 .Fl verbosity=Level
 .Fl tcp
-.Fl udp
+.Fl mptcp
 .Fl sctp
+.Fl udp
 .Fl dccp
 .Op FLOWSPEC
 .Op ...
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm netperfmeter
-is a network performance meter for the UDP, TCP, SCTP and DCCP transport protocols.
-It simultaneously transmits bidirectional flows to an endpoint and measures the
-resulting flow bandwidths. The results are written as vector and scalar files.
+is a network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP
+transport protocols. It simultaneously transmits bidirectional flows to an
+endpoint and measures the resulting flow bandwidths. The results are written
+as vector and scalar files.
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
@@ -89,6 +91,10 @@ Sets the verbosity of the log output to a given level, from 0 (lowest) to 6 (hig
 Establish a new SCTP association. The streams of this association must be specified by one or more FLOWSPEC specifications as following parameters.
 .It tcp
 Establish a new TCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
+.It mptcp
+Establish a new MPTCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
+Currently, there is only an experimental custom Linux kernel with MPTCP support.
+Note, that MPTCP is not a separate protocol. However, MPTCP support in NetPerfMeter is realized as additional "MPTCP" socket (i.e. another TCP socket, but bound to another port number and with CMT enabled).
 .It udp
 Establish a new UDP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
 .It dccp

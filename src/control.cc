@@ -227,7 +227,8 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
    // ====== Sent NETPERFMETER_IDENTIFY_FLOW to remote node =================
    unsigned int maxTrials = 1;
    if( (flow->getTrafficSpec().Protocol != IPPROTO_SCTP) &&
-       (flow->getTrafficSpec().Protocol != IPPROTO_TCP) ) {
+       (flow->getTrafficSpec().Protocol != IPPROTO_TCP) &&
+       (flow->getTrafficSpec().Protocol != IPPROTO_MPTCP) ) {
       // SCTP and TCP are reliable transport protocols => no retransmissions
       maxTrials = IDENTIFY_MAX_TRIALS;
    }

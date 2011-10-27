@@ -507,6 +507,9 @@ const char* getProtocolName(const uint8_t protocol)
       case IPPROTO_TCP:
          protocolName = "TCP";
          break;
+      case IPPROTO_MPTCP:
+         protocolName = "MPTCP";
+         break;
       case IPPROTO_UDP:
          protocolName = "UDP";
          break;

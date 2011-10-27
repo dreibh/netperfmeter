@@ -43,6 +43,20 @@
 #include <iostream>
 
 
+/* MPTCP as "pseudo-protocol". Just for internal representation. */
+#define IPPROTO_MPTCP IPPROTO_EGP
+
+/* DCCP definitions */
+#ifdef HAVE_DCCP
+#include <linux/dccp.h>
+#ifndef SOL_DCCP
+#define SOL_DCCP 269
+#endif
+#else
+#warning DCCP is not supported by the API of this system!
+#endif
+
+
 std::string format(const char* fmt, ...);
 
 unsigned long long getMicroTime();

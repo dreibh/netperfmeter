@@ -1213,24 +1213,7 @@ bool Flow::configureSocket(const int socketDescriptor)
         return(false);
     }
 
-    if(TrafficSpec.Protocol == IPPROTO_TCP) {
-#ifdef TCP_MULTIPATH_ENABLE
-        int cmtOnOff = (TrafficSpec.CMT != NPAF_PRIMARY_PATH) ? 1 : 0;
-        if(ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-          if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
-              std::cerr << "ERROR: Failed to configure CMT usage on TCP socket (TCP_MULTIPATH_ENABLE option) - "
-                        << strerror(errno) << "!" << std::endl;
-             return(false);
-          }
-        }
-#else
-        if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
-          std::cerr << "ERROR: CMT usage on TCP socket configured, but not supported by this system!" << std::endl;
-          return(false);
-        }
-#endif
-    }
-    else if(TrafficSpec.Protocol == IPPROTO_SCTP) {
+    if(TrafficSpec.Protocol == IPPROTO_SCTP) {
 #ifdef SCTP_CMT_ON_OFF
         struct sctp_assoc_value cmtOnOff;
         cmtOnOff.assoc_id    = 0;
