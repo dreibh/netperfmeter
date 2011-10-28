@@ -723,8 +723,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
       std::cerr << "NOTE: Compiled with MPTCP support, but unable to initialize it: "
                 << strerror(errno) << "!" << endl;
-//       ext_close(gMPTCPSocket);
-//       gMPTCPSocket = -1;
+      ext_close(gMPTCPSocket);
+      gMPTCPSocket = -1;
    }
 #endif
 
