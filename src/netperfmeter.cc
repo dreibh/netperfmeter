@@ -267,9 +267,14 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          trafficSpec.CMT = NPAF_CMT;
          n = 4 + 3;
       }
-      else if(strncmp((const char*)&parameters[4], "like-mptcp", 10) == 0) {
+      else if( (strncmp((const char*)&parameters[4], "like-mptcp", 10) == 0) ||
+               (strncmp((const char*)&parameters[4], "mptcp-like", 10) == 0) ) {
          trafficSpec.CMT = NPAF_LikeMPTCP;
          n = 4 + 10;
+      }
+      else if(strncmp((const char*)&parameters[4], "mptcp", 5) == 0) {
+         trafficSpec.CMT = NPAF_LikeMPTCP;
+         n = 4 + 5;         
       }
       else if(strncmp((const char*)&parameters[4], "normal", 6) == 0) {   // Legacy: use "cmt"!
          trafficSpec.CMT = NPAF_CMT;
@@ -287,6 +292,22 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          cerr << "ERROR: Invalid \"cmt\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
          exit(1);
       }
+      
+      // ------ Set correct "pseudo-protocol" for MPTCP ---------------------
+      if( (trafficSpec.Protocol == IPPROTO_TCP) ||
+          (trafficSpec.Protocol == IPPROTO_MPTCP) ) {
+         if(trafficSpec.CMT == NPAF_PRIMARY_PATH) {
+            trafficSpec.Protocol = IPPROTO_TCP;
+         }
+         else {
+            trafficSpec.Protocol = IPPROTO_MPTCP;
+            if(trafficSpec.CMT != NPAF_LikeMPTCP) {
+               cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
+                    << " for MPTCP! Using default instead!" << std::endl;
+            }
+         }
+      }
+      // --------------------------------------------------------------------
    }
    else if(strncmp(parameters, "ccid=", 5) == 0) {
       unsigned int ccid;
@@ -361,8 +382,8 @@ static Flow* createFlow(Flow*                  previousFlow,
                         const uint64_t         measurementID,
                         const char*            vectorNamePattern,
                         const OutputFileFormat vectorFileFormat,
-                        const uint8_t          protocol,
-                        sockaddr*              remoteAddress)
+                        const uint8_t          initialProtocol,
+                        const sockaddr_union&  remoteAddress)
 {
    // ====== Get flow ID and stream ID ======================================
    static uint32_t flowID   = 0; // will be increased with each successfull call
@@ -370,7 +391,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 
    // ====== Get FlowTrafficSpec ============================================
    FlowTrafficSpec trafficSpec;
-   trafficSpec.Protocol = protocol;
+   trafficSpec.Protocol = initialProtocol;
    if(strncmp(parameters, "default", 7) == 0) {
       trafficSpec.OutboundFrameRateRng = RANDOM_CONSTANT;
       trafficSpec.OutboundFrameRate[0] = 0.0;
@@ -450,26 +471,23 @@ static Flow* createFlow(Flow*                  previousFlow,
    else {
       originalSocketDescriptor = true;
       socketDescriptor          = -1;
-      switch(protocol) {
+      switch(trafficSpec.Protocol) {
          case IPPROTO_SCTP:
-            socketDescriptor = createAndBindSocket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_SCTP, 0,
+            socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_SCTP, 0,
                                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
-         case IPPROTO_MPTCP:
-            assert(getPort(remoteAddress) > 1);
-            setPort(remoteAddress, getPort(remoteAddress) - 1);
-            // Do *not* break here. Rest is as for TCP!
          case IPPROTO_TCP:
-            socketDescriptor = createAndBindSocket(remoteAddress->sa_family, SOCK_STREAM, IPPROTO_TCP, 0,
+         case IPPROTO_MPTCP:
+            socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_TCP, 0,
                                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
          case IPPROTO_UDP:
-            socketDescriptor = createAndBindSocket(remoteAddress->sa_family, SOCK_DGRAM, IPPROTO_UDP, 0,
+            socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_UDP, 0,
                                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
 #ifdef HAVE_DCCP
          case IPPROTO_DCCP:
-            socketDescriptor = createAndBindSocket(remoteAddress->sa_family, SOCK_DCCP, IPPROTO_DCCP, 0,
+            socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DCCP, IPPROTO_DCCP, 0,
                                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
 #endif
@@ -478,21 +496,27 @@ static Flow* createFlow(Flow*                  previousFlow,
           break;
       }
       if(socketDescriptor < 0) {
-         cerr << "ERROR: Unable to create " << getProtocolName(protocol)
+         cerr << "ERROR: Unable to create " << getProtocolName(trafficSpec.Protocol)
               << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
+      }
+
+      // ====== MPTCP: choose MPTCP socket instead of TCP socket ============
+      sockaddr_union destinationAddress = remoteAddress;
+      if(trafficSpec.Protocol == IPPROTO_MPTCP) {
+         setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
       }
 
       // ====== Establish connection ========================================
       if(gOutputVerbosity >= NPFOV_STATUS) {
          cout << "Flow #" << flow->getFlowID() << ": connecting "
-            << getProtocolName(protocol) << " socket to ";
-         printAddress(cout, remoteAddress, true);
+            << getProtocolName(trafficSpec.Protocol) << " socket to ";
+         printAddress(cout, &destinationAddress.sa, true);
          cout << " ... ";
          cout.flush();
       }
 
-      if(protocol == IPPROTO_SCTP) {
+      if(trafficSpec.Protocol == IPPROTO_SCTP) {
          sctp_initmsg initmsg;
          memset((char*)&initmsg, 0 ,sizeof(initmsg));
          initmsg.sinit_num_ostreams  = 65535;
@@ -518,9 +542,8 @@ static Flow* createFlow(Flow*                  previousFlow,
       if(flow->configureSocket(socketDescriptor) == false) {
          exit(1);
       }
-
-      if(ext_connect(socketDescriptor, remoteAddress, getSocklen(remoteAddress)) < 0) {
-         cerr << "ERROR: Unable to connect " << getProtocolName(protocol)
+      if(ext_connect(socketDescriptor, &destinationAddress.sa, getSocklen(&destinationAddress.sa)) < 0) {
+         cerr << "ERROR: Unable to connect " << getProtocolName(trafficSpec.Protocol)
               << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
       }
@@ -700,8 +723,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
       std::cerr << "NOTE: Compiled with MPTCP support, but unable to initialize it: "
                 << strerror(errno) << "!" << endl;
-      ext_close(gMPTCPSocket);
-      gMPTCPSocket = -1;
+//       ext_close(gMPTCPSocket);
+//       gMPTCPSocket = -1;
    }
 #endif
 
@@ -757,7 +780,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
    // ====== Print status ===================================================
    cout << "Passive Mode: Accepting TCP"
-        << ((gMPTCPSocket > 0) ? "/MPTCP" : "")
+        << ((gMPTCPSocket > 0) ? "+MPTCP" : "")
         << "/UDP/SCTP" << ((gDCCPSocket > 0) ? "/DCCP" : "")
         << " connections on port " << localPort << endl << endl;
 
@@ -860,11 +883,6 @@ void activeMode(int argc, char** argv)
          else if(strcmp(argv[i], "-tcp") == 0) {
             protocol = IPPROTO_TCP;
          }
-#ifdef HAVE_MPTCP
-         else if(strcmp(argv[i], "-mptcp") == 0) {
-            protocol = IPPROTO_MPTCP;
-         }
-#endif
          else if(strcmp(argv[i], "-udp") == 0) {
             protocol = IPPROTO_UDP;
          }
@@ -926,7 +944,7 @@ void activeMode(int argc, char** argv)
 
          lastFlow = createFlow(lastFlow, argv[i], measurementID,
                                vectorNamePattern, vectorFileFormat,
-                               protocol, &remoteAddress.sa);
+                               protocol, remoteAddress);
          hasFlow = true;
 
          if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
