@@ -726,6 +726,14 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       ext_close(gMPTCPSocket);
       gMPTCPSocket = -1;
    }
+   else {
+      cmtOnOff = 0;
+      if(ext_setsockopt(gTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
+         cerr << "ERROR: Failed to disable MPTCP on TCP socket - "
+              << strerror(errno) << "!" << endl;
+         exit(1);
+      }
+   }
 #endif
 
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
