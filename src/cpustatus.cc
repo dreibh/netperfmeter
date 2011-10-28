@@ -144,7 +144,6 @@ void CPUStatus::update()
 
 
    // ====== Get counters ===================================================
-   unsigned int i, j;
 #ifdef __FreeBSD__
    cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
    if(sysctlbyname("kern.cp_times", (tick_t*)&CpuTimes[CpuStates], &cpuTimesSize, NULL, 0) < 0) {
@@ -152,10 +151,10 @@ void CPUStatus::update()
       exit(1);
    }
    // ------ Compute total values -------------------------
-   for(j = 0; j < CpuStates; j++) {
+   for(unsigned int j = 0; j < CpuStates; j++) {
       CpuTimes[j] = 0;
    }
-   for(i = 0; i < CPUs; i++) {
+   for(unsigned int i = 0; i < CPUs; i++) {
       for(j = 0; j < CpuStates; j++) {
          CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
       }
@@ -205,10 +204,10 @@ void CPUStatus::update()
 
 
    // ====== Calculate percentages ==========================================
-   for(i = 0; i < CPUs + 1; i++) {
+   for(unsigned int i = 0; i < CPUs + 1; i++) {
       tick_t diffTotal = 0;
       tick_t diff[CpuStates];
-      for(j = 0; j < CpuStates; j++) {
+      for(unsigned int j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
          if(CpuTimes[index] >= OldCpuTimes[index]) {
             diff[j] = CpuTimes[index] - OldCpuTimes[index];
@@ -218,9 +217,11 @@ void CPUStatus::update()
          }
          diffTotal += diff[j];
       }
-      for(j = 0; j < CpuStates; j++) {
+      for(unsigned int j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
-         Percentages[index] = 100.0 * (float)diff[j] / (float)diffTotal;
+         if(diffTotal != 0) {   // Avoid division by zero!
+            Percentages[index] = 100.0 * (float)diff[j] / (float)diffTotal;
+         }
          assert( (Percentages[index] >= 0.0) && (Percentages[index] <= 100.0) );
       }
    }
