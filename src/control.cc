@@ -155,6 +155,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    addFlowMsg->Header.Type   = NETPERFMETER_ADD_FLOW;
    addFlowMsg->Header.Flags  = 0x00;
    addFlowMsg->CCID          = flow->getTrafficSpec().CCID;
+   addFlowMsg->CMT           = flow->getTrafficSpec().CMT;
    if(flow->getTrafficSpec().CMT > 0) {
       addFlowMsg->Header.Flags |= NPMAF_USE_CMT;   /* Backward compatibility */
    }
