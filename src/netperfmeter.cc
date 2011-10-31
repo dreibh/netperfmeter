@@ -274,7 +274,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       else if(strncmp((const char*)&parameters[4], "mptcp", 5) == 0) {
          trafficSpec.CMT = NPAF_LikeMPTCP;
-         n = 4 + 5;         
+         n = 4 + 5;
       }
       else if(strncmp((const char*)&parameters[4], "normal", 6) == 0) {   // Legacy: use "cmt"!
          trafficSpec.CMT = NPAF_CMT;
@@ -292,7 +292,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          cerr << "ERROR: Invalid \"cmt\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
          exit(1);
       }
-      
+
       // ------ Set correct "pseudo-protocol" for MPTCP ---------------------
       if( (trafficSpec.Protocol == IPPROTO_TCP) ||
           (trafficSpec.Protocol == IPPROTO_MPTCP) ) {
