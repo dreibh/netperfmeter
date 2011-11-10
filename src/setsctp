@@ -44,7 +44,7 @@ while [ "$1" != "" ] ; do
          CMT=2
       elif [ "$2" = "cmtrpv2" ] ; then
          CMT=3
-      elif [ "$2" = "like-mptcp" ] ; then
+      elif [ "$2" = "like-mptcp" -o "$2" = "mptcp-like" -o "$2" = "mptcp" ] ; then
          CMT=4
       elif [ $2 -ge 2 -o $2 -lt 256 ] ; then
          CMT=$2
