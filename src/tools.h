@@ -74,9 +74,9 @@ void dissectName(const std::string& name,
 
 
 union sockaddr_union {
-   struct sockaddr          sa;
-   struct sockaddr_in       in;
-   struct sockaddr_in6      in6;
+   struct sockaddr     sa;
+   struct sockaddr_in  in;
+   struct sockaddr_in6 in6;
 };
 
 bool checkIPv6();
@@ -100,7 +100,7 @@ const char* getProtocolName(const uint8_t protocol);
 uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
 bool sendAbort(int sd, sctp_assoc_t assocID);
-int createAndBindSocket(int                   family,
+int createAndBindSocket(const int             family,
                         const int             type,
                         const int             protocol,
                         const uint16_t        localPort,

@@ -563,7 +563,7 @@ bool setPort(struct sockaddr* address, uint16_t port)
 
 
 /* ###### Create server socket of appropriate family and bind it ######### */
-int createAndBindSocket(int                   family,
+int createAndBindSocket(const int             family,
                         const int             type,
                         const int             protocol,
                         const uint16_t        localPort,
@@ -571,14 +571,18 @@ int createAndBindSocket(int                   family,
                         const sockaddr_union* localAddressArray,
                         const bool            listenMode)
 {
+   unsigned int localAddressCount = localAddresses;
+
    // ====== Get family =====================================================
-   if(family == AF_UNSPEC) {
-      family = checkIPv6() ? AF_INET6 : AF_INET;
+   int socketFamily = family;
+   if(socketFamily == AF_UNSPEC) {
+      socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
    }
 
+   // Prepare ANY address for the corresponding family
    sockaddr_union anyAddress;
    memset(&anyAddress, 0, sizeof(anyAddress));
-   if(family == AF_INET6) {
+   if(socketFamily == AF_INET6) {
       anyAddress.in6.sin6_family = AF_INET6;
       anyAddress.in6.sin6_port   = htons(localPort);
    }
@@ -587,13 +591,23 @@ int createAndBindSocket(int                   family,
       anyAddress.in.sin_port   = htons(localPort);
    }
 
+   // ====== Get protocol ===================================================
+   int socketProtocol = protocol;
+#ifdef HAVE_MPTCP
+   if(socketProtocol == IPPROTO_MPTCP) {
+      socketProtocol    = IPPROTO_TCP;
+#warning Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...
+      localAddressCount = 0;
+   }
+#endif
+
    // ====== Create socket ==================================================
-   int sd = ext_socket(family, type, protocol);
+   int sd = ext_socket(socketFamily, type, socketProtocol);
    if(sd < 0) {
       return(-2);
    }
 #ifdef IPV6_BINDV6ONLY
-   if(family == AF_INET6) {
+   if(socketFamily == AF_INET6) {
       // Accept IPv4 and IPv6 connections.
       int on = 0;
       setsockopt(sd, IPPROTO_IPV6, IPV6_BINDV6ONLY, (char *)&on, sizeof(on));
@@ -601,18 +615,18 @@ int createAndBindSocket(int                   family,
 #endif
 
    // ====== Bind socket ====================================================
-   if( (protocol != IPPROTO_SCTP) || (localAddresses == 0) ) {
+   if( (socketProtocol != IPPROTO_SCTP) || (localAddressCount == 0) ) {
       if(ext_bind(sd, &anyAddress.sa, getSocklen(&anyAddress.sa)) != 0) {
          ext_close(sd);
          return(-3);
       }
    }
    else {
-      if(protocol == IPPROTO_SCTP) {
+      if(socketProtocol == IPPROTO_SCTP) {
          // ====== SCTP bind: bind to specified addresses ===================
-         char   buffer[localAddresses * sizeof(sockaddr_union)];
+         char   buffer[localAddressCount * sizeof(sockaddr_union)];
          char*  ptr = (char*)&buffer[0];
-         for(unsigned int i = 0;i < localAddresses;i++) {
+         for(unsigned int i = 0;i < localAddressCount;i++) {
             if(localAddressArray[i].sa.sa_family == AF_INET) {
                memcpy(ptr, (void*)&localAddressArray[i].in, sizeof(sockaddr_in));
                ((sockaddr_in*)ptr)->sin_port = htons(localPort);
@@ -627,7 +641,7 @@ int createAndBindSocket(int                   family,
                assert(false);
             }
          }
-         if(sctp_bindx(sd, (sockaddr*)&buffer, localAddresses,
+         if(sctp_bindx(sd, (sockaddr*)&buffer, localAddressCount,
                        SCTP_BINDX_ADD_ADDR) != 0) {
             ext_close(sd);
             return(-3);

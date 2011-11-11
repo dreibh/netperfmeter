@@ -477,10 +477,15 @@ static Flow* createFlow(Flow*                  previousFlow,
                                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
          case IPPROTO_TCP:
-         case IPPROTO_MPTCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_TCP, 0,
                                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
            break;
+#ifdef HAVE_MPTCP
+         case IPPROTO_MPTCP:
+            socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_MPTCP, 0,
+                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
+           break;
+#endif
          case IPPROTO_UDP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_UDP, 0,
                                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
@@ -712,7 +717,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    }
 
 #ifdef HAVE_MPTCP
-   gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort - 1,
+   gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
                                       gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gMPTCPSocket < 0) {
       cerr << "ERROR: Failed to create and bind MPTCP socket - "
