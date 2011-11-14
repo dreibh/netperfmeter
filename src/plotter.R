@@ -356,6 +356,7 @@ plotstd3 <- function(mainTitle,
                      xSeparatorsColors    = c(),
                      rangeSet             = c(),
                      rangeColors          = c(),
+                     hideCurves           = c(),
                      hideLegend           = FALSE,
                      legendOnly           = FALSE,
                      enumerateLines       = FALSE,
@@ -566,7 +567,12 @@ plotstd3 <- function(mainTitle,
             }
 
 
-            if(!legendOnly) {
+            if( (length(hideCurves) > 0) && (length(intersect(c(lineNum), hideCurves)) > 0) ) {
+               legendDot   <- legendDot + 1
+               legendStyle <- (legendStyle + 1) %% 7
+               lineNum     <- lineNum + 1
+            }
+            else if(!legendOnly) {
                # ----- Points plot ------------------------------------------
                if((type == "p") || (type=="points")) {
                   xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
@@ -1083,6 +1089,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                      rangeColors          = c(),
                      enumerateLines       = FALSE,
                      pStart               = 0,
+                     hideCurves           = c(),
                      hideLegend           = FALSE,
                      frameColor           = par("fg"),
                      prePlotFunction      = defaultPrePlotFunction,
@@ -1177,6 +1184,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         rangeColors          = rangeColors,
                         enumerateLines       = enumerateLines,
                         type                 = type,
+                        hideCurves           = hideCurves,
                         hideLegend           = hideLegend,
                         legendSize           = legendSize,
                         legendPos            = legendPos,
@@ -1613,6 +1621,7 @@ createPlots <- function(simulationDirectory,
       pSortAscending      <- TRUE
       prePlotFunction     <- defaultPrePlotFunction
       postPlotFunction    <- defaultPostPlotFunction
+      hideCurves          <- c()
 
       frameColor   <- "black"
       yManipulator <- "set"
@@ -1872,7 +1881,8 @@ createPlots <- function(simulationDirectory,
                bSortAscending   = bSortAscending,
                pSortAscending   = pSortAscending,
                prePlotFunction  = prePlotFunction,
-               postPlotFunction = postPlotFunction)
+               postPlotFunction = postPlotFunction,
+               hideCurves       = hideCurves)               
       if(plotOwnOutput) {
          dev.off()
       }
