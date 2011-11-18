@@ -23,4 +23,4 @@
 make -j2 || exit 1
 
 # Burgsteinfurt
-nohup ./netperfmeter 7000 -verbosity=0 -local=87.139.124.106,212.201.121.87 >server-Burgsteinfurt.log 2>&1 &
+nohup ./netperfmeter 7000 -verbosity=0 -local=87.139.124.106,212.201.121.86 >server-Burgsteinfurt.log 2>&1 &
