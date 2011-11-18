@@ -52,8 +52,8 @@
 #ifndef SOL_DCCP
 #define SOL_DCCP 269
 #endif
-#else
-#warning DCCP is not supported by the API of this system!
+// #else
+// #warning DCCP is not supported by the API of this system!
 #endif
 
 

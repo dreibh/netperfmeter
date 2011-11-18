@@ -155,7 +155,7 @@ void CPUStatus::update()
       CpuTimes[j] = 0;
    }
    for(unsigned int i = 0; i < CPUs; i++) {
-      for(j = 0; j < CpuStates; j++) {
+      for(unsigned int j = 0; j < CpuStates; j++) {
          CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
       }
    }
