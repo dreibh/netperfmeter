@@ -3,7 +3,7 @@
  * network performance meter application NetPerfMeter:
  * http://www.exp-math.uni-essen.de/~dreibh/netperfmeter/
  *
- * Copyright 2009 by Thomas Dreibholz <dreibh [AT] iem.uni-due.de>
+ * Copyright 2012 by Thomas Dreibholz <dreibh [AT] iem.uni-due.de>
  *
  * $Id$
  *
