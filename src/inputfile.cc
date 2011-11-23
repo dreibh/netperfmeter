@@ -1,7 +1,7 @@
 /* $Id$
  *
  * Plain/BZip2 File Input
- * Copyright (C) 2009-2011 by Thomas Dreibholz
+ * Copyright (C) 2009-2012 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -62,7 +62,7 @@ bool InputFile::initialize(const char*           name,
    BZFile = NULL;
    File = (name != NULL) ? fopen(name, "r") : tmpfile();
    if(File == NULL) {
-      std::cerr << "ERROR: Unable to create output file <"
+      std::cerr << "ERROR: Unable to open input file <"
                 << Name << ">!" << std::endl;
       ReadError = true;
       return(false);
@@ -119,7 +119,7 @@ ssize_t InputFile::readLine(char* buffer, size_t bufferSize, bool& eof)
 
    if(bufferSize < 1) {
       return(-1);
-   }   
+   }
    bufferSize--;  // Leave one byte for terminating 0x00 byte.
 
    ssize_t bytesRead;
