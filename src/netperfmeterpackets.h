@@ -151,7 +151,7 @@ struct NetPerfMeterDataMessage
    uint64_t           ByteSeqNumber;
    uint64_t           TimeStamp;
 
-   char               Payload[];
+   unsigned char      Payload[];
 } __attribute__((packed));
 
 #define NPMDF_FRAME_BEGIN (1 << 0)

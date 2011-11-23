@@ -41,6 +41,18 @@ extern unsigned int gOutputVerbosity;
 #define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetPerfMeterDataMessage))
 
 
+// ###### Generate payload pattern ##########################################
+static void fillPayload(unsigned char* payload, const size_t length)
+{
+   unsigned char c = 30;
+   for(size_t i = 0;i < length;i++) {
+      *payload++ = c++;
+      if(c > 127) {
+         c = 30;
+      }
+   }
+}
+
 
 // ###### Send NETPERFMETER_DATA message ####################################
 ssize_t sendNetPerfMeterData(Flow*                    flow,
@@ -78,14 +90,8 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    dataMsg->TimeStamp     = hton64(now);
 
    // ------ Create payload data pattern ------------------
-   unsigned char c = 30;
-   for(size_t i = 0;i < (bytesToSend - sizeof(NetPerfMeterDataMessage));i++) {
-      dataMsg->Payload[i] = (char)c;
-      c++;
-      if(c > 127) {
-         c = 30;
-      }
-   }
+   fillPayload((unsigned char*)&dataMsg->Payload,
+               bytesToSend - sizeof(NetPerfMeterDataMessage));
 
    // ====== Send NETPERFMETER_DATA message =================================
    ssize_t sent;
