@@ -262,10 +262,8 @@ static unsigned int getAggregate(char*        objectName,
 
    // ====== Get segment ====================================================
    unsigned int levels;
-   bool         levelIsObject = false;
-   char* segment = rindex(objectName, '.');
+   char*        segment = rindex(objectName, '.');
    if(segment == NULL) {
-      levelIsObject = true;
       segment       = objectName;
       scalarName[0] = 0x00;
       aggNames[0]   = 0x00;
