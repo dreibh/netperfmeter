@@ -1,0 +1,336 @@
+
+
+
+Network Working Group                                       T. Dreibholz
+Internet-Draft                                                  M. Becke
+Intended status: Experimental               University of Duisburg-Essen
+Expires: April 28, 2012                                 October 26, 2011
+
+
+      SCTP Socket API Extensions for Concurrent Multipath Transfer
+           draft-dreibholz-tsvwg-sctpsocket-multipath-02.txt
+
+Abstract
+
+   This document describes extensions to the SCTP sockets API for
+   configuring the CMT-SCTP and CMT/RP-SCTP extensions.
+
+Status of this Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on April 28, 2012.
+
+Copyright Notice
+
+   Copyright (c) 2011 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+
+
+
+Dreibholz & Becke        Expires April 28, 2012                 [Page 1]
+
+Internet-Draft         SCTP Socket API Extensions           October 2011
+
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . . . 3
+   2.  Concurrent Multipath Transfer and Resource Pooling
+       Activation/Deactivation (SCTP_CMT_ON_OFF) . . . . . . . . . . . 3
+   3.  Security Considerations . . . . . . . . . . . . . . . . . . . . 3
+   4.  IANA Considerations . . . . . . . . . . . . . . . . . . . . . . 4
+   5.  Acknowledgments . . . . . . . . . . . . . . . . . . . . . . . . 4
+   6.  References  . . . . . . . . . . . . . . . . . . . . . . . . . . 4
+     6.1.  Normative References  . . . . . . . . . . . . . . . . . . . 4
+     6.2.  Informative References  . . . . . . . . . . . . . . . . . . 4
+   Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . . . 5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Dreibholz & Becke        Expires April 28, 2012                 [Page 2]
+
+Internet-Draft         SCTP Socket API Extensions           October 2011
+
+
+1.  Introduction
+
+   This draft describes extensions to the SCTP sockets API (see
+   [I-D.ietf-tsvwg-sctpsocket], [RFC4960]) which allow an application to
+   configure the behaviour of the Concurrent Multipath Transfer (CMT)
+   extensions CMT-SCTP, CMT/RPv1-SCTP, CMT/RPv2-SCTP and MPTCP-like (see
+   [I-D.tuexen-tsvwg-sctp-multipath], [Globecom2010], [PAMS2011],
+   [SoftCOM2011], [ConTEL2011], [AINA2010], [IAS2006]).
+
+
+2.  Concurrent Multipath Transfer and Resource Pooling Activation/
+    Deactivation (SCTP_CMT_ON_OFF)
+
+   This socket option activates or deactivates CMT and sets the
+   corresponding Resource Pooling variant to be applied.  The
+   sctp_assoc_value structure is used to specify the association for
+   which the CMT state should be changed and the new CMT state.
+
+   Definition of the sctp_assoc_value structure:
+
+   struct sctp_assoc_value {
+      sctp_assoc_t assoc_id;
+      uint32_t     assoc_value;
+   };
+
+   assoc_id:  Holds the identifier for the association of which the CMT
+      state should be changed.  Ignored for one-to-one style sockets.
+
+   assoc_value:
+
+      0  Turns CMT off.
+
+      1  Turns plain CMT-SCTP on.  No Resource Pooling is applied.
+
+      2  Turns CMT-SCTP on.  CMT/RPv1 Resource Pooling as defined in
+         [AINA2010] is applied.
+
+      3  Turns CMT-SCTP on.  CMT/RPv2 Resource Pooling as defined in
+         [ConTEL2011] is applied.
+
+      4  Turns CMT-SCTP on.  MPTCP-like Resource Pooling as defined in
+         [SoftCOM2011], [ConTEL2011] is applied.
+
+
+3.  Security Considerations
+
+   Security considerations for the SCTP sockets API are described by
+   [I-D.ietf-tsvwg-sctpsocket].
+
+
+
+Dreibholz & Becke        Expires April 28, 2012                 [Page 3]
+
+Internet-Draft         SCTP Socket API Extensions           October 2011
+
+
+4.  IANA Considerations
+
+   This document does not require IANA actions.
+
+
+5.  Acknowledgments
+
+   The authors would like to thank Michael Tuexen for his support.
+
+
+6.  References
+
+6.1.  Normative References
+
+   [RFC4960]  Stewart, R., "Stream Control Transmission Protocol",
+              RFC 4960, September 2007.
+
+   [I-D.ietf-tsvwg-sctpsocket]
+              Stewart, R., Tuexen, M., Poon, K., Lei, P., and V.
+              Yasevich, "Sockets API Extensions for Stream Control
+              Transmission Protocol (SCTP)",
+              draft-ietf-tsvwg-sctpsocket-32 (work in progress),
+              October 2011.
+
+   [I-D.tuexen-tsvwg-sctp-multipath]
+              Becke, M., Dreibholz, T., Iyengar, J., Natarajan, P., and
+              M. Tuexen, "Load Sharing for the Stream Control
+              Transmission Protocol (SCTP)",
+              draft-tuexen-tsvwg-sctp-multipath-02 (work in progress),
+              July 2011.
+
+6.2.  Informative References
+
+   [SoftCOM2011]
+              Dreibholz, T., Becke, M., Adhari, H., and E. Rathgeb,
+              "Evaluation of A New Multipath Congestion Control Scheme
+              using the NetPerfMeter Tool-Chain", Proceedings of the
+              19th IEEE International Conference on Software,
+              Telecommunications and Computer
+              Networks (SoftCOM), ISBN 978-953-290-027-9,
+              September 2011.
+
+   [PAMS2011]
+              Adhari, H., Dreibholz, T., Becke, M., Rathgeb, E., and M.
+              Tuexen, "Evaluation of Concurrent Multipath Transfer over
+              Dissimilar Paths", Proceedings of the 1st International
+              Workshop on Protocols and Applications with Multi-Homing
+              Support (PAMS), Pages 708-714, ISBN 978-0-7695-4338-3,
+
+
+
+Dreibholz & Becke        Expires April 28, 2012                 [Page 4]
+
+Internet-Draft         SCTP Socket API Extensions           October 2011
+
+
+              DOI 10.1109/WAINA.2011.92, March 2011.
+
+   [ConTEL2011]
+              Dreibholz, T., Becke, M., Adhari, H., and E. Rathgeb, "On
+              the Impact of Congestion Control for Concurrent Multipath
+              Transfer on the Transport Layer", Proceedings of the 11th
+              IEEE International Conference on
+              Telecommunications (ConTEL), Pages 397-404, ISBN 978-953-
+              184-152-8, June 2011.
+
+   [AINA2010]
+              Dreibholz, T., Becke, M., Pulinthanath, J., and E.
+              Rathgeb, "Applying TCP-Friendly Congestion Control to
+              Concurrent Multipath Transfer", Proceedings of the 24th
+              IEEE International Conference on Advanced Information
+              Networking and Applications (AINA), Pages 312-319,
+              ISSN 1550-445X, DOI 10.1109/AINA.2010.117, April 2010.
+
+   [Globecom2010]
+              Dreibholz, T., Becke, M., Rathgeb, E., and M. Tuexen, "On
+              the Use of Concurrent Multipath Transfer over Asymmetric
+              Paths", Proceedings of the IEEE Global Communications
+              Conference (GLOBECOM), ISBN 978-1-4244-5637-6,
+              DOI 10.1109/GLOCOM.2010.5683579, December 2010.
+
+   [IAS2006]  Iyengar, J., Amer, P., and R. Stewart, "Concurrent
+              Multipath Transfer Using SCTP Multihoming Over Independent
+              End-to-End Paths", IEEE/ACM Transactions on
+              Networking, Volume 14, Number 5, Pages 951-964, ISSN 1063-
+              6692, DOI 10.1109/TNET.2006.882843, October 2006.
+
+
+Authors' Addresses
+
+   Thomas Dreibholz
+   University of Duisburg-Essen, Institute for Experimental Mathematics
+   Ellernstrasse 29
+   45326 Essen, Nordrhein-Westfalen
+   Germany
+
+   Phone: +49-201-1837637
+   Fax:   +49-201-1837673
+   Email: dreibh@iem.uni-due.de
+   URI:   http://www.iem.uni-due.de/~dreibh/
+
+
+
+
+
+
+
+Dreibholz & Becke        Expires April 28, 2012                 [Page 5]
+
+Internet-Draft         SCTP Socket API Extensions           October 2011
+
+
+   Martin Becke
+   University of Duisburg-Essen, Institute for Experimental Mathematics
+   Ellernstrasse 29
+   45326 Essen, Nordrhein-Westfalen
+   Germany
+
+   Phone: +49-201-183-7667
+   Fax:   +49-201-183-7673
+   Email: martin.becke@uni-due.de
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Dreibholz & Becke        Expires April 28, 2012                 [Page 6]
+
