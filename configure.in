@@ -37,6 +37,14 @@ AC_ARG_ENABLE([plotting-programs],
               enable_plotting_programs=$enableval,enable_plotting_programs=no)
 AM_CONDITIONAL(BUILD_PLOTTING_PROGRAMS, test x$enable_plotting_programs = xyes)
 
+AC_ARG_ENABLE([per-cpu-stats],
+              AC_HELP_STRING( [--enable-per-cpu-stats],
+                              [Use per CPU stats (applies only to Mac OS X) @<:@default=no@:>@]),
+              enable_per_cpu_stats=$enableval,enable_per_cpu_stats=no)
+if test x$enable_per_cpu_stats = xyes; then
+  AC_DEFINE(USE_PER_CPU_STATISTICS, 1, [Use per CPU statistics])
+fi
+
 # ###### Networking declarations ############################################
 AC_MSG_CHECKING(if stderr is a variable of type FILE* and not a macro)
 AC_TRY_COMPILE([#include <stdio.h>],
