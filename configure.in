@@ -14,9 +14,10 @@ AC_PROG_LIBTOOL
 
 # ###### Maintainer mode ####################################################
 AC_ARG_ENABLE([maintainer-mode],
-[  --enable-maintainer-mode            enable maintainer mode ]
-[default=no]],enable_maintainer_mode=$enableval,enable_maintainer_mode=no)
-if test "$enable_maintainer_mode" = "yes"; then
+              AC_HELP_STRING( [--enable-maintainer-mode],
+                              [enable maintainer mode @<:@default=no@:>@]),
+              enable_maintainer_mode=$enableval,enable_maintainer_mode=no)
+if test x$enable_maintainer_mode = xyes; then
    CFLAGS="$CFLAGS -Wall -g3 -O0"
    CXXFLAGS="$CXXFLAGS -Wall -g3 -O0"
 else
@@ -25,15 +26,16 @@ else
 fi
 
 AC_ARG_ENABLE([test-programs],
-[  --enable-test-programs              build with batch test programs ]
-[default=no]],enable_test_programs=$enableval,enable_test_programs=no)
+              AC_HELP_STRING( [--enable-test-programs],
+                              [build with batch test programs @<:@default=no@:>@]),
+              enable_test_programs=$enableval,enable_test_programs=no)
 AM_CONDITIONAL(BUILD_TEST_PROGRAMS, test x$enable_test_programs = xyes)
 
 AC_ARG_ENABLE([plotting-programs],
-[  --enable-plotting-programs              build with batch plotting programs ]
-[default=no]],enable_plotting_programs=$enableval,enable_plotting_programs=no)
+              AC_HELP_STRING( [--enable-plotting-programs],
+                              [build with batch plotting programs @<:@default=no@:>@]),
+              enable_plotting_programs=$enableval,enable_plotting_programs=no)
 AM_CONDITIONAL(BUILD_PLOTTING_PROGRAMS, test x$enable_plotting_programs = xyes)
-
 
 # ###### Networking declarations ############################################
 AC_MSG_CHECKING(if stderr is a variable of type FILE* and not a macro)
@@ -178,8 +180,10 @@ LIBS=$oldLIBS
 
 
 # ###### Check if kernel SCTP should be used ################################
-AC_ARG_ENABLE(kernel-sctp,
-[  --enable-kernel-sctp Use kernel SCTP instead of sctplib [default=yes]],enable_kernel_sctp=$enableval,enable_kernel_sctp=yes)
+AC_ARG_ENABLE([kernel-sctp],
+              AC_HELP_STRING( [--enable-kernel-sctp],
+                              [Use kernel SCTP instead of sctplib @<:@default=yes@:>@]),
+              enable_kernel_sctp=$enableval,enable_kernel_sctp=yes)
 
 
 # ###### Check for SCTP implementation ######################################
