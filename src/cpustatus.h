@@ -24,6 +24,9 @@
 
 #include <stdio.h>
 #include <assert.h>
+#ifdef __APPLE__
+#include <mach/mach.h>
+#endif
 
 
 class CPUStatus
@@ -62,6 +65,14 @@ class CPUStatus
 #elif defined __linux__
    typedef unsigned long long tick_t;
    FILE*               ProcStatFD;
+#elif __APPLE__
+#ifdef USE_PER_CPU_STATISTICS
+   typedef unsigned int tick_t;
+   host_priv_t         host_priv;
+#else
+   typedef natural_t tick_t;
+#endif
+   host_name_port_t    host;
 #endif
    unsigned int        CPUs;
    tick_t*             CpuTimes;

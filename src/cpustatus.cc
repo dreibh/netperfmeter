@@ -31,6 +31,9 @@
 #ifdef __FreeBSD__
 #include <sys/proc.h>
 #endif
+#ifdef __APPLE__
+#include <mach/mach.h>
+#endif
 #include <iostream>
 
 
@@ -44,6 +47,11 @@ const char* CPUStatus::CpuStateNames[] = {
 const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Idle", "IOWait",
    "Hardware Interrupts", "Software Interrupts", "Hypervisor"
+};
+#elif defined __APPLE__
+#define IDLE_INDEX 2
+const char* CPUStatus::CpuStateNames[] = {
+   "User", "System", "Idle", "Nice"
 };
 #endif
 
@@ -83,6 +91,29 @@ CPUStatus::CPUStatus()
       std::cerr << "ERROR: Unable to open /proc/stat!" << std::endl;
       exit(1);
    }
+#elif defined __APPLE__
+#ifdef USE_PER_CPU_STATISTICS
+   kern_return_t kr;
+   mach_msg_type_number_t count;
+   host_basic_info_data_t hinfo;
+#endif
+
+   CpuStates = CPU_STATE_MAX;
+   host = mach_host_self();
+#ifdef USE_PER_CPU_STATISTICS
+   if((kr = host_get_host_priv_port(host, &host_priv)) != KERN_SUCCESS) {
+      mach_error("host_get_host_priv_port():", kr);
+      exit(1);
+   }
+   count = HOST_BASIC_INFO_COUNT;
+   if((kr = host_info(host, HOST_BASIC_INFO, (host_info_t)&hinfo, &count)) != KERN_SUCCESS) {
+      mach_error("host_info():", kr);
+      exit(1);
+   };
+   CPUs = hinfo.max_cpus;
+#else
+   CPUs = 1;
+#endif
 #endif
 
    // ====== Allocate current times array ===================================
@@ -121,6 +152,9 @@ CPUStatus::~CPUStatus()
 #ifdef __linux__
    fclose(ProcStatFD);
    ProcStatFD = NULL;
+#endif
+#ifdef __APPLE__
+   mach_port_deallocate(mach_task_self(), host);
 #endif
 }
 
@@ -185,6 +219,49 @@ void CPUStatus::update()
          exit(1);
       }
    }
+
+#elif __APPLE__
+   kern_return_t kr;
+#ifdef USE_PER_CPU_STATISTICS
+   processor_port_array_t processor_list;
+   natural_t processor_count, info_count;
+   processor_cpu_load_info_data_t cpu_load_info;
+
+   if((kr = host_processors(host_priv, &processor_list, &processor_count)) != KERN_SUCCESS) {
+      mach_error("host_processors():", kr);
+      exit(1);
+   }
+   for(unsigned int i = 0; i < processor_count; i++) {
+      info_count = PROCESSOR_CPU_LOAD_INFO_COUNT;
+      if ((kr = processor_info(processor_list[i], PROCESSOR_CPU_LOAD_INFO, &host, (processor_info_t)&cpu_load_info, &info_count)) != KERN_SUCCESS) {
+         mach_error("processor_info():", kr);
+         exit(1);
+      }
+      for(unsigned int j = 0; j < CpuStates; j++) {
+         CpuTimes[((i + 1) * CpuStates) + j] = cpu_load_info.cpu_ticks[j];
+      }
+   }
+   vm_deallocate(mach_task_self(), (vm_address_t)processor_list, processor_count * sizeof(processor_t *));
+   // ------ Compute total values -------------------------
+   for(unsigned int j = 0; j < CpuStates; j++) {
+      CpuTimes[j] = 0;
+      for(unsigned int i = 0; i < CPUs; i++) {
+         CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
+      }
+   }
+#else
+   mach_msg_type_number_t count;
+   host_cpu_load_info_data_t cpu_load_info;
+
+   count = HOST_CPU_LOAD_INFO_COUNT;
+   if((kr = host_statistics(host, HOST_CPU_LOAD_INFO, (host_info_t)&cpu_load_info, &count)) != KERN_SUCCESS) {
+      mach_error("host_statistics():", kr);
+      exit(1);
+   }
+   for(unsigned int j = 0; j < CpuStates; j++) {
+      CpuTimes[j] = CpuTimes[CpuStates + j] = cpu_load_info.cpu_ticks[j];
+   }
+#endif
 #endif
 
 
