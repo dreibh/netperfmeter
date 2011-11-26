@@ -99,7 +99,10 @@ CPUStatus::CPUStatus()
 #endif
 
    CpuStates = CPU_STATE_MAX;
-   host = mach_host_self();
+   if ((host = mach_host_self()) == MACH_PORT_NULL) {
+      std::cerr << "ERROR: Couldn't receive send rights." << std::endl;
+      exit(1);
+   }
 #ifdef USE_PER_CPU_STATISTICS
    if((kr = host_get_host_priv_port(host, &host_priv)) != KERN_SUCCESS) {
       mach_error("host_get_host_priv_port():", kr);
