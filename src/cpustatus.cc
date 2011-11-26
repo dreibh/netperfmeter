@@ -92,11 +92,7 @@ CPUStatus::CPUStatus()
    CpuTimes = (tick_t*)calloc(1, cpuTimesSize);
    assert(CpuTimes != NULL);
 #ifdef __FreeBSD__
-   if(sysctlbyname("kern.cp_times", CpuTimes, &cpuTimesSize, NULL, 0) < 0) {
-      std::cerr << "ERROR: sysctlbyname(kern.cp_times) failed: "
-                << strerror(errno) << std::endl;
-      exit(1);
-   }
+   getSysCtl("kern.cp_times", CpuTimes, cpuTimesSize);
    CPUs = cpuTimesSize / CpuStates / sizeof(tick_t);
 #endif
 
@@ -146,10 +142,7 @@ void CPUStatus::update()
    // ====== Get counters ===================================================
 #ifdef __FreeBSD__
    cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
-   if(sysctlbyname("kern.cp_times", (tick_t*)&CpuTimes[CpuStates], &cpuTimesSize, NULL, 0) < 0) {
-      std::cerr << "ERROR: sysctlbyname(kern.cp_times) failed: " << strerror(errno) << std::endl;
-      exit(1);
-   }
+   getSysCtl("kern.cp_times", &CpuTimes[CpuStates], cpuTimesSize);
    // ------ Compute total values -------------------------
    for(unsigned int j = 0; j < CpuStates; j++) {
       CpuTimes[j] = 0;
