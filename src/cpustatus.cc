@@ -69,16 +69,14 @@ CPUStatus::CPUStatus()
 {
    // ====== Initialize =====================================================
 #ifdef __FreeBSD__
-   int maxCPUs;
    CpuStates = CPUSTATES;
-   getSysCtl("kern.smp.maxcpus", &maxCPUs, sizeof(maxCPUs));
+   getSysCtl("hw.ncpu", &CPUs, sizeof(CPUs));
 #elif defined __linux__
    CpuStates = 8;
    CPUs = sysconf(_SC_NPROCESSORS_CONF);
    if(CPUs < 1) {
       CPUs = 1;
    }
-   const int maxCPUs = CPUs;
 
    ProcStatFD = fopen("/proc/stat", "r");
    if(ProcStatFD == NULL) {
@@ -88,13 +86,9 @@ CPUStatus::CPUStatus()
 #endif
 
    // ====== Allocate current times array ===================================
-   size_t cpuTimesSize = sizeof(tick_t) * (maxCPUs + 1) * CpuStates;
+   size_t cpuTimesSize = sizeof(tick_t) * (CPUs + 1) * CpuStates;
    CpuTimes = (tick_t*)calloc(1, cpuTimesSize);
    assert(CpuTimes != NULL);
-#ifdef __FreeBSD__
-   getSysCtl("kern.cp_times", CpuTimes, cpuTimesSize);
-   CPUs = cpuTimesSize / CpuStates / sizeof(tick_t);
-#endif
 
    // ====== Allocate old times array =======================================
    cpuTimesSize = sizeof(tick_t) * (CPUs + 1) * CpuStates;
@@ -146,9 +140,7 @@ void CPUStatus::update()
    // ------ Compute total values -------------------------
    for(unsigned int j = 0; j < CpuStates; j++) {
       CpuTimes[j] = 0;
-   }
-   for(unsigned int i = 0; i < CPUs; i++) {
-      for(unsigned int j = 0; j < CpuStates; j++) {
+      for(unsigned int i = 0; i < CPUs; i++) {
          CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
       }
    }
