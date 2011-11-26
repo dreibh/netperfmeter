@@ -305,14 +305,6 @@ else
                    #ifdef HAVE_NETINET_SCTP_H
                    #include <netinet/sctp.h>
                    #endif])
-   AC_CHECK_MEMBER(struct sctp_sndrcvinfo.sinfo_pr_policy,
-                   AC_DEFINE(HAVE_SINFO_PR_POLICY, 1, [Define this if sctp_sndrcvinfo has the sinfo_pr_policy field.]),,
-                   [#ifdef HAVE_SYS_TYPES_H
-                   #include <sys/types.h>
-                   #endif
-                   #ifdef HAVE_NETINET_SCTP_H
-                   #include <netinet/sctp.h>
-                   #endif])
    AC_MSG_CHECKING(whether sctp_connectx has an associd parameter)
    AC_TRY_COMPILE([#include <sys/types.h>
                    #include <netinet/sctp.h>],
