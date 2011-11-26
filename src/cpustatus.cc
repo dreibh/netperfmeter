@@ -154,6 +154,9 @@ CPUStatus::~CPUStatus()
    ProcStatFD = NULL;
 #endif
 #ifdef __APPLE__
+#ifdef USE_PER_CPU_STATISTICS
+   mach_port_deallocate(mach_task_self(), host_priv);
+#endif
    mach_port_deallocate(mach_task_self(), host);
 #endif
 }
