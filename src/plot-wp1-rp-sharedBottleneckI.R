@@ -1,3 +1,4 @@
+
 # ###########################################################################
 # Name:        wp1-rp-sharedBottleneckI
 # Description:
@@ -32,22 +33,14 @@ plotConfigurations <- list(
    #      "a-Axis Variable", "b-Axis Variable", "p-Axis Variable")
    # ------------------------------------------------------------------------
 
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
-        "Received Bit Rate per Flow", NA, NA, list(0,1),
-        "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
-        "CMTCCVariant", "OptionBufferSplitting", "",
-        "passive.flow", "OptionNRSACK", "Unordered"),
 
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUUtilization.pdf"),
-        "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
-        "RateNorthernTrail-Mbit", "active.CPU-Utilization",
-        "CMTCCVariant", "OptionNRSACK", "",
-        "active.CPU", "", ""),
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUUtilization.pdf"),
-        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
-        "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
-        "CMTCCVariant", "OptionNRSACK", "",
-        "passive.CPU", "", "")
+  list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
+        "", NA, NA, list(0,1),
+        "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
+        "CMTCCVariant", "passive.flow", "OptionNRSACK",
+        "", "ReferenceFlowProtocol", "Runtime",
+        "TRUE", 
+	 "zColorArray <- c(\"darkgreen\", \"orange\", \"red\", \"blue\", \"gray50\")")
 )
 
 
@@ -57,4 +50,6 @@ plotVariables <- append(list(
 
 # ###########################################################################
 
-createPlots(simulationDirectory, plotConfigurations)
+createPlots(simulationDirectory, plotConfigurations,
+            customFilter="sed -f change_names_Flows.sed")
+

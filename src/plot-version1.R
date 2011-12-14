@@ -39,7 +39,7 @@ netPerfMeterPlotVariables <- list(
    list("ReferenceFlowProtocol", "Reference Flow Protocol{P}"),
    list("OnlyOneAssoc",          "Only One Assoc{A}"),
    list("Unordered",             "Unordered{U}"),
-   list("CMTCCVariant",          "CMT{:G:}"),
+   list("CMTCCVariant",          "CMT Variant {:Gamma:}"),
    list("OptionDAC",             "Delayed Ack CMT{:D:}"),
    list("OptionNRSACK",          "Use NR-SACK{:n:}"),
    list("SndBuf",                "Send Buffer{S}[Bytes]"),
@@ -48,6 +48,7 @@ netPerfMeterPlotVariables <- list(
    list("OptionBufferSplitting", "Buffer Splitting{:B:}"),
    list("BidirectionalQoS",      "Bidirectional QoS{Q}"),
    list("CwndMaxBurst",          "Cwnd MaxBurst{c}"),
+   list("Runtime",               "Runtime{R}[s]"),
 
    list("RateNorthernTrail",
            "Data Rate on Northern Trail{:R[North]:}[Kbit/s]"),
@@ -67,7 +68,7 @@ netPerfMeterPlotVariables <- list(
            "Loss Rate on Southern Trail{:E[South]:}"),
 
    list("passive.flow",
-           "Flow Number{F}"),
+           "Flow {F}"),
    list("passive.flow-ReceivedPackets",
            "Received Packets [1]",
            "data1$passive.flow.ReceivedPackets",
