@@ -33,37 +33,12 @@ plotConfigurations <- list(
    # ------------------------------------------------------------------------
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
-        "Received Bit Rate per Flow", NA, NA, list(0,1),
+        "", NA, NA, list(0,1),
         "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
-        "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
-        "passive.flow", "ReferenceFlowProtocol", "",
-        "TRUE", "vSortAscending<-FALSE"),
-
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUIdle.pdf"),
-        "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
-        "RateNorthernTrail-Mbit", "active.CPU-Utilization",
-        "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
-        "passive.flow", "ReferenceFlowProtocol", "",
-        "TRUE", "vSortAscending<-FALSE"),
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-PassiveCPUIdle.pdf"),
-        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
-        "RateNorthernTrail-Mbit", "passive.CPU-Utilization",
-        "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
-        "passive.flow", "ReferenceFlowProtocol", "",
-        "TRUE", "vSortAscending<-FALSE"),
-
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
-        "Sender's Perspective", NA, seq(0, 100, 10), list(0,1),
-        "RateNorthernTrail-Mbit", "active.CPU-System",
-        "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
-        "passive.flow", "ReferenceFlowProtocol", "",
-        "TRUE", "vSortAscending<-FALSE"),
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ActiveCPUSystem.pdf"),
-        "Receiver's Perspective", NA, seq(0, 100, 10), list(0,1),
-        "RateNorthernTrail-Mbit", "passive.CPU-System",
-        "CMTCCVariant", "OptionBufferSplitting", "OptionNRSACK",
-        "passive.flow", "ReferenceFlowProtocol", "",
-        "TRUE", "vSortAscending<-FALSE")
+        "CMTCCVariant", "passive.flow", "OptionNRSACK",
+        "", "ReferenceFlowProtocol", "",
+        "TRUE", 
+	 "zColorArray <- c(\"darkgreen\", \"orange\", \"red\", \"blue\", \"gray50\")")
 )
 
 
@@ -73,4 +48,5 @@ plotVariables <- append(list(
 
 # ###########################################################################
 
-createPlots(simulationDirectory, plotConfigurations)
+createPlots(simulationDirectory, plotConfigurations,
+            customFilter="sed -f change_names_Flows.sed")
