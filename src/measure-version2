@@ -27,7 +27,7 @@ fi
 
 
 # ###### Variables ##########################################################
-Variables="Run Runtime Scenario Flows ReferenceFlows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst CMTCCVariant OptionDAC OptionNRSACK OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail QueueTypeNorthernTrail FrameCapacityNorthernTrail RedMinThNorthernTrail RedMaxThNorthernTrail RedMaxPNorthernTrail RedWqNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail QueueTypeSouthernTrail FrameCapacitySouthernTrail RedMinThSouthernTrail RedMaxThSouthernTrail RedMaxPSouthernTrail RedWqSouthernTrail"
+Variables="Run Runtime Scenario Flows ReferenceFlows CompareWithReference ReferenceFlowProtocol OnlyOneAssoc Unordered Unreliable ReferenceUnordered ReferenceUnreliable FrameRate FrameSize SndBuf RcvBuf InitialCwnd CwndMaxBurst CMTCCVariant OptionDAC OptionNRSACK OptionBufferSplitting BidirectionalQoS RateNorthernTrail DelayNorthernTrail LossNorthernTrail ErrorNorthernTrail QueueTypeNorthernTrail FrameCapacityNorthernTrail RedMinThNorthernTrail RedMaxThNorthernTrail RedMaxPNorthernTrail RedWqNorthernTrail RateSouthernTrail DelaySouthernTrail LossSouthernTrail ErrorSouthernTrail QueueTypeSouthernTrail FrameCapacitySouthernTrail RedMinThSouthernTrail RedMaxThSouthernTrail RedMaxPSouthernTrail RedWqSouthernTrail Protocol"
 
 # ###### Control ############################################################
 MaxTrials=10            # If something goes wrong, try again up to 10 times
@@ -49,6 +49,7 @@ Unordered_VALUES="0.0"
 Unreliable_VALUES="0.0"
 ReferenceUnordered_VALUES="-1"
 ReferenceUnreliable_VALUES="-1"
+Protocol_VALUES="SCTP"
 
 CMTCCVariant_VALUES="off"
 SndBuf_VALUES="233016"
@@ -287,19 +288,37 @@ perform_run ()
             command="$command -runtime=$Runtime"
 
             if [ "$OnlyOneAssoc" = "true" ] ; then
-               local n=0
+               mainProtocolSelector="-bad"
+               if [ "$Protocol" = "TCP" ] ; then
+                  mainProtocolSelector="-tcp"
+               elif [ "$Protocol" = "SCTP" ] ; then
+                  mainProtocolSelector="-sctp"
+               else
+                  echo >&2 "ERROR: Bad setting of Protocol: $Protocol!"
+                  exit 1
+               fi
+	       local n=0
                local id=1
-               command="$command -sctp "
+               command="$command $mainProtocolSelector "
                while [ $n -lt $Flows ] ; do
                   command="$command $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf:cmt=$CMTCCVariant "
                   n=$(($n+1))
                   id=$(($id+1))
                done
             else
+               mainProtocolSelector="-bad"
+               if [ "$Protocol" = "TCP" ] ; then
+                  mainProtocolSelector="-tcp"
+               elif [ "$Protocol" = "SCTP" ] ; then
+                  mainProtocolSelector="-sctp"
+               else
+                  echo >&2 "ERROR: Bad setting of Protocol: $Protocol!"
+                  exit 1
+               fi
                local n=0
                local id=1
                while [ $n -lt $Flows ] ; do
-                  command="$command -sctp $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf "
+                  command="$command $mainProtocolSelector $FrameRate:$FrameSize:const0:const0:id=$id:unordered=$Unordered:unreliable=$Unreliable:sndbuf=$SndBuf:rcvbuf=$RcvBuf "
                   n=$(($n+1))
                   id=$(($id+1))
                done
