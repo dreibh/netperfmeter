@@ -238,15 +238,9 @@ static const char* parseTrafficSpecOption(const char*      parameters,
    }
    else if(sscanf(parameters, "rcvbuf=%u%n", &intValue, &n) == 1) {
       trafficSpec.RcvBufferSize = (uint32_t)intValue;
-      if(trafficSpec.RcvBufferSize < 4096) {
-         trafficSpec.RcvBufferSize = 4096;
-      }
    }
    else if(sscanf(parameters, "sndbuf=%u%n", &intValue, &n) == 1) {
       trafficSpec.SndBufferSize = (uint32_t)intValue;
-      if(trafficSpec.SndBufferSize < 4096) {
-         trafficSpec.SndBufferSize = 4096;
-      }
    }
    else if(strncmp(parameters, "cmt=", 4) == 0) {
       unsigned int cmt;
