@@ -1200,19 +1200,22 @@ void Flow::run()
 // ###### Configure socket parameters #######################################
 bool Flow::configureSocket(const int socketDescriptor)
 {
-    int bufferSize = TrafficSpec.RcvBufferSize;
-    if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-        std::cerr << "ERROR: Failed to configure receive buffer size on SCTP socket (SO_RCVBUF option) - "
-                  << strerror(errno) << "!" << std::endl;
-        return(false);
+    if(TrafficSpec.RcvBufferSize != 0) {
+       int bufferSize = TrafficSpec.RcvBufferSize;
+       if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
+           std::cerr << "ERROR: Failed to configure receive buffer size on SCTP socket (SO_RCVBUF option) - "
+                     << strerror(errno) << "!" << std::endl;
+           return(false);
+       }
     }
-    bufferSize = TrafficSpec.SndBufferSize;
-    if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-        std::cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
-                  << strerror(errno) << "!" << std::endl;
-        return(false);
+    if(TrafficSpec.SndBufferSize != 0) {
+       int bufferSize = TrafficSpec.SndBufferSize;
+       if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
+           std::cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
+                     << strerror(errno) << "!" << std::endl;
+           return(false);
+       }
     }
-
     if(TrafficSpec.Protocol == IPPROTO_SCTP) {
 #ifdef SCTP_CMT_ON_OFF
         struct sctp_assoc_value cmtOnOff;
