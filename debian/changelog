@@ -1,8 +1,8 @@
-netperfmeter (1.1.10~beta2.6-0ubuntu1) precise; urgency=low
+netperfmeter (1.2.2-1ubuntu1) precise; urgency=low
 
   * New upstream version.
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Mon, 31 Oct 2011 11:11:11 +0200
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 11 Apr 2012 22:22:22 +0800
 
 
 netperfmeter (1.1.9-0ubuntu1) oneiric; urgency=low
