@@ -35,10 +35,14 @@
 #include "transfer.h"
 
 #ifdef HAVE_MPTCP
+// ====== Constants for draft-ietf-mptcp-api-04 =============================
+// FIXME: This should really be set within a standard include file!
 #warning linux/tcp.h does not work with C++ code. Using ugly workaround!
 // #include <linux/tcp.h>
-#define TCP_MULTIPATH_ENABLE   19   /* MPTCP_ENABLE */
-// FIXME: This should really be set within a standard include file!
+#define TCP_MULTIPATH_ENABLE   19
+#define TCP_MULTIPATH_ADD      20
+#define TCP_MULTIPATH_REMOVE   21
+// ==========================================================================
 #endif
 
 
@@ -46,21 +50,20 @@ using namespace std;
 
 
 #define MAX_LOCAL_ADDRESSES 16
-static unsigned int   gLocalAddresses = 0;
+static unsigned int   gLocalAddresses  = 0;
 static sockaddr_union gLocalAddressArray[MAX_LOCAL_ADDRESSES];
 
-
-static const char*   gActiveNodeName  = "Client";
-static const char*   gPassiveNodeName = "Server";
-static int           gControlSocket   = -1;
-static int           gTCPSocket       = -1;
-static int           gMPTCPSocket     = -1;
-static int           gUDPSocket       = -1;
-static int           gSCTPSocket      = -1;
-static int           gDCCPSocket      = -1;
-static double        gRuntime         = -1.0;
-static bool          gStopTimeReached = false;
-MessageReader        gMessageReader;
+static const char*    gActiveNodeName  = "Client";
+static const char*    gPassiveNodeName = "Server";
+static int            gControlSocket   = -1;
+static int            gTCPSocket       = -1;
+static int            gMPTCPSocket     = -1;
+static int            gUDPSocket       = -1;
+static int            gSCTPSocket      = -1;
+static int            gDCCPSocket      = -1;
+static double         gRuntime         = -1.0;
+static bool           gStopTimeReached = false;
+MessageReader         gMessageReader;
 
 
 
