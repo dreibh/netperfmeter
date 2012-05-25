@@ -83,13 +83,20 @@ inline unsigned int makePacket(char*              buffer,
 }
 
 
-static void recordPacket(const uint64_t        now,
-                         const sockaddr_union* local,
-                         const sockaddr_union* remote,
-                         const TestPacket*     packet,
-                         const char*           purpose,
-                         const bool            outOfSequence = false,
-                         const bool            duplicate     = false)
+static void recordEvent(const uint64_t           now,
+                        const uint64_t           testStartTime,
+                        const sockaddr_union*    local,
+                        const sockaddr_union*    remote,
+                        const char*              purpose,
+                        const unsigned long long parameter1,
+                        const unsigned long long parameter2,
+                        const uint64_t           currentSeqNumber,
+                        const uint64_t           totalSeqNumber,
+                        const char*              valueUnit,
+                        const double             value,
+                        const char*              str1 = "",
+                        const char*              str2 = "")
+
 {
    char localAddress[64];
    if(!address2string(&local->sa, (char*)&localAddress, sizeof(localAddress), true)) {
@@ -99,18 +106,34 @@ static void recordPacket(const uint64_t        now,
    if(!address2string(&remote->sa, (char*)&remoteAddress, sizeof(remoteAddress), true)) {
       remoteAddress[0] = 0x00;
    }
-   printf("%llu %llu %s \"%s\" \"%s\" %u\t%llu\t%llu\t%1.6f\t\"%s\" \"%s\"\n",
-          (unsigned long long)now,
-          (unsigned long long)ntoh64(packet->TestStartTime),
+   printf("%llu %llu %s \"%s\" \"%s\" %llu %llu\t%llu %llu\t%s %1.6f\t\"%s\" \"%s\"\n",
+          (unsigned long long)now, (unsigned long long)testStartTime,
           purpose,
           remoteAddress, localAddress,
-          (unsigned int)ntohl(packet->Length),
-          (unsigned long long)ntoh64(packet->CurrentSeqNumber),
-          (unsigned long long)ntoh64(packet->TotalInSequence),
-          ((long long)now - (long long)ntoh64(packet->PacketSendTime)) / 1000.0,
-          (outOfSequence == true) ? "OOS" : "",
-          (duplicate == true)     ? "DUP" : ""
-         );
+          parameter1, parameter2,
+          (unsigned long long)currentSeqNumber, (unsigned long long)totalSeqNumber,
+          valueUnit, value, str1, str2);
+}
+
+
+static void recordPacket(const uint64_t           now,
+                         const sockaddr_union*    local,
+                         const sockaddr_union*    remote,
+                         const TestPacket*        packet,
+                         const char*              purpose,
+                         const unsigned long long interPacketTime = 0,
+                         const bool               outOfSequence   = false,
+                         const bool               duplicate       = false)
+{
+   recordEvent(now, (unsigned long long)ntoh64(packet->TestStartTime),
+               local, remote, purpose,
+               ntohl(packet->Length), interPacketTime,
+               (unsigned long long)ntoh64(packet->CurrentSeqNumber),
+               (unsigned long long)ntoh64(packet->TotalInSequence),
+               "Delay",
+               ((long long)now - (long long)ntoh64(packet->PacketSendTime)) / 1000.0,
+               (outOfSequence == true) ? "OOS" : "",
+               (duplicate == true)     ? "DUP" : "");
 }
 
 
@@ -189,7 +212,7 @@ static void discard(int                   sd,
       }
       else {
          const TestPacket* packet = (const TestPacket*)&buffer;
-         recordPacket(ntoh64(packet->PacketSendTime), local, remote, packet, "SentDiscard");
+         recordPacket(ntoh64(packet->PacketSendTime), local, remote, packet, "SentDiscard", interPacketTime);
       }
       usleep(interPacketTime);
    }
@@ -211,6 +234,8 @@ static void ping(int                   sd,
    uint64_t                ackNumber         = 0;
    uint64_t                requestsSent      = 0;
    uint64_t                responsesReceived = 0;
+   uint64_t                dupsReceived      = 0;
+   uint64_t                oosReceived       = 0;
    boost::dynamic_bitset<> packetMap(packetCount + 1);
 
    while(true) {
@@ -220,6 +245,16 @@ static void ping(int                   sd,
             printf("%llu/%llu -> %1.3f%% loss\n", (unsigned long long)responsesReceived,
                                                   (unsigned long long)requestsSent,
                                                   100.0 * (requestsSent - responsesReceived) / requestsSent);
+            recordEvent(now, testStartTime, local, remote, "LossSummary",
+                        packetSize, interPacketTime, 0, 0,
+                        "Loss",
+                        100.0 * (requestsSent - responsesReceived) / requestsSent);
+            recordEvent(now, testStartTime, local, remote, "DupsSummary",
+                        packetSize, interPacketTime, 0, 0,
+                        "Dups", dupsReceived);
+            recordEvent(now, testStartTime, local, remote, "OoSeqSummary",
+                        packetSize, interPacketTime, 0, 0,
+                        "OoSeq", oosReceived);
             return;
          }
          nextPacketTime = now + interPacketTime;
@@ -233,7 +268,7 @@ static void ping(int                   sd,
          }
          else {
             const TestPacket* packet = (const TestPacket*)&buffer;
-            recordPacket(ntoh64(packet->PacketSendTime), local, remote, packet, "SentEchoReq");
+            recordPacket(ntoh64(packet->PacketSendTime), local, remote, packet, "SentEchoReq", interPacketTime);
             requestsSent++;
          }
       }
@@ -262,9 +297,15 @@ static void ping(int                   sd,
                      oos       = false;
                      ackNumber = ntoh64(packet->CurrentSeqNumber);
                   }
+                  else {
+                     oosReceived++;
+                  }
                   const bool dup = packetMap.test(ntoh64(packet->CurrentSeqNumber));
                   if(!dup) {
                      responsesReceived++;
+                  }
+                  else {
+                     dupsReceived++;
                   }
                   packetMap.set(ntoh64(packet->CurrentSeqNumber), 1);
                   recordPacket(now, local, &remote, packet, "RecvEchoRes", oos, dup);
@@ -336,8 +377,9 @@ int main(int argc, char** argv)
       }
 
       for(int i = 5;i < argc;i++) {
-         if(!(strcmp(argv[i], "ping"))) {
-            ping(sd, &local, &remote);
+         double a, b, c;
+         if(sscanf(argv[i], "ping:%lf:%lf:%lf", &a, &b, &c) == 3) {
+            ping(sd, &local, &remote, (unsigned int)a, (unsigned int)b, (unsigned int)(1000000.0 * c));
          }
          else {
             fprintf(stderr, "ERROR: Invalid action %s!\n", argv[i]);
