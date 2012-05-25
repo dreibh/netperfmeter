@@ -38,8 +38,8 @@ struct TestPacket {
    uint8_t  Flags;
    uint16_t Padding;
    uint32_t Length;
-   uint32_t CurrentSeqNumber;
-   uint32_t TotalInSequence;
+   uint64_t CurrentSeqNumber;
+   uint64_t TotalInSequence;
    uint64_t TestStartTime;
    uint64_t PacketSendTime;
    char     Data[];
@@ -54,8 +54,8 @@ inline unsigned int makePacket(char*              buffer,
                                const size_t       bufferSize,
                                const uint8_t      type,
                                const uint64_t     testStartTime,
-                               const uint32_t     currentSeqNumber,
-                               const uint32_t     totalInSequence,
+                               const uint64_t     currentSeqNumber,
+                               const uint64_t     totalInSequence,
                                const unsigned int totalPacketSize)
 {
    const unsigned int payloadLength =
@@ -70,8 +70,8 @@ inline unsigned int makePacket(char*              buffer,
    packet->Flags            = 0;
    packet->Padding          = 0;
    packet->Length           = htonl(totalLength);
-   packet->CurrentSeqNumber = htonl(currentSeqNumber);
-   packet->TotalInSequence  = htonl(totalInSequence);
+   packet->CurrentSeqNumber = hton64(currentSeqNumber);
+   packet->TotalInSequence  = hton64(totalInSequence);
    for(unsigned int i = 0; i < payloadLength; i++) {
       packet->Data[i] = (i & 0xff);
    }
@@ -86,7 +86,9 @@ static void recordPacket(const uint64_t        now,
                          const sockaddr_union* local,
                          const sockaddr_union* remote,
                          const TestPacket*     packet,
-                         const char*           purpose)
+                         const char*           purpose,
+                         const bool            outOfSequence = false,
+                         const bool            duplicate     = false)
 {
    char localAddress[64];
    if(!address2string(&local->sa, (char*)&localAddress, sizeof(localAddress), true)) {
@@ -96,15 +98,17 @@ static void recordPacket(const uint64_t        now,
    if(!address2string(&remote->sa, (char*)&remoteAddress, sizeof(remoteAddress), true)) {
       remoteAddress[0] = 0x00;
    }
-   printf("%llu %llu %s \"%s\" \"%s\" %u\t%u\t%u\t%1.6f\n",
+   printf("%llu %llu %s \"%s\" \"%s\" %u\t%llu\t%llu\t%1.6f\t\"%s\" \"%s\"\n",
           (unsigned long long)now,
           (unsigned long long)ntoh64(packet->TestStartTime),
           purpose,
           remoteAddress, localAddress,
           (unsigned int)ntohl(packet->Length),
-          (unsigned int)ntohl(packet->CurrentSeqNumber),
-          (unsigned int)ntohl(packet->TotalInSequence),
-          ((long long)now - (long long)ntoh64(packet->PacketSendTime)) / 1000.0
+          (unsigned long long)ntoh64(packet->CurrentSeqNumber),
+          (unsigned long long)ntoh64(packet->TotalInSequence),
+          ((long long)now - (long long)ntoh64(packet->PacketSendTime)) / 1000.0,
+          (outOfSequence == true) ? "OOS" : "",
+          (duplicate == true)     ? "DUP" : ""
          );
 }
 
@@ -166,9 +170,9 @@ static void discard(int                   sd,
                     const unsigned int    packetSize      = 1000,
                     const unsigned int    interPacketTime = 1000000)
 {
-   char buffer[sizeof(TestPacket) + packetSize];
+   char           buffer[sizeof(TestPacket) + packetSize];
+   const uint64_t testStartTime = getMicroTime();
 
-   uint64_t testStartTime = getMicroTime();
    for(unsigned int i = 0; i < packetCount; i++) {
       const unsigned int bytes = makePacket((char*)&buffer, sizeof(buffer),
                                             TPT_ECHO_REQUEST, testStartTime,
@@ -186,29 +190,75 @@ static void discard(int                   sd,
 }
 
 
-void ping(int                   sd,
-          const sockaddr_union* local,
-          const sockaddr_union* remote,
-          const unsigned int    packetCount     = 3,
-          const unsigned int    packetSize      = 1000,
-          const unsigned int    interPacketTime = 1000000)
+static void ping(int                   sd,
+                 const sockaddr_union* local,
+                 const sockaddr_union* remote,
+                 const unsigned int    packetCount     = 3,
+                 const unsigned int    packetSize      = 1000,
+                 const unsigned int    interPacketTime = 1000000)
 {
-   char buffer[sizeof(TestPacket) + packetSize];
+   char           buffer[sizeof(TestPacket) + packetSize];
+   const uint64_t testStartTime     = getMicroTime();
+   uint64_t       nextPacketTime    = 0;
+   uint64_t       seqNumber         = 1;
+   uint64_t       ackNumber         = 0;
+   uint64_t       requestsSent      = 0;
+   uint64_t       responsesReceived = 0;
 
-   uint64_t testStartTime = getMicroTime();
-   for(unsigned int i = 0; i < packetCount; i++) {
-      const unsigned int bytes = makePacket((char*)&buffer, sizeof(buffer),
-                                            TPT_ECHO_REQUEST, testStartTime,
-                                            1 + i, packetCount,
-                                            packetSize);
-      if(sendto(sd, &buffer, bytes, MSG_DONTWAIT, &remote->sa, sizeof(sockaddr_union)) < 0) {
-         perror("send() failed");
+   while(true) {
+      uint64_t now = getMicroTime();
+      if(now >= nextPacketTime) {
+         if(seqNumber > packetCount) {
+            printf("%llu/%llu -> %1.3f%% loss\n", (unsigned long long)responsesReceived,
+                                                  (unsigned long long)requestsSent,
+                                                  100.0 * (requestsSent - responsesReceived) / requestsSent);
+            return;
+         }
+         nextPacketTime = now + interPacketTime;
+         const unsigned int bytes = makePacket((char*)&buffer, sizeof(buffer),
+                                               TPT_ECHO_REQUEST, testStartTime,
+                                               seqNumber, packetCount,
+                                               packetSize);
+         seqNumber++;
+         if(sendto(sd, &buffer, bytes, MSG_DONTWAIT, &remote->sa, sizeof(sockaddr_union)) < 0) {
+            perror("send() failed");
+         }
+         else {
+            const TestPacket* packet = (const TestPacket*)&buffer;
+            recordPacket(ntoh64(packet->PacketSendTime), local, remote, packet, "SentEchoReq");
+            requestsSent++;
+         }
       }
-      else {
-         const TestPacket* packet = (const TestPacket*)&buffer;
-         recordPacket(ntoh64(packet->PacketSendTime), local, remote, packet, "SentEchoReq");
+
+      const int timeout = (int)std::max(((int64_t)nextPacketTime - (int64_t)now) / 1000,
+                                        (int64_t)0);
+      pollfd pfd;
+      pfd.fd      = sd;
+      pfd.events  = POLLIN;
+      pfd.revents = 0;
+      const int ready = poll(&pfd, 1, timeout);
+      if( (ready > 0) && (pfd.revents & POLLIN) ) {
+         sockaddr_union remote;
+         socklen_t      remoteLength = sizeof(remote);
+         const ssize_t  bytes = recvfrom(sd, (char*)&buffer, sizeof(buffer), 0,
+                                         &remote.sa, &remoteLength);
+         now = getMicroTime();
+         if(bytes >= (ssize_t)sizeof(TestPacket)) {
+            TestPacket* packet = (TestPacket*)&buffer;
+            if(ntohl(packet->Length) == bytes) {
+               if( (packet->Type == TPT_ECHO_RESPONSE) &&
+                   (ntoh64(packet->TestStartTime) == testStartTime) ) {
+                  bool oos = true;
+                  if(ntoh64(packet->CurrentSeqNumber) > ackNumber) {
+                     oos       = false;
+                     ackNumber = ntoh64(packet->CurrentSeqNumber);
+                  }
+                  recordPacket(now, local, &remote, packet, "RecvEchoRes", oos);
+                  responsesReceived++;
+               }
+            }
+         }
       }
-      usleep(interPacketTime);
    }
 }
 
