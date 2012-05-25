@@ -29,6 +29,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/sctp.h>
+#include "boost/dynamic_bitset.hpp"
 
 #include "tools.h"
 
@@ -137,6 +138,11 @@ static void passiveMode(int sd, const sockaddr_union* local)
                   if(packet->Type == TPT_ECHO_REQUEST) {
                      recordPacket(now, local, &remote, packet, "RecvEchoReq");
                      packet->Type = TPT_ECHO_RESPONSE;
+
+                     // ====== !!! TEST !!! =================================
+                     // packet->CurrentSeqNumber = hton64(1);
+                     // =====================================================
+
                      if(sendto(sd, &buffer, bytes, MSG_DONTWAIT,
                                &remote.sa, remoteLength) < 0) {
                         perror("send() failed");
@@ -190,6 +196,7 @@ static void discard(int                   sd,
 }
 
 
+#define MAX_PACKET_COUNT
 static void ping(int                   sd,
                  const sockaddr_union* local,
                  const sockaddr_union* remote,
@@ -197,13 +204,14 @@ static void ping(int                   sd,
                  const unsigned int    packetSize      = 1000,
                  const unsigned int    interPacketTime = 1000000)
 {
-   char           buffer[sizeof(TestPacket) + packetSize];
-   const uint64_t testStartTime     = getMicroTime();
-   uint64_t       nextPacketTime    = 0;
-   uint64_t       seqNumber         = 1;
-   uint64_t       ackNumber         = 0;
-   uint64_t       requestsSent      = 0;
-   uint64_t       responsesReceived = 0;
+   char                    buffer[sizeof(TestPacket) + packetSize];
+   const uint64_t          testStartTime     = getMicroTime();
+   uint64_t                nextPacketTime    = 0;
+   uint64_t                seqNumber         = 1;
+   uint64_t                ackNumber         = 0;
+   uint64_t                requestsSent      = 0;
+   uint64_t                responsesReceived = 0;
+   boost::dynamic_bitset<> packetMap(packetCount + 1);
 
    while(true) {
       uint64_t now = getMicroTime();
@@ -247,15 +255,24 @@ static void ping(int                   sd,
             TestPacket* packet = (TestPacket*)&buffer;
             if(ntohl(packet->Length) == bytes) {
                if( (packet->Type == TPT_ECHO_RESPONSE) &&
-                   (ntoh64(packet->TestStartTime) == testStartTime) ) {
+                   (ntoh64(packet->TestStartTime) == testStartTime) &&
+                   (ntoh64(packet->CurrentSeqNumber) <= seqNumber) ) {
                   bool oos = true;
                   if(ntoh64(packet->CurrentSeqNumber) > ackNumber) {
                      oos       = false;
                      ackNumber = ntoh64(packet->CurrentSeqNumber);
                   }
-                  recordPacket(now, local, &remote, packet, "RecvEchoRes", oos);
-                  responsesReceived++;
+                  const bool dup = packetMap.test(ntoh64(packet->CurrentSeqNumber));
+                  if(!dup) {
+                     responsesReceived++;
+                  }
+                  packetMap.set(ntoh64(packet->CurrentSeqNumber), 1);
+                  recordPacket(now, local, &remote, packet, "RecvEchoRes", oos, dup);
+
                }
+            }
+            else {
+               fputs("ERROR: ping protocol violation?!\n", stderr);
             }
          }
       }
