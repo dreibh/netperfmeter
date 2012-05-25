@@ -47,6 +47,7 @@ struct TestPacket {
 
 #define TPT_ECHO_REQUEST  1
 #define TPT_ECHO_RESPONSE 2
+#define TPT_DISCARD       3
 
 
 inline unsigned int makePacket(char*              buffer,
@@ -81,32 +82,65 @@ inline unsigned int makePacket(char*              buffer,
 }
 
 
-
-void passiveMode(int sd)
+static void recordPacket(const uint64_t        now,
+                         const sockaddr_union* local,
+                         const sockaddr_union* remote,
+                         const TestPacket*     packet,
+                         const char*           purpose)
 {
- puts("pasv");
-   while(true) {
+   char localAddress[64];
+   if(!address2string(&local->sa, (char*)&localAddress, sizeof(localAddress), true)) {
+      localAddress[0] = 0x00;
+   }
+   char remoteAddress[64];
+   if(!address2string(&remote->sa, (char*)&remoteAddress, sizeof(remoteAddress), true)) {
+      remoteAddress[0] = 0x00;
+   }
+   printf("%llu %llu %s \"%s\" \"%s\" %u\t%u\t%u\t%1.6f\n",
+          (unsigned long long)now,
+          (unsigned long long)ntoh64(packet->TestStartTime),
+          purpose,
+          remoteAddress, localAddress,
+          (unsigned int)ntohl(packet->Length),
+          (unsigned int)ntohl(packet->CurrentSeqNumber),
+          (unsigned int)ntohl(packet->TotalInSequence),
+          ((long long)now - (long long)ntoh64(packet->PacketSendTime)) / 1000.0
+         );
+}
+
+
+static void passiveMode(int sd, const sockaddr_union* local)
+{
+  while(true) {
       pollfd pfd;
       pfd.fd      = sd;
-      pfd.events  = POLLIN|POLLOUT;
+      pfd.events  = POLLIN;
       pfd.revents = 0;
 
-      int ready = poll(&pfd, 1, 1000);
+      int ready = poll(&pfd, 1, 3600000);
       if(ready > 0) {
          if(pfd.revents & POLLIN) {
-            char buffer[65536];
-            const ssize_t bytes = recv(sd, (char*)&buffer, sizeof(buffer), 0);
-            if(bytes >= (ssize_t)sizeof(TestPacket)) {
-               const uint64_t    now    = getMicroTime();
-               const TestPacket* packet = (const TestPacket*)&buffer;
-               if(ntohl(packet->Length) == bytes) {
-//                   printf("%llu
-//
-//                          ",
-//                          now,
-//
+            char           buffer[65536];
+            sockaddr_union remote;
+            socklen_t      remoteLength = sizeof(remote);
 
-                  printf("R=%d\n", (int)bytes);
+            const ssize_t bytes = recvfrom(sd, (char*)&buffer, sizeof(buffer), 0,
+                                           &remote.sa, &remoteLength);
+            if(bytes >= (ssize_t)sizeof(TestPacket)) {
+               TestPacket* packet = (TestPacket*)&buffer;
+               if(ntohl(packet->Length) == bytes) {
+                  const uint64_t now = getMicroTime();
+                  if(packet->Type == TPT_ECHO_REQUEST) {
+                     recordPacket(now, local, &remote, packet, "RecvEchoReq");
+                     packet->Type = TPT_ECHO_RESPONSE;
+                     if(sendto(sd, &buffer, bytes, MSG_DONTWAIT,
+                               &remote.sa, remoteLength) < 0) {
+                        perror("send() failed");
+                     }
+                  }
+                  else if(packet->Type == TPT_DISCARD) {
+                     recordPacket(now, local, &remote, packet, "RecvDiscard");
+                  }
                }
                else {
                   fprintf(stderr, "Length error: %u/%u\n", ntohl(packet->Length), (unsigned int)bytes);
@@ -115,7 +149,7 @@ void passiveMode(int sd)
          }
       }
       else if(ready == 0) {
-       puts("TO");
+         puts("TO");
       }
       else {
          perror("poll()");
@@ -125,10 +159,12 @@ void passiveMode(int sd)
 }
 
 
-void ping(int                sd,
-          const unsigned int packetCount     = 1,
-          const unsigned int packetSize      = 1000,
-          const unsigned int interPacketTime = 1000000)
+static void discard(int                   sd,
+                    const sockaddr_union* local,
+                    const sockaddr_union* remote,
+                    const unsigned int    packetCount     = 3,
+                    const unsigned int    packetSize      = 1000,
+                    const unsigned int    interPacketTime = 1000000)
 {
    char buffer[sizeof(TestPacket) + packetSize];
 
@@ -138,10 +174,40 @@ void ping(int                sd,
                                             TPT_ECHO_REQUEST, testStartTime,
                                             1 + i, packetCount,
                                             packetSize);
-      if(send(sd, &buffer, bytes, MSG_DONTWAIT) < 0) {
+      if(sendto(sd, &buffer, bytes, MSG_DONTWAIT, &remote->sa, sizeof(sockaddr_union)) < 0) {
          perror("send() failed");
       }
-      else puts("ok!");
+      else {
+         const TestPacket* packet = (const TestPacket*)&buffer;
+         recordPacket(ntoh64(packet->PacketSendTime), local, remote, packet, "SentDiscard");
+      }
+      usleep(interPacketTime);
+   }
+}
+
+
+void ping(int                   sd,
+          const sockaddr_union* local,
+          const sockaddr_union* remote,
+          const unsigned int    packetCount     = 3,
+          const unsigned int    packetSize      = 1000,
+          const unsigned int    interPacketTime = 1000000)
+{
+   char buffer[sizeof(TestPacket) + packetSize];
+
+   uint64_t testStartTime = getMicroTime();
+   for(unsigned int i = 0; i < packetCount; i++) {
+      const unsigned int bytes = makePacket((char*)&buffer, sizeof(buffer),
+                                            TPT_ECHO_REQUEST, testStartTime,
+                                            1 + i, packetCount,
+                                            packetSize);
+      if(sendto(sd, &buffer, bytes, MSG_DONTWAIT, &remote->sa, sizeof(sockaddr_union)) < 0) {
+         perror("send() failed");
+      }
+      else {
+         const TestPacket* packet = (const TestPacket*)&buffer;
+         recordPacket(ntoh64(packet->PacketSendTime), local, remote, packet, "SentEchoReq");
+      }
       usleep(interPacketTime);
    }
 }
@@ -184,7 +250,7 @@ int main(int argc, char** argv)
 
    if(!(strcmp(argv[3], "passive"))) {
       puts("Working in passive mode ...");
-      passiveMode(sd);
+      passiveMode(sd, &local);
       exit(1);
    }
    else if(!(strcmp(argv[3], "active"))) {
@@ -204,7 +270,7 @@ int main(int argc, char** argv)
 
       for(int i = 5;i < argc;i++) {
          if(!(strcmp(argv[i], "ping"))) {
-            ping(sd);
+            ping(sd, &local, &remote);
          }
          else {
             fprintf(stderr, "ERROR: Invalid action %s!\n", argv[i]);
@@ -213,44 +279,6 @@ int main(int argc, char** argv)
       }
    }
 
-
-   sockaddr_union remote;
-
-   if( (argc > 2) &&
-       (string2address(argv[1], &local)) &&
-       (string2address(argv[2], &remote)) ) {
-
-      puts("CLIENT MODE");
-
-      int sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-      if(sd < 0) {
-         perror("socket()");
-         exit(1);
-      }
-
-      if(bind(sd, (struct sockaddr*)&local.sa, sizeof(local)) < 0) {
-         perror("bind()");
-         exit(1);
-      }
-
-      if(connect(sd, (struct sockaddr*)&remote.sa, sizeof(remote)) < 0) {
-         perror("connect()");
-         exit(1);
-      }
-
-      char buffer[1000];
-      for(unsigned int i = 0; i < sizeof(buffer); i++) {
-         buffer[i] = (i & 0xff);
-      }
-
-      for(int n = 0; n < 1; n++) {
-         if(send(sd, buffer, sizeof(buffer), 0) < 0) {
-            perror("send()");
-            exit(1);
-         }
-      }
-
-      close(sd);
-   }
+   close(sd);
    return 0;
 }
