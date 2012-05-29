@@ -1,6 +1,6 @@
 /* $Id$
  *
- * Simple Transfer Test
+ * Simple Connectivity Test
  * Copyright (C) 2012 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,6 +32,10 @@
 #include "boost/dynamic_bitset.hpp"
 
 #include "tools.h"
+#include "outputfile.h"
+
+
+static OutputFile gOutputFile;
 
 
 struct TestPacket {
@@ -51,6 +55,7 @@ struct TestPacket {
 #define TPT_DISCARD       3
 
 
+// ====== Initialize test packet ============================================
 inline unsigned int makePacket(char*              buffer,
                                const size_t       bufferSize,
                                const uint8_t      type,
@@ -83,6 +88,7 @@ inline unsigned int makePacket(char*              buffer,
 }
 
 
+// ====== Record event ======================================================
 static void recordEvent(const uint64_t           now,
                         const uint64_t           testStartTime,
                         const sockaddr_union*    local,
@@ -106,16 +112,23 @@ static void recordEvent(const uint64_t           now,
    if(!address2string(&remote->sa, (char*)&remoteAddress, sizeof(remoteAddress), true)) {
       remoteAddress[0] = 0x00;
    }
-   printf("%llu %llu %s \"%s\" \"%s\" %llu %llu\t%llu %llu\t%s %1.6f\t\"%s\" \"%s\"\n",
-          (unsigned long long)now, (unsigned long long)testStartTime,
-          purpose,
-          remoteAddress, localAddress,
-          parameter1, parameter2,
-          (unsigned long long)currentSeqNumber, (unsigned long long)totalSeqNumber,
-          valueUnit, value, str1, str2);
+   if(gOutputFile.getLine() == 0) {
+      gOutputFile.printf("CurrentTime TestStartTime Purpose Remote Local P1 P2 CurrentSeqNumber TotalSeqNumber Unit Value S1 S2\n");
+      gOutputFile.nextLine();
+   }
+   gOutputFile.printf("%06llu %llu %llu %s \"%s\" \"%s\" %llu %llu\t%llu %llu\t%s %1.6f\t\"%s\" \"%s\"\n",
+                      gOutputFile.getLine(),
+                      (unsigned long long)now, (unsigned long long)testStartTime,
+                      purpose,
+                      remoteAddress, localAddress,
+                      parameter1, parameter2,
+                      (unsigned long long)currentSeqNumber, (unsigned long long)totalSeqNumber,
+                      valueUnit, value, str1, str2);
+   gOutputFile.nextLine();
 }
 
 
+// ====== Record packet =====================================================
 static void recordPacket(const uint64_t           now,
                          const sockaddr_union*    local,
                          const sockaddr_union*    remote,
@@ -137,6 +150,7 @@ static void recordPacket(const uint64_t           now,
 }
 
 
+// ====== Passive mode ======================================================
 static void passiveMode(int sd, const sockaddr_union* local)
 {
   while(true) {
@@ -192,6 +206,7 @@ static void passiveMode(int sd, const sockaddr_union* local)
 }
 
 
+// ====== One-way test ======================================================
 static void discard(int                   sd,
                     const sockaddr_union* local,
                     const sockaddr_union* remote,
@@ -219,7 +234,7 @@ static void discard(int                   sd,
 }
 
 
-#define MAX_PACKET_COUNT
+// ====== Ping test =========================================================
 static void ping(int                   sd,
                  const sockaddr_union* local,
                  const sockaddr_union* remote,
@@ -242,9 +257,11 @@ static void ping(int                   sd,
       uint64_t now = getMicroTime();
       if(now >= nextPacketTime) {
          if(seqNumber > packetCount) {
+            /*
             printf("%llu/%llu -> %1.3f%% loss\n", (unsigned long long)responsesReceived,
                                                   (unsigned long long)requestsSent,
                                                   100.0 * (requestsSent - responsesReceived) / requestsSent);
+            */
             recordEvent(now, testStartTime, local, remote, "LossSummary",
                         packetSize, interPacketTime, 0, 0,
                         "Loss",
@@ -323,52 +340,91 @@ static void ping(int                   sd,
 
 int main(int argc, char** argv)
 {
-   if(argc < 4) {
-      fprintf(stderr, "Usage: %s [udp|tcp|sctp|dccp] [local address] [passive|...] {...}\n", argv[0]);
+   if(argc < 5) {
+      fprintf(stderr, "Usage: %s [output file] [udp|tcp|sctp|dccp] [local address] [tos] [passive|...] {...}\n", argv[0]);
       exit(1);
    }
 
+   // ====== Get local address ==============================================
+   sockaddr_union local;
+   if(!string2address(argv[3], &local)) {
+      fprintf(stderr, "ERROR: Bad local address %s!\n", argv[3]);
+      exit(1);
+   }
+
+   // ====== Create socket ==================================================
    int sd;
-   if(!(strcmp(argv[1], "udp"))) {
-      sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+   if(!(strcmp(argv[2], "udp"))) {
+      sd = socket(local.sa.sa_family, SOCK_DGRAM, IPPROTO_UDP);
    }
-   else if(!(strcmp(argv[1], "tcp"))) {
-      sd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+   else if(!(strcmp(argv[2], "tcp"))) {
+      sd = socket(local.sa.sa_family, SOCK_STREAM, IPPROTO_TCP);
    }
-   else if(!(strcmp(argv[1], "sctp"))) {
-      sd = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
+   else if(!(strcmp(argv[2], "sctp"))) {
+      sd = socket(local.sa.sa_family, SOCK_SEQPACKET, IPPROTO_SCTP);
    }
-   else if(!(strcmp(argv[1], "dccp"))) {
-      sd = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_DCCP);
+   else if(!(strcmp(argv[2], "dccp"))) {
+      sd = socket(local.sa.sa_family, SOCK_SEQPACKET, IPPROTO_DCCP);
    }
    else {
-      fprintf(stderr, "ERROR: Bad protocol %s!\n", argv[1]);
+      fprintf(stderr, "ERROR: Bad protocol %s!\n", argv[2]);
       exit(1);
    }
 
-   sockaddr_union local;
-   if(!string2address(argv[2], &local)) {
-      fprintf(stderr, "ERROR: Bad local address %s!\n", argv[2]);
-      exit(1);
-   }
+   // ====== Bind to local address ==========================================
    if(bind(sd, (struct sockaddr*)&local.sa, sizeof(local)) < 0) {
       perror("bind() of local address failed");
       exit(1);
    }
 
-   if(!(strcmp(argv[3], "passive"))) {
+   // ====== Set TOS ========================================================
+   int opt;
+   if( (sscanf(argv[4], "0x%x", &opt) < 1) &&
+       (sscanf(argv[4], "%u", &opt) < 1) ) {
+      fprintf(stderr, "ERROR: Bad TOS setting %s!\n", argv[4]);
+      exit(1);
+   }
+   if( (opt & 0xfc) != opt ) {
+      fprintf(stderr, "ERROR: Bad TOS setting 0x%x: should in [0x00,0xff], with ECN bits not set!\n", opt);
+      exit(1);
+   }
+   if(local.sa.sa_family == AF_INET) {
+      if(setsockopt(sd, SOL_IP, IP_TOS, &opt, sizeof(opt)) < 0) {
+         perror("setsockopt() of TOS failed");
+         exit(1);
+      }
+   }
+   else {
+      if(setsockopt(sd, IPPROTO_IPV6, IPV6_TCLASS, &opt, sizeof(opt)) < 0) {
+         perror("setsockopt() of Traffic Class failed");
+         exit(1);
+      }
+   }
+
+   // ====== Open output file ===============================================
+   const std::string gOutputFileName   = argv[1];
+   OutputFileFormat  gOutputFileFormat = OFF_Plain;
+   if( (gOutputFileName.rfind(".bz2") == gOutputFileName.size() - 4) ||
+       (gOutputFileName.rfind(".BZ2") == gOutputFileName.size() - 4) ) {
+      gOutputFileFormat = OFF_BZip2;
+   }
+   if(gOutputFile.initialize(gOutputFileName.c_str(), gOutputFileFormat) == false) {
+      exit(1);
+   }
+
+   if(!(strcmp(argv[5], "passive"))) {
       puts("Working in passive mode ...");
       passiveMode(sd, &local);
       exit(1);
    }
-   else if(!(strcmp(argv[3], "active"))) {
-      if(argc < 4) {
+   else if(!(strcmp(argv[5], "active"))) {
+      if(argc < 6) {
          fputs("ERROR: No remote address specified in active mode!\n", stderr);
          exit(1);
       }
       sockaddr_union remote;
-      if(!string2address(argv[4], &remote)) {
-         fprintf(stderr, "ERROR: Bad remote address %s!\n", argv[4]);
+      if(!string2address(argv[6], &remote)) {
+         fprintf(stderr, "ERROR: Bad remote address %s!\n", argv[6]);
          exit(1);
       }
       if(connect(sd, (struct sockaddr*)&remote.sa, sizeof(remote)) < 0) {
@@ -376,10 +432,17 @@ int main(int argc, char** argv)
          exit(1);
       }
 
-      for(int i = 5;i < argc;i++) {
+      for(int i = 7;i < argc;i++) {
          double a, b, c;
          if(sscanf(argv[i], "ping:%lf:%lf:%lf", &a, &b, &c) == 3) {
-            ping(sd, &local, &remote, (unsigned int)a, (unsigned int)b, (unsigned int)(1000000.0 * c));
+            ping(sd, &local, &remote,
+                 (unsigned int)a, (unsigned int)b,
+                 (unsigned int)(1000000.0 * c));
+         }
+         else if(sscanf(argv[i], "discard:%lf:%lf:%lf", &a, &b, &c) == 3) {
+            discard(sd, &local, &remote,
+                    (unsigned int)a, (unsigned int)b,
+                    (unsigned int)(1000000.0 * c));
          }
          else {
             fprintf(stderr, "ERROR: Invalid action %s!\n", argv[i]);
@@ -389,5 +452,8 @@ int main(int argc, char** argv)
    }
 
    close(sd);
+   if(!gOutputFile.finish()) {
+      exit(1);
+   }
    return 0;
 }
