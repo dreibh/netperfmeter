@@ -196,7 +196,7 @@ static void passiveMode(int sd, const sockaddr_union* local)
          }
       }
       else if(ready == 0) {
-         puts("TO");
+         // puts("Timeout");
       }
       else {
          perror("poll()");
@@ -341,7 +341,7 @@ static void ping(int                   sd,
 int main(int argc, char** argv)
 {
    if(argc < 5) {
-      fprintf(stderr, "Usage: %s [output file] [udp|tcp|sctp|dccp] [local address] [tos] [passive|...] {...}\n", argv[0]);
+      fprintf(stderr, "Usage: %s output_file udp|sctp local_address:local_port tos [passive|...] {...}\n", argv[0]);
       exit(1);
    }
 
@@ -354,17 +354,14 @@ int main(int argc, char** argv)
 
    // ====== Create socket ==================================================
    int sd;
+   int protocol;
    if(!(strcmp(argv[2], "udp"))) {
       sd = socket(local.sa.sa_family, SOCK_DGRAM, IPPROTO_UDP);
-   }
-   else if(!(strcmp(argv[2], "tcp"))) {
-      sd = socket(local.sa.sa_family, SOCK_STREAM, IPPROTO_TCP);
+      protocol = IPPROTO_UDP;
    }
    else if(!(strcmp(argv[2], "sctp"))) {
       sd = socket(local.sa.sa_family, SOCK_SEQPACKET, IPPROTO_SCTP);
-   }
-   else if(!(strcmp(argv[2], "dccp"))) {
-      sd = socket(local.sa.sa_family, SOCK_SEQPACKET, IPPROTO_DCCP);
+      protocol = IPPROTO_SCTP;
    }
    else {
       fprintf(stderr, "ERROR: Bad protocol %s!\n", argv[2]);
@@ -413,6 +410,13 @@ int main(int argc, char** argv)
    }
 
    if(!(strcmp(argv[5], "passive"))) {
+      if(protocol != IPPROTO_UDP) {
+         if(listen(sd, 10) < 0) {
+            perror("listen() failed");
+            exit(1);
+         }
+      }
+
       puts("Working in passive mode ...");
       passiveMode(sd, &local);
       exit(1);
