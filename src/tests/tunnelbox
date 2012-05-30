@@ -1,0 +1,70 @@
+#!/bin/bash
+# $Id$
+#
+# Simple Connectivity Test
+# Copyright (C) 2012 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@simula.no
+#
+
+set -e
+
+
+# $1 = Interface
+# $2 = GRE Tunnel Key
+# $3 = Outer Local IP
+# $4 = Outer Remote IP
+# $5 = Inner Local IP
+# $6 = Outer Local IP
+# $7 = Route
+make-tunnel ()
+{
+   local interface=$1
+   local tunnelKey=$2
+   local outerLocalIP=$3
+   local outerRemoteIP=$4
+   local innerLocalIP=$5
+   local innerRemoteIP=$6
+   local route=$7
+
+   ip tunnel del $interface || true
+   ip tunnel add $interface mode gre local $outerLocalIP remote $outerRemoteIP ttl 255 key $tunnelKey
+   ip addr add $innerLocalIP peer $innerRemoteIP dev $interface
+   ip link set dev $interface up
+   if [ "$route" != "" ] ; then
+      # Create rule
+      ip rule del from $innerLocalIP table $tunnelKey || true
+      ip rule add from $innerLocalIP table $tunnelKey
+      
+      # Add source-specific default route via new interface
+      ip route add $innerRemoteIP dev $interface scope link table $tunnelKey
+      ip route add $route via $innerRemoteIP dev $interface table $tunnelKey
+      echo "$route from $innerLocalIP via $innerRemoteIP/$interface"
+   fi
+}
+
+
+TunnelBox=169.254.100.70
+
+RemoteIP=169.254.100.51
+make-tunnel gre1 256 $TunnelBox $RemoteIP 10.100.1.1 10.100.1.2 10.100.1.0/24
+make-tunnel gre2 257 $TunnelBox $RemoteIP 172.16.1.1 172.16.1.2 172.16.1.0/24
+
+RemoteIP=169.254.100.52
+make-tunnel gre3 258 $TunnelBox $RemoteIP 10.100.2.1 10.100.2.2 10.100.2.0/24
+make-tunnel gre4 259 $TunnelBox $RemoteIP 172.16.2.1 172.16.2.2 172.16.2.0/24
+
+sysctl net.ipv4.ip_forward=1
