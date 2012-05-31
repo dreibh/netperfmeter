@@ -45,7 +45,7 @@ make-tunnel ()
    ip tunnel add $interface mode gre local $outerLocalIP remote $outerRemoteIP ttl 255 key $tunnelKey
    ip addr add $innerLocalIP peer $innerRemoteIP dev $interface
    ip link set dev $interface up
-
+   
    # ====== Routing table setup =============================================
    if [ "$route" != "" ] ; then
       # Create rule from interface IP address
@@ -64,7 +64,7 @@ make-tunnel ()
       fi
 
       # Add source-specific default route via new interface
-      ip route add $innerRemoteIP dev $interface scope link table $tunnelKey
+      ip route add $innerRemoteIP dev $interface table $tunnelKey
       ip route add $route via $innerRemoteIP dev $interface table $tunnelKey
       
       echo "$route from $innerLocalIP via $innerRemoteIP/$interface (selected by TOS $tos)"
