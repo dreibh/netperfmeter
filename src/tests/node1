@@ -30,3 +30,8 @@ TunnelBox=169.254.100.70
 
 make-tunnel gre1 256 0x28 $LocalIP $TunnelBox 10.100.1.2 10.100.1.1 default
 make-tunnel gre2 257 0x48 $LocalIP $TunnelBox 172.16.1.2 172.16.1.1 default
+
+
+echo "XXXXXXXXXXXXXXXXXXXX"
+iptables -t mangle -A POSTROUTING -j TOS --set-tos 0x00
+echo "XXXXXXXXXXXXXXXXXXXX"
