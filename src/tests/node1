@@ -26,12 +26,17 @@ set -e
 
 
 LocalIP=169.254.100.51
-TunnelBox=169.254.100.70
+TunnelBoxNorth=169.254.100.71
+TunnelBoxSouth=169.254.100.70
 
-make-tunnel gre1 256 0x28 $LocalIP $TunnelBox 10.100.1.2 10.100.1.1 default
-make-tunnel gre2 257 0x48 $LocalIP $TunnelBox 172.16.1.2 172.16.1.1 default
+make-tunnel gre1 256 0x28 $LocalIP $TunnelBoxNorth 10.100.1.2 10.100.1.1 default
+make-tunnel gre2 257 0x48 $LocalIP $TunnelBoxSouth 172.16.1.2 172.16.1.1 default
 
 
-echo "XXXXXXXXXXXXXXXXXXXX"
-iptables -t mangle -A POSTROUTING -j TOS --set-tos 0x00
-echo "XXXXXXXXXXXXXXXXXXXX"
+# It is probably a good idea to set the DSCP to 0 here. Then, its setting will
+# not interfere with routers within the core network. The ECN bits will be
+# left untouched.
+iptables -t mangle -A POSTROUTING -j TOS --set-tos 0x00/0xfc
+
+# Turn on ECN for TCP.
+sysctl net.ipv4.tcp_ecn=1
