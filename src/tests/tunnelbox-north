@@ -1,0 +1,40 @@
+#!/bin/bash
+# $Id$
+#
+# Simple Connectivity Test
+# Copyright (C) 2012 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@simula.no
+#
+
+set -e
+
+. ./tunnel-setup
+
+
+TunnelBox=169.254.100.71
+
+RemoteIP=169.254.100.51
+make-tunnel gre1 256 0x00 $TunnelBox $RemoteIP 10.100.1.1 10.100.1.2 ""
+
+RemoteIP=169.254.100.52
+make-tunnel gre2 258 0x00 $TunnelBox $RemoteIP 10.100.2.1 10.100.2.2 ""
+
+RemoteTunnelBox=169.254.100.70
+make-tunnel gre3 512 0x00 $TunnelBox $RemoteTunnelBox 192.168.1.1 192.168.1.2 ""
+ip route add 172.16.0.0/16 dev gre3
+
+sysctl net.ipv4.ip_forward=1

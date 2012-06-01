@@ -43,6 +43,13 @@ make-tunnel ()
    # ====== Tunnel setup ====================================================
    ip tunnel del $interface 2>/dev/null || true
    ip tunnel add $interface mode gre local $outerLocalIP remote $outerRemoteIP ttl 255 key $tunnelKey
+   # Turn off Reverse Path filtering, since it prevents routing packets
+   # from interface when this interface has no route to the source!
+   sysctl net.ipv4.conf.$interface.rp_filter=0
+   # Also, turn off Reverse Path filter on all interfaces.
+   # If it is turned on, it supersedes all per-interface settings!
+   sysctl net.ipv4.conf.all.rp_filter=0
+   # Finally, configure an address and turn the interface up
    ip addr add $innerLocalIP peer $innerRemoteIP dev $interface
    ip link set dev $interface up
    
