@@ -3,7 +3,8 @@
 #
 # Simple Connectivity Test
 # Copyright (C) 2012 by Thomas Dreibholz
-#
+#make-tunnel gre3 258 0x00 $TunnelBox $RemoteIP 10.100.2.1 10.100.2.2 ""
+
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -28,11 +29,13 @@ set -e
 TunnelBox=169.254.100.70
 
 RemoteIP=169.254.100.51
-make-tunnel gre1 256 0x00 $TunnelBox $RemoteIP 10.100.1.1 10.100.1.2 ""
-make-tunnel gre2 257 0x00 $TunnelBox $RemoteIP 172.16.1.1 172.16.1.2 ""
+make-tunnel gre1 257 0x00 $TunnelBox $RemoteIP 172.16.1.1 172.16.1.2 ""
 
 RemoteIP=169.254.100.52
-make-tunnel gre3 258 0x00 $TunnelBox $RemoteIP 10.100.2.1 10.100.2.2 ""
-make-tunnel gre4 259 0x00 $TunnelBox $RemoteIP 172.16.2.1 172.16.2.2 ""
+make-tunnel gre2 259 0x00 $TunnelBox $RemoteIP 172.16.2.1 172.16.2.2 ""
+
+RemoteTunnelBox=169.254.100.71
+make-tunnel gre3 512 0x00 $TunnelBox $RemoteTunnelBox 192.168.1.2 192.168.1.1 ""
+ip route add 10.0.0.0/8 dev gre3
 
 sysctl net.ipv4.ip_forward=1
