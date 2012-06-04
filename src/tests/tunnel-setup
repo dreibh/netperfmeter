@@ -29,20 +29,22 @@
 # $6 = Inner Local IP
 # $7 = Outer Local IP
 # $8 = Route
+# $9 = Tunnel Options (e.g. "csum")
 make-tunnel ()
 {
-   local interface=$1
-   local tunnelKey=$2
-   local tos=$3
-   local outerLocalIP=$4
-   local outerRemoteIP=$5
-   local innerLocalIP=$6
-   local innerRemoteIP=$7
-   local route=$8
+   local interface="$1"
+   local tunnelKey="$2"
+   local tos="$3"
+   local outerLocalIP="$4"
+   local outerRemoteIP="$5"
+   local innerLocalIP="$6"
+   local innerRemoteIP="$7"
+   local route="$8"
+   local tunnelOptions="$9"
 
    # ====== Tunnel setup ====================================================
    ip tunnel del $interface 2>/dev/null || true
-   ip tunnel add $interface mode gre local $outerLocalIP remote $outerRemoteIP ttl 255 key $tunnelKey
+   ip tunnel add $interface mode gre local $outerLocalIP remote $outerRemoteIP ttl 255 key $tunnelKey $tunnelOptions
    # Turn off Reverse Path filtering, since it prevents routing packets
    # from interface when this interface has no route to the source!
    sysctl net.ipv4.conf.$interface.rp_filter=0
