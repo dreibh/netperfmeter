@@ -1,0 +1,9 @@
+#!/bin/sh
+
+sudo yum clean all
+sudo yum install -y autoconf automake libtool gcc gcc-c++ gdb automake autoconf joe libstdc++-devel gcc gcc-c++ glib-devel glib2-devel make subversion libpcap bzip2-devel findutils valgrind strace lksctp-tools-devel ImageMagick-devel GeoIP-devel libcurl-devel openssl-devel bison flex subversion git R 
+mkdir src
+cd src
+svn co https://dreibh@svn1.tdr.iem.uni-due.de/svn/sctp-misc/trunk/netperfmeter
+cd netperfmeter
+./autogen.sh
