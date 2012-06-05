@@ -82,3 +82,64 @@ make-tunnel ()
       echo "$route from $innerLocalIP via $innerRemoteIP/$interface (selected by TOS $tos)"
    fi
 }
+
+
+# $1 = Interface
+# $2 = GRE Tunnel Key
+# $3 = TOS
+# $4 = Outer Local IP
+# $5 = Outer Remote IP
+# $6 = Inner Local IP
+# $7 = Outer Local IP
+# $8 = Route
+# $9 = Tunnel Options (e.g. "csum")
+make-planetlab-tunnel ()
+{
+   local interface="$1"
+   local tunnelKey="$2"
+   local tos="$3"
+   local outerLocalIP="$4"
+   local outerRemoteIP="$5"
+   local innerLocalIP="$6"
+   local innerRemoteIP="$7"
+   local route="$8"
+   local tunnelOptions="$9"
+
+
+   # ====== Tunnel setup ====================================================
+   echo "Removing $interface ..."
+   cat /vsys/vif_down.out&
+   cat >/vsys/vif_down.in <<EOF
+$interface
+delete=1
+EOF
+
+   wait
+   sleep 1
+
+
+   echo "Setting up $interface ..."
+   wait
+   
+   cat /vsys/vif_up.out &
+   cat >/vsys/vif_up.in <<EOF
+$interface
+$innerLocalIP
+32
+pointopoint=$innerRemoteIP
+gre=$tunnelKey
+remote=$outerRemoteIP
+rp_filter=0
+EOF
+
+   wait
+   sleep 1
+   
+   echo "ok"
+
+
+   # ====== Routing table setup =============================================
+   if [ "$route" != "" ] ; then
+      echo "RT!"
+   fi
+}
