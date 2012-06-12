@@ -26,9 +26,9 @@ set -e
 
 
 SliceID=506
-LocalIP=169.254.100.81
-TunnelBoxNorth=169.254.100.71
-TunnelBoxSouth=169.254.100.70
+LocalIP=132.252.156.81
+TunnelBoxNorth=132.252.156.71
+TunnelBoxSouth=132.252.156.70
 
 make-planetlab-tunnel tun$SliceID-1 $SliceID 0x28 $LocalIP $TunnelBoxNorth 10.100.1.4 10.100.1.3 default
 make-planetlab-tunnel tun$SliceID-2 $SliceID 0x48 $LocalIP $TunnelBoxSouth 172.16.1.4 172.16.1.3 default

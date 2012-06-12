@@ -25,9 +25,9 @@ set -e
 . ./tunnel-setup
 
 
-LocalIP=169.254.100.51
-TunnelBoxNorth=169.254.100.71
-TunnelBoxSouth=169.254.100.70
+LocalIP=132.252.156.51
+TunnelBoxNorth=132.252.156.71
+TunnelBoxSouth=132.252.156.70
 
 make-tunnel gre1 256 0x28 $LocalIP $TunnelBoxNorth 10.100.1.2 10.100.1.1 default
 make-tunnel gre2 257 0x48 $LocalIP $TunnelBoxSouth 172.16.1.2 172.16.1.1 default
