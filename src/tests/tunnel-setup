@@ -57,28 +57,29 @@ make-tunnel ()
    
    # ====== Routing table setup =============================================
    if [ "$route" != "" ] ; then
+      let tableID=1000000000+0x100*$SliceID+$tos
       let tosPref=10000+$tunnelKey
       let sourcePref=11000+$tunnelKey
    
       # Create rule for TOS setting
       if [ "$tos" != "0x00" ] ; then
          # Add rule to PREROUTING chain, for *routed* packets
-         iptables -t mangle -A PREROUTING -m tos --tos $tos/0xfc -j MARK --set-mark $fwmark $tunnelKey
+         iptables -t mangle -A PREROUTING -m tos --tos $tos/0xfc -j MARK --set-mark $fwmark $tableID
          # Also add rule to OUTPUT chain, for packets originating from *this* machine!
-         iptables -t mangle -A OUTPUT -m tos --tos $tos/0xfc -j MARK --set-mark $fwmark $tunnelKey
+         iptables -t mangle -A OUTPUT -m tos --tos $tos/0xfc -j MARK --set-mark $fwmark $tableID
          # Ensure that marked packets use the right routing table
-         ip rule del fwmark $tunnelKey table $tunnelKey pref $tosPref 2>/dev/null || true
-         ip rule add fwmark $tunnelKey table $tunnelKey pref $tosPref
+         ip rule del fwmark $tableID table $tableID pref $tosPref 2>/dev/null || true
+         ip rule add fwmark $tableID table $tableID pref $tosPref
       fi
 
       # Create rule from interface IP address
-      ip rule del from $innerLocalIP table $tunnelKey pref $sourcePref 2>/dev/null || true
-      ip rule add from $innerLocalIP table $tunnelKey pref $sourcePref
+      ip rule del from $innerLocalIP table $tableID pref $sourcePref 2>/dev/null || true
+      ip rule add from $innerLocalIP table $tableID pref $sourcePref
       
       # Add source-specific default route via new interface
-      ip route add $innerRemoteIP dev $interface table $tunnelKey
-      ip route add $route via $innerRemoteIP dev $interface table $tunnelKey
-      
+      ip route add $innerRemoteIP dev $interface table $tableID
+      ip route add $route via $innerRemoteIP dev $interface table $tableID
+
       echo "$route from $innerLocalIP via $innerRemoteIP/$interface (selected by TOS $tos)"
    fi
 }
