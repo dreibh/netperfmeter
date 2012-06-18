@@ -21,66 +21,113 @@
 #
 
 
-# $1 = Interface
-# $2 = GRE Tunnel Key
-# $3 = TOS
-# $4 = Outer Local IP
-# $5 = Outer Remote IP
-# $6 = Inner Local IP
-# $7 = Outer Local IP
-# $8 = Route
-# $9 = Tunnel Options (e.g. "csum")
+# $1  = Interface
+# $2  = GRE Tunnel Key
+# $3  = TOS
+# $4  = fwmark
+# $5  = Outer Local IP
+# $6  = Outer Remote IP
+# $7  = Inner Local IP
+# $8  = Outer Local IP
+# $9  = Route1 (e.g. default)
+# $10 = Route2 (e.g. the complete network -- like Telenor or Telekom)
+# $11 = Tunnel Options (e.g. "csum")
 make-tunnel ()
 {
    local interface="$1"
    local tunnelKey="$2"
    local tos="$3"
-   local outerLocalIP="$4"
-   local outerRemoteIP="$5"
-   local innerLocalIP="$6"
-   local innerRemoteIP="$7"
-   local route="$8"
-   local tunnelOptions="$9"
+   local fwmark="$4"
+   local outerLocalIP="$5"
+   local outerRemoteIP="$6"
+   local innerLocalIP="$7"
+   local innerRemoteIP="$8"
+   local route1="$9"
+   local route2="${10}"
+   local tunnelOptions="${11}"
+
 
    # ====== Tunnel setup ====================================================
    ip tunnel del $interface 2>/dev/null || true
    ip tunnel add $interface mode gre local $outerLocalIP remote $outerRemoteIP ttl 255 key $tunnelKey $tunnelOptions
    # Turn off Reverse Path filtering, since it prevents routing packets
    # from interface when this interface has no route to the source!
-   sysctl net.ipv4.conf.$interface.rp_filter=0
+   sysctl -q net.ipv4.conf.$interface.rp_filter=0
    # Also, turn off Reverse Path filter on all interfaces.
    # If it is turned on, it supersedes all per-interface settings!
-   sysctl net.ipv4.conf.all.rp_filter=0
+   sysctl -q net.ipv4.conf.all.rp_filter=0
    # Finally, configure an address and turn the interface up
    ip addr add $innerLocalIP peer $innerRemoteIP dev $interface
    ip link set dev $interface up
    
+   echo "$interface: tunnel [$innerLocalIP <-> $innerRemoteIP] via [$outerLocalIP <-> $outerRemoteIP]:"
+   
+   
    # ====== Routing table setup =============================================
-   if [ "$route" != "" ] ; then
-      let tableID=1000000000+0x100*$SliceID+$tos
+   if [ "$route1" != "" -o "$route2" != "" ] ; then
+      let tableID=1000000000+0x100*$tunnelKey+$tos
       let tosPref=10000+$tunnelKey
       let sourcePref=11000+$tunnelKey
+      let globalPref=12000+$tunnelKey
+
+
+      # ====== If rules are only for specific fwmark: write specific table ==
+      if [ $fwmark -ne 0 ] ; then
+         # Get the identifier for the fwmark's "global" table
+         globalTable="$globalPref"
+         ip rule del fwmark $fwmark table $globalTable pref $globalPref || true
+         ip rule add fwmark $fwmark table $globalTable pref $globalPref
+      else
+         # Use "main" table.
+         globalTable="main"
+      fi
+      
+      echo "   Global table is $globalTable."
+      
    
-      # Create rule for TOS setting
+      # ====== Create rule for TOS setting ==================================
       if [ "$tos" != "0x00" ] ; then
+         # When there is a fwmark given, only apply the TOS filtering rules for
+         # packets marked with this fwmark!
+         if [ $fwmark -ne 0 ] ; then
+            markerOption="-m mark --mark $fwmark"
+         else
+            markerOption=""
+         fi
+      
          # Add rule to PREROUTING chain, for *routed* packets
-         iptables -t mangle -A PREROUTING -m tos --tos $tos/0xfc -j MARK --set-mark $fwmark $tableID
+         iptables -t mangle -A PREROUTING $markerOption -m tos --tos $tos/0xfc -j MARK --set-mark $tableID
          # Also add rule to OUTPUT chain, for packets originating from *this* machine!
-         iptables -t mangle -A OUTPUT -m tos --tos $tos/0xfc -j MARK --set-mark $fwmark $tableID
+         iptables -t mangle -A OUTPUT $markerOption -m tos --tos $tos/0xfc -j MARK --set-mark $tableID
          # Ensure that marked packets use the right routing table
          ip rule del fwmark $tableID table $tableID pref $tosPref 2>/dev/null || true
          ip rule add fwmark $tableID table $tableID pref $tosPref
+         
+         echo "   TOS $tos goes via table $tableID."
       fi
 
-      # Create rule from interface IP address
-      ip rule del from $innerLocalIP table $tableID pref $sourcePref 2>/dev/null || true
-      ip rule add from $innerLocalIP table $tableID pref $sourcePref
+      # ====== Create rule for interface's source IP address ================
+      if [ $fwmark -ne 0 ] ; then
+         markerOption="fwmark $fwmark"
+      else
+         markerOption="fwmark $fwmark"
+      fi
+      
+      ip rule del $markerOption from $innerLocalIP table $tableID pref $sourcePref 2>/dev/null || true
+      ip rule add $markerOption from $innerLocalIP table $tableID pref $sourcePref
       
       # Add source-specific default route via new interface
       ip route add $innerRemoteIP dev $interface table $tableID
-      ip route add $route via $innerRemoteIP dev $interface table $tableID
-
-      echo "$route from $innerLocalIP via $innerRemoteIP/$interface (selected by TOS $tos)"
+      if [ "$route1" != "" ] ; then
+         # Add entry in interface-specific table.
+         ip route add $route1 via $innerRemoteIP dev $interface table $tableID
+         echo "   Route to $route1 from $innerLocalIP via $innerRemoteIP/$interface (also selected by TOS $tos; in table $tableID)"
+      fi
+      if [ "$route2" != "" ] ; then
+         # Add entry in "global" table.
+         ip route add $route2 via $innerRemoteIP dev $interface table $globalTable
+         echo "   Route to $route2 via $innerRemoteIP/$interface (in global table, i.e. table $globalTable)"
+      fi
    fi
 }
 
