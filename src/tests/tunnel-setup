@@ -21,6 +21,18 @@
 #
 
 
+# Only 8 TOS field settings allowed (remaining bits masked out!)
+# This is a bug in the Linux kernel!
+# T0 -> 0x00
+# T1 -> 0x04
+# T2 -> 0x08
+# T3 -> 0x0C
+# T4 -> 0x10
+# T5 -> 0x14
+# T6 -> 0x18
+# T7 -> 0x1C
+
+
 # $1  = Interface
 # $2  = GRE Tunnel Key
 # $3  = TOS
@@ -90,18 +102,18 @@ make-tunnel ()
          # When there is a fwmark given, only apply the TOS filtering rules for
          # packets marked with this fwmark!
          if [ $fwmark -ne 0 ] ; then
-            markerOption="-m mark --mark $fwmark"
+            markerOption="fwmark $fwmark"
          else
             markerOption=""
          fi
-      
-         # Add rule to PREROUTING chain, for *routed* packets
-         iptables -t mangle -A PREROUTING $markerOption -m tos --tos $tos/0xfc -j MARK --set-mark $tableID
-         # Also add rule to OUTPUT chain, for packets originating from *this* machine!
-         iptables -t mangle -A OUTPUT $markerOption -m tos --tos $tos/0xfc -j MARK --set-mark $tableID
-         # Ensure that marked packets use the right routing table
-         ip rule del fwmark $tableID table $tableID pref $tosPref 2>/dev/null || true
-         ip rule add fwmark $tableID table $tableID pref $tosPref
+         
+         # Ensure that TOS-marked packets use the right routing table
+         ip rule del $markerOption tos $tos table $tableID pref $tosPref 2>/dev/null || true
+         ip rule add $markerOption tos $tos table $tableID pref $tosPref
+         
+         # NOTE: Only the TOS settings above are accepted by the kernel. All
+         # other settings are disallowed. Since only 3 bits may vary, there
+         # are only eight possible settings.
          
          echo "   TOS $tos goes via table $tableID."
       fi

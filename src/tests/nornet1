@@ -30,8 +30,8 @@ TunnelBoxNorth=132.252.156.71
 TunnelBoxSouth=132.252.156.70
 SliceID=506
 
-make-tunnel gre$SliceID-1 $SliceID 0x28 $SliceID $LocalIP $TunnelBoxNorth 10.100.1.8 10.100.1.7 default 10.0.0.0/8    "csum"
-make-tunnel gre$SliceID-2 $SliceID 0x48 $SliceID $LocalIP $TunnelBoxSouth 172.16.1.8 172.16.1.7 default 172.16.0.0/16 "csum"
+make-tunnel gre$SliceID-1 $SliceID 0x04 $SliceID $LocalIP $TunnelBoxNorth 10.100.1.8 10.100.1.7 default 10.0.0.0/8    "csum"
+make-tunnel gre$SliceID-2 $SliceID 0x08 $SliceID $LocalIP $TunnelBoxSouth 172.16.1.8 172.16.1.7 default 172.16.0.0/16 "csum"
 
 
 # It is probably a good idea to set the DSCP to 0 here. Then, its setting will
