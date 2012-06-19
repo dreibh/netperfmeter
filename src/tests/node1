@@ -29,8 +29,8 @@ LocalIP=132.252.156.51
 TunnelBoxNorth=132.252.156.71
 TunnelBoxSouth=132.252.156.70
 
-make-tunnel gre1 256 0x28 0 $LocalIP $TunnelBoxNorth 10.100.1.2 10.100.1.1 default ""
-make-tunnel gre2 257 0x48 0 $LocalIP $TunnelBoxSouth 172.16.1.2 172.16.1.1 default ""
+make-tunnel gre1 256 0x04 0 $LocalIP $TunnelBoxNorth 10.100.1.2 10.100.1.1 default ""
+make-tunnel gre2 257 0x08 0 $LocalIP $TunnelBoxSouth 172.16.1.2 172.16.1.1 default ""
 
 
 # It is probably a good idea to set the DSCP to 0 here. Then, its setting will
