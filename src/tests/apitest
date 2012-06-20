@@ -1,4 +1,357 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# PLC API Test
+# Copyright (C) 2012 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@simula.no
 
+
+import sys;
 import xmlrpclib;
+from datetime import datetime;
 
+# Needs package python-ipaddr (Fedora Core)!
+import ipaddr;
+
+
+
+NorNetPLC_APIURL        = 'https://132.252.156.21/PLCAPI/'
+NorNetPLC_Root_User     = 'root@localhost.localdomain'
+NorNetPLC_Root_Password = 'nntb-root'
+
+NorNetProviders = {
+ 'Uninett'  : 001,
+ 'Hafslund' : 002,
+ 'Telenor'  : 003
+}
+
+
+
+def log(logstring):
+   print datetime.now().isoformat() + ' ' + logstring;
+
+
+def error(logstring):
+   print datetime.now().isoformat() + ' ===== ERROR: ' + logstring + " =====";
+   sys.exit(1)
+
+
+# ====== Log into PLC =======================================================
+def nornetLogin():
+   global plc_server
+   global plc_authentication
+
+   log('Logging into PLC ...')
+   try:
+      plc_server = xmlrpclib.ServerProxy(NorNetPLC_APIURL, allow_none=True)
+
+      plc_authentication = {}
+      plc_authentication['AuthMethod'] = 'password'
+      plc_authentication['Username']   = NorNetPLC_Root_User
+      plc_authentication['AuthString'] = NorNetPLC_Root_Password
+
+      authorized = plc_server.AuthCheck(plc_authentication)
+      if authorized:
+         print 'We are authorized!'
+      else:
+         error('Authorization at PLC failed!')
+
+   except:
+      error('Unable to log into PLC!')
+
+
+# ====== Get list of NorNet nodes ===========================================
+def nornetGetNodes():
+   global plc_server
+   global plc_authentication
+   global nornet_nodes
+
+   log('Fetching node list ...')
+   try:
+      nornet_nodes = plc_server.GetNodes(plc_authentication)
+      return(nornet_nodes)
+
+   except:
+      error('Unable to fetch node list!')
+
+
+# ====== Get list of NorNet sites ===========================================
+def nornetGetSites():
+   global plc_server
+   global plc_authentication
+   global nornet_sites
+
+   log('Fetching site list ...')
+   try:
+      filter = {'is_public': True,
+                'enabled':   True}
+      nornet_sites = plc_server.GetSites(plc_authentication, filter)
+      return(nornet_sites)
+
+   except:
+      error('Unable to fetch site list!')
+
+
+# ====== Get list of site tags ==============================================
+def nornetGetSiteTags(site):
+   global plc_server
+   global plc_authentication
+   global nornet_sites
+
+   log('Fetching site tags ...')
+   try:
+      siteTags = plc_server.GetSiteTags(plc_authentication, site)
+      return(siteTags)
+
+   except:
+      error('Unable to fetch site tag list!')
+
+
+
+
+# ====== Find site ID =======================================================
+def findSiteID(siteName):
+   try:
+      site = plc_server.GetSites(plc_authentication,
+                                  {'name': siteName}, ['site_id'])
+      siteID = int(site[0]['site_id'])
+      return(siteID)
+
+   except:
+      return(0)
+
+
+# ====== Find person ID =====================================================
+def findPersonID(eMail):
+   try:
+      person = plc_server.GetPersons(plc_authentication,
+                                     {'email': eMail}, ['person_id'])
+      personID = int(person[0]['person_id'])
+      return(personID)
+
+   except:
+      return(0)
+
+
+
+log('***** This is NorNet version 1.0! *****')
+nornetLogin()
+nornetGetSites()
+#nornetGetNodes()
+
+
+print "xxxx"
+i=1
+for site in nornet_sites:
+   print 'Site ',i
+   print str(site['name']) + ': id=' + str(site['site_id']) + ' url=' + str(site['url'])
+
+   siteID = findSiteID(str(site['name']))
+   if siteID != 0:
+      tags = nornetGetSiteTags(siteID)
+      print tags
+
+   i=i+1
+
+
+
+
+
+def makeTagType(category, description, tagName):
+   found = plc_server.GetTagTypes(plc_authentication, tagName, ['tag_type_id'])
+   if len(found) == 0:
+      tagType = {}
+      tagType['category']    = category
+      tagType['description'] = description
+      tagType['tagname']     = tagName
+      plc_server.AddTagType(plc_authentication, tagType)
+
+
+def removeNorNetSite(siteName):
+   siteID = findSiteID(siteName)
+   if siteID != 0:
+      log('Deleting site ' + str(siteID) + ' ...')
+      plc_server.DeleteSite(plc_authentication, siteID)
+
+
+def makeNorNetSite(siteName, siteAbbrvName, siteLoginBase, siteUrl,
+                   siteCity, siteProvince, cityCountry, siteLatitude, siteLogitude):
+   try:
+      log('Adding site ' + siteName + ' ...')
+
+      site = {}
+      site['name']             = siteName
+      site['abbreviated_name'] = siteAbbrvName
+      site['login_base']       = siteLoginBase
+      site['url']              = siteUrl
+      site['enabled']          = True
+      site['is_public']        = True
+      site['latitude']         = siteLatitude
+      site['longitude']        = siteLogitude
+      site['max_slices']       = 10
+      siteID = plc_server.AddSite(plc_authentication, site)
+      if siteID <= 0:
+         error('Unable to add site ' + siteName)
+
+      return siteID
+
+   except Exception as e:
+      error('Adding site ' + siteName + ' has failed: ' + str(e))
+
+
+def makeNorNetIPv4(provider, site, host):
+   p = int(provider)
+   s = int(site)
+   h = int(host)
+   if ((p < 0) | (p > 255)):
+      error('Bad provider ID')
+   if ((s < 0) | (s > 255)):
+      error('Bad site ID')
+   if ((h < 0) | (h > 255)):
+      error('Bad host ID')
+   if site != 0:
+      prefix = 24;
+   else:
+      prefix = 16;
+   return ipaddr.IPNetwork('10.' + str(p) + '.' + str(s) + '.' + str(h) + '/' + str(prefix))
+
+
+def makeNorNetNode(siteID, siteAbbrvName, siteDomain, siteNorNetID,
+                   nodeNiceName, nodeNumber, nodeAddressNumber,
+                   publicIPv4Address, publicGateway, publicDNS,
+                   providerList):
+   try:
+      nodeHostName = nodeNiceName + "." + siteDomain;
+      log('Adding node ' + nodeHostName + ' ...')
+
+      node = {}
+      node['hostname']   = nodeHostName
+      node['boot_state'] = 'reinstall'
+      node['model']      = 'Amiga 5000'
+      nodeID = plc_server.AddNode(plc_authentication, siteID, node)
+      if nodeID <= 0:
+         error('Unable to add node ' + nodeHostName)
+
+      interface = {}
+      interface['hostname']   = nodeHostName
+      interface['is_primary'] = True
+      interface['ifname']     = 'eth0'
+      interface['type']       = 'ipv4'
+      interface['method']     = 'static'
+      interface['ip']         = str(publicIPv4Address.ip)
+      interface['netmask']    = str(publicIPv4Address.netmask)
+      interface['network']    = str(publicIPv4Address.network)
+      interface['broadcast']  = str(publicIPv4Address.broadcast)
+      interface['gateway']    = str(publicGateway)
+      interface['dns1']       = str(publicDNS[0])
+      if len(publicDNS) > 1:
+         interface['dns2']    = str(publicDNS[1])
+      if plc_server.AddInterface(plc_authentication, nodeID, interface) <= 0:
+         error('Unable to add primary interface ' + str(publicAddress.ip))
+
+
+      alias = 1
+      for provider in providerList:
+         providerID = NorNetProviders[provider]
+         if providerID <= 0:
+            error("Bad provider " + provider)
+
+
+         ifHostName = 'node' + str(nodeNumber) + '-' + str.lower(provider) + '.' + str.lower(siteDomain)
+         ifIPv4            = makeNorNetIPv4(providerID, siteNorNetID, nodeAddressNumber)
+         ifGateway         = makeNorNetIPv4(providerID, siteNorNetID, 1)
+         ifProviderNetwork = makeNorNetIPv4(providerID, 0, 0)
+
+         interface = {}
+         interface['hostname']   = ifHostName
+         interface['is_primary'] = False
+         interface['ifname']     = 'eth0'
+         interface['type']       = 'ipv4'
+         interface['method']     = 'static'
+         interface['ip']         = str(ifIPv4.ip)
+         interface['netmask']    = str(ifIPv4.netmask)
+         interface['network']    = str(ifIPv4.network)
+         interface['broadcast']  = str(ifIPv4.broadcast)
+         interface['gateway']    = str(ifGateway.ip)
+
+         interfaceID = plc_server.AddInterface(plc_authentication, nodeID, interface)
+         if interfaceID <= 0:
+            error('Unable to add secondary interface ' + str(ifIPv4.ip))
+
+         if plc_server.AddInterfaceTag(plc_authentication, interfaceID, "alias", str(alias)) <= 0:
+            error('Unable to add "alias" tag to interface ' + str(ifIPv4.ip))
+         if plc_server.AddInterfaceTag(plc_authentication, interfaceID, "nornet_ifprovider_name", provider) <= 0:
+            error('Unable to add "nornet_ifprovider_name" tag to interface ' + str(ifIPv4.ip))
+         if plc_server.AddInterfaceTag(plc_authentication, interfaceID, "nornet_ifprovider_id", str(providerID)) <= 0:
+            error('Unable to add "nornet_ifprovider_name" tag to interface ' + str(ifIPv4.ip))
+         if plc_server.AddInterfaceTag(plc_authentication, interfaceID, "nornet_ifprovider_network", str(ifProviderNetwork)) <= 0:
+            error('Unable to add "nornet_ifprovider_network" tag to interface ' + str(ifIPv4.ip))
+
+      return nodeID
+
+   except Exception as e:
+      error('Adding node ' + nodeHostName + ' has failed: ' + str(e))
+
+
+
+# ###########################################################################
+
+
+makeTagType('site/nornet',      'NorNet Site Info',                  'nornet_siteinfo')
+
+makeTagType('interface/nornet', 'NorNet Interface Provider Name',    'nornet_ifprovider_name')
+makeTagType('interface/nornet', 'NorNet Interface Provider ID',      'nornet_ifprovider_id')
+makeTagType('interface/nornet', 'NorNet Interface Provider Network', 'nornet_ifprovider_network')
+
+
+
+
+removeNorNetSite("My Test Site")
+removeNorNetSite("Alpha Test Site")
+removeNorNetSite("Beta Test Site")
+removeNorNetSite("Gamma Test Site")
+
+
+
+siteAlphaID = makeNorNetSite('Alpha Test Site', 'TA', 'ta', 'http://alpha.site',
+                             'Ullevål', 'Østlandet', 'Norge', 10.0, 50.0)
+siteAlphaNorNetID = 1
+
+siteBetaID  = makeNorNetSite('Beta Test Site', 'TB', 'tb', 'http://beta.site',
+                             'Bygdøy',  'Østlandet', 'Norge', 15.0, 55.0)
+siteBetaNorNetID = 2
+
+siteGammaID = makeNorNetSite('Gamma Test Site', 'TC', 'tc', 'http://gamma.site',
+                             'Essen',  'Nordrhein-Westfalen', 'Deutschland', 12.5, 40.0)
+siteGammaNorNetID = 3
+
+
+names = ['sognsvann', 'tyrvann', 'ekeberg', 'fornebu', 'ullevaal', 'akerbrygge', 'bygdoey']
+firstAddress = 81
+i = 0
+for name in names:
+   makeNorNetNode(siteAlphaID, 'Alpha', 'alpha.site', siteAlphaNorNetID,
+                  name, 1 + i, firstAddress + i,
+                  ipaddr.IPv4Network('132.252.156.' + str(firstAddress + i) + '/24'),
+                  ipaddr.IPv4Address('132.252.156.1'),
+                  [ ipaddr.IPv4Address('132.252.156.21') ],
+                  ['Uninett', 'Telenor'])
+   i = i + 1
+
+
+
+print "TD=",findPersonID('dreibh@simula.no')
