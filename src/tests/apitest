@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+# $Id$
 #
 # PLC API Test
 # Copyright (C) 2012 by Thomas Dreibholz
@@ -25,7 +26,7 @@ import xmlrpclib;
 from datetime import datetime;
 
 # Needs package python-ipaddr (Fedora Core)!
-import ipaddr;
+from ipaddr import *;
 
 
 
@@ -148,29 +149,6 @@ def findPersonID(eMail):
 
 
 
-log('***** This is NorNet version 1.0! *****')
-nornetLogin()
-nornetGetSites()
-#nornetGetNodes()
-
-
-print "xxxx"
-i=1
-for site in nornet_sites:
-   print 'Site ',i
-   print str(site['name']) + ': id=' + str(site['site_id']) + ' url=' + str(site['url'])
-
-   siteID = findSiteID(str(site['name']))
-   if siteID != 0:
-      tags = nornetGetSiteTags(siteID)
-      print tags
-
-   i=i+1
-
-
-
-
-
 def makeTagType(category, description, tagName):
    found = plc_server.GetTagTypes(plc_authentication, tagName, ['tag_type_id'])
    if len(found) == 0:
@@ -189,7 +167,8 @@ def removeNorNetSite(siteName):
 
 
 def makeNorNetSite(siteName, siteAbbrvName, siteLoginBase, siteUrl,
-                   siteCity, siteProvince, cityCountry, siteLatitude, siteLogitude):
+                   siteCity, siteProvince, cityCountry, siteCountryCode,
+                   siteLatitude, siteLogitude):
    try:
       log('Adding site ' + siteName + ' ...')
 
@@ -207,10 +186,43 @@ def makeNorNetSite(siteName, siteAbbrvName, siteLoginBase, siteUrl,
       if siteID <= 0:
          error('Unable to add site ' + siteName)
 
+      if plc_server.AddSiteTag(plc_authentication, siteID, "nornet_site_city", siteCity) <= 0:
+         error('Unable to add "nornet_site_city" tag to site ' + siteName)
+      if plc_server.AddSiteTag(plc_authentication, siteID, "nornet_site_province", siteProvince) <= 0:
+         error('Unable to add "nornet_site_province" tag to site ' + siteName)
+      if plc_server.AddSiteTag(plc_authentication, siteID, "nornet_site_country", cityCountry) <= 0:
+         error('Unable to add "nornet_site_country" tag to site ' + siteName)
+      if plc_server.AddSiteTag(plc_authentication, siteID, "nornet_site_country_code", siteCountryCode) <= 0:
+         error('Unable to add "nornet_site_country_code" tag to site ' + siteName)
+
       return siteID
 
    except Exception as e:
       error('Adding site ' + siteName + ' has failed: ' + str(e))
+
+
+def makeNorNetPCU(siteID, hostName, siteDomain, publicIPv4Address,
+                  user, password, protocol, model, notes):
+   try:
+      log('Adding PCU ' + hostName + '.' + siteDomain + ' ...')
+
+      pcu = {}
+      pcu['username'] = user
+      pcu['password'] = password
+      pcu['protocol'] = protocol
+      pcu['model']    = model
+      pcu['notes']    = notes
+      pcu['ip']       = str(publicIPv4Address)
+      pcu['hostname'] = hostName + '.' + siteDomain
+
+      pcuID = plc_server.AddPCU(plc_authentication, siteID, pcu)
+      if pcuID <= 0:
+         error('Unable to add PCU ' + hostName + '.' + siteDomain)
+
+      return pcuID
+
+   except Exception as e:
+      error('Adding PCU ' + hostName + '.' + siteDomain + ' has failed: ' + str(e))
 
 
 def makeNorNetIPv4(provider, site, host):
@@ -227,11 +239,12 @@ def makeNorNetIPv4(provider, site, host):
       prefix = 24;
    else:
       prefix = 16;
-   return ipaddr.IPNetwork('10.' + str(p) + '.' + str(s) + '.' + str(h) + '/' + str(prefix))
+   return IPNetwork('10.' + str(p) + '.' + str(s) + '.' + str(h) + '/' + str(prefix))
 
 
 def makeNorNetNode(siteID, siteAbbrvName, siteDomain, siteNorNetID,
                    nodeNiceName, nodeNumber, nodeAddressNumber,
+                   pcuID, pcuPort,
                    publicIPv4Address, publicGateway, publicDNS,
                    providerList):
    try:
@@ -245,6 +258,12 @@ def makeNorNetNode(siteID, siteAbbrvName, siteDomain, siteNorNetID,
       nodeID = plc_server.AddNode(plc_authentication, siteID, node)
       if nodeID <= 0:
          error('Unable to add node ' + nodeHostName)
+
+
+      if pcuID > 0:
+         if plc_server.AddNodeToPCU(plc_authentication, nodeID, pcuID, pcuPort) != 1:
+            error('Unable to add node ' + nodeHostName + " to PCU " + str(pcuID) + ", port " + str(pcuPort))
+
 
       interface = {}
       interface['hostname']   = nodeHostName
@@ -311,7 +330,31 @@ def makeNorNetNode(siteID, siteAbbrvName, siteDomain, siteNorNetID,
 # ###########################################################################
 
 
-makeTagType('site/nornet',      'NorNet Site Info',                  'nornet_siteinfo')
+log('***** This is NorNet version 1.0! *****')
+nornetLogin()
+nornetGetSites()
+#nornetGetNodes()
+
+
+print "xxxx"
+i=1
+for site in nornet_sites:
+   print 'Site ',i
+   print str(site['name']) + ': id=' + str(site['site_id']) + ' url=' + str(site['url'])
+
+   siteID = findSiteID(str(site['name']))
+   if siteID != 0:
+      tags = nornetGetSiteTags(siteID)
+      print tags
+
+   i=i+1
+
+
+
+makeTagType('site/nornet',      'NorNet Site City',                  'nornet_site_city')
+makeTagType('site/nornet',      'NorNet Site Province',              'nornet_site_province')
+makeTagType('site/nornet',      'NorNet Site Country',               'nornet_site_country')
+makeTagType('site/nornet',      'NorNet Site Country Code',          'nornet_site_country_code')
 
 makeTagType('interface/nornet', 'NorNet Interface Provider Name',    'nornet_ifprovider_name')
 makeTagType('interface/nornet', 'NorNet Interface Provider ID',      'nornet_ifprovider_id')
@@ -320,38 +363,42 @@ makeTagType('interface/nornet', 'NorNet Interface Provider Network', 'nornet_ifp
 
 
 
-removeNorNetSite("My Test Site")
 removeNorNetSite("Alpha Test Site")
 removeNorNetSite("Beta Test Site")
 removeNorNetSite("Gamma Test Site")
 
 
 
+
 siteAlphaID = makeNorNetSite('Alpha Test Site', 'TA', 'ta', 'http://alpha.site',
-                             'Ullevål', 'Østlandet', 'Norge', 10.0, 50.0)
+                             'Ullevål', 'Østlandet', 'Norge', 'NO', 10.0, 50.0)
+siteAlphaPCUID = makeNorNetPCU(siteAlphaID, 'pcu', 'alpha.site', IPv4Address('132.252.156.2'),
+                               'pcu-root', 'a-secret-password', 'ssh', 'Amiga 5099', 'Jeg vet ikke.')
 siteAlphaNorNetID = 1
 
 siteBetaID  = makeNorNetSite('Beta Test Site', 'TB', 'tb', 'http://beta.site',
-                             'Bygdøy',  'Østlandet', 'Norge', 15.0, 55.0)
+                             'Bygdøy',  'Østlandet', 'Norge', 'NO', 15.0, 55.0)
 siteBetaNorNetID = 2
 
 siteGammaID = makeNorNetSite('Gamma Test Site', 'TC', 'tc', 'http://gamma.site',
-                             'Essen',  'Nordrhein-Westfalen', 'Deutschland', 12.5, 40.0)
+                             'Essen',  'Nordrhein-Westfalen', 'Deutschland', 'DE', 12.5, 40.0)
 siteGammaNorNetID = 3
 
 
-names = ['sognsvann', 'tyrvann', 'ekeberg', 'fornebu', 'ullevaal', 'akerbrygge', 'bygdoey']
+names = sorted(['sognsvann', 'tyrvann', 'ekeberg', 'fornebu', 'ullevaal', 'akerbrygge', 'bygdoey', 'majorstuen'])
 firstAddress = 81
 i = 0
 for name in names:
    makeNorNetNode(siteAlphaID, 'Alpha', 'alpha.site', siteAlphaNorNetID,
                   name, 1 + i, firstAddress + i,
-                  ipaddr.IPv4Network('132.252.156.' + str(firstAddress + i) + '/24'),
-                  ipaddr.IPv4Address('132.252.156.1'),
-                  [ ipaddr.IPv4Address('132.252.156.21') ],
+                  siteAlphaPCUID, 1 + i,
+                  IPv4Network('132.252.156.' + str(firstAddress + i) + '/24'),
+                  IPv4Address('132.252.156.1'),
+                  [ IPv4Address('132.252.156.21') ],
                   ['Uninett', 'Telenor'])
    i = i + 1
 
 
 
-print "TD=",findPersonID('dreibh@simula.no')
+personID = findPersonID('dreibh@simula.no')
+plc_server.AddPersonToSite(plc_authentication, personID, siteAlphaID)
