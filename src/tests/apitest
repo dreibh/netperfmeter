@@ -610,8 +610,8 @@ def createTestConfiguration():
    siteAlphaNorNetIndex = 1
    siteAlphaID = makeNorNetSite('Alpha Test Site', 'TA', 'ta', 'http://www.alpha.site', 'alpha.site',
                                 siteAlphaNorNetIndex, 'Ullevål', 'Østlandet', 'Norge', 'NO', 10.0, 50.0, [
-                                   [ 'Uninett', IPv4Address('192.168.11.1'), IPv6Address('::') ],
-                                   [ 'Telenor', IPv4Address('192.168.22.1'), IPv6Address('::') ]
+                                   [ 'Uninett', IPv4Address('132.252.156.70'), IPv6Address('fd55:5555::70') ],
+                                   [ 'Telenor', IPv4Address('169.254.100.70'), IPv6Address('::') ]
                                 ])
    siteAlphaPCUID = makeNorNetPCU(siteAlphaID, 'pcu', 'alpha.site', IPv4Address('132.252.156.2'),
                                   'pcu-root', 'a-secret-password', 'ssh', 'Amiga 5099', 'Jeg vet ikke.')
@@ -619,8 +619,8 @@ def createTestConfiguration():
    siteBetaNorNetIndex = 2
    siteBetaID  = makeNorNetSite('Beta Test Site', 'TB', 'tb', 'http://www.beta.site', 'beta.site',
                                 siteBetaNorNetIndex, 'Bygdøy',  'Østlandet', 'Norge', 'NO', 15.0, 55.0, [
-                                   [ 'Uninett', IPv4Address('192.168.11.2'), IPv6Address('::') ],
-                                   [ 'Telenor', IPv4Address('192.168.22.2'), IPv6Address('::') ]
+                                   [ 'Uninett', IPv4Address('132.252.156.71'), IPv6Address('fd55:5555::71') ],
+                                   [ 'Telenor', IPv4Address('169.254.100.71'), IPv6Address('::') ]
                                 ])
    siteBetaPCUID = makeNorNetPCU(siteBetaID, 'pcu', 'beta.site', IPv4Address('132.252.156.3'),
                                  'pcu-root', 'a-secret-password', 'ssh', 'Amiga 5099', 'Jeg vet ikke.')
@@ -628,9 +628,9 @@ def createTestConfiguration():
    siteGammaNorNetIndex = 3
    siteGammaID = makeNorNetSite('Gamma Test Site', 'TC', 'tc', 'http://www.gamma.site', 'gamma.site',
                                 siteGammaNorNetIndex, 'Essen',  'Nordrhein-Westfalen', 'Deutschland', 'DE', 12.5, 40.0, [
-                                   [ 'Uninett', IPv4Address('192.168.11.3'), IPv6Address('::') ],
-                                   [ 'Telenor', IPv4Address('192.168.22.3'), IPv6Address('::') ],
-                                   [ 'DFN',     IPv4Address('192.168.33.3'), IPv6Address('::') ]
+                                   [ 'Uninett', IPv4Address('132.252.156.72'), IPv6Address('::') ],
+                                   [ 'Telenor', IPv4Address('169.254.100.72'), IPv6Address('::') ],
+                                   [ 'DFN',     IPv4Address('172.31.255.72'),  IPv6Address('::') ]
                                 ])
    siteGammaPCUID = makeNorNetPCU(siteGammaID, 'pcu', 'gamma.site', IPv4Address('132.252.156.4'),
                                   'pcu-root', 'a-secret-password', 'ssh', 'Amiga 5099', 'Jeg vet ikke.')
@@ -697,26 +697,30 @@ loginToPLC()
 
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#createTestConfiguration()
+createTestConfiguration()
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 # ###### Generate tunnelbox configuration ###################################
-def makeTunnelBox(localSiteID):
+def makeTunnelBoxConfiguration(localSiteID):
    # ====== Get site information ============================================
    localSiteList = plc_server.GetSites(plc_authentication, {'site_id': localSiteID})
    if len(localSiteList) != 1:
       error('Cannot find site ' + str(localSiteID))
-   localSite          = localSiteList[0]
-   localSiteName      = localSite['name']
-   localSiteAbbrvName = localSite['abbreviated_name']
-   localSiteTagsList  = getSiteTagsList(localSiteID)
-   fullSiteList       = getSiteList()
-   localSiteNorNetIndex = int(getTagValue(localSiteTagsList, 'nornet_site_index', '-1'))
+   localSite             = localSiteList[0]
+   localSiteName         = localSite['name']
+   localSiteAbbrvName    = localSite['abbreviated_name']
+   localSiteTagsList     = getSiteTagsList(localSiteID)
+   fullSiteList          = getSiteList()
+   localSiteNorNetIndex  = int(getTagValue(localSiteTagsList, 'nornet_site_index', '-1'))
+   localSiteNorNetDomain = getTagValue(localSiteTagsList, 'nornet_site_domain', '')
    if localSiteNorNetIndex < 0:
       error('Cannot find NorNet site index for site ' + str(localSiteID))
+   if localSiteNorNetDomain == '':
+      error('Cannot find NorNet domain for site ' + str(localSiteID))
 
-   outputFile = open(localSiteAbbrvName + '-tunnelbox.config', 'w')
+
+   outputFile = open('tunnelbox.' + localSiteNorNetDomain + '-config', 'w')
    outputFile.write('# ===== Tunnelbox configuration for ' + localSiteName + ' =====\n')
    outputFile.write('# Generated on ' + datetime.now().isoformat() + '\n\n')
 
@@ -804,10 +808,8 @@ def makeTunnelBox(localSiteID):
                                                          localSiteNorNetIndex, outgoingProviderIndex, 6)
             tunnelRemoteNetworkIPv6 = makeNorNetIP(incomingProviderIndex, remoteSiteNorNetIndex, 0, 6)
 
-            print '      * Path #' + str(pathIndex + 1) + ' via ' + str(remoteTunnelboxIPv4) + ' (' + incomingProviderName + ')' + \
-                  '  -->  ' + str(tunnelLocalIPv4) + ' <--> ' + str(tunnelRemoteIPv4) + ' [' + str(localTunnelboxIPv4) + ' <--> ' + str(remoteTunnelboxIPv4) + \
-                  '/tunnel ' + \
-                  str(hex(tunnelKey)) + ']'
+            print '      * Path #' + str(pathIndex + 1) + ' via ' + incomingProviderName + \
+                  'through tunnel ' + tunnelKeyString + ' (for TOS ' + tosString + ')'
 
             # ====== Write tunnel configuration =============================
             outputFile.write('# ' + outgoingProviderName + ' (' + str(outgoingProviderIndex) + ') <-> ' + \
@@ -829,23 +831,17 @@ def makeTunnelBox(localSiteID):
                      str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "" "' + str(tunnelRemoteNetworkIPv6) + '" "--add-v6-only\n')
             outputFile.write('\n')
 
-
    outputFile.close()
-
-
-#RemoteTunnelBox=132.252.156.70
-#make-tunnel gre3 512 0x00 0 $TunnelBox $RemoteTunnelBox 192.168.1.1 192.168.1.2 "" ""
-#ip route add 172.16.0.0/16 dev gre3
 
 
 # ###########################################################################
 
 
 siteID = findSiteID('Alpha Test Site')
-makeTunnelBox(siteID)
+makeTunnelBoxConfiguration(siteID)
 
 siteID = findSiteID('Beta Test Site')
-makeTunnelBox(siteID)
+makeTunnelBoxConfiguration(siteID)
 
 
 #nodeID = findNodeID('altenessen.gamma.site')
