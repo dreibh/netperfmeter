@@ -1,4 +1,713 @@
 ------------------------------------------------------------------------
+r1417 | dreibh | 2012-06-14 14:41:25 +0200 (Thu, 14 Jun 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/tests/bug1
+
+Added bug script.
+
+------------------------------------------------------------------------
+r1414 | dreibh | 2012-06-12 16:29:49 +0200 (Tue, 12 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/node1
+   M /trunk/netperfmeter/src/tests/node2
+   M /trunk/netperfmeter/src/tests/nornet1
+   M /trunk/netperfmeter/src/tests/tunnelbox-north
+   M /trunk/netperfmeter/src/tests/tunnelbox-south
+
+Updates.
+
+------------------------------------------------------------------------
+r1413 | dreibh | 2012-06-12 12:45:55 +0200 (Tue, 12 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/init-node
+
+Minor update.
+
+------------------------------------------------------------------------
+r1412 | dreibh | 2012-06-12 09:39:48 +0200 (Tue, 12 Jun 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/tests/ifcfg-p2p1
+
+Added test configurations script for FC 16.
+
+------------------------------------------------------------------------
+r1404 | dreibh | 2012-06-06 10:20:26 +0200 (Wed, 06 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/init-node
+
+Update.
+
+------------------------------------------------------------------------
+r1403 | dreibh | 2012-06-05 10:13:21 +0200 (Tue, 05 Jun 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/tests/nornet1
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some updates.
+
+------------------------------------------------------------------------
+r1402 | dreibh | 2012-06-05 09:48:03 +0200 (Tue, 05 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/init-node
+
+Update.
+
+------------------------------------------------------------------------
+r1401 | dreibh | 2012-06-04 17:19:44 +0200 (Mon, 04 Jun 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/tests/init-node
+
+Added script.
+
+------------------------------------------------------------------------
+r1400 | dreibh | 2012-06-04 15:27:08 +0200 (Mon, 04 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/tunnelbox-south
+
+Updated script.
+
+------------------------------------------------------------------------
+r1399 | dreibh | 2012-06-04 14:15:06 +0200 (Mon, 04 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+   M /trunk/netperfmeter/src/tests/tunnelbox-north
+
+Script updates.
+
+------------------------------------------------------------------------
+r1397 | dreibh | 2012-06-01 14:33:45 +0200 (Fri, 01 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/node2
+
+And another update.
+
+------------------------------------------------------------------------
+r1396 | dreibh | 2012-06-01 14:30:54 +0200 (Fri, 01 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/node1
+
+Script update.
+
+------------------------------------------------------------------------
+r1395 | dreibh | 2012-06-01 14:20:01 +0200 (Fri, 01 Jun 2012) | 2 lines
+Changed paths:
+   D /trunk/netperfmeter/src/tests/tunnelbox
+   A /trunk/netperfmeter/src/tests/tunnelbox-south (from /trunk/netperfmeter/src/tests/tunnelbox:1393)
+
+Another script update.
+
+------------------------------------------------------------------------
+r1394 | dreibh | 2012-06-01 14:18:33 +0200 (Fri, 01 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+   A /trunk/netperfmeter/src/tests/tunnelbox-north (from /trunk/netperfmeter/src/tests/tunnelbox:1393)
+
+Updated configuration scripts.
+
+------------------------------------------------------------------------
+r1393 | dreibh | 2012-05-31 15:19:16 +0200 (Thu, 31 May 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/node1
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some more updates.
+
+------------------------------------------------------------------------
+r1392 | dreibh | 2012-05-31 15:18:31 +0200 (Thu, 31 May 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+   M /trunk/netperfmeter/src/tests/tunnelbox
+
+Some updates.
+
+------------------------------------------------------------------------
+r1391 | dreibh | 2012-05-31 11:57:53 +0200 (Thu, 31 May 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/tunnelbox
+
+Script update.
+
+------------------------------------------------------------------------
+r1390 | dreibh | 2012-05-31 11:45:09 +0200 (Thu, 31 May 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/node1
+   M /trunk/netperfmeter/src/tests/node2
+   A /trunk/netperfmeter/src/tests/tunnel-setup (from /trunk/netperfmeter/src/tests/node1:1387)
+
+Some script updates.
+
+------------------------------------------------------------------------
+r1389 | dreibh | 2012-05-30 16:09:48 +0200 (Wed, 30 May 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/tests/node2
+
+And another script.
+
+------------------------------------------------------------------------
+r1388 | dreibh | 2012-05-30 16:06:01 +0200 (Wed, 30 May 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/tests/tunnelbox
+
+Added another script.
+
+------------------------------------------------------------------------
+r1387 | dreibh | 2012-05-30 16:04:04 +0200 (Wed, 30 May 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/tests
+   A /trunk/netperfmeter/src/tests/node1
+
+Added test script.
+
+------------------------------------------------------------------------
+r1386 | dreibh | 2012-05-29 15:16:06 +0200 (Tue, 29 May 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/t6.1 (from /trunk/netperfmeter/src/netperfmeter.1:1383)
+   M /trunk/netperfmeter/src/t6.cc
+
+Some test tool improvements.
+
+------------------------------------------------------------------------
+r1385 | dreibh | 2012-05-29 13:54:45 +0200 (Tue, 29 May 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/t6.cc
+
+Improved test program.
+
+------------------------------------------------------------------------
+r1384 | dreibh | 2012-05-29 11:48:36 +0200 (Tue, 29 May 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/defragmenter.cc
+   M /trunk/netperfmeter/src/defragmenter.h
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+   M /trunk/netperfmeter/src/flowbandwidthstats.cc
+   M /trunk/netperfmeter/src/flowbandwidthstats.h
+   M /trunk/netperfmeter/src/flowtrafficspec.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.h
+   M /trunk/netperfmeter/src/inputfile.cc
+   M /trunk/netperfmeter/src/inputfile.h
+   M /trunk/netperfmeter/src/measurement.cc
+   M /trunk/netperfmeter/src/measurement.h
+   M /trunk/netperfmeter/src/outputfile.cc
+   M /trunk/netperfmeter/src/outputfile.h
+   M /trunk/netperfmeter/src/t2.cc
+
+Typo fix.
+
+------------------------------------------------------------------------
+r1383 | dreibh | 2012-05-25 15:06:35 +0200 (Fri, 25 May 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/t6.cc
+
+Some updates.
+
+------------------------------------------------------------------------
+r1382 | dreibh | 2012-05-25 13:56:41 +0200 (Fri, 25 May 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/t6.cc
+
+Test update.
+
+------------------------------------------------------------------------
+r1381 | dreibh | 2012-05-25 13:39:09 +0200 (Fri, 25 May 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/t6.cc
+
+Updated test program.
+
+------------------------------------------------------------------------
+r1380 | dreibh | 2012-05-25 12:34:20 +0200 (Fri, 25 May 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/t6.cc
+
+Updated test program.
+
+------------------------------------------------------------------------
+r1379 | dreibh | 2012-05-25 10:28:44 +0200 (Fri, 25 May 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/t6.cc
+
+Added test program.
+
+------------------------------------------------------------------------
+r1364 | dreibh | 2012-04-21 20:49:50 +0200 (Sat, 21 Apr 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/control
+
+Updated standards version.
+
+------------------------------------------------------------------------
+r1359 | dreibh | 2012-04-12 14:25:06 +0200 (Thu, 12 Apr 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+
+Updated MPTCP option handling.
+
+------------------------------------------------------------------------
+r1358 | dreibh | 2012-04-11 19:43:53 +0200 (Wed, 11 Apr 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/netperfmeter.lsm
+
+Version update.
+
+------------------------------------------------------------------------
+r1357 | adhari | 2012-04-11 17:50:57 +0200 (Wed, 11 Apr 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+
+Removed useless lower limit.
+
+------------------------------------------------------------------------
+r1356 | adhari | 2012-04-11 17:47:13 +0200 (Wed, 11 Apr 2012) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/flow.cc
+
+measure-version2 reverted
+------------------------------------------------------------------------
+r1353 | dreibh | 2012-03-20 10:03:43 +0100 (Tue, 20 Mar 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/measure-version2
+
+Added patch for measure-version2.
+
+------------------------------------------------------------------------
+r1255 | adhari | 2011-12-16 13:08:15 +0100 (Fri, 16 Dec 2011) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/plot-wp1-cc-disjoint-bandwidth-betaI.R
+   M /trunk/netperfmeter/src/run-wp1-cc-disjoint-bandwidth-betaI
+   M /trunk/netperfmeter/src/run-wp1-rp-sharedBottleneckI
+
+working scripts used for PAMS2012
+------------------------------------------------------------------------
+r1231 | dreibh | 2011-12-14 15:00:30 +0100 (Wed, 14 Dec 2011) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/rtpaudio2/rtpaudio/internetaddress.cc
+   M /trunk/subnetcalc/configure.in
+
+Fixed detection code for sa_len, sin_len and sin6_len.
+------------------------------------------------------------------------
+r1228 | adhari | 2011-12-14 14:19:37 +0100 (Wed, 14 Dec 2011) | 1 line
+Changed paths:
+   A /trunk/netperfmeter/src/change_names_Flows.sed
+   M /trunk/netperfmeter/src/plot-version1.R
+   M /trunk/netperfmeter/src/plot-wp1-rp-sharedBottleneckI.R
+
+plot scripts edited flow 1001 renamed, names updates to the names in the simulation
+------------------------------------------------------------------------
+r1212 | adhari | 2011-12-13 11:28:12 +0100 (Tue, 13 Dec 2011) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/run-wp1-rp-sharedBottleneckI
+
+bottleneck scenario script, PAMS setting, is working
+------------------------------------------------------------------------
+r1151 | michael.tuexen | 2011-11-26 20:23:51 +0100 (Sat, 26 Nov 2011) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+
+Add a per-cpu-stats configure option. Default is off,
+such that netperfmeter runs without root priviledges.
+
+------------------------------------------------------------------------
+r1150 | michael.tuexen | 2011-11-26 20:22:50 +0100 (Sat, 26 Nov 2011) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+
+Use AC_HELP_STRING to get a better layout of
+./configure --help.
+
+------------------------------------------------------------------------
+r1149 | michael.tuexen | 2011-11-26 19:01:43 +0100 (Sat, 26 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/cpustatus.cc
+
+Add protection code...
+
+------------------------------------------------------------------------
+r1148 | michael.tuexen | 2011-11-26 18:56:40 +0100 (Sat, 26 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/cpustatus.cc
+
+Free resources on exit.
+
+------------------------------------------------------------------------
+r1147 | michael.tuexen | 2011-11-26 18:42:24 +0100 (Sat, 26 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/cpustatus.cc
+   M /trunk/netperfmeter/src/cpustatus.h
+
+Add support for Mac OS X.
+
+------------------------------------------------------------------------
+r1146 | michael.tuexen | 2011-11-26 18:40:05 +0100 (Sat, 26 Nov 2011) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/src/cpustatus.cc
+
+Cleanup FreeBSD code path a bit.
+
+
+------------------------------------------------------------------------
+r1145 | michael.tuexen | 2011-11-26 14:27:19 +0100 (Sat, 26 Nov 2011) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/src/cpustatus.cc
+
+Use getSysCtl().
+
+
+------------------------------------------------------------------------
+r1144 | michael.tuexen | 2011-11-26 11:15:01 +0100 (Sat, 26 Nov 2011) | 11 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/src/transfer.cc
+
+The field sinfo_pr_policy in struct sctp_sndrcvinfo was only available in
+certain versions of FreeBSD and Mac OS X. It is not there anymore.
+Replace the code to select the PR-SCTP policy with code which works
+also on FreeBSD 10 and current versions of Mac OS X as well as older
+versions.
+Also use on platforms which do not support SCTP_PR_SCTP_RTX, use always
+SCTP_PR_SCTP_TTL. But honor the value given in flow->getTrafficSpec().RetransmissionTrials.
+
+Thomas: The last line describes a change of semeantics, since you where setting
+        the sinfo_timetolive to 1. So please review my change.
+
+------------------------------------------------------------------------
+r1143 | dreibh | 2011-11-23 08:24:48 +0100 (Wed, 23 Nov 2011) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/transfer.cc
+
+Improved data pattern generation code.
+------------------------------------------------------------------------
+r1142 | dreibh | 2011-11-23 07:49:16 +0100 (Wed, 23 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/clean-deb
+   M /trunk/netperfmeter/debian/copyright
+   M /trunk/netperfmeter/freebsd/netperfmeter/make-diff
+   M /trunk/netperfmeter/freebsd/netperfmeter/test-packaging
+   M /trunk/netperfmeter/make-deb
+
+Script updates.
+
+------------------------------------------------------------------------
+r1141 | dreibh | 2011-11-23 07:46:04 +0100 (Wed, 23 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/createsummary.cc
+
+Removed unused variable.
+
+------------------------------------------------------------------------
+r1140 | dreibh | 2011-11-23 07:43:27 +0100 (Wed, 23 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/archive-measurement
+   M /trunk/netperfmeter/src/combinesummaries.1
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/cpustatus.cc
+   M /trunk/netperfmeter/src/cpustatus.h
+   M /trunk/netperfmeter/src/createsummary.1
+   M /trunk/netperfmeter/src/debug.h
+   M /trunk/netperfmeter/src/defragmenter.cc
+   M /trunk/netperfmeter/src/defragmenter.h
+   M /trunk/netperfmeter/src/ext_socket.h
+   M /trunk/netperfmeter/src/extractvectors.1
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+   M /trunk/netperfmeter/src/flowbandwidthstats.cc
+   M /trunk/netperfmeter/src/flowbandwidthstats.h
+   M /trunk/netperfmeter/src/flowtrafficspec.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.h
+   M /trunk/netperfmeter/src/inputfile.h
+   M /trunk/netperfmeter/src/make-kerneltest
+   M /trunk/netperfmeter/src/make-rootshell
+   M /trunk/netperfmeter/src/measure-version2
+   M /trunk/netperfmeter/src/measurement.cc
+   M /trunk/netperfmeter/src/measurement.h
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/messagereader.h
+   M /trunk/netperfmeter/src/mutex.cc
+   M /trunk/netperfmeter/src/mutex.h
+   M /trunk/netperfmeter/src/netperfmeter.1
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/outputfile.cc
+   M /trunk/netperfmeter/src/outputfile.h
+   M /trunk/netperfmeter/src/pdfembedfonts
+   M /trunk/netperfmeter/src/pdfembedfonts.1
+   M /trunk/netperfmeter/src/pdfmetadata
+   M /trunk/netperfmeter/src/pdfmetadata.1
+   M /trunk/netperfmeter/src/plot-netperfmeter-results
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.1
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.R
+   M /trunk/netperfmeter/src/plot-version1.R
+   M /trunk/netperfmeter/src/qos-testbed
+   M /trunk/netperfmeter/src/redblacktree.h
+   M /trunk/netperfmeter/src/redblacktree_impl.h
+   M /trunk/netperfmeter/src/rootshell.c
+   M /trunk/netperfmeter/src/run-test1
+   M /trunk/netperfmeter/src/run-test5
+   M /trunk/netperfmeter/src/run-test6
+   M /trunk/netperfmeter/src/run-test7
+   M /trunk/netperfmeter/src/run-test8
+   M /trunk/netperfmeter/src/run-wp0-cmt-throughputI
+   M /trunk/netperfmeter/src/run-wp0-links-symmetrischI
+   M /trunk/netperfmeter/src/run-wp1-cc-disjoint-bandwidth-betaI
+   M /trunk/netperfmeter/src/run-wp1-rp-disjointPathsI
+   M /trunk/netperfmeter/src/run-wp1-rp-sharedBottleneckI
+   M /trunk/netperfmeter/src/run-wp3-dsl-ccI
+   M /trunk/netperfmeter/src/run-wp3-dsl-ccII
+   M /trunk/netperfmeter/src/run-wp3-dsl-ordered-bandwidthI
+   M /trunk/netperfmeter/src/run-wp3-dsl-unordered-bandwidthI
+   M /trunk/netperfmeter/src/run-wp3-unordered-bandwidthI
+   M /trunk/netperfmeter/src/server
+   M /trunk/netperfmeter/src/setqos
+   M /trunk/netperfmeter/src/setsctp
+   M /trunk/netperfmeter/src/simpleredblacktree.c
+   M /trunk/netperfmeter/src/simpleredblacktree.h
+   M /trunk/netperfmeter/src/start-server-burgsteinfurt
+   M /trunk/netperfmeter/src/start-server-local
+   M /trunk/netperfmeter/src/start-servers-testbed
+   M /trunk/netperfmeter/src/t2.cc
+   M /trunk/netperfmeter/src/thread.cc
+   M /trunk/netperfmeter/src/thread.h
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
+   M /trunk/netperfmeter/src/wireshark/packet-netperfmeter.c
+
+Version updates.
+
+------------------------------------------------------------------------
+r1139 | dreibh | 2011-11-23 07:42:42 +0100 (Wed, 23 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/inputfile.cc
+
+Small fix.
+
+------------------------------------------------------------------------
+r1138 | dreibh | 2011-11-23 07:34:11 +0100 (Wed, 23 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/combinesummaries.cc
+   M /trunk/netperfmeter/src/createsummary.cc
+   A /trunk/netperfmeter/src/docs/draft-dreibholz-tsvwg-sctpsocket-multipath.txt
+   D /trunk/netperfmeter/src/docs/draft-ietf-tsvwg-sctpsocket-19.txt
+   A /trunk/netperfmeter/src/docs/draft-ietf-tsvwg-sctpsocket.txt (from /trunk/netperfmeter/src/docs/draft-ietf-tsvwg-sctpsocket-19.txt:1137)
+   M /trunk/netperfmeter/src/extractvectors.cc
+   M /trunk/netperfmeter/src/ldcalc.cc
+   M /trunk/netperfmeter/src/plotter.R
+   M /trunk/netperfmeter/src/runtimeestimator.cc
+
+Minor updates.
+
+------------------------------------------------------------------------
+r1134 | dreibh | 2011-11-22 15:13:50 +0100 (Tue, 22 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/combinesummaries.1
+   M /trunk/netperfmeter/src/createsummary.1
+   M /trunk/netperfmeter/src/extractvectors.1
+   M /trunk/netperfmeter/src/netperfmeter.1
+   M /trunk/netperfmeter/src/pdfembedfonts.1
+   M /trunk/netperfmeter/src/pdfmetadata.1
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.1
+
+Manpage category fix.
+
+------------------------------------------------------------------------
+r1133 | dreibh | 2011-11-22 15:06:26 +0100 (Tue, 22 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/netperfmeter.manpages
+   M /trunk/netperfmeter/src/Makefile.am
+   A /trunk/netperfmeter/src/combinesummaries.1 (from /trunk/netperfmeter/src/combinesummaries.8:1132)
+   D /trunk/netperfmeter/src/combinesummaries.8
+   A /trunk/netperfmeter/src/createsummary.1 (from /trunk/netperfmeter/src/createsummary.8:1132)
+   D /trunk/netperfmeter/src/createsummary.8
+   A /trunk/netperfmeter/src/extractvectors.1 (from /trunk/netperfmeter/src/extractvectors.8:1132)
+   D /trunk/netperfmeter/src/extractvectors.8
+   A /trunk/netperfmeter/src/netperfmeter.1 (from /trunk/netperfmeter/src/netperfmeter.8:1132)
+   D /trunk/netperfmeter/src/netperfmeter.8
+   A /trunk/netperfmeter/src/pdfembedfonts.1 (from /trunk/netperfmeter/src/pdfembedfonts.8:1132)
+   D /trunk/netperfmeter/src/pdfembedfonts.8
+   A /trunk/netperfmeter/src/pdfmetadata.1 (from /trunk/netperfmeter/src/pdfmetadata.8:1132)
+   D /trunk/netperfmeter/src/pdfmetadata.8
+   A /trunk/netperfmeter/src/plot-netperfmeter-results.1 (from /trunk/netperfmeter/src/plot-netperfmeter-results.8:1132)
+   D /trunk/netperfmeter/src/plot-netperfmeter-results.8
+
+Changed manpage category from 8 to 1.
+
+------------------------------------------------------------------------
+r1108 | dreibh | 2011-11-18 14:43:24 +0100 (Fri, 18 Nov 2011) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/src/measure-version2
+   M /trunk/netperfmeter/src/start-server-burgsteinfurt
+
+Changed IP of test server.
+
+
+------------------------------------------------------------------------
+r1107 | dreibh | 2011-11-18 13:17:38 +0100 (Fri, 18 Nov 2011) | 3 lines
+Changed paths:
+   M /trunk/netperfmeter/src/cpustatus.cc
+   M /trunk/netperfmeter/src/ldcalc.cc
+   M /trunk/netperfmeter/src/tools.h
+
+Fixed compile problems under FreeBSD.
+
+
+------------------------------------------------------------------------
+r1102 | dreibh | 2011-11-14 11:27:38 +0100 (Mon, 14 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plotter.R
+
+Added functionality to hide certain plot lines.
+
+------------------------------------------------------------------------
+r1100 | dreibh | 2011-11-11 07:45:14 +0100 (Fri, 11 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+
+Improved MPTCP handling: sockets for MPTCP are bound to ANY address, regardless of specified local addresses. The MPTCP kernel does not yet support an option to set multiple addresses.
+
+------------------------------------------------------------------------
+r1098 | dreibh | 2011-11-10 15:24:36 +0100 (Thu, 10 Nov 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/setsctp
+
+Added MPTCP CC name to setsctp script.
+
+------------------------------------------------------------------------
+r1094 | dreibh | 2011-10-31 19:54:42 +0100 (Mon, 31 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/netperfmeter.cc
+
+Version update.
+
+------------------------------------------------------------------------
+r1093 | dreibh | 2011-10-30 11:37:36 +0100 (Sun, 30 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/control.cc
+
+Added missing assignment of CMT field in AddFlow message.
+
+------------------------------------------------------------------------
+r1092 | adhari | 2011-10-28 14:47:02 +0200 (Fri, 28 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+
+Fixed option problem for MPTCP kernel.
+
+------------------------------------------------------------------------
+r1091 | dreibh | 2011-10-28 14:08:30 +0200 (Fri, 28 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.cc
+
+Removed debug code.
+
+------------------------------------------------------------------------
+r1090 | dreibh | 2011-10-28 14:04:22 +0200 (Fri, 28 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/flowtrafficspec.cc
+   M /trunk/netperfmeter/src/netperfmeter.8
+   M /trunk/netperfmeter/src/netperfmeter.cc
+
+Improved MPTCP handling.
+
+------------------------------------------------------------------------
+r1089 | dreibh | 2011-10-28 14:03:49 +0200 (Fri, 28 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/cpustatus.cc
+
+Fixed possible "division by zero" problem during CPU utilization computation.
+
+------------------------------------------------------------------------
+r1088 | dreibh | 2011-10-27 21:09:32 +0200 (Thu, 27 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/netperfmeter.8
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+
+Added MPTCP support by using an own socket.
+
+------------------------------------------------------------------------
+r1087 | dreibh | 2011-10-27 17:33:08 +0200 (Thu, 27 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+
+Small configure.in fix for MPTCP detection.
+
+------------------------------------------------------------------------
+r1082 | dreibh | 2011-10-25 13:02:15 +0200 (Tue, 25 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/control
+
+Updated Debian files.
+
+------------------------------------------------------------------------
+r1080 | dreibh | 2011-10-20 20:18:00 +0200 (Thu, 20 Oct 2011) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/src/netperfmeter.8
+
+Updated manpage.
+------------------------------------------------------------------------
+r1079 | dreibh | 2011-10-20 19:53:37 +0200 (Thu, 20 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+
+Added option to enable/disable MPTCP.
+
+------------------------------------------------------------------------
+r1075 | dreibh | 2011-10-20 17:30:23 +0200 (Thu, 20 Oct 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/make-ppa
+
+Updated packaging scripts for Ubuntu 12.04 Precise Pangolin.
+
+------------------------------------------------------------------------
+r1073 | dreibh | 2011-09-01 11:35:40 +0200 (Thu, 01 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+
+Documentation updates.
+
+------------------------------------------------------------------------
+r1072 | dreibh | 2011-09-01 11:34:44 +0200 (Thu, 01 Sep 2011) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian.conf
+   A /trunk/netperfmeter/filter-empty-entries (from /trunk/bibtexconv/filter-empty-entries:1071)
+   M /trunk/netperfmeter/make-deb
+   M /trunk/netperfmeter/netperfmeter.lsm
+
+Build script updates.
+
+------------------------------------------------------------------------
 r1066 | dreibh | 2011-08-30 09:24:26 +0200 (Tue, 30 Aug 2011) | 2 lines
 Changed paths:
    M /trunk/netperfmeter/src/plot-test1.R
