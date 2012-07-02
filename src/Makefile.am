@@ -1,7 +1,7 @@
 if BUILD_PLOTTING_PROGRAMS
-bin_PROGRAMS = netperfmeter createsummary combinesummaries extractvectors ldcalc runtimeestimator t6
+bin_PROGRAMS = netperfmeter createsummary combinesummaries extractvectors ldcalc runtimeestimator
 else
-bin_PROGRAMS = netperfmeter t6
+bin_PROGRAMS = netperfmeter
 endif
 
 
@@ -35,8 +35,8 @@ ldcalc_LDADD          =
 nodist_runtimeestimator_SOURCES = runtimeestimator.cc
 runtimeestimator_LDADD          =
 
-nodist_t6_SOURCES = t6.cc tools.cc outputfile.cc
-t6_LDADD          = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread
+#nodist_t6_SOURCES = t6.cc tools.cc outputfile.cc
+#t6_LDADD          = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread
 
 endif
 

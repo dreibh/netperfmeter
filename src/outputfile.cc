@@ -21,6 +21,7 @@
 
 #include "outputfile.h"
 
+#include <unistd.h>
 #include <stdarg.h>
 
 

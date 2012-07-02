@@ -1,25 +1,21 @@
 netperfmeter (1.2.2-1ubuntu1) precise; urgency=low
 
   * New upstream version.
+  * Removed gcc-4.7 patch, since changes are included upstream now.
+  * debian/control: update for debhelper 9.
+  * debian/control: added libglib2.0-dev build dependency.
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 11 Apr 2012 22:22:22 +0800
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sun, 01 Jul 2012 22:22:22 +0800
 
+netperfmeter (1.1.7-1.1ubuntu1) unstable; urgency=low
 
-netperfmeter (1.1.9-0ubuntu1) oneiric; urgency=low
+  * Non-maintainer upload.
+  * Fix "ftbfs with GCC-4.7": add patch gcc-4.7.patch (missing includes).
+    (Closes: #667295)
 
-  * New upstream version.
+ -- gregor herrmann <gregoa@debian.org>  Thu, 10 May 2012 23:55:03 +0200
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 14 Aug 2011 09:09:09 +0200
-
-
-netperfmeter (1.1.8-0ubuntu1) natty; urgency=low
-
-  * New upstream version.
-
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 01 Mar 2011 08:08:08 +0200
-
-
-netperfmeter (1.1.7-1ubuntu1) natty; urgency=low
+netperfmeter (1.1.7-1ubuntu1) unstable; urgency=low
 
   * New upstream version.
   * Changed package format to 3.0 (quilt).
