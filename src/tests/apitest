@@ -348,14 +348,17 @@ def makeNorNetTunnelIP(outgoingSite, outgoingProvider, incomingSite, incomingPro
    if incomingSite < outgoingSite:
       side  = 1
       sLow  = incomingSite
-      pLow  = incomingProvider
       sHigh = outgoingSite
-      pHigh = outgoingProvider
    else:
       side  = 2
       sLow  = outgoingSite
-      pLow  = outgoingProvider
       sHigh = incomingSite
+
+   if incomingProvider < outgoingProvider:
+      pLow  = incomingProvider
+      pHigh = outgoingProvider
+   else:
+      pLow  = outgoingProvider
       pHigh = incomingProvider
 
    if version == 4:
