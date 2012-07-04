@@ -33,6 +33,33 @@
 # T7 -> 0x1C
 
 
+# ###### Tunnel removal #####################################################
+remove-tunnel ()
+{
+   local interface="$1"           # Interface name (fire*, seks*, gre*)
+   local tunnelKey="$2"           # Tunnel key, must be unique between sites
+   local from="$3"                # From network
+   local tos="$4"                 # TOS
+   local fwmark="$5"              # fwmark
+
+   let tableID=0x10000+0x40*$tunnelKey+$tos/4
+   let tosPref=0x10000+$tunnelKey
+   let sourcePref=0x11000+$tunnelKey
+   let globalPref=0x12000+$tunnelKey
+   if [ $fwmark -ne 0 ] ; then
+      markerOption="fwmark $fwmark"
+   else
+      markerOption=""
+   fi
+
+   ip tunnel del $interface 2>/dev/null || true
+   ip rule del fwmark $fwmark table $globalTable pref $globalPref || true
+   ip rule del $markerOption tos $tos table $tableID pref $tosPref 2>/dev/null || true
+   ip rule del $markerOption from $localIP table $tableID pref $sourcePref 2>/dev/null || true
+   ip rule del $markerOption from $from table $tableID pref $sourcePref 2>/dev/null || true
+}
+
+
 # ###### Tunnel setup #######################################################
 make-tunnel ()
 {
@@ -49,7 +76,7 @@ make-tunnel ()
    local route2="${11}"           # Route2 (e.g. the complete network -- like Telenor or Telekom) -- for global routing table
    local tunnelOptions="${12}"    # Tunnel options (e.g. "csum")
    local miscOptions="${13}"      # Misc options (e.g. "----add-to-exiting-tunnel")
-   
+
    local innerV6option=""
    local outerV6option=""
    if [[ "$innerLocalIP" =~ : ]] ; then
@@ -58,7 +85,7 @@ make-tunnel ()
    if [[ "$outerLocalIP" =~ : ]] ; then
       outerV6option="-6"
    fi
-   
+
    local mode=""
    local greoption=""
    if [[ "$interface" =~ ^seks ]] ; then
@@ -98,10 +125,10 @@ make-tunnel ()
    # Also, turn off Reverse Path filter on all interfaces.
    # If it is turned on, it supersedes all per-interface settings!
    sysctl -q net.ipv4.conf.all.rp_filter=0
-   
+
    echo "$interface: tunnel [$innerLocalIP <-> $innerRemoteIP] via [$outerLocalIP <-> $outerRemoteIP]"
-   
-   
+
+
    # ====== Routing table setup =============================================
    if [ "$route1" != "" -o "$route2" != "" ] ; then
       make-routes "$interface" "$tunnelKey" "$from" "$tos" "$fwmark" \
@@ -134,7 +161,7 @@ make-routes ()
      echo "ONLY-v6"
      addToExistingTunnel=1
    fi
-   
+
    let tableID=0x10000+0x40*$tunnelKey+$tos/4
    let tosPref=0x10000+$tunnelKey
    let sourcePref=0x11000+$tunnelKey
@@ -163,18 +190,18 @@ make-routes ()
    else
       markerOption=""
    fi
-       
-   
+
+
    # ====== Create rule for TOS setting =====================================
    if [ "$tos" != "0x00" ] ; then
        # Ensure that TOS-marked packets use the right routing table
        ip rule del $markerOption tos $tos table $tableID pref $tosPref 2>/dev/null || true
        ip rule add $markerOption tos $tos table $tableID pref $tosPref
-       
+
        # NOTE: Only the TOS settings above are accepted by the kernel. All
        # other settings are disallowed. Since only 3 bits may vary, there
        # are only eight possible settings.
-       
+
        echo "   TOS $tos goes via table $tableID."
    fi
 
@@ -239,7 +266,7 @@ EOF
 
    echo "Setting up $interface ..."
    wait
-   
+
    cat /vsys/vif_up.out &
    cat >/vsys/vif_up.in <<EOF
 $interface
@@ -253,7 +280,7 @@ EOF
 
    wait
    sleep 1
-   
+
    echo "ok"
 
 

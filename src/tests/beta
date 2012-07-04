@@ -2,10 +2,18 @@
 
 set -ex
 
-ip rule flush
-# ip rule add from all lookup local   pref 0
-ip rule add from all lookup main    pref 32766
-ip rule add from all lookup default pref 32767
+state="$1"
+if [ "$state" != "start" -a "$state" != "stop" ] ; then
+   echo >&2 "Usage: $0 [start|stop]"
+   exit 1
+fi
+
+if [ "$state" != "stop" ] ; then
+   ip rule flush
+   # ip rule add from all lookup local   pref 0
+   ip rule add from all lookup main    pref 32766
+   ip rule add from all lookup default pref 32767
+fi
 
 . ./tunnel-setup
 . ./tunnelbox.beta.site-config

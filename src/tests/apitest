@@ -805,7 +805,8 @@ def makeTunnelBoxConfiguration(localSiteID):
                                                            remoteSiteNorNetIndex, incomingProviderIndex, 4)
             tunnelProviderNetworkIPv4 = makeNorNetIP(localSiteNorNetIndex, 0, 0, 4)
             tunnelRemoteIPv4          = makeNorNetTunnelIP(remoteSiteNorNetIndex, incomingProviderIndex,
-                                                         localSiteNorNetIndex, outgoingProviderIndex, 4)
+                                                           localSiteNorNetIndex, outgoingProviderIndex, 4)
+            tunnelCompleteNorNetIPv4  = makeNorNetIP(0, 0, 0, 4)
 
             remoteTunnelboxIPv6       = IPv6Address(getTagValue(remoteSiteTagsList, 'nornet_site_tbp' + str(j) + '_address_ipv6', '0.0.0.0'))
             tunnelNameIPv6            = str(remoteSiteNorNetIndex) + "-" + str(outgoingProviderIndex) + '-' + str(incomingProviderIndex)
@@ -814,6 +815,7 @@ def makeTunnelBoxConfiguration(localSiteID):
             tunnelProviderNetworkIPv6 = makeNorNetIP(localSiteNorNetIndex, 0, 0, 6)
             tunnelRemoteIPv6          = makeNorNetTunnelIP(remoteSiteNorNetIndex, incomingProviderIndex,
                                                            localSiteNorNetIndex, outgoingProviderIndex, 6)
+            tunnelCompleteNorNetIPv6  = makeNorNetIP(0, 0, 0, 6)
 
             print '      * Path #' + str(pathIndex + 1) + ' via ' + incomingProviderName + \
                   ' through tunnel ' + tunnelKeyString + ' (for TOS ' + tosString + ')'
@@ -828,18 +830,18 @@ def makeTunnelBoxConfiguration(localSiteID):
             outputFile.write( \
                '   make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv4) + ' ' + tosString + ' '+ str(0) + ' ' + \
                   str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
-                  str(tunnelLocalIPv4)    + ' ' + str(tunnelRemoteIPv4)   + ' "default" "" ""\n')
+                  str(tunnelLocalIPv4)    + ' ' + str(tunnelRemoteIPv4)   + ' "' + str(tunnelCompleteNorNetIPv4) + '" "" ""\n')
 
             if ((localTunnelboxIPv6 != IPv6Address('::')) & (remoteTunnelboxIPv6 != IPv6Address('::'))):
                outputFile.write( \
                '   make-tunnel seks' + tunnelNameIPv6 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv6) + ' ' + tosString + ' ' +  str(0) + ' ' + \
                   str(localTunnelboxIPv6) + ' ' + str(remoteTunnelboxIPv6) + ' ' + \
-                  str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "default" "" ""\n')
+                  str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "' + str(tunnelCompleteNorNetIPv6) + '" "" ""\n')
             else:
                outputFile.write( \
                '   make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv6) + ' ' + tosString + ' ' +  str(0) + ' ' + \
                   str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
-                  str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "default" "" "" "--add-to-exiting-tunnel"\n')
+                  str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "' + str(tunnelCompleteNorNetIPv6) + '" "" "" "--add-to-exiting-tunnel"\n')
 
             # ------ Stop tunnel --------------------------
             outputFile.write('elif [ "$state" = "stop" ] ; then\n')
