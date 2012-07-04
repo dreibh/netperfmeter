@@ -325,9 +325,9 @@ def makeNorNetIP(provider, site, host, version):
       return IPv4Network('10.' + str(p) + '.' + str(s) + '.' + str(h) + '/' + str(prefix))
    else:
       if site != 0:
-         prefix = 32;
-      else:
          prefix = 48;
+      else:
+         prefix = 32;
       return IPv6Network('fd00:' + \
                           str.replace(hex(p), '0x', '') + ':' + \
                           str.replace(hex(s), '0x', '') + ':' + \

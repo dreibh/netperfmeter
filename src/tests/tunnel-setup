@@ -33,6 +33,20 @@
 # T7 -> 0x1C
 
 
+# ###### Get IDs for custom routing tables ##################################
+get-table-IDs()
+{
+   let tableID=0x10000+0x40*$tunnelKey+$tos/4
+   let tosPref=0x10000+$tunnelKey
+   let sourcePref=0x11000+$tunnelKey
+   let globalPref=0x12000+$tunnelKey
+   export tableID
+   export tosPref
+   export sourcePref
+   export globalPref
+}
+
+   
 # ###### Tunnel removal #####################################################
 remove-tunnel ()
 {
@@ -42,10 +56,7 @@ remove-tunnel ()
    local tos="$4"                 # TOS
    local fwmark="$5"              # fwmark
 
-   let tableID=0x10000+0x40*$tunnelKey+$tos/4
-   let tosPref=0x10000+$tunnelKey
-   let sourcePref=0x11000+$tunnelKey
-   let globalPref=0x12000+$tunnelKey
+   get-table-IDs
    if [ $fwmark -ne 0 ] ; then
       markerOption="fwmark $fwmark"
    else
@@ -53,10 +64,14 @@ remove-tunnel ()
    fi
 
    ip tunnel del $interface 2>/dev/null || true
-   ip rule del fwmark $fwmark table $globalTable pref $globalPref || true
+   if [ $fwmark -ne 0 ] ; then
+      ip rule del fwmark $fwmark table $globalTable pref $globalPref || true
+   fi
    ip rule del $markerOption tos $tos table $tableID pref $tosPref 2>/dev/null || true
-   ip rule del $markerOption from $localIP table $tableID pref $sourcePref 2>/dev/null || true
-   ip rule del $markerOption from $from table $tableID pref $sourcePref 2>/dev/null || true
+   if [ "$from" != "" ] ; then
+      ip rule del $markerOption from $from table $tableID pref $sourcePref 2>/dev/null || true
+   fi
+   ip rule del $markerOption table $tableID pref $sourcePref 2>/dev/null || true
 }
 
 
@@ -102,14 +117,13 @@ make-tunnel ()
 
    local addToExistingTunnel=0
    if [[ "$miscOptions" =~ --add-to-exiting-tunnel ]] ; then
-     echo "ONLY-v6"
-     addToExistingTunnel=1
+      addToExistingTunnel=1
    fi
 
    # ====== Tunnel setup ====================================================
    # Create the tunnel
    if [ $addToExistingTunnel -eq 0 ] ; then
-      ip tunnel del $interface 2>/dev/null || true
+      remove-tunnel "$interface" "$tunnelKey" "$from" "$tos" "$fwmark"
       ip $outerV6option tunnel add $interface mode $mode local $outerLocalIP remote $outerRemoteIP ttl 255 $greoption  $tunnelOptions
    fi
    # Configure an address and turn the interface up
@@ -158,15 +172,10 @@ make-routes ()
 
    local addToExistingTunnel=0
    if [[ "$miscOptions" =~ --add-to-exiting-tunnel ]] ; then
-     echo "ONLY-v6"
-     addToExistingTunnel=1
+      addToExistingTunnel=1
    fi
 
-   let tableID=0x10000+0x40*$tunnelKey+$tos/4
-   let tosPref=0x10000+$tunnelKey
-   let sourcePref=0x11000+$tunnelKey
-   let globalPref=0x12000+$tunnelKey
-
+   get-table-IDs
 
    # ====== If rules are only for specific fwmark: write specific table ==
    if [ $fwmark -ne 0 ] ; then
@@ -202,16 +211,18 @@ make-routes ()
        # other settings are disallowed. Since only 3 bits may vary, there
        # are only eight possible settings.
 
-       echo "   TOS $tos goes via table $tableID."
+       echo "   TOS $tos goes out via table $tableID."
    fi
 
 
    # ====== Create rule for interface's source IP address ===================
    ip rule del $markerOption from $localIP table $tableID pref $sourcePref 2>/dev/null || true
-   ip $v6option rule add $markerOption from $localIP table $tableID pref $sourcePref
+   ip $v6option rule add $markerOption from $localIP table $tableID pref $sourcePref   
+   echo "   Source $localIP goes out via table $tableID."
    if [ "$from" != "" ] ; then
       ip rule del $markerOption from $from table $tableID pref $sourcePref 2>/dev/null || true
       ip $v6option rule add $markerOption from $from table $tableID pref $sourcePref
+       echo "   Source $from goes out via table $tableID."
    fi
 
 
@@ -220,12 +231,12 @@ make-routes ()
    if [ "$route1" != "" ] ; then
        # Add entry in interface-specific table.
        ip route add $route1 via $remoteIP dev $interface table $tableID
-       echo "   Route to $route1 from $localIP via $remoteIP/$interface (also selected by TOS $tos; in table $tableID)"
+       echo "   Table $tableID: route to $route1 from $localIP via $remoteIP/$interface"
    fi
    if [ "$route2" != "" ] ; then
        # Add entry in "global" table.
        ip route add $route2 via $remoteIP dev $interface table $globalTable
-       echo "   Route to $route2 via $remoteIP/$interface (in global table, i.e. table $globalTable)"
+       echo "   Table $globalTable: route to $route2 via $remoteIP/$interface (in global table!)"
    fi
 }
 
