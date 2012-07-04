@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -ex
+
+. ./tunnel-setup
+. ./tunnelbox.beta.site-config

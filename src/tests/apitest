@@ -361,13 +361,16 @@ def makeNorNetTunnelIP(outgoingSite, outgoingProvider, incomingSite, incomingPro
    if version == 4:
       address = ((pLow << 8 | pHigh) << 4) | side
       address = int(IPv4Address('192.168.0.0')) | address
-      network = str(IPv4Address(address)) + '/28'
-      return IPv4Network(network)
+      return IPv4Address(address)
+      # network = str(IPv4Address(address)) + '/28'
+      # return IPv4Network(network)
    else:
       source      = str.replace(hex((pLow << 8) | sLow), '0x', '')
       destination = str.replace(hex((pHigh << 8) | pLow), '0x', '')
-      network     = 'fdff:ffff:' + source + ':' + destination + '::' + str(side) + '/64'
-      return IPv6Network(network)
+      address     = 'fdff:ffff:' + source + ':' + destination + '::' + str(side)
+      return IPv6Address(address)
+      # network     = address + '/64'
+      # return IPv6Network(network)
 
 
 # ====== Get NorNet interface IPv4 address ==================================
@@ -697,7 +700,7 @@ loginToPLC()
 
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#createTestConfiguration()
+# createTestConfiguration()
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
@@ -796,9 +799,9 @@ def makeTunnelBoxConfiguration(localSiteID):
                error('Bad IPv4 address on site ' + remoteSiteName + ', NorNet interface ' + str(j))
             tunnelNameIPv4          = str(outgoingProviderIndex) + '-' + str(incomingProviderIndex)
             tunnelLocalIPv4         = makeNorNetTunnelIP(localSiteNorNetIndex, outgoingProviderIndex,
-                                                  remoteSiteNorNetIndex, incomingProviderIndex, 4)
+                                                        remoteSiteNorNetIndex, incomingProviderIndex, 4)
             tunnelRemoteIPv4        = makeNorNetTunnelIP(remoteSiteNorNetIndex, incomingProviderIndex,
-                                                  localSiteNorNetIndex, outgoingProviderIndex, 4)
+                                                         localSiteNorNetIndex, outgoingProviderIndex, 4)
             tunnelRemoteNetworkIPv4 = makeNorNetIP(incomingProviderIndex, remoteSiteNorNetIndex, 0, 4)
 
             remoteTunnelboxIPv6     = IPv6Address(getTagValue(remoteSiteTagsList, 'nornet_site_tbp' + str(j) + '_address_ipv6', '0.0.0.0'))
@@ -816,18 +819,18 @@ def makeTunnelBoxConfiguration(localSiteID):
             outputFile.write('# ' + outgoingProviderName + ' (' + str(outgoingProviderIndex) + ') <-> ' + \
                              incomingProviderName + ' (' + str(incomingProviderIndex) + ')\n')
             outputFile.write( \
-               'make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + tosString + ' ' + \
+               'make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + tosString + ' '+ str(0) + ' ' + \
                   str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
-                  str(tunnelLocalIPv4)    + ' ' + str(tunnelRemoteIPv4)   + ' "" "' + str(tunnelRemoteNetworkIPv4) + '\n')
+                  str(tunnelLocalIPv4)    + ' ' + str(tunnelRemoteIPv4)   + ' "" "' + str(tunnelRemoteNetworkIPv4) + '"\n')
 
             if ((localTunnelboxIPv6 != IPv6Address('::')) & (remoteTunnelboxIPv6 != IPv6Address('::'))):
                outputFile.write( \
-               'make-tunnel gre' + tunnelNameIPv6 + ' ' + tunnelKeyString + ' ' + tosString + ' ' + \
+               'make-tunnel gre' + tunnelNameIPv6 + ' ' + tunnelKeyString + ' ' + tosString + ' ' +  str(0) + ' ' + \
                   str(localTunnelboxIPv6) + ' ' + str(remoteTunnelboxIPv6) + ' ' + \
                   str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "" "' + str(tunnelRemoteNetworkIPv6) + '"\n')
             else:
                outputFile.write( \
-               'make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + tosString + ' ' + \
+               'make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + tosString + ' ' +  str(0) + ' ' + \
                   str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
                   str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "" "' + str(tunnelRemoteNetworkIPv6) + '" "--add-v6-only\n')
             outputFile.write('\n')
@@ -860,13 +863,13 @@ def makeNodeConfiguration(nodeID):
 # ###########################################################################
 
 
-siteID = findSiteID('Alpha Test Site')
-makeTunnelBoxConfiguration(siteID)
+#siteID = findSiteID('Alpha Test Site')
+#makeTunnelBoxConfiguration(siteID)
 
 siteID = findSiteID('Beta Test Site')
 makeTunnelBoxConfiguration(siteID)
 
 
-nodeID = findNodeID('altenessen.gamma.site')
-print "N=",nodeID
-makeNodeConfiguration(nodeID)
+#nodeID = findNodeID('altenessen.gamma.site')
+#print "N=",nodeID
+#makeNodeConfiguration(nodeID)

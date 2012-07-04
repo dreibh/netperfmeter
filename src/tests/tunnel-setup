@@ -104,10 +104,10 @@ make-routes ()
    local route1="$7"
    local route2="$8"
 
-   let tableID=1000000000+0x100*$tunnelKey+$tos
-   let tosPref=10000+$tunnelKey
-   let sourcePref=11000+$tunnelKey
-   let globalPref=12000+$tunnelKey
+   let tableID=0x10000+0x40*$tunnelKey+$tos/4
+   let tosPref=0x10000+$tunnelKey
+   let sourcePref=0x11000+$tunnelKey
+   let globalPref=0x12000+$tunnelKey
 
 
    # ====== If rules are only for specific fwmark: write specific table ==
