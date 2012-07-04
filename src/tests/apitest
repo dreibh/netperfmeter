@@ -703,13 +703,13 @@ loginToPLC()
 
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# createTestConfiguration()
+#createTestConfiguration()
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 # ###### Generate tunnelbox configuration ###################################
 
-def makeTunnelBoxConfiguration(localSiteID):
+def makeTunnelBoxConfiguration(localSiteID, v4only):
    # ====== Get site information ============================================
    localSiteList = plc_server.GetSites(plc_authentication, {'site_id': localSiteID})
    if len(localSiteList) != 1:
@@ -832,22 +832,24 @@ def makeTunnelBoxConfiguration(localSiteID):
                   str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
                   str(tunnelLocalIPv4)    + ' ' + str(tunnelRemoteIPv4)   + ' "' + str(tunnelCompleteNorNetIPv4) + '" "" ""\n')
 
-            if ((localTunnelboxIPv6 != IPv6Address('::')) & (remoteTunnelboxIPv6 != IPv6Address('::'))):
-               outputFile.write( \
-               '   make-tunnel seks' + tunnelNameIPv6 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv6) + ' ' + tosString + ' ' +  str(0) + ' ' + \
-                  str(localTunnelboxIPv6) + ' ' + str(remoteTunnelboxIPv6) + ' ' + \
-                  str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "' + str(tunnelCompleteNorNetIPv6) + '" "" ""\n')
-            else:
-               outputFile.write( \
-               '   make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv6) + ' ' + tosString + ' ' +  str(0) + ' ' + \
-                  str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
-                  str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "' + str(tunnelCompleteNorNetIPv6) + '" "" "" "--add-to-exiting-tunnel"\n')
+            if (v4only == False):
+               if ((localTunnelboxIPv6 != IPv6Address('::')) and (remoteTunnelboxIPv6 != IPv6Address('::'))):
+                  outputFile.write( \
+                  '   make-tunnel seks' + tunnelNameIPv6 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv6) + ' ' + tosString + ' ' +  str(0) + ' ' + \
+                     str(localTunnelboxIPv6) + ' ' + str(remoteTunnelboxIPv6) + ' ' + \
+                     str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "' + str(tunnelCompleteNorNetIPv6) + '" "" ""\n')
+               else:
+                  outputFile.write( \
+                  '   make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv6) + ' ' + tosString + ' ' +  str(0) + ' ' + \
+                     str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
+                     str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "' + str(tunnelCompleteNorNetIPv6) + '" "" "" "--add-to-exiting-tunnel"\n')
 
             # ------ Stop tunnel --------------------------
             outputFile.write('elif [ "$state" = "stop" ] ; then\n')
             outputFile.write('   remove-tunnel ' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv4) + ' ' + tosString + ' '+ str(0)+ '\n')
-            if ((localTunnelboxIPv6 != IPv6Address('::')) & (remoteTunnelboxIPv6 != IPv6Address('::'))):
-               outputFile.write('   remove-tunnel seks' + tunnelNameIPv6 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv6) + ' ' + tosString + ' '+ str(0)+ '\n')
+            if (v4only == False):
+               if ((localTunnelboxIPv6 != IPv6Address('::')) and (remoteTunnelboxIPv6 != IPv6Address('::'))):
+                  outputFile.write('   remove-tunnel seks' + tunnelNameIPv6 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv6) + ' ' + tosString + ' '+ str(0)+ '\n')
             outputFile.write('fi\n\n')
 
    outputFile.close()
@@ -882,7 +884,7 @@ def makeNodeConfiguration(nodeID):
 #makeTunnelBoxConfiguration(siteID)
 
 siteID = findSiteID('Beta Test Site')
-makeTunnelBoxConfiguration(siteID)
+makeTunnelBoxConfiguration(siteID,True)
 
 
 #nodeID = findNodeID('altenessen.gamma.site')
