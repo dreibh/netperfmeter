@@ -283,7 +283,7 @@ def makeNorNetSite(siteName, siteAbbrvName, siteLoginBase, siteUrl, siteNorNetDo
 def makeNorNetPCU(siteID, hostName, siteNorNetDomain, publicIPv4Address,
                   user, password, protocol, model, notes):
    try:
-      pcuHostName = str.lower(hostName) + "." + str.lower(siteNorNetDomain);
+      pcuHostName = str.lower(hostName) + '.' + str.lower(siteNorNetDomain);
       log('Adding PCU ' + pcuHostName + ' ...')
 
       pcu = {}
@@ -513,7 +513,7 @@ def makeNorNetNode(siteID, nodeNiceName, nodeNorNetIndex, firstAddressNumber,
 
 
       # ====== Create node ==================================================
-      nodeHostName = nodeHostName + "." + str.lower(siteNorNetDomain);
+      nodeHostName = nodeHostName + '.' + str.lower(siteNorNetDomain);
       log('Adding node ' + nodeHostName + ' ...')
 
       node = {}
@@ -697,11 +697,12 @@ loginToPLC()
 
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-createTestConfiguration()
+#createTestConfiguration()
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 # ###### Generate tunnelbox configuration ###################################
+
 def makeTunnelBoxConfiguration(localSiteID):
    # ====== Get site information ============================================
    localSiteList = plc_server.GetSites(plc_authentication, {'site_id': localSiteID})
@@ -809,7 +810,7 @@ def makeTunnelBoxConfiguration(localSiteID):
             tunnelRemoteNetworkIPv6 = makeNorNetIP(incomingProviderIndex, remoteSiteNorNetIndex, 0, 6)
 
             print '      * Path #' + str(pathIndex + 1) + ' via ' + incomingProviderName + \
-                  'through tunnel ' + tunnelKeyString + ' (for TOS ' + tosString + ')'
+                  ' through tunnel ' + tunnelKeyString + ' (for TOS ' + tosString + ')'
 
             # ====== Write tunnel configuration =============================
             outputFile.write('# ' + outgoingProviderName + ' (' + str(outgoingProviderIndex) + ') <-> ' + \
@@ -822,16 +823,38 @@ def makeTunnelBoxConfiguration(localSiteID):
             if ((localTunnelboxIPv6 != IPv6Address('::')) & (remoteTunnelboxIPv6 != IPv6Address('::'))):
                outputFile.write( \
                'make-tunnel gre' + tunnelNameIPv6 + ' ' + tunnelKeyString + ' ' + tosString + ' ' + \
-                     str(localTunnelboxIPv6) + ' ' + str(remoteTunnelboxIPv6) + ' ' + \
-                     str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "" "' + str(tunnelRemoteNetworkIPv6) + '"\n')
+                  str(localTunnelboxIPv6) + ' ' + str(remoteTunnelboxIPv6) + ' ' + \
+                  str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "" "' + str(tunnelRemoteNetworkIPv6) + '"\n')
             else:
                outputFile.write( \
                'make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + tosString + ' ' + \
-                     str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
-                     str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "" "' + str(tunnelRemoteNetworkIPv6) + '" "--add-v6-only\n')
+                  str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
+                  str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "" "' + str(tunnelRemoteNetworkIPv6) + '" "--add-v6-only\n')
             outputFile.write('\n')
 
    outputFile.close()
+
+
+def makeNodeConfiguration(nodeID):
+   # ====== Get node information ============================================
+   nodeList = plc_server.GetNodes(plc_authentication, {'node_id': nodeID} )
+   if len(nodeList) != 1:
+      error('Cannot find node ' + str(nodeID))
+   node        = nodeList[0]
+   nodeName    = node['hostname']
+   nodeTagList = getNodeTagsList(nodeID)
+   nodeNorNetIndex = int(getTagValue(nodeTagList, 'nornet_node_index', '-1'))
+   if nodeNorNetIndex < 0:
+      error('Bad nornet_node_index setting')
+   nodeNorNetAddress = int(getTagValue(nodeTagList, 'nornet_node_address', '-1'))
+   if nodeNorNetAddress < 0:
+      error('Bad nornet_node_address setting')
+
+   outputFile = open(nodeName + '-config', 'w')
+   outputFile.write('# ===== Node configuration for ' + nodeName + ' =====\n')
+   outputFile.write('# Generated on ' + datetime.now().isoformat() + '\n\n')
+
+   print 'Node configuration for: ' + nodeName
 
 
 # ###########################################################################
@@ -844,6 +867,6 @@ siteID = findSiteID('Beta Test Site')
 makeTunnelBoxConfiguration(siteID)
 
 
-#nodeID = findNodeID('altenessen.gamma.site')
-#print "N=",nodeID
-#updateNorNetInterfaces(nodeID, getSiteTagsList(findSiteID('Gamma Test Site')))
+nodeID = findNodeID('altenessen.gamma.site')
+print "N=",nodeID
+makeNodeConfiguration(nodeID)
