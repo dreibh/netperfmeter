@@ -821,14 +821,14 @@ def makeTunnelBoxConfiguration(localSiteID):
             # ====== Write tunnel configuration =============================
             outputFile.write('# ' + outgoingProviderName + ' (' + str(outgoingProviderIndex) + ') <-> ' + \
                              incomingProviderName + ' (' + str(incomingProviderIndex) + ')\n')
+
             outputFile.write('if [ "$state" = "start" ] ; then\n')
+
+            # ------ Start tunnel -------------------------
             outputFile.write( \
                '   make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv4) + ' ' + tosString + ' '+ str(0) + ' ' + \
                   str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
                   str(tunnelLocalIPv4)    + ' ' + str(tunnelRemoteIPv4)   + ' "default" "" ""\n')
-            outputFile.write('elif [ "$state" = "stop" ] ; then\n')
-            outputFile.write('   destroy-tunnel ' + tunnelNameIPv4 + ' ' + tunnelKeyString + '\n')
-            outputFile.write('fi\n')            
 
             if ((localTunnelboxIPv6 != IPv6Address('::')) & (remoteTunnelboxIPv6 != IPv6Address('::'))):
                outputFile.write( \
@@ -840,7 +840,13 @@ def makeTunnelBoxConfiguration(localSiteID):
                '   make-tunnel gre' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv6) + ' ' + tosString + ' ' +  str(0) + ' ' + \
                   str(localTunnelboxIPv4) + ' ' + str(remoteTunnelboxIPv4) + ' ' + \
                   str(tunnelLocalIPv6)    + ' ' + str(tunnelRemoteIPv6)   + ' "default" "" "" "--add-to-exiting-tunnel"\n')
-            outputFile.write('\n')
+
+            # ------ Stop tunnel --------------------------
+            outputFile.write('elif [ "$state" = "stop" ] ; then\n')
+            outputFile.write('   remove-tunnel ' + tunnelNameIPv4 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv4) + ' ' + tosString + ' '+ str(0)+ '\n')
+            if ((localTunnelboxIPv6 != IPv6Address('::')) & (remoteTunnelboxIPv6 != IPv6Address('::'))):
+               outputFile.write('   remove-tunnel seks' + tunnelNameIPv6 + ' ' + tunnelKeyString + ' ' + str(tunnelProviderNetworkIPv6) + ' ' + tosString + ' '+ str(0)+ '\n')
+            outputFile.write('fi\n\n')
 
    outputFile.close()
 
