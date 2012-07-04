@@ -58,32 +58,48 @@ make-tunnel ()
    local route1="$9"
    local route2="${10}"
    local tunnelOptions="${11}"
+   local miscOptions="${12}"
+   
+   local innerV6option=""
+   local outerV6option=""
+   if [[ "$innerLocalIP" =~ : ]] ; then
+      innerV6option="-6"
+   fi
+   if [[ "$outerLocalIP" =~ : ]] ; then
+      outerV6option="-6"
+   fi
    
    local mode=""
-   local v6option=""
    local greoption=""
    if [[ "$interface" =~ ^seks ]] ; then
       mode="any"
-      v6option="-6"
    elif [[ "$interface" =~ ^fire ]] ; then
       mode="sit"
    elif [[ "$interface" =~ ^gre ]] ; then
       mode="gre"
-      greoption="key $tunnelKey $tunnelOptions"
+      greoption="key $tunnelKey"
    else
       echo >&2 "ERROR: Cannot determine tunnel mode from interface name $interface!"
       exit 1
    fi
 
+   local addToExistingTunnel=0
+   if [[ "$miscOptions" =~ --add-to-exiting-tunnel ]] ; then
+     echo "ONLY-v6"
+     addToExistingTunnel=1
+   fi
+
    # ====== Tunnel setup ====================================================
    # Create the tunnel
-   ip tunnel del $interface 2>/dev/null || true
-   ip $v6option tunnel add $interface mode $mode local $outerLocalIP remote $outerRemoteIP ttl 255 $greoption
+   if [ $addToExistingTunnel -eq 0 ] ; then
+      ip tunnel del $interface 2>/dev/null || true
+      ip $outerV6option tunnel add $interface mode $mode local $outerLocalIP remote $outerRemoteIP ttl 255 $greoption  $tunnelOptions
+   fi
    # Configure an address and turn the interface up
-   if [ "$v6option" = "" ] ; then
+   if [ "$innerV6option" = "" ] ; then
       ip addr add $innerLocalIP peer $innerRemoteIP dev $interface
    else
-      ip addr add $innerLocalIP/64 dev $interface
+      ip $innerV6option addr add $innerLocalIP/64 dev $interface
    fi
    ip link set dev $interface up
    # Turn off Reverse Path filtering, since it prevents routing packets
@@ -99,7 +115,7 @@ make-tunnel ()
    # ====== Routing table setup =============================================
    if [ "$route1" != "" -o "$route2" != "" ] ; then
       make-routes "$interface" "$tunnelKey" "$tos" "$fwmark" \
-                  "$innerLocalIP" "$innerRemoteIP" "$route1" "$route2"
+                  "$innerLocalIP" "$innerRemoteIP" "$route1" "$route2" "$miscOptions"
    fi
 }
 
@@ -123,10 +139,17 @@ make-routes ()
    local remoteIP="$6"
    local route1="$7"
    local route2="$8"
+   local miscOptions="$9"
 
    local v6option=""
-   if [[ "$interface" =~ ^seks ]] ; then
+   if [[ "$localIP" =~ : ]] ; then
       v6option="-6"
+   fi
+
+   local addToExistingTunnel=0
+   if [[ "$miscOptions" =~ --add-to-exiting-tunnel ]] ; then
+     echo "ONLY-v6"
+     addToExistingTunnel=1
    fi
    
    let tableID=0x10000+0x40*$tunnelKey+$tos/4
@@ -149,16 +172,17 @@ make-routes ()
    echo "   Global table is $globalTable."
 
 
+   # When there is a fwmark given, only apply the TOS filtering rules for
+   # packets marked with this fwmark!
+   if [ $fwmark -ne 0 ] ; then
+      markerOption="fwmark $fwmark"
+   else
+      markerOption=""
+   fi
+       
+   
    # ====== Create rule for TOS setting ==================================
    if [ "$tos" != "0x00" ] ; then
-       # When there is a fwmark given, only apply the TOS filtering rules for
-       # packets marked with this fwmark!
-       if [ $fwmark -ne 0 ] ; then
-          markerOption="fwmark $fwmark"
-       else
-          markerOption=""
-       fi
-       
        # Ensure that TOS-marked packets use the right routing table
        ip rule del $markerOption tos $tos table $tableID pref $tosPref 2>/dev/null || true
        ip rule add $markerOption tos $tos table $tableID pref $tosPref
@@ -171,12 +195,6 @@ make-routes ()
    fi
 
    # ====== Create rule for interface's source IP address ================
-   if [ $fwmark -ne 0 ] ; then
-       markerOption="fwmark $fwmark"
-   else
-       markerOption="fwmark $fwmark"
-   fi
-
    ip rule del $markerOption from $localIP table $tableID pref $sourcePref 2>/dev/null || true
    ip $v6option rule add $markerOption from $localIP table $tableID pref $sourcePref
 
