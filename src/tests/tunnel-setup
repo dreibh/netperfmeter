@@ -58,20 +58,40 @@ make-tunnel ()
    local route1="$9"
    local route2="${10}"
    local tunnelOptions="${11}"
-
+   
+   local mode=""
+   local v6option=""
+   local greoption=""
+   if [[ "$interface" =~ ^seks ]] ; then
+      mode="any"
+      v6option="-6"
+   elif [[ "$interface" =~ ^fire ]] ; then
+      mode="sit"
+   elif [[ "$interface" =~ ^gre ]] ; then
+      mode="gre"
+      greoption="key $tunnelKey $tunnelOptions"
+   else
+      echo >&2 "ERROR: Cannot determine tunnel mode from interface name $interface!"
+      exit 1
+   fi
 
    # ====== Tunnel setup ====================================================
+   # Create the tunnel
    ip tunnel del $interface 2>/dev/null || true
-   ip tunnel add $interface mode gre local $outerLocalIP remote $outerRemoteIP ttl 255 key $tunnelKey $tunnelOptions
+   ip $v6option tunnel add $interface mode $mode local $outerLocalIP remote $outerRemoteIP ttl 255 $greoption
+   # Configure an address and turn the interface up
+   if [ "$v6option" = "" ] ; then
+      ip addr add $innerLocalIP peer $innerRemoteIP dev $interface
+   else
+      ip addr add $innerLocalIP/64 dev $interface
+   fi
+   ip link set dev $interface up
    # Turn off Reverse Path filtering, since it prevents routing packets
    # from interface when this interface has no route to the source!
    sysctl -q net.ipv4.conf.$interface.rp_filter=0
    # Also, turn off Reverse Path filter on all interfaces.
    # If it is turned on, it supersedes all per-interface settings!
    sysctl -q net.ipv4.conf.all.rp_filter=0
-   # Finally, configure an address and turn the interface up
-   ip addr add $innerLocalIP peer $innerRemoteIP dev $interface
-   ip link set dev $interface up
    
    echo "$interface: tunnel [$innerLocalIP <-> $innerRemoteIP] via [$outerLocalIP <-> $outerRemoteIP]"
    
@@ -104,6 +124,11 @@ make-routes ()
    local route1="$7"
    local route2="$8"
 
+   local v6option=""
+   if [[ "$interface" =~ ^seks ]] ; then
+      v6option="-6"
+   fi
+   
    let tableID=0x10000+0x40*$tunnelKey+$tos/4
    let tosPref=0x10000+$tunnelKey
    let sourcePref=0x11000+$tunnelKey
@@ -115,7 +140,7 @@ make-routes ()
        # Get the identifier for the fwmark's "global" table
        globalTable="$globalPref"
        ip rule del fwmark $fwmark table $globalTable pref $globalPref || true
-       ip rule add fwmark $fwmark table $globalTable pref $globalPref
+       ip $v6option rule add fwmark $fwmark table $globalTable pref $globalPref
    else
        # Use "main" table.
        globalTable="main"
@@ -129,9 +154,9 @@ make-routes ()
        # When there is a fwmark given, only apply the TOS filtering rules for
        # packets marked with this fwmark!
        if [ $fwmark -ne 0 ] ; then
-	 markerOption="fwmark $fwmark"
+          markerOption="fwmark $fwmark"
        else
-	 markerOption=""
+          markerOption=""
        fi
        
        # Ensure that TOS-marked packets use the right routing table
@@ -153,7 +178,7 @@ make-routes ()
    fi
 
    ip rule del $markerOption from $localIP table $tableID pref $sourcePref 2>/dev/null || true
-   ip rule add $markerOption from $localIP table $tableID pref $sourcePref
+   ip $v6option rule add $markerOption from $localIP table $tableID pref $sourcePref
 
    # Add source-specific default route via new interface
    ip route add $remoteIP dev $interface table $tableID
