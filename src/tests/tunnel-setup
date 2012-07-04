@@ -34,31 +34,21 @@
 
 
 # ###### Tunnel setup #######################################################
-# $1  = Interface
-# $2  = GRE Tunnel Key
-# $3  = TOS
-# $4  = fwmark
-# $5  = Outer Local IP
-# $6  = Outer Remote IP
-# $7  = Inner Local IP
-# $8  = Outer Local IP
-# $9  = Route1 (e.g. default)
-# $10 = Route2 (e.g. the complete network -- like Telenor or Telekom)
-# $11 = Tunnel Options (e.g. "csum")
 make-tunnel ()
 {
-   local interface="$1"
-   local tunnelKey="$2"
-   local tos="$3"
-   local fwmark="$4"
-   local outerLocalIP="$5"
-   local outerRemoteIP="$6"
-   local innerLocalIP="$7"
-   local innerRemoteIP="$8"
-   local route1="$9"
-   local route2="${10}"
-   local tunnelOptions="${11}"
-   local miscOptions="${12}"
+   local interface="$1"           # Interface name (fire*, seks*, gre*)
+   local tunnelKey="$2"           # Tunnel key, must be unique between sites
+   local from="$3"                # From network
+   local tos="$4"                 # TOS
+   local fwmark="$5"              # fwmark
+   local outerLocalIP="$6"        # Outer Local IP
+   local outerRemoteIP="$7"       # Outer Remote IP
+   local innerLocalIP="$8"        # Inner Local IP
+   local innerRemoteIP="$9"       # Inner Remote IP
+   local route1="${10}"           # Route1 (e.g. default) -- for tunnel's routing table
+   local route2="${11}"           # Route2 (e.g. the complete network -- like Telenor or Telekom) -- for global routing table
+   local tunnelOptions="${12}"    # Tunnel options (e.g. "csum")
+   local miscOptions="${13}"      # Misc options (e.g. "----add-to-exiting-tunnel")
    
    local innerV6option=""
    local outerV6option=""
@@ -114,32 +104,25 @@ make-tunnel ()
    
    # ====== Routing table setup =============================================
    if [ "$route1" != "" -o "$route2" != "" ] ; then
-      make-routes "$interface" "$tunnelKey" "$tos" "$fwmark" \
+      make-routes "$interface" "$tunnelKey" "$from" "$tos" "$fwmark" \
                   "$innerLocalIP" "$innerRemoteIP" "$route1" "$route2" "$miscOptions"
    fi
 }
 
 
 # ###### Routes setup #######################################################
-# $1 = Interface
-# $2 = GRE Tunnel Key
-# $3 = TOS
-# $4 = fwmark
-# $5 = Local IP
-# $6 = Remote IP
-# $7 = Route1 (e.g. default)
-# $8 = Route2 (e.g. the complete network -- like Telenor or Telekom)
 make-routes ()
 {
-   local interface="$1"
-   local tunnelKey="$2"
-   local tos="$3"
-   local fwmark="$4"
-   local localIP="$5"
-   local remoteIP="$6"
-   local route1="$7"
-   local route2="$8"
-   local miscOptions="$9"
+   local interface="$1"           # Interface name (fire*, seks*, gre*)
+   local tunnelKey="$2"           # Tunnel key, must be unique between sites
+   local from="$3"                # From network
+   local tos="$4"                 # TOS
+   local fwmark="$5"              # fwmark
+   local localIP="$6"             # Local IP
+   local remoteIP="$7"            # Remote IP
+   local route1="$8"              # Route1 (e.g. default) -- for tunnel's routing table
+   local route2="$9"              # Route2 (e.g. the complete network -- like Telenor or Telekom) -- for global routing table
+   local miscOptions="${10}"      # Misc options (e.g. "----add-to-exiting-tunnel")
 
    local v6option=""
    if [[ "$localIP" =~ : ]] ; then
@@ -172,6 +155,7 @@ make-routes ()
    echo "   Global table is $globalTable."
 
 
+   # ====== Route for certain fwmark setting ================================
    # When there is a fwmark given, only apply the TOS filtering rules for
    # packets marked with this fwmark!
    if [ $fwmark -ne 0 ] ; then
@@ -181,7 +165,7 @@ make-routes ()
    fi
        
    
-   # ====== Create rule for TOS setting ==================================
+   # ====== Create rule for TOS setting =====================================
    if [ "$tos" != "0x00" ] ; then
        # Ensure that TOS-marked packets use the right routing table
        ip rule del $markerOption tos $tos table $tableID pref $tosPref 2>/dev/null || true
@@ -194,11 +178,17 @@ make-routes ()
        echo "   TOS $tos goes via table $tableID."
    fi
 
-   # ====== Create rule for interface's source IP address ================
+
+   # ====== Create rule for interface's source IP address ===================
    ip rule del $markerOption from $localIP table $tableID pref $sourcePref 2>/dev/null || true
    ip $v6option rule add $markerOption from $localIP table $tableID pref $sourcePref
+   if [ "$from" != "" ] ; then
+      ip rule del $markerOption from $from table $tableID pref $sourcePref 2>/dev/null || true
+      ip $v6option rule add $markerOption from $from table $tableID pref $sourcePref
+   fi
 
-   # Add source-specific default route via new interface
+
+   # ====== Add source-specific default route via new interface =============
    ip route add $remoteIP dev $interface table $tableID
    if [ "$route1" != "" ] ; then
        # Add entry in interface-specific table.

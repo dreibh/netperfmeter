@@ -2,5 +2,10 @@
 
 set -ex
 
+ip rule flush
+# ip rule add from all lookup local   pref 0
+ip rule add from all lookup main    pref 32766
+ip rule add from all lookup default pref 32767
+
 . ./tunnel-setup
 . ./tunnelbox.beta.site-config
