@@ -36,21 +36,30 @@
 # ###### Write log information ##############################################
 log ()
 {
-   echo -e "$@"
+   echo -e "\x1b[34m`date --utc --iso-8601=s`: $@\x1b[0m"
 }
 
 
 # ###### Write log action information #######################################
 log-action ()
 {
-   echo -en "$@"
+   echo -en "\x1b[34m`date --utc --iso-8601=s`: $@\x1b[0m"
 }
 
 
 # ###### Write log result information #######################################
 log-result ()
 {
-   echo -en "\x1b[120G$1\n"
+   local result="$1"
+   local line=128
+
+   if [ "$result" = "1" ] ; then
+      echo -en "\x1b[${line}G\x1b[32mOK\x1b[0m\n"
+   elif [ "$result" = "0" ] ; then
+      echo -en "\x1b[${line}G\x1b[30;47;5mFAILED!\x1b[0m\n"
+   else
+      echo -en "\x1b[${line}G\x1b[0m$result\n"
+   fi
 }
 
 
@@ -99,7 +108,7 @@ make-tunnel ()
    fi
 
    local addToExistingTunnel=0
-   if [[ "$miscOptions" =~ --add-to-exiting-tunnel ]] ; then
+   if [[ "$miscOptions" =~ --add-to-existing-tunnel ]] ; then
       addToExistingTunnel=1
    fi
 
@@ -134,12 +143,12 @@ show-tunnel ()
    local innerRemoteIP="$2"       # Inner Remote IP
    local description="$3"         # Description
 
-   echo -en "Pinging $innerRemoteIP ..."
+   # echo -en "Pinging $innerRemoteIP (peer of tunnel interface $interface) ..."
 
-   if [[ "$innerLocalIP" =~ : ]] ; then
-      ping6 -W3 -c3 -q $innerRemoteIP >/dev/null 2>&1 && log-result "OK" || log-result "FAILED!"
+   if [[ "$innerRemoteIP" =~ : ]] ; then
+      ping6 -W3 -c3 -i0.2 -q $innerRemoteIP >/dev/null 2>&1 && log-result 1 || log-result 0
    else
-      ping -W3 -c3 -q $innerRemoteIP >/dev/null 2>&1 && log-result "OK" || log-result "FAILED!"
+      ping -W3 -c3 -i0.2 -q $innerRemoteIP >/dev/null 2>&1 && log-result 1 || log-result 0
    fi
 }
 

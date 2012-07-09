@@ -24,11 +24,11 @@
 import sys;
 import xmlrpclib;
 import re;
-import md5;
-from datetime import datetime;
+import hashlib;
+import datetime;
 
-# Needs package python-ipaddr (Fedora Core)!
-from ipaddr import *;
+# Needs package python-ipaddr (Fedora Core, Ubuntu, Debian)!
+from ipaddr import IPv4Address, IPv4Network, IPv6Address, IPv6Network;
 
 
 
@@ -55,22 +55,14 @@ NorNet_ProviderList     = {
 NorNet_TOSSettings = [ 0x00, 0x04, 0x08, 0x0C, 0x10, 0x14, 0x18, 0x1C ]
 
 
-# ###### Get NorNet provider information ####################################
-def getNorNetProviderInfo(providerIndex):
-   try:
-      return NorNet_ProviderList[providerIndex]
-   except:
-      return NorNet_ProviderList[0]
-
-
 # ###### Print log message ==================================================
 def log(logstring):
-   print datetime.now().isoformat() + ' ' + logstring;
+   print datetime.datetime.utcnow().isoformat() + ' ' + logstring;
 
 
 # ###### Abort with error ===================================================
 def error(logstring):
-   print datetime.now().isoformat() + ' ===== ERROR: ' + logstring + " =====";
+   print datetime.datetime.utcnow().isoformat() + ' ===== ERROR: ' + logstring + " =====";
    sys.exit(1)
 
 
@@ -148,19 +140,12 @@ def fetchNorNetSiteList():
       error('Unable to fetch NorNet site list: ' + str(e))
 
 
-## ###### Get list of site tags ##############################################
-#def fetchSiteTagsList(siteID):
-   #global plc_server
-   #global plc_authentication
-
-   #try:
-      #siteTagsList = plc_server.GetSiteTags(plc_authentication,
-                                            #{ 'site_id' : siteID },
-                                            #[ 'tagname', 'value' ])
-      #return(siteTagsList)
-
-   #except:
-      #error('Unable to fetch site tag list!')
+# ###### Get NorNet provider information ####################################
+def getNorNetProviderInfo(providerIndex):
+   try:
+      return NorNet_ProviderList[providerIndex]
+   except:
+      return NorNet_ProviderList[0]
 
 
 # ###### Get the providers a site is connected to ###########################
@@ -193,8 +178,8 @@ def getNorNetProvidersForSite(norNetSite):
       error('Unable to get NorNet providers for site ' + norNetSite['name'] + ': ' + str(e))
 
 
-# ###### Get list of NorNet nodes ===========================================
-def getNodeList():
+# ###### Get list of NorNet nodes ###########################################
+def fetchNodeList():
    global plc_server
    global plc_authentication
 
@@ -207,7 +192,7 @@ def getNodeList():
       error('Unable to fetch node list!')
 
 
-# ###### Find site ID =======================================================
+# ###### Find site ID #######################################################
 def findSiteID(siteName):
    try:
       site = plc_server.GetSites(plc_authentication,
@@ -219,7 +204,22 @@ def findSiteID(siteName):
       return(0)
 
 
-# ###### Find person ID =====================================================
+# ###### Get list of site tags ##############################################
+def fetchSiteTagsList(siteID):
+   global plc_server
+   global plc_authentication
+
+   try:
+      siteTagsList = plc_server.GetSiteTags(plc_authentication,
+                                            { 'site_id' : siteID },
+                                            [ 'tagname', 'value' ])
+      return(siteTagsList)
+
+   except:
+      error('Unable to fetch site tag list!')
+
+
+# ###### Find person ID #####################################################
 def findPersonID(eMail):
    try:
       person = plc_server.GetPersons(plc_authentication,
@@ -231,7 +231,7 @@ def findPersonID(eMail):
       return(0)
 
 
-# ###### Find slice ID ======================================================
+# ###### Find slice ID ######################################################
 def findSliceID(sliceName):
    try:
       slice = plc_server.GetSlices(plc_authentication,
@@ -243,7 +243,7 @@ def findSliceID(sliceName):
       return(0)
 
 
-# ###### Find node ID =======================================================
+# ###### Find node ID #######################################################
 def findNodeID(nodeName):
    try:
       node = plc_server.GetNodes(plc_authentication,
@@ -255,8 +255,8 @@ def findNodeID(nodeName):
       return(0)
 
 
-# ###### Get list of node tags ==============================================
-def getNodeTagsList(nodeID):
+# ###### Get list of node tags ##############################################
+def fetchNodeTagsList(nodeID):
    global plc_server
    global plc_authentication
 
@@ -270,7 +270,7 @@ def getNodeTagsList(nodeID):
       error('Unable to fetch node tag list!')
 
 
-# ###### Create tag type ====================================================
+# ###### Create tag type ####################################################
 def makeTagType(category, description, tagName):
    found = plc_server.GetTagTypes(plc_authentication, tagName, ['tag_type_id'])
    if len(found) == 0:
@@ -281,7 +281,7 @@ def makeTagType(category, description, tagName):
       plc_server.AddTagType(plc_authentication, tagType)
 
 
-# ###### Remove NorNet site =================================================
+# ###### Remove NorNet site #################################################
 def removeNorNetSite(siteName):
    siteID = findSiteID(siteName)
    if siteID != 0:
@@ -289,7 +289,7 @@ def removeNorNetSite(siteName):
       plc_server.DeleteSite(plc_authentication, siteID)
 
 
-# ###### Create NorNet site =================================================
+# ###### Create NorNet site #################################################
 def makeNorNetSite(siteName, siteAbbrvName, siteLoginBase, siteUrl, siteNorNetDomain,
                    siteNorNetIndex, siteCity, siteProvince, cityCountry, siteCountryCode,
                    siteLatitude, siteLogitude,
@@ -356,7 +356,7 @@ def makeNorNetSite(siteName, siteAbbrvName, siteLoginBase, siteUrl, siteNorNetDo
      error('Adding site ' + siteName + ' has failed: ' + str(e))
 
 
-# ###### Create NorNet PCU ==================================================
+# ###### Create NorNet PCU ##################################################
 def makeNorNetPCU(siteID, hostName, siteNorNetDomain, publicIPv4Address,
                   user, password, protocol, model, notes):
    try:
@@ -382,7 +382,7 @@ def makeNorNetPCU(siteID, hostName, siteNorNetDomain, publicIPv4Address,
       error('Adding PCU ' + pcuHostName + ' has failed: ' + str(e))
 
 
-# ###### Get NorNet interface IPv4 address ==================================
+# ###### Get NorNet interface IPv4 address ##################################
 def makeNorNetIP(provider, site, host, version):
    p = int(provider)
    s = int(site)
@@ -411,7 +411,7 @@ def makeNorNetIP(provider, site, host, version):
                           str.replace(hex(h), '0x', '') + ':0:0::/' + str(prefix))
 
 
-# ###### Get NorNet tunnel inner IPv4 address ===============================
+# ###### Get NorNet tunnel inner IPv4 address ###############################
 def makeNorNetTunnelIP(outgoingSite, outgoingProvider, incomingSite, incomingProvider, version):
    if ((outgoingSite < 0) | (outgoingSite > 255)):
       error('Bad site ID')
@@ -444,7 +444,7 @@ def makeNorNetTunnelIP(outgoingSite, outgoingProvider, incomingSite, incomingPro
    if version == 4:
       # The space is to small in IPv4 addresses. Use MD5 to create most likely
       # unique addresses.
-      m = md5.new()
+      m = hashlib.md5()
       m.update(address)
       s = m.hexdigest()
       address = (long(s[0:4], 16) & 0xfffc) | side
@@ -455,7 +455,7 @@ def makeNorNetTunnelIP(outgoingSite, outgoingProvider, incomingSite, incomingPro
       return IPv6Address(address)
 
 
-# ###### Get NorNet interface IPv4 address ==================================
+# ###### Get NorNet interface IPv4 address ##################################
 def makeNorNetTunnelKey(outgoingSite, outgoingProvider, incomingSite, incomingProvider):
    if ((outgoingSite < 0) | (outgoingSite > 255)):
       error('Bad site ID')
@@ -482,11 +482,11 @@ def makeNorNetTunnelKey(outgoingSite, outgoingProvider, incomingSite, incomingPr
    return(tunnelID)
 
 
-# ###### Update interfaces of a node ========================================
+# ###### Update interfaces of a node ########################################
 def updateNorNetInterfaces(nodeID, siteTagsList):
    try:
-      # ###### Get node tags ===================================================
-      nodeTagList = getNodeTagsList(nodeID)
+      # ====== Get node tags ================================================
+      nodeTagList = fetchNodeTagsList(nodeID)
       nodeNorNetIndex = int(getTagValue(nodeTagList, 'nornet_node_index', '-1'))
       if nodeNorNetIndex < 0:
          error('Bad nornet_node_index setting')
@@ -494,7 +494,7 @@ def updateNorNetInterfaces(nodeID, siteTagsList):
       if nodeNorNetAddress < 0:
          error('Bad nornet_node_address setting')
 
-      # ###### Current interface settings ======================================
+      # ====== Current interface settings ===================================
       currentAddressList     = [ ]
       currentInterfaceIDList = [ ]
       interfaceList = plc_server.GetInterfaces(plc_authentication, { 'node_id' : nodeID })
@@ -507,7 +507,7 @@ def updateNorNetInterfaces(nodeID, siteTagsList):
             currentInterfaceIDList.append(interfaceID)
 
 
-      # ###### Current interface settings ======================================
+      # ====== Current interface settings ===================================
       newAddressList = [ ]
       for i in range(0, NorNet_MaxProviders - 1):
          providerNorNetIndex = int(getTagValue(siteTagsList, 'nornet_site_tbp' + str(i) + '_index', '-1'))
@@ -523,7 +523,7 @@ def updateNorNetInterfaces(nodeID, siteTagsList):
                newAddressList.append(IPv4Address(ifIPv4.ip))
 
 
-      # ###### Update interfaces ===============================================
+      # ====== Update interfaces ============================================
       if currentAddressList == newAddressList:
          return(0)
 
@@ -540,8 +540,7 @@ def updateNorNetInterfaces(nodeID, siteTagsList):
          if providerNorNetIndex >= 0:
             providerNorNetName = getNorNetProviderInfo(providerNorNetIndex)[1]
 
-            ifHostName = 'node' + str(nodeNorNetIndex) + '-' + str.lower(providerNorNetName) + '.' + str.lower(siteNorNetDomain)
-            print ifHostName
+            ifHostName        = 'node' + str(nodeNorNetIndex) + '-' + str.lower(providerNorNetName) + '.' + str.lower(siteNorNetDomain)
             ifIPv4            = makeNorNetIP(providerNorNetIndex, siteNorNetIndex, nodeNorNetAddress, 4)
             ifGateway         = makeNorNetIP(providerNorNetIndex, siteNorNetIndex, 1, 4)
             ifProviderNetwork = makeNorNetIP(providerNorNetIndex, 0, 0, 4)
@@ -569,8 +568,6 @@ def updateNorNetInterfaces(nodeID, siteTagsList):
                error('Unable to add "nornet_is_managed_interface" tag to interface ' + str(ifIPv4.ip))
             if plc_server.AddInterfaceTag(plc_authentication, interfaceID, 'nornet_ifprovider_index', str(providerNorNetIndex)) <= 0:
                error('Unable to add "nornet_ifprovider_index" tag to interface ' + str(ifIPv4.ip))
-            if plc_server.AddInterfaceTag(plc_authentication, interfaceID, 'nornet_ifprovider_network', str(ifProviderNetwork)) <= 0:
-               error('Unable to add "nornet_ifprovider_network" tag to interface ' + str(ifIPv4.ip))
 
       return(1)
 
@@ -578,14 +575,14 @@ def updateNorNetInterfaces(nodeID, siteTagsList):
       error('Updating interfaces of node ' + str(nodeID) + ' has failed: ' + str(e))
 
 
-# ###### Create NorNet node =================================================
+# ###### Create NorNet node #################################################
 def makeNorNetNode(siteID, nodeNiceName, nodeNorNetIndex, firstAddressNumber,
                    pcuID, pcuPort,
                    publicIPv4Address, publicGateway, publicDNS):
    nodeHostName = nodeNiceName   # Domain to be set below!
    try:
-      # ###### Get site information =========================================
-      siteTagsList    = getSiteTagsList(siteID)
+      # ====== Get site information =========================================
+      siteTagsList    = fetchSiteTagsList(siteID)
       siteNorNetIndex = int(getTagValue(siteTagsList, 'nornet_site_index', '-1'))
       if siteNorNetIndex < 0:
          error("Site " + str(siteID) + ' has no NorNet site index!')
@@ -594,7 +591,7 @@ def makeNorNetNode(siteID, nodeNiceName, nodeNorNetIndex, firstAddressNumber,
          error("Site " + str(siteID) + ' has no NorNet domain name!')
 
 
-      # ###### Create node ==================================================
+      # ====== Create node ==================================================
       nodeHostName = nodeHostName + '.' + str.lower(siteNorNetDomain);
       log('Adding node ' + nodeHostName + ' ...')
 
@@ -614,13 +611,13 @@ def makeNorNetNode(siteID, nodeNiceName, nodeNorNetIndex, firstAddressNumber,
          error('Unable to add "nornet_node_address" tag to node ' + nodeHostName)
 
 
-      # ###### Add node to PCU ==============================================
+      # ====== Add node to PCU ==============================================
       if pcuID > 0:
          if plc_server.AddNodeToPCU(plc_authentication, nodeID, pcuID, pcuPort) != 1:
             error('Unable to add node ' + nodeHostName + " to PCU " + str(pcuID) + ", port " + str(pcuPort))
 
 
-      # ###### Create primary interface =====================================
+      # ====== Create primary interface =====================================
       interface = {}
       interface['hostname']   = nodeHostName
       interface['is_primary'] = True
@@ -635,12 +632,11 @@ def makeNorNetNode(siteID, nodeNiceName, nodeNorNetIndex, firstAddressNumber,
       interface['dns1']       = str(publicDNS[0])
       if len(publicDNS) > 1:
          interface['dns2']    = str(publicDNS[1])
-      print interface
       if plc_server.AddInterface(plc_authentication, nodeID, interface) <= 0:
          error('Unable to add primary interface ' + str(publicIPv4Address.ip))
 
 
-      # ###### Create NorNet interfaces =====================================
+      # ====== Create NorNet interfaces =====================================
       updateNorNetInterfaces(nodeID, siteTagsList)
 
       return nodeID
@@ -671,13 +667,8 @@ def createTestConfiguration():
    makeTagType('node/nornet',      'NorNet Node Index',           'nornet_node_index')
    makeTagType('node/nornet',      'NorNet Node Address Index',   'nornet_node_address')
 
-   makeTagType('interface/nornet', 'NorNet Managed Interface',     'nornet_is_managed_interface')
-
-
-
-   makeTagType('interface/nornet', 'NorNet Interface Provider Index',     'nornet_ifprovider_index')
-   makeTagType('interface/nornet', 'NorNet Interface Provider Network',   'nornet_ifprovider_network')
-
+   makeTagType('interface/nornet', 'NorNet Managed Interface',        'nornet_is_managed_interface')
+   makeTagType('interface/nornet', 'NorNet Interface Provider Index', 'nornet_ifprovider_index')
 
 
 
@@ -729,7 +720,7 @@ def createTestConfiguration():
                      [ IPv4Address('132.252.156.21') ])
       i = i + 1
 
-   names = sorted(['bjordammen', 'sognsvann', 'svartkulp', 'tyrvann'])
+   names = sorted(['bjordammen', 'maridalsvannet', 'sognsvann', 'svartkulp', 'skjennungen', 'tyrvann'])
    for name in names:
       makeNorNetNode(siteBetaID, name, 1 + i, firstAddressIndex,
                      siteBetaPCUID, 1 + i,
@@ -757,7 +748,7 @@ def createTestConfiguration():
 
 
    sliceID = findSliceID('nn_test')
-   nodeList = getNodeList()
+   nodeList = fetchNodeList()
    nodeIDs  = []
    for node in nodeList:
       nodeID = int(node['node_id'])
@@ -784,7 +775,7 @@ loginToPLC()
 def makeConfigFile(type, configurationName):
    outputFile = open(configurationName, 'w')
    outputFile.write('# ===== ' + type + ' configuration ===============\n')
-   now = datetime.now().isoformat()
+   now = datetime.datetime.utcnow().isoformat()
    info = str.replace(str.lower(configurationName), '-', '_')
    outputFile.write('# Generated on ' + now + '\n\n')
    outputFile.write(info + '="' + now + '"\n\n')
@@ -826,7 +817,7 @@ def makeProviderConfiguration():
 
 
 # ###### Generate site configuration ########################################
-def makeSiteConfiguration(fullSiteList, site):
+def makeSiteConfiguration(fullSiteList, site, v4only):
    configurationName = 'site-' + site['site_short_name'] + '-config'
    outputFile = makeConfigFile('Site', configurationName)
 
@@ -843,14 +834,14 @@ def makeSiteConfiguration(fullSiteList, site):
       outputFile.write(siteShortName + '_' + providerShortName + '_network_ipv4="' + str(providerNetworkIPv4) + '"\n')
       outputFile.write(siteShortName + '_' + providerShortName + '_network_ipv6="' + str(providerNetworkIPv6) + '"\n')
 
-   makeTunnelBoxConfiguration(fullSiteList, site, True)
+   makeTunnelBoxConfiguration(fullSiteList, site, v4only)
 
    outputFile.close()
    return configurationName
 
 
 # ###### Generate sites configuration #######################################
-def makeNorNetConfiguration():
+def makeNorNetConfiguration(v4only):
    configurationName = 'nornet-config'
    outputFile = makeConfigFile('nornet', configurationName)
 
@@ -861,28 +852,28 @@ def makeNorNetConfiguration():
 
    for localSiteIndex in fullSiteList:
       localSite = fullSiteList[localSiteIndex]
-      print 'local=' + localSite['site_long_name']
 
-      siteConfigurationName = makeSiteConfiguration(fullSiteList, localSite)
+      siteConfigurationName = makeSiteConfiguration(fullSiteList, localSite, v4only)
       outputFile.write('. ./' + siteConfigurationName + '\n')
 
    outputFile.close()
    return configurationName
 
 
-# ###### Generate tunnelbox configuration ###################################
-
-def getTableID(opIndex):
+# ###### Get ID for routing table ###########################################
+def _getTableID(opIndex):
    return 1000000 + opIndex
 
 
-def getTablePref(opIndex, tos):
+# ###### Get preference for routing table ###################################
+def _getTablePref(opIndex, tos):
    if tos != 0:
      return 100 + opIndex
    else:
      return 1000 + opIndex
 
 
+# ###### Get tunnel configuration ###########################################
 def getTunnel(localSite, localProvider, remoteSite, remoteProvider, version):
    localSiteIndex      = localSite['site_index']
    localProviderIndex  = localProvider['provider_index']
@@ -925,7 +916,8 @@ def getTunnel(localSite, localProvider, remoteSite, remoteProvider, version):
    return norNetTunnel
 
 
-def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProvider, pathNumber):
+# ###### Generate tunnelbox configuration for given provider ################
+def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProvider, pathNumber, v4only):
    configurationName = 'tunnelbox-' + localSite['site_short_name'] + '-' + \
                        localProvider['provider_short_name'] + '-config'
    outputFile = makeConfigFile('Tunnelbox-Provider', configurationName)
@@ -942,10 +934,10 @@ def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProv
          outputFile.write('if [ "$state" = "' + state + '" ] ; then\n')
 
       # ====== Create provider-specific routing table =======================
-      routingTableID = getTableID(localProviderIndex)
+      routingTableID = _getTableID(localProviderIndex)
       if (state == 'start'):
-         routingTableTOSPref    = getTablePref(localProviderIndex, 1)
-         routingTableSourcePref = getTablePref(localProviderIndex, 0)
+         routingTableTOSPref    = _getTablePref(localProviderIndex, 1)
+         routingTableSourcePref = _getTablePref(localProviderIndex, 0)
          if pathNumber + 1 < len(NorNet_TOSSettings):
             routingTableTOS = NorNet_TOSSettings[pathNumber + 1]
          else:
@@ -956,6 +948,8 @@ def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProv
          if routingTableTOS != 0x00:
             outputFile.write('   add-table-selector ' + str(routingTableID) + ' ' + str(routingTableTOSPref) + ' tos ' + hex(routingTableTOS) + '\n')
          for version in [ 4, 6 ]:
+            if ((version == 6) and (v4only == True)):
+               continue
             localProviderNetwork = makeNorNetIP(localProviderIndex, 0, 0, version)
             outputFile.write('   add-table-selector ' + str(routingTableID) + ' ' + str(routingTableSourcePref) + ' from ' + str(localProviderNetwork) + '\n')
       elif (state == 'stop'):
@@ -979,23 +973,26 @@ def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProv
                              ' (' + str(remoteProvider['provider_index']) + ') ~~~~~~\n')
             if ((state == 'start') or (state == 'stop') or (state == 'status')):
                action = ''
-               suffix = ' ...'
                if (state == 'start'):
                   action = 'Setting up'
                elif (state == 'stop'):
                   action = 'Tearing down'
                elif (state == 'status'):
                   action = 'Checking'
-                  suffix = ':\n'
-               outputFile.write('   log-action "' + action + ' tunnels with ' + \
+               outputFile.write('   log "' + action + ' tunnels with ' + \
                                 remoteSite['site_long_name'] + ' via [' + \
                                 localProvider['provider_long_name'] + ' <--> ' + \
-                                remoteProvider['provider_long_name'] + ']' + suffix + '"\n')
+                                remoteProvider['provider_long_name'] + ']:"\n')
 
             for version in [ 4, 6 ]:
+               if ((version == 6) and (v4only == True)):
+                  continue
                tunnel        = getTunnel(localSite, localProvider, remoteSite, remoteProvider, version)
                remoteNetwork = makeNorNetIP(remoteProviderIndex, remoteSiteIndex, 0, version)
 
+               outputFile.write('   log-action "Tunnel ' + tunnel['tunnel_interface'] + ': ' + \
+                                str(tunnel['tunnel_local_inner_address'])  + ' <--> ' + \
+                                str(tunnel['tunnel_remote_inner_address']) + '"\n')
 
                # ====== Create tunnels ======================================
                if (state == 'start'):
@@ -1050,8 +1047,8 @@ def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProv
                                    localProvider['provider_long_name'] + ' <--> ' + \
                                    remoteProvider['provider_long_name'] + ' tunnel\n')
 
-            if ((state == 'start') or (state == 'stop')):
-               outputFile.write('   log-result "OK"\n')
+               if ((state == 'start') or (state == 'stop')):
+                  outputFile.write('   log-result 1\n')
 
 
       outputFile.write('fi\n\n')
@@ -1061,6 +1058,7 @@ def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProv
    return configurationName
 
 
+# ###### Generate tunnelbox configuration ###################################
 def makeTunnelBoxConfiguration(fullSiteList, localSite, v4only):
    configurationName = 'tunnelbox-' + localSite['site_short_name'] + '-config'
    outputFile = makeConfigFile('Tunnelbox', configurationName)
@@ -1073,7 +1071,7 @@ def makeTunnelBoxConfiguration(fullSiteList, localSite, v4only):
       localProvider = localProviderList[localProviderIndex]
       tbpName = _makeTunnelboxProvider(fullSiteList, localSite,
                                        localProviderList, localProvider,
-                                       pathNumber)
+                                       pathNumber, v4only)
       outputFile.write('. ./' + tbpName + '\n')
       pathNumber = pathNumber + 1
 
@@ -1081,14 +1079,15 @@ def makeTunnelBoxConfiguration(fullSiteList, localSite, v4only):
    return configurationName
 
 
+# ###### Generate node configuration ########################################
 def makeNodeConfiguration(nodeID):
-   # ###### Get node information ============================================
+   # ====== Get node information ============================================
    nodeList = plc_server.GetNodes(plc_authentication, {'node_id': nodeID} )
    if len(nodeList) != 1:
       error('Cannot find node ' + str(nodeID))
    node        = nodeList[0]
    nodeName    = node['hostname']
-   nodeTagList = getNodeTagsList(nodeID)
+   nodeTagList = fetchNodeTagsList(nodeID)
    nodeNorNetIndex = int(getTagValue(nodeTagList, 'nornet_node_index', '-1'))
    if nodeNorNetIndex < 0:
       error('Bad nornet_node_index setting')
@@ -1098,7 +1097,7 @@ def makeNodeConfiguration(nodeID):
 
    outputFile = open(nodeName + '-config', 'w')
    outputFile.write('# ===== Node configuration for ' + nodeName + ' =====\n')
-   outputFile.write('# Generated on ' + datetime.now().isoformat() + '\n\n')
+   outputFile.write('# Generated on ' + datetime.datetime.utcnow().isoformat() + '\n\n')
 
    print 'Node configuration for: ' + nodeName
 
@@ -1107,7 +1106,7 @@ def makeNodeConfiguration(nodeID):
 
 
 makeProviderConfiguration()
-makeNorNetConfiguration()
+makeNorNetConfiguration(False)
 
 
 #f = fetchNorNetSiteList()
