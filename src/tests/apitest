@@ -24,6 +24,7 @@
 import sys;
 import xmlrpclib;
 import re;
+import md5;
 from datetime import datetime;
 
 # Needs package python-ipaddr (Fedora Core)!
@@ -437,19 +438,20 @@ def makeNorNetTunnelIP(outgoingSite, outgoingProvider, incomingSite, incomingPro
       pLow  = outgoingProvider
       pHigh = incomingProvider
 
+   source      = str.replace(hex((pLow << 8) | sLow), '0x', '')
+   destination = str.replace(hex((pHigh << 8) | pLow), '0x', '')
+   address     = 'fdff:ffff:' + source + ':' + destination + '::' + str(side)
    if version == 4:
-      address = ((pLow << 8 | pHigh) << 4) | side
+      # The space is to small in IPv4 addresses. Use MD5 to create most likely
+      # unique addresses.
+      m = md5.new()
+      m.update(address)
+      s = m.hexdigest()
+      address = (long(s[0:4], 16) & 0xfffc) | side
       address = int(IPv4Address('192.168.0.0')) | address
       return IPv4Address(address)
-      # network = str(IPv4Address(address)) + '/28'
-      # return IPv4Network(network)
    else:
-      source      = str.replace(hex((pLow << 8) | sLow), '0x', '')
-      destination = str.replace(hex((pHigh << 8) | pLow), '0x', '')
-      address     = 'fdff:ffff:' + source + ':' + destination + '::' + str(side)
       return IPv6Address(address)
-      # network     = address + '/64'
-      # return IPv6Network(network)
 
 
 # ###### Get NorNet interface IPv4 address ==================================
