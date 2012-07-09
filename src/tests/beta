@@ -3,7 +3,7 @@
 set -e
 
 state="$1"
-if [ "$state" != "start" -a "$state" != "stop" ] ; then
+if [ "$state" != "start" -a "$state" != "stop" -a "$state" != "status" ] ; then
    echo >&2 "Usage: $0 [start|stop]"
    exit 1
 fi

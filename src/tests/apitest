@@ -440,7 +440,7 @@ def makeNorNetTunnelIP(outgoingSite, outgoingProvider, incomingSite, incomingPro
 
    source      = str.replace(hex((pLow << 8) | sLow), '0x', '')
    destination = str.replace(hex((pHigh << 8) | pLow), '0x', '')
-   address     = 'fdff:ffff:' + source + ':' + destination + '::' + str(side)
+   address     = 'fdff:ffff:' + source + ':' + destination + '::'
    if version == 4:
       # The space is to small in IPv4 addresses. Use MD5 to create most likely
       # unique addresses.
@@ -451,6 +451,7 @@ def makeNorNetTunnelIP(outgoingSite, outgoingProvider, incomingSite, incomingPro
       address = int(IPv4Address('192.168.0.0')) | address
       return IPv4Address(address)
    else:
+      address = address + str(side)
       return IPv6Address(address)
 
 
@@ -953,10 +954,10 @@ def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProv
                           localProvider['provider_long_name'] + ' table\n')
 
          if routingTableTOS != 0x00:
-            outputFile.write('   add-table-selector ' + str(routingTableID) + ' tos ' + hex(routingTableTOS) + ' pref ' + str(routingTableTOSPref) + '\n')
+            outputFile.write('   add-table-selector ' + str(routingTableID) + ' ' + str(routingTableTOSPref) + ' tos ' + hex(routingTableTOS) + '\n')
          for version in [ 4, 6 ]:
             localProviderNetwork = makeNorNetIP(localProviderIndex, 0, 0, version)
-            outputFile.write('   add-table-selector ' + str(routingTableID) + ' from ' + str(localProviderNetwork) + ' pref ' + str(routingTableSourcePref) + '\n')
+            outputFile.write('   add-table-selector ' + str(routingTableID) + ' ' + str(routingTableSourcePref) + ' from ' + str(localProviderNetwork) + '\n')
       elif (state == 'stop'):
          outputFile.write('   remove-table ' + str(routingTableID) + '\n')
 
@@ -976,6 +977,21 @@ def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProv
             remoteProvider = remoteProviderList[remoteProviderIndex]
             outputFile.write('   # ~~~~~~ ' + remoteProvider['provider_long_name'] + \
                              ' (' + str(remoteProvider['provider_index']) + ') ~~~~~~\n')
+            if ((state == 'start') or (state == 'stop') or (state == 'status')):
+               action = ''
+               suffix = ' ...'
+               if (state == 'start'):
+                  action = 'Setting up'
+               elif (state == 'stop'):
+                  action = 'Tearing down'
+               elif (state == 'status'):
+                  action = 'Checking'
+                  suffix = ':\n'
+               outputFile.write('   log-action "' + action + ' tunnels with ' + \
+                                remoteSite['site_long_name'] + ' via [' + \
+                                localProvider['provider_long_name'] + ' <--> ' + \
+                                remoteProvider['provider_long_name'] + ']' + suffix + '"\n')
+
             for version in [ 4, 6 ]:
                tunnel        = getTunnel(localSite, localProvider, remoteSite, remoteProvider, version)
                remoteNetwork = makeNorNetIP(remoteProviderIndex, remoteSiteIndex, 0, version)
@@ -1000,17 +1016,17 @@ def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProv
                                       tunnel['tunnel_interface'] + ' ' + \
                                       hex(tunnel['tunnel_key'])  + '\n')
                elif (state == 'status'):
-                  if not ((version == 6) and (tunnel['tunnel_over_ipv4'] == True)):
-                     outputFile.write('   show-tunnel ' + \
-                                      tunnel['tunnel_interface'] + ' "' +
-                                      localSite['site_long_name'] + \
-                                      str(localSite['site_index']) + ' <-> ' + \
-                                      remoteSite['site_long_name'] + \
-                                      ' (' + str(remoteSite['site_index']) + ') via [' + \
-                                      remoteProvider['provider_long_name'] + \
-                                      ' (' + str(remoteProvider['provider_index']) + ') <--> ' + \
-                                      localProvider['provider_long_name'] + \
-                                      ' (' + str(localProvider['provider_index']) + ')]"\n')
+                  outputFile.write('   show-tunnel ' + \
+                                   tunnel['tunnel_interface'] + ' ' + \
+                                   str(tunnel['tunnel_remote_inner_address']) + ' "' + \
+                                   localSite['site_long_name'] + \
+                                   str(localSite['site_index']) + ' <-> ' + \
+                                   remoteSite['site_long_name'] + \
+                                   ' (' + str(remoteSite['site_index']) + ') via [' + \
+                                   remoteProvider['provider_long_name'] + \
+                                   ' (' + str(remoteProvider['provider_index']) + ') <--> ' + \
+                                   localProvider['provider_long_name'] + \
+                                   ' (' + str(localProvider['provider_index']) + ')]"\n')
 
 
                # ====== Create provider-specific routing table entries ======
@@ -1018,21 +1034,24 @@ def _makeTunnelboxProvider(fullSiteList, localSite, localProviderList, localProv
                   outputFile.write('   make-route ' + \
                                    str(routingTableID) + ' ' +
                                    str(remoteNetwork) + ' ' +
-                                   str(tunnel['tunnel_remote_inner_address']) + ' ' + \
-                                   tunnel['tunnel_interface'] + '   # via ' + \
+                                   tunnel['tunnel_interface'] + ' ' + \
+                                   str(tunnel['tunnel_remote_inner_address']) + '   # via ' + \
                                    localProvider['provider_long_name'] + ' <--> ' + \
                                    remoteProvider['provider_long_name'] + ' tunnel\n')
-                  metric        = 10
+                  metric = 10
                   if remoteProviderIndex == localProviderIndex:
                      metric = 5
                   outputFile.write('   make-route ' + \
                                    'main ' +
                                    str(remoteNetwork) + ' ' +
-                                   str(tunnel['tunnel_remote_inner_address']) + ' ' + \
                                    tunnel['tunnel_interface'] + ' ' + \
+                                   str(tunnel['tunnel_remote_inner_address']) + ' ' + \
                                    'metric ' + str(metric) + '   # via ' + \
                                    localProvider['provider_long_name'] + ' <--> ' + \
                                    remoteProvider['provider_long_name'] + ' tunnel\n')
+
+            if ((state == 'start') or (state == 'stop')):
+               outputFile.write('   log-result "OK"\n')
 
 
       outputFile.write('fi\n\n')
