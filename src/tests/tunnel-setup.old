@@ -1,0 +1,302 @@
+#!/bin/bash
+# $Id$
+#
+# Tunnel Setup Script
+# Copyright (C) 2012 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@simula.no
+#
+
+
+# Only 8 TOS field settings allowed (remaining bits masked out!)
+# This is a bug in the Linux kernel!
+# T0 -> 0x00
+# T1 -> 0x04
+# T2 -> 0x08
+# T3 -> 0x0C
+# T4 -> 0x10
+# T5 -> 0x14
+# T6 -> 0x18
+# T7 -> 0x1C
+
+
+# ###### Get IDs for custom routing tables ##################################
+get-table-IDs()
+{
+   let tableID=0x10000+0x40*$tunnelKey+$tos/4
+   let tosPref=0x10000+$tunnelKey
+   let sourcePref=0x11000+$tunnelKey
+   let globalPref=0x12000+$tunnelKey
+   export tableID
+   export tosPref
+   export sourcePref
+   export globalPref
+}
+
+
+# ###### Tunnel removal #####################################################
+remove-tunnel ()
+{
+   local interface="$1"           # Interface name (fire*, seks*, gre*)
+   local tunnelKey="$2"           # Tunnel key, must be unique between sites
+   local from="$3"                # From network
+   local tos="$4"                 # TOS
+   local fwmark="$5"              # fwmark
+
+   get-table-IDs
+   if [ $fwmark -ne 0 ] ; then
+      markerOption="fwmark $fwmark"
+   else
+      markerOption=""
+   fi
+
+   ip tunnel del $interface 2>/dev/null || true
+   if [ $fwmark -ne 0 ] ; then
+      ip rule del fwmark $fwmark table $globalTable pref $globalPref || true
+   fi
+   ip rule del $markerOption tos $tos table $tableID pref $tosPref 2>/dev/null || true
+   if [ "$from" != "" ] ; then
+      ip rule del $markerOption from $from table $tableID pref $sourcePref 2>/dev/null || true
+   fi
+   ip rule del $markerOption table $tableID pref $sourcePref 2>/dev/null || true
+}
+
+
+# ###### Tunnel setup #######################################################
+make-tunnel ()
+{
+   local interface="$1"           # Interface name (fire*, seks*, gre*)
+   local tunnelKey="$2"           # Tunnel key, must be unique between sites
+   local from="$3"                # From network
+   local tos="$4"                 # TOS
+   local fwmark="$5"              # fwmark
+   local outerLocalIP="$6"        # Outer Local IP
+   local outerRemoteIP="$7"       # Outer Remote IP
+   local innerLocalIP="$8"        # Inner Local IP
+   local innerRemoteIP="$9"       # Inner Remote IP
+   local route1="${10}"           # Route1 (e.g. default) -- for tunnel's routing table
+   local route2="${11}"           # Route2 (e.g. the complete network -- like Telenor or Telekom) -- for global routing table
+   local tunnelOptions="${12}"    # Tunnel options (e.g. "csum")
+   local miscOptions="${13}"      # Misc options (e.g. "----add-to-exiting-tunnel")
+
+   local innerV6option=""
+   local outerV6option=""
+   if [[ "$innerLocalIP" =~ : ]] ; then
+      innerV6option="-6"
+   fi
+   if [[ "$outerLocalIP" =~ : ]] ; then
+      outerV6option="-6"
+   fi
+
+   local mode=""
+   local greoption=""
+   if [[ "$interface" =~ ^seks ]] ; then
+      mode="any"
+   elif [[ "$interface" =~ ^fire ]] ; then
+      mode="sit"
+   elif [[ "$interface" =~ ^gre ]] ; then
+      mode="gre"
+      greoption="key $tunnelKey"
+   else
+      echo >&2 "ERROR: Cannot determine tunnel mode from interface name $interface!"
+      exit 1
+   fi
+
+   local addToExistingTunnel=0
+   if [[ "$miscOptions" =~ --add-to-exiting-tunnel ]] ; then
+      addToExistingTunnel=1
+   fi
+
+   # ====== Tunnel setup ====================================================
+   # Create the tunnel
+   if [ $addToExistingTunnel -eq 0 ] ; then
+      remove-tunnel "$interface" "$tunnelKey" "$from" "$tos" "$fwmark"
+      ip $outerV6option tunnel add $interface mode $mode local $outerLocalIP remote $outerRemoteIP ttl 255 $greoption  $tunnelOptions
+   fi
+   # Configure an address and turn the interface up
+   if [ "$innerV6option" = "" ] ; then
+      ip addr add $innerLocalIP peer $innerRemoteIP dev $interface
+   else
+      ip $innerV6option addr add $innerLocalIP/64 dev $interface
+   fi
+   ip link set dev $interface up
+   # Turn off Reverse Path filtering, since it prevents routing packets
+   # from interface when this interface has no route to the source!
+   sysctl -q net.ipv4.conf.$interface.rp_filter=0
+   # Also, turn off Reverse Path filter on all interfaces.
+   # If it is turned on, it supersedes all per-interface settings!
+   sysctl -q net.ipv4.conf.all.rp_filter=0
+
+   echo "$interface: tunnel [$innerLocalIP <-> $innerRemoteIP] via [$outerLocalIP <-> $outerRemoteIP]"
+
+
+   # ====== Routing table setup =============================================
+   if [ "$route1" != "" -o "$route2" != "" ] ; then
+      make-routes "$interface" "$tunnelKey" "$from" "$tos" "$fwmark" \
+                  "$innerLocalIP" "$innerRemoteIP" "$route1" "$route2" "$miscOptions"
+   fi
+}
+
+
+# ###### Routes setup #######################################################
+make-routes ()
+{
+   local interface="$1"           # Interface name (fire*, seks*, gre*)
+   local tunnelKey="$2"           # Tunnel key, must be unique between sites
+   local from="$3"                # From network
+   local tos="$4"                 # TOS
+   local fwmark="$5"              # fwmark
+   local localIP="$6"             # Local IP
+   local remoteIP="$7"            # Remote IP
+   local route1="$8"              # Route1 (e.g. default) -- for tunnel's routing table
+   local route2="$9"              # Route2 (e.g. the complete network -- like Telenor or Telekom) -- for global routing table
+   local miscOptions="${10}"      # Misc options (e.g. "----add-to-exiting-tunnel")
+
+   local v6option=""
+   if [[ "$localIP" =~ : ]] ; then
+      v6option="-6"
+   fi
+
+   local addToExistingTunnel=0
+   if [[ "$miscOptions" =~ --add-to-exiting-tunnel ]] ; then
+      addToExistingTunnel=1
+   fi
+
+   get-table-IDs
+
+   # ====== If rules are only for specific fwmark: write specific table ==
+   if [ $fwmark -ne 0 ] ; then
+       # Get the identifier for the fwmark's "global" table
+       globalTable="$globalPref"
+       ip rule del fwmark $fwmark table $globalTable pref $globalPref || true
+       ip $v6option rule add fwmark $fwmark table $globalTable pref $globalPref
+   else
+       # Use "main" table.
+       globalTable="main"
+   fi
+
+   echo "   Global table is $globalTable."
+
+
+   # ====== Route for certain fwmark setting ================================
+   # When there is a fwmark given, only apply the TOS filtering rules for
+   # packets marked with this fwmark!
+   if [ $fwmark -ne 0 ] ; then
+      markerOption="fwmark $fwmark"
+   else
+      markerOption=""
+   fi
+
+
+   # ====== Create rule for TOS setting =====================================
+   if [ "$tos" != "0x00" ] ; then
+       # Ensure that TOS-marked packets use the right routing table
+       ip rule del $markerOption tos $tos table $tableID pref $tosPref 2>/dev/null || true
+       ip rule add $markerOption tos $tos table $tableID pref $tosPref
+
+       # NOTE: Only the TOS settings above are accepted by the kernel. All
+       # other settings are disallowed. Since only 3 bits may vary, there
+       # are only eight possible settings.
+
+       echo "   TOS $tos goes out via table $tableID."
+   fi
+
+
+   # ====== Create rule for interface's source IP address ===================
+   ip rule del $markerOption from $localIP table $tableID pref $sourcePref 2>/dev/null || true
+   ip $v6option rule add $markerOption from $localIP table $tableID pref $sourcePref   
+   echo "   Source $localIP goes out via table $tableID."
+   if [ "$from" != "" ] ; then
+      ip rule del $markerOption from $from table $tableID pref $sourcePref 2>/dev/null || true
+      ip $v6option rule add $markerOption from $from table $tableID pref $sourcePref
+       echo "   Source $from goes out via table $tableID."
+   fi
+
+
+   # ====== Add source-specific default route via new interface =============
+   ip route add $remoteIP dev $interface table $tableID
+   if [ "$route1" != "" ] ; then
+       # Add entry in interface-specific table.
+       ip route add $route1 via $remoteIP dev $interface table $tableID
+       echo "   Table $tableID: route to $route1 from $localIP via $remoteIP/$interface"
+   fi
+   if [ "$route2" != "" ] ; then
+       # Add entry in "global" table.
+       ip route add $route2 via $remoteIP dev $interface table $globalTable
+       echo "   Table $globalTable: route to $route2 via $remoteIP/$interface (in global table!)"
+   fi
+}
+
+
+# $1 = Interface
+# $2 = GRE Tunnel Key
+# $3 = TOS
+# $4 = Outer Local IP
+# $5 = Outer Remote IP
+# $6 = Inner Local IP
+# $7 = Outer Local IP
+# $8 = Route
+# $9 = Tunnel Options (e.g. "csum")
+make-planetlab-tunnel ()
+{
+   local interface="$1"
+   local tunnelKey="$2"
+   local tos="$3"
+   local outerLocalIP="$4"
+   local outerRemoteIP="$5"
+   local innerLocalIP="$6"
+   local innerRemoteIP="$7"
+   local route="$8"
+   local tunnelOptions="$9"
+
+
+   # ====== Tunnel setup ====================================================
+   echo "Removing $interface ..."
+   cat /vsys/vif_down.out&
+   cat >/vsys/vif_down.in <<EOF
+$interface
+delete=1
+EOF
+
+   wait
+   sleep 1
+
+
+   echo "Setting up $interface ..."
+   wait
+
+   cat /vsys/vif_up.out &
+   cat >/vsys/vif_up.in <<EOF
+$interface
+$innerLocalIP
+32
+pointopoint=$innerRemoteIP
+gre=$tunnelKey
+remote=$outerRemoteIP
+rp_filter=0
+EOF
+
+   wait
+   sleep 1
+
+   echo "ok"
+
+
+   # ====== Routing table setup =============================================
+   if [ "$route" != "" ] ; then
+      echo "RT!"
+   fi
+}
