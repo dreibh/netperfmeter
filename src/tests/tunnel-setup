@@ -46,7 +46,7 @@ get-table-IDs()
    export globalPref
 }
 
-   
+
 # ###### Tunnel removal #####################################################
 remove-tunnel ()
 {

@@ -16,4 +16,4 @@ if [ "$state" != "stop" ] ; then
 fi
 
 . ./tunnel-setup
-. ./tunnelbox.beta.site-config
+. ./tunnelbox-TB-config
