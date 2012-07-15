@@ -7,7 +7,7 @@ endif
 
 # ###### NetPerfMeter program ###############################################
 netperfmeter_SOURCES = netperfmeter.cc ext_socket.h netperfmeterpackets.h thread.cc thread.h mutex.cc mutex.h tools.h tools.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc outputfile.h outputfile.cc flowtrafficspec.h flowtrafficspec.cc flowbandwidthstats.h flowbandwidthstats.cc flow.h flow.cc cpustatus.h cpustatus.cc measurement.h measurement.cc defragmenter.h defragmenter.cc
-netperfmeter_LDADD   = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread
+netperfmeter_LDADD   = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread -lstdc++
 
 
 # ###### Plotting programs ##################################################
@@ -21,19 +21,19 @@ nodist_EXTRA_DIST   = plotter.R plot-netperfmeter-results.R
 # nodist_pkgdata_DATA = plotter.R plot-netperfmeter-results.R
 
 nodist_createsummary_SOURCES = createsummary.cc inputfile.h inputfile.cc outputfile.h outputfile.cc debug.h redblacktree.h redblacktree_impl.h simpleredblacktree.h simpleredblacktree.c
-createsummary_LDADD          = $(bz2_LIBS)
+createsummary_LDADD          = $(bz2_LIBS) -lstdc++
 
 nodist_combinesummaries_SOURCES = combinesummaries.cc inputfile.h inputfile.cc outputfile.h outputfile.cc
-combinesummaries_LDADD          = $(bz2_LIBS)
+combinesummaries_LDADD          = $(bz2_LIBS) -lstdc++
 
 nodist_extractvectors_SOURCES = extractvectors.cc inputfile.h inputfile.cc outputfile.h outputfile.cc
-extractvectors_LDADD          = $(bz2_LIBS)
+extractvectors_LDADD          = $(bz2_LIBS) -lstdc++
 
 nodist_ldcalc_SOURCES = ldcalc.cc
-ldcalc_LDADD          =
+ldcalc_LDADD          = -lstdc++
 
 nodist_runtimeestimator_SOURCES = runtimeestimator.cc
-runtimeestimator_LDADD          =
+runtimeestimator_LDADD          = -lstdc++
 
 #nodist_t6_SOURCES = t6.cc tools.cc outputfile.cc
 #t6_LDADD          = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread

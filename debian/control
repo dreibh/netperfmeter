@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Thomas Dreibholz <dreibh@iem.uni-due.de>
 Homepage: http://www.iem.uni-due.de/~dreibh/netperfmeter/
 Build-Depends: autotools-dev,
+               colorgcc,
                debhelper (>= 9),
                libbz2-dev (>= 1.0),
                libglib2.0-dev (>= 2.0.0),

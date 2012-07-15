@@ -1,4 +1,4 @@
-AC_INIT([NetPerfMeter], [1.2.3], [dreib@iem.uni-due.de])
+AC_INIT([NetPerfMeter], [1.2.4], [dreib@iem.uni-due.de])
 
 AM_INIT_AUTOMAKE
 AC_PREREQ(2.60)
@@ -11,6 +11,14 @@ AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_LIBTOOL
 
+# ###### colorgcc ###########################################################
+AC_CHECK_PROG([COLORGCC], [colorgcc], [yes], [no])
+if test "$COLORGCC" == "yes"
+then
+   AC_MSG_NOTICE([Compiling using colorgcc])
+   CC=colorgcc
+   CXX=colorgcc
+fi
 
 # ###### Maintainer mode ####################################################
 AC_ARG_ENABLE([maintainer-mode],
