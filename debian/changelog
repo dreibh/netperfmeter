@@ -1,3 +1,9 @@
+netperfmeter (1.2.5~beta1.1-1ubuntu1) quantal; urgency=low
+
+  * New upstream version.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sat, 25 Aug 2012 22:22:22 +0200
+
 netperfmeter (1.2.4-1ubuntu1) quantal; urgency=low
 
   * New upstream version.

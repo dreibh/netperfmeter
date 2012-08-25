@@ -1,4 +1,301 @@
 ------------------------------------------------------------------------
+r1485 | dreibh | 2012-07-15 12:53:14 +0200 (Sun, 15 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/src/Makefile.am
+   D /trunk/netperfmeter/src/tests
+
+Build scripts now use colorgcc. Therefore, libstdc++ had to be added to Makefile.am explicitly.
+
+------------------------------------------------------------------------
+r1461 | dreibh | 2012-07-09 15:58:37 +0200 (Mon, 09 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some more updates.
+
+------------------------------------------------------------------------
+r1460 | dreibh | 2012-07-09 13:51:16 +0200 (Mon, 09 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+   M /trunk/netperfmeter/src/tests/beta
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some more updates.
+
+------------------------------------------------------------------------
+r1459 | dreibh | 2012-07-09 11:13:33 +0200 (Mon, 09 Jul 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/tests/tunnel-setup.old (from /trunk/netperfmeter/src/tests/tunnel-setup:1458)
+
+Update.
+
+------------------------------------------------------------------------
+r1458 | dreibh | 2012-07-09 11:00:35 +0200 (Mon, 09 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/beta
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some updates.
+
+------------------------------------------------------------------------
+r1457 | dreibh | 2012-07-09 10:50:14 +0200 (Mon, 09 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+A small update.
+
+------------------------------------------------------------------------
+r1456 | dreibh | 2012-07-07 23:32:22 +0200 (Sat, 07 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Further improvements.
+
+------------------------------------------------------------------------
+r1455 | dreibh | 2012-07-07 22:34:27 +0200 (Sat, 07 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Some tests.
+
+------------------------------------------------------------------------
+r1454 | dreibh | 2012-07-06 14:39:10 +0200 (Fri, 06 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Some more testing.
+
+------------------------------------------------------------------------
+r1453 | dreibh | 2012-07-06 14:24:45 +0200 (Fri, 06 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Some test.
+
+------------------------------------------------------------------------
+r1452 | dreibh | 2012-07-05 15:57:35 +0200 (Thu, 05 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Some more testing.
+
+------------------------------------------------------------------------
+r1451 | dreibh | 2012-07-04 16:26:13 +0200 (Wed, 04 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Some more updates.
+
+------------------------------------------------------------------------
+r1450 | dreibh | 2012-07-04 16:03:12 +0200 (Wed, 04 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+   M /trunk/netperfmeter/src/tests/beta
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some more updates.
+
+------------------------------------------------------------------------
+r1449 | dreibh | 2012-07-04 15:23:14 +0200 (Wed, 04 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+   M /trunk/netperfmeter/src/tests/beta
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some more updates.
+
+------------------------------------------------------------------------
+r1448 | dreibh | 2012-07-04 15:07:24 +0200 (Wed, 04 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Update.
+
+------------------------------------------------------------------------
+r1447 | dreibh | 2012-07-04 14:59:46 +0200 (Wed, 04 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+   M /trunk/netperfmeter/src/tests/beta
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some more updates.
+
+------------------------------------------------------------------------
+r1446 | dreibh | 2012-07-04 14:24:21 +0200 (Wed, 04 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some updates.
+
+------------------------------------------------------------------------
+r1445 | dreibh | 2012-07-04 14:19:26 +0200 (Wed, 04 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+A small fix.
+
+------------------------------------------------------------------------
+r1444 | dreibh | 2012-07-04 12:02:43 +0200 (Wed, 04 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some improvements.
+
+------------------------------------------------------------------------
+r1443 | dreibh | 2012-07-04 11:05:37 +0200 (Wed, 04 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+   A /trunk/netperfmeter/src/tests/beta
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Some more tests.
+
+------------------------------------------------------------------------
+r1442 | dreibh | 2012-07-04 10:13:19 +0200 (Wed, 04 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Some test.
+
+------------------------------------------------------------------------
+r1438 | dreibh | 2012-07-02 14:57:47 +0200 (Mon, 02 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/make-ppa
+
+Script update.
+
+------------------------------------------------------------------------
+r1432 | dreibh | 2012-07-02 13:23:20 +0200 (Mon, 02 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+   M /trunk/netperfmeter/configure.in
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/netperfmeter.lsm
+
+Version and ChangeLog update.
+
+------------------------------------------------------------------------
+r1431 | dreibh | 2012-07-02 13:21:07 +0200 (Mon, 02 Jul 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/compat
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/debian.conf
+   M /trunk/netperfmeter/src/Makefile.am
+   M /trunk/netperfmeter/src/cpustatus.cc
+   M /trunk/netperfmeter/src/messagereader.h
+   M /trunk/netperfmeter/src/outputfile.cc
+
+Fixed some problems for compiling and packaging under latest Debian testing.
+
+------------------------------------------------------------------------
+r1430 | dreibh | 2012-06-22 16:09:34 +0200 (Fri, 22 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Some more updates.
+
+------------------------------------------------------------------------
+r1429 | dreibh | 2012-06-22 13:27:10 +0200 (Fri, 22 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Update.
+
+------------------------------------------------------------------------
+r1428 | dreibh | 2012-06-21 16:11:20 +0200 (Thu, 21 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Another update.
+
+------------------------------------------------------------------------
+r1427 | dreibh | 2012-06-21 13:31:12 +0200 (Thu, 21 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Updated test script.
+
+------------------------------------------------------------------------
+r1426 | dreibh | 2012-06-21 09:43:13 +0200 (Thu, 21 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Updated API test script.
+
+------------------------------------------------------------------------
+r1425 | dreibh | 2012-06-20 16:38:25 +0200 (Wed, 20 Jun 2012) | 5 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Some updates.
+-This line, and those below, will be ignored--
+
+M    tests/apitest
+
+------------------------------------------------------------------------
+r1424 | dreibh | 2012-06-20 15:30:54 +0200 (Wed, 20 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/apitest
+
+Added API test script.
+
+------------------------------------------------------------------------
+r1423 | dreibh | 2012-06-20 09:32:48 +0200 (Wed, 20 Jun 2012) | 2 lines
+Changed paths:
+   A /trunk/netperfmeter/src/tests/apitest
+
+Added test.
+
+------------------------------------------------------------------------
+r1422 | dreibh | 2012-06-19 14:34:37 +0200 (Tue, 19 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Separated tunnel configuration from routing configuration.
+
+------------------------------------------------------------------------
+r1421 | dreibh | 2012-06-19 14:18:16 +0200 (Tue, 19 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/node1
+   M /trunk/netperfmeter/src/tests/node2
+
+Fixed DSCPs.
+
+------------------------------------------------------------------------
+r1420 | dreibh | 2012-06-19 13:53:36 +0200 (Tue, 19 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/nornet1
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Updated scripts. Works with TOS setting now.
+
+------------------------------------------------------------------------
+r1419 | dreibh | 2012-06-18 15:42:12 +0200 (Mon, 18 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/node1
+   M /trunk/netperfmeter/src/tests/node2
+   M /trunk/netperfmeter/src/tests/nornet1
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+   M /trunk/netperfmeter/src/tests/tunnelbox-north
+   M /trunk/netperfmeter/src/tests/tunnelbox-south
+
+Script updates.
+
+------------------------------------------------------------------------
+r1418 | dreibh | 2012-06-18 13:34:45 +0200 (Mon, 18 Jun 2012) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/tests/tunnel-setup
+
+Script update.
+
+------------------------------------------------------------------------
 r1417 | dreibh | 2012-06-14 14:41:25 +0200 (Thu, 14 Jun 2012) | 2 lines
 Changed paths:
    A /trunk/netperfmeter/src/tests/bug1
