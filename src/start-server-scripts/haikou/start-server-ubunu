@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $Id: start-servers-testbed 1140 2011-11-23 06:43:27Z dreibh $
 #
 # Network Performance Meter
 # Copyright (C) 2012 by Thomas Dreibholz
@@ -22,5 +22,5 @@
 
 make -j2 || exit 1
 
-# Burgsteinfurt
-nohup ./netperfmeter 7000 -verbosity=0 >server-local.log 2>&1 &
+# University Network / Unicom
+nohup ./netperfmeter 7010 -verbosity=0 -local=210.37.45.148,113.59.104.25 >server-DisjointPaths.log 2>&1 &

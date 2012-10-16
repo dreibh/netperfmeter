@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $Id: start-servers-testbed 1140 2011-11-23 06:43:27Z dreibh $
 #
 # Network Performance Meter
 # Copyright (C) 2012 by Thomas Dreibholz
@@ -22,5 +22,8 @@
 
 make -j2 || exit 1
 
-# Burgsteinfurt
-nohup ./netperfmeter 7000 -verbosity=0 -local=87.139.124.106,212.201.121.86 >server-Burgsteinfurt.log 2>&1 &
+# Disjoint Paths
+nohup ./netperfmeter 7010 -verbosity=0 -local=132.252.153.18,89.246.242.230 >server-DisjointPaths.log 2>&1 &
+
+# Shared Bottleneck
+nohup ./netperfmeter 7020 -verbosity=0 -local=132.252.153.18,132.252.153.22 >server-SharedBottleneck.log 2>&1 &
