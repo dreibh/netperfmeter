@@ -170,19 +170,32 @@ perform_run ()
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 			
-         elif [ "$Scenario" = "haikou" ] ; then
-            HOST_EAST="212.201.121.86"   #   DFN=212.201.121.86   DSL=87.139.124.106
-            # HOST_EAST="87.139.124.106"   #   DFN=212.201.121.86   DSL=87.139.124.106
+         elif [ "$Scenario" = "haikou-cmt" ] ; then
+            HOST_EAST="210.37.45.149"    
             ROUTER_NORTH="132.252.153.9"
             NETWORK_NW="132.252.153.8/29"
-            NETWORK_NE="113.59.104.59/29"
+            NETWORK_NE="210.37.45.128/26"
             ROUTER_SOUTH=""
             NETWORK_SW=""
-            NETWORK_SE=""t ic
+            NETWORK_SE="" 
 
             HOST_WEST="132.252.153.10,89.246.242.228"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
+
+         elif [ "$Scenario" = "haikou-mptcp" ] ; then
+            HOST_EAST="210.37.45.148"   
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="210.37.45.128/26"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="132.252.153.10,89.246.242.228"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
          elif [ "$Scenario" = "TestLocal" ] ; then
             HOST_EAST="127.0.0.1"
             ROUTER_NORTH="127.0.0.1"
