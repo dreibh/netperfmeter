@@ -378,7 +378,7 @@ static char* getWord(char* str, char* word)
    size_t i = 0;
    while( ((quoted) && (str[n] != '\"')) ||
           ((!quoted) && (str[n] != ' ') && (str[n] != '\t')) ) {
-      if(str[n] == 0x00) {
+      if( (quoted == true) && (str[n] == 0x00) ) {
          return(NULL);
       }
       word[i++] = str[n++];
@@ -558,9 +558,9 @@ static bool handleScalarFile(const std::string& varNames,
           (!(strncmp(buffer, "scalar\t", 7))) ) {
          // ====== Parse scalar line ========================================
          char* s = getWord((char*)&buffer[7], (char*)&objectName);
-         if(s) {
+         if(s != NULL) {
             s = getWord(s, (char*)&statName);
-            if(s) {
+            if(s != NULL) {
                if(sscanf(s, "%lf", &value) != 1) {
                   cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
                        << " - Value expected!" << endl;
@@ -570,14 +570,14 @@ static bool handleScalarFile(const std::string& varNames,
             }
             else {
                cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                    << " - Statistics name expected!" << endl;
+                    << " - Statistics name expected for \"scalar\"!" << endl;
                success = false;
                break;
             }
          }
          else {
             cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                 << " - Object name expected!" << endl;
+                 << " - Object name expected for \"scalar\"!" << endl;
             success = false;
             break;
          }
@@ -636,14 +636,14 @@ static bool handleScalarFile(const std::string& varNames,
             s = getWord(s, (char*)&statisticBlockName);
             if(s == NULL) {
                cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                    << " - Statistics name expected!" << endl;
+                    << " - Statistics name expected for \"statistic\"!" << endl;
                success = false;
                break;
             }
          }
          else {
             cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                 << " - Object name expected!" << endl;
+                 << " - Object name expected for \"statistic\"!" << endl;
             success = false;
             break;
          }
