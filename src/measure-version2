@@ -424,7 +424,8 @@ initialize_runs ()
 # ###### Create summary #####################################################
 finish_runs ()
 {
-   ./createsummary "$@ $additionalVariables" -batch -quiet <$summaryName
+   variables="$@ $additionalVariables"
+   ./createsummary "$variables" -batch -quiet <$summaryName
 }
 
 
