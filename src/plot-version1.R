@@ -19,7 +19,7 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-source("plotter.R")
+source("plotter-version1.R")
 
 
 netPerfMeterPlotVariables <- list(
@@ -49,7 +49,8 @@ netPerfMeterPlotVariables <- list(
    list("BidirectionalQoS",      "Bidirectional QoS{Q}"),
    list("CwndMaxBurst",          "Cwnd MaxBurst{c}"),
    list("Runtime",               "Runtime{R}[s]"),
-
+   list("Protocol",          	 "Protocol {P}"),
+      
    list("RateNorthernTrail",
            "Data Rate on Northern Trail{:R[North]:}[Kbit/s]"),
    list("RateNorthernTrail-Mbit",
