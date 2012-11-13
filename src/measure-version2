@@ -143,6 +143,19 @@ perform_run ()
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7010"
 
+         elif [ "$Scenario" = "DisjointPaths-mptcp" ] ; then
+            HOST_EAST="132.252.153.19"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="132.252.153.16/29"
+            ROUTER_SOUTH="89.246.242.226"
+            NETWORK_SW="89.246.242.228/29"
+            NETWORK_SE="89.246.242.228/29"
+
+            HOST_WEST="132.252.153.12,89.246.242.227"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7010"
+
          elif [ "$Scenario" = "SharedBottleneck" ] ; then
             HOST_EAST="132.252.153.18"
             ROUTER_NORTH="132.252.153.9"
@@ -197,15 +210,15 @@ perform_run ()
             RemoteNode="$HOST_EAST:7000"
 
          elif [ "$Scenario" = "haikou-mptcp" ] ; then
-            HOST_EAST="210.37.45.148"   
+            HOST_EAST="113.59.104.58"   
             ROUTER_NORTH="132.252.153.9"
             NETWORK_NW="132.252.153.8/29"
-            NETWORK_NE="210.37.45.128/26"
+            NETWORK_NE="113.59.104.56/29"
             ROUTER_SOUTH=""
             NETWORK_SW=""
             NETWORK_SE="" 
 
-            HOST_WEST="132.252.153.10,89.246.242.228"
+            HOST_WEST="132.252.153.12,89.246.242.227"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 
