@@ -1,0 +1,55 @@
+#!/bin/bash
+# $Id: run-wp3-dsl-ccI 1140 2011-11-23 06:43:27Z dreibh $
+#
+# Network Performance Meter
+# Copyright (C) 2009-2012 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
+
+Directory="haikou-Disjoint-local-Essen-MPTCP-Dissimilar"
+. ./measure-version2
+
+
+Run_VALUES="1 2" # 3 4" #  5 6
+Scenario_VALUES="DisjointPaths-mptcp"
+Runtime_VALUES="90"
+Flows_VALUES="1"
+CompareWithReference_VALUES="false"
+ReferenceFlowProtocol_VALUES="SCTP"
+FrameRate_VALUES="const0"
+FrameSize_VALUES="const1444"
+SndBuf_VALUES="-1 100000 500000 1000000 3000000 5000000 10000000 20000000" 
+
+RcvBuf_VALUES=-1
+Protocol_VALUES="TCP"
+CMTCCVariant_VALUES="off mptcp" 
+BidirectionalQoS_VALUES="true"
+CwndMaxBurst_VALUES="true"
+
+# First trail
+RateNorthernTrail_VALUES="100000" 
+DelayNorthernTrail_VALUES="0 50"
+LossNorthernTrail_VALUES="0" # 0.02"
+
+
+
+# Second trail
+RateSouthernTrail_VALUES="10000"
+DelaySouthernTrail_VALUES="10" #0 
+LossSouthernTrail_VALUES="0"
+
+perform_measurements
