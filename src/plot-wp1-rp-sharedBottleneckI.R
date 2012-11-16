@@ -13,7 +13,7 @@ simulationDirectory  <- "wp1-rp-sharedBottleneckI"
 plotColorMode        <- cmColor
 plotHideLegend       <- FALSE
 plotLegendSizeFactor <- 0.8
-plotOwnOutput        <- FALSE
+plotOwnOutput        <- TRUE
 plotFontFamily       <- "Helvetica"
 plotFontPointsize    <- 22
 plotWidth            <- 10
@@ -34,9 +34,9 @@ plotConfigurations <- list(
    # ------------------------------------------------------------------------
 
 
-  list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
+  list(simulationDirectory, "bottleneck-messung.pdf",
         "", NA, NA, list(0,1),
-        "RateNorthernTrail-Mbit", "passive.flow-ReceivedBitRate-Mbit",
+        "RateNorthernTrail-Mbit2", "passive.flow-ReceivedBitRate-Mbit",
         "CMTCCVariant", "passive.flow", "OptionNRSACK",
         "", "ReferenceFlowProtocol", "Runtime",
         "TRUE", 
@@ -46,6 +46,9 @@ plotConfigurations <- list(
 
 # ------ Variable templates -------------------------------------------------
 plotVariables <- append(list(
+
+   list("RateNorthernTrail-Mbit2",
+           "Common Data Rate{:rho[B]:}[Mbit/s]", "data1$RateNorthernTrail / 1000")
 ), netPerfMeterPlotVariables)
 
 # ###########################################################################

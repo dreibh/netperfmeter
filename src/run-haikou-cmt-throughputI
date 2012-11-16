@@ -24,19 +24,19 @@ Directory="haikou-cmt-throughputI"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3"
-Scenario_VALUES="haikou-cmt"
-Runtime_VALUES="150" #"300" 
+Run_VALUES="1 2 3" # 4 5 6 7"
+Scenario_VALUES="haikou-cmt-unicom"
+Runtime_VALUES="150"  #120
 Flows_VALUES="1"
-CompareWithReference_VALUES="true"
+CompareWithReference_VALUES="false" # true"
 ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
 OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1444"   # DSL-MTU!
-Unordered_VALUES="1.0"   # !!!
-SndBuf_VALUES="500000 1000000 1500000"
-RcvBuf_VALUES="500000"
-CMTCCVariant_VALUES="like-mptcp" # "cmt cmtrpv1 cmtrpv2 like-mptcp"
+Unordered_VALUES="0.0"   # !!!
+SndBuf_VALUES="5000 50000 100000 300000 500000 1000000 1500000 2000000 2500000"
+RcvBuf_VALUES=-1
+CMTCCVariant_VALUES="off cmt like-mptcp" # "cmt cmtrpv1 cmtrpv2 like-mptcp"
 OptionNRSACK_VALUES="true"
 OptionBufferSplitting_VALUES="bothSides"
 
@@ -44,16 +44,16 @@ BidirectionalQoS_VALUES="true"
 CwndMaxBurst_VALUES="true"
 
 # First trail
-RateNorthernTrail_VALUES="2500 5000 10000 20000 30000 40000"
+RateNorthernTrail_VALUES="50000" #"200 500 1000 2000 3000 4000 5000" 
 DelayNorthernTrail_VALUES="0" #"2"
 LossNorthernTrail_VALUES="0"
 #QueueTypeNorthernTrail_VALUES="red"      ## !!!
 #FrameCapacityNorthernTrail_VALUES="100"   ## !!!
 
 # Second trail
-RateSouthernTrail_VALUES="0"
-DelaySouthernTrail_VALUES="0"
-LossSouthernTrail_VALUES="0"
+#RateSouthernTrail_VALUES="0"
+#DelaySouthernTrail_VALUES="0"
+#LossSouthernTrail_VALUES="0"
 #QueueTypeSouthernTrail_VALUES="red"   ## !!!
 # FrameCapacitySouthernTrail_VALUES="100"   ## !!!
 
