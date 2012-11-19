@@ -26,9 +26,9 @@ plotConfigurations <- list(
 
 
    list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
-        "", NA, NA, list(1,1),
+        "SinglePath", NA, NA, list(1,1),
         "SndBuf", "passive.flow-ReceivedBitRate-Mbit",
-        "Protocol", "passive.flow", "ReferenceFlowProtocol",
+        "Protocol", "", "",
         "DelayNorthernTrail", "", "RateNorthernTrail-Mbit",
         "TRUE", 
 	 "zColorArray <- c(\"darkgreen\", \"orange\", \"red\", \"blue\", \"gray50\")")
