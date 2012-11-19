@@ -19,7 +19,7 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-source("plotter-version1.R")
+-source("plotter.R")
 
 
 netPerfMeterPlotVariables <- list(
