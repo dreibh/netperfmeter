@@ -24,7 +24,7 @@ Directory="haikou-Disjoint-local-Essen-MPTCP-Dissimilar"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3  4" #  5 6
+Run_VALUES="1 2 3 4" #  5 6
 Scenario_VALUES="DisjointPaths-mptcp"
 Runtime_VALUES="90"
 Flows_VALUES="1"
