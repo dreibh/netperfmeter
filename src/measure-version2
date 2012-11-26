@@ -195,6 +195,61 @@ perform_run ()
             HOST_WEST="132.252.153.10,89.246.242.228"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
+            
+	elif [ "$Scenario" = "haikou-cmt-DFN-unicom-mpctp-west-SP" ] ; then
+            HOST_EAST="113.59.104.59"    
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="113.59.104.56/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="132.252.153.12"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7020"
+
+	elif [ "$Scenario" = "haikou-cmt-DFN-uninet-mpctp-west-SP" ] ; then
+            HOST_EAST="210.37.45.149"    
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="210.37.45.128/26"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="132.252.153.12"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7010"
+
+
+	elif [ "$Scenario" = "haikou-cmt-Versatel-unicom-mpctp-west-SP" ] ; then
+            HOST_EAST="113.59.104.59"    
+            ROUTER_NORTH="89.246.242.226"
+            NETWORK_NW="89.246.242.228/29"
+            NETWORK_NE="113.59.104.56/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="89.246.242.227"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7020"
+
+	elif [ "$Scenario" = "haikou-cmt-Versatel-uninet-mpctp-west-SP" ] ; then
+            HOST_EAST="210.37.45.149"    
+            ROUTER_NORTH="89.246.242.226"
+            NETWORK_NW="89.246.242.228/29"
+            NETWORK_NE="210.37.45.128/26"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="89.246.242.227"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7010"
+
+haikou-cmt-Versatel-uninet-mpctp-west-SP
 
          elif [ "$Scenario" = "haikou-cmt-uninet" ] ; then
             HOST_EAST="210.37.45.149"    
