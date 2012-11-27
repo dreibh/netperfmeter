@@ -33,7 +33,7 @@ netPerfMeterPlotVariables <- list(
    #          list("InputFile1", "InputFile2", ...))
    #             (simulationDirectory/Results/....data.tar.bz2 is added!)
    # ------------------------------------------------------------------------
-#   list("simulationDirectorySet",                 "simulationDirectorySet"),
+   list("simDir",   		 "Path {Pa}"),
    list("Flows",                 "Number of Flows{n}[1]"),
    list("Reference Flows",       "Number of Reference Flows{n}[1]"),
    list("ReferenceFlowProtocol", "Reference Flow Protocol{P}"),
@@ -49,7 +49,7 @@ netPerfMeterPlotVariables <- list(
    list("BidirectionalQoS",      "Bidirectional QoS{Q}"),
    list("CwndMaxBurst",          "Cwnd MaxBurst{c}"),
    list("Runtime",               "Runtime{R}[s]"),
-   list("Protocol",          	 "Protocol {P}"),
+   list("Protocol",          	 "Protocol {Pr}"),
    list("SndBuf-Kbyte",                
 	    "Send Buffer [KBytes]", "data1$SndBuf / 1000"),
    list("RateNorthernTrail",

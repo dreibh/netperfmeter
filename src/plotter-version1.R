@@ -1785,14 +1785,24 @@ createPlots <- function(simulationDirectorySet,
 			 resultFileName  <- paste(sep="", simulationDirectory, "/Results/", resultsName, ".data.bz2")
 			 cat(sep="", "     + Loading results from ", resultFileName, " ...\n")
 			 
-			 tmpData <- rbind(tmpData, loadResults(resultFileName, quiet=FALSE,
-                                               customFilter=customFilter,
-                                               customFormatter=customFormatter))											   
+			  a <- loadResults(resultFileName, quiet=FALSE,
+				    customFilter=customFilter,
+				    customFormatter=customFormatter)
+			  a <- transform(a, simDir=simulationDirectory)
+			  tmpData <- rbind(tmpData, a)			 
+			 
 			 inputDirectorySet <- unique(append(inputDirectorySet, c(paste(sep="", simulationDirectory, "/Results"))))
 			 inputFileSet      <- unique(append(inputFileSet, c(resultFileName)))
 		 }
 		 data <- append(data, list(tmpData))
       }
+      
+      
+#       a <- loadResults(resultFileName, quiet=FALSE,
+#                 customFilter=customFilter,
+#                 customFormatter=customFormatter)
+#        a <- transform(a, simDir=simulationDirectory)
+#        tmpData <- rbind(tmpData, a)
       
       
 #       for(resultsName in resultsNameSet) {

@@ -10,11 +10,11 @@ source("plot-version1-multiple-folders.R")
 # ------ Plotter Settings ---------------------------------------------------
 #simulationDirectorySet  <- list("../../netperfmeter-original/src/haikou-cmt-throughputI", "../../netperfmeter-original/src/haikou-cmt-DFN-unicom-mpctp-west-SP", "../../netperfmeter-original/src/haikou-cmt-Versatel-unicom-mpctp-west-SP" )
 # haikou-cmt-DFN-unicom-mpctp-west-SP haikou-cmt-DFN-uninet-mpctp-west-SP haikou-cmt-Versatel-unicom-mpctp-west-SP haikou-cmt-Versatel-uninet-mpctp-west-SP 
-simulationDirectorySet  <- list("../../netperfmeter-original/src/haikou-cmt-throughputI", "../../netperfmeter-original/src/haikou-cmt-Versatel-uninet-mpctp-west-SP", "../../netperfmeter-original/src/haikou-cmt-Versatel-unicom-mpctp-west-SP")
+simulationDirectorySet  <- list("../../netperfmeter-original/src/haikou-cmt-throughputI", "../../netperfmeter-original/src/haikou-cmt-DFN-unicom-mpctp-west-SP", "../../netperfmeter-original/src/haikou-cmt-DFN-uninet-mpctp-west-SP", "../../netperfmeter-original/src/haikou-cmt-Versatel-unicom-mpctp-west-SP", "../../netperfmeter-original/src/haikou-cmt-Versatel-uninet-mpctp-west-SP")
 
 plotColorMode        <- cmColor
 plotHideLegend       <- FALSE
-plotLegendSizeFactor <- 1.0
+plotLegendSizeFactor <- 0.5
 plotOwnOutput        <- TRUE
 plotFontFamily       <- "Helvetica"
 plotFontPointsize    <- 22
@@ -30,7 +30,7 @@ plotConfigurations <- list(
    list(simulationDirectorySet, "haikou-essen_90s.pdf",
         "90 s laufzeit", seq(0, 20000, 5000), seq(0,2,0.5), list(1,1),
         "SndBuf-Kbyte", "passive.flow-ReceivedBitRate-Mbit",
-        "Protocol", "CMTCCVariant", "",
+        "Protocol", "CMTCCVariant", "simDir",
         #"simulationDirectory", "", "",
         "", "", "",
         "    (data1$Runtime == 90) ", 
