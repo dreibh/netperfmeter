@@ -249,9 +249,7 @@ perform_run ()
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7010"
 
-haikou-cmt-Versatel-uninet-mpctp-west-SP
-
-         elif [ "$Scenario" = "haikou-cmt-uninet" ] ; then
+    elif [ "$Scenario" = "haikou-cmt-uninet" ] ; then
             HOST_EAST="210.37.45.149"    
             ROUTER_NORTH="132.252.153.9"
             NETWORK_NW="132.252.153.8/29"
@@ -264,7 +262,7 @@ haikou-cmt-Versatel-uninet-mpctp-west-SP
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 
-         elif [ "$Scenario" = "haikou-mptcp" ] ; then
+    elif [ "$Scenario" = "haikou-mptcp" ] ; then
             HOST_EAST="113.59.104.58"   
             ROUTER_NORTH="132.252.153.9"
             NETWORK_NW="132.252.153.8/29"
@@ -277,7 +275,7 @@ haikou-cmt-Versatel-uninet-mpctp-west-SP
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 
-         elif [ "$Scenario" = "TestLocal" ] ; then
+    elif [ "$Scenario" = "TestLocal" ] ; then
             HOST_EAST="127.0.0.1"
             ROUTER_NORTH="127.0.0.1"
             NETWORK_NW="127.0.0.1/32"
@@ -290,7 +288,7 @@ haikou-cmt-Versatel-uninet-mpctp-west-SP
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 
-         else
+    else
             echo >&2 "ERROR: Bad scenario setting $Scenario!"
             exit 1
          fi
