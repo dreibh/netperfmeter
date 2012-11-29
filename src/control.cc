@@ -109,35 +109,6 @@ static bool downloadOutputFile(MessageReader* messageReader,
 }
 
 
-ssize_t sctp_send2(int                           sd,
-                  const void*                   data,
-                  size_t                        len,
-                  const struct sctp_sndrcvinfo* sinfo,
-                  int                           flags)
-{
-   struct sctp_sndrcvinfo* sri;
-   struct iovec            iov = { (char*)data, len };
-   struct cmsghdr*         cmsg;
-   size_t                  cmsglen = CMSG_SPACE(sizeof(struct sctp_sndrcvinfo));
-   char                    cbuf[CMSG_SPACE(sizeof(struct sctp_sndrcvinfo))];
-   struct msghdr msg = {
-      NULL, 0,
-      &iov, 1,
-      cbuf, cmsglen,
-      flags
-   };
-
-   cmsg = (struct cmsghdr*)CMSG_FIRSTHDR(&msg);
-   cmsg->cmsg_len   = CMSG_LEN(sizeof(struct sctp_sndrcvinfo));
-   cmsg->cmsg_level = IPPROTO_SCTP;
-   cmsg->cmsg_type  = SCTP_SNDRCV;
-
-   sri = (struct sctp_sndrcvinfo*)CMSG_DATA(cmsg);
-   memcpy(sri, sinfo, sizeof(struct sctp_sndrcvinfo));
-   return(ext_sendmsg(sd, &msg, msg.msg_flags));
-}
-
-
 // ###### Download statistics file ##########################################
 static bool downloadResults(MessageReader*     messageReader,
                             const int          controlSocket,
@@ -230,10 +201,8 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       std::cout << "<R1> "; std::cout.flush();
    }
-   printf("ctrl2=%d\n",controlSocket);
-   if(sctp_send2(controlSocket, addFlowMsg, addFlowMsgSize, &sinfo, 0) <= 0) {
-      perror("ERR=");
-      puts("FALSE!!!!!!");
+   if(sctp_send(controlSocket, addFlowMsg, addFlowMsgSize, &sinfo, 0) <= 0) {
+      perror("ERROR");
       return(false);
    }
 
@@ -244,6 +213,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    flow->getMeasurementID(),
                                    flow->getFlowID(), flow->getStreamID()) == false) {
+      perror("ERROR");
       return(false);
    }
 
