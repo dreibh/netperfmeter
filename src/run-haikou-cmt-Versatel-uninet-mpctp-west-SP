@@ -20,36 +20,42 @@
 # Contact: dreibh@iem.uni-due.de
 #
 
-Directory="haikou-Disjoint-local-Essen-Dissimilar"
+Directory="haikou-cmt-Versatel-uninet-mpctp-west-SP"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3  4" #  5 6
-Scenario_VALUES="DisjointPaths-mptcp"
-Runtime_VALUES="90"
+Run_VALUES="1 2 3 4" # 5 6 7" #
+Scenario_VALUES="haikou-cmt-Versatel-uninet-mpctp-west-SP"
+Runtime_VALUES="90 300"  #120
 Flows_VALUES="1"
-CompareWithReference_VALUES="false"
-ReferenceFlowProtocol_VALUES="SCTP"
+CompareWithReference_VALUES="false" # true"
+ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
+OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
-FrameSize_VALUES="const1444"
-SndBuf_VALUES="5000 50000 100000 200000 300000 400000 500000 100000 500000 1000000 1500000 2000000 2500000 3000000 5000000 10000000 15000000"
+FrameSize_VALUES="const1444"   # DSL-MTU!
+Unordered_VALUES="0.0"   # !!!
+SndBuf_VALUES="5000 50000 100000 200000 300000 400000 500000 100000 500000 1000000 3000000 5000000 10000000 20000000"
 RcvBuf_VALUES=-1
-CMTCCVariant_VALUES="cmt like-mptcp" 
+Protocol_VALUES="TCP SCTP"
+CMTCCVariant_VALUES="off" #
 OptionNRSACK_VALUES="true"
 OptionBufferSplitting_VALUES="bothSides"
+
 BidirectionalQoS_VALUES="true"
 CwndMaxBurst_VALUES="true"
 
-
-RateNorthernTrail_VALUES="100000" 
-DelayNorthernTrail_VALUES="0 10"
+# First trail
+RateNorthernTrail_VALUES="50000" #
+DelayNorthernTrail_VALUES="0" 
 LossNorthernTrail_VALUES="0"
 
 
-
 # Second trail
-RateSouthernTrail_VALUES="10000"
-DelaySouthernTrail_VALUES="0 10" 
+#RateSouthernTrail_VALUES="0"
+#DelaySouthernTrail_VALUES="0"
+#LossSouthernTrail_VALUES="0"
+#QueueTypeSouthernTrail_VALUES="red"   ## !!!
+# FrameCapacitySouthernTrail_VALUES="100"   ## !!!
 
 
 perform_measurements
