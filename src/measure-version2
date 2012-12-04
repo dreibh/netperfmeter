@@ -183,7 +183,7 @@ perform_run ()
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 			
-         elif [ "$Scenario" = "haikou-cmt-unicom" ] ; then
+         elif [ "$Scenario" = "haikou-cmt-unicom_From-West" ] ; then
             HOST_EAST="113.59.104.59"    
             ROUTER_NORTH="132.252.153.9"
             NETWORK_NW="132.252.153.8/29"
@@ -195,7 +195,119 @@ perform_run ()
             HOST_WEST="132.252.153.10,89.246.242.228"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
-            
+  
+##CMT-SCTP FreeBSD Essen (MPTCP-West) ==> Haikou /CMT
+
+	elif [ "$Scenario" = "Essen_Haikou-cmt-DFN-unicom" ] ; then
+            HOST_EAST="113.59.104.59"    
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="113.59.104.56/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="132.252.153.12"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+	elif [ "$Scenario" = "Essen_Haikou-cmt-DFN-uninet" ] ; then
+            HOST_EAST="210.37.45.149"    
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="210.37.45.128/26"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="132.252.153.12"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+
+	elif [ "$Scenario" = "Essen_Haikou-cmt-Versatel-unicom" ] ; then
+            HOST_EAST="113.59.104.59"    
+            ROUTER_NORTH="89.246.242.226"
+            NETWORK_NW="89.246.242.228/29"
+            NETWORK_NE="113.59.104.56/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="89.246.242.227"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+	elif [ "$Scenario" = "Essen_Haikou-cmt-Versatel-uninet" ] ; then
+            HOST_EAST="210.37.45.149"    
+            ROUTER_NORTH="89.246.242.226"
+            NETWORK_NW="89.246.242.228/29"
+            NETWORK_NE="210.37.45.128/26"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="89.246.242.227"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+
+##CMT-SCTP Haikou ==> FreeBSD Essen (MPTCP-West) /CMT
+	elif [ "$Scenario" = "haikou-Essen-cmt-unicom-DFN" ] ; then
+            HOST_EAST="132.252.153.12"    
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="113.59.104.56/29"
+            NETWORK_NE="132.252.153.8/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="113.59.104.59,210.37.45.149"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+	elif [ "$Scenario" = "haikou-Essen-cmt-uninet-DFN" ] ; then
+            HOST_EAST="132.252.153.12"    
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="210.37.45.128/26"
+            NETWORK_NE="132.252.153.8/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="113.59.104.59,210.37.45.149"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+
+	elif [ "$Scenario" = "haikou-Essen-cmt-unicom-Versatel" ] ; then
+            HOST_EAST="89.246.242.227"    
+            ROUTER_NORTH="89.246.242.226"
+            NETWORK_NW="113.59.104.56/29"
+            NETWORK_NE="89.246.242.228/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="113.59.104.59,210.37.45.149"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+	elif [ "$Scenario" = "haikou-Essen-cmt-uninet-Versatel" ] ; then
+            HOST_EAST="89.246.242.227"    
+            ROUTER_NORTH="89.246.242.226"
+            NETWORK_NW="210.37.45.128/26"
+            NETWORK_NE="89.246.242.228/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="113.59.104.59,210.37.45.149"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+##FreeBSD Essen (MPTCP-West) ==> Haikou /Single Path (SCTP and TCP)
+           
 	elif [ "$Scenario" = "haikou-cmt-DFN-unicom-mpctp-west-SP" ] ; then
             HOST_EAST="113.59.104.59"    
             ROUTER_NORTH="132.252.153.9"
@@ -207,7 +319,7 @@ perform_run ()
 
             HOST_WEST="132.252.153.12"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
-            RemoteNode="$HOST_EAST:7020"
+            RemoteNode="$HOST_EAST:7100"
 
 	elif [ "$Scenario" = "haikou-cmt-DFN-uninet-mpctp-west-SP" ] ; then
             HOST_EAST="210.37.45.149"    
@@ -220,7 +332,7 @@ perform_run ()
 
             HOST_WEST="132.252.153.12"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
-            RemoteNode="$HOST_EAST:7010"
+            RemoteNode="$HOST_EAST:7110"
 
 
 	elif [ "$Scenario" = "haikou-cmt-Versatel-unicom-mpctp-west-SP" ] ; then
@@ -234,7 +346,7 @@ perform_run ()
 
             HOST_WEST="89.246.242.227"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
-            RemoteNode="$HOST_EAST:7020"
+            RemoteNode="$HOST_EAST:7100"
 
 	elif [ "$Scenario" = "haikou-cmt-Versatel-uninet-mpctp-west-SP" ] ; then
             HOST_EAST="210.37.45.149"    
@@ -247,20 +359,64 @@ perform_run ()
 
             HOST_WEST="89.246.242.227"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
-            RemoteNode="$HOST_EAST:7010"
+            RemoteNode="$HOST_EAST:7110"
 
-    elif [ "$Scenario" = "haikou-cmt-uninet" ] ; then
-            HOST_EAST="210.37.45.149"    
+##FreeBSD  Haikou ==> Essen (MPTCP-West)/Single Path (SCTP and TCP)
+           
+	elif [ "$Scenario" = "haikou-Essen-SP-unicom-DFN" ] ; then
+            HOST_EAST="132.252.153.12"    
             ROUTER_NORTH="132.252.153.9"
-            NETWORK_NW="132.252.153.8/29"
-            NETWORK_NE="210.37.45.128/26"
+            NETWORK_NW="113.59.104.56/29"
+            NETWORK_NE="132.252.153.8/29"
             ROUTER_SOUTH=""
             NETWORK_SW=""
             NETWORK_SE="" 
 
-            HOST_WEST="132.252.153.10,89.246.242.228"
+            HOST_WEST="113.59.104.59"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
-            RemoteNode="$HOST_EAST:7000"
+            RemoteNode="$HOST_EAST:7110"
+
+	elif [ "$Scenario" = "haikou-Essen-SP-uninet-DFN-SP" ] ; then
+            HOST_EAST="132.252.153.12"    
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="210.37.45.128/26"
+            NETWORK_NE="132.252.153.8/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="210.37.45.149"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7110"
+
+
+	elif [ "$Scenario" = "haikou-Essen-SP-unicom-Versatel" ] ; then
+            HOST_EAST="89.246.242.227"    
+            ROUTER_NORTH="89.246.242.226"
+            NETWORK_NW="113.59.104.56/29"
+            NETWORK_NE="89.246.242.228/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="113.59.104.59"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7100"
+
+	elif [ "$Scenario" = "haikou-Essen-SP-uninet-Versatel-SP" ] ; then
+            HOST_EAST="89.246.242.227"    
+            ROUTER_NORTH="89.246.242.226"
+            NETWORK_NW="210.37.45.128/26"
+            NETWORK_NE="89.246.242.228/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+
+            HOST_WEST="210.37.45.149"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7100"
+
+
 
     elif [ "$Scenario" = "haikou-mptcp" ] ; then
             HOST_EAST="113.59.104.58"   

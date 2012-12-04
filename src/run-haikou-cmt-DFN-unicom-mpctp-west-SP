@@ -24,9 +24,9 @@ Directory="haikou-cmt-DFN-unicom-mpctp-west-SP"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3 4" # 5 6 7" #
+Run_VALUES="1 2" # 3" # 4 5 6 7" #
 Scenario_VALUES="haikou-cmt-DFN-unicom-mpctp-west-SP"
-Runtime_VALUES="90" # 300"  #120
+Runtime_VALUES="300"  #120 90
 Flows_VALUES="1"
 CompareWithReference_VALUES="false" # true"
 ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom

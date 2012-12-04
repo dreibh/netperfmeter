@@ -20,7 +20,7 @@
 # Contact: dreibh@iem.uni-due.de
 #
 Directory="haikou-cmt-Versatel-unicom-mpctp-west-SP"
-Run_VALUES="1 2 3 4" # 89.246.242.227 5 6 7" #
+Run_VALUES="1 2 3 4 5 6 7" #
 . ./measure-version2
 
 

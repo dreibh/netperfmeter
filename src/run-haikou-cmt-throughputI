@@ -24,8 +24,8 @@ Directory="haikou-cmt-throughputI"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3" # 4 5 6 7"
-Scenario_VALUES="haikou-cmt-unicom-mpctp-west"
+Run_VALUES="1 2 3 4 5  6 7 8 9 10" # 11 12 13 14" #
+Scenario_VALUES="haikou-cmt-from-mpctp-west"
 Runtime_VALUES="90 300" # 300"  #120
 Flows_VALUES="1"
 CompareWithReference_VALUES="false" # true"
@@ -34,9 +34,9 @@ OnlyOneAssoc_VALUES="true"
 FrameRate_VALUES="const0"
 FrameSize_VALUES="const1444"   # DSL-MTU!
 Unordered_VALUES="0.0"   # !!!
-SndBuf_VALUES="5000 100000 500000 1000000 2000000 500000 1000000 5000000 10000000 20000000"
+SndBuf_VALUES="5000 50000 100000 200000 300000 400000 500000 100000 500000 1000000 3000000 5000000 10000000 20000000"
 RcvBuf_VALUES=-1
-CMTCCVariant_VALUES="off cmt like-mptcp"
+CMTCCVariant_VALUES="cmt like-mptcp"
 OptionNRSACK_VALUES="true"
 OptionBufferSplitting_VALUES="bothSides"
 

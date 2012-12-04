@@ -131,9 +131,9 @@ if [ "$SYSTEM" = "FreeBSD" ] ; then
    /sbin/sysctl net.inet.sctp.buffer_splitting=$BUFFERSPLITTING >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.initial_cwnd=$INITIAL_CWND >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.cwnd_maxburst=$CWND_MAXBURST >/dev/null || success=0
-   /sbin/sysctl kern.ipc.maxsockbuf=100005000 >/dev/null || success=0      # This is the absolute socket buffer limit!
-   /sbin/sysctl net.inet.sctp.sendspace=10000000 >/dev/null || success=0   # SCTP limit, seems to need full pages!
-   /sbin/sysctl net.inet.sctp.recvspace=10000000 >/dev/null || success=0   # SCTP limit, seems to need full pages!
+   /sbin/sysctl kern.ipc.maxsockbuf=1000050000 >/dev/null || success=0      # This is the absolute socket buffer limit!
+#   /sbin/sysctl net.inet.sctp.sendspace=10000000 >/dev/null || success=0   # SCTP limit, seems to need full pages!
+#   /sbin/sysctl net.inet.sctp.recvspace=10000000 >/dev/null || success=0   # SCTP limit, seems to need full pages!
 
 # ====== Linux ==============================================================
 elif [ "$SYSTEM" = "Linux" ] ; then

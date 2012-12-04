@@ -24,7 +24,7 @@ Directory="haikou-cmt-Versatel-uninet-mpctp-west-SP"
 . ./measure-version2
 
 
-Run_VALUES="1 2 3 4" # 5 6 7" #
+Run_VALUES="1 2 3 4 5 6 7" #
 Scenario_VALUES="haikou-cmt-Versatel-uninet-mpctp-west-SP"
 Runtime_VALUES="90 300"  #120
 Flows_VALUES="1"

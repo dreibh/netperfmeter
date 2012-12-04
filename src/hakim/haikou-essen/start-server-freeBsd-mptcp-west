@@ -1,8 +1,8 @@
-#!/bin/bash
-# $Id: run-wp3-dsl-ccI 1140 2011-11-23 06:43:27Z dreibh $
+#!/bin/sh
+# $Id: start-servers-testbed 1140 2011-11-23 06:43:27Z dreibh $
 #
 # Network Performance Meter
-# Copyright (C) 2009-2012 by Thomas Dreibholz
+# Copyright (C) 2012 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,12 +17,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Contact: dreibh@iem.uni-due.de
 #
-#./run-haikou-cmt-DFN-unicom-mpctp-west-SP
-./run-haikou-cmt-DFN-uninet-mpctp-west-SP
+#
 
 
 
-#./run-haikou-cmt-Versatel-unicom-mpctp-west-SP
-./run-haikou-cmt-Versatel-uninet-mpctp-west-SP
+##CMT
+nohup ../.././netperfmeter 7000 -verbosity=0 -local=132.252.153.12,89.246.242.227 >server-DisjointPaths.log 2>&1 &
+
+
+##Single path
+#Primary: *-DFN
+nohup ../.././netperfmeter 7110 -verbosity=0 -local=113.59.104.59 >server-DisjointPaths.log 2>&1 &
+
+#Primary: *-Versatel
+nohup ../.././netperfmeter 7100 -verbosity=0 -local=210.37.45.149 >server-DisjointPaths.log 2>&1 &

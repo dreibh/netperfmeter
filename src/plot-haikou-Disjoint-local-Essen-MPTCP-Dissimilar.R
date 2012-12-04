@@ -12,7 +12,7 @@ simulationDirectory  <- "haikou-Disjoint-local-Essen-MPTCP-Dissimilar"
 plotColorMode        <- cmColor
 plotHideLegend       <- FALSE
 plotLegendSizeFactor <- 1.0
-plotOwnOutput        <- FALSE
+plotOwnOutput        <- TRUE
 plotFontFamily       <- "Helvetica"
 plotFontPointsize    <- 22
 plotWidth            <- 10
@@ -24,7 +24,7 @@ plotConfidence       <- 0.95
 # ------ Plots --------------------------------------------------------------
 plotConfigurations <- list(
 
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
+   list(simulationDirectory, "haikou-Disjoint-local-Essen-MPTCP-Dissimilar.pdf",
         "", NA, NA, list(1,0),
         "SndBuf", "passive.flow-ReceivedBitRate-Mbit",
         "DelayNorthernTrail", "", "ReferenceFlowProtocol",

@@ -8,11 +8,11 @@ source("plot-version1.R")
 
 
 # ------ Plotter Settings ---------------------------------------------------
-simulationDirectory  <- "haikou-Disjoint-local-Essen" 
+simulationDirectory  <- "haikou-Disjoint-local-Essen-Dissimilar" 
 plotColorMode        <- cmColor
 plotHideLegend       <- FALSE
-plotLegendSizeFactor <- 1.0
-plotOwnOutput        <- FALSE
+plotLegendSizeFactor <- 1.5
+plotOwnOutput        <- TRUE
 plotFontFamily       <- "Helvetica"
 plotFontPointsize    <- 22
 plotWidth            <- 10
@@ -24,11 +24,11 @@ plotConfidence       <- 0.95
 # ------ Plots --------------------------------------------------------------
 plotConfigurations <- list(
 
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
-        "", NA, NA, list(1,0),
+   list(simulationDirectory, "haikou-Disjoint-local-Essen-SCTP-Dissimilar.pdf",
+        "", NA, NA, list(1,0.5),
         "SndBuf", "passive.flow-ReceivedBitRate-Mbit",
         "DelayNorthernTrail", "CMTCCVariant", "ReferenceFlowProtocol",
-        "RateSouthernTrail", "", "DelaySouthernTrail",
+        "DelaySouthernTrail", "RateSouthernTrail", "",
         "TRUE", 
 	 "zColorArray <- c(\"darkgreen\", \"orange\", \"red\", \"blue\", \"gray50\")")
 )

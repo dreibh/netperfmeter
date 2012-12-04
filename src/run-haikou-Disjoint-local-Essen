@@ -23,7 +23,7 @@ BidirectionalQoS_VALUES="true"
 CwndMaxBurst_VALUES="true"
 
 # First trail
-RateNorthernTrail_VALUES="70000 50000 100000" 
+RateNorthernTrail_VALUES="30000 70000 50000 100000" 
 DelayNorthernTrail_VALUES="0 10 50"
 LossNorthernTrail_VALUES="0"
 

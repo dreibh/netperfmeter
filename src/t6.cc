@@ -386,7 +386,8 @@ int main(int argc, char** argv)
       exit(1);
    }
    if(local.sa.sa_family == AF_INET) {
-      if(setsockopt(sd, SOL_IP, IP_TOS, &opt, sizeof(opt)) < 0) {
+//      if(setsockopt(sd, SOL_IP, IP_TOS, &opt, sizeof(opt)) < 0) {
+	if(setsockopt(sd, IPPROTO_IP, IP_TOS, &opt, sizeof(opt)) < 0) {
          perror("setsockopt() of TOS failed");
          exit(1);
       }
