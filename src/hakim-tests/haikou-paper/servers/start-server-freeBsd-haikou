@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/local/bin/bash
 # $Id: start-servers-testbed 1140 2011-11-23 06:43:27Z dreibh $
 #
 # Network Performance Meter
@@ -18,8 +18,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #
-
-make -j2 || exit 1
 
 
 ##CMT
