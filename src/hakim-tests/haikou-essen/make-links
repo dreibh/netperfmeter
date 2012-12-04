@@ -1,0 +1,52 @@
+#!/usr/local/bin/bash
+# $Id: make-links 811 2011-05-23 14:09:28Z dreibh $
+# * --------------------------------------------------------------------------
+# *
+# *     //====//  //===== <===//===>  //====//
+# *    //        //          //      //    //    SCTP Optimization Project
+# *   //=====   //          //      //====//   ==============================
+# *        //  //          //      //           University of Duisburg-Essen
+# *  =====//  //=====     //      //
+# *
+# * --------------------------------------------------------------------------
+# *
+# *   Copyright (C) 2009-2010 by Thomas Dreibholz
+# *
+# *   This program is free software: you can redistribute it and/or modify
+# *   it under the terms of the GNU General Public License as published by
+# *   the Free Software Foundation, either version 3 of the License, or
+# *   (at your option) any later version.
+# *
+# *   This program is distributed in the hope that it will be useful,
+# *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+# *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# *   GNU General Public License for more details.
+# *
+# *   You should have received a copy of the GNU General Public License
+# *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# *
+
+
+TOOLCHAIN_DIR="../.."
+if [ "$1" != "" ] ; then
+   TOOLCHAIN_DIR="$1"
+fi
+
+if [ ! -e "$TOOLCHAIN_DIR/Toolchain.files" ] ; then
+   echo >&2 "ERROR: Cannot find file SimProcTC.files in directory \"$TOOLCHAIN_DIR\"!"
+   echo >&2 "Usage: $0 [Tool-Chain Directory]"
+   exit 1
+fi
+
+FILES="`cat $TOOLCHAIN_DIR/Toolchain.files`"
+for f in $FILES ; do
+   if [ -e $f ] ; then
+      rm $f
+   fi
+   echo "Sym-linking $TOOLCHAIN_DIR/$f ..."
+   if [ ! -e "$TOOLCHAIN_DIR/$f" ] ; then
+      echo >&2 "ERROR: $TOOLCHAIN_DIR/$f does not exist!"
+      exit 1
+   fi
+   ln -s "$TOOLCHAIN_DIR/$f" .
+done
