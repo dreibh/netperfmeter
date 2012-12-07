@@ -1,0 +1,35 @@
+#!/bin/bash
+
+loop_couter=1
+maximum_runs=2
+host_name=$(cat /etc/rc.conf |grep hostname |cut -d '"' -f 2)
+
+
+file_name="ping-$host_name.txt"
+
+date_value=$(date)
+backup_file_name="$host_name-$date_value.txt"
+mv  $file_name $backup_file_name
+
+path_unicom="$host_name-1135910458"
+path_uninet="$host_name-2103745148"
+
+
+
+while [ $loop_couter -ne 0 ] #always running untli manual stop
+do
+	echo "ping number $loop_couter"
+	date_value=$(date)
+	ping_value=$(ping -c 1 113.59.104.58 |grep ttl)
+	line_value="$loop_couter $path_unicom $date_value $ping_value"
+	echo $line_value >>$file_name
+
+	date_value=$(date)
+	ping_value=$(ping -c 1 210.37.45.148 |grep ttl)
+	line_value="$loop_couter $path_uninet $date_value $ping_value"
+	echo $line_value >>$file_name
+
+	sleep 60
+	
+	loop_couter=$(( $loop_couter + 1 ))
+done
