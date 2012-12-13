@@ -10,9 +10,9 @@ source("plot-version1.R")
 # ------ Plotter Settings ---------------------------------------------------
 simulationDirectory  <- "haikou-local-Freebsd-SP"
 plotColorMode        <- cmColor
-plotHideLegend       <- FALSE
+plotHideLegend       <- TRUE
 plotLegendSizeFactor <- 1.0
-plotOwnOutput        <- FALSE
+plotOwnOutput        <- TRUE
 plotFontFamily       <- "Helvetica"
 plotFontPointsize    <- 22
 plotWidth            <- 10
@@ -22,18 +22,32 @@ plotConfidence       <- 0.95
 # ###########################################################################
 
 # ------ Plots --------------------------------------------------------------
+
 plotConfigurations <- list(
 
-
-   list(simulationDirectory, paste(sep="", simulationDirectory, "-ReceivedBitRate.pdf"),
-        "SinglePath", NA, NA, list(1,1),
+   list(simulationDirectory  , "similar-2x70MB_zoom.pdf",
+        "", seq(0, 1000000, 200000), seq(40, 140, 20), list(1,0.5), 
         "SndBuf", "passive.flow-ReceivedBitRate-Mbit",
-        "Protocol", "", "",
-        "DelayNorthernTrail", "", "RateNorthernTrail-Mbit",
-        "TRUE", 
-	 "zColorArray <- c(\"darkgreen\", \"orange\", \"red\", \"blue\", \"gray50\")")
+        "Protocol", "CMTCCVariant", "",
+        "DelayNorthernTrail", "", "RateNorthernTrail",
+        "
+           (data1$RateNorthernTrail == 70000) &
+           (data1$DelayNorthernTrail == 0)
+        ", 
+	 "zColorArray <- c(\"darkgreen\", \"red\", \"blue\", \"orange\", \"gray50\")"),
+	 
+    list(simulationDirectory  , "similar-2x70MB.pdf",
+        "", NA, seq(40, 140, 20), list(1,0.5),
+        "SndBuf", "passive.flow-ReceivedBitRate-Mbit",
+        "Protocol", "CMTCCVariant", "",
+        "DelayNorthernTrail", "", "RateNorthernTrail",
+        "
+           (data1$RateNorthernTrail == 70000) &
+           (data1$DelayNorthernTrail == 0)
+        ", 
+	 "zColorArray <- c(\"darkgreen\", \"red\", \"blue\", \"orange\", \"gray50\")")
 )
-#RateNorthernTrail-Mbit
+
 
 # ------ Variable templates -------------------------------------------------
 plotVariables <- append(list(
