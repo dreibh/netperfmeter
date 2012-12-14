@@ -195,7 +195,40 @@ perform_run ()
             HOST_WEST="132.252.153.10,89.246.242.228"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
+
+##MPTCP Ubuntu Essen West ==> east (old SCTP machines running ubuntu)
   
+
+	elif [ "$Scenario" = "West-east-MPTCP-Ubuntu" ] ; then
+            HOST_EAST="132.252.153.18"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="132.252.153.16/29"
+            ROUTER_SOUTH="132.252.153.137"
+            NETWORK_SW="132.252.153.136/29"
+            NETWORK_SE="132.252.153.144/29"
+
+            HOST_WEST="132.252.153.10"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+##MPTCP Ubuntu Essen MPTCP-West ==> MPTCP-east (new machines)
+  
+
+	elif [ "$Scenario" = "West-east-MPTCP-Ubuntu" ] ; then
+            HOST_EAST="132.252.153.19"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="132.252.153.16/29"
+            ROUTER_SOUTH="132.252.153.137"
+            NETWORK_SW="132.252.153.136/29"
+            NETWORK_SE="132.252.153.144/29"
+
+            HOST_WEST="132.252.153.12"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+
 ##CMT-SCTP FreeBSD Essen (MPTCP-West) ==> Haikou /CMT
 
 	elif [ "$Scenario" = "Essen_Haikou-cmt-DFN-unicom" ] ; then
