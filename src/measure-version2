@@ -204,13 +204,30 @@ perform_run ()
             ROUTER_NORTH="132.252.153.9"
             NETWORK_NW="132.252.153.8/29"
             NETWORK_NE="132.252.153.16/29"
-            ROUTER_SOUTH="132.252.153.137"
-            NETWORK_SW="132.252.153.136/29"
-            NETWORK_SE="132.252.153.144/29"
+            ROUTER_SOUTH="89.246.242.226"
+            NETWORK_SW="89.246.242.228/29"
+            NETWORK_SE="89.246.242.228/29"
 
             HOST_WEST="132.252.153.10"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
+
+##MPTCP Ubuntu Essen MPTCP-West ==> MPTCPeast (DELL machines running ubuntu)
+  
+
+	elif [ "$Scenario" = "MPCTP-West_MPCTP-east-MPTCP-Ubuntu" ] ; then
+            HOST_EAST="132.252.153.19"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="132.252.153.16/29"
+            ROUTER_SOUTH="89.246.242.226"
+            NETWORK_SW="89.246.242.228/29"
+            NETWORK_SE="89.246.242.228/29"
+
+            HOST_WEST="132.252.153.12"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
 
 ##MPTCP Ubuntu Essen MPTCP-West ==> MPTCP-east (new machines)
   
@@ -220,9 +237,9 @@ perform_run ()
             ROUTER_NORTH="132.252.153.9"
             NETWORK_NW="132.252.153.8/29"
             NETWORK_NE="132.252.153.16/29"
-            ROUTER_SOUTH="132.252.153.137"
-            NETWORK_SW="132.252.153.136/29"
-            NETWORK_SE="132.252.153.144/29"
+            ROUTER_SOUTH="89.246.242.226"
+            NETWORK_SW="89.246.242.228/29"
+            NETWORK_SE="89.246.242.228/29"
 
             HOST_WEST="132.252.153.12"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
@@ -449,6 +466,33 @@ perform_run ()
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7100"
 
+
+##MPTCP Ubuntu Essen (MPTCP-east) ==> Haikou-ubuntu /CMT ==> now from west no more from mptcp-east
+
+	elif [ "$Scenario" = "Essen_Haikou-MPTCP-DFN-unicom_from-MPTCP-East" ] ; then
+            HOST_EAST="113.59.104.58"    
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="113.59.104.56/29"
+            ROUTER_SOUTH=""
+            NETWORK_SW=""
+            NETWORK_SE="" 
+            HOST_WEST="132.252.153.10"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+#	elif [ "$Scenario" = "Essen_Haikou-MPTCP-DFN-unicom_from-MPTCP-East" ] ; then
+#            HOST_EAST="210.37.45.148"    
+#            ROUTER_NORTH="132.252.153.9"
+#            NETWORK_NW="132.252.153.8/29"
+#            NETWORK_NE="210.37.45.128/26"
+#            ROUTER_SOUTH=""
+#            NETWORK_SW=""
+#            NETWORK_SE="" 
+
+#            HOST_WEST="132.252.153.10"
+#            LocalOpts="$LocalOpts -local=$HOST_WEST"
+#            RemoteNode="$HOST_EAST:7000"
 
 
     elif [ "$Scenario" = "haikou-mptcp" ] ; then
