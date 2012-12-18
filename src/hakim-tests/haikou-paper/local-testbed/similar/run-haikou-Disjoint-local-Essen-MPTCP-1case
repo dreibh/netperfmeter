@@ -25,7 +25,7 @@ Directory="haikou-Disjoint-local-Essen-MPTCP"
 
 
 Run_VALUES=$1
-Scenario_VALUES="DisjointPaths-mptcp"
+Scenario_VALUES="West-east-MPTCP-Ubuntu"
 Runtime_VALUES=$2
 Flows_VALUES="1"
 CompareWithReference_VALUES="false"
@@ -35,7 +35,7 @@ FrameSize_VALUES="const1444"   # DSL-MTU!
 SndBuf_VALUES=$3
 RcvBuf_VALUES=-1
 Protocol_VALUES="TCP"
-CMTCCVariant_VALUES="mptcp" 
+CMTCCVariant_VALUES="off" 
 BidirectionalQoS_VALUES="true"
 CwndMaxBurst_VALUES="true"
 

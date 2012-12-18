@@ -42,7 +42,7 @@ echo start .run-haikou-Disjoint-local-Essen-MPTCP-1case
 echo
 echo
 echo
-./run-haikou-Disjoint-local-Essen-MPTCP-1case "1 2 3 4" "$time_value" "5000 50000 100000 150000 300000 400000 500000 750000 1000000 1250000 1500000"
+./run-haikou-Disjoint-local-Essen-MPTCP-1case "1 2 3 4 5" "$time_value" "5000 50000 100000 150000 300000 400000 500000 750000 1000000 1250000 1500000"
 
 
 
@@ -56,7 +56,7 @@ cd ~/src/netperfmeter/src/hakim-tests/haikou-paper/local-testbed/dissimilar
 
 echo run-haikou-Disjoint-local-Essen-MPTCP-Dissimilar-1case
 echo
-./run-haikou-Disjoint-local-Essen-MPTCP-Dissimilar-1case  "1 2 3 4" "$time_value" "5000 50000 100000 200000 300000 400000 450000 500000 750000 1000000 1250000 1500000"
+./run-haikou-Disjoint-local-Essen-MPTCP-Dissimilar-1case  "1 2 3 4 5" "$time_value" "5000 50000 100000 200000 300000 400000 450000 500000 750000 1000000 1250000 1500000"
 
 
 
