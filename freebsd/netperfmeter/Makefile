@@ -6,7 +6,7 @@
 #
 
 PORTNAME=	netperfmeter
-PORTVERSION=	1.1.7
+PORTVERSION=	1.3.0
 CATEGORIES=	benchmarks
 MASTER_SITES=	http://www.iem.uni-due.de/~dreibh/netperfmeter/download/ http://www.exp-math.uni-essen.de/~dreibh/netperfmeter/download/
 
@@ -17,7 +17,7 @@ GNU_CONFIGURE=	yes
 USE_GMAKE=	yes
 
 PLIST_FILES=	bin/netperfmeter
-MAN8=		netperfmeter.8
+MAN1=		netperfmeter.1
 
 LICENSE=	GPLv3
 LICENSE_FILE=	${WRKSRC}/COPYING
