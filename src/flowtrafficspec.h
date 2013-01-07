@@ -1,6 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
+ * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2012 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +17,8 @@
  * You should have relReceived a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Contact: dreibh@iem.uni-due.de
+ * Contact: sebastian.wallat@uni-due.de
+ *          dreibh@iem.uni-due.de
  */
 
 #ifndef FLOWTRAFFICSPEC_H
@@ -75,6 +77,7 @@ class FlowTrafficSpec
    uint8_t                CCID;
 
    bool                   ErrorOnAbort;
+   bool                   TCPNoDelay;
 };
 
 #endif

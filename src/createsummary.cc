@@ -26,6 +26,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <unistd.h>
 
 #include "simpleredblacktree.h"
 #include "inputfile.h"

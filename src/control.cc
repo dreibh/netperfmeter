@@ -1,6 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
+ * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2012 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Contact: dreibh@iem.uni-due.de
+ * Contact: sebastian.wallat@uni-due.de, dreibh@iem.uni-due.de
  */
 
 #include "control.h"
@@ -154,6 +155,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    NetPerfMeterAddFlowMessage* addFlowMsg = (NetPerfMeterAddFlowMessage*)&addFlowMsgBuffer;
    addFlowMsg->Header.Type   = NETPERFMETER_ADD_FLOW;
    addFlowMsg->Header.Flags  = 0x00;
+   addFlowMsg->TCPNoDelay	 = uint8_t((flow->getTrafficSpec().TCPNoDelay) ? 1 : 0);
    addFlowMsg->CCID          = flow->getTrafficSpec().CCID;
    addFlowMsg->CMT           = flow->getTrafficSpec().CMT;
    if(flow->getTrafficSpec().CMT > 0) {
@@ -768,6 +770,8 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
             trafficSpec.CMT = NPAF_CMT;
          }
       }
+
+      trafficSpec.TCPNoDelay = (addFlowMsg->TCPNoDelay != 0) ? true : false;
 
       Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
                             ntohs(addFlowMsg->StreamID), trafficSpec,

@@ -1,6 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
+ * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2012 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Contact: dreibh@iem.uni-due.de
+ * Contact: sebastian.wallat@uni-due.de
+ *          dreibh@iem.uni-due.de
  */
 
 #include <stdio.h>
@@ -362,9 +364,24 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       n = m;
    }
+   else if (strncmp(parameters,"tcp_no_delay=", 13) == 0) {
+	   std::cout << "Found tcp_no_delay" << std::endl;
+	   if(strncmp((const char*)&parameters[13], "on", 2) == 0) {
+		   trafficSpec.TCPNoDelay = true;
+		   n = 13 + 2;
+	   }
+	   else if(strncmp((const char*)&parameters[13], "off", 3) == 0) {
+		   trafficSpec.TCPNoDelay = false;
+		   n = 13 + 3;
+	   }
+	   else {
+		   cerr << "ERROR: Invalid \"tcp_no_delay\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+		   exit(1);
+	   }
+   }
    else {
-      cerr << "ERROR: Invalid options " << parameters << "!" << endl;
-      exit(1);
+	   cerr << "ERROR: Invalid options " << parameters << "!" << endl;
+	   exit(1);
    }
    if(parameters[n] == 0x00) {
       return(NULL);
@@ -1049,7 +1066,7 @@ int main(int argc, char** argv)
       }
    }
    if(gOutputVerbosity >= NPFOV_STATUS) {
-      cout << "Network Performance Meter - Version 1.0" << endl
+      cout << "Network Performance Meter - Version 1.3.1" << endl
            << "---------------------------------------" << endl << endl;
    }
 

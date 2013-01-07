@@ -1,6 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
+ * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2012 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Contact: dreibh@iem.uni-due.de
+ * Contact: sebastian.wallat@uni-due.de
+ *          dreibh@iem.uni-due.de
  */
 
 #ifndef NETMETERPACKETS_H
@@ -96,6 +98,8 @@ struct NetPerfMeterAddFlowMessage
 
    uint8_t              CMT;
    uint8_t              CCID;
+
+   uint8_t              TCPNoDelay;
 
    uint16_t             OnOffEvents;
    uint32_t             OnOffEvent[];

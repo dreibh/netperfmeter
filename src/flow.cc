@@ -1,6 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
+ * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2012 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +17,8 @@
  * You should have relReceived a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Contact: dreibh@iem.uni-due.de
+ * Contact: sebastian.wallat@uni-die.de
+ *          dreibh@iem.uni-due.de
  */
 
 #include "flow.h"
@@ -28,6 +30,7 @@
 #include <poll.h>
 #include <assert.h>
 #include <math.h>
+#include <netinet/tcp.h>
 
 
 // Flow Manager Singleton object
@@ -1215,6 +1218,16 @@ bool Flow::configureSocket(const int socketDescriptor)
                      << strerror(errno) << "!" << std::endl;
            return(false);
        }
+    }
+    if(TrafficSpec.Protocol == IPPROTO_TCP) {
+    	if (TrafficSpec.TCPNoDelay) {
+    		int on = 1;
+    		if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof(on)) < 0) {
+    			std::cerr << "ERROR: Failed to set TCP_NODELAY on socket - "
+    					  << strerror(errno) << "!" << std::endl;
+    			return(false);
+    		}
+    	}
     }
     if(TrafficSpec.Protocol == IPPROTO_SCTP) {
 #ifdef SCTP_CMT_ON_OFF

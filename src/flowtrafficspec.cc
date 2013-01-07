@@ -1,6 +1,7 @@
 /* $Id$
  *
  * Network Performance Meter
+ * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2012 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +17,8 @@
  * You should have relReceived a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Contact: dreibh@iem.uni-due.de
+ * Contact: sebastian.wallat@uni-due.de
+ *          dreibh@iem.uni-due.de
  */
 
 #include "flowtrafficspec.h"
@@ -124,6 +126,10 @@ void FlowTrafficSpec::print(std::ostream& os) const
    os << "}" << std::endl;
    os << "      - Error on Abort:      "
       << ((ErrorOnAbort == true) ? "yes" : "no") << std::endl;
+   if(Protocol == IPPROTO_TCP) {
+	   os << "      - TCP No Delay:        "
+		  << ((TCPNoDelay == true) ? "yes" : "no") << std::endl;
+   }
    os << "      - CMT:                 #" << (unsigned int)CMT << " ";
    switch(CMT) {
       case NPAF_PRIMARY_PATH:
@@ -159,6 +165,7 @@ void FlowTrafficSpec::reset()
    RetransmissionTrials     = ~0;
    RetransmissionTrialsInMS = true;
    ErrorOnAbort             = true;
+   TCPNoDelay               = false;
    CMT                      = 0x00;
    CCID                     = 0x00;
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
