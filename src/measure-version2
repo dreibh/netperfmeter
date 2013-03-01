@@ -154,7 +154,20 @@ perform_run ()
 
             HOST_WEST="132.252.153.12,89.246.242.227"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
-            RemoteNode="$HOST_EAST:7010"
+            RemoteNode="$HOST_EAST:7000"
+
+         elif [ "$Scenario" = "DisjointPaths-mptcp-4paths" ] ; then
+            HOST_EAST="132.252.153.19"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="0.0.0.0/0"
+            ROUTER_SOUTH="132.252.153.137"
+            NETWORK_SW="132.252.153.136/29"
+            NETWORK_SE="0.0.0.0/0"
+
+            HOST_WEST="132.252.153.12,132.252.153.139"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
 
          elif [ "$Scenario" = "SharedBottleneck" ] ; then
             HOST_EAST="132.252.153.18"
@@ -227,6 +240,22 @@ perform_run ()
             HOST_WEST="132.252.153.12"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
+
+
+
+        elif [ "$Scenario" = "MPCTP-West_MPCTP-east-MPTCP-Ubuntu-4paths" ] ; then
+            HOST_EAST="132.252.153.19"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="0.0.0.0/0"
+            ROUTER_SOUTH="132.252.153.137"
+            NETWORK_SW="132.252.153.136/29"
+            NETWORK_SE="0.0.0.0/0"
+
+            HOST_WEST="132.252.153.12"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
 
 
 ##MPTCP Ubuntu Essen MPTCP-West ==> MPTCP-east (new machines)
