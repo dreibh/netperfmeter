@@ -1,0 +1,17 @@
+#!/bin/sh
+
+
+
+
+~/src/netperfmeter/src/rootshell /sbin/ipfw 1 delete pipe 1 
+~/src/netperfmeter/src/rootshell /sbin/ipfw 1 delete pipe 2
+~/src/netperfmeter/src/rootshell /sbin/ipfw 1 delete pipe 3
+
+
+~/src/netperfmeter/src/rootshell  /sbin/ipfw add 1 pipe 1 in src-ip 0.0.0.0/0 dst-ip 132.252.153.19
+~/src/netperfmeter/src/rootshell  /sbin/ipfw pipe 1 config bw 3000Kbit/s delay 0ms plr 0  queue 80 red 0.002/20/80/0.02
+
+
+~/src/netperfmeter/src/rootshell  /sbin/ipfw add 1 pipe 2 in src-ip 0.0.0.0/0 dst-ip 132.252.153.147
+~/src/netperfmeter/src/rootshell  /sbin/ipfw pipe 2 config bw 800Kbit/s delay 0ms plr 0  queue 80 red 0.002/20/80/0.02
+
