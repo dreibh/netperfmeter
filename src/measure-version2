@@ -162,6 +162,60 @@ perform_run ()
             NETWORK_NW="132.252.153.8/29"
             NETWORK_NE="0.0.0.0/0"
             ROUTER_SOUTH="132.252.153.137"
+            NETWORK_SW="89.246.242.228/29"
+            NETWORK_SE="0.0.0.0/0"
+
+            HOST_WEST="132.252.153.12,132.252.153.139"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+
+        elif [ "$Scenario" = "MPCTP-West_MPCTP-east-SCTP-4paths-8-16" ] ; then
+            HOST_EAST="132.252.153.19"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="0.0.0.0/0"
+            ROUTER_SOUTH="132.252.153.137"
+            NETWORK_SW="132.252.153.136/29"
+            NETWORK_SE="0.0.0.0/0"
+
+            HOST_WEST="132.252.153.12,132.252.153.139"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+        elif [ "$Scenario" = "MPCTP-West_MPCTP-east-SCTP-4paths-136-16" ] ; then
+            HOST_EAST="132.252.153.19"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="0.0.0.0/0"
+            ROUTER_SOUTH="132.252.153.137"
+            NETWORK_SW="132.252.153.136/29"
+            NETWORK_SE="0.0.0.0/0"
+
+            HOST_WEST="132.252.153.139,132.252.153.12"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+
+        elif [ "$Scenario" = "MPCTP-West_MPCTP-east-SCTP-4paths-136-144" ] ; then
+            HOST_EAST="132.252.153.147"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="0.0.0.0/0"
+            ROUTER_SOUTH="132.252.153.137"
+            NETWORK_SW="132.252.153.136/29"
+            NETWORK_SE="0.0.0.0/0"
+
+            HOST_WEST="132.252.153.139,132.252.153.12"
+            LocalOpts="$LocalOpts -local=$HOST_WEST"
+            RemoteNode="$HOST_EAST:7000"
+
+        elif [ "$Scenario" = "MPCTP-West_MPCTP-east-SCTP-4paths-8-144" ] ; then
+            HOST_EAST="132.252.153.147"
+            ROUTER_NORTH="132.252.153.9"
+            NETWORK_NW="132.252.153.8/29"
+            NETWORK_NE="0.0.0.0/0"
+            ROUTER_SOUTH="132.252.153.137"
             NETWORK_SW="132.252.153.136/29"
             NETWORK_SE="0.0.0.0/0"
 
@@ -192,7 +246,7 @@ perform_run ()
             NETWORK_SW=""
             NETWORK_SE=""
 
-            HOST_WEST="132.252.153.10,89.246.242.228"
+            HOST_WEST="132.252.153.10,89..246.242.228"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 			
@@ -256,8 +310,6 @@ perform_run ()
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 
-
-
 ##MPTCP Ubuntu Essen MPTCP-West ==> MPTCP-east (new machines)
   
 
@@ -286,7 +338,7 @@ perform_run ()
             NETWORK_SW=""
             NETWORK_SE="" 
 
-            HOST_WEST="132.252.153.12"
+            HOST_WEST="132.252.153.12,89.246.242.227"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 
@@ -299,7 +351,7 @@ perform_run ()
             NETWORK_SW=""
             NETWORK_SE="" 
 
-            HOST_WEST="132.252.153.12"
+            HOST_WEST="132.252.153.12,89.246.242.227"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 
@@ -313,7 +365,7 @@ perform_run ()
             NETWORK_SW=""
             NETWORK_SE="" 
 
-            HOST_WEST="89.246.242.227"
+            HOST_WEST="89.246.242.227,132.252.153.12"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 
@@ -326,7 +378,7 @@ perform_run ()
             NETWORK_SW=""
             NETWORK_SE="" 
 
-            HOST_WEST="89.246.242.227"
+            HOST_WEST="89.246.242.227,132.252.153.12"
             LocalOpts="$LocalOpts -local=$HOST_WEST"
             RemoteNode="$HOST_EAST:7000"
 
