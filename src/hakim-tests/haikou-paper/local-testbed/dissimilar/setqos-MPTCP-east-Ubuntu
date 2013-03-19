@@ -1,0 +1,20 @@
+#!/bin/sh
+
+
+INTERFACES=`eval "ifconfig -a" 2>/dev/null | sed -ne 's|^\('$cur'[^[:space:][:punct:]]\{1,\}\).*$|\1|p'`
+
+for iface in $INTERFACES ; do
+    tc qdisc del dev $iface root 2>/dev/null   # Ohne ID-Angabe wird Root mit jeder ID entfernt!
+done
+
+
+tc qdisc add dev eth0 root handle 92:0 cbq bandwidth 100Mbit avpkt 1000 cell 8
+tc class add dev eth0 parent 92:0 classid 92:3 cbq   bandwidth 100Mbit rate 3000Kbit      prio 8 allot 1514 cell 8 avpkt 1000 bounded
+tc qdisc add dev eth0 parent 92:3 handle 82:0 netem         delay 0ms loss 0.000000000000000% corrupt 0.000000000000000%
+tc filter add dev eth0 protocol ip parent 92:0             u32 match ip src 0.0.0.0/0 match ip dst 0.0.0.0/0 flowid 92:3
+
+
+tc qdisc add dev eth1 root handle 92:0 cbq bandwidth 100Mbit avpkt 1000 cell 8
+tc class add dev eth1 parent 92:0 classid 92:3 cbq   bandwidth 100Mbit rate 800Kbit      prio 8 allot 1514 cell 8 avpkt 1000 bounded
+tc qdisc add dev eth1 parent 92:3 handle 82:0 netem         delay 0ms loss 0.000000000000000% corrupt 0.000000000000000%
+tc filter add dev eth1 protocol ip parent 92:0             u32 match ip src 0.0.0.0/0 match ip dst 0.0.0.0/0 flowid 92:3
