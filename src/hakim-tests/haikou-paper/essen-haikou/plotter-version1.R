@@ -484,7 +484,7 @@ plotstd3 <- function(mainTitle,
       yLabel <- getLabel(yTitle)
 
       mtext(parse(text=xLabel), col=frameColor,
-            side = 1, adj=0.5, line=2.25,
+            side = 1, adj=0.5, line=2.5,
             xpd = NA, font = par("font.main"), cex = par("cex"))
       mtext(parse(text=yLabel), col=frameColor,
             side = 2, adj=0.5, line=2.25,

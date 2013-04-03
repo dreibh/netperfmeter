@@ -8,7 +8,7 @@ source("plot-version1-multiple-folders.R")
 
 
 # ------ Plotter Settings ---------------------------------------------------
-simulationDirectorySet  <- list("DFN-Cernet-CMT", "DFN-Unicom-CMT", "Versatel-Cernet-CMT", "Versatel-unicom-CMT", "DFN-Cernet-mptcp", "DFN-Unicom-mptcp", "Versatel-Cernet-mptcp", "Versatel-Unicom-mptcp")
+simulationDirectorySet  <- list("DFN-Cernet-mptcp", "DFN-Unicom-mptcp", "Versatel-Cernet-mptcp", "Versatel-Unicom-mptcp")
 #simulationDirectorySet  <- list("DFN-Cernet-SP", "DFN-Unicom-SP", "Versatel-Cernet-SP", "Versatel-Unicom-SP")
 #simulationDirectorySet  <- list("/media/storage/Dropbox/Ubuntu-VM-Prince/essen-haikou/")
 
@@ -28,16 +28,15 @@ plotConfidence       <- 0.95
 # ------ Plots --------------------------------------------------------------
 plotConfigurations <- list(
 
-   list(simulationDirectorySet, "haikou-essen_300s.pdf",
+   list(simulationDirectorySet, "haikou-essen_mptcp.pdf",
         "", seq(0,10,0.5), seq(0,2.5,0.5), list(1,1),
         "OptionBufferSplitting", "passive.flow-ReceivedBitRate-Mbit",
-        "CMTCCVariant", "", "",
+        "SndBuf", "", "",
         #"simulationDirectory", "", "",
         "", "", "",
         "TRUE",
   #    #  "data1$SndBuf==6000000", 
-	 "zColorArray <- c(\"darkgreen\", \"red\", \"blue\", \"gray50\")")
-#	"zColorArray <- c(\"darkgreen\", \"orange\", \"red\", \"blue\", \"gray50\")")
+	 "zColorArray <- c(\"darkgreen\", \"orange\", \"red\", \"blue\", \"gray50\")")
 # 	 ,
 # 	 
 #    list(simulationDirectorySet, "haikou-essen_300s.pdf",
