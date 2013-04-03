@@ -1,0 +1,17 @@
+   DESTINATION="/media/storage/svn-git/docs/papers-Essen/InProgress/pams2013_new/Measurements/Original/figure10"
+   
+   mkdir -p $DESTINATION/S1-R1/Results
+   mkdir -p $DESTINATION/S1-R2/Results
+   mkdir -p $DESTINATION/S2-R1/Results
+   mkdir -p $DESTINATION/S2-R2/Results
+   cp S1-R1/Results/passive.flow-ReceivedByteRate.data.bz2 \
+      $DESTINATION/S1-R1/Results/passive.flow-ReceivedByteRate.data.bz2
+   cp S1-R2/Results/passive.flow-ReceivedByteRate.data.bz2 \
+      $DESTINATION/S1-R2/Results/passive.flow-ReceivedByteRate.data.bz2
+   cp S2-R1/Results/passive.flow-ReceivedByteRate.data.bz2 \
+      $DESTINATION/S2-R1/Results/passive.flow-ReceivedByteRate.data.bz2
+   cp S2-R2/Results/passive.flow-ReceivedByteRate.data.bz2 \
+      $DESTINATION/S2-R2/Results/passive.flow-ReceivedByteRate.data.bz2
+
+    rm -f *~
+    cp * $DESTINATION

@@ -1,0 +1,44 @@
+
+#!/bin/bash
+# $Id: run-wp3-dsl-ccI 1140 2011-11-23 06:43:27Z dreibh $
+#
+# Network Performance Meter
+# Copyright (C) 2009-2012 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+
+
+
+RateNorthernTrail="200 500 800 1000 1250 1500  1750 2001 2250  2500 2750 3000" 
+
+
+
+time="300" 
+waittime=1
+
+runnumber=4
+n=5
+run_value="1 2"
+
+
+	./run-local-multiple-bandwith-disimilar-SCTP-4paths "8-16" "$run_value" "$time" "$RateNorthernTrail" "MPCTP-West_MPCTP-east-SCTP-4paths-8-16"
+
+
+	./run-local-multiple-bandwith-disimilar-SCTP-4paths "136-16" "$run_value" "$time" "$RateNorthernTrail" "MPCTP-West_MPCTP-east-SCTP-4paths-136-16"
+
+	./run-local-multiple-bandwith-disimilar-SCTP-4paths "136-144" "$run_value" "$time" "$RateNorthernTrail"  "MPCTP-West_MPCTP-east-SCTP-4paths-136-144"
+
+	./run-local-multiple-bandwith-disimilar-SCTP-4paths "8-144" "$run_value" "$time" "$RateNorthernTrail"  "MPCTP-West_MPCTP-east-SCTP-4paths-8-144"

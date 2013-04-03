@@ -1,0 +1,67 @@
+#!/bin/bash
+# $Id: run-wp3-dsl-ccI 1140 2011-11-23 06:43:27Z dreibh $
+#
+# Network Performance Meter
+# Copyright (C) 2009-2012 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: dreibh@iem.uni-due.de
+#
+
+Directory="haikou-Disjoint-local-Essen"
+. ./measure-version2
+
+
+Run_VALUES="1 2 3 4 5" # 6 7 5 9 10" 
+Scenario_VALUES="DisjointPaths-mptcp"
+Runtime_VALUES="300"
+Flows_VALUES="1"
+CompareWithReference_VALUES="false" # true"
+ReferenceFlowProtocol_VALUES="SCTP"   # Protokoll für Referenzstrom
+OnlyOneAssoc_VALUES="true"
+FrameRate_VALUES="const0"
+FrameSize_VALUES="const1444"   # DSL-MTU!
+Unordered_VALUES="0.0"   # !!!
+#SndBuf_VALUES="1000000 6000000"
+SndBuf_VALUES="6000000" 
+
+
+
+
+RcvBuf_VALUES=-1
+CMTCCVariant_VALUES="like-mptcp" 
+OptionNRSACK_VALUES="true"
+OptionBufferSplitting_VALUES="bothSides"
+
+BidirectionalQoS_VALUES="true"
+CwndMaxBurst_VALUES="false"
+
+# First trail
+RateNorthernTrail_VALUES="200 800 1000 2000 3000 4000 5000 6000 7000 8000 9000 10000"
+
+
+
+#DelayNorthernTrail_VALUES="0 200" #
+DelayNorthernTrail_VALUES="0 200" # 
+
+
+
+# Second trail
+RateSouthernTrail_VALUES="800"
+
+
+
+perform_measurements
+
