@@ -36,17 +36,6 @@
 #include "control.h"
 #include "transfer.h"
 
-#ifdef HAVE_MPTCP
-// ====== Constants for draft-ietf-mptcp-api-04 =============================
-// FIXME: This should really be set within a standard include file!
-#warning linux/tcp.h does not work with C++ code. Using ugly workaround!
-// #include <linux/tcp.h>
-#define TCP_MULTIPATH_ENABLE   19
-#define TCP_MULTIPATH_ADD      20
-#define TCP_MULTIPATH_REMOVE   21
-// ==========================================================================
-#endif
-
 
 using namespace std;
 
@@ -738,6 +727,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
            << strerror(errno) << "!" << endl;
       exit(1);
    }
+   /* !!! FIXME: TCP_MULTIPATH_ENABLE is not implemented by current MPTCP! !!!
    int cmtOnOff = 1;
    if(ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
       std::cerr << "NOTE: Compiled with MPTCP support, but unable to initialize it: "
@@ -753,6 +743,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
          exit(1);
       }
    }
+   */
 #endif
 
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
