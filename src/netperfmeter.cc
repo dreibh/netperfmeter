@@ -590,7 +590,7 @@ bool mainLoop(const bool               isActiveMode,
               const unsigned long long stopAt,
               const uint64_t           measurementID)
 {
-   pollfd                 fds[5];
+   pollfd                 fds[6];
    int                    n         = 0;
    int                    controlID = -1;
    int                    tcpID     = -1;
