@@ -1,1 +1,6 @@
 src/netperfmeter.1
+src/createsummary.1
+src/combinesummaries.1
+src/extractvectors.1
+# src/ldcalc.1
+# src/runtimeestimator.1
