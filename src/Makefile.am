@@ -7,27 +7,25 @@ netperfmeter_LDADD   = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread -
 
 
 # ###### Plotting programs ##################################################
-dist_man_MANS = netperfmeter.1
+dist_man_MANS     = netperfmeter.1 plot-netperfmeter-results.1 createsummary.1 combinesummaries.1 extractvectors.1 pdfmetadata.1 pdfembedfonts.1
+dist_bin_SCRIPTS  = plot-netperfmeter-results pdfmetadata pdfembedfonts
+# nodist_EXTRA_DIST   = plotter.R plot-netperfmeter-results.R
+dist_pkgdata_DATA = plotter.R plot-netperfmeter-results.R
 
-nodist_bin_SCRIPTS  = plot-netperfmeter-results pdfmetadata pdfembedfonts
-nodist_man_MANS     = plot-netperfmeter-results.1 createsummary.1 combinesummaries.1 extractvectors.1 pdfmetadata.1 pdfembedfonts.1
-nodist_EXTRA_DIST   = plotter.R plot-netperfmeter-results.R
-# nodist_pkgdata_DATA = plotter.R plot-netperfmeter-results.R
+createsummary_SOURCES = createsummary.cc inputfile.h inputfile.cc outputfile.h outputfile.cc debug.h redblacktree.h redblacktree_impl.h simpleredblacktree.h simpleredblacktree.c
+createsummary_LDADD   = $(bz2_LIBS)
 
-nodist_createsummary_SOURCES = createsummary.cc inputfile.h inputfile.cc outputfile.h outputfile.cc debug.h redblacktree.h redblacktree_impl.h simpleredblacktree.h simpleredblacktree.c
-createsummary_LDADD          = $(bz2_LIBS)
+combinesummaries_SOURCES = combinesummaries.cc inputfile.h inputfile.cc outputfile.h outputfile.cc
+combinesummaries_LDADD   = $(bz2_LIBS)
 
-nodist_combinesummaries_SOURCES = combinesummaries.cc inputfile.h inputfile.cc outputfile.h outputfile.cc
-combinesummaries_LDADD          = $(bz2_LIBS)
+extractvectors_SOURCES = extractvectors.cc inputfile.h inputfile.cc outputfile.h outputfile.cc
+extractvectors_LDADD   = $(bz2_LIBS)
 
-nodist_extractvectors_SOURCES = extractvectors.cc inputfile.h inputfile.cc outputfile.h outputfile.cc
-extractvectors_LDADD          = $(bz2_LIBS)
+ldcalc_SOURCES = ldcalc.cc
+ldcalc_LDADD   =
 
-nodist_ldcalc_SOURCES = ldcalc.cc
-ldcalc_LDADD          =
-
-nodist_runtimeestimator_SOURCES = runtimeestimator.cc
-runtimeestimator_LDADD          =
+runtimeestimator_SOURCES = runtimeestimator.cc
+runtimeestimator_LDADD   =
 
 # nodist_t6_SOURCES = t6.cc tools.cc outputfile.cc
 # t6_LDADD          = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread

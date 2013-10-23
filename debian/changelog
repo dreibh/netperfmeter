@@ -1,6 +1,8 @@
 netperfmeter (1.4.0~rc1.1-1ubuntu1) trusty; urgency=low
 
   * New upstream version.
+  * debian/control: Added libfile-fcntllock-perl to get rid of
+                    warning on NFS-safe locks.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 23 Oct 2013 03:03:03 +0200
 
