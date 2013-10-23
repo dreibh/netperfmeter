@@ -1,4 +1,28 @@
 ------------------------------------------------------------------------
+r1691 | dreibh | 2013-10-23 19:59:29 +0200 (Wed, 23 Oct 2013) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/combinesummaries.1
+   M /trunk/netperfmeter/src/createsummary.1
+   M /trunk/netperfmeter/src/pdfmetadata.1
+
+Fixed lintian warnings in manpages.
+
+------------------------------------------------------------------------
+r1690 | dreibh | 2013-10-23 19:45:50 +0200 (Wed, 23 Oct 2013) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/src/Makefile.am
+
+Updated packaging and build scripts.
+
+------------------------------------------------------------------------
+r1685 | dreibh | 2013-10-23 13:32:41 +0200 (Wed, 23 Oct 2013) | 1 line
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+
+Updated ChangeLog.
+------------------------------------------------------------------------
 r1678 | dreibh | 2013-10-23 13:29:38 +0200 (Wed, 23 Oct 2013) | 1 line
 Changed paths:
    M /trunk/netperfmeter/ChangeLog
