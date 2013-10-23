@@ -90,17 +90,17 @@ test2.sca.bz2 (created with ParameterX=Two). The scalar files are located in
 the current directory, the output tables should be written to /tmp with
 compression level 5:
 .br
-( echo "--simulationsdirectory=."  && \\
-  echo "--resultsdirectory=/tmp"   && \\
-  echo "--values=One"              && \\
-  echo "--input=test1.sca.bz2"     && \\
-  echo "--values=Two"              && \\
-  echo "--input=test2.sca.bz2" ) | createsummary "ParameterX" -compress=5
+( echo "\-\-simulationsdirectory=."  && \\
+  echo "\-\-resultsdirectory=/tmp"   && \\
+  echo "\-\-values=One"              && \\
+  echo "\-\-input=test1.sca.bz2"     && \\
+  echo "\-\-values=Two"              && \\
+  echo "\-\-input=test2.sca.bz2" ) | createsummary "ParameterX" \-compress=5
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz
 .br
-http://www.iem.uni-due.de/~dreibh/omnetpp
+http://www.iem.uni-due.de/~dreibh/netperfmeter
 .br
 mailto://dreibh@iem.uni-due.de
 .br

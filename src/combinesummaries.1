@@ -68,15 +68,15 @@ v1.data.bz2 (created with ParameterY=Alpha) and
 v2.data.bz2 (created with ParameterY=Beta).
 The output data table should be written to output.data.bz2.
 .br
-( echo "--values=\\"Alpha\\""   && \\
-  echo "--input=v1.data.bz2"  && \\
-  echo "--values=\\"Beta\\""    && \\
-  echo "--input=v2.data.bz2" ) | combinesummaries output.data.bz2 "ParameterY"
+( echo "\-\-values=\\"Alpha\\""   && \\
+  echo "\-\-input=v1.data.bz2"  && \\
+  echo "\-\-values=\\"Beta\\""    && \\
+  echo "\-\-input=v2.data.bz2" ) | combinesummaries output.data.bz2 "ParameterY"
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz
 .br
-http://www.iem.uni-due.de/~dreibh/omnetpp
+http://www.iem.uni-due.de/~dreibh/netperfmeter
 .br
 mailto://dreibh@iem.uni-due.de
 .br
