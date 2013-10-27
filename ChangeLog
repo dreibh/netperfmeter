@@ -1,4 +1,11 @@
 ------------------------------------------------------------------------
+r1692 | dreibh | 2013-10-23 20:15:33 +0200 (Wed, 23 Oct 2013) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+
+Updated ChangeLog.
+
+------------------------------------------------------------------------
 r1691 | dreibh | 2013-10-23 19:59:29 +0200 (Wed, 23 Oct 2013) | 2 lines
 Changed paths:
    M /trunk/netperfmeter/src/combinesummaries.1
