@@ -46,7 +46,9 @@ static sockaddr_union gLocalAddressArray[MAX_LOCAL_ADDRESSES];
 
 static const char*    gActiveNodeName  = "Client";
 static const char*    gPassiveNodeName = "Server";
+static bool           gControlOverTCP  = false;
 static int            gControlSocket   = -1;
+static set<int>       gAcceptedControlSockets;
 static int            gTCPSocket       = -1;
 static int            gMPTCPSocket     = -1;
 static int            gUDPSocket       = -1;
@@ -63,6 +65,9 @@ bool handleGlobalParameter(char* parameter)
 {
    if(strncmp(parameter, "-runtime=", 9) == 0) {
       gRuntime = atof((const char*)&parameter[9]);
+   }
+   else if(strcmp(parameter, "-control-over-tcp") == 0) {
+      gControlOverTCP = true;
    }
    else if(strncmp(parameter, "-activenodename=", 16) == 0) {
       gActiveNodeName = (const char*)&parameter[16];
@@ -590,25 +595,30 @@ bool mainLoop(const bool               isActiveMode,
               const unsigned long long stopAt,
               const uint64_t           measurementID)
 {
-   pollfd                 fds[6];
-   int                    n         = 0;
-   int                    controlID = -1;
-   int                    tcpID     = -1;
-   int                    mptcpID   = -1;
-   int                    udpID     = -1;
-   int                    sctpID    = -1;
-   int                    dccpID    = -1;
-   unsigned long long     now       = getMicroTime();
+   pollfd                 fds[5 + gMessageReader.size()];
+   int                    n       = 0;
+   int                    tcpID   = -1;
+   int                    mptcpID = -1;
+   int                    udpID   = -1;
+   int                    sctpID  = -1;
+   int                    dccpID  = -1;
+   unsigned long long     now     = getMicroTime();
    std::map<int, pollfd*> pollFDIndex;
 
 
    // ====== Get parameters for poll() ======================================
-   addToPollFDs((pollfd*)&fds, gControlSocket, n, &controlID);
    addToPollFDs((pollfd*)&fds, gTCPSocket,     n, &tcpID);
    addToPollFDs((pollfd*)&fds, gMPTCPSocket,   n, &mptcpID);
    addToPollFDs((pollfd*)&fds, gUDPSocket,     n, &udpID);
    addToPollFDs((pollfd*)&fds, gSCTPSocket,    n, &sctpID);
    addToPollFDs((pollfd*)&fds, gDCCPSocket,    n, &dccpID);
+   int    controlFDSet[gMessageReader.size()];
+   size_t controlFDs = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
+   const int controlIDMin = n;
+   for(size_t i = 0; i < controlFDs; i++) {
+      addToPollFDs((pollfd*)&fds, controlFDSet[i], n, NULL);
+   }
+   const int controlIDMax = n - 1;
 
 
    // ====== Use poll() to wait for events ==================================
@@ -626,11 +636,27 @@ bool mainLoop(const bool               isActiveMode,
    if(result > 0) {
 
       // ====== Incoming control message ====================================
-      if( (controlID >= 0) && (fds[controlID].revents & POLLIN) ) {
-         const bool controlOkay = handleNetPerfMeterControlMessage(
-                                     &gMessageReader, gControlSocket);
-         if((!controlOkay) && (isActiveMode)) {
-            return(false);
+      int controlID;
+      for(controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
+         if(fds[controlID].revents & POLLIN) {
+            if( (isActiveMode == false) &&
+                (fds[controlID].fd == gControlSocket) ) {
+               const int newSD = ext_accept(gControlSocket, NULL, 0);
+               if(newSD >= 0) {
+                  gMessageReader.registerSocket((gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP, newSD);
+               }
+            }
+            else {
+               const bool controlOkay = handleNetPerfMeterControlMessage(
+                                           &gMessageReader, fds[controlID].fd);
+               if(!controlOkay) {
+                  if(isActiveMode) {
+                     return(false);
+                  }
+                  gMessageReader.deregisterSocket(fds[controlID].fd);
+                  ext_close(fds[controlID].fd);
+               }
+            }
          }
       }
 
@@ -690,23 +716,25 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    }
    printGlobalParameters();
 
-
    // ====== Initialize control socket ======================================
-   gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_SEQPACKET, IPPROTO_SCTP, localPort + 1,
-                                        0, NULL, true);
+   const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
+   gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, controlSocketProtocol,
+                                        localPort + 1, 0, NULL, true);
    if(gControlSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket for control port - "
            << strerror(errno) << "!" << endl;
       exit(1);
    }
    sctp_event_subscribe events;
-   memset((char*)&events, 0 ,sizeof(events));
-   events.sctp_data_io_event     = 1;
-   events.sctp_association_event = 1;
-   if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-      cerr << "ERROR: Failed to configure events on control socket - "
-           << strerror(errno) << "!" << endl;
-      exit(1);
+   if(!gControlOverTCP) {
+      memset((char*)&events, 0 ,sizeof(events));
+      events.sctp_data_io_event     = 1;
+      events.sctp_association_event = 1;
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
+         cerr << "ERROR: Failed to configure events on control socket - "
+              << strerror(errno) << "!" << endl;
+         exit(1);
+      }
    }
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
@@ -867,7 +895,13 @@ void activeMode(int argc, char** argv)
    }
 
    // ====== Initialize control socket ======================================
-   gControlSocket = ext_socket(controlAddress.sa.sa_family, SOCK_STREAM, IPPROTO_SCTP);
+   for(int i = 2;i < argc;i++) {
+      if(strcmp(argv[i], "-control-over-tcp") == 0) {
+         gControlOverTCP = true;
+      }
+   }
+   const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
+   gControlSocket = ext_socket(controlAddress.sa.sa_family, SOCK_STREAM, controlSocketProtocol);
    if(gControlSocket < 0) {
       cerr << "ERROR: Failed to create SCTP socket for control port - "
            << strerror(errno) << "!" << endl;
@@ -1038,7 +1072,7 @@ int main(int argc, char** argv)
 {
    if(argc < 2) {
       cerr << "Usage: " << argv[0]
-           << " [Local Port|Remote Endpoint] {-tcp|-udp|-sctp|-dccp} {flow spec} ..."
+           << " [Local Port|Remote Endpoint] {-control-over-tcp} {-tcp|-udp|-sctp|-dccp} {flow spec} ..."
            << endl;
       exit(1);
    }
@@ -1057,8 +1091,8 @@ int main(int argc, char** argv)
       }
    }
    if(gOutputVerbosity >= NPFOV_STATUS) {
-      cout << "Network Performance Meter - Version 1.3.1" << endl
-           << "---------------------------------------" << endl << endl;
+      cout << "Network Performance Meter" << endl
+           << "-------------------------" << endl << endl;
    }
 
    const uint16_t localPort = atol(argv[1]);

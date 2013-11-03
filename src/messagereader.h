@@ -52,6 +52,11 @@ class MessageReader
                           socklen_t*       fromSize = NULL,
                           sctp_sndrcvinfo* sinfo    = NULL,
                           int*             msgFlags = NULL);
+   size_t getAllSDs(int* sds, const size_t maxEntries);
+   
+   inline size_t size() {
+      return(SocketMap.size()); 
+   }
 
    // ====== Private Data ===================================================
    private:

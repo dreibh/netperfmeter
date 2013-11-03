@@ -87,6 +87,18 @@ bool MessageReader::registerSocket(const int    protocol,
 }
 
 
+// ###### Get all socket descriptors ########################################
+size_t MessageReader::getAllSDs(int* sds, const size_t maxEntries)
+{
+   assert(maxEntries >= SocketMap.size());
+   size_t count = 0;
+   for(std::map<int, Socket*>::iterator iterator = SocketMap.begin(); iterator != SocketMap.end(); iterator++) {
+      sds[count++] = iterator->second->SocketDescriptor;
+   }
+   return(count);
+}
+
+
 // ###### Deregister a socket ###############################################
 bool MessageReader::deregisterSocket(const int sd)
 {

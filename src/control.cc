@@ -979,8 +979,10 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       return(true);   // Partial read -> wait for next fragment.
    }
    else if(received < (ssize_t)sizeof(NetPerfMeterHeader)) {
-      std::cerr << "ERROR: Control connection is broken!" << std::endl;
-      sendAbort(controlSocket, sinfo.sinfo_assoc_id);
+      if(received < 0) { 
+         std::cerr << "ERROR: Control connection is broken!" << std::endl;
+         sendAbort(controlSocket, -1);
+      }
       return(false);
    }
 
