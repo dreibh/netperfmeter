@@ -15,7 +15,7 @@ Standards-Version: 3.9.4
 Package: netperfmeter
 Architecture: any
 Depends: ${misc:Depends},
-         ${shlibs:Depends}
+         ${shlibs:Depends}, bc
 Recommends: iputils-ping,
             iputils-tracepath,
             subnetcalc (>= 2.0.2),

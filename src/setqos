@@ -124,10 +124,10 @@ if [ "$SYSTEM" = "Linux" ] ; then
          delayParameter="delay ${DELAY}ms"
       fi
       if [ "$LOSS" != "" ] ; then
-         lossParameter="loss `./ldcalc ${LOSS} "*" "100.0"`%"
+         lossParameter="loss `echo "${LOSS}*100.0" | bc`%"
       fi
       if [ "$ERROR" != "" ] ; then
-         errorParameter="corrupt `./ldcalc ${ERROR} "*" "100.0"`%"
+         errorParameter="corrupt `echo "${ERROR}*100.0" | bc`%"
       fi
 
       for iface in $INTERFACES ; do
