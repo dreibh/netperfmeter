@@ -44,18 +44,18 @@ using namespace std;
 static unsigned int   gLocalAddresses  = 0;
 static sockaddr_union gLocalAddressArray[MAX_LOCAL_ADDRESSES];
 
-static const char*    gActiveNodeName  = "Client";
-static const char*    gPassiveNodeName = "Server";
-static bool           gControlOverTCP  = false;
-static int            gControlSocket   = -1;
-static set<int>       gAcceptedControlSockets;
-static int            gTCPSocket       = -1;
-static int            gMPTCPSocket     = -1;
-static int            gUDPSocket       = -1;
-static int            gSCTPSocket      = -1;
-static int            gDCCPSocket      = -1;
-static double         gRuntime         = -1.0;
-static bool           gStopTimeReached = false;
+static const char*    gActiveNodeName   = "Client";
+static const char*    gPassiveNodeName  = "Server";
+static bool           gControlOverTCP   = false;
+static int            gControlSocket    = -1;
+static int            gControlSocketTCP = -1;
+static int            gTCPSocket        = -1;
+static int            gMPTCPSocket      = -1;
+static int            gUDPSocket        = -1;
+static int            gSCTPSocket       = -1;
+static int            gDCCPSocket       = -1;
+static double         gRuntime          = -1.0;
+static bool           gStopTimeReached  = false;
 MessageReader         gMessageReader;
 
 
@@ -643,7 +643,14 @@ bool mainLoop(const bool               isActiveMode,
                 (fds[controlID].fd == gControlSocket) ) {
                const int newSD = ext_accept(gControlSocket, NULL, 0);
                if(newSD >= 0) {
-                  gMessageReader.registerSocket((gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP, newSD);
+                  gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
+               }
+            }
+            else if( (isActiveMode == false) &&
+                (fds[controlID].fd == gControlSocketTCP) ) {
+               const int newSD = ext_accept(gControlSocketTCP, NULL, 0);
+               if(newSD >= 0) {
+                  gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                }
             }
             else {
@@ -717,8 +724,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    printGlobalParameters();
 
    // ====== Initialize control socket ======================================
-   const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
-   gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, controlSocketProtocol,
+   gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
                                         localPort + 1, 0, NULL, true);
    if(gControlSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket for control port - "
@@ -731,13 +737,22 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       events.sctp_data_io_event     = 1;
       events.sctp_association_event = 1;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-         cerr << "ERROR: Failed to configure events on control socket - "
+         cerr << "ERROR: Failed to configure events on SCTP control socket - "
               << strerror(errno) << "!" << endl;
          exit(1);
       }
    }
-   gMessageReader.registerSocket(controlSocketProtocol, gControlSocket);
+   gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
+   gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP,
+                                           localPort + 1, 0, NULL, true);
+   if(gControlSocketTCP < 0) {
+      cerr << "ERROR: Failed to create and bind TCP socket for control port - "
+           << strerror(errno) << "!" << endl;
+      exit(1);
+   }
+   gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
+   
    // ====== Initialize data socket for each protocol =======================
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
@@ -846,6 +861,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 
    // ====== Clean up =======================================================
+   gMessageReader.deregisterSocket(gControlSocketTCP);
+   ext_close(gControlSocketTCP);
    gMessageReader.deregisterSocket(gControlSocket);
    ext_close(gControlSocket);
    ext_close(gTCPSocket);
@@ -900,7 +917,6 @@ void activeMode(int argc, char** argv)
          gControlOverTCP = true;
       }
    }
-   printf("YYY=%d\n",gControlOverTCP);
    const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
    gControlSocket = ext_socket(controlAddress.sa.sa_family, SOCK_STREAM, controlSocketProtocol);
    if(gControlSocket < 0) {

@@ -21,7 +21,7 @@
 .\"          dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd October 28, 2011
+.Dd November 3, 2013
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -34,6 +34,7 @@
 .Op Port
 .Nm netperfmeter
 .Op Destination:Port
+.Fl control-over-tcp
 .Fl local=Address[,Address,...]
 .Fl runtime=Seconds
 .Fl config=Name
@@ -67,6 +68,8 @@ The following arguments have to be provided:
 The port number for the passive side's data socket. The port number of the control socket will be port+1. Specifying a port number turns netperfmeter in passive mode, i.e. it will wait for incoming connections.
 .It Destination:Port
 Specifies the destination endpoint to connect to. This will turn netperfmeter in active mode, i.e. it will connect to the specified remote endpoint.
+.It control-over-tcp
+Use TCP instead of SCTP for the control connection. This is useful for NAT traversal.
 .It local=Address[,Address,...]
 Specifies address(es) of the local endpoint. For TCP, UDP and DCCP, only the first address is used!
 .It runtime
@@ -164,6 +167,8 @@ At t=30s, start flow "Beta" as second stream on the SCTP association (same param
 Start TCP connection.
 At t=60s, start flow "Gamma" over the TCP connection (same parameters as flow "Alpha").
 At t=300s, stop the measurement.
+.It netperfmeter 172.16.255.254:9000 -control-over-tcp -tcp const2:const1000
+Start in active mode, i.e. establish connection to 172.16.255.254, port 9000. The control connection uses TCP instead of SCTP.
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
