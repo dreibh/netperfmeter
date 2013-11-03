@@ -1,6 +1,6 @@
-.\" $Id$
+.\" $Id: runtimeestimator.1 1691 2013-10-23 17:59:29Z dreibh $
 .\"
-.\" PDF Font Embedder
+.\" Runtime Estimator
 .\" Copyright (C) 2013 by Thomas Dreibholz
 .\"
 .\" This program is free software: you can redistribute it and/or modify
@@ -20,41 +20,50 @@
 .\"
 .\" ###### Setup ############################################################
 .Dd November 3, 2013
-.Dt pdfembedfonts 1
-.Os pdfembedfonts
+.Dt runtimeestimator 1
+.Os runtimeestimator
 .\" ###### Name #############################################################
 .Sh NAME
-.Nm pdfembedfonts
-.Nd PDF Metadata Updater
+.Nm runtimeestimator
+.Nd Batch Job Runtime Estimator
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm pdfembedfonts
-.Op Input PDF
-.Op Output PDF
-.Fl optimize
+.Nm runtimeestimator
+.Op start_file
+.Op total_runs
+.Op current_run
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
-.Nm pdfembedfonts
-uses GhostScript to make a copy of a given PDF file which included all
-required font data. Optionally, the resulting PDF will also be optimized
-("fast web view", "linearized").
+.Nm runtimeestimator
+is a simple program to estimate the total runtime of a batch job consisting
+of multiple runs. Upon initialisation, it initialises a start file with a
+time stamp. Each time a run is completed, it prints out the estimated total
+runtime.
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It Input PDF
-The input PDF file name.
-.It Output PDF
-The output PDF file name.
-.It Fl optimize
-Optimize the resulting PDF file for fast web view.
+.It start_file
+The name of the start file.
+.It total_runs
+The total number of runs.
+.It current_run
+The current run number that has just been completed.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
-A pdfembedfonts usage example:
+Some netperfmeter usage examples:
 .Bl -tag -width indent
-.It pdfembedfonts MyDocument.pdf MyDocument-with-Embedded-Fonts.pdf
+.It runtimeestimator runtime.dat 100 0
+Initialize runtime estimation (i.e. before the first run). The start file
+"runtime.dat" is created.
+.It runtimeestimator runtime.dat 100 1
+Completed run 1 of 100 (i.e. the first run).
+.It runtimeestimator runtime.dat 100 5
+Completed run 5 of 100.
+.It runtimeestimator runtime.dat 100 100
+Completed run 100 of 100 (i.e. all runs are complete).
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
