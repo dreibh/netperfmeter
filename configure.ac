@@ -1,4 +1,4 @@
-AC_INIT([NetPerfMeter], [1.4.0~rc1.1], [dreib@iem.uni-due.de])
+AC_INIT([NetPerfMeter], [1.4.0~rc2.0], [dreib@iem.uni-due.de])
 
 AM_INIT_AUTOMAKE
 AC_PREREQ(2.60)
@@ -20,8 +20,8 @@ if test "${enable_colorgcc}" = "yes"; then
    if test "$COLORGCC" == "yes"
    then
       AC_MSG_NOTICE([Compiling using colorgcc])
-      CC=colorgcc
-      CXX=colorgcc -lstdc++
+      CC="colorgcc"
+      CXX="colorgcc -lstdc++"
    fi
 fi
 
