@@ -1,4 +1,4 @@
-bin_PROGRAMS = netperfmeter createsummary combinesummaries extractvectors ldcalc runtimeestimator
+bin_PROGRAMS = netperfmeter createsummary combinesummaries extractvectors runtimeestimator
 
 
 # ###### NetPerfMeter program ###############################################
@@ -20,9 +20,6 @@ combinesummaries_LDADD   = $(bz2_LIBS)
 
 extractvectors_SOURCES = extractvectors.cc inputfile.h inputfile.cc outputfile.h outputfile.cc
 extractvectors_LDADD   = $(bz2_LIBS)
-
-ldcalc_SOURCES = ldcalc.cc
-ldcalc_LDADD   =
 
 runtimeestimator_SOURCES = runtimeestimator.cc
 runtimeestimator_LDADD   =
