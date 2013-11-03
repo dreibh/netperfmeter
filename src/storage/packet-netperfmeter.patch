@@ -1,0 +1,13 @@
+Index: epan/dissectors/packet-netperfmeter.c
+===================================================================
+--- epan/dissectors/packet-netperfmeter.c	(Revision 53061)
++++ epan/dissectors/packet-netperfmeter.c	(Arbeitskopie)
+@@ -466,4 +466,8 @@
+   dissector_add_uint("sctp.ppi", PPID_NETPERFMETER_DATA_LEGACY,    npmp_handle);
+   dissector_add_uint("sctp.ppi", NPMP_CTRL_PAYLOAD_PROTOCOL_ID,    npmp_handle);
+   dissector_add_uint("sctp.ppi", NPMP_DATA_PAYLOAD_PROTOCOL_ID,    npmp_handle);
++
++  dissector_add_uint("tcp.port", 8999, npmp_handle);
++  dissector_add_uint("tcp.port", 9000, npmp_handle);
++  dissector_add_uint("tcp.port", 9001, npmp_handle);
+ }
