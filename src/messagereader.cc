@@ -207,7 +207,8 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 #ifdef DEBUG_MESSAGEREADER
                   printf("Socket %d:   T=%u F=%02x L=%u   [Header]\n",
                           socket->SocketDescriptor,
-                          (unsigned int)header->Type, (unsigned int)header->Flags, ntohs(header->Length));
+                          (unsigned int)header->Type, (unsigned int)header->Flags,
+                         ntohs(header->Length));
 #endif
                   socket->MessageSize = ntohs(header->Length);
                   if(socket->MessageSize < sizeof(TLVHeader)) {

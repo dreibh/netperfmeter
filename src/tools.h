@@ -99,7 +99,7 @@ void printAddress(std::ostream&          os,
 const char* getProtocolName(const uint8_t protocol);
 uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
-bool sendAbort(int sd, sctp_assoc_t assocID);
+bool sendAbort(int sd, sctp_assoc_t assocID = 0);
 int createAndBindSocket(const int             family,
                         const int             type,
                         const int             protocol,

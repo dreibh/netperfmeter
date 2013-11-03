@@ -329,12 +329,10 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
                                   const int              socketDescriptor,
                                   const sockaddr_union*  from,
                                   const OutputFileFormat vectorFileFormat,
-                                  int&                   controlSocketDescriptor,
-                                  sctp_assoc_t&          controlAssocID)
+                                  int&                   controlSocketDescriptor)
 {
    bool success            = false;
    controlSocketDescriptor = -1;
-   controlAssocID          = 0;
 
    lock();
    Flow* flow = findFlow(measurementID, flowID, streamID);
@@ -345,7 +343,6 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
       flow->RemoteAddress        = *from;
       flow->RemoteAddressIsValid = true;
       controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
-      controlAssocID             = flow->RemoteControlAssocID;
       success = flow->initializeVectorFile(NULL, vectorFileFormat);
       flow->unlock();
       removeSocket(socketDescriptor, false);   // Socket is now managed as flow!
@@ -836,8 +833,7 @@ Flow::Flow(const uint64_t         measurementID,
            const uint32_t         flowID,
            const uint16_t         streamID,
            const FlowTrafficSpec& trafficSpec,
-           const int              controlSocketDescriptor,
-           const sctp_assoc_t     controlAssocID)
+           const int              controlSocketDescriptor)
 {
    lock();
    MeasurementID                 = measurementID;
@@ -847,7 +843,6 @@ Flow::Flow(const uint64_t         measurementID,
    SocketDescriptor              = -1;
    OriginalSocketDescriptor      = false;
    RemoteControlSocketDescriptor = controlSocketDescriptor;
-   RemoteControlAssocID          = controlAssocID;
    RemoteAddressIsValid          = false;
 
    InputStatus                   = WaitingForStartup;
@@ -902,7 +897,7 @@ void Flow::resetStatistics()
 void Flow::print(std::ostream& os, const bool printStatistics)
 {
    lock();
-   if((OriginalSocketDescriptor) || (RemoteControlAssocID != 0)) {
+   if(OriginalSocketDescriptor) {
       if(TrafficSpec.Protocol != IPPROTO_SCTP) {
          os << "+ " << getProtocolName(TrafficSpec.Protocol) << " Flow (Flow ID #"
             << FlowID << " \"" << TrafficSpec.Description << "\"):" << std::endl;
@@ -1052,9 +1047,6 @@ void Flow::deactivate(const bool asyncStop)
          }
          else {
             const int shutdownOkay = ext_shutdown(SocketDescriptor, 2);
-/*
-            const int shutdownOkay = sctp_sendmsg(SocketDescriptor, NULL, 0, NULL, 0, 0, SCTP_EOF, 0, 0, 0);
-*/
             if(shutdownOkay < 0) {
                perror("WARNING: Cannut shut association down");
             }

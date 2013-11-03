@@ -82,7 +82,6 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
                                       int            controlSocket);
 
 bool sendNetPerfMeterAcknowledge(int            controlSocket,
-                                 sctp_assoc_t   assocID,
                                  const uint64_t measurementID,
                                  const uint32_t flowID,
                                  const uint16_t streamID,

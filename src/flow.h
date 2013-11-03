@@ -78,8 +78,7 @@ class FlowManager : public Thread
                         const int              socketDescriptor,
                         const sockaddr_union*  from,
                         const OutputFileFormat vectorFileFormat,
-                        int&                   controlSocketDescriptor,
-                        sctp_assoc_t&          controlAssocID);
+                        int&                   controlSocketDescriptor);
    void removeSocket(const int  socketDescriptor,
                      const bool closeSocket = true);
 
@@ -177,8 +176,7 @@ class Flow : public Thread
         const uint32_t         flowID,
         const uint16_t         streamID,
         const FlowTrafficSpec& trafficSpec,
-        const int              controlSocketDescriptor = -1,
-        const sctp_assoc_t     controlAssocID          = 0);
+        const int              controlSocketDescriptor = -1);
    virtual ~Flow();
 
 
@@ -197,8 +195,8 @@ class Flow : public Thread
    inline Defragmenter* getDefragmenter() {
       return(&MyDefragmenter);
    }
-   inline sctp_assoc_t getRemoteControlAssocID() const {
-      return(RemoteControlAssocID);
+   inline sctp_assoc_t getRemoteControlSocketDescriptor() const {
+      return(RemoteControlSocketDescriptor);
    }
    inline const FlowTrafficSpec& getTrafficSpec() const {
       return(TrafficSpec);
@@ -340,7 +338,6 @@ class Flow : public Thread
    pollfd*            PollFDEntry;   // For internal usage by FlowManager
 
    int                RemoteControlSocketDescriptor;
-   sctp_assoc_t       RemoteControlAssocID;
    sockaddr_union     RemoteAddress;
    bool               RemoteAddressIsValid;
 

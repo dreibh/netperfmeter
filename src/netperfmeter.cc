@@ -736,7 +736,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
          exit(1);
       }
    }
-   gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
+   gMessageReader.registerSocket(controlSocketProtocol, gControlSocket);
 
    // ====== Initialize data socket for each protocol =======================
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
@@ -900,6 +900,7 @@ void activeMode(int argc, char** argv)
          gControlOverTCP = true;
       }
    }
+   printf("YYY=%d\n",gControlOverTCP);
    const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
    gControlSocket = ext_socket(controlAddress.sa.sa_family, SOCK_STREAM, controlSocketProtocol);
    if(gControlSocket < 0) {
@@ -915,7 +916,7 @@ void activeMode(int argc, char** argv)
    if(gOutputVerbosity >= NPFOV_STATUS) {
       cout << "okay; sd=" << gControlSocket << endl << endl;
    }
-   gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
+   gMessageReader.registerSocket(controlSocketProtocol, gControlSocket);
 
 
    // ====== Handle command-line parameters =================================
