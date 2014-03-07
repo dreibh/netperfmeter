@@ -143,7 +143,7 @@ A list of time stamps when the flow should be activated or deactivated. If onoff
 .It error_on_abort=on|off
 By default, the active side stops with an error when a transmission tails (e.g. on connection abort). This parameter turns this behaviour on or off.
 .It tcp_no_delay=on|off
-Deactivate Nagel algorithm for TCP. (TCP only; default: off))
+Deactivate Nagle algorithm for TCP (TCP only; default: off).
 .It cmt=off|cmt|cmtrpv1|cmtrpv2|like-mptcp|mptcp-like|mptcp
 Configures usage of Concurrent Multipath Transfer (CMT): off (turned off; default), cmt (independent paths), cmtrpv1 (CMT/RPv1), cmtrpv1 (CMT/RPv2), mptcp/like-mptcp/mptcp-like (MPTCP), 0-255 (custom value).
 Currently only supported by CMT-SCTP on FreeBSD systems and MPTCP on Linux systems. Note: CMT for MPTCP always uses MPTCP congestion control.
