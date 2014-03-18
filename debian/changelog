@@ -1,11 +1,11 @@
-netperfmeter (1.4.0~rc2.0-1ubuntu1) trusty; urgency=low
+netperfmeter (1.4.0~rc2.1-1ubuntu1) trusty; urgency=low
 
   * New upstream version.
   * debian/control: Added libfile-fcntllock-perl to get rid of
                     warning on NFS-safe locks.
   * debian/control: Added bc as dependency.
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sun, 03 Nov 2013 03:03:03 +0200
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 18 Mar 2014 03:03:03 +0200
 
 netperfmeter (1.3.0-1ubuntu1) quantal; urgency=low
 
