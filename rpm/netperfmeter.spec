@@ -22,6 +22,8 @@ NetPerfMeter is a network performance meter for the UDP, TCP, SCTP and DCCP tran
 %setup -q
 
 %build
+autoreconf -if
+
 %configure
 make
 
