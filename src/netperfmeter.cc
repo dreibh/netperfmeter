@@ -922,7 +922,7 @@ void activeMode(int argc, char** argv)
    const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
    gControlSocket = ext_socket(controlAddress.sa.sa_family, SOCK_STREAM, controlSocketProtocol);
    if(gControlSocket < 0) {
-      cerr << "ERROR: Failed to create SCTP socket for control port - "
+      cerr << "ERROR: Failed to create socket for control port - "
            << strerror(errno) << "!" << endl;
       exit(1);
    }
