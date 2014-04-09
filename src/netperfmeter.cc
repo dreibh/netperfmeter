@@ -752,9 +752,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       exit(1);
    }
    gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
-   
+
    // ====== Initialize data socket for each protocol =======================
-   printf("TCP=%d\n",localPort);
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);                                    
    if(gTCPSocket < 0) {
@@ -764,7 +763,6 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    }
 
 #ifdef HAVE_MPTCP
-   printf("MPTCP=%d\n",localPort-1);
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
                                       gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gMPTCPSocket < 0) {
