@@ -598,9 +598,11 @@ int createAndBindSocket(const int             family,
    int socketProtocol = protocol;
 #ifdef HAVE_MPTCP
    if(socketProtocol == IPPROTO_MPTCP) {
-      socketProtocol    = IPPROTO_TCP;
-#warning Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...
-      localAddressCount = 0;
+      socketProtocol = IPPROTO_TCP;
+      if(localAddresses > 1) {
+         printf("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
+         localAddressCount = 0;
+      }
    }
 #endif
 
@@ -617,7 +619,7 @@ int createAndBindSocket(const int             family,
    }
 #endif
    // ====== Bind socket ====================================================
-   if( (socketProtocol != IPPROTO_SCTP) || (localAddressCount == 0) ) {
+   if(localAddressCount == 0) {
       if(ext_bind(sd, &anyAddress.sa, getSocklen(&anyAddress.sa)) != 0) {
          ext_close(sd);
          return(-3);
