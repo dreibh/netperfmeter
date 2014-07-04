@@ -8,6 +8,8 @@ URL: http://www.iem.uni-due.de/~dreibh/netperfmeter/
 Source: http://www.iem.uni-due.de/~dreibh/netperfmeter/download/%{name}-%{version}.tar.gz
 
 AutoReqProv: on
+BuildRequires: autoconf
+BuildRequires: automake
 BuildRequires: gcc-c++
 BuildRequires: lksctp-tools-devel
 BuildRequires: valgrind-devel
