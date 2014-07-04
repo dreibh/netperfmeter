@@ -11,6 +11,7 @@ AutoReqProv: on
 BuildRequires: autoconf
 BuildRequires: automake
 BuildRequires: gcc-c++
+BuildRequires: libtool
 BuildRequires: lksctp-tools-devel
 BuildRequires: valgrind-devel
 BuildRequires: bzip2-devel
