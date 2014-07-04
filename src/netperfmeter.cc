@@ -770,11 +770,13 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
            << strerror(errno) << "!" << endl;
       exit(1);
    }
-   /* !!! FIXME: TCP_MULTIPATH_ENABLE is not implemented by current MPTCP! !!!
+#ifndef TCP_MULTIPATH_ENABLE
+#warning TCP_MULTIPATH_ENABLE is not defined => No MPTCP configuration possible!
+#else
    int cmtOnOff = 1;
    if(ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-      std::cerr << "NOTE: Compiled with MPTCP support, but unable to initialize it: "
-                << strerror(errno) << "!" << endl;
+      cerr << "NOTE: Compiled with MPTCP support, but unable to initialize it: "
+           << strerror(errno) << "!" << endl;
       ext_close(gMPTCPSocket);
       gMPTCPSocket = -1;
    }
@@ -786,7 +788,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
          exit(1);
       }
    }
-   */
+#endif
 #endif
 
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,

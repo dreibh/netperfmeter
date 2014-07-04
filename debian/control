@@ -10,7 +10,7 @@ Build-Depends: autotools-dev,
                libfile-fcntllock-perl,
                libglib2.0-dev (>= 2.0.0),
                libsctp-dev (>= 1.0.5)
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 
 Package: netperfmeter
 Architecture: any
