@@ -46,6 +46,16 @@
 /* MPTCP as "pseudo-protocol". Just for internal representation. */
 #define IPPROTO_MPTCP IPPROTO_EGP
 
+/* FIXME: This is ugly, but currently the only way to easily get the #defines for Linux MPTCP! */
+#define TCP_MULTIPATH_DEBUG         10001   /* MPTCP DEBUG on/off */
+#define TCP_MULTIPATH_ENABLE        10002   /* MPTCP DISABLED on/off */
+#define TCP_MULTIPATH_ADD           10003
+#define TCP_MULTIPATH_REMOVE        10004
+#define TCP_MULTIPATH_SUBFLOWS      10005
+#define TCP_MULTIPATH_CONNID        10006
+#define TCP_MULTIPATH_NDIFFPORTS    10007   /* MPTCP NDIFFPORTS */
+#define TCP_MULTIPATH_PATHMANAGER   10008   /* MPTCP PATHMANAGER */
+
 /* DCCP definitions */
 #ifdef HAVE_DCCP
 #include <linux/dccp.h>

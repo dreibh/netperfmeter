@@ -1200,57 +1200,86 @@ void Flow::run()
 // ###### Configure socket parameters #######################################
 bool Flow::configureSocket(const int socketDescriptor)
 {
-    if(TrafficSpec.RcvBufferSize != 0) {
-       int bufferSize = TrafficSpec.RcvBufferSize;
-       if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-           std::cerr << "ERROR: Failed to configure receive buffer size on SCTP socket (SO_RCVBUF option) - "
-                     << strerror(errno) << "!" << std::endl;
-           return(false);
-       }
-    }
-    if(TrafficSpec.SndBufferSize != 0) {
-       int bufferSize = TrafficSpec.SndBufferSize;
-       if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-           std::cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
-                     << strerror(errno) << "!" << std::endl;
-           return(false);
-       }
-    }
-    if(TrafficSpec.Protocol == IPPROTO_TCP) {
-       if (TrafficSpec.NoDelay) {
-          int on = 1;
-          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof(on)) < 0) {
-             std::cerr << "ERROR: Failed to set TCP_NODELAY on socket - "
-                     << strerror(errno) << "!" << std::endl;
-             return(false);
-          }
-       }
-    }
-    if(TrafficSpec.Protocol == IPPROTO_SCTP) {
-       if (TrafficSpec.NoDelay) {
-          int on = 1;
-          if (ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, (char *) &on, sizeof(on)) < 0) {
-             std::cerr << "ERROR: Failed to set SCTP_NODELAY on socket - "
-                     << strerror(errno) << "!" << std::endl;
-             return(false);
-          }
-       }
-#ifdef SCTP_CMT_ON_OFF
-        struct sctp_assoc_value cmtOnOff;
-        cmtOnOff.assoc_id    = 0;
-        cmtOnOff.assoc_value = TrafficSpec.CMT;
-        if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-          if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
-              std::cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
-                        << strerror(errno) << "!" << std::endl;
-             return(false);
-          }
-        }
+   if(TrafficSpec.RcvBufferSize != 0) {
+      int bufferSize = TrafficSpec.RcvBufferSize;
+      if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
+         std::cerr << "ERROR: Failed to configure receive buffer size on SCTP socket (SO_RCVBUF option) - "
+                  << strerror(errno) << "!" << std::endl;
+         return(false);
+      }
+   }
+   if(TrafficSpec.SndBufferSize != 0) {
+      int bufferSize = TrafficSpec.SndBufferSize;
+      if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
+         std::cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
+                  << strerror(errno) << "!" << std::endl;
+         return(false);
+      }
+   }
+   if( (TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP) ) {
+puts("tcp/mptcp-1"); // ????
+      const int noDelayOption = (TrafficSpec.NoDelay == true) ? 1 : 0;
+      if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+         std::cerr << "ERROR: Failed to set TCP_NODELAY on socket - "
+               << strerror(errno) << "!" << std::endl;
+         return(false);
+      }
+
+      if(TrafficSpec.Protocol == IPPROTO_MPTCP) {
+puts("tcp/mptcp-2"); // ????
+
+         // FIXME! Add proper, platform-independent code here!
+#ifndef __linux__
+#warning MPTCP is currently only available on Linux!
 #else
-        if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
-          std::cerr << "ERROR: CMT usage on SCTP socket configured, but not supported by this system!" << std::endl;
-          return(false);
-        }
+puts("tcp/mptcp-3"); // ????
+
+         const int debugOption = (TrafficSpec.Debug == true) ? 1 : 0;
+         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_DEBUG, (const char*)&debugOption, sizeof(debugOption)) < 0) {
+            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_DEBUG on socket - "
+                      << strerror(errno) << "!" << std::endl;
+         }
+
+         const int nDiffPorts = (int)TrafficSpec.NDiffPorts;
+         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_NDIFFPORTS, (const char*)&nDiffPorts, sizeof(nDiffPorts)) < 0) {
+            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_NDIFFPORTS on socket - "
+                      << strerror(errno) << "!" << std::endl;
+         }
+
+         const char* pathMgr = TrafficSpec.PathMgr.c_str();
+         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_PATHMANAGER, (const char*)&pathMgr, strlen(pathMgr)) < 0) {
+            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_PATHMANAGER on socket - "
+                      << strerror(errno) << "!" << std::endl;
+         }
+#endif
+puts("tcp/mptcp-4"); // ????
+      }
+   }
+   else if(TrafficSpec.Protocol == IPPROTO_SCTP) {
+      if (TrafficSpec.NoDelay) {
+         const int noDelayOption = 1;
+         if (ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+            std::cerr << "ERROR: Failed to set SCTP_NODELAY on socket - "
+                  << strerror(errno) << "!" << std::endl;
+            return(false);
+         }
+      }
+#ifdef SCTP_CMT_ON_OFF
+      struct sctp_assoc_value cmtOnOff;
+      cmtOnOff.assoc_id    = 0;
+      cmtOnOff.assoc_value = TrafficSpec.CMT;
+      if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
+         if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
+            std::cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
+                     << strerror(errno) << "!" << std::endl;
+            return(false);
+         }
+      }
+#else
+      if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
+         std::cerr << "ERROR: CMT usage on SCTP socket configured, but not supported by this system!" << std::endl;
+         return(false);
+      }
 #endif
    }
 #ifdef HAVE_DCCP

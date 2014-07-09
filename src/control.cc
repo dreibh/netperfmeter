@@ -155,18 +155,10 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    addFlowMsg->Header.Type   = NETPERFMETER_ADD_FLOW;
    addFlowMsg->Header.Flags  = 0x00;
    if(flow->getTrafficSpec().Debug == true) {
-      addFlowMsg->Header.Flags |= NPMAF_DEBUG;
+      addFlowMsg->Header.Flags |= NPMAFF_DEBUG;
    }
    if(flow->getTrafficSpec().NoDelay == true) {
-      addFlowMsg->Header.Flags |= NPMAF_NODELAY;
-   }
-   addFlowMsg->CCID          = flow->getTrafficSpec().CCID;
-   addFlowMsg->CMT           = flow->getTrafficSpec().CMT;
-   if(flow->getTrafficSpec().CMT > 0) {
-      addFlowMsg->Header.Flags |= NPMAF_USE_CMT;   /* Backward compatibility */
-   }
-   if(flow->getTrafficSpec().CCID > 0) {
-      addFlowMsg->Header.Flags |= NPMAF_USE_RP;    /* Backward compatibility */
+      addFlowMsg->Header.Flags |= NPMAFF_NODELAY;
    }
 
    addFlowMsg->Header.Length = htons(addFlowMsgSize);
@@ -174,7 +166,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    addFlowMsg->FlowID        = htonl(flow->getFlowID());
    addFlowMsg->StreamID      = htons(flow->getStreamID());
    addFlowMsg->Protocol      = flow->getTrafficSpec().Protocol;
-   addFlowMsg->Flags         = 0x00;
+   addFlowMsg->pad           = 0x00;
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
       addFlowMsg->FrameRate[i] = doubleToNetwork(flow->getTrafficSpec().InboundFrameRate[i]);
       addFlowMsg->FrameSize[i] = doubleToNetwork(flow->getTrafficSpec().InboundFrameSize[i]);
@@ -189,6 +181,8 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    addFlowMsg->RetransmissionTrials =
       htonl((uint32_t)flow->getTrafficSpec().RetransmissionTrials |
             (uint32_t)(flow->getTrafficSpec().RetransmissionTrialsInMS ? NPMAF_RTX_TRIALS_IN_MILLISECONDS : 0));
+   addFlowMsg->CCID          = flow->getTrafficSpec().CCID;
+   addFlowMsg->CMT           = flow->getTrafficSpec().CMT;
 
    addFlowMsg->OnOffEvents   = htons(flow->getTrafficSpec().OnOffEvents.size());
    size_t i = 0;
@@ -200,7 +194,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    strncpy((char*)&addFlowMsg->Description, flow->getTrafficSpec().Description.c_str(),
            std::min(sizeof(addFlowMsg->Description), flow->getTrafficSpec().Description.size()));
 
-   addFlowMsg->NDiffPaths = htons(flow->getTrafficSpec().NDiffPaths);
+   addFlowMsg->NDiffPorts = htons(flow->getTrafficSpec().NDiffPorts);
    memset((char*)&addFlowMsg->PathMgr, 0, sizeof(addFlowMsg->PathMgr));
    strncpy((char*)&addFlowMsg->PathMgr, flow->getTrafficSpec().PathMgr.c_str(),
            std::min(sizeof(addFlowMsg->PathMgr), flow->getTrafficSpec().PathMgr.size()));
@@ -360,7 +354,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          fprintf(configFile, "FLOW%u_NODELAY=\"%s\"\n",                      flow->getFlowID(), (flow->getTrafficSpec().NoDelay == true) ? "on" : "off");
          fprintf(configFile, "FLOW%u_DEBUG=\"%s\"\n",                        flow->getFlowID(), (flow->getTrafficSpec().Debug == true) ? "on" : "off");
          fprintf(configFile, "FLOW%u_PATHMGR=\"%s\"\n",                      flow->getFlowID(), flow->getTrafficSpec().PathMgr.c_str());
-         fprintf(configFile, "FLOW%u_NDIFFPATHS=%u\n",                       flow->getFlowID(), flow->getTrafficSpec().NDiffPaths);
+         fprintf(configFile, "FLOW%u_NDIFFPORTS=%u\n",                       flow->getFlowID(), flow->getTrafficSpec().NDiffPorts);
          fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(), flow->getVectorFile().getName().c_str());
          fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n",        flow->getFlowID(),
                               Flow::getNodeOutputName(vectorNamePattern, "passive",
@@ -746,8 +740,8 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    else {
       // ====== Create new flow =============================================
       FlowTrafficSpec trafficSpec;
-      trafficSpec.Protocol             = addFlowMsg->Protocol;
-      trafficSpec.Description          = std::string(description);
+      trafficSpec.Protocol    = addFlowMsg->Protocol;
+      trafficSpec.Description = std::string(description);
       for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
          trafficSpec.OutboundFrameRate[i] = networkToDouble(addFlowMsg->FrameRate[i]);
          trafficSpec.OutboundFrameSize[i] = networkToDouble(addFlowMsg->FrameSize[i]);
@@ -772,23 +766,14 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       trafficSpec.CMT  = addFlowMsg->CMT;
       trafficSpec.CCID = addFlowMsg->CCID;
 
-      if(trafficSpec.CMT == 0x00) {   /* Backward compatibility */
-         if(addFlowMsg->Header.Flags & (NPMAF_USE_CMT|NPMAF_USE_RP)) {
-            trafficSpec.CMT = NPAF_CMTRPv1;
-         }
-         else if(addFlowMsg->Header.Flags & NPMAF_USE_CMT) {
-            trafficSpec.CMT = NPAF_CMT;
-         }
-      }
-
-      trafficSpec.NoDelay = (addFlowMsg->Header.Flags & NPMAF_NODELAY);
-      trafficSpec.Debug   = (addFlowMsg->Header.Flags & NPMAF_DEBUG);
+      trafficSpec.NoDelay = (addFlowMsg->Header.Flags & NPMAFF_NODELAY);
+      trafficSpec.Debug   = (addFlowMsg->Header.Flags & NPMAFF_DEBUG);
 
       char pathMgr[sizeof(addFlowMsg->PathMgr) + 1];
       memcpy((char*)&pathMgr, (const char*)&addFlowMsg->PathMgr, sizeof(addFlowMsg->PathMgr));
       pathMgr[sizeof(addFlowMsg->PathMgr)] = 0x00;
       trafficSpec.PathMgr    = std::string(pathMgr);
-      trafficSpec.NDiffPaths = ntohs(addFlowMsg->NDiffPaths);
+      trafficSpec.NDiffPorts = ntohs(addFlowMsg->NDiffPorts);
 
       Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
                             ntohs(addFlowMsg->StreamID), trafficSpec,

@@ -79,7 +79,7 @@ struct NetPerfMeterAddFlowMessage
    uint64_t             MeasurementID;
    uint16_t             StreamID;
    uint8_t              Protocol;
-   uint8_t              Flags;
+   uint8_t              pad;
 
    char                 Description[NETPERFMETER_DESCRIPTION_SIZE];
 
@@ -99,18 +99,18 @@ struct NetPerfMeterAddFlowMessage
    uint8_t              CMT;
    uint8_t              CCID;
 
-   uint16_t             NDiffPaths;
+   uint16_t             NDiffPorts;
    char                 PathMgr[NETPERFMETER_PATHMGR_LENGTH];
 
    uint16_t             OnOffEvents;
    uint32_t             OnOffEvent[];
 } __attribute__((packed));
 
+#define NPMAFF_DEBUG                     (1 << 0)
+#define NPMAFF_NODELAY                   (1 << 1)
+
+// RetransmissionTrials in milliseconds (highest bit of 32-bit value set)
 #define NPMAF_RTX_TRIALS_IN_MILLISECONDS (1 << 31)
-#define NPMAF_USE_CMT                    (1 << 30)   /* DEPRECATED! */
-#define NPMAF_USE_RP                     (1 << 29)   /* DEPRECATED! */
-#define NPMAF_NODELAY                    (1 << 28)
-#define NPMAF_DEBUG                      (1 << 27)
 
 #define NPAF_PRIMARY_PATH 0x00
 #define NPAF_CMT          0x01

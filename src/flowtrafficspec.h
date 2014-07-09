@@ -76,7 +76,7 @@ class FlowTrafficSpec
    uint8_t                CMT;
    uint8_t                CCID;
    
-   uint16_t               NDiffPaths;
+   uint16_t               NDiffPorts;
    std::string            PathMgr;
 
    bool                   Debug;

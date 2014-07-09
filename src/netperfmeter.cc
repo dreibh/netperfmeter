@@ -40,17 +40,6 @@
 using namespace std;
 
 
-/* FIXME: This is ugly, but currently the only way to easily get the #defines for Linux MPTCP! */
-#define TCP_MULTIPATH_DEBUG         10001   /* MPTCP DEBUG on/off */
-#define TCP_MULTIPATH_ENABLE        10002   /* MPTCP DISABLED on/off */
-#define TCP_MULTIPATH_ADD           10003
-#define TCP_MULTIPATH_REMOVE        10004
-#define TCP_MULTIPATH_SUBFLOWS      10005
-#define TCP_MULTIPATH_CONNID        10006
-#define TCP_MULTIPATH_NDIFFPORTS    10007   /* MPTCP NDIFFPORTS */
-#define TCP_MULTIPATH_PATHMANAGER   10008   /* MPTCP PATHMANAGER */
-
-
 #define MAX_LOCAL_ADDRESSES 16
 static unsigned int   gLocalAddresses  = 0;
 static sockaddr_union gLocalAddressArray[MAX_LOCAL_ADDRESSES];
@@ -397,19 +386,36 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          exit(1);
       }
    }
-   else if(strncmp(parameters, "ndiffpaths=", 11) == 0) {
-      trafficSpec.NDiffPaths = atol((const char*)&parameters[11]);
+   else if(strncmp(parameters, "ndiffports=", 11) == 0) {
+      unsigned int nDiffPorts;
+      int          pos;
+      if(sscanf((const char*)&parameters[11], "%u%n", &nDiffPorts, &pos) == 1) {
+         trafficSpec.NDiffPorts = (uint16_t)nDiffPorts;
+         n = 11 + pos;
+      }
    }
    else if(strncmp(parameters, "pathmgr=", 8) == 0) {
-      if(strlen((const char*)&parameters[8]) > NETPERFMETER_PATHMGR_LENGTH) {
+      char   pathMgr[NETPERFMETER_PATHMGR_LENGTH + 1];
+      size_t i = 0;
+      while(i < NETPERFMETER_PATHMGR_LENGTH) {
+         if( (parameters[8 + i] == ':') ||
+             (parameters[8 + i] == 0x00) ) {
+            break;
+         }
+         pathMgr[i] = parameters[8 + i];
+         i++;
+      }
+      pathMgr[i] = 0x00;
+      if( (parameters[8 + i] != ':') && (parameters[8 + i] != 0x00) ) {
          cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
               << " - name too long!" << std::endl;
+          exit(1);
       }
-      trafficSpec.PathMgr = std::string((const char*)&parameters[8]);
-      
+      trafficSpec.PathMgr = std::string((const char*)&pathMgr);
+      n = 8 + strlen((const char*)&pathMgr);
    }
    else {
-      cerr << "ERROR: Invalid options " << parameters << "!" << endl;
+      cerr << "ERROR: Invalid option \"" << parameters << "\"!" << endl;
       exit(1);
    }
    if(parameters[n] == 0x00) {
@@ -471,8 +477,7 @@ static Flow* createFlow(Flow*                  previousFlow,
             if(parameters) {
                parameters = parseNextEntry(parameters, (double*)&trafficSpec.InboundFrameSize, &trafficSpec.InboundFrameSizeRng);
                if(parameters) {
-                  while( (parameters = parseTrafficSpecOption(parameters, trafficSpec, flowID)) ) {
-                  }
+                  while( (parameters = parseTrafficSpecOption(parameters, trafficSpec, flowID)) ) { }
                }
             }
          }
