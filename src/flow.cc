@@ -1217,16 +1217,24 @@ bool Flow::configureSocket(const int socketDescriptor)
        }
     }
     if(TrafficSpec.Protocol == IPPROTO_TCP) {
-    	if (TrafficSpec.TCPNoDelay) {
-    		int on = 1;
-    		if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof(on)) < 0) {
-    			std::cerr << "ERROR: Failed to set TCP_NODELAY on socket - "
-    					  << strerror(errno) << "!" << std::endl;
-    			return(false);
-    		}
-    	}
+       if (TrafficSpec.NoDelay) {
+          int on = 1;
+          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof(on)) < 0) {
+             std::cerr << "ERROR: Failed to set TCP_NODELAY on socket - "
+                     << strerror(errno) << "!" << std::endl;
+             return(false);
+          }
+       }
     }
     if(TrafficSpec.Protocol == IPPROTO_SCTP) {
+       if (TrafficSpec.NoDelay) {
+          int on = 1;
+          if (ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, (char *) &on, sizeof(on)) < 0) {
+             std::cerr << "ERROR: Failed to set SCTP_NODELAY on socket - "
+                     << strerror(errno) << "!" << std::endl;
+             return(false);
+          }
+       }
 #ifdef SCTP_CMT_ON_OFF
         struct sctp_assoc_value cmtOnOff;
         cmtOnOff.assoc_id    = 0;

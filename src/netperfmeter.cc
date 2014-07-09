@@ -369,20 +369,44 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       n = m;
    }
-   else if (strncmp(parameters,"tcp_no_delay=", 13) == 0) {
-      std::cout << "Found tcp_no_delay" << std::endl;
-      if(strncmp((const char*)&parameters[13], "on", 2) == 0) {
-         trafficSpec.TCPNoDelay = true;
-         n = 13 + 2;
+   else if(strncmp(parameters, "nodelay=", 8) == 0) {
+      if(strncmp((const char*)&parameters[8], "on", 2) == 0) {
+         trafficSpec.NoDelay = true;
+         n = 8 + 2;
       }
-      else if(strncmp((const char*)&parameters[13], "off", 3) == 0) {
-         trafficSpec.TCPNoDelay = false;
-         n = 13 + 3;
+      else if(strncmp((const char*)&parameters[8], "off", 3) == 0) {
+         trafficSpec.NoDelay = false;
+         n = 8 + 3;
       }
       else {
-         cerr << "ERROR: Invalid \"tcp_no_delay\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         cerr << "ERROR: Invalid \"nodelay\" setting: " << (const char*)&parameters[8] << "!" << std::endl;
          exit(1);
       }
+   }
+   else if(strncmp(parameters, "debug=", 6) == 0) {
+      if(strncmp((const char*)&parameters[6], "on", 2) == 0) {
+         trafficSpec.Debug = true;
+         n = 6 + 2;
+      }
+      else if(strncmp((const char*)&parameters[6], "off", 3) == 0) {
+         trafficSpec.Debug = false;
+         n = 6 + 3;
+      }
+      else {
+         cerr << "ERROR: Invalid \"debug\" setting: " << (const char*)&parameters[6] << "!" << std::endl;
+         exit(1);
+      }
+   }
+   else if(strncmp(parameters, "ndiffpaths=", 11) == 0) {
+      trafficSpec.NDiffPaths = atol((const char*)&parameters[11]);
+   }
+   else if(strncmp(parameters, "pathmgr=", 8) == 0) {
+      if(strlen((const char*)&parameters[8]) > NETPERFMETER_PATHMGR_LENGTH) {
+         cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
+              << " - name too long!" << std::endl;
+      }
+      trafficSpec.PathMgr = std::string((const char*)&parameters[8]);
+      
    }
    else {
       cerr << "ERROR: Invalid options " << parameters << "!" << endl;

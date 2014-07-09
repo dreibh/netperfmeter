@@ -75,9 +75,14 @@ class FlowTrafficSpec
 
    uint8_t                CMT;
    uint8_t                CCID;
+   
+   uint16_t               NDiffPaths;
+   std::string            PathMgr;
+
+   bool                   Debug;
+   bool                   NoDelay;
 
    bool                   ErrorOnAbort;
-   bool                   TCPNoDelay;
 };
 
 #endif

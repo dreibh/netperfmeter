@@ -1,7 +1,6 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2014 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
@@ -68,7 +67,9 @@ struct NetPerfMeterAcknowledgeMessage
 
 
 #define NETPERFMETER_DESCRIPTION_SIZE     32
-#define NETPERFMETER_RNG_INPUT_PARAMETERS 4
+#define NETPERFMETER_RNG_INPUT_PARAMETERS  4
+
+#define NETPERFMETER_PATHMGR_LENGTH       16
 
 struct NetPerfMeterAddFlowMessage
 {
@@ -95,11 +96,11 @@ struct NetPerfMeterAddFlowMessage
    uint32_t             SndBufferSize;
 
    uint16_t             MaxMsgSize;
-
    uint8_t              CMT;
    uint8_t              CCID;
 
-   uint8_t              TCPNoDelay;
+   uint16_t             NDiffPaths;
+   char                 PathMgr[NETPERFMETER_PATHMGR_LENGTH];
 
    uint16_t             OnOffEvents;
    uint32_t             OnOffEvent[];
@@ -108,6 +109,8 @@ struct NetPerfMeterAddFlowMessage
 #define NPMAF_RTX_TRIALS_IN_MILLISECONDS (1 << 31)
 #define NPMAF_USE_CMT                    (1 << 30)   /* DEPRECATED! */
 #define NPMAF_USE_RP                     (1 << 29)   /* DEPRECATED! */
+#define NPMAF_NODELAY                    (1 << 28)
+#define NPMAF_DEBUG                      (1 << 27)
 
 #define NPAF_PRIMARY_PATH 0x00
 #define NPAF_CMT          0x01
@@ -159,7 +162,7 @@ struct NetPerfMeterDataMessage
 } __attribute__((packed));
 
 #define NPMDF_FRAME_BEGIN (1 << 0)
-#define NPMDF_FRAME_END (1 << 1)
+#define NPMDF_FRAME_END   (1 << 1)
 
 
 struct NetPerfMeterStartMessage

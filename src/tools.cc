@@ -1,7 +1,6 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2014 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify

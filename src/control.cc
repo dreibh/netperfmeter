@@ -1,7 +1,6 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2014 by Thomas Dreibholz
  *
  * This program is free software: you can redistribute it and/or modify
@@ -155,7 +154,12 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    NetPerfMeterAddFlowMessage* addFlowMsg = (NetPerfMeterAddFlowMessage*)&addFlowMsgBuffer;
    addFlowMsg->Header.Type   = NETPERFMETER_ADD_FLOW;
    addFlowMsg->Header.Flags  = 0x00;
-   addFlowMsg->TCPNoDelay	 = uint8_t((flow->getTrafficSpec().TCPNoDelay) ? 1 : 0);
+   if(flow->getTrafficSpec().Debug == true) {
+      addFlowMsg->Header.Flags |= NPMAF_DEBUG;
+   }
+   if(flow->getTrafficSpec().NoDelay == true) {
+      addFlowMsg->Header.Flags |= NPMAF_NODELAY;
+   }
    addFlowMsg->CCID          = flow->getTrafficSpec().CCID;
    addFlowMsg->CMT           = flow->getTrafficSpec().CMT;
    if(flow->getTrafficSpec().CMT > 0) {
@@ -195,6 +199,11 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    memset((char*)&addFlowMsg->Description, 0, sizeof(addFlowMsg->Description));
    strncpy((char*)&addFlowMsg->Description, flow->getTrafficSpec().Description.c_str(),
            std::min(sizeof(addFlowMsg->Description), flow->getTrafficSpec().Description.size()));
+
+   addFlowMsg->NDiffPaths = htons(flow->getTrafficSpec().NDiffPaths);
+   memset((char*)&addFlowMsg->PathMgr, 0, sizeof(addFlowMsg->PathMgr));
+   strncpy((char*)&addFlowMsg->PathMgr, flow->getTrafficSpec().PathMgr.c_str(),
+           std::min(sizeof(addFlowMsg->PathMgr), flow->getTrafficSpec().PathMgr.size()));
 
    sctp_sndrcvinfo sinfo;
    memset(&sinfo, 0, sizeof(sinfo));
@@ -348,6 +357,10 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          fprintf(configFile, "FLOW%u_INBOUND_FRAME_SIZE_RNG=%u\n",           flow->getFlowID(), flow->getTrafficSpec().InboundFrameSizeRng);
          fprintf(configFile, "FLOW%u_RELIABLE=%f\n",                         flow->getFlowID(), flow->getTrafficSpec().ReliableMode);
          fprintf(configFile, "FLOW%u_ORDERED=%f\n",                          flow->getFlowID(), flow->getTrafficSpec().OrderedMode);
+         fprintf(configFile, "FLOW%u_NODELAY=\"%s\"\n",                      flow->getFlowID(), (flow->getTrafficSpec().NoDelay == true) ? "on" : "off");
+         fprintf(configFile, "FLOW%u_DEBUG=\"%s\"\n",                        flow->getFlowID(), (flow->getTrafficSpec().Debug == true) ? "on" : "off");
+         fprintf(configFile, "FLOW%u_PATHMGR=\"%s\"\n",                      flow->getFlowID(), flow->getTrafficSpec().PathMgr.c_str());
+         fprintf(configFile, "FLOW%u_NDIFFPATHS=%u\n",                       flow->getFlowID(), flow->getTrafficSpec().NDiffPaths);
          fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(), flow->getVectorFile().getName().c_str());
          fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n",        flow->getFlowID(),
                               Flow::getNodeOutputName(vectorNamePattern, "passive",
@@ -767,7 +780,14 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
          }
       }
 
-      trafficSpec.TCPNoDelay = (addFlowMsg->TCPNoDelay != 0) ? true : false;
+      trafficSpec.NoDelay = (addFlowMsg->Header.Flags & NPMAF_NODELAY);
+      trafficSpec.Debug   = (addFlowMsg->Header.Flags & NPMAF_DEBUG);
+
+      char pathMgr[sizeof(addFlowMsg->PathMgr) + 1];
+      memcpy((char*)&pathMgr, (const char*)&addFlowMsg->PathMgr, sizeof(addFlowMsg->PathMgr));
+      pathMgr[sizeof(addFlowMsg->PathMgr)] = 0x00;
+      trafficSpec.PathMgr    = std::string(pathMgr);
+      trafficSpec.NDiffPaths = ntohs(addFlowMsg->NDiffPaths);
 
       Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
                             ntohs(addFlowMsg->StreamID), trafficSpec,

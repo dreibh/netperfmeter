@@ -124,12 +124,19 @@ void FlowTrafficSpec::print(std::ostream& os) const
       os << "*0 ";
    }
    os << "}" << std::endl;
+
    os << "      - Error on Abort:      "
-      << ((ErrorOnAbort == true) ? "yes" : "no") << std::endl;
-   if(Protocol == IPPROTO_TCP) {
-	   os << "      - TCP No Delay:        "
-		  << ((TCPNoDelay == true) ? "yes" : "no") << std::endl;
+      << ((ErrorOnAbort == true) ? "yes" : "no") << std::endl
+      << "      - Debug:               "
+      << ((Debug == true) ? "yes" : "no") << std::endl
+      << "      - No Delay:            "
+      << ((NoDelay == true) ? "yes" : "no") << std::endl;
+
+   if(Protocol == IPPROTO_MPTCP) {
+      os << "      Number of Diff. Paths: " << NDiffPaths << std::endl
+         << "      Path Manager:          " << PathMgr    << std::endl;
    }
+
    os << "      - CMT:                 #" << (unsigned int)CMT << " ";
    switch(CMT) {
       case NPAF_PRIMARY_PATH:
@@ -165,7 +172,10 @@ void FlowTrafficSpec::reset()
    RetransmissionTrials     = ~0;
    RetransmissionTrialsInMS = true;
    ErrorOnAbort             = true;
-   TCPNoDelay               = false;
+   Debug                    = false;
+   NoDelay                  = false;
+   NDiffPaths               = 4;
+   PathMgr                  = "default";
    CMT                      = 0x00;
    CCID                     = 0x00;
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
