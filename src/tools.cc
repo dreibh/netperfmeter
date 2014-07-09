@@ -1157,6 +1157,7 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
 #endif
 
 
+/*
 ssize_t sctp_send_fixed(int                           sd,
                         const void*                   data,
                         size_t                        len,
@@ -1184,3 +1185,4 @@ ssize_t sctp_send_fixed(int                           sd,
    memcpy(sri, sinfo, sizeof(struct sctp_sndrcvinfo));
    return(ext_sendmsg(sd, &msg, msg.msg_flags));
 }
+*/

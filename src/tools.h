@@ -146,6 +146,7 @@ inline int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int 
 }
 #endif
 
+/*
 #if defined(linux)
 #warning Added fix for broken sctp_send() with LK-SCTP
 ssize_t sctp_send_fixed(int                           sd,
@@ -155,5 +156,6 @@ ssize_t sctp_send_fixed(int                           sd,
                         int                           flags);
 #define sctp_send(a,b,c,d,e) sctp_send_fixed(a,b,c,d,e)
 #endif
+*/
 
 #endif

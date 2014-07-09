@@ -132,7 +132,6 @@ AC_TRY_COMPILE([#include <netinet/in.h>],
                [AC_DEFINE(HAVE_IPV6_BINDV6ONLY, 1, "Define to 1 if IPV6_BINDV6ONLY socket option is available.")
                 AC_MSG_RESULT(yes)],
                [AC_MSG_RESULT(no)])
-
 AC_CHECK_FUNCS(socket, , AC_CHECK_LIB(socket, socket))
 
 

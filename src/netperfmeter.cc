@@ -40,6 +40,17 @@
 using namespace std;
 
 
+/* FIXME: This is ugly, but currently the only way to easily get the #defines for Linux MPTCP! */
+#define TCP_MULTIPATH_DEBUG         10001   /* MPTCP DEBUG on/off */
+#define TCP_MULTIPATH_ENABLE        10002   /* MPTCP DISABLED on/off */
+#define TCP_MULTIPATH_ADD           10003
+#define TCP_MULTIPATH_REMOVE        10004
+#define TCP_MULTIPATH_SUBFLOWS      10005
+#define TCP_MULTIPATH_CONNID        10006
+#define TCP_MULTIPATH_NDIFFPORTS    10007   /* MPTCP NDIFFPORTS */
+#define TCP_MULTIPATH_PATHMANAGER   10008   /* MPTCP PATHMANAGER */
+
+
 #define MAX_LOCAL_ADDRESSES 16
 static unsigned int   gLocalAddresses  = 0;
 static sockaddr_union gLocalAddressArray[MAX_LOCAL_ADDRESSES];
@@ -359,23 +370,23 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       n = m;
    }
    else if (strncmp(parameters,"tcp_no_delay=", 13) == 0) {
-	   std::cout << "Found tcp_no_delay" << std::endl;
-	   if(strncmp((const char*)&parameters[13], "on", 2) == 0) {
-		   trafficSpec.TCPNoDelay = true;
-		   n = 13 + 2;
-	   }
-	   else if(strncmp((const char*)&parameters[13], "off", 3) == 0) {
-		   trafficSpec.TCPNoDelay = false;
-		   n = 13 + 3;
-	   }
-	   else {
-		   cerr << "ERROR: Invalid \"tcp_no_delay\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
-		   exit(1);
-	   }
+      std::cout << "Found tcp_no_delay" << std::endl;
+      if(strncmp((const char*)&parameters[13], "on", 2) == 0) {
+         trafficSpec.TCPNoDelay = true;
+         n = 13 + 2;
+      }
+      else if(strncmp((const char*)&parameters[13], "off", 3) == 0) {
+         trafficSpec.TCPNoDelay = false;
+         n = 13 + 3;
+      }
+      else {
+         cerr << "ERROR: Invalid \"tcp_no_delay\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         exit(1);
+      }
    }
    else {
-	   cerr << "ERROR: Invalid options " << parameters << "!" << endl;
-	   exit(1);
+      cerr << "ERROR: Invalid options " << parameters << "!" << endl;
+      exit(1);
    }
    if(parameters[n] == 0x00) {
       return(NULL);
@@ -770,8 +781,10 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
            << strerror(errno) << "!" << endl;
       exit(1);
    }
-#ifndef TCP_MULTIPATH_ENABLE
-#warning TCP_MULTIPATH_ENABLE is not defined => No MPTCP configuration possible!
+
+// FIXME! Add proper, platform-independent code here!
+#ifndef __linux__
+#warning MPTCP is currently only available on Linux!
 #else
    int cmtOnOff = 1;
    if(ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
