@@ -765,8 +765,9 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       if( (trafficSpec.RetransmissionTrialsInMS) && (trafficSpec.RetransmissionTrials == 0x7fffffff) ) {
          trafficSpec.RetransmissionTrials = ~0;
       }
+      const uint32_t* events = (const uint32_t*)&addFlowMsg->OnOffEvent;
       for(size_t i = 0;i < startStopEvents;i++) {
-         trafficSpec.OnOffEvents.insert(ntohl(addFlowMsg->OnOffEvent[i]));
+         trafficSpec.OnOffEvents.insert(ntohl(events[i]));
       }
       trafficSpec.CMT  = addFlowMsg->CMT;
       trafficSpec.CCID = addFlowMsg->CCID;
