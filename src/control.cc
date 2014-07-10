@@ -207,7 +207,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
       std::cout << "<R1> "; std::cout.flush();
    }
    if(sctp_send(controlSocket, addFlowMsg, addFlowMsgSize, &sinfo, 0) <= 0) {
-      perror("ERROR");
+      perror("sctp_send error");
       return(false);
    }
 
@@ -218,7 +218,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    flow->getMeasurementID(),
                                    flow->getFlowID(), flow->getStreamID()) == false) {
-      perror("ERROR");
+      perror("sctp_rev error");
       return(false);
    }
 

@@ -1217,7 +1217,6 @@ bool Flow::configureSocket(const int socketDescriptor)
       }
    }
    if( (TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP) ) {
-puts("tcp/mptcp-1"); // ????
       const int noDelayOption = (TrafficSpec.NoDelay == true) ? 1 : 0;
       if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
          std::cerr << "ERROR: Failed to set TCP_NODELAY on socket - "
@@ -1226,13 +1225,10 @@ puts("tcp/mptcp-1"); // ????
       }
 
       if(TrafficSpec.Protocol == IPPROTO_MPTCP) {
-puts("tcp/mptcp-2"); // ????
-
          // FIXME! Add proper, platform-independent code here!
 #ifndef __linux__
 #warning MPTCP is currently only available on Linux!
 #else
-puts("tcp/mptcp-3"); // ????
 
          const int debugOption = (TrafficSpec.Debug == true) ? 1 : 0;
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_DEBUG, (const char*)&debugOption, sizeof(debugOption)) < 0) {
@@ -1247,12 +1243,11 @@ puts("tcp/mptcp-3"); // ????
          }
 
          const char* pathMgr = TrafficSpec.PathMgr.c_str();
-         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_PATHMANAGER, (const char*)&pathMgr, strlen(pathMgr)) < 0) {
+         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_PATHMANAGER, pathMgr, strlen(pathMgr)) < 0) {
             std::cerr << "WARNING: Failed to set TCP_MULTIPATH_PATHMANAGER on socket - "
                       << strerror(errno) << "!" << std::endl;
          }
 #endif
-puts("tcp/mptcp-4"); // ????
       }
    }
    else if(TrafficSpec.Protocol == IPPROTO_SCTP) {
