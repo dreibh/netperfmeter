@@ -187,8 +187,6 @@ elif [ "$SYSTEM" = "FreeBSD" ] ; then
          exit 1
       fi
 
-      echo "XXX: $queueParameters ; ERR=$ERROR"
-
       /sbin/ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST || success=0
       /sbin/ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR $queueParameters || success=0
       if [ $bidirectionalQoS -eq 1 ] ; then
