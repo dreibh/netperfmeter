@@ -95,8 +95,6 @@ if [ $# -ge 4 ] ; then
       fi
       shift ; shift
    done
-
-#   exit 1
 fi
 
 
