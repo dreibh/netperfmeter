@@ -21,7 +21,7 @@
 #
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [ID] [Source Network] [Destination Network] [Bandwidth in kbit/s] [Delay in ms] [Loss Rate] [Error Rate] [bidirectional] {options} ..."
+   echo >&2 "Usage: $0 id source destination bandwidth_kbit_per_s delay_ms loss_rate error_rate [-interfaces name] [-bidirectional] [-queueType type] [-frameCapacity packets] [-redMinTh threshold] [-redMaxTh threshold] [-redMaxP probability] [-redWq wq]"
    exit 1
 fi
 
@@ -38,6 +38,7 @@ if [ "$3" != "" ] ; then
 else
    NETWORK_DST="0.0.0.0/0"
 fi
+INTERFACES=""
 QUEUE_TYPE=red
 FRAME_CAPACITY=80
 RED_MINTH=20
@@ -71,30 +72,42 @@ if [ $# -ge 4 ] ; then
      ERROR="$7"
      addRule=1
    fi
-   if [ "$8" = "true" -o "$8" = "bidirectional" ] ; then
-      bidirectionalQoS=1
-   fi
 
-   shift ; shift ; shift ; shift ; shift ; shift ; shift ; shift
+   shift ; shift ; shift ; shift ; shift ; shift ; shift
    while [ "$1" != "" ] ; do      
-      if [ "$1" = "queueType" ] ; then
+      if [ "$1" = "-bidirectional" ] ; then
+         bidirectionalQoS=1
+      elif [ "$1" = "-queueType" ] ; then
          QUEUE_TYPE="$2"
-      elif [ "$1" = "redMinTh" ] ; then
+         shift
+      elif [ "$1" = "-redMinTh" ] ; then
          RED_MINTH="$2"    
-      elif [ "$1" = "redMaxTh" ] ; then
+         shift
+      elif [ "$1" = "-redMaxTh" ] ; then
          RED_MAXTH="$2"     
-      elif [ "$1" = "redMaxP" ] ; then
+         shift
+      elif [ "$1" = "-redMaxP" ] ; then
          RED_MAXP="$2"      
-      elif [ "$1" = "redWq" ] ; then
+         shift
+      elif [ "$1" = "-redWq" ] ; then
          RED_WQ="$2"
-      elif [ "$1" = "frameCapacity" ] ; then
+         shift
+      elif [ "$1" = "-frameCapacity" ] ; then
          FRAME_CAPACITY="$2"
+         shift
+      elif [ "$1" = "-interfaces" ] ; then
+         INTERFACES="$2"
+         shift
       else
          echo >&2 "ERROR: Invalid option $1!"
          exit 1
       fi
-      shift ; shift
+      shift
    done
+fi
+
+if [ $addRule -eq 0 ] ; then
+   echo "REM"
 fi
 
 
@@ -102,8 +115,10 @@ fi
 success=1
 SYSTEM=`uname`
 if [ "$SYSTEM" = "Linux" ] ; then
-   INTERFACES=`eval "ifconfig -a" 2>/dev/null | sed -ne 's|^\('$cur'[^[:space:][:punct:]]\{1,\}\).*$|\1|p'`
-
+   if [ "$INTERFACES" = "" ] ; then   # Use *all* interfaces
+      INTERFACES=`eval "ifconfig -a" 2>/dev/null | sed -ne 's|^\('$cur'[^[:space:][:punct:]]\{1,\}\).*$|\1|p'`
+   fi
+   
    for iface in $INTERFACES ; do
       tc qdisc del dev $iface root 2>/dev/null   # Ohne ID-Angabe wird Root mit jeder ID entfernt!
    done
@@ -129,16 +144,24 @@ if [ "$SYSTEM" = "Linux" ] ; then
       fi
 
       for iface in $INTERFACES ; do
-         tc qdisc add dev $iface root handle 9$ID:0 cbq bandwidth 100Mbit avpkt 1000 cell 8 || success=0
+         tc qdisc add dev $iface root handle 9$ID:0 cbq bandwidth 100Mbit avpkt 1500 cell 8 || success=0
          tc class add dev $iface parent 9$ID:0 classid 9$ID:3 cbq \
             bandwidth 100Mbit $bandwidthParameter $weightParameter \
-            prio 8 allot 1514 cell 8 maxburst 20 avpkt 1000 bounded || success=0
-         tc qdisc add dev $iface parent 9$ID:3 handle 8$ID:0 netem \
-            $delayParameter $lossParameter $errorParameter || success=0
+            prio 8 allot 1514 cell 8 maxburst 20 avpkt 1500 bounded || success=0
+            
+         if [ "$QUEUE_TYPE" = "fifo" ] ; then
+            tc qdisc add dev $iface handle 8$ID:0 parent 9$ID:3 pfifo limit $FRAME_CAPACITY
+         elif [ "$QUEUE_TYPE" = "red" ] ; then
+#             tc qdisc add dev $iface parent 8$ID:0 red limit $FRAME_CAPACITY avpkt 1500
+            echo "RED configuration: IMPLEMENT ME!"
+            exit 1
+         else
+            echo >&2 "ERROR: Bad queue type?!"
+            exit 1
+         fi
 
          tc filter add dev $iface protocol ip parent 9$ID:0 \
             u32 match ip src $NETWORK_SRC match ip dst $NETWORK_DST flowid 9$ID:3 || success=0
-
          if [ $bidirectionalQoS -eq 1 ] ; then
             tc filter add dev $iface protocol ip parent 9$ID:0 \
                u32 match ip src $NETWORK_DST match ip dst $NETWORK_SRC flowid 9$ID:3 || success=0
