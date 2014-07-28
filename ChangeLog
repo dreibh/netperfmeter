@@ -1,4 +1,35 @@
 ------------------------------------------------------------------------
+r1893 | dreibh | 2014-07-18 19:54:39 +0200 (fr., 18 juli 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
+
+Some updates to the setqos script.
+
+------------------------------------------------------------------------
+r1892 | dreibh | 2014-07-17 15:59:54 +0200 (to., 17 juli 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
+
+Removed inactive debug code.
+
+------------------------------------------------------------------------
+r1891 | dreibh | 2014-07-17 15:58:36 +0200 (to., 17 juli 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/setqos
+
+Removed debug output.
+
+------------------------------------------------------------------------
+r1889 | dreibh | 2014-07-15 12:56:18 +0200 (ti., 15 juli 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+   M /trunk/netperfmeter/configure.ac
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/rpm/netperfmeter.spec
+
+Version bump.
+
+------------------------------------------------------------------------
 r1880 | dreibh | 2014-07-10 14:35:32 +0200 (to., 10 juli 2014) | 2 lines
 Changed paths:
    M /trunk/netperfmeter/src/control.cc
