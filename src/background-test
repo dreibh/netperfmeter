@@ -1,0 +1,23 @@
+#!/bin/bash
+
+REMOTE=localhost:9000
+
+TCP_FLOWS=0
+TCP_PARAMS="const0:const0:const40:const1460:cmt=off"
+
+UDP_FLOWS=1
+UDP_PARAMS="const0:const0:const40:const1562"
+
+
+options=""
+i=0 ; while [ $i -lt $TCP_FLOWS ] ; do
+   options="$options -tcp $TCP_PARAMS"
+   let i=$i+1
+done
+i=0 ; while [ $i -lt $UDP_FLOWS ] ; do
+   options="$options -udp $UDP_PARAMS"
+   let i=$i+1
+done
+
+echo "OPTIONS=$options"
+./netperfmeter $REMOTE $options
