@@ -161,7 +161,9 @@ static const char* parseNextEntry(const char* parameters,
    }
    else if(sscanf(parameters, "uniform%lf,%lf%n", &valueArray[0], &valueArray[1], &n) == 2) {
       *rng = RANDOM_UNIFORM;
-      // printf("%lf +/- %lf%%\n",valueArray[0],valueArray[1]*100);
+   }
+   else if(sscanf(parameters, "pareto%lf,%lf%n", &valueArray[0], &valueArray[1], &n) == 2) {
+      *rng = RANDOM_PARETO;
    }
    else {
       cerr << "ERROR: Invalid parameters " << parameters << endl;

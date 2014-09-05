@@ -57,6 +57,10 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
          snprintf((char*)&str, sizeof(str), "%1.6lf +/- %1.3lf%% (uniform)",
                   valueArray[0], 100.0 * valueArray[1]);
        break;
+      case RANDOM_PARETO:
+         snprintf((char*)&str, sizeof(str), "m=%1.6lf +/- k=%1.6lf%% (pareto)",
+                  valueArray[0], valueArray[1]);
+       break;
       default:
          snprintf((char*)&str, sizeof(str), "unknown?!");
        break;

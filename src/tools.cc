@@ -971,6 +971,9 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
          value = lowest + (randomDouble() * (highest - lowest));
         }
        break;
+      case RANDOM_PARETO:
+         value = randomParetoDouble(valueArray[0], valueArray[1]);
+       break;
       default:
          value = 0.0;   // Avoids warning of uninitialized variable.
          assert(false);
@@ -992,6 +995,9 @@ const char* getRandomGeneratorName(const uint8_t rng)
        break;
       case RANDOM_UNIFORM:
          return("uniform");
+       break;
+      case RANDOM_PARETO:
+         return("pareto");
        break;
    }
    return("(invalid!)");
@@ -1084,6 +1090,21 @@ double randomDouble()
 double randomExpDouble(const double p)
 {
    return( -p * log(randomDouble()) );
+}
+
+
+/* ###### Get pareto-distributed double random value ##################### */
+// m = the minimum value
+// k = the k value 
+double randomParetoDouble(const double m, const double k)
+{
+   assert(k > 0.0);
+
+   double r = randomDouble();
+   while ((r <= 0.0) || (r >= 1.0)) {
+      r = randomDouble();
+   }
+   return( m * pow(r, -1.0 / k) );
 }
 
 

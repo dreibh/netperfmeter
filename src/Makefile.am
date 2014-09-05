@@ -1,4 +1,4 @@
-bin_PROGRAMS = netperfmeter createsummary combinesummaries extractvectors runtimeestimator
+bin_PROGRAMS = netperfmeter createsummary combinesummaries extractvectors runtimeestimator t1
 
 
 # ###### NetPerfMeter program ###############################################
@@ -22,6 +22,9 @@ extractvectors_LDADD   = $(bz2_LIBS)
 
 runtimeestimator_SOURCES = runtimeestimator.cc
 runtimeestimator_LDADD   =
+
+nodist_t1_SOURCES = t1.cc tools.cc
+t1_LDADD          = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread -lm
 
 # nodist_t6_SOURCES = t6.cc tools.cc outputfile.cc
 # t6_LDADD          = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread
