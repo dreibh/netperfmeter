@@ -134,12 +134,10 @@ void FlowTrafficSpec::print(std::ostream& os) const
       << "      - Debug:               "
       << ((Debug == true) ? "yes" : "no") << std::endl
       << "      - No Delay:            "
-      << ((NoDelay == true) ? "yes" : "no") << std::endl;
-
-//    if(Protocol == IPPROTO_MPTCP) {
-      os << "      Number of Diff. Ports: " << NDiffPorts << std::endl
-         << "      Path Manager:          " << PathMgr    << std::endl;
-//    }
+      << ((NoDelay == true) ? "yes" : "no") << std::endl
+      << "      Congestion Control:    " << CongestionControl << std::endl
+      << "      Number of Diff. Ports: " << NDiffPorts        << std::endl
+      << "      Path Manager:          " << PathMgr           << std::endl;
 
    os << "      - CMT:                 #" << (unsigned int)CMT << " ";
    switch(CMT) {
@@ -180,6 +178,7 @@ void FlowTrafficSpec::reset()
    NoDelay                  = false;
    NDiffPorts               = 4;
    PathMgr                  = "default";
+   CongestionControl        = "default";
    CMT                      = 0x00;
    CCID                     = 0x00;
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {

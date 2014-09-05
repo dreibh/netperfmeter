@@ -194,6 +194,10 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    strncpy((char*)&addFlowMsg->Description, flow->getTrafficSpec().Description.c_str(),
            std::min(sizeof(addFlowMsg->Description), flow->getTrafficSpec().Description.size()));
 
+   memset((char*)&addFlowMsg->CongestionControl, 0, sizeof(addFlowMsg->CongestionControl));
+   strncpy((char*)&addFlowMsg->CongestionControl, flow->getTrafficSpec().CongestionControl.c_str(),
+           std::min(sizeof(addFlowMsg->CongestionControl), flow->getTrafficSpec().CongestionControl.size()));
+
    addFlowMsg->NDiffPorts = htons(flow->getTrafficSpec().NDiffPorts);
    memset((char*)&addFlowMsg->PathMgr, 0, sizeof(addFlowMsg->PathMgr));
    strncpy((char*)&addFlowMsg->PathMgr, flow->getTrafficSpec().PathMgr.c_str(),
@@ -353,6 +357,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          fprintf(configFile, "FLOW%u_ORDERED=%f\n",                          flow->getFlowID(), flow->getTrafficSpec().OrderedMode);
          fprintf(configFile, "FLOW%u_NODELAY=\"%s\"\n",                      flow->getFlowID(), (flow->getTrafficSpec().NoDelay == true) ? "on" : "off");
          fprintf(configFile, "FLOW%u_DEBUG=\"%s\"\n",                        flow->getFlowID(), (flow->getTrafficSpec().Debug == true) ? "on" : "off");
+         fprintf(configFile, "FLOW%u_CC=\"%s\"\n",                           flow->getFlowID(), flow->getTrafficSpec().CongestionControl.c_str());
          fprintf(configFile, "FLOW%u_PATHMGR=\"%s\"\n",                      flow->getFlowID(), flow->getTrafficSpec().PathMgr.c_str());
          fprintf(configFile, "FLOW%u_NDIFFPORTS=%u\n",                       flow->getFlowID(), flow->getTrafficSpec().NDiffPorts);
          fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(), flow->getVectorFile().getName().c_str());
@@ -769,6 +774,11 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       trafficSpec.NoDelay = (addFlowMsg->Header.Flags & NPMAFF_NODELAY);
       trafficSpec.Debug   = (addFlowMsg->Header.Flags & NPMAFF_DEBUG);
 
+      char congestionControl[sizeof(addFlowMsg->CongestionControl) + 1];
+      memcpy((char*)&congestionControl, (const char*)&addFlowMsg->CongestionControl, sizeof(addFlowMsg->CongestionControl));
+      congestionControl[sizeof(addFlowMsg->CongestionControl)] = 0x00;
+      trafficSpec.CongestionControl = std::string(congestionControl);
+      
       char pathMgr[sizeof(addFlowMsg->PathMgr) + 1];
       memcpy((char*)&pathMgr, (const char*)&addFlowMsg->PathMgr, sizeof(addFlowMsg->PathMgr));
       pathMgr[sizeof(addFlowMsg->PathMgr)] = 0x00;

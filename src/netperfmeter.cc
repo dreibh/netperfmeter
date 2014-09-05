@@ -416,6 +416,26 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       trafficSpec.PathMgr = std::string((const char*)&pathMgr);
       n = 8 + strlen((const char*)&pathMgr);
    }
+   else if(strncmp(parameters, "cc=", 3) == 0) {
+      char   congestionControl[NETPERFMETER_CC_LENGTH + 1];
+      size_t i = 0;
+      while(i < NETPERFMETER_CC_LENGTH) {
+         if( (parameters[3 + i] == ':') ||
+             (parameters[3 + i] == 0x00) ) {
+            break;
+         }
+         congestionControl[i] = parameters[3 + i];
+         i++;
+      }
+      congestionControl[i] = 0x00;
+      if( (parameters[3 + i] != ':') && (parameters[3 + i] != 0x00) ) {
+         cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
+              << " - name too long!" << std::endl;
+          exit(1);
+      }
+      trafficSpec.CongestionControl = std::string((const char*)&congestionControl);
+      n = 3 + strlen((const char*)&congestionControl);
+   }
    else {
       cerr << "ERROR: Invalid option \"" << parameters << "\"!" << endl;
       exit(1);

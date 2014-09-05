@@ -148,6 +148,8 @@ Set debug mode on socket (currently: MPTCP for Linux only. Requires socket optio
 Set number of different MPTCP subflows (MPTCP for Linux only. Requires socket options kernel patch!).
 .It pathmgr=name
 Set MPTCP path manager (MPTCP for Linux only. Requires socket options kernel patch!).
+.It cc=name
+Set congestion control name (TCP and MPTCP for Linux only).
 .It cmt=off|cmt|cmtrpv1|cmtrpv2|like-mptcp|mptcp-like|mptcp
 Configures usage of Concurrent Multipath Transfer (CMT): off (turned off; default), cmt (independent paths), cmtrpv1 (CMT/RPv1), cmtrpv1 (CMT/RPv2), mptcp/like-mptcp/mptcp-like (MPTCP), 0-255 (custom value).
 Currently only supported by CMT-SCTP on FreeBSD systems and MPTCP on Linux systems. Note: CMT for MPTCP always uses MPTCP congestion control.
