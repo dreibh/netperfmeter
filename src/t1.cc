@@ -10,7 +10,7 @@
 int main(int argc, char** argv)
 {
    double valueArray[] = {
-      500, 1.5
+      0.16667, 1.5
    };
    
    for(int i = 0; i < 5000000; i++) {

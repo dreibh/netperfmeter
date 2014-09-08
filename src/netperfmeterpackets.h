@@ -74,10 +74,10 @@ struct NetPerfMeterAcknowledgeMessage
 
 struct NetPerfMeterOnOffEvent
 {
-   uint8_t  RandNumGen;
-   uint8_t  Flags;
-   uint16_t pad;
-   double   ValueArray[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   uint8_t          RandNumGen;
+   uint8_t          Flags;
+   uint16_t         pad;
+   network_double_t ValueArray[NETPERFMETER_RNG_INPUT_PARAMETERS];
 };
 
 #define NPOOEF_RELTIME (1 << 0)

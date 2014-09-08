@@ -1103,24 +1103,25 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
    if(OnOffEventPointer >= TrafficSpec.OnOffEvents.size()) {
       NextStatusChangeEvent = ~0ULL;
       if(TrafficSpec.RepeatOnOff == true) {
-         puts("----- ende of schedule   REWIND!\n");
+//          printf("Rewinding flow #%u\n", FlowID);
          OnOffEventPointer = 0;
       }
    }
 
    if(OnOffEventPointer < TrafficSpec.OnOffEvents.size()) {
-      const OnOffEvent& event = TrafficSpec.OnOffEvents[OnOffEventPointer];
-      printf("SCHEDULE: %d\n",(int)OnOffEventPointer);
-
+      const OnOffEvent&        event        = TrafficSpec.OnOffEvents[OnOffEventPointer];
       const unsigned long long relNextEvent = (const unsigned long long)rint(1000000.0 * getRandomValue((const double*)&event.ValueArray, event.RandNumGen));
-      printf("%ld: v=%ld\n",now-TimeBase,relNextEvent);
-
       const unsigned long long absNextEvent = TimeBase + TimeOffset + relNextEvent;
 
       TimeOffset            = TimeOffset + relNextEvent;
       NextStatusChangeEvent = absNextEvent;
 
-      printf("%ld: v=%ld\t at %ld\n",now-TimeBase,relNextEvent,(int64_t)absNextEvent-(int64_t)now);
+//       printf("Schedule flow #%u:\trel=%llu\tin=%lld\n",
+//              FlowID, relNextEvent, (long long)absNextEvent - (long long)now);
+
+      if((long long)absNextEvent - (long long)now < -10000000) {
+         std::cerr << "WARNING: Schedule is more than 10s behind clock time! Check on/off parameters!" << std::endl;
+      }
    }
 
    unlock();
