@@ -110,17 +110,18 @@ void FlowTrafficSpec::print(std::ostream& os) const
       }
       os << std::endl;
    }
-   os << "      - Start/Stop:          { ";
+   os << "      - On/Off:              { ";
    if(OnOffEvents.size() > 0) {
       bool start = true;
-      for(std::set<unsigned int>::iterator iterator = OnOffEvents.begin();
+      for(std::set<OnOffEvent>::iterator iterator = OnOffEvents.begin();
           iterator != OnOffEvents.end();iterator++) {
          if(start) {
-            os << "*" << (*iterator / 1000.0) << " ";
+            os << "* ";
          }
          else {
-            os << "~" << (*iterator / 1000.0) << " ";
+            os << "~ ";
          }
+         showEntry(os, (const double*)&(*iterator).ValueArray, (*iterator).RandNumGen);
          start = !start;
       }
    }

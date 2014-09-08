@@ -335,28 +335,30 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       n = 12 + strlen(description);
    }
    else if(strncmp(parameters,"onoff=", 6) == 0) {
-      unsigned int lastEvent = 0;
-      size_t       m         = 5;
+      size_t   m           = 5;
+      uint16_t eventNumber = 0;
       while( (parameters[m] != 0x00) && (parameters[m] != ':') ) {
          m++;
-         double       dblValue;
-         unsigned int onoff;
-         if(sscanf((const char*)&parameters[m], "+%lf%n", &dblValue, &n) == 1) {
-            // Relative time
-            onoff = (unsigned int)rint(1000.0 * dblValue);
-            onoff += lastEvent;
+         
+         OnOffEvent event;
+         event.Number        = eventNumber++;
+         event.RandNumGen    = 0x00;
+         event.RelativeTime  = false;
+         for(size_t i = 0; i < sizeof(event.ValueArray) / sizeof(event.ValueArray[0]); i++) {
+            event.ValueArray[i] = 0.0;
          }
-         else if(sscanf((const char*)&parameters[m], "%lf%n", &dblValue, &n) == 1) {
-            // Absolute time
-            onoff = (unsigned int)rint(1000.0 * dblValue);
+         if(parameters[m] == '+') {
+            event.RelativeTime = true;
+            m++;
          }
-         else {
+         const char* p = parseNextEntry((const char*)&parameters[m + 1], (double*)&event.ValueArray, (uint8_t*)&event.RandNumGen);
+         if(p == NULL) {
             cerr << "ERROR: Invalid on/off list at " << (const char*)&parameters[m] << "!" << std::endl;
             exit(1);
          }
-         trafficSpec.OnOffEvents.insert(onoff);
-         lastEvent = onoff;
-         m += n;
+         parameters = p;
+
+         trafficSpec.OnOffEvents.insert(event);
       }
       n = m;
    }

@@ -33,6 +33,21 @@
 #include <iostream>
 
 
+struct OnOffEvent
+{
+   uint16_t Number;
+   uint8_t  RandNumGen;
+   bool     RelativeTime;
+   double   ValueArray[NETPERFMETER_RNG_INPUT_PARAMETERS];
+};
+
+inline bool operator<(const OnOffEvent& e1, const OnOffEvent& e2) {
+   if(e1.Number <= e2.Number) {
+      return(true);
+   }
+   return(false);
+}
+
 class FlowTrafficSpec
 {
    // ====== Methods ========================================================
@@ -50,7 +65,7 @@ class FlowTrafficSpec
 
    std::string            Description;
    uint8_t                Protocol;
-   std::set<unsigned int> OnOffEvents;
+   std::set<struct OnOffEvent>   OnOffEvents;
 
    double                 OrderedMode;
    double                 ReliableMode;

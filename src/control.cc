@@ -186,9 +186,17 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
 
    addFlowMsg->OnOffEvents   = htons(flow->getTrafficSpec().OnOffEvents.size());
    size_t i = 0;
-   for(std::set<unsigned int>::iterator iterator = flow->getTrafficSpec().OnOffEvents.begin();
+   for(std::set<OnOffEvent>::iterator iterator = flow->getTrafficSpec().OnOffEvents.begin();
        iterator != flow->getTrafficSpec().OnOffEvents.end();iterator++, i++) {
-      addFlowMsg->OnOffEvent[i] = htonl(*iterator);
+      addFlowMsg->OnOffEvent[i].RandNumGen = (*iterator).RandNumGen;
+      addFlowMsg->OnOffEvent[i].Flags      = 0x00;
+      if((*iterator).RelativeTime == true) {
+         addFlowMsg->OnOffEvent[i].Flags |= NPOOEF_RELTIME;
+      }
+      addFlowMsg->OnOffEvent[i].pad = 0x00;
+      for(size_t j = 0; j < NETPERFMETER_RNG_INPUT_PARAMETERS; j++) {
+         addFlowMsg->OnOffEvent[i].ValueArray[j] = doubleToNetwork((*iterator).ValueArray[j]);
+      }
    }
    memset((char*)&addFlowMsg->Description, 0, sizeof(addFlowMsg->Description));
    strncpy((char*)&addFlowMsg->Description, flow->getTrafficSpec().Description.c_str(),
@@ -764,15 +772,21 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       if( (trafficSpec.RetransmissionTrialsInMS) && (trafficSpec.RetransmissionTrials == 0x7fffffff) ) {
          trafficSpec.RetransmissionTrials = ~0;
       }
-      const uint32_t* events = (const uint32_t*)&addFlowMsg->OnOffEvent;
-      for(size_t i = 0;i < startStopEvents;i++) {
-         trafficSpec.OnOffEvents.insert(ntohl(events[i]));
-      }
-      trafficSpec.CMT  = addFlowMsg->CMT;
-      trafficSpec.CCID = addFlowMsg->CCID;
-
+      trafficSpec.CMT     = addFlowMsg->CMT;
+      trafficSpec.CCID    = addFlowMsg->CCID;
       trafficSpec.NoDelay = (addFlowMsg->Header.Flags & NPMAFF_NODELAY);
       trafficSpec.Debug   = (addFlowMsg->Header.Flags & NPMAFF_DEBUG);
+
+      const NetPerfMeterOnOffEvent* event = (const NetPerfMeterOnOffEvent*)&addFlowMsg->OnOffEvent;
+      for(size_t i = 0;i < startStopEvents;i++) {
+         OnOffEvent newEvent;
+         newEvent.RandNumGen   = event[i].RandNumGen;
+         newEvent.RelativeTime = (event[i].Flags & NPOOEF_RELTIME);
+         for(size_t j = 0; j < NETPERFMETER_RNG_INPUT_PARAMETERS; j++) {
+            newEvent.ValueArray[j] = networkToDouble(event[i].ValueArray[j]);
+         }
+         trafficSpec.OnOffEvents.insert(newEvent);
+      }
 
       char congestionControl[sizeof(addFlowMsg->CongestionControl) + 1];
       memcpy((char*)&congestionControl, (const char*)&addFlowMsg->CongestionControl, sizeof(addFlowMsg->CongestionControl));

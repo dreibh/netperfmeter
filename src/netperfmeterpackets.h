@@ -72,40 +72,50 @@ struct NetPerfMeterAcknowledgeMessage
 #define NETPERFMETER_PATHMGR_LENGTH       16
 #define NETPERFMETER_CC_LENGTH            16
 
+struct NetPerfMeterOnOffEvent
+{
+   uint8_t  RandNumGen;
+   uint8_t  Flags;
+   uint16_t pad;
+   double   ValueArray[NETPERFMETER_RNG_INPUT_PARAMETERS];
+};
+
+#define NPOOEF_RELTIME (1 << 0)
+
 struct NetPerfMeterAddFlowMessage
 {
-   NetPerfMeterHeader   Header;
+   NetPerfMeterHeader     Header;
 
-   uint32_t             FlowID;
-   uint64_t             MeasurementID;
-   uint16_t             StreamID;
-   uint8_t              Protocol;
-   uint8_t              pad;
+   uint32_t               FlowID;
+   uint64_t               MeasurementID;
+   uint16_t               StreamID;
+   uint8_t                Protocol;
+   uint8_t                pad;
 
-   char                 Description[NETPERFMETER_DESCRIPTION_SIZE];
+   char                   Description[NETPERFMETER_DESCRIPTION_SIZE];
 
-   uint32_t             OrderedMode;
-   uint32_t             ReliableMode;
-   uint32_t             RetransmissionTrials;
+   uint32_t               OrderedMode;
+   uint32_t               ReliableMode;
+   uint32_t               RetransmissionTrials;
 
-   network_double_t     FrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
-   network_double_t     FrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
-   uint8_t              FrameRateRng;
-   uint8_t              FrameSizeRng;
+   network_double_t       FrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   network_double_t       FrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   uint8_t                FrameRateRng;
+   uint8_t                FrameSizeRng;
 
-   uint32_t             RcvBufferSize;
-   uint32_t             SndBufferSize;
+   uint32_t               RcvBufferSize;
+   uint32_t               SndBufferSize;
 
-   uint16_t             MaxMsgSize;
-   uint8_t              CMT;
-   uint8_t              CCID;
+   uint16_t               MaxMsgSize;
+   uint8_t                CMT;
+   uint8_t                CCID;
 
-   uint16_t             NDiffPorts;
-   char                 PathMgr[NETPERFMETER_PATHMGR_LENGTH];
-   char                 CongestionControl[NETPERFMETER_CC_LENGTH];
+   uint16_t               NDiffPorts;
+   char                   PathMgr[NETPERFMETER_PATHMGR_LENGTH];
+   char                   CongestionControl[NETPERFMETER_CC_LENGTH];
 
-   uint16_t             OnOffEvents;
-   uint32_t             OnOffEvent[];
+   uint16_t               OnOffEvents;
+   NetPerfMeterOnOffEvent OnOffEvent[];
 } __attribute__((packed));
 
 #define NPMAFF_DEBUG                     (1 << 0)
