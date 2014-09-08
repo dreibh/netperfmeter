@@ -3,10 +3,10 @@
 REMOTE=localhost:9000
 
 TCP_FLOWS=5
-TCP_PARAMS="const0:const0:const40:const1460:cmt=off"
+TCP_PARAMS="const40:const1460:const40:const1460:cmt=off"
 
 UDP_FLOWS=5
-UDP_PARAMS="const0:const0:const25:const2500:onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat"
+UDP_PARAMS="const25:const2500:const25:const2500:onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat"
 
 
 options=""
@@ -20,4 +20,4 @@ i=0 ; while [ $i -lt $UDP_FLOWS ] ; do
 done
 
 echo "OPTIONS=$options"
-make -j12&&./netperfmeter $REMOTE $options
+make -j12&&./netperfmeter $REMOTE $options -quiet
