@@ -343,7 +343,8 @@ class Flow : public Thread
 
 
    // ====== Timing =========================================================
-   unsigned long long BaseTime;
+   unsigned long long TimeBase;     // when has flow been started?
+   unsigned long long TimeOffset;   // time offset to TimeBase for next event
    unsigned long long FirstTransmission;
    unsigned long long FirstReception;
    unsigned long long LastTransmission;
@@ -356,6 +357,7 @@ class Flow : public Thread
    uint32_t           LastOutboundFrameID;     // ID of last outbound frame
    uint64_t           LastOutboundSeqNumber;   // ID of last outbound packet
    unsigned long long NextStatusChangeEvent;
+   size_t             OnOffEventPointer;
 
    // ====== Statistics =====================================================
    Measurement*       MyMeasurement;

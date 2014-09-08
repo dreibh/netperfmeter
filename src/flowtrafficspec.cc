@@ -58,7 +58,7 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
                   valueArray[0], 100.0 * valueArray[1]);
        break;
       case RANDOM_PARETO:
-         snprintf((char*)&str, sizeof(str), "m=%1.6lf +/- k=%1.6lf%% (pareto)",
+         snprintf((char*)&str, sizeof(str), "m=%1.6lf, k=%1.6lf%% (pareto)",
                   valueArray[0], valueArray[1]);
        break;
       default:
@@ -66,7 +66,7 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
        break;
    }
 
-   os << str;
+   os << str << " ";
 }
 
 
@@ -110,17 +110,13 @@ void FlowTrafficSpec::print(std::ostream& os) const
       }
       os << std::endl;
    }
-   os << "      - On/Off:              { ";
+
+   os << "      - On/Off:              {";
    if(OnOffEvents.size() > 0) {
       bool start = true;
-      for(std::set<OnOffEvent>::iterator iterator = OnOffEvents.begin();
+      for(std::vector<OnOffEvent>::const_iterator iterator = OnOffEvents.begin();
           iterator != OnOffEvents.end();iterator++) {
-         if(start) {
-            os << "* ";
-         }
-         else {
-            os << "~ ";
-         }
+         os << std::endl << "         " << ((start == true) ? "* " : "~ ");
          showEntry(os, (const double*)&(*iterator).ValueArray, (*iterator).RandNumGen);
          start = !start;
       }
@@ -128,7 +124,8 @@ void FlowTrafficSpec::print(std::ostream& os) const
    else {
       os << "*0 ";
    }
-   os << "}" << std::endl;
+   os << "}" << std::endl
+      << "      - Repeat On/Off:       " << ((RepeatOnOff == true) ? "yes" : "no") << std::endl;
 
    os << "      - Error on Abort:      "
       << ((ErrorOnAbort == true) ? "yes" : "no") << std::endl
@@ -177,6 +174,7 @@ void FlowTrafficSpec::reset()
    ErrorOnAbort             = true;
    Debug                    = false;
    NoDelay                  = false;
+   RepeatOnOff              = false;
    NDiffPorts               = 4;
    PathMgr                  = "default";
    CongestionControl        = "default";

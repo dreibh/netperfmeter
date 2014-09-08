@@ -31,6 +31,9 @@
 #include <assert.h>
 #include <math.h>
 #include <netinet/tcp.h>
+#include <set>
+
+#include <set>
 
 
 // Flow Manager Singleton object
@@ -204,7 +207,8 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
             if(flow->MeasurementID == measurementID) {
                flow->setMeasurement(measurement);
                if(flow->SocketDescriptor >= 0) {
-                  flow->BaseTime     = now;
+                  flow->TimeBase     = now;
+                  flow->TimeOffset    = 0;
                   flow->InputStatus  = Flow::On;
                   flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
                   if(printFlows) {
@@ -852,7 +856,7 @@ Flow::Flow(const uint64_t         measurementID,
 
    InputStatus                   = WaitingForStartup;
    OutputStatus                  = WaitingForStartup;
-   BaseTime                      = getMicroTime();
+   TimeBase                      = getMicroTime();
 
    TrafficSpec                   = trafficSpec;
 
@@ -865,6 +869,7 @@ Flow::Flow(const uint64_t         measurementID,
    LastOutboundSeqNumber         = ~0;
    LastOutboundFrameID           = ~0;
    NextStatusChangeEvent         = ~0ULL;
+   OnOffEventPointer             = 0;
    unlock();
 
    FlowManager::getFlowManager()->addFlow(this);
@@ -1095,14 +1100,27 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
 {
    lock();
 
-   std::set<unsigned int>::iterator first = TrafficSpec.OnOffEvents.begin();
-   if((OutputStatus != WaitingForStartup) && (first != TrafficSpec.OnOffEvents.end())) {
-      const unsigned int relNextEvent = *first;
-      const unsigned long long absNextEvent = BaseTime + (1000ULL * relNextEvent);
-      NextStatusChangeEvent = absNextEvent;
-   }
-   else {
+   if(OnOffEventPointer >= TrafficSpec.OnOffEvents.size()) {
       NextStatusChangeEvent = ~0ULL;
+      if(TrafficSpec.RepeatOnOff == true) {
+         puts("----- ende of schedule   REWIND!\n");
+         OnOffEventPointer = 0;
+      }
+   }
+
+   if(OnOffEventPointer < TrafficSpec.OnOffEvents.size()) {
+      const OnOffEvent& event = TrafficSpec.OnOffEvents[OnOffEventPointer];
+      printf("SCHEDULE: %d\n",(int)OnOffEventPointer);
+
+      const unsigned long long relNextEvent = (const unsigned long long)rint(1000000.0 * getRandomValue((const double*)&event.ValueArray, event.RandNumGen));
+      printf("%ld: v=%ld\n",now-TimeBase,relNextEvent);
+
+      const unsigned long long absNextEvent = TimeBase + TimeOffset + relNextEvent;
+
+      TimeOffset            = TimeOffset + relNextEvent;
+      NextStatusChangeEvent = absNextEvent;
+
+      printf("%ld: v=%ld\t at %ld\n",now-TimeBase,relNextEvent,(int64_t)absNextEvent-(int64_t)now);
    }
 
    unlock();
@@ -1115,8 +1133,7 @@ void Flow::handleStatusChangeEvent(const unsigned long long now)
 {
    lock();
    if(NextStatusChangeEvent <= now) {
-      std::set<unsigned int>::iterator first = TrafficSpec.OnOffEvents.begin();
-      assert(first != TrafficSpec.OnOffEvents.end());
+      assert(OnOffEventPointer < TrafficSpec.OnOffEvents.size());
 
       if(OutputStatus == Off) {
          OutputStatus = On;
@@ -1128,9 +1145,9 @@ void Flow::handleStatusChangeEvent(const unsigned long long now)
          assert(false);
       }
 
-      TrafficSpec.OnOffEvents.erase(first);
+      OnOffEventPointer++;
+      scheduleNextStatusChangeEvent(now);
    }
-   scheduleNextStatusChangeEvent(now);
    unlock();
 }
 
@@ -1140,13 +1157,14 @@ void Flow::run()
 {
    signal(SIGPIPE, SIG_IGN);
 
+   scheduleNextStatusChangeEvent(getMicroTime());
+
    bool result = true;
    do {
       // ====== Schedule next status change event ===========================
       unsigned long long       now              = getMicroTime();
-      const unsigned long long nextStatusChange = scheduleNextStatusChangeEvent(now);
       const unsigned long long nextTransmission = scheduleNextTransmissionEvent();
-      unsigned long long       nextEvent        = std::min(nextStatusChange, nextTransmission);
+      unsigned long long       nextEvent        = std::min(NextStatusChangeEvent, nextTransmission);
 
       // ====== Wait until there is something to do =========================
       if(nextEvent > now) {
@@ -1190,7 +1208,7 @@ void Flow::run()
       }
 
       // ====== Handle status changes =======================================
-      if(nextStatusChange <= now) {
+      if(NextStatusChangeEvent <= now) {
          handleStatusChangeEvent(now);
       }
    } while( (result == true) && (!isStopping()) );

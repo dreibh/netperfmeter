@@ -165,6 +165,10 @@ static const char* parseNextEntry(const char* parameters,
    else if(sscanf(parameters, "pareto%lf,%lf%n", &valueArray[0], &valueArray[1], &n) == 2) {
       *rng = RANDOM_PARETO;
    }
+   else if(sscanf(parameters, "%lf%n", &valueArray[0], &n) == 1) {
+      // shortcut: number interpreted as constant
+      *rng = RANDOM_CONSTANT;
+   }
    else {
       cerr << "ERROR: Invalid parameters " << parameters << endl;
       exit(1);
@@ -335,13 +339,12 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       n = 12 + strlen(description);
    }
    else if(strncmp(parameters,"onoff=", 6) == 0) {
-      size_t   m           = 5;
-      uint16_t eventNumber = 0;
+      size_t m = 5;
+      trafficSpec.RepeatOnOff = false;
       while( (parameters[m] != 0x00) && (parameters[m] != ':') ) {
          m++;
-         
+
          OnOffEvent event;
-         event.Number        = eventNumber++;
          event.RandNumGen    = 0x00;
          event.RelativeTime  = false;
          for(size_t i = 0; i < sizeof(event.ValueArray) / sizeof(event.ValueArray[0]); i++) {
@@ -351,14 +354,33 @@ static const char* parseTrafficSpecOption(const char*      parameters,
             event.RelativeTime = true;
             m++;
          }
-         const char* p = parseNextEntry((const char*)&parameters[m + 1], (double*)&event.ValueArray, (uint8_t*)&event.RandNumGen);
-         if(p == NULL) {
-            cerr << "ERROR: Invalid on/off list at " << (const char*)&parameters[m] << "!" << std::endl;
+         else if(strncmp((const char*)&parameters[m], "repeat", 6) == 0) {
+            m += 6;
+            trafficSpec.RepeatOnOff = true;
+            break;
+         }
+         const char* p = parseNextEntry((const char*)&parameters[m], (double*)&event.ValueArray, (uint8_t*)&event.RandNumGen);
+         if(p != NULL) {
+            m += (long)p - (long)&parameters[m + 1];
+         }
+         else {
+            m += strlen((const char*)&parameters[m]);
+         }
+
+         trafficSpec.OnOffEvents.push_back(event);
+      }
+      if(trafficSpec.RepeatOnOff == true) {
+         if((trafficSpec.OnOffEvents.size() % 2) != 0) {
+            cerr << "ERROR: Repeated on/off traffic needs even number of events!" << endl;
             exit(1);
          }
-         parameters = p;
-
-         trafficSpec.OnOffEvents.insert(event);
+         for(std::vector<OnOffEvent>::const_iterator iterator = trafficSpec.OnOffEvents.begin();
+            iterator != trafficSpec.OnOffEvents.end();iterator++) {
+            if((*iterator).RelativeTime == false) {
+               cerr << "ERROR: Repeated on/off traffic needs relative times!" << endl;
+               exit(1);
+            }
+         }
       }
       n = m;
    }

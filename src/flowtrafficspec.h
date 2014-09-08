@@ -28,25 +28,17 @@
 
 #include <sys/types.h>
 
-#include <set>
+#include <vector>
 #include <string>
 #include <iostream>
 
 
 struct OnOffEvent
 {
-   uint16_t Number;
    uint8_t  RandNumGen;
    bool     RelativeTime;
    double   ValueArray[NETPERFMETER_RNG_INPUT_PARAMETERS];
 };
-
-inline bool operator<(const OnOffEvent& e1, const OnOffEvent& e2) {
-   if(e1.Number <= e2.Number) {
-      return(true);
-   }
-   return(false);
-}
 
 class FlowTrafficSpec
 {
@@ -63,42 +55,43 @@ class FlowTrafficSpec
    public:
    static void showEntry(std::ostream& os, const double* valueArray, const uint8_t rng);
 
-   std::string            Description;
-   uint8_t                Protocol;
-   std::set<struct OnOffEvent>   OnOffEvents;
+   std::string             Description;
+   uint8_t                 Protocol;
 
-   double                 OrderedMode;
-   double                 ReliableMode;
-   uint32_t               RetransmissionTrials;
-   bool                   RetransmissionTrialsInMS;
+   double                  OrderedMode;
+   double                  ReliableMode;
+   uint32_t                RetransmissionTrials;
+   bool                    RetransmissionTrialsInMS;
 
-   uint16_t               MaxMsgSize;
+   uint16_t                MaxMsgSize;
 
-   unsigned int           RcvBufferSize;
-   unsigned int           SndBufferSize;
+   unsigned int            RcvBufferSize;
+   unsigned int            SndBufferSize;
 
-   unsigned long long     DefragmentTimeout;
+   unsigned long long      DefragmentTimeout;
 
-   double                 OutboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
-   double                 OutboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
-   double                 InboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
-   double                 InboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
-   uint8_t                OutboundFrameRateRng;
-   uint8_t                OutboundFrameSizeRng;
-   uint8_t                InboundFrameRateRng;
-   uint8_t                InboundFrameSizeRng;
+   double                  OutboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   double                  OutboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   double                  InboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   double                  InboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];
+   uint8_t                 OutboundFrameRateRng;
+   uint8_t                 OutboundFrameSizeRng;
+   uint8_t                 InboundFrameRateRng;
+   uint8_t                 InboundFrameSizeRng;
 
-   uint8_t                CMT;
-   uint8_t                CCID;
+   uint8_t                 CMT;
+   uint8_t                 CCID;
 
-   uint16_t               NDiffPorts;
-   std::string            PathMgr;
-   std::string            CongestionControl;
+   uint16_t                NDiffPorts;
+   std::string             PathMgr;
+   std::string             CongestionControl;
 
-   bool                   Debug;
-   bool                   NoDelay;
+   bool                    Debug;
+   bool                    NoDelay;
+   bool                    ErrorOnAbort;
+   bool                    RepeatOnOff;
 
-   bool                   ErrorOnAbort;
+   std::vector<OnOffEvent> OnOffEvents;
 };
 
 #endif

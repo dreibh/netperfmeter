@@ -149,7 +149,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
 {
    // ====== Sent NETPERFMETER_ADD_FLOW to remote node ======================
    const size_t                addFlowMsgSize = sizeof(NetPerfMeterAddFlowMessage) +
-                                                   (sizeof(uint32_t) * flow->getTrafficSpec().OnOffEvents.size());
+                                                   (sizeof(NetPerfMeterOnOffEvent) * flow->getTrafficSpec().OnOffEvents.size());
    char                        addFlowMsgBuffer[addFlowMsgSize];
    NetPerfMeterAddFlowMessage* addFlowMsg = (NetPerfMeterAddFlowMessage*)&addFlowMsgBuffer;
    addFlowMsg->Header.Type   = NETPERFMETER_ADD_FLOW;
@@ -159,6 +159,9 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    }
    if(flow->getTrafficSpec().NoDelay == true) {
       addFlowMsg->Header.Flags |= NPMAFF_NODELAY;
+   }
+   if(flow->getTrafficSpec().RepeatOnOff == true) {
+      addFlowMsg->Header.Flags |= NPMAFF_REPEATONOFF;
    }
 
    addFlowMsg->Header.Length = htons(addFlowMsgSize);
@@ -186,7 +189,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
 
    addFlowMsg->OnOffEvents   = htons(flow->getTrafficSpec().OnOffEvents.size());
    size_t i = 0;
-   for(std::set<OnOffEvent>::iterator iterator = flow->getTrafficSpec().OnOffEvents.begin();
+   for(std::vector<OnOffEvent>::const_iterator iterator = flow->getTrafficSpec().OnOffEvents.begin();
        iterator != flow->getTrafficSpec().OnOffEvents.end();iterator++, i++) {
       addFlowMsg->OnOffEvent[i].RandNumGen = (*iterator).RandNumGen;
       addFlowMsg->OnOffEvent[i].Flags      = 0x00;
@@ -767,15 +770,16 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       trafficSpec.SndBufferSize            = ntohl(addFlowMsg->SndBufferSize);
       trafficSpec.OrderedMode              = ntohl(addFlowMsg->OrderedMode)  / (double)0xffffffff;
       trafficSpec.ReliableMode             = ntohl(addFlowMsg->ReliableMode) / (double)0xffffffff;
+      trafficSpec.CMT                      = addFlowMsg->CMT;
+      trafficSpec.CCID                     = addFlowMsg->CCID;
+      trafficSpec.NoDelay                  = (addFlowMsg->Header.Flags & NPMAFF_NODELAY);
+      trafficSpec.Debug                    = (addFlowMsg->Header.Flags & NPMAFF_DEBUG);
+      trafficSpec.RepeatOnOff              = (addFlowMsg->Header.Flags & NPMAFF_REPEATONOFF);
       trafficSpec.RetransmissionTrials     = ntohl(addFlowMsg->RetransmissionTrials) & ~NPMAF_RTX_TRIALS_IN_MILLISECONDS;
       trafficSpec.RetransmissionTrialsInMS = (ntohl(addFlowMsg->RetransmissionTrials) & NPMAF_RTX_TRIALS_IN_MILLISECONDS);
       if( (trafficSpec.RetransmissionTrialsInMS) && (trafficSpec.RetransmissionTrials == 0x7fffffff) ) {
          trafficSpec.RetransmissionTrials = ~0;
       }
-      trafficSpec.CMT     = addFlowMsg->CMT;
-      trafficSpec.CCID    = addFlowMsg->CCID;
-      trafficSpec.NoDelay = (addFlowMsg->Header.Flags & NPMAFF_NODELAY);
-      trafficSpec.Debug   = (addFlowMsg->Header.Flags & NPMAFF_DEBUG);
 
       const NetPerfMeterOnOffEvent* event = (const NetPerfMeterOnOffEvent*)&addFlowMsg->OnOffEvent;
       for(size_t i = 0;i < startStopEvents;i++) {
@@ -785,14 +789,14 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
          for(size_t j = 0; j < NETPERFMETER_RNG_INPUT_PARAMETERS; j++) {
             newEvent.ValueArray[j] = networkToDouble(event[i].ValueArray[j]);
          }
-         trafficSpec.OnOffEvents.insert(newEvent);
+         trafficSpec.OnOffEvents.push_back(newEvent);
       }
 
       char congestionControl[sizeof(addFlowMsg->CongestionControl) + 1];
       memcpy((char*)&congestionControl, (const char*)&addFlowMsg->CongestionControl, sizeof(addFlowMsg->CongestionControl));
       congestionControl[sizeof(addFlowMsg->CongestionControl)] = 0x00;
       trafficSpec.CongestionControl = std::string(congestionControl);
-      
+
       char pathMgr[sizeof(addFlowMsg->PathMgr) + 1];
       memcpy((char*)&pathMgr, (const char*)&addFlowMsg->PathMgr, sizeof(addFlowMsg->PathMgr));
       pathMgr[sizeof(addFlowMsg->PathMgr)] = 0x00;

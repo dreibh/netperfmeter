@@ -118,8 +118,9 @@ struct NetPerfMeterAddFlowMessage
    NetPerfMeterOnOffEvent OnOffEvent[];
 } __attribute__((packed));
 
-#define NPMAFF_DEBUG                     (1 << 0)
-#define NPMAFF_NODELAY                   (1 << 1)
+#define NPMAFF_DEBUG         (1 << 0)
+#define NPMAFF_NODELAY       (1 << 1)
+#define NPMAFF_REPEATONOFF   (1 << 2)
 
 // RetransmissionTrials in milliseconds (highest bit of 32-bit value set)
 #define NPMAF_RTX_TRIALS_IN_MILLISECONDS (1 << 31)
