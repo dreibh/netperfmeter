@@ -579,6 +579,11 @@ int createAndBindSocket(const int             family,
    int socketFamily = family;
    if(socketFamily == AF_UNSPEC) {
       socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
+      if( (localAddresses == 1) &&
+          (protocol != IPPROTO_SCTP) &&
+          (localAddressArray[0].sa.sa_family == AF_INET) ) {
+         socketFamily = AF_INET;   // Restrict to IPv4!
+      }
    }
 
    // Prepare ANY address for the corresponding family
@@ -614,7 +619,7 @@ int createAndBindSocket(const int             family,
    if(socketFamily == AF_INET6) {
       // Accept IPv4 and IPv6 connections.
       int on = 0;
-      setsockopt(sd, IPPROTO_IPV6, IPV6_BINDV6ONLY, (char *)&on, sizeof(on));
+      ext_setsockopt(sd, IPPROTO_IPV6, IPV6_BINDV6ONLY, (char *)&on, sizeof(on));
    }
 #endif
    // ====== Bind socket ====================================================
@@ -652,8 +657,20 @@ int createAndBindSocket(const int             family,
       }
       else {
          // ====== Non-SCTP bind: bind to ANY address =======================
-         if(ext_bind(sd, &localAddressArray[0].sa,
-                     getSocklen(&localAddressArray[0].sa)) != 0) {
+         sockaddr_union localAddress;
+         if(localAddressArray[0].sa.sa_family == AF_INET) {
+            memcpy(&localAddress, (void*)&localAddressArray[0].in, sizeof(sockaddr_in));
+            ((sockaddr_in*)&localAddress)->sin_port = htons(localPort);
+         }
+         else if(localAddressArray[0].sa.sa_family == AF_INET6) {
+            memcpy(&localAddress, (void*)&localAddressArray[0].in6, sizeof(sockaddr_in6));
+            ((sockaddr_in6*)&localAddress)->sin6_port = htons(localPort);
+         }
+         else {
+            assert(false);
+         }
+
+         if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
             ext_close(sd);
             return(-3);
          }
