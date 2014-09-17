@@ -863,8 +863,10 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 #else
    int cmtOnOff = 1;
    if(ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-      cerr << "NOTE: Compiled with MPTCP support, but unable to initialize it: "
-           << strerror(errno) << "!" << endl;
+      if(gOutputVerbosity >= NPFOV_STATUS) {
+         cerr << "NOTE: Compiled with MPTCP support, but unable to initialize it: "
+              << strerror(errno) << "!" << endl;
+      }
       ext_close(gMPTCPSocket);
       gMPTCPSocket = -1;
    }
@@ -930,10 +932,12 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 
    // ====== Print status ===================================================
-   cout << "Passive Mode: Accepting TCP"
-        << ((gMPTCPSocket > 0) ? "+MPTCP" : "")
-        << "/UDP/SCTP" << ((gDCCPSocket > 0) ? "/DCCP" : "")
-        << " connections on port " << localPort << endl << endl;
+   if(gOutputVerbosity >= NPFOV_STATUS) {
+      cout << "Passive Mode: Accepting TCP"
+           << ((gMPTCPSocket > 0) ? "+MPTCP" : "")
+           << "/UDP/SCTP" << ((gDCCPSocket > 0) ? "/DCCP" : "")
+           << " connections on port " << localPort << endl << endl;
+   }
 
 
    // ====== Main loop ======================================================
