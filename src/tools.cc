@@ -622,6 +622,20 @@ int createAndBindSocket(const int             family,
       ext_setsockopt(sd, IPPROTO_IPV6, IPV6_BINDV6ONLY, (char *)&on, sizeof(on));
    }
 #endif
+// FIXME! Add proper, platform-independent code here!
+#ifndef __linux__
+#warning MPTCP is currently only available on Linux!
+#else
+   if((protocol == IPPROTO_MPTCP) || (protocol == IPPROTO_TCP)) {
+      const int cmtOnOff = (protocol == IPPROTO_MPTCP);
+      if(ext_setsockopt(sd, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
+         if(protocol == IPPROTO_MPTCP) {
+            return(-2);
+         }
+      }
+   }
+#endif
+
    // ====== Bind socket ====================================================
    if(localAddressCount == 0) {
       if(ext_bind(sd, &anyAddress.sa, getSocklen(&anyAddress.sa)) != 0) {

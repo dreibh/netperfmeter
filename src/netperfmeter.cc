@@ -852,33 +852,11 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
                                       gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gMPTCPSocket < 0) {
-      cerr << "ERROR: Failed to create and bind MPTCP socket - "
-           << strerror(errno) << "!" << endl;
-      exit(1);
-   }
-
-// FIXME! Add proper, platform-independent code here!
-#ifndef __linux__
-#warning MPTCP is currently only available on Linux!
-#else
-   int cmtOnOff = 1;
-   if(ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
       if(gOutputVerbosity >= NPFOV_STATUS) {
-         cerr << "NOTE: Compiled with MPTCP support, but unable to initialize it: "
-              << strerror(errno) << "!" << endl;
-      }
-      ext_close(gMPTCPSocket);
-      gMPTCPSocket = -1;
-   }
-   else {
-      cmtOnOff = 0;
-      if(ext_setsockopt(gTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-         cerr << "ERROR: Failed to disable MPTCP on TCP socket - "
-              << strerror(errno) << "!" << endl;
-         exit(1);
+         cerr << "NOTE: Unable to create and bind MPTCP socket - "
+            << strerror(errno) << "!" << endl;
       }
    }
-#endif
 #endif
 
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
