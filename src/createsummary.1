@@ -19,7 +19,7 @@
 .\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd June 27, 2010
+.Dd October 1, 2014
 .Dt createsummary 1
 .Os CreateSummary
 .\" ###### Name #############################################################
@@ -33,6 +33,7 @@
 .Fl batch
 .Fl interactive
 .Fl compress=Level
+.Fl ignore-scalar-file-errors
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm createsummary
@@ -67,6 +68,8 @@ This option can be used to filter out unneeded results.
 Sets the directory where to find the scalar files.
 .It Fl Fl resultsdirectory=Directory
 Sets the directory where to write the summary tables to.
+.It Fl Fl ignore-scalar-file-errors
+Ignore skalar file erros (that is, missing input files) instead of aborting.
 .El
 .Pp
 .\" ###### Arguments ########################################################
@@ -81,6 +84,8 @@ Run in batch mode. The program is aborted on errors.
 Run in interactive mode. On errors, the program is continued.
 .It Fl compress=0-9
 Sets the BZip2 compression level; 1=none, 9=highest (default).
+.It Fl ignore-scalar-file-errors
+Ignore skalar file erros (that is, missing input files) instead of aborting.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLE
