@@ -2,5 +2,5 @@
 
 ./bootstrap && \
 ./clean-deb && \
-./make-deb precise quantal raring saucy trusty && \
+./make-deb precise saucy trusty utpoic && \
 dput ppa *.changes
