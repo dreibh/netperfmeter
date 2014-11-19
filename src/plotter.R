@@ -1,7 +1,7 @@
 # $Id$
 # ###########################################################################
 #             Thomas Dreibholz's R Simulation Scripts Collection
-#                  Copyright (C) 2005-2013 Thomas Dreibholz
+#                  Copyright (C) 2005-2015 Thomas Dreibholz
 #
 #               Author: Thomas Dreibholz, dreibh@iem.uni-due.de
 # ###########################################################################
@@ -91,7 +91,7 @@ rainbow2 <- function(n)
 #    else if(n == 5) {
 #       return(c("red", "#00aa00", "black", "blue", "magenta"))
 #    }
-   return(rainbow(n, gamma=2))
+   return(rainbow(n))
 }
 
 
