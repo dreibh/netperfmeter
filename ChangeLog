@@ -1,4 +1,100 @@
 ------------------------------------------------------------------------
+r1934 | dreibh | 2014-11-19 17:29:39 +0100 (Wed, 19 Nov 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/src/plotter.R
+
+Script fix.
+
+------------------------------------------------------------------------
+r1933 | dreibh | 2014-11-17 08:41:37 +0100 (Mon, 17 Nov 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/freebsd/netperfmeter/make-diff
+   M /trunk/netperfmeter/freebsd/netperfmeter/test-packaging
+   M /trunk/netperfmeter/make-ppa
+   M /trunk/netperfmeter/src/combinesummaries.1
+   M /trunk/netperfmeter/src/control.cc
+   M /trunk/netperfmeter/src/control.h
+   M /trunk/netperfmeter/src/cpustatus.cc
+   M /trunk/netperfmeter/src/cpustatus.h
+   M /trunk/netperfmeter/src/createsummary.1
+   M /trunk/netperfmeter/src/debug.h
+   M /trunk/netperfmeter/src/defragmenter.cc
+   M /trunk/netperfmeter/src/defragmenter.h
+   M /trunk/netperfmeter/src/ext_socket.h
+   M /trunk/netperfmeter/src/extractvectors.1
+   M /trunk/netperfmeter/src/flow.cc
+   M /trunk/netperfmeter/src/flow.h
+   M /trunk/netperfmeter/src/flowbandwidthstats.cc
+   M /trunk/netperfmeter/src/flowbandwidthstats.h
+   M /trunk/netperfmeter/src/flowtrafficspec.cc
+   M /trunk/netperfmeter/src/flowtrafficspec.h
+   M /trunk/netperfmeter/src/inputfile.cc
+   M /trunk/netperfmeter/src/inputfile.h
+   M /trunk/netperfmeter/src/make-rootshell
+   M /trunk/netperfmeter/src/measurement.cc
+   M /trunk/netperfmeter/src/measurement.h
+   M /trunk/netperfmeter/src/messagereader.cc
+   M /trunk/netperfmeter/src/messagereader.h
+   M /trunk/netperfmeter/src/mutex.cc
+   M /trunk/netperfmeter/src/mutex.h
+   M /trunk/netperfmeter/src/netperfmeter.1
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/netperfmeterpackets.h
+   M /trunk/netperfmeter/src/outputfile.cc
+   M /trunk/netperfmeter/src/outputfile.h
+   M /trunk/netperfmeter/src/pdfembedfonts
+   M /trunk/netperfmeter/src/pdfembedfonts.1
+   M /trunk/netperfmeter/src/pdfmetadata
+   M /trunk/netperfmeter/src/pdfmetadata.1
+   M /trunk/netperfmeter/src/plot-netperfmeter-results
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.1
+   M /trunk/netperfmeter/src/plot-netperfmeter-results.R
+   M /trunk/netperfmeter/src/plot-version1.R
+   M /trunk/netperfmeter/src/redblacktree.h
+   M /trunk/netperfmeter/src/redblacktree_impl.h
+   M /trunk/netperfmeter/src/rootshell.c
+   M /trunk/netperfmeter/src/runtimeestimator.1
+   M /trunk/netperfmeter/src/setqos
+   M /trunk/netperfmeter/src/setsctp
+   M /trunk/netperfmeter/src/simpleredblacktree.c
+   M /trunk/netperfmeter/src/simpleredblacktree.h
+   M /trunk/netperfmeter/src/storage/t2.cc
+   M /trunk/netperfmeter/src/t6.1
+   M /trunk/netperfmeter/src/t6.cc
+   M /trunk/netperfmeter/src/thread.cc
+   M /trunk/netperfmeter/src/thread.h
+   M /trunk/netperfmeter/src/tools.cc
+   M /trunk/netperfmeter/src/tools.h
+   M /trunk/netperfmeter/src/transfer.cc
+   M /trunk/netperfmeter/src/transfer.h
+
+Packaging script updates.
+
+------------------------------------------------------------------------
+r1930 | dreibh | 2014-10-01 17:49:11 +0200 (Wed, 01 Oct 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.ac
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/rpm/netperfmeter.spec
+   M /trunk/netperfmeter/src/createsummary.1
+   M /trunk/netperfmeter/src/createsummary.cc
+
+Improvements for createsummary tool.
+
+------------------------------------------------------------------------
+r1928 | dreibh | 2014-09-19 14:11:10 +0200 (Fri, 19 Sep 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+   M /trunk/netperfmeter/configure.ac
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/debian/control
+   M /trunk/netperfmeter/rpm/netperfmeter.spec
+   M /trunk/netperfmeter/src/netperfmeter.cc
+   M /trunk/netperfmeter/src/tools.cc
+
+Some MPTCP fixes.
+
+------------------------------------------------------------------------
 r1926 | dreibh | 2014-09-17 15:32:35 +0200 (Wed, 17 Sep 2014) | 2 lines
 Changed paths:
    M /trunk/netperfmeter/configure.ac
