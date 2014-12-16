@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r1935 | dreibh | 2014-11-20 17:26:14 +0100 (Thu, 20 Nov 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+   M /trunk/netperfmeter/configure.ac
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/make-ppa
+   M /trunk/netperfmeter/netperfmeter.lsm
+   M /trunk/netperfmeter/rpm/netperfmeter.spec
+
+New stable release.
+
+------------------------------------------------------------------------
 r1934 | dreibh | 2014-11-19 17:29:39 +0100 (Wed, 19 Nov 2014) | 2 lines
 Changed paths:
    M /trunk/netperfmeter/src/plotter.R
