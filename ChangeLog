@@ -1,4 +1,32 @@
 ------------------------------------------------------------------------
+r1945 | dreibh | 2015-02-06 10:13:23 +0100 (Fri, 06 Feb 2015) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.ac
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/netperfmeter.lsm
+   M /trunk/netperfmeter/rpm/netperfmeter.spec
+
+Version update.
+
+------------------------------------------------------------------------
+r1944 | dreibh | 2014-12-16 09:31:22 +0100 (Tue, 16 Dec 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/ChangeLog
+
+Updated changlog.
+
+------------------------------------------------------------------------
+r1943 | dreibh | 2014-12-16 09:31:02 +0100 (Tue, 16 Dec 2014) | 2 lines
+Changed paths:
+   M /trunk/netperfmeter/configure.ac
+   M /trunk/netperfmeter/debian/changelog
+   M /trunk/netperfmeter/make-ppa
+   M /trunk/netperfmeter/rpm/netperfmeter.spec
+   M /trunk/netperfmeter/src/netperfmeter.1
+
+Fixed documentation for FLOWSPEC.
+
+------------------------------------------------------------------------
 r1935 | dreibh | 2014-11-20 17:26:14 +0100 (Thu, 20 Nov 2014) | 2 lines
 Changed paths:
    M /trunk/netperfmeter/ChangeLog
