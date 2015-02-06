@@ -1,8 +1,8 @@
-netperfmeter (1.5.1-1ubuntu1) utopic; urgency=low
+netperfmeter (1.5.2-1ubuntu1) vivid; urgency=low
 
   * New upstream version.
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 16 Dec 2014 08:08:08 +0200
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Thu, 05 Feb 2015 08:08:08 +0200
 
 netperfmeter (1.5.0-1ubuntu1) utopic; urgency=low
 
