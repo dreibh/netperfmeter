@@ -629,8 +629,10 @@ int createAndBindSocket(const int             family,
    if((protocol == IPPROTO_MPTCP) || (protocol == IPPROTO_TCP)) {
       const int cmtOnOff = (protocol == IPPROTO_MPTCP);
       if(ext_setsockopt(sd, IPPROTO_TCP, TCP_MULTIPATH_ENABLE, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-         if(protocol == IPPROTO_MPTCP) {
-            return(-2);
+         if(ext_setsockopt(sd, IPPROTO_TCP, TCP_MULTIPATH_ENABLE_LEGACY, &cmtOnOff, sizeof(cmtOnOff)) < 0) {   // FIXME: get rid of legacy option number!
+            if(protocol == IPPROTO_MPTCP) {
+               return(-2);
+            }
          }
       }
    }
