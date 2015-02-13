@@ -71,6 +71,7 @@ struct NetPerfMeterAcknowledgeMessage
 
 #define NETPERFMETER_PATHMGR_LENGTH       16
 #define NETPERFMETER_CC_LENGTH            16
+#define NETPERFMETER_SCHEDULER_LENGTH     16
 
 struct NetPerfMeterOnOffEvent
 {
@@ -113,6 +114,7 @@ struct NetPerfMeterAddFlowMessage
    uint16_t               NDiffPorts;
    char                   PathMgr[NETPERFMETER_PATHMGR_LENGTH];
    char                   CongestionControl[NETPERFMETER_CC_LENGTH];
+   char                   Scheduler[NETPERFMETER_SCHEDULER_LENGTH];
 
    uint16_t               OnOffEvents;
    NetPerfMeterOnOffEvent OnOffEvent[];

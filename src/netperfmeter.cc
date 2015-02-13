@@ -440,6 +440,26 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       trafficSpec.PathMgr = std::string((const char*)&pathMgr);
       n = 8 + strlen((const char*)&pathMgr);
    }
+   else if(strncmp(parameters, "scheduler=", 10) == 0) {
+      char   scheduler[NETPERFMETER_SCHEDULER_LENGTH + 1];
+      size_t i = 0;
+      while(i < NETPERFMETER_SCHEDULER_LENGTH) {
+         if( (parameters[10 + i] == ':') ||
+             (parameters[10 + i] == 0x00) ) {
+            break;
+         }
+         scheduler[i] = parameters[10 + i];
+         i++;
+      }
+      scheduler[i] = 0x00;
+      if( (parameters[10 + i] != ':') && (parameters[10 + i] != 0x00) ) {
+         cerr << "ERROR: Invalid \"scheduler\" setting: " << (const char*)&parameters[10]
+              << " - name too long!" << std::endl;
+          exit(1);
+      }
+      trafficSpec.Scheduler = std::string((const char*)&scheduler);
+      n = 10 + strlen((const char*)&scheduler);
+   }
    else if(strncmp(parameters, "cc=", 3) == 0) {
       char   congestionControl[NETPERFMETER_CC_LENGTH + 1];
       size_t i = 0;

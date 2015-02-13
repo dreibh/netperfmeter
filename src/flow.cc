@@ -1266,6 +1266,12 @@ bool Flow::configureSocket(const int socketDescriptor)
             std::cerr << "WARNING: Failed to set TCP_MULTIPATH_PATHMANAGER on socket - "
                       << strerror(errno) << "!" << std::endl;
          }
+
+         const char* scheduler = TrafficSpec.Scheduler.c_str();
+         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_SCHEDULER, scheduler, strlen(scheduler)) < 0) {
+            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_SCHEDULER on socket - "
+                      << strerror(errno) << "!" << std::endl;
+         }
 #endif
       }
 #ifndef __linux__

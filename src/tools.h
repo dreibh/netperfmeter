@@ -47,15 +47,16 @@
 #define IPPROTO_MPTCP IPPROTO_EGP
 
 /* FIXME: This is ugly, but currently the only way to easily get the #defines for Linux MPTCP! */
-#define TCP_MULTIPATH_DEBUG         10001   /* MPTCP DEBUG on/off */
+#define TCP_MULTIPATH_DEBUG         10001   /* MPTCP DEBUG on/off    */
 #define TCP_MULTIPATH_ENABLE        26      /* MPTCP DISABLED on/off */
 #define TCP_MULTIPATH_ENABLE_LEGACY 10002
 #define TCP_MULTIPATH_ADD           10003
 #define TCP_MULTIPATH_REMOVE        10004
 #define TCP_MULTIPATH_SUBFLOWS      10005
 #define TCP_MULTIPATH_CONNID        10006
-#define TCP_MULTIPATH_NDIFFPORTS    10007   /* MPTCP NDIFFPORTS */
+#define TCP_MULTIPATH_NDIFFPORTS    10007   /* MPTCP NDIFFPORTS  */
 #define TCP_MULTIPATH_PATHMANAGER   10008   /* MPTCP PATHMANAGER */
+#define TCP_MULTIPATH_SCHEDULER     10009   /* MPTCP SCHEDULER   */
 
 
 /* DCCP definitions */

@@ -83,8 +83,9 @@ class FlowTrafficSpec
    uint8_t                 CCID;
 
    uint16_t                NDiffPorts;
-   std::string             PathMgr;
    std::string             CongestionControl;
+   std::string             PathMgr;
+   std::string             Scheduler;
 
    bool                    Debug;
    bool                    NoDelay;

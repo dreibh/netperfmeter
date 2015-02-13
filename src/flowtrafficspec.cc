@@ -135,7 +135,8 @@ void FlowTrafficSpec::print(std::ostream& os) const
       << ((NoDelay == true) ? "yes" : "no") << std::endl
       << "      Congestion Control:    " << CongestionControl << std::endl
       << "      Number of Diff. Ports: " << NDiffPorts        << std::endl
-      << "      Path Manager:          " << PathMgr           << std::endl;
+      << "      Path Manager:          " << PathMgr           << std::endl
+      << "      Scheduler:             " << Scheduler         << std::endl;
 
    os << "      - CMT:                 #" << (unsigned int)CMT << " ";
    switch(CMT) {
@@ -176,7 +177,8 @@ void FlowTrafficSpec::reset()
    NoDelay                  = false;
    RepeatOnOff              = false;
    NDiffPorts               = 4;
-   PathMgr                  = "default";
+   PathMgr                  = "fullmesh";
+   Scheduler                = "default";
    CongestionControl        = "default";
    CMT                      = 0x00;
    CCID                     = 0x00;
