@@ -46,6 +46,8 @@ static sockaddr_union gLocalAddressArray[MAX_LOCAL_ADDRESSES];
 
 static const char*    gActiveNodeName   = "Client";
 static const char*    gPassiveNodeName  = "Server";
+static const char*    gPathMgr          = "fullmesh";
+static const char*    gScheduler        = "default";
 static bool           gControlOverTCP   = false;
 static int            gControlSocket    = -1;
 static int            gControlSocketTCP = -1;
@@ -74,6 +76,12 @@ bool handleGlobalParameter(char* parameter)
    }
    else if(strncmp(parameter, "-passivenodename=", 17) == 0) {
       gPassiveNodeName = (const char*)&parameter[17];
+   }
+   else if(strncmp(parameter, "-pathmgr=", 9) == 0) {
+      gPathMgr = (const char*)&parameter[9];
+   }
+   else if(strncmp(parameter, "-scheduler=", 11) == 0) {
+      gScheduler = (const char*)&parameter[11];
    }
    else if(strcmp(parameter, "-quiet") == 0) {
       // Already handled before!
@@ -874,7 +882,21 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(gMPTCPSocket < 0) {
       if(gOutputVerbosity >= NPFOV_STATUS) {
          cerr << "NOTE: Unable to create and bind MPTCP socket - "
-            << strerror(errno) << "!" << endl;
+              << strerror(errno) << "!" << endl;
+      }
+   }
+   else {
+      if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_PATHMANAGER, gPathMgr, strlen(gPathMgr)) < 0) {
+         if(strcmp(gPathMgr, "default") != 0) {
+            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_PATHMANAGER on socket - "
+                        << strerror(errno) << "!" << std::endl;
+         }
+      }
+      if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_SCHEDULER, gScheduler, strlen(gScheduler)) < 0) {
+         if(strcmp(gScheduler, "default") != 0) {
+            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_SCHEDULER on socket - "
+                        << strerror(errno) << "!" << std::endl;
+         }
       }
    }
 #endif
