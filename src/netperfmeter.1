@@ -20,7 +20,7 @@
 .\"          dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd September 8, 2014
+.Dd February 13, 2015
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -44,6 +44,8 @@
 .Fl quiet
 .Fl verbose
 .Fl verbosity=Level
+.Fl pathmgr=name
+.Fl scheduler=name
 .Fl tcp
 .Fl sctp
 .Fl udp
@@ -66,37 +68,41 @@ The following arguments have to be provided:
 The port number for the passive side's data socket. The port number of the control socket will be port+1. Specifying a port number turns netperfmeter in passive mode, i.e. it will wait for incoming connections.
 .It Destination:Port
 Specifies the destination endpoint to connect to. This will turn netperfmeter in active mode, i.e. it will connect to the specified remote endpoint.
-.It control-over-tcp
+.It Fl control-over-tcp
 Use TCP instead of SCTP for the control connection. This is useful for NAT traversal.
-.It local=Address[,Address,...]
+.It Fl local=Address[,Address,...]
 Specifies address(es) of the local endpoint. For TCP, UDP and DCCP, only the first address is used!
-.It runtime
+.It Fl runtime
 Specifies the measurement runtime in seconds. After the given time span, netperfmeter will finish the measurement.
-.It config=Name
+.It Fl config=Name
 Specifies the name of the configuration file to write. Default is output.config.
-.It vector=Name
+.It Fl vector=Name
 Specifies the name pattern of the vector files to write. If the suffix of this name is .bz2, the file will be BZip2-compressed on the fly. The vector name is automatically extended to name the flow vector files by adding -<active|passive>-<flow_id>-<stream_id> before the suffix.
 Default is vector.vec.bz2, hence the name of the vector file for flow 5, stream 2 on the passive node will be vector-passive-00000005-0002.vec.bz2.
-.It scalar=Name
+.It Fl scalar=Name
 Specifies the name pattern of the scalar files to write. If the suffix of this name is .bz2, the file will be BZip2-compressed on the fly. The scalar name is automatically extended to name the flow scalar files by adding -<active|passive>-<flow_id>-<stream_id> before the suffix.
 Default is scalar.vec.bz2, hence the name of the scalar file for flow 5, stream 2 on the passive node will be scalar-passive-00000005-0002.vec.bz2.
-.It activenodename=Description
+.It Fl activenodename=Description
 Sets a textual description of the active node (e.g. Client).
-.It passivenodename=Description
+.It Fl passivenodename=Description
 Sets a textual description of the passive node (e.g. Server).
-.It quiet
+.It Fl quiet
 Reduces verbosity of log output. May be specified multiple times.
-.It verbose
+.It Fl verbose
 Increases verbosity of log output. May be specified multiple times.
-.It verbosity=Level
+.It Fl verbosity=Level
 Sets the verbosity of the log output to a given level, from 0 (lowest) to 6 (highest).
-.It sctp
+.It Fl pathmgr=name
+Set MPTCP path manager for the passive node (MPTCP for Linux only. Requires socket options kernel patch!).
+.It Fl scheduler=name
+Set MPTCP scheduler for the passive node (MPTCP for Linux only. Requires socket options kernel patch!).
+.It Fl sctp
 Establish a new SCTP association. The streams of this association must be specified by one or more FLOWSPEC specifications as following parameters.
-.It tcp
+.It Fl tcp
 Establish a new TCP or MPTCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter. MPTCP support in NetPerfMeter is realized as additional "MPTCP" socket (i.e. another TCP socket, but bound to another port number and with CMT enabled). That is, for MPTCP usage, it must contain the option cmt=mptcp (see below) to usage the MPTCP socket instead of the TCP socket.
-.It udp
+.It Fl udp
 Establish a new UDP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
-.It dccp
+.It Fl dccp
 Establish a new DCCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter. Note, that DCCP is not available on all platforms yet. Currently, only Linux provides DCCP in its official kernel.
 .It FLOWSPEC
 Specifies a new flow. The format is: outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option:...
@@ -149,6 +155,8 @@ Set debug mode on socket (currently: MPTCP for Linux only. Requires socket optio
 Set number of different MPTCP subflows (MPTCP for Linux only. Requires socket options kernel patch!).
 .It pathmgr=name
 Set MPTCP path manager (MPTCP for Linux only. Requires socket options kernel patch!).
+.It scheduler=name
+Set MPTCP scheduler (MPTCP for Linux only. Requires socket options kernel patch!).
 .It cc=name
 Set congestion control name (TCP and MPTCP for Linux only).
 .It cmt=off|cmt|cmtrpv1|cmtrpv2|like-mptcp|mptcp-like|mptcp
