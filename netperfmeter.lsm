@@ -1,7 +1,7 @@
 Begin4
 Title:          netperfmeter
-Version:        1.5.2
-Entered-date:   2015-02-06
+Version:        1.5.3
+Entered-date:   2015-01-03
 Description:    NetPerfMeter is a network performance meter for the UDP,
                 TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and
                 IPv6. It simultaneously transmits bidirectional flows to an
@@ -13,7 +13,7 @@ Keywords:       Network Performance, QoS, IPv4, IPv6, TCP, MPTCP, SCTP, UDP,
 Author:         dreibh@iem.uni-due.de (Thomas Dreibholz)
 Maintained-by:  dreibh@iem.uni-due.de (Thomas Dreibholz)
 Primary-site:   http://www.iem.uni-due.de/~dreibh/netperfmeter
-                496 kB download/netperfmeter-1.5.2.tar.gz
+                496 kB download/netperfmeter-1.5.3.tar.gz
 Original-site:  http://www.iem.uni-due.de/~dreibh/netperfmeter
 Platforms:      Linux, FreeBSD, MacOS, Solaris
 Copying-policy: GPL
