@@ -1090,9 +1090,6 @@ uint32_t random32()
             return(number);
          }
          RandomSource = RS_CLIB;
-      case RS_CLIB:
-         return(random());
-       break;
       case RS_TRY_DEVICE:
          RandomDevice = fopen("/dev/urandom", "r");
          if(RandomDevice != NULL) {
@@ -1105,9 +1102,11 @@ uint32_t random32()
          }
          RandomSource = RS_CLIB;
          srandom((unsigned int)(getMicroTime() & (uint64_t)0xffffffff));
-      break;
+       break;
    }
-   return(random());
+   const uint16_t a = random() & 0xffff;
+   const uint16_t b = random() & 0xffff;
+   return( (((uint32_t)a) << 16) | (uint32_t)b );
 #endif
 }
 
@@ -1127,17 +1126,35 @@ double randomExpDouble(const double p)
 
 
 /* ###### Get pareto-distributed double random value ##################### */
-// m = the minimum value
-// k = the k value 
-double randomParetoDouble(const double m, const double k)
+// Parameters:
+// location = the location parameter (also: scale parameter): x_m, x_min or m
+// shape    = the shape parameter: alpha or k
+//
+// Based on rpareto from GNU R's VGAM package
+// (http://cran.r-project.org/web/packages/VGAM/index.html):
+// rpareto <- function (n, location, shape) 
+// {
+//     ans <- location/runif(n)^(1/shape)
+//     ans[location <= 0] <- NaN
+//     ans[shape <= 0] <- NaN
+//     ans
+// }
+//
+// Some description:
+// http://en.wikipedia.org/wiki/Pareto_distribution
+//
+// Mean: E(X) = shape*location / (shape - 1) for alpha > 1
+// => location = E(X)*(shape - 1) / shape
+//
+double randomParetoDouble(const double location, const double shape)
 {
-   assert(k > 0.0);
+   assert(shape > 0.0);
 
    double r = randomDouble();
    while ((r <= 0.0) || (r >= 1.0)) {
       r = randomDouble();
    }
-   return( m * pow(r, -1.0 / k) );
+   return( location / pow(r, 1.0 / shape) );
 }
 
 
