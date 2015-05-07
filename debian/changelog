@@ -1,3 +1,9 @@
+netperfmeter (1.5.4~rc1-1ubuntu1) vivid; urgency=low
+
+  * New upstream version.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sun, 01 Mar 2015 08:08:08 +0200
+
 netperfmeter (1.5.3-1ubuntu1) vivid; urgency=low
 
   * New upstream version.

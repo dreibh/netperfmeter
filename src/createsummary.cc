@@ -108,8 +108,8 @@ ScalarNode::~ScalarNode()
 // ###### Get ScalarNode object from storage node ###########################
 static inline ScalarNode* getScalarNodeFromStorageNode(struct SimpleRedBlackTreeNode* node)
 {
-   const long offset = (long)(&((struct ScalarNode*)node)->Node) - (long)node;
-   return( (struct ScalarNode*)( (long)node - offset ));
+   const long offset = (long)(&((class ScalarNode*)node)->Node) - (long)node;
+   return( (class ScalarNode*)( (long)node - offset ));
 }
 
 

@@ -1049,28 +1049,23 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
             return(handleNetPerfMeterAddFlow(
                       messageReader, controlSocket,
                       (const NetPerfMeterAddFlowMessage*)&inputBuffer, received));
-          break;
          case NETPERFMETER_REMOVE_FLOW:
             return(handleNetPerfMeterRemoveFlow(
                       messageReader, controlSocket,
                       (const NetPerfMeterRemoveFlowMessage*)&inputBuffer, received));
-          break;
          case NETPERFMETER_START:
             return(handleNetPerfMeterStart(
                       messageReader, controlSocket,
                       (const NetPerfMeterStartMessage*)&inputBuffer, received));
-          break;
          case NETPERFMETER_STOP:
             return(handleNetPerfMeterStop(
                       messageReader, controlSocket,
                       (const NetPerfMeterStopMessage*)&inputBuffer, received));
-          break;
          default:
             std::cerr << "ERROR: Received invalid control message of type "
                      << (unsigned int)header->Type << "!" << std::endl;
             sendAbort(controlSocket);
             return(false);
-          break;
       }
    }
    return(true);

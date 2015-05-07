@@ -620,7 +620,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 #endif
          default:
             abort();
-          break;
+
       }
       if(socketDescriptor < 0) {
          cerr << "ERROR: Unable to create " << getProtocolName(trafficSpec.Protocol)
