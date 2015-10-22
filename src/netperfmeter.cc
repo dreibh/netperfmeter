@@ -869,7 +869,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
    // ====== Initialize data socket for each protocol =======================
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
-                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);                                    
+                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
    if(gTCPSocket < 0) {
       cerr << "ERROR: Failed to create and bind TCP socket - "
            << strerror(errno) << "!" << endl;
