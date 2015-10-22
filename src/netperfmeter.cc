@@ -1058,12 +1058,22 @@ void activeMode(int argc, char** argv)
    const char*      configName        = "";
    uint8_t          protocol          = 0;
    Flow*            lastFlow          = NULL;
+   
+   // ------ Handle global parameters first ---------------------------------
    for(int i = 2;i < argc;i++) {
+      if(handleGlobalParameter(argv[i])) {
+         argv[i] = NULL;
+      }
+   }
+   
+   // ------ Handle other parameters ----------------------------------------
+   for(int i = 2;i < argc;i++) {
+      if(argv[i] == NULL) {
+         continue;   // Parameter has already been handled above!
+      }
       if(argv[i][0] == '-') {
          lastFlow = NULL;
-         if(handleGlobalParameter(argv[i])) {
-         }
-         else if(strcmp(argv[i], "-tcp") == 0) {
+         if(strcmp(argv[i], "-tcp") == 0) {
             protocol = IPPROTO_TCP;
          }
          else if(strcmp(argv[i], "-udp") == 0) {
