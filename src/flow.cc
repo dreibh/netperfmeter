@@ -1226,12 +1226,38 @@ bool Flow::configureSocket(const int socketDescriptor)
                   << strerror(errno) << "!" << std::endl;
          return(false);
       }
+      int newBufferSize = 0;
+      socklen_t newBufferSizeLength = sizeof(newBufferSize);
+      if(ext_getsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
+         std::cerr << "ERROR: Failed to obtain receive buffer size on SCTP socket (SO_RCVBUF option) - "
+                   << strerror(errno) << "!" << std::endl;
+         return(false);
+      }
+      if(newBufferSize < bufferSize) {
+         std::cerr << "ERROR: actual receive buffer size < configured receive buffer size: "
+                   << bufferSize << " < " << newBufferSize
+                   << std::endl;
+         return(false);
+      }
    }
    if(TrafficSpec.SndBufferSize != 0) {
       int bufferSize = TrafficSpec.SndBufferSize;
       if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
          std::cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
                   << strerror(errno) << "!" << std::endl;
+         return(false);
+      }
+      int newBufferSize = 0;
+      socklen_t newBufferSizeLength = sizeof(newBufferSize);
+      if(ext_getsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
+         std::cerr << "ERROR: Failed to obtain send buffer size on SCTP socket (SO_SNDBUF option) - "
+                   << strerror(errno) << "!" << std::endl;
+         return(false);
+      }
+      if(newBufferSize < bufferSize) {
+         std::cerr << "ERROR: actual send buffer size < configured send buffer size: "
+                   << bufferSize << " < " << newBufferSize
+                   << std::endl;
          return(false);
       }
    }
