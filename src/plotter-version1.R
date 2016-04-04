@@ -1,7 +1,7 @@
 # $Id: plotter-version1.R 2012-05-28 10:34:55Z ctdao $
 # ###########################################################################
 #             Thomas Dreibholz's R Simulation Scripts Collection
-#                  Copyright (C) 2005-2013 Thomas Dreibholz
+#                  Copyright (C) 2005-2016 Thomas Dreibholz
 #
 #               Author: Thomas Dreibholz, dreibh@iem.uni-due.de
 # ###########################################################################

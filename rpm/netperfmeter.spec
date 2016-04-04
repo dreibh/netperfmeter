@@ -58,5 +58,5 @@ rm -rf "$RPM_BUILD_ROOT"
 %{_datadir}/netperfmeter/plotter.R
 
 %changelog
-* Mon Nov 04 2013 Thomas Dreibholz <dreibh@simula.no> 1.4.0~rc2.0
+* Mon Nov 04 2016 Thomas Dreibholz <dreibh@simula.no> 1.4.0~rc2.0
 - Initial RPM release
