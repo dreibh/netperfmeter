@@ -1235,7 +1235,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       }
       if(newBufferSize < bufferSize) {
          std::cerr << "ERROR: actual receive buffer size < configured receive buffer size: "
-                   << bufferSize << " < " << newBufferSize
+                   << newBufferSize << " < " << bufferSize
                    << std::endl;
          return(false);
       }
@@ -1256,7 +1256,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       }
       if(newBufferSize < bufferSize) {
          std::cerr << "ERROR: actual send buffer size < configured send buffer size: "
-                   << bufferSize << " < " << newBufferSize
+                   << newBufferSize << " < " << bufferSize
                    << std::endl;
          return(false);
       }
