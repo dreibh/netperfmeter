@@ -1222,14 +1222,14 @@ bool Flow::configureSocket(const int socketDescriptor)
    if(TrafficSpec.RcvBufferSize != 0) {
       int bufferSize = TrafficSpec.RcvBufferSize;
       if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-         std::cerr << "ERROR: Failed to configure receive buffer size on SCTP socket (SO_RCVBUF option) - "
+         std::cerr << "ERROR: Failed to configure receive buffer size (SO_RCVBUF option) - "
                   << strerror(errno) << "!" << std::endl;
          return(false);
       }
       int newBufferSize = 0;
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
-         std::cerr << "ERROR: Failed to obtain receive buffer size on SCTP socket (SO_RCVBUF option) - "
+         std::cerr << "ERROR: Failed to obtain receive buffer size (SO_RCVBUF option) - "
                    << strerror(errno) << "!" << std::endl;
          return(false);
       }
@@ -1243,14 +1243,14 @@ bool Flow::configureSocket(const int socketDescriptor)
    if(TrafficSpec.SndBufferSize != 0) {
       int bufferSize = TrafficSpec.SndBufferSize;
       if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-         std::cerr << "ERROR: Failed to configure send buffer size on SCTP socket (SO_SNDBUF option) - "
+         std::cerr << "ERROR: Failed to configure send buffer size (SO_SNDBUF option) - "
                   << strerror(errno) << "!" << std::endl;
          return(false);
       }
       int newBufferSize = 0;
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
-         std::cerr << "ERROR: Failed to obtain send buffer size on SCTP socket (SO_SNDBUF option) - "
+         std::cerr << "ERROR: Failed to obtain send buffer size (SO_SNDBUF option) - "
                    << strerror(errno) << "!" << std::endl;
          return(false);
       }
@@ -1264,7 +1264,7 @@ bool Flow::configureSocket(const int socketDescriptor)
    if( (TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP) ) {
       const int noDelayOption = (TrafficSpec.NoDelay == true) ? 1 : 0;
       if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
-         std::cerr << "ERROR: Failed to set TCP_NODELAY on socket - "
+         std::cerr << "ERROR: Failed to set TCP_NODELAY - "
                << strerror(errno) << "!" << std::endl;
          return(false);
       }
@@ -1277,25 +1277,25 @@ bool Flow::configureSocket(const int socketDescriptor)
 
          const int debugOption = (TrafficSpec.Debug == true) ? 1 : 0;
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_DEBUG, (const char*)&debugOption, sizeof(debugOption)) < 0) {
-            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_DEBUG on socket - "
+            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_DEBUG on MPTCP socket - "
                       << strerror(errno) << "!" << std::endl;
          }
 
          const int nDiffPorts = (int)TrafficSpec.NDiffPorts;
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_NDIFFPORTS, (const char*)&nDiffPorts, sizeof(nDiffPorts)) < 0) {
-            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_NDIFFPORTS on socket - "
+            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_NDIFFPORTS on MPTCP socket - "
                       << strerror(errno) << "!" << std::endl;
          }
 
          const char* pathMgr = TrafficSpec.PathMgr.c_str();
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_PATHMANAGER, pathMgr, strlen(pathMgr)) < 0) {
-            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_PATHMANAGER on socket - "
+            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_PATHMANAGER on MPTCP socket - "
                       << strerror(errno) << "!" << std::endl;
          }
 
          const char* scheduler = TrafficSpec.Scheduler.c_str();
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_SCHEDULER, scheduler, strlen(scheduler)) < 0) {
-            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_SCHEDULER on socket - "
+            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_SCHEDULER on MPTCP socket - "
                       << strerror(errno) << "!" << std::endl;
          }
 #endif
@@ -1307,7 +1307,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(strcmp(congestionControl, "default") != 0) {
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
             std::cerr << "ERROR: Failed to set TCP_CONGESTION ("
-                      << congestionControl << ") on socket - "
+                      << congestionControl << ") - "
                       << strerror(errno) << "!" << std::endl;
             return(false);
          }
@@ -1318,7 +1318,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       if (TrafficSpec.NoDelay) {
          const int noDelayOption = 1;
          if (ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
-            std::cerr << "ERROR: Failed to set SCTP_NODELAY on socket - "
+            std::cerr << "ERROR: Failed to set SCTP_NODELAY on SCTP socket - "
                   << strerror(errno) << "!" << std::endl;
             return(false);
          }
