@@ -1146,6 +1146,7 @@ double randomParetoDouble(const double location, const double shape)
 }
 
 
+/* ###### poll() to select() wrapper to work around broken Apple poll() ## */
 #ifdef __APPLE__
 #warning Using poll() to select() wrapper to work around broken Apple poll().
 int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
@@ -1215,6 +1216,7 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
 #endif
 
 
+/* ###### Word-around for lksctp bug ##################################### */
 ssize_t sctp_send_fixed(int                           sd,
                         const void*                   data,
                         size_t                        len,
@@ -1241,4 +1243,53 @@ ssize_t sctp_send_fixed(int                           sd,
    sri = (struct sctp_sndrcvinfo*)CMSG_DATA(cmsg);
    memcpy(sri, sinfo, sizeof(struct sctp_sndrcvinfo));
    return(ext_sendmsg(sd, &msg, msg.msg_flags));
+}
+
+
+/* ###### Configure send and receive buffer sizes ######################## */
+bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
+{
+   if(sndBufSize >= 0) {
+      if(ext_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &sndBufSize, sizeof(sndBufSize)) < 0) {
+         std::cerr << "ERROR: Failed to configure send buffer size (SO_SNDBUF option) - "
+                   << strerror(errno) << "!" << std::endl;
+         return(false);
+      }
+      int newBufferSize = 0;
+      socklen_t newBufferSizeLength = sizeof(newBufferSize);
+      if(ext_getsockopt(sd, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
+         std::cerr << "ERROR: Failed to obtain receive send size (SO_SNDBUF option) - "
+                   << strerror(errno) << "!" << std::endl;
+         return(false);
+      }
+      printf("SET-SNDBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, sndBufSize);
+      if(newBufferSize < sndBufSize) {
+         std::cerr << "ERROR: actual send buffer size < configured send buffer size: "
+                   << newBufferSize << " < " << sndBufSize
+                   << std::endl;
+         return(false);
+      }
+   }
+   if(rcvBufSize >= 0) {
+      if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvBufSize, sizeof(rcvBufSize)) < 0) {
+         std::cerr << "ERROR: Failed to configure receive buffer size (SO_RCVBUF option) - "
+                   << strerror(errno) << "!" << std::endl;
+         return(false);
+      }
+      int newBufferSize = 0;
+      socklen_t newBufferSizeLength = sizeof(newBufferSize);
+      if(ext_getsockopt(sd, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
+         std::cerr << "ERROR: Failed to obtain receive buffer size (SO_RCVBUF option) - "
+                   << strerror(errno) << "!" << std::endl;
+         return(false);
+      }
+      printf("SET-RCVBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, rcvBufSize);
+      if(newBufferSize < rcvBufSize) {
+         std::cerr << "ERROR: actual receive buffer size < configured receive buffer size: "
+                   << newBufferSize << " < " << rcvBufSize
+                   << std::endl;
+         return(false);
+      }
+   }
+   return(true);
 }

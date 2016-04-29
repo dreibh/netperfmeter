@@ -171,4 +171,6 @@ ssize_t sctp_send_fixed(int                           sd,
 #define sctp_send(a,b,c,d,e) sctp_send_fixed(a,b,c,d,e)
 #endif
 
+bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize);
+
 #endif

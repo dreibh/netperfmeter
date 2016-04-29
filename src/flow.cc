@@ -1219,47 +1219,10 @@ void Flow::run()
 // ###### Configure socket parameters #######################################
 bool Flow::configureSocket(const int socketDescriptor)
 {
-   if(TrafficSpec.RcvBufferSize != 0) {
-      int bufferSize = TrafficSpec.RcvBufferSize;
-      if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-         std::cerr << "ERROR: Failed to configure receive buffer size (SO_RCVBUF option) - "
-                  << strerror(errno) << "!" << std::endl;
-         return(false);
-      }
-      int newBufferSize = 0;
-      socklen_t newBufferSizeLength = sizeof(newBufferSize);
-      if(ext_getsockopt(socketDescriptor, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
-         std::cerr << "ERROR: Failed to obtain receive buffer size (SO_RCVBUF option) - "
-                   << strerror(errno) << "!" << std::endl;
-         return(false);
-      }
-      if(newBufferSize < bufferSize) {
-         std::cerr << "ERROR: actual receive buffer size < configured receive buffer size: "
-                   << newBufferSize << " < " << bufferSize
-                   << std::endl;
-         return(false);
-      }
-   }
-   if(TrafficSpec.SndBufferSize != 0) {
-      int bufferSize = TrafficSpec.SndBufferSize;
-      if(ext_setsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &bufferSize, sizeof(bufferSize)) < 0) {
-         std::cerr << "ERROR: Failed to configure send buffer size (SO_SNDBUF option) - "
-                  << strerror(errno) << "!" << std::endl;
-         return(false);
-      }
-      int newBufferSize = 0;
-      socklen_t newBufferSizeLength = sizeof(newBufferSize);
-      if(ext_getsockopt(socketDescriptor, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
-         std::cerr << "ERROR: Failed to obtain send buffer size (SO_SNDBUF option) - "
-                   << strerror(errno) << "!" << std::endl;
-         return(false);
-      }
-      if(newBufferSize < bufferSize) {
-         std::cerr << "ERROR: actual send buffer size < configured send buffer size: "
-                   << newBufferSize << " < " << bufferSize
-                   << std::endl;
-         return(false);
-      }
+   if(setBufferSizes(socketDescriptor,
+                     (int)TrafficSpec.SndBufferSize,
+                     (int)TrafficSpec.RcvBufferSize) == false) {
+      return(false);
    }
    if( (TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP) ) {
       const int noDelayOption = (TrafficSpec.NoDelay == true) ? 1 : 0;

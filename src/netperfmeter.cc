@@ -48,6 +48,8 @@ static const char*    gActiveNodeName   = "Client";
 static const char*    gPassiveNodeName  = "Server";
 static const char*    gPathMgr          = "fullmesh";
 static const char*    gScheduler        = "default";
+static int            gSndBufSize       = -1;
+static int            gRcvBufSize       = -1;
 static bool           gControlOverTCP   = false;
 static int            gControlSocket    = -1;
 static int            gControlSocketTCP = -1;
@@ -82,6 +84,12 @@ bool handleGlobalParameter(char* parameter)
    }
    else if(strncmp(parameter, "-scheduler=", 11) == 0) {
       gScheduler = (const char*)&parameter[11];
+   }
+   else if(strncmp(parameter, "-sndbuf=", 8) == 0) {
+      gSndBufSize = atol((const char*)&parameter[8]);
+   }
+   else if(strncmp(parameter, "-rcvbuf=", 8) == 0) {
+      gRcvBufSize = atol((const char*)&parameter[8]);
    }
    else if(strcmp(parameter, "-quiet") == 0) {
       // Already handled before!
@@ -875,6 +883,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
            << strerror(errno) << "!" << endl;
       exit(1);
    }
+   if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
+      exit(1);
+   }
 
 #ifdef HAVE_MPTCP
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
@@ -897,6 +908,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
             std::cerr << "WARNING: Failed to set TCP_MULTIPATH_SCHEDULER on socket - "
                         << strerror(errno) << "!" << std::endl;
          }
+      }
+      if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
+         exit(1);
       }
    }
 #endif
@@ -923,6 +937,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                << strerror(errno) << "!" << std::endl;
       exit(1);
    }
+   if(setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize) == false) {
+      exit(1);
+   }
 #endif
 
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
@@ -947,6 +964,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
       cerr << "ERROR: Failed to configure events on SCTP socket - "
            << strerror(errno) << "!" << endl;
+      exit(1);
+   }
+   if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
       exit(1);
    }
 
