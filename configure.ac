@@ -1,4 +1,4 @@
-AC_INIT([NetPerfMeter], [1.5.5], [dreib@iem.uni-due.de])
+AC_INIT([NetPerfMeter], [1.5.6~rc1.1], [dreib@iem.uni-due.de])
 
 AM_INIT_AUTOMAKE
 AC_PREREQ(2.60)
