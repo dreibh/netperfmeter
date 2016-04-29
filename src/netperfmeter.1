@@ -16,11 +16,10 @@
 .\" You should have received a copy of the GNU General Public License
 .\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
 .\"
-.\" Contact: sebastian.wallat@uni-due.de
-.\"          dreibh@iem.uni-due.de
+.\" Contact: dreibh@iem.uni-due.de
 .\"
 .\" ###### Setup ############################################################
-.Dd February 13, 2015
+.Dd April 29, 2016
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -46,6 +45,8 @@
 .Fl verbosity=Level
 .Fl pathmgr=name
 .Fl scheduler=name
+.Fl sndbuf=bytes
+.Fl rcvbuf=bytes
 .Fl tcp
 .Fl sctp
 .Fl udp
@@ -96,6 +97,10 @@ Sets the verbosity of the log output to a given level, from 0 (lowest) to 6 (hig
 Set MPTCP path manager for the passive node (MPTCP for Linux only. Requires socket options kernel patch!).
 .It Fl scheduler=name
 Set MPTCP scheduler for the passive node (MPTCP for Linux only. Requires socket options kernel patch!).
+.It rcvbuf=bytes
+Sets the receiver buffer size (on the listening socket) to the given number of bytes.
+.It sndbuf=bytes
+Sets the sender buffer size (on the listening socket) to the given number of bytes.
 .It Fl sctp
 Establish a new SCTP association. The streams of this association must be specified by one or more FLOWSPEC specifications as following parameters.
 .It Fl tcp
