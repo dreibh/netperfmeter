@@ -7,4 +7,4 @@ if [ -e /usr/bin/dpkg-buildflags ] ; then
    export LDFLAGS=`dpkg-buildflags --get LDFLAGS`
 fi
 
-./bootstrap && ./configure --enable-test-programs --enable-plotting-programs && make
+./bootstrap && ./configure --enable-test-programs --enable-plotting-programs $@ && make
