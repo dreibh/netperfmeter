@@ -1249,7 +1249,7 @@ ssize_t sctp_send_fixed(int                           sd,
 /* ###### Configure send and receive buffer sizes ######################## */
 bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
 {
-   if(sndBufSize >= 0) {
+   if(sndBufSize > 0) {
       if(ext_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &sndBufSize, sizeof(sndBufSize)) < 0) {
          std::cerr << "ERROR: Failed to configure send buffer size (SO_SNDBUF option) - "
                    << strerror(errno) << "!" << std::endl;
@@ -1262,7 +1262,7 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
                    << strerror(errno) << "!" << std::endl;
          return(false);
       }
-      // printf("SET-SNDBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, sndBufSize);
+      printf("SET-SNDBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, sndBufSize);
       if(newBufferSize < sndBufSize) {
          std::cerr << "ERROR: actual send buffer size < configured send buffer size: "
                    << newBufferSize << " < " << sndBufSize
@@ -1270,7 +1270,7 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
          return(false);
       }
    }
-   if(rcvBufSize >= 0) {
+   if(rcvBufSize > 0) {
       if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvBufSize, sizeof(rcvBufSize)) < 0) {
          std::cerr << "ERROR: Failed to configure receive buffer size (SO_RCVBUF option) - "
                    << strerror(errno) << "!" << std::endl;
@@ -1283,7 +1283,7 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
                    << strerror(errno) << "!" << std::endl;
          return(false);
       }
-      // printf("SET-RCVBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, rcvBufSize);
+      printf("SET-RCVBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, rcvBufSize);
       if(newBufferSize < rcvBufSize) {
          std::cerr << "ERROR: actual receive buffer size < configured receive buffer size: "
                    << newBufferSize << " < " << rcvBufSize
