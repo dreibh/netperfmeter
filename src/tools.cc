@@ -1262,7 +1262,7 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
                    << strerror(errno) << "!" << std::endl;
          return(false);
       }
-      printf("SET-SNDBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, sndBufSize);
+      // printf("SET-SNDBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, sndBufSize);
       if(newBufferSize < sndBufSize) {
          std::cerr << "ERROR: actual send buffer size < configured send buffer size: "
                    << newBufferSize << " < " << sndBufSize
@@ -1283,7 +1283,7 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
                    << strerror(errno) << "!" << std::endl;
          return(false);
       }
-      printf("SET-RCVBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, rcvBufSize);
+      // printf("SET-RCVBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, rcvBufSize);
       if(newBufferSize < rcvBufSize) {
          std::cerr << "ERROR: actual receive buffer size < configured receive buffer size: "
                    << newBufferSize << " < " << rcvBufSize

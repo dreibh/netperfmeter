@@ -1,4 +1,4 @@
-# $Id$
+# $Id: plotter.R 1934 2014-11-19 16:29:39Z dreibh $
 # ###########################################################################
 #             Thomas Dreibholz's R Simulation Scripts Collection
 #                  Copyright (C) 2005-2016 Thomas Dreibholz
