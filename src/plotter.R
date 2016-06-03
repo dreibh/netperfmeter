@@ -1,7 +1,7 @@
 # $Id: plotter.R 1934 2014-11-19 16:29:39Z dreibh $
 # ###########################################################################
 #             Thomas Dreibholz's R Simulation Scripts Collection
-#                  Copyright (C) 2005-2016 Thomas Dreibholz
+#                  Copyright (C) 2005-2015 Thomas Dreibholz
 #
 #               Author: Thomas Dreibholz, dreibh@iem.uni-due.de
 # ###########################################################################
@@ -868,16 +868,18 @@ plotstd3 <- function(mainTitle,
          legendColors <- par("fg")
          legendBackground <- "white"
       }
-      legend(lx, ly,
-             xjust = lxjust,
-             yjust = lyjust,
-             parse(text=legendTexts),
-             bg=legendBackground,
-             col=legendColors,
-             lty=legendStyles,
-             pch=legendDots,
-             text.col=legendColors,
-             lwd=1, cex=par("cex")*legendSize)
+      if(length(legendTexts) > 1) {
+         legend(lx, ly,
+               xjust = lxjust,
+               yjust = lyjust,
+               parse(text=legendTexts),
+               bg=legendBackground,
+               col=legendColors,
+               lty=legendStyles,
+               pch=legendDots,
+               text.col=legendColors,
+               lwd=1, cex=par("cex")*legendSize)
+       }
    }
 
    par(opar)
