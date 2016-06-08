@@ -1,7 +1,7 @@
 # $Id: plotter.R 1934 2014-11-19 16:29:39Z dreibh $
 # ###########################################################################
 #             Thomas Dreibholz's R Simulation Scripts Collection
-#                  Copyright (C) 2005-2015 Thomas Dreibholz
+#                  Copyright (C) 2005-2016 Thomas Dreibholz
 #
 #               Author: Thomas Dreibholz, dreibh@iem.uni-due.de
 # ###########################################################################
@@ -101,16 +101,21 @@ cmGrayScale <- 1
 cmBlackAndWhite <- 0
 getBackgroundColor <- function(index, colorMode = cmColor, pStart = 0)
 {
-   if(colorMode == cmColor) {
-      bgColorSet <- c("#ffffe0", "#ffe0ff", "#e0ffff", "#ffe0e0", "#e0ffe0", "#e0e0ff", "#e0e0c0", "#eeeeee", "#000000")
-   }
-   else if(colorMode == cmGrayScale) {
-      bgColorSet <- c("#ffffff", "#f8f8f8", "#f0f0f0", "#e8e8e8", "#e0e0e0", "#d8d8d8", "#d0d0d0", "#c8c8c8", "#000000")
+   if(pStart >= 0) {
+      if(colorMode == cmColor) {
+         bgColorSet <- c("#ffffe0", "#ffe0ff", "#e0ffff", "#ffe0e0", "#e0ffe0", "#e0e0ff", "#e0e0c0", "#eeeeee", "#000000")
+      }
+      else if(colorMode == cmGrayScale) {
+         bgColorSet <- c("#ffffff", "#f8f8f8", "#f0f0f0", "#e8e8e8", "#e0e0e0", "#d8d8d8", "#d0d0d0", "#c8c8c8", "#000000")
+      }
+      else {
+         bgColorSet <- c("#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff")
+      }
+      bgColor <- bgColorSet[(pStart + (index - 1)) %% length(bgColorSet)]
    }
    else {
-      bgColorSet <- c("#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff")
+      bgColor <- "#ffffff"
    }
-   bgColor <- bgColorSet[(pStart + (index - 1)) %% length(bgColorSet)]
    return(bgColor)
 }
 
@@ -868,18 +873,16 @@ plotstd3 <- function(mainTitle,
          legendColors <- par("fg")
          legendBackground <- "white"
       }
-      if(length(legendTexts) > 1) {
-         legend(lx, ly,
-               xjust = lxjust,
-               yjust = lyjust,
-               parse(text=legendTexts),
-               bg=legendBackground,
-               col=legendColors,
-               lty=legendStyles,
-               pch=legendDots,
-               text.col=legendColors,
-               lwd=1, cex=par("cex")*legendSize)
-       }
+      legend(lx, ly,
+             xjust = lxjust,
+             yjust = lyjust,
+             parse(text=legendTexts),
+             bg=legendBackground,
+             col=legendColors,
+             lty=legendStyles,
+             pch=legendDots,
+             text.col=legendColors,
+             lwd=1, cex=par("cex")*legendSize)
    }
 
    par(opar)
