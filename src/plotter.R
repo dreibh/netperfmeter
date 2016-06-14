@@ -101,16 +101,21 @@ cmGrayScale <- 1
 cmBlackAndWhite <- 0
 getBackgroundColor <- function(index, colorMode = cmColor, pStart = 0)
 {
-   if(colorMode == cmColor) {
-      bgColorSet <- c("#ffffe0", "#ffe0ff", "#e0ffff", "#ffe0e0", "#e0ffe0", "#e0e0ff", "#e0e0c0", "#eeeeee", "#000000")
-   }
-   else if(colorMode == cmGrayScale) {
-      bgColorSet <- c("#ffffff", "#f8f8f8", "#f0f0f0", "#e8e8e8", "#e0e0e0", "#d8d8d8", "#d0d0d0", "#c8c8c8", "#000000")
+   if(pStart >= 0) {
+      if(colorMode == cmColor) {
+         bgColorSet <- c("#ffffe0", "#ffe0ff", "#e0ffff", "#ffe0e0", "#e0ffe0", "#e0e0ff", "#e0e0c0", "#eeeeee", "#000000")
+      }
+      else if(colorMode == cmGrayScale) {
+         bgColorSet <- c("#ffffff", "#f8f8f8", "#f0f0f0", "#e8e8e8", "#e0e0e0", "#d8d8d8", "#d0d0d0", "#c8c8c8", "#000000")
+      }
+      else {
+         bgColorSet <- c("#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff")
+      }
+      bgColor <- bgColorSet[(pStart + (index - 1)) %% length(bgColorSet)]
    }
    else {
-      bgColorSet <- c("#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff")
+      bgColor <- "#ffffff"
    }
-   bgColor <- bgColorSet[(pStart + (index - 1)) %% length(bgColorSet)]
    return(bgColor)
 }
 
@@ -337,7 +342,7 @@ plotstd3 <- function(mainTitle,
                      type                 = "lines",
                      confidence           = 0.95,
                      legendPos            = c(0,1),
-                     legendSize           = 0.8,
+                     legendSize           = 1.0,
                      lineWidthScaleFactor = 1.0,
                      colorMode            = cmColor,
                      frameColor           = par("fg"),
@@ -370,7 +375,8 @@ plotstd3 <- function(mainTitle,
                      writeMetadata        = TRUE,
                      largeMargins         = FALSE,
                      aLevels              = 1,
-                     bLevels              = 1)
+                     bLevels              = 1,
+                     fromPlotStd6         = FALSE)
 {
    if(length(zSet) < 1) {
       zSet   <- rep(0, length(ySet))
@@ -390,16 +396,18 @@ plotstd3 <- function(mainTitle,
    vLevels <- levels(factor(vSet))
    wLevels <- levels(factor(wSet))
    if(length(xLevels) < 1) {
-      cat("WARNING: plotstd3() - xLevels=c()\n")
-      return(0);
+      if(fromPlotStd6 == FALSE) {
+         cat("WARNING: plotstd3() - xLevels=c()\n")
+      }
+      return(0)
    }
    if(length(yLevels) < 1) {
       cat("WARNING: plotstd3() - yLevels=c()\n")
-      return(0);
+      return(0)
    }
    if(length(zLevels) < 1) {
       cat("WARNING: plotstd3() - zLevels=c()\n")
-      return(0);
+      return(0)
    }
 
    if(length(zColorArray) == 0) {
@@ -608,7 +616,8 @@ plotstd3 <- function(mainTitle,
 
                # ----- Lines or Steps plot without confidence intervals -----
                else if((type == "lx") || (type=="linesx") ||
-                       (type == "sx") || (type=="stepsx")) {
+                       (type == "sx") || (type=="stepsx") ||
+                       (type == "ecdf")) {
                   xSubset <- subset(xSet, (zSet == z) & (vSet == v) & (wSet == w))
                   ySubset <- subset(ySet, (zSet == z) & (vSet == v) & (wSet == w))
                   if(length(xSubset) > 0) {
@@ -625,12 +634,18 @@ plotstd3 <- function(mainTitle,
                         lines(xSubset, ySubset, type="s",
                               col=legendColor, lty=legendStyle, lwd=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
                      }
+                     else if(type == "ecdf") {
+                        lines(ecdf(xSubset), y=NULL,
+                              col=legendColor, lty=legendStyle, lwd=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
+                     }
 
-                     pcex <- dotScaleFactor * par("cex")
-                     points(xSubset, ySubset,
-                           col=legendColor, lty=legendStyle, pch=getDot(dotSet, legendDot),
-                           lwd=par("cex"),
-                           cex=pcex, bg="yellow")
+                     if(type != "ecdf") {
+                        pcex <- dotScaleFactor * par("cex")
+                        points(xSubset, ySubset,
+                              col=legendColor, lty=legendStyle, pch=getDot(dotSet, legendDot),
+                              lwd=par("cex"),
+                              cex=pcex, bg="yellow")
+                     }
 
                      legendTexts  <- append(legendTexts,  legendText)
                      legendColors <- append(legendColors, legendColor)
@@ -1166,6 +1181,7 @@ plotstd6 <- function(mainTitle, pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
                         xTitle, yTitle, zTitle,
                         xSubset, ySubset, zSubset,
                         vSubset, wSubset, vTitle, wTitle,
+                        fromPlotStd6         = TRUE,
                         zReverseColors       = zReverseColors,
                         zSortAscending       = zSortAscending,
                         vSortAscending       = vSortAscending,
@@ -1238,7 +1254,7 @@ plothist <- function(mainTitle,
                      colorMode        = cmColor,
                      zColorArray      = c(),
                      frameColor       = par("fg"),
-                     legendSize = 0.8,
+                     legendSize       = 0.8,
                      showMinMax       = FALSE,
                      showConfidence   = TRUE,
                      confidence       = 0.95,
