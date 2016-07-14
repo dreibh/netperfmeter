@@ -341,6 +341,7 @@ plotstd3 <- function(mainTitle,
                      yAxisTicks           = c(),
                      type                 = "lines",
                      confidence           = 0.95,
+                     pointsSize           = 2,
                      legendPos            = c(0,1),
                      legendSize           = 0.8,
                      lineWidthScaleFactor = 1.0,
@@ -722,7 +723,7 @@ plotstd3 <- function(mainTitle,
                      points(xPlotSet, yPlotMeanSet,
                             col=legendColor, lty=legendStyle, pch=getDot(dotSet, legendDot),
                             lwd=par("cex"),
-                            cex=2*par("cex"), bg="yellow")
+                            cex=pointsSize*par("cex"), bg="yellow")
 
                      legendTexts  <- append(legendTexts,  legendText)
                      legendColors <- append(legendColors, legendColor)
