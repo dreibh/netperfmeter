@@ -48,6 +48,7 @@ static const char*    gActiveNodeName   = "Client";
 static const char*    gPassiveNodeName  = "Server";
 static const char*    gPathMgr          = "fullmesh";
 static const char*    gScheduler        = "default";
+static bool           gBindV6Only       = false;
 static int            gSndBufSize       = -1;
 static int            gRcvBufSize       = -1;
 static bool           gControlOverTCP   = false;
@@ -90,6 +91,9 @@ bool handleGlobalParameter(char* parameter)
    }
    else if(strncmp(parameter, "-rcvbuf=", 8) == 0) {
       gRcvBufSize = atol((const char*)&parameter[8]);
+   }
+   else if(strcmp(parameter, "-v6only") == 0) {
+      gBindV6Only = true;
    }
    else if(strcmp(parameter, "-quiet") == 0) {
       // Already handled before!
@@ -350,6 +354,10 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          exit(1);
       }
    }
+   else if(strncmp(parameters, "v6only", 6) == 0) {
+      trafficSpec.BindV6Only = true;
+      n = 6;
+   }
    else if(sscanf(parameters, "description=%255[^:]s%n", (char*)&description, &n) == 1) {
       trafficSpec.Description = std::string(description);
       n = 12 + strlen(description);
@@ -604,26 +612,31 @@ static Flow* createFlow(Flow*                  previousFlow,
       switch(trafficSpec.Protocol) {
          case IPPROTO_SCTP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_SCTP, 0,
-                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
+                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false,
+                                                   trafficSpec.BindV6Only);
            break;
          case IPPROTO_TCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_TCP, 0,
-                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
+                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false,
+                                                   trafficSpec.BindV6Only);
            break;
 #ifdef HAVE_MPTCP
          case IPPROTO_MPTCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_MPTCP, 0,
-                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
+                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false,
+                                                   trafficSpec.BindV6Only);
            break;
 #endif
          case IPPROTO_UDP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_UDP, 0,
-                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
+                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false,
+                                                   trafficSpec.BindV6Only);
            break;
 #ifdef HAVE_DCCP
          case IPPROTO_DCCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DCCP, IPPROTO_DCCP, 0,
-                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false);
+                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false,
+                                                   trafficSpec.BindV6Only);
            break;
 #endif
          default:
@@ -847,7 +860,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
    // ====== Initialize control socket ======================================
    gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
-                                        localPort + 1, 0, NULL, true);
+                                        localPort + 1, 0, NULL, true, gBindV6Only);
    if(gControlSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket for control port - "
            << strerror(errno) << "!" << endl;
@@ -867,7 +880,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
    gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP,
-                                           localPort + 1, 0, NULL, true);
+                                           localPort + 1, 0, NULL, true, gBindV6Only);
    if(gControlSocketTCP < 0) {
       cerr << "ERROR: Failed to create and bind TCP socket for control port - "
            << strerror(errno) << "!" << endl;
@@ -877,7 +890,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
    // ====== Initialize data socket for each protocol =======================
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
-                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
+                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true, gBindV6Only);
    if(gTCPSocket < 0) {
       cerr << "ERROR: Failed to create and bind TCP socket - "
            << strerror(errno) << "!" << endl;
@@ -889,7 +902,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 #ifdef HAVE_MPTCP
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
-                                      gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
+                                      gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true, gBindV6Only);
    if(gMPTCPSocket < 0) {
       if(gOutputVerbosity >= NPFOV_STATUS) {
          cerr << "NOTE: Unable to create and bind MPTCP socket - "
@@ -916,7 +929,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 #endif
 
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
-                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
+                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true, gBindV6Only);
    if(gUDPSocket < 0) {
       cerr << "ERROR: Failed to create and bind UDP socket - "
            << strerror(errno) << "!" << endl;
@@ -927,7 +940,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 #ifdef HAVE_DCCP
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
-                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
+                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true, gBindV6Only);
    if(gDCCPSocket < 0) {
       cerr << "NOTE: Your kernel does not provide DCCP support." << endl;
    }
@@ -943,7 +956,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 #endif
 
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
-                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true);
+                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true, gBindV6Only);
    if(gSCTPSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket - "
            << strerror(errno) << "!" << endl;

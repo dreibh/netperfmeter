@@ -1,10 +1,11 @@
-AC_INIT([NetPerfMeter], [1.5.6], [dreib@iem.uni-due.de])
+AC_INIT([NetPerfMeter], [1.6.0~rc1.0], [dreib@iem.uni-due.de])
 
 AM_INIT_AUTOMAKE
 AC_PREREQ(2.60)
 
 AC_CONFIG_HEADERS([config.h:config.in])
 AC_CONFIG_SRCDIR([src/netperfmeter.cc])
+AC_CONFIG_MACRO_DIRS([m4])
 
 AC_PROG_CC
 AC_PROG_CXX
@@ -126,10 +127,10 @@ AC_TRY_COMPILE([#include <linux/tcp.h>],
                 AC_DEFINE(HAVE_MPTCP, 1, "Define to 1 if MPTCP is supported.")],
                [AC_MSG_RESULT(no)])
 
-AC_MSG_CHECKING(for IPV6_BINDV6ONLY)
+AC_MSG_CHECKING(for IPV6_V6ONLY)
 AC_TRY_COMPILE([#include <netinet/in.h>],
-               [int x = IPV6_BINDV6ONLY],
-               [AC_DEFINE(HAVE_IPV6_BINDV6ONLY, 1, "Define to 1 if IPV6_BINDV6ONLY socket option is available.")
+               [int x = IPV6_V6ONLY],
+               [AC_DEFINE(HAVE_IPV6_V6ONLY, 1, "Define to 1 if IPV6_V6ONLY socket option is available.")
                 AC_MSG_RESULT(yes)],
                [AC_MSG_RESULT(no)])
 AC_CHECK_FUNCS(socket, , AC_CHECK_LIB(socket, socket))

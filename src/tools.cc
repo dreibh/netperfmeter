@@ -563,7 +563,8 @@ int createAndBindSocket(const int             family,
                         const uint16_t        localPort,
                         const unsigned int    localAddresses,
                         const sockaddr_union* localAddressArray,
-                        const bool            listenMode)
+                        const bool            listenMode,
+                        const bool            bindV6Only)
 {
    unsigned int localAddressCount = localAddresses;
 
@@ -607,12 +608,17 @@ int createAndBindSocket(const int             family,
    if(sd < 0) {
       return(-2);
    }
-#ifdef IPV6_BINDV6ONLY
+#ifdef IPV6_V6ONLY
    if(socketFamily == AF_INET6) {
       // Accept IPv4 and IPv6 connections.
-      int on = 0;
-      ext_setsockopt(sd, IPPROTO_IPV6, IPV6_BINDV6ONLY, (char *)&on, sizeof(on));
+      const int on = (bindV6Only == true) ? 1 : 0;
+      // printf("IPV6_V6ONLY=%d\n", on);
+      if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) < 0) {
+         return(-2);
+      }
    }
+#else
+#error IPV6_V6ONLY not defined?! Please create a bug report and provide some information about your OS!
 #endif
 // FIXME! Add proper, platform-independent code here!
 #ifndef __linux__

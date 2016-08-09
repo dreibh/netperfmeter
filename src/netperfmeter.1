@@ -43,6 +43,7 @@
 .Fl quiet
 .Fl verbose
 .Fl verbosity=Level
+.Fl v6only
 .Fl pathmgr=name
 .Fl scheduler=name
 .Fl sndbuf=bytes
@@ -93,6 +94,8 @@ Reduces verbosity of log output. May be specified multiple times.
 Increases verbosity of log output. May be specified multiple times.
 .It Fl verbosity=Level
 Sets the verbosity of the log output to a given level, from 0 (lowest) to 6 (highest).
+.It Fl v6only
+Use sockets with IPv6 only (by setting IPV6_V6ONLY socket option).
 .It Fl pathmgr=name
 Set MPTCP path manager for the passive node (MPTCP for Linux only. Requires socket options kernel patch!).
 .It Fl scheduler=name
@@ -158,6 +161,8 @@ Deactivate Nagle algorithm (TCP and SCTP only; default: off).
 Set debug mode on socket (currently: MPTCP for Linux only. Requires socket options kernel patch!).
 .It ndiffports=number
 Set number of different MPTCP subflows (MPTCP for Linux only. Requires socket options kernel patch!).
+.It Fl v6only
+Use socket with IPv6 only (by setting IPV6_V6ONLY socket option).
 .It pathmgr=name
 Set MPTCP path manager (MPTCP for Linux only. Requires socket options kernel patch!).
 .It scheduler=name

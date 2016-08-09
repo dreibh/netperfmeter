@@ -175,6 +175,7 @@ void FlowTrafficSpec::reset()
    ErrorOnAbort             = true;
    Debug                    = false;
    NoDelay                  = false;
+   BindV6Only               = false;
    RepeatOnOff              = false;
    NDiffPorts               = 4;
    PathMgr                  = "fullmesh";

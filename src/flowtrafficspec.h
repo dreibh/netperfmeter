@@ -91,6 +91,7 @@ class FlowTrafficSpec
    bool                    NoDelay;
    bool                    ErrorOnAbort;
    bool                    RepeatOnOff;
+   bool                    BindV6Only;
 
    std::vector<OnOffEvent> OnOffEvents;
 };
