@@ -1232,7 +1232,7 @@ ssize_t sctp_send_fixed(int                           sd,
    struct sctp_sndrcvinfo* sri;
    struct iovec            iov = { (char*)data, len };
    struct cmsghdr*         cmsg;
-   size_t                  cmsglen = CMSG_SPACE(sizeof(struct sctp_sndrcvinfo));
+   socklen_t               cmsglen = CMSG_SPACE(sizeof(struct sctp_sndrcvinfo));
    char                    cbuf[CMSG_SPACE(sizeof(struct sctp_sndrcvinfo))];
    struct msghdr msg = {
       NULL, 0,
