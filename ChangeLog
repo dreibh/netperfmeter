@@ -1,3 +1,24 @@
+commit 734b5dbb39d296f9abf440f3fbeacb57a1984eda
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 3 16:06:38 2016 +0100
+
+    Updated build scripts.
+
+ configure.ac     | 2 +-
+ debian/changelog | 6 ++++++
+ make-ppa         | 2 +-
+ 3 files changed, 8 insertions(+), 2 deletions(-)
+
+commit 5329067def69e1bd2cccf7c0f547ffb0eadf7c14
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Sep 9 16:06:20 2016 +0200
+
+    Updated ChangeLog.
+
+ ChangeLog        | 19874 +++++++++++++++++++++++++++++++----------------------
+ update-changelog |     2 +-
+ 2 files changed, 11751 insertions(+), 8125 deletions(-)
+
 commit 8503856357c012b82d6f32896a974f75248ef561
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Fri Sep 9 16:05:11 2016 +0200
