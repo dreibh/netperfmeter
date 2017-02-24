@@ -263,7 +263,6 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
       if(flow) {
          if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
             std::cout << "End of input for flow " <<  flow->getFlowID() << std::endl;
-            printf("r=%d\n", received);
          }
          flow->endOfInput();
       }
