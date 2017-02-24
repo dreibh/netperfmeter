@@ -773,7 +773,7 @@ bool mainLoop(const bool               isActiveMode,
       // ====== Incoming control message ====================================
       int controlID;
       for(controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
-         if(fds[controlID].revents & POLLIN) {
+         if(fds[controlID].revents & (POLLIN|POLLERR)) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
                const int newSD = ext_accept(gControlSocket, NULL, 0);

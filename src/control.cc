@@ -598,7 +598,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
       }
       return(false);
    }
-   if(!(pfd.revents & POLLIN)) {
+   if(!(pfd.revents & (POLLIN|POLLERR))) {
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
          std::cout << "<no answer> ";
       }

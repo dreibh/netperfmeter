@@ -735,6 +735,7 @@ void FlowManager::run()
                   pollFDs[n].events  = POLLIN;
                   pollFDs[n].revents = 0;
                   FlowSet[i]->PollFDEntry = &pollFDs[n];
+                  // printf("?pollin-1: %d\n", pollFDs[n].fd);
                   n++;
                   socketSet.insert(FlowSet[i]->SocketDescriptor);
                }
@@ -753,6 +754,7 @@ void FlowManager::run()
          pollFDs[n].fd      = iterator->first;
          pollFDs[n].events  = POLLIN;
          pollFDs[n].revents = 0;
+         // printf("?pollin-2: %d\n", pollFDs[n].fd);
          unidentifiedSocketsPollFDIndex[i] = &pollFDs[n];
          n++; i++;
       }
@@ -784,10 +786,13 @@ void FlowManager::run()
             // NOTE: Release the lock here, because the FlowSet enty may belong
             //       to another stream of the socket. handleNetPerfMeterData()
             //       will find and lock the actual FlowSet entry!
-            if( (entry) && (entry->revents & POLLIN) ) {
-               // NOTE: FlowSet[i] may not be the actual Flow!
-               //       It may be another stream of the same SCTP assoc!
-               handleNetPerfMeterData(true, now, protocol, entry->fd);
+            if(entry) {
+               // printf("***pollin-1: %d REV=%x\n", entry->fd, entry->revents);
+               if(entry->revents & (POLLIN|POLLERR)) {
+                  // NOTE: FlowSet[i] may not be the actual Flow!
+                  //       It may be another stream of the same SCTP assoc!
+                  handleNetPerfMeterData(true, now, protocol, entry->fd);
+               }
             }
             FlowSet[i]->unlock();
          }
@@ -799,7 +804,8 @@ void FlowManager::run()
             for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
                iterator != UnidentifiedSockets.end(); iterator++) {
                assert(unidentifiedSocketsPollFDIndex[i]->fd == iterator->first);
-               if(unidentifiedSocketsPollFDIndex[i]->revents & POLLIN) {
+               if(unidentifiedSocketsPollFDIndex[i]->revents & (POLLIN|POLLERR)) {
+                  // printf("***pollin-2: %d REV=%x\n", unidentifiedSocketsPollFDIndex[i]->fd, unidentifiedSocketsPollFDIndex[i]->revents);
                   if(handleNetPerfMeterData(true, now,
                                             iterator->second,
                                             iterator->first) == 0) {
