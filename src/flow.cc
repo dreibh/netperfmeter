@@ -788,7 +788,7 @@ void FlowManager::run()
             //       will find and lock the actual FlowSet entry!
             if(entry) {
                // printf("***pollin-1: %d REV=%x\n", entry->fd, entry->revents);
-               if(entry->revents & (POLLIN|POLLERR)) {
+               if(entry->revents & POLLIN) {
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
                   handleNetPerfMeterData(true, now, protocol, entry->fd);
@@ -804,7 +804,7 @@ void FlowManager::run()
             for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
                iterator != UnidentifiedSockets.end(); iterator++) {
                assert(unidentifiedSocketsPollFDIndex[i]->fd == iterator->first);
-               if(unidentifiedSocketsPollFDIndex[i]->revents & (POLLIN|POLLERR)) {
+               if(unidentifiedSocketsPollFDIndex[i]->revents & POLLIN) {
                   // printf("***pollin-2: %d REV=%x\n", unidentifiedSocketsPollFDIndex[i]->fd, unidentifiedSocketsPollFDIndex[i]->revents);
                   if(handleNetPerfMeterData(true, now,
                                             iterator->second,

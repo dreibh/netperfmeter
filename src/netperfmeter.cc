@@ -789,12 +789,14 @@ bool mainLoop(const bool               isActiveMode,
                }
             }
             else {
+               printf("***CCCCC: %d REV=%x\n", fds[controlID].fd, fds[controlID].revents);
                const bool controlOkay = handleNetPerfMeterControlMessage(
                                            &gMessageReader, fds[controlID].fd);
                if(!controlOkay) {
                   if(isActiveMode) {
                      return(false);
                   }
+                  puts("DEREG-CONTROL!");
                   gMessageReader.deregisterSocket(fds[controlID].fd);
                   ext_close(fds[controlID].fd);
                }
