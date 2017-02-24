@@ -1105,9 +1105,8 @@ void activeMode(int argc, char** argv)
    }
    const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
    gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, SOCK_STREAM, controlSocketProtocol,
-                                        0,
-                                        gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
-                                        true, gBindV6Only);
+                                        0, gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
+                                        false, gBindV6Only);
    if(gControlSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket - "
            << strerror(errno) << "!" << endl;
