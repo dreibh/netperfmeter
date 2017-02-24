@@ -34,6 +34,7 @@
 .Op Destination:Port
 .Fl control-over-tcp
 .Fl local=Address[,Address,...]
+.Fl controllocal=Address[,Address,...]
 .Fl runtime=Seconds
 .Fl config=Name
 .Fl scalar=Name
@@ -73,7 +74,9 @@ Specifies the destination endpoint to connect to. This will turn netperfmeter in
 .It Fl control-over-tcp
 Use TCP instead of SCTP for the control connection. This is useful for NAT traversal.
 .It Fl local=Address[,Address,...]
-Specifies address(es) of the local endpoint. For TCP, UDP and DCCP, only the first address is used!
+Specifies address(es) of the local *data* endpoint. For TCP, UDP and DCCP, only the first address is used!
+.It Fl controllocal=Address[,Address,...]
+Specifies address(es) of the local *control* endpoint (SCTP or TCP). For TCP, only the first address is used!
 .It Fl runtime
 Specifies the measurement runtime in seconds. After the given time span, netperfmeter will finish the measurement.
 .It Fl config=Name
