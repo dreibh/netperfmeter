@@ -1,8 +1,8 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2016 by Thomas Dreibholz
+ * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -641,12 +641,12 @@ static Flow* createFlow(Flow*                  previousFlow,
          << getProtocolName(trafficSpec.Protocol) << " socket to ";
       printAddress(cout, &destinationAddress.sa, true);
       cout << " from ";
-      if(gLocalAddresses > 0) {
-         for(unsigned int i = 0;i < gLocalAddresses;i++) {
+      if(gLocalDataAddresses > 0) {
+         for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
             if(i > 0) {
                std::cout << ", ";
             }
-            printAddress(std::cout, &gLocalAddressArray[i].sa, false);
+            printAddress(std::cout, &gLocalDataAddressArray[i].sa, false);
          }
       }
       else {
