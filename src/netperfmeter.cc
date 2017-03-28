@@ -41,8 +41,10 @@ using namespace std;
 
 
 #define MAX_LOCAL_ADDRESSES 16
-static unsigned int   gLocalAddresses  = 0;
-static sockaddr_union gLocalAddressArray[MAX_LOCAL_ADDRESSES];
+static unsigned int   gLocalDataAddresses = 0;
+static sockaddr_union gLocalDataAddressArray[MAX_LOCAL_ADDRESSES];
+static unsigned int   gLocalControlAddresses = 0;
+static sockaddr_union gLocalControlAddressArray[MAX_LOCAL_ADDRESSES];
 
 static const char*    gActiveNodeName   = "Client";
 static const char*    gPassiveNodeName  = "Server";
@@ -105,18 +107,38 @@ bool handleGlobalParameter(char* parameter)
       // Already handled before!
    }
    else if(strncmp(parameter, "-local=", 7) == 0) {
-      gLocalAddresses = 0;
+      gLocalDataAddresses = 0;
       char* address = (char*)&parameter[7];
-      while(gLocalAddresses < MAX_LOCAL_ADDRESSES) {
+      while(gLocalDataAddresses < MAX_LOCAL_ADDRESSES) {
          char* idx = index(address, ',');
          if(idx) {
             *idx = 0x00;
          }
-         if(!string2address(address, &gLocalAddressArray[gLocalAddresses])) {
-            fprintf(stderr, "ERROR: Bad address %s for local endpoint! Use format <address:port>.\n",address);
+         if(!string2address(address, &gLocalDataAddressArray[gLocalDataAddresses])) {
+            fprintf(stderr, "ERROR: Bad address %s for local data endpoint! Use format <address:port>.\n",address);
             exit(1);
          }
-         gLocalAddresses++;
+         gLocalDataAddresses++;
+         if(!idx) {
+            break;
+         }
+         address = idx;
+         address++;
+      }
+   }
+   else if(strncmp(parameter, "-controllocal=", 14) == 0) {
+      gLocalControlAddresses = 0;
+      char* address = (char*)&parameter[14];
+      while(gLocalControlAddresses < MAX_LOCAL_ADDRESSES) {
+         char* idx = index(address, ',');
+         if(idx) {
+            *idx = 0x00;
+         }
+         if(!string2address(address, &gLocalControlAddressArray[gLocalControlAddresses])) {
+            fprintf(stderr, "ERROR: Bad address %s for local control endpoint! Use format <address:port>.\n",address);
+            exit(1);
+         }
+         gLocalControlAddresses++;
          if(!idx) {
             break;
          }
@@ -136,29 +158,42 @@ void printGlobalParameters()
 {
    if(gOutputVerbosity >= NPFOV_STATUS) {
       std::cout << "Global Parameters:" << std::endl
-               << "   - Runtime           = ";
+               << "   - Runtime                   = ";
       if(gRuntime >= 0.0) {
          std::cout << gRuntime << "s" << std::endl;
       }
       else {
          std::cout << "until manual stop" << std::endl;
       }
-      std::cout << "   - Active Node Name  = " << gActiveNodeName  << std::endl
-                << "   - Passive Node Name = " << gPassiveNodeName << std::endl;
-      std::cout << "   - Local Address(es) = ";
-      if(gLocalAddresses > 0) {
-         for(unsigned int i = 0;i < gLocalAddresses;i++) {
+      std::cout << "   - Active Node Name          = " << gActiveNodeName  << std::endl
+                << "   - Passive Node Name         = " << gPassiveNodeName << std::endl;
+      std::cout << "   - Local Data Address(es)    = ";
+      if(gLocalDataAddresses > 0) {
+         for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
             if(i > 0) {
                std::cout << ", ";
             }
-            printAddress(std::cout, &gLocalAddressArray[i].sa, false);
+            printAddress(std::cout, &gLocalDataAddressArray[i].sa, false);
          }
       }
       else {
          std::cout << "(any)";
       }
       std::cout << std::endl;
-      std::cout << "   - Logging Verbosity = " << gOutputVerbosity << std::endl
+      std::cout << "   - Local Control Address(es) = ";
+      if(gLocalControlAddresses > 0) {
+         for(unsigned int i = 0;i < gLocalControlAddresses;i++) {
+            if(i > 0) {
+               std::cout << ", ";
+            }
+            printAddress(std::cout, &gLocalControlAddressArray[i].sa, false);
+         }
+      }
+      else {
+         std::cout << "(any)";
+      }
+      std::cout << std::endl;
+      std::cout << "   - Logging Verbosity         = " << gOutputVerbosity << std::endl
                 << std::endl;
    }
 }
@@ -639,30 +674,30 @@ static Flow* createFlow(Flow*                  previousFlow,
       switch(trafficSpec.Protocol) {
          case IPPROTO_SCTP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_SCTP, 0,
-                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false,
+                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
                                                    trafficSpec.BindV6Only);
            break;
          case IPPROTO_TCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_TCP, 0,
-                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false,
+                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
                                                    trafficSpec.BindV6Only);
            break;
 #ifdef HAVE_MPTCP
          case IPPROTO_MPTCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_MPTCP, 0,
-                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false,
+                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
                                                    trafficSpec.BindV6Only);
            break;
 #endif
          case IPPROTO_UDP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_UDP, 0,
-                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false,
+                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
                                                    trafficSpec.BindV6Only);
            break;
 #ifdef HAVE_DCCP
          case IPPROTO_DCCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DCCP, IPPROTO_DCCP, 0,
-                                                   gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, false,
+                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
                                                    trafficSpec.BindV6Only);
            break;
 #endif
@@ -786,7 +821,7 @@ bool mainLoop(const bool               isActiveMode,
       // ====== Incoming control message ====================================
       int controlID;
       for(controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
-         if(fds[controlID].revents & POLLIN) {
+         if(fds[controlID].revents & (POLLIN|POLLERR)) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
                const int newSD = ext_accept(gControlSocket, NULL, 0);
@@ -873,7 +908,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
    // ====== Initialize control socket ======================================
    gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
-                                        localPort + 1, 0, NULL, true, gBindV6Only);
+                                        localPort + 1,
+                                        gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
+                                        true, gBindV6Only);
    if(gControlSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket for control port - "
            << strerror(errno) << "!" << endl;
@@ -903,7 +940,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
    // ====== Initialize data socket for each protocol =======================
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
-                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true, gBindV6Only);
+                                    gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gTCPSocket < 0) {
       cerr << "ERROR: Failed to create and bind TCP socket - "
            << strerror(errno) << "!" << endl;
@@ -915,7 +952,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 #ifdef HAVE_MPTCP
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
-                                      gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true, gBindV6Only);
+                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gMPTCPSocket < 0) {
       if(gOutputVerbosity >= NPFOV_STATUS) {
          cerr << "NOTE: Unable to create and bind MPTCP socket - "
@@ -942,7 +979,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 #endif
 
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
-                                    gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true, gBindV6Only);
+                                    gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gUDPSocket < 0) {
       cerr << "ERROR: Failed to create and bind UDP socket - "
            << strerror(errno) << "!" << endl;
@@ -953,23 +990,25 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 #ifdef HAVE_DCCP
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
-                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true, gBindV6Only);
+                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gDCCPSocket < 0) {
       cerr << "NOTE: Your kernel does not provide DCCP support." << endl;
    }
-   const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };
-   if(ext_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
-      std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
-               << strerror(errno) << "!" << std::endl;
-      exit(1);
-   }
-   if(setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize) == false) {
-      exit(1);
+   else {
+      const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };
+      if(ext_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
+         std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
+                   << strerror(errno) << "!" << std::endl;
+         exit(1);
+      }
+      if(setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize) == false) {
+         exit(1);
+      }
    }
 #endif
 
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
-                                     gLocalAddresses, (const sockaddr_union*)&gLocalAddressArray, true, gBindV6Only);
+                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gSCTPSocket < 0) {
       cerr << "ERROR: Failed to create and bind SCTP socket - "
            << strerror(errno) << "!" << endl;
@@ -1078,9 +1117,11 @@ void activeMode(int argc, char** argv)
       }
    }
    const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
-   gControlSocket = ext_socket(controlAddress.sa.sa_family, SOCK_STREAM, controlSocketProtocol);
+   gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, SOCK_STREAM, controlSocketProtocol,
+                                        0, gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
+                                        false, gBindV6Only);
    if(gControlSocket < 0) {
-      cerr << "ERROR: Failed to create socket for control port - "
+      cerr << "ERROR: Failed to create and bind SCTP socket - "
            << strerror(errno) << "!" << endl;
       exit(1);
    }

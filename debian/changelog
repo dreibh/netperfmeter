@@ -1,8 +1,20 @@
-netperfmeter (1.6.0~rc1.0-1ubuntu1) yakkety; urgency=low
+netperfmeter (1.6.2~rc1.1-1ubuntu1) zesty; urgency=low
 
   * New upstream version.
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 09 Aug 2016 08:08:08 +0200
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 21 Mar 2017 08:08:08 +0200
+
+netperfmeter (1.6.1-1ubuntu1) zesty; urgency=low
+
+  * New upstream version.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 04 Nov 2016 08:08:08 +0200
+
+netperfmeter (1.6.0-1ubuntu1) yakkety; urgency=low
+
+  * New upstream version.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 17 Aug 2016 08:08:08 +0200
 
 netperfmeter (1.5.6-1ubuntu1) yakkety; urgency=low
 

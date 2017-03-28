@@ -238,7 +238,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    flow->getMeasurementID(),
                                    flow->getFlowID(), flow->getStreamID()) == false) {
-      perror("sctp_rev error");
+      perror("sctp_recv error");
       return(false);
    }
 
@@ -598,7 +598,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
       }
       return(false);
    }
-   if(!(pfd.revents & POLLIN)) {
+   if(!(pfd.revents & (POLLIN|POLLERR))) {
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
          std::cout << "<no answer> ";
       }

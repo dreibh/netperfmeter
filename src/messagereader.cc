@@ -175,6 +175,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          msgFlags   = &dummyFlags;
       }
       if(socket->Protocol == IPPROTO_SCTP) {
+         // printf("toRead=%d\n", bytesToRead);
          received = sctp_recvmsg(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  from, fromSize, sinfo, msgFlags);
