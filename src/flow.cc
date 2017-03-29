@@ -1064,7 +1064,7 @@ void Flow::deactivate(const bool asyncStop)
          else {
             const int shutdownOkay = ext_shutdown(SocketDescriptor, 2);
             if(shutdownOkay < 0) {
-               perror("WARNING: Cannut shut association down");
+               perror("WARNING: Failed to shut down association");
             }
          }
       }
