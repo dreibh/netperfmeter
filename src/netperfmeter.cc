@@ -1,8 +1,8 @@
 /* $Id$
  *
  * Network Performance Meter
- * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  * Copyright (C) 2009-2016 by Thomas Dreibholz
+ * Copyright (C) 2013 by Sebastian Wallat (TCP No delay)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -629,6 +629,33 @@ static Flow* createFlow(Flow*                  previousFlow,
       exit(1);
    }
 
+   // ====== MPTCP: choose MPTCP socket instead of TCP socket ============
+   sockaddr_union destinationAddress = remoteAddress;
+   if(trafficSpec.Protocol == IPPROTO_MPTCP) {
+      setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
+   }
+
+   // ====== Print information ==============================================
+   if(gOutputVerbosity >= NPFOV_STATUS) {
+      cout << "Flow #" << flow->getFlowID() << ": connecting "
+         << getProtocolName(trafficSpec.Protocol) << " socket to ";
+      printAddress(cout, &destinationAddress.sa, true);
+      cout << " from ";
+      if(gLocalDataAddresses > 0) {
+         for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
+            if(i > 0) {
+               std::cout << ", ";
+            }
+            printAddress(std::cout, &gLocalDataAddressArray[i].sa, false);
+         }
+      }
+      else {
+         std::cout << "(any)";
+      }
+      cout << " ... ";
+      cout.flush();
+   }
+   
    // ====== Set up socket ==================================================
    int  socketDescriptor;
    bool originalSocketDescriptor;
@@ -684,21 +711,7 @@ static Flow* createFlow(Flow*                  previousFlow,
          exit(1);
       }
 
-      // ====== MPTCP: choose MPTCP socket instead of TCP socket ============
-      sockaddr_union destinationAddress = remoteAddress;
-      if(trafficSpec.Protocol == IPPROTO_MPTCP) {
-         setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
-      }
-
       // ====== Establish connection ========================================
-      if(gOutputVerbosity >= NPFOV_STATUS) {
-         cout << "Flow #" << flow->getFlowID() << ": connecting "
-            << getProtocolName(trafficSpec.Protocol) << " socket to ";
-         printAddress(cout, &destinationAddress.sa, true);
-         cout << " ... ";
-         cout.flush();
-      }
-
       if(trafficSpec.Protocol == IPPROTO_SCTP) {
          sctp_initmsg initmsg;
          memset((char*)&initmsg, 0 ,sizeof(initmsg));
@@ -1133,19 +1146,12 @@ void activeMode(int argc, char** argv)
    uint8_t          protocol          = 0;
    Flow*            lastFlow          = NULL;
    
-   // ------ Handle global parameters first ---------------------------------
-   for(int i = 2;i < argc;i++) {
-      if(handleGlobalParameter(argv[i])) {
-         argv[i] = NULL;
-      }
-   }
-   
    // ------ Handle other parameters ----------------------------------------
    for(int i = 2;i < argc;i++) {
-      if(argv[i] == NULL) {
-         continue;   // Parameter has already been handled above!
+      if(handleGlobalParameter(argv[i])) {
+         // Parameter has been handled in handleGlobalParameter()!
       }
-      if(argv[i][0] == '-') {
+      else if(argv[i][0] == '-') {
          lastFlow = NULL;
          if(strcmp(argv[i], "-tcp") == 0) {
             protocol = IPPROTO_TCP;
