@@ -1,3 +1,13 @@
+commit eda34a6378ee89fe7d0acdda040a6eb5b54ebbd7
+Author: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Date:   Thu Apr 20 11:04:02 2017 +0200
+
+    Some clean-ups.
+
+ ChangeLog        | 313 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ netperfmeter.lsm |   6 +-
+ 2 files changed, 316 insertions(+), 3 deletions(-)
+
 commit 1d4c4f9065b97cd113a19731f05d805197b98af4
 Author: Thomas Dreibholz <dreibh@iem.uni-due.de>
 Date:   Thu Apr 20 10:57:35 2017 +0200
