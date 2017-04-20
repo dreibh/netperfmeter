@@ -1,4 +1,3 @@
-// $Id$
 // ###########################################################################
 //             Thomas Dreibholz's R Simulation Scripts Collection
 //                  Copyright (C) 2004-2016 Thomas Dreibholz
@@ -27,7 +26,7 @@
 #include <sys/time.h>
 
 
-/* ###### Get current timer ############################################## */
+// ###### Get current time stamp ############################################
 static unsigned long long getMicroTime()
 {
   struct timeval tv;

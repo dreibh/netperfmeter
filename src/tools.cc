@@ -61,7 +61,7 @@ std::string format(const char* fmt, ...)
 }
 
 
-// ###### Get current timer #################################################
+// ###### Get current time stamp ############################################
 unsigned long long getMicroTime()
 {
   struct timeval tv;
