@@ -1,3 +1,316 @@
+commit 1d4c4f9065b97cd113a19731f05d805197b98af4
+Author: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Date:   Thu Apr 20 10:57:35 2017 +0200
+
+    Some clean-ups.
+
+ src/storage/t2.cc |  72 --------------
+ src/storage/t3.cc | 133 --------------------------
+ src/storage/t4.cc | 113 ----------------------
+ src/storage/t5.cc | 273 ------------------------------------------------------
+ 4 files changed, 591 deletions(-)
+
+commit abd4975ca062d3a543bc3684afe85daa657fa6f4
+Author: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Date:   Thu Apr 20 10:08:53 2017 +0200
+
+    Makefile fix.
+
+ src/Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 29b5f5558084ecd70d721ae847cc867944865346
+Author: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Date:   Thu Apr 20 10:08:16 2017 +0200
+
+    Updated headers.
+
+ build-deb                           | 2 +-
+ clean-deb                           | 2 +-
+ configure.ac                        | 2 +-
+ debian/changelog                    | 4 ++--
+ debian/netperfmeter.install         | 1 +
+ debian/netperfmeter.manpages        | 1 +
+ filter-empty-entries                | 2 +-
+ freebsd/netperfmeter/make-diff      | 2 +-
+ freebsd/netperfmeter/test-packaging | 2 +-
+ make-deb                            | 2 +-
+ rpm/netperfmeter.spec               | 2 +-
+ src/combinesummaries.1              | 2 --
+ src/combinesummaries.cc             | 1 -
+ src/control.cc                      | 5 ++---
+ src/control.h                       | 5 ++---
+ src/cpustatus.cc                    | 5 ++---
+ src/cpustatus.h                     | 5 ++---
+ src/createsummary.1                 | 2 --
+ src/createsummary.cc                | 1 -
+ src/debug.h                         | 5 ++---
+ src/defragmenter.cc                 | 5 ++---
+ src/defragmenter.h                  | 5 ++---
+ src/ext_socket.h                    | 3 +--
+ src/extractvectors.1                | 2 --
+ src/extractvectors.cc               | 1 -
+ src/flow.cc                         | 5 ++---
+ src/flow.h                          | 5 ++---
+ src/flowbandwidthstats.cc           | 5 ++---
+ src/flowbandwidthstats.h            | 5 ++---
+ src/flowtrafficspec.cc              | 5 ++---
+ src/flowtrafficspec.h               | 5 ++---
+ src/getabstime.cc                   | 2 +-
+ src/inputfile.cc                    | 5 ++---
+ src/inputfile.h                     | 5 ++---
+ src/make-rootshell                  | 3 +--
+ src/measurement.cc                  | 5 ++---
+ src/measurement.h                   | 5 ++---
+ src/messagereader.cc                | 5 ++---
+ src/messagereader.h                 | 5 ++---
+ src/mutex.cc                        | 5 ++---
+ src/mutex.h                         | 5 ++---
+ src/netperfmeter.1                  | 4 +---
+ src/netperfmeter.cc                 | 5 ++---
+ src/netperfmeterpackets.h           | 5 ++---
+ src/outputfile.cc                   | 5 ++---
+ src/outputfile.h                    | 5 ++---
+ src/pdfembedfonts                   | 3 +--
+ src/pdfembedfonts.1                 | 2 --
+ src/pdfmetadata                     | 3 +--
+ src/pdfmetadata.1                   | 2 --
+ src/plot-netperfmeter-results       | 3 +--
+ src/plot-netperfmeter-results.1     | 2 --
+ src/plot-netperfmeter-results.R     | 4 +---
+ src/plot-version1.R                 | 4 +---
+ src/redblacktree.h                  | 5 ++---
+ src/redblacktree_impl.h             | 5 ++---
+ src/rootshell.c                     | 5 ++---
+ src/runtimeestimator.1              | 2 --
+ src/setqos                          | 3 +--
+ src/setsctp                         | 3 +--
+ src/simpleredblacktree.c            | 5 ++---
+ src/simpleredblacktree.h            | 5 ++---
+ src/thread.cc                       | 5 ++---
+ src/thread.h                        | 5 ++---
+ src/tools.cc                        | 5 ++---
+ src/tools.h                         | 3 +--
+ src/transfer.cc                     | 5 ++---
+ src/transfer.h                      | 5 ++---
+ 68 files changed, 94 insertions(+), 158 deletions(-)
+
+commit ba9d200482d0bfba1aac5b4768d7b3306c27c1cd
+Author: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Date:   Thu Apr 20 09:51:59 2017 +0200
+
+    Added getabstime tool.
+
+ src/Makefile.am         |   9 +-
+ src/getabstime.1        |  42 +++++
+ src/getabstime.cc       |  44 +++++
+ src/runtimeestimator.cc |   3 +-
+ src/t1.cc               |  23 ---
+ src/t6.1                |  76 --------
+ src/t6.cc               | 464 ------------------------------------------------
+ src/tools.cc            |   2 +-
+ 8 files changed, 93 insertions(+), 570 deletions(-)
+
+commit 54fd9b268de9f299fe1ef37b873629a36ce32f38
+Author: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Date:   Wed Apr 19 14:45:13 2017 +0200
+
+    Fixed option number for TCP_MULTIPATH_ENABLE (now: 42).
+
+ configure.ac          | 2 +-
+ debian/changelog      | 4 ++--
+ rpm/netperfmeter.spec | 2 +-
+ src/tools.h           | 6 +++---
+ 4 files changed, 7 insertions(+), 7 deletions(-)
+
+commit 84672768c2df6295038d3d883b6bad45c34bcf6f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 29 13:43:19 2017 +0200
+
+    New test release.
+
+ configure.ac          | 2 +-
+ debian/changelog      | 2 +-
+ rpm/netperfmeter.spec | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+commit bda4d0411d636afdede77f0dd4fd995b60841617
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 29 13:41:45 2017 +0200
+
+    Warning is misleading, since connection may already be shut down => turned it off.
+
+ src/flow.cc | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+commit 3ad6a5204d4246ecbce58c10726dd3ef498c0b65
+Merge: b1c1c0a d7d6778
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 29 13:18:10 2017 +0200
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit b1c1c0acdfb147c123041e4adaf671a4d150585c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 29 13:16:45 2017 +0200
+
+    Improved text.
+
+ src/flow.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit d7d67784bd0a0338c8015a7ad33c1d207a589145
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Mar 28 21:33:22 2017 +0200
+
+    Fixed merge problem.
+
+ configure.ac        | 2 +-
+ debian/changelog    | 4 ++--
+ src/netperfmeter.cc | 8 ++++----
+ 3 files changed, 7 insertions(+), 7 deletions(-)
+
+commit 39983d9022a7f5cdf368885abd2e001a6f1ea159
+Merge: 0693e91 a5bb077
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Mar 28 21:30:50 2017 +0200
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 0693e91b4900baae81a83616e23de39fb86c1d6f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Mar 28 21:29:45 2017 +0200
+
+    Improved parameter handling for the passive side.
+
+ src/netperfmeter.1  |  3 +++
+ src/netperfmeter.cc | 54 +++++++++++++++++++++++++++++------------------------
+ 2 files changed, 33 insertions(+), 24 deletions(-)
+
+commit a5bb07791e2607eaef10b872f9660a478bc400ae
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Mar 21 10:18:02 2017 +0100
+
+    Script update.
+
+ make-ppa | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit a5a7d484ea256e7d3309fa37fc05a3277ac6ab12
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Mar 21 10:17:46 2017 +0100
+
+    Version bump.
+
+ configure.ac          | 2 +-
+ debian/changelog      | 4 ++--
+ rpm/netperfmeter.spec | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+commit 5a6cd41a137840feb67df80eee16788a4ff84b0d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 24 16:35:01 2017 +0100
+
+    A fix.
+
+ rpm/netperfmeter.spec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit bc90e0b68c08e0599b7f8757b26eff3e6f5195c6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 24 16:31:07 2017 +0100
+
+    Version bump.
+
+ configure.ac     | 2 +-
+ debian/changelog | 6 ++++++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+commit bd6d47cea0ceb2bb0135f64099f075f271b58e81
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 24 16:28:38 2017 +0100
+
+    A fix.
+
+ src/netperfmeter.cc | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+commit db12e2ae190cd9a62f031d30e5f550d6e9a6b0ed
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 24 16:23:04 2017 +0100
+
+    Updated manpage.
+
+ src/netperfmeter.1 | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+commit 29a093a8ab8d6a79c79060660b74eb8be89de2d5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 24 16:21:42 2017 +0100
+
+    Added option to bind *control* port to given addresses.
+
+ src/netperfmeter.cc | 96 +++++++++++++++++++++++++++++++++++++----------------
+ 1 file changed, 68 insertions(+), 28 deletions(-)
+
+commit d950207cea3b9edbf32bd216a4a2557171e94f1c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 24 16:12:52 2017 +0100
+
+    Removed debug code again.
+
+ src/control.cc       | 2 +-
+ src/flow.cc          | 4 ++--
+ src/messagereader.cc | 4 ++--
+ src/netperfmeter.cc  | 2 --
+ src/transfer.cc      | 1 -
+ 5 files changed, 5 insertions(+), 8 deletions(-)
+
+commit 92eea9045682fe40e91d0b9cba46a1b71f8fa387
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 24 15:53:41 2017 +0100
+
+    Enabled some debug output.
+
+ src/flow.cc          | 4 ++--
+ src/messagereader.cc | 3 ++-
+ src/netperfmeter.cc  | 2 ++
+ src/transfer.cc      | 1 +
+ 4 files changed, 7 insertions(+), 3 deletions(-)
+
+commit 5543b432e9ff56ccf286c0c25deee0a2a83c33e3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 24 15:04:45 2017 +0100
+
+    Improved error handling.
+
+ src/control.cc      |  2 +-
+ src/flow.cc         | 16 +++++++++++-----
+ src/netperfmeter.cc |  2 +-
+ 3 files changed, 13 insertions(+), 7 deletions(-)
+
+commit 43ac38eed8a717c5497c17d5e7fd8cb2eaa385c5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 24 11:53:03 2017 +0100
+
+    DCCP handling fix for Linux systems without DCCP support.
+
+ src/netperfmeter.cc | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+commit 991424ef9fbfd24903bf7c4e2c67fe5c407b8f93
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 4 11:02:30 2016 +0100
+
+    Updated packaging files.
+
+ ChangeLog             | 21 +++++++++++++++++++++
+ configure.ac          |  2 +-
+ debian/changelog      |  4 ++--
+ netperfmeter.lsm      |  6 +++---
+ rpm/netperfmeter.spec |  2 +-
+ 5 files changed, 28 insertions(+), 7 deletions(-)
+
 commit 734b5dbb39d296f9abf440f3fbeacb57a1984eda
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Thu Nov 3 16:06:38 2016 +0100
