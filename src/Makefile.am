@@ -7,7 +7,7 @@ netperfmeter_LDADD   = $(bz2_LIBS) $(socketapi_LIBS) $(sctplib_LIBS) -lpthread -
 
 
 # ###### Plotting programs ##################################################
-dist_man_MANS     = netperfmeter.1 plot-netperfmeter-results.1 createsummary.1 combinesummaries.1 extractvectors.1 pdfmetadata.1 pdfembedfonts.1 runtimeestimator.1
+dist_man_MANS     = netperfmeter.1 plot-netperfmeter-results.1 createsummary.1 combinesummaries.1 extractvectors.1 pdfmetadata.1 pdfembedfonts.1 runtimeestimator.1 getabstime.1
 dist_bin_SCRIPTS  = plot-netperfmeter-results pdfmetadata pdfembedfonts
 dist_pkgdata_DATA = plotter.R plot-netperfmeter-results.R
 
