@@ -1,5 +1,6 @@
 src/combinesummaries   /usr/bin
 src/createsummary      /usr/bin
 src/extractvectors     /usr/bin
+src/getabstime         /usr/bin
 src/netperfmeter       /usr/bin
 src/runtimeestimator   /usr/bin
