@@ -41,6 +41,7 @@ rm -rf "$RPM_BUILD_ROOT"
 %{_bindir}/combinesummaries
 %{_bindir}/createsummary
 %{_bindir}/extractvectors
+%{_bindir}/getabstime
 %{_bindir}/netperfmeter
 %{_bindir}/pdfembedfonts
 %{_bindir}/pdfmetadata
@@ -49,6 +50,7 @@ rm -rf "$RPM_BUILD_ROOT"
 %{_datadir}/man/man1/combinesummaries.1.gz
 %{_datadir}/man/man1/createsummary.1.gz
 %{_datadir}/man/man1/extractvectors.1.gz
+%{_datadir}/man/man1/getabstime.1.gz
 %{_datadir}/man/man1/netperfmeter.1.gz
 %{_datadir}/man/man1/pdfembedfonts.1.gz
 %{_datadir}/man/man1/pdfmetadata.1.gz
