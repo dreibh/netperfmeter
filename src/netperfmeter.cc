@@ -959,16 +959,20 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       }
    }
    else {
-      if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_PATHMANAGER, gPathMgr, strlen(gPathMgr)) < 0) {
-         if(strcmp(gPathMgr, "default") != 0) {
-            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_PATHMANAGER on socket - "
-                        << strerror(errno) << "!" << std::endl;
+      if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER_LEGACY, gPathMgr, strlen(gPathMgr)) < 0) {
+         if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER, gPathMgr, strlen(gPathMgr)) < 0) {
+            if(strcmp(gPathMgr, "default") != 0) {
+               std::cerr << "WARNING: Failed to set MPTCP_PATH_MANAGER on socket - "
+                           << strerror(errno) << "!" << std::endl;
+            }
          }
       }
-      if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, TCP_MULTIPATH_SCHEDULER, gScheduler, strlen(gScheduler)) < 0) {
-         if(strcmp(gScheduler, "default") != 0) {
-            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_SCHEDULER on socket - "
-                        << strerror(errno) << "!" << std::endl;
+      if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER_LEGACY, gScheduler, strlen(gScheduler)) < 0) {
+         if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER, gScheduler, strlen(gScheduler)) < 0) {
+            if(strcmp(gScheduler, "default") != 0) {
+               std::cerr << "WARNING: Failed to set MPTCP_SCHEDULER on socket - "
+                           << strerror(errno) << "!" << std::endl;
+            }
          }
       }
       if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {

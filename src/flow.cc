@@ -1247,27 +1247,35 @@ bool Flow::configureSocket(const int socketDescriptor)
 #else
 
          const int debugOption = (TrafficSpec.Debug == true) ? 1 : 0;
-         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_DEBUG, (const char*)&debugOption, sizeof(debugOption)) < 0) {
-            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_DEBUG on MPTCP socket - "
-                      << strerror(errno) << "!" << std::endl;
+         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_DEBUG_LEGACY, (const char*)&debugOption, sizeof(debugOption)) < 0) {
+            if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_DEBUG, (const char*)&debugOption, sizeof(debugOption)) < 0) {
+               std::cerr << "WARNING: Failed to set MPTCP_DEBUG on MPTCP socket - "
+                        << strerror(errno) << "!" << std::endl;
+            }
          }
 
          const int nDiffPorts = (int)TrafficSpec.NDiffPorts;
-         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_NDIFFPORTS, (const char*)&nDiffPorts, sizeof(nDiffPorts)) < 0) {
-            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_NDIFFPORTS on MPTCP socket - "
-                      << strerror(errno) << "!" << std::endl;
+         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_NDIFFPORTS_LEGACY, (const char*)&nDiffPorts, sizeof(nDiffPorts)) < 0) {
+            if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_NDIFFPORTS, (const char*)&nDiffPorts, sizeof(nDiffPorts)) < 0) {
+               std::cerr << "WARNING: Failed to set MPTCP_NDIFFPORTS on MPTCP socket - "
+                        << strerror(errno) << "!" << std::endl;
+            }
          }
 
          const char* pathMgr = TrafficSpec.PathMgr.c_str();
-         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_PATHMANAGER, pathMgr, strlen(pathMgr)) < 0) {
-            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_PATHMANAGER on MPTCP socket - "
-                      << strerror(errno) << "!" << std::endl;
+         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_PATH_MANAGER_LEGACY, pathMgr, strlen(pathMgr)) < 0) {
+            if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_PATH_MANAGER, pathMgr, strlen(pathMgr)) < 0) {
+               std::cerr << "WARNING: Failed to set MPTCP_PATH_MANAGER on MPTCP socket - "
+                        << strerror(errno) << "!" << std::endl;
+            }
          }
 
          const char* scheduler = TrafficSpec.Scheduler.c_str();
-         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_MULTIPATH_SCHEDULER, scheduler, strlen(scheduler)) < 0) {
-            std::cerr << "WARNING: Failed to set TCP_MULTIPATH_SCHEDULER on MPTCP socket - "
-                      << strerror(errno) << "!" << std::endl;
+         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_SCHEDULER_LEGACY, scheduler, strlen(scheduler)) < 0) {
+            if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_SCHEDULER, scheduler, strlen(scheduler)) < 0) {
+               std::cerr << "WARNING: Failed to set MPTCP_SCHEDULER on MPTCP socket - "
+                         << strerror(errno) << "!" << std::endl;
+            }
          }
 #endif
       }
