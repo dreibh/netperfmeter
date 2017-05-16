@@ -1,10 +1,7 @@
-#!/bin/bash -e
+#!/bin/sh -e
 
-if [ -e /usr/bin/dpkg-buildflags ] ; then
-   export CPPFLAGS=`dpkg-buildflags --get CPPFLAGS`
-   export CFLAGS=`dpkg-buildflags --get CFLAGS`
-   export CXXFLAGS=`dpkg-buildflags --get CXXFLAGS`
-   export LDFLAGS=`dpkg-buildflags --get LDFLAGS`
-fi
+rm -f CMakeCache.txt
+cmake -DCMAKE_INSTALL_PREFIX=/usr -DWITH_NEAT=0 -DBUILD_TEST_PROGRAMS=1 .
 
-./bootstrap && ./configure --enable-test-programs --enable-plotting-programs $@ && make
+cores=`getconf _NPROCESSORS_ONLN`
+make -j${cores}
