@@ -1,4 +1,4 @@
-src/netperfmeter                /usr/bin
-src/plot-netperfmeter-results   /usr/bin
-src/plot-netperfmeter-results.R /usr/share/netperfmeter
-src/plotter.R                   /usr/share/netperfmeter
+usr/bin/netperfmeter
+usr/bin/plot-netperfmeter-results
+usr/share/netperfmeter/plot-netperfmeter-results.R
+usr/share/netperfmeter/plotter.R

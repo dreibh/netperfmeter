@@ -1,2 +1,2 @@
-src/pdfmetadata   /usr/bin
-src/pdfembedfonts /usr/bin
+usr/bin/pdfmetadata
+usr/bin/pdfembedfonts
