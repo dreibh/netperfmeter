@@ -40,6 +40,16 @@ TARGET_LINK_LIBRARIES(getabstime)
 INSTALL(PROGRAMS getabstime DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES getabstime.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man/man1)
 
+
+IF (BUILD_PLOT_PROGRAMS)
+   INSTALL(FILES plot-netperfmeter-results pdfmetadata pdfembedfonts
+         DESTINATION ${CMAKE_INSTALL_BINDIR})
+   INSTALL(FILES plotter.R plot-netperfmeter-results.R
+         DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter)
+   INSTALL(FILES plot-netperfmeter-results.1 pdfmetadata.1 pdfembedfonts.1
+         DESTINATION ${CMAKE_INSTALL_MANDIR}/man/man1)
+ENDIF()
+
 IF (BUILD_TEST_PROGRAMS)
    ADD_EXECUTABLE(rootshell
    rootshell.c)

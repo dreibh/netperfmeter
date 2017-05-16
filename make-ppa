@@ -1,6 +1,5 @@
 #!/bin/bash
 
-./bootstrap && \
 ./clean-deb && \
-./make-deb precise trusty xenial yakkety zesty unstable && \
+./make-deb precise trusty xenial yakkety zesty artful unstable && \
 dput ppa *.changes
