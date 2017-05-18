@@ -152,7 +152,7 @@ OPTION(BUILD_TEST_PROGRAMS "Build test programs" 0)
 OPTION(BUILD_PLOT_PROGRAMS "Build plot programs" 0)
 
 
-# ###### Kernel SCTP or User-Space SCTP #####################################
+# ###### SCTP ###############################################################
 OPTION(USE_KERNEL_SCTP "Use Kernel SCTP" 1)
 IF (USE_KERNEL_SCTP)
    # ====== Kernel SCTP =====================================================
