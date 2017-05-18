@@ -43,12 +43,12 @@ fi
 # ------ Using PDF -> PS -> PDF ---------------------------
 # ( ps2pdf -dPDFSETTINGS=/prepress -dLanguageLevel=3 $1 - | \
 #      ps2pdf -dPDFSETTINGS=/prepress -dCompatibilityLevel=1.4 - $2-tmp.pdf && \
-#  pdfopt $2-tmp.pdf $2  ) || cp $1 $2
+#  qpdf --linearize $2-tmp.pdf $2  ) || cp $1 $2
 # rm -f $2-tmp.pdf
 
 # ------ Using PDF/X --------------------------------------
 if [ $OPTIMIZE -eq 1 ] ; then
-   ( ps2pdf -dPDFX $1 $2-tmp.pdf && pdfopt $2-tmp.pdf $2 ) || cp $1 $2
+   ( ps2pdf -dPDFX $1 $2-tmp.pdf && qpdf --linearize $2-tmp.pdf $2 ) || cp $1 $2
    rm -f $2-tmp.pdf
 else
     ps2pdf -dPDFX $1 $2
