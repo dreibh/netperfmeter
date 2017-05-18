@@ -10,11 +10,32 @@ Build-Depends: cmake,
                libsctp-dev (>= 1.0.5)
 Standards-Version: 3.9.7
 
-Package: netperfmeter-examples
+Package: pdfproctools
 Architecture: all
-Depends: ${misc:Depends},
+Depends: ghostscript,
+         libpdf-api2-perl,
+         perl (>= 5.8.0),
+         qpdf,
+         ${misc:Depends},
          ${shlibs:Depends}
-Description: Network Performance Meter (example files)
+Description: PDF Processing Tools
+ This package contains tools for PDF file processing.
+ .
+ PDFMetadata updates the metadata of a PDF file. In particular, it can be
+ used to add outlines (bookmarks) to a document. Furthermore, it can set the
+ document properties (e.g. author, title, keywords, creator, producer).
+ .
+ PDFEmbedFonts embeds all referenced fonts into a PDF file. Optionally, it
+ can also linearize the PDF file for online publication
+ ("fast web view", "optimized").
+
+Package: netperfmeter-plotting
+Architecture: any
+Depends: pdfproctools,
+         r-base,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Description: Network Performance Meter (plotting program)
  NetPerfMeter is a network performance meter for the UDP,
  TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
  It simultaneously transmits bidirectional flows to an endpoint
@@ -22,7 +43,7 @@ Description: Network Performance Meter (example files)
  results are written as vector and scalar files. The vector
  files can e.g. be used to create plots of the results.
  .
- This package contains example files.
+ This package contains a plotting program for the results.
 
 Package: netperfmeter
 Architecture: any
@@ -31,12 +52,15 @@ Depends: ${misc:Depends},
 Recommends: bc,
             iputils-ping,
             iputils-tracepath,
+            netperfmeter-plotting,
             subnetcalc (>= 2.0.2),
             traceroute
-Description: Network Performance Meter
+Description: Network Performance Meter (measurement program)
  NetPerfMeter is a network performance meter for the UDP,
  TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
  It simultaneously transmits bidirectional flows to an endpoint
  and measures the resulting flow bandwidths and QoS. The
  results are written as vector and scalar files. The vector
  files can e.g. be used to create plots of the results.
+ .
+ This package contains the measurement program.

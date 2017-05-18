@@ -6,6 +6,9 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 %:
 	dh $@ --buildsystem=cmake --parallel
 
+override_dh_auto_configure:
+	dh_auto_configure -- -DWITH_NEAT=0 -DBUILD_TEST_PROGRAMS=1 -DBUILD_PLOT_PROGRAMS=1
+
 # Use upstream ChangeLog for installation
 override_dh_installchangelogs:
 	dh_installchangelogs -k ChangeLog
