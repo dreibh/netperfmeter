@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 1.7.0
+Version: 1.7.1~rc1.1
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0
@@ -8,14 +8,12 @@ URL: http://www.iem.uni-due.de/~dreibh/netperfmeter/
 Source: http://www.iem.uni-due.de/~dreibh/netperfmeter/download/%{name}-%{version}.tar.gz
 
 AutoReqProv: on
-BuildRequires: autoconf
-BuildRequires: automake
+BuildRequires: cmake
 BuildRequires: gcc-c++
 BuildRequires: libtool
 BuildRequires: lksctp-tools-devel
 BuildRequires: valgrind-devel
 BuildRequires: bzip2-devel
-BuildRequires: glib2-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 
 %description
@@ -25,10 +23,8 @@ NetPerfMeter is a network performance meter for the UDP, TCP, SCTP and DCCP tran
 %setup -q
 
 %build
-autoreconf -if
-
-%configure
-make
+%cmake -DCMAKE_INSTALL_PREFIX=/usr -DWITH_NEAT=0 -DBUILD_TEST_PROGRAMS=1 -DBUILD_PLOT_PROGRAMS=1 .
+make %{?_smp_mflags}
 
 %install
 make install DESTDIR=%{buildroot}
@@ -60,5 +56,5 @@ rm -rf "$RPM_BUILD_ROOT"
 %{_datadir}/netperfmeter/plotter.R
 
 %changelog
-* Mon Nov 04 2016 Thomas Dreibholz <dreibh@simula.no> 1.4.0~rc2.0
+* Thu May 18 2017 Thomas Dreibholz <dreibh@simula.no> 1.7.1
 - Initial RPM release
