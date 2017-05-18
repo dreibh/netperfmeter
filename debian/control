@@ -30,7 +30,7 @@ Description: PDF Processing Tools
  ("fast web view", "optimized").
 
 Package: netperfmeter-plotting
-Architecture: any
+Architecture: all
 Depends: pdfproctools,
          r-base,
          ${misc:Depends},
