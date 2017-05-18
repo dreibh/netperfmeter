@@ -194,7 +194,7 @@ class Flow : public Thread
    inline Defragmenter* getDefragmenter() {
       return(&MyDefragmenter);
    }
-   inline sctp_assoc_t getRemoteControlSocketDescriptor() const {
+   inline int getRemoteControlSocketDescriptor() const {
       return(RemoteControlSocketDescriptor);
    }
    inline const FlowTrafficSpec& getTrafficSpec() const {
