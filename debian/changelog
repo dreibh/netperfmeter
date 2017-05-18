@@ -1,4 +1,4 @@
-netperfmeter (1.7.1~beta1.0-1ubuntu1) artful; urgency=low
+netperfmeter (1.7.1~rc1.1-1ubuntu1) xenial; urgency=low
 
   * New upstream version.
   * debian/rules: autoconf/automake -> cmake
