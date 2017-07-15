@@ -250,6 +250,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 
             // ====== Partially read message ================================
             if(socket->BytesRead < socket->MessageSize) {
+#ifndef WITH_NEAT
                if(socket->Protocol == IPPROTO_SCTP) {
                   if(*msgFlags & MSG_EOR) {   // end of SCTP message
                      if(!(*msgFlags & MSG_NOTIFICATION)) {   // data message
@@ -270,6 +271,9 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                else {
                   return(MRRM_PARTIAL_READ);
                }
+#else
+               return(MRRM_PARTIAL_READ);
+#endif
             }
 
             // ====== Completed reading =====================================
@@ -279,12 +283,14 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                socket->Status = Socket::MRS_StreamError;
                return(MRRM_STREAM_ERROR);
             }
+#ifndef WITH_NEAT
             if((socket->Protocol == IPPROTO_SCTP) && (!(*msgFlags & MSG_EOR))) {
                std::cerr << "ERROR: TLV message end does not match with SCTP message end!"
                          << std::endl;
                socket->Status = Socket::MRS_StreamError;
                return(MRRM_STREAM_ERROR);
             }
+#endif
             received = socket->MessageSize;
             memcpy(buffer, socket->MessageBuffer, socket->MessageSize);
             socket->Status      = Socket::MRS_WaitingForHeader;

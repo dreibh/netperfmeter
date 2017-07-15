@@ -241,7 +241,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    flow->getMeasurementID(),
                                    flow->getFlowID(), flow->getStreamID()) == false) {
-      perror("sctp_recv error");
+      perror("receive error");
       return(false);
    }
 
