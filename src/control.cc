@@ -230,7 +230,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
 #else
    if(nsa_send(controlSocket, addFlowMsg, addFlowMsgSize, 0) <= 0) {
 #endif
-      perror("sctp_send error");
+      perror("send error");
       return(false);
    }
 
