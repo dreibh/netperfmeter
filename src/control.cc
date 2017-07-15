@@ -225,7 +225,11 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       std::cout << "<R1> "; std::cout.flush();
    }
+#ifndef WITH_NEAT
    if(sctp_send(controlSocket, addFlowMsg, addFlowMsgSize, &sinfo, 0) <= 0) {
+#else
+   if(nsa_send(controlSocket, addFlowMsg, addFlowMsgSize, 0) <= 0) {
+#endif
       perror("sctp_send error");
       return(false);
    }
@@ -284,7 +288,11 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
          memset(&sinfo, 0, sizeof(sinfo));
          sinfo.sinfo_stream = flow->getStreamID();
          sinfo.sinfo_ppid   = htonl(PPID_NETPERFMETER_CONTROL);
+#ifndef WITH_NEAT
          if(sctp_send(flow->getSocketDescriptor(), &identifyMsg, sizeof(identifyMsg), &sinfo, 0) <= 0) {
+#else
+         if(nsa_send(flow->getSocketDescriptor(), &identifyMsg, sizeof(identifyMsg), 0) <= 0) {
+#endif
             return(false);
          }
       }
@@ -427,7 +435,11 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       if(gOutputVerbosity >= NPFOV_STATUS) {
          std::cout << "Starting measurement ... <S1> "; std::cout.flush();
       }
+#ifndef WITH_NEAT
       if(sctp_send(controlSocket, &startMsg, sizeof(startMsg), &sinfo, 0) < 0) {
+#else
+      if(nsa_send(controlSocket, &startMsg, sizeof(startMsg), 0) < 0) {
+#endif
          return(false);
       }
       if(gOutputVerbosity >= NPFOV_STATUS) {
@@ -469,7 +481,11 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
    if(gOutputVerbosity >= NPFOV_STATUS) {
       std::cout << "<flow " << flow->getFlowID() << "> "; std::cout.flush();
    }
+#ifndef WITH_NEAT
    if(sctp_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), &sinfo, 0) <= 0) {
+#else
+   if(nsa_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), 0) <= 0) {
+#endif
       return(false);
    }
    if(measurement->getVectorNamePattern() != "") {
@@ -508,7 +524,11 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    if(gOutputVerbosity >= NPFOV_STATUS) {
       std::cout << "Stopping measurement ... <S1> "; std::cout.flush();
    }
+#ifndef WITH_NEAT
    if(sctp_send(controlSocket, &stopMsg, sizeof(stopMsg), &sinfo, 0) < 0) {
+#else
+   if(nsa_send(controlSocket, &stopMsg, sizeof(stopMsg), 0) < 0) {
+#endif
       return(false);
    }
    if(gOutputVerbosity >= NPFOV_STATUS) {
@@ -691,7 +711,11 @@ static bool uploadOutputFile(const int         controlSocket,
       }
 
       // ====== Transmit chunk ==============================================
+#ifndef WITH_NEAT
       if(sctp_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, &sinfo, 0) < 0) {
+#else
+      if(nsa_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, 0) < 0) {
+#endif
          std::cerr << "ERROR: Failed to upload results - " << strerror(errno) << "!" << std::endl;
          success = false;
          break;
@@ -1140,5 +1164,9 @@ bool sendNetPerfMeterAcknowledge(int            controlSocket,
    memset(&sinfo, 0, sizeof(sinfo));
    sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
 
+#ifndef WITH_NEAT
    return(sctp_send(controlSocket, &ackMsg, sizeof(ackMsg), &sinfo, 0) > 0);
+#else
+   return(nsa_send(controlSocket, &ackMsg, sizeof(ackMsg), 0) > 0);   
+#endif
 }

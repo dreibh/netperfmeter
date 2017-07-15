@@ -125,9 +125,14 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
             sinfo.sinfo_flags |= SCTP_UNORDERED;
          }
       }
+#ifndef WITH_NEAT
       sent = sctp_send(flow->getSocketDescriptor(),
                        (char*)&outputBuffer, bytesToSend,
                        &sinfo, 0);
+#else
+      sent = nsa_send(flow->getSocketDescriptor(),
+                      (char*)&outputBuffer, bytesToSend, 0);
+#endif
    }
    else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
       if(flow->isRemoteAddressValid()) {
