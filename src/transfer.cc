@@ -131,18 +131,34 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    }
    else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
       if(flow->isRemoteAddressValid()) {
+#ifndef WITH_NEAT
          sent = ext_sendto(flow->getSocketDescriptor(),
                            (char*)&outputBuffer, bytesToSend, 0,
                            flow->getRemoteAddress(),
                            getSocklen(flow->getRemoteAddress()));
+#else
+         sent = nsa_sendto(flow->getSocketDescriptor(),
+                           (char*)&outputBuffer, bytesToSend, 0,
+                           flow->getRemoteAddress(),
+                           getSocklen(flow->getRemoteAddress()));
+#endif
       }
       else {
+#ifndef WITH_NEAT
          sent = ext_send(flow->getSocketDescriptor(),
                          (char*)&outputBuffer, bytesToSend, 0);
+#else
+         sent = nsa_send(flow->getSocketDescriptor(),
+                         (char*)&outputBuffer, bytesToSend, 0);
+#endif
       }
    }
    else {
+#ifndef WITH_NEAT
       sent = ext_send(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, 0);
+#else
+      sent = nsa_send(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, 0);
+#endif
    }
 
    // ====== Check, whether flow has been aborted unintentionally ===========

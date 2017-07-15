@@ -21,10 +21,16 @@
 #ifndef MESSAGEREADER_H
 #define MESSAGEREADER_H
 
-#include <ext_socket.h>
 #include <sys/types.h>
 #include <cstddef>
 #include <map>
+
+#ifndef WITH_NEAT
+#include "ext_socket.h"
+#else
+#include <neat-socketapi.h>
+#include <netinet/sctp.h>
+#endif
 
 
 #define MRRM_SOCKET_ERROR (ssize_t)-1

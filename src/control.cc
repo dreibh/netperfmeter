@@ -278,6 +278,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
          std::cout << "<R3> "; std::cout.flush();
       }
+#ifndef WITH_NEAT
       if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
@@ -292,6 +293,11 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
             return(false);
          }
       }
+#else
+      if(nsa_send(flow->getSocketDescriptor(), &identifyMsg, sizeof(identifyMsg), 0) <= 0) {
+         return(false);
+      }
+#endif
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
          std::cout << "<R4> "; std::cout.flush();
       }
@@ -589,7 +595,11 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    pfd.fd      = controlSocket;
    pfd.events  = POLLIN;
    pfd.revents = 0;
-   const int result = ext_poll_wrapper(&pfd, 1, timeout);
+#ifndef WITH_NEAT
+   const int result = ext_poll(&pfd, 1, timeout);
+#else
+   const int result = nsa_poll(&pfd, 1, timeout);
+#endif
    if(result < 1) {
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
          std::cout << "<timeout> ";
@@ -1018,7 +1028,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
    else if(received < (ssize_t)sizeof(NetPerfMeterHeader)) {
       if(received < 0) { 
          std::cerr << "ERROR: Control connection is broken!" << std::endl;
-         sendAbort(controlSocket, -1);
+         sendAbort(controlSocket);
       }
       return(false);
    }

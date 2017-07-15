@@ -37,9 +37,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <ext_socket.h>
-
 #include <iostream>
+
+#ifndef WITH_NEAT
+#include "ext_socket.h"
+#else
+#include <neat-socketapi.h>
+#endif
 
 
 /* MPTCP as "pseudo-protocol". Just for internal representation. */
@@ -113,7 +117,7 @@ void printAddress(std::ostream&          os,
 const char* getProtocolName(const uint8_t protocol);
 uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
-bool sendAbort(int sd, sctp_assoc_t assocID = 0);
+bool sendAbort(int sd);
 int createAndBindSocket(const int             family,
                         const int             type,
                         const int             protocol,
@@ -152,16 +156,6 @@ uint32_t random32();
 double randomDouble();
 double randomExpDouble(const double p);
 double randomParetoDouble(const double m, const double k);
-
-#ifdef __APPLE__
-// Apple's poll() function is broken. We need a wrapper to select() here!
-int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time);
-#else
-inline int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
-{
-   return(ext_poll(fdlist, count, time));
-}
-#endif
 
 #if defined(linux)
 #warning Added fix for broken sctp_send() with LK-SCTP

@@ -197,6 +197,7 @@ IF (WITH_NEAT)
    IF (NOT HAVE_NEAT_SOCKETAPI_H OR NOT NEAT_SOCKETAPI_LIB)
       MESSAGE(FATAL_ERROR "neat-socketapi not found - neat-socketapi installed?")
    ENDIF()
+   ADD_DEFINITIONS("-DWITH_NEAT")
 ENDIF()
 
 

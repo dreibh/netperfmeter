@@ -24,8 +24,6 @@
 #include "flow.h"
 #include "messagereader.h"
 
-#include <ext_socket.h>
-
 
 #define NPFOV_BANDWIDTH_INFO 1
 #define NPFOV_STATUS         2

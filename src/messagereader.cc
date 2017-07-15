@@ -19,13 +19,12 @@
  */
 
 #include "messagereader.h"
+#include "tools.h"
 
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
 #include <iostream>
-
-#include "tools.h"
 
 
 // #define DEBUG_SOCKETS
@@ -173,6 +172,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          dummyFlags = 0;
          msgFlags   = &dummyFlags;
       }
+#ifndef WITH_NEAT      
       if(socket->Protocol == IPPROTO_SCTP) {
          // printf("toRead=%d\n", bytesToRead);
          received = sctp_recvmsg(socket->SocketDescriptor,
@@ -184,6 +184,11 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  *msgFlags, from, fromSize);
       }
+#else
+      received = nsa_recvfrom(socket->SocketDescriptor,
+                              (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
+                              *msgFlags, from, fromSize);
+#endif
       // printf("recv(%d)=%d, eor=%d\n", socket->SocketDescriptor, received, ((*msgFlags & MSG_EOR) != 0));
 
 

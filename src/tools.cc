@@ -40,12 +40,18 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <net/if.h>
-#include <ext_socket.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <time.h>
 
 #include <iostream>
+
+#ifndef WITH_NEAT
+#include "ext_socket.h"
+#else
+#include <netinet/sctp.h>
+#include <neat-socketapi.h>
+#endif
 
 
 // ###### Create formatted string (printf-like) #############################
@@ -603,10 +609,16 @@ int createAndBindSocket(const int             family,
 #endif
 
    // ====== Create socket ==================================================
+#ifndef WITH_NEAT
    int sd = ext_socket(socketFamily, type, socketProtocol);
+#else
+   int sd = nsa_socket(socketFamily, type, socketProtocol, NULL);
+#endif
    if(sd < 0) {
       return(-2);
    }
+
+#ifndef WITH_NEAT
 #ifdef IPV6_V6ONLY
    if(socketFamily == AF_INET6) {
       // Accept IPv4 and IPv6 connections.
@@ -619,6 +631,9 @@ int createAndBindSocket(const int             family,
 #else
 #error IPV6_V6ONLY not defined?! Please create a bug report and provide some information about your OS!
 #endif
+#endif
+
+#ifndef WITH_NEAT
 // FIXME! Add proper, platform-independent code here!
 #ifndef __linux__
 #warning MPTCP is currently only available on Linux!
@@ -634,11 +649,17 @@ int createAndBindSocket(const int             family,
       }
    }
 #endif
+#endif
 
    // ====== Bind socket ====================================================
    if(localAddressCount == 0) {
+#ifndef WITH_NEAT
       if(ext_bind(sd, &anyAddress.sa, getSocklen(&anyAddress.sa)) != 0) {
          ext_close(sd);
+#else
+      if(nsa_bind(sd, &anyAddress.sa, getSocklen(&anyAddress.sa), NULL, 0) != 0) {
+         nsa_close(sd);
+#endif
          return(-3);
       }
    }
@@ -662,9 +683,15 @@ int createAndBindSocket(const int             family,
                assert(false);
             }
          }
+#ifndef WITH_NEAT
          if(sctp_bindx(sd, (sockaddr*)&buffer, localAddressCount,
                        SCTP_BINDX_ADD_ADDR) != 0) {
             ext_close(sd);
+#else
+         if(nsa_bindx(sd, (sockaddr*)&buffer, localAddressCount,
+                      0, NULL, 0) != 0) {
+            nsa_close(sd);
+#endif
             return(-3);
          }
       }
@@ -683,8 +710,13 @@ int createAndBindSocket(const int             family,
             assert(false);
          }
 
+#ifndef WITH_NEAT
          if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
             ext_close(sd);
+#else
+         if(nsa_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa), NULL, 0) != 0) {
+            nsa_close(sd);
+#endif
             return(-3);
          }
       }
@@ -692,19 +724,22 @@ int createAndBindSocket(const int             family,
 
    // ====== Put socket into listening mode =================================
    if(listenMode) {
+#ifndef WITH_NEAT
       ext_listen(sd, 10);
+#else
+      nsa_listen(sd, 10);
+#endif
    }
    return(sd);
 }
 
 
 /* ###### Send SCTP ABORT ################################################ */
-bool sendAbort(int sd, sctp_assoc_t assocID)
+bool sendAbort(int sd)
 {
    sctp_sndrcvinfo sinfo;
    memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_assoc_id = assocID;
-   sinfo.sinfo_flags    = SCTP_ABORT;
+   sinfo.sinfo_flags = SCTP_ABORT;
 
    return(sctp_send(sd, NULL, 0, &sinfo, 0) >= 0);
 }
@@ -1151,76 +1186,6 @@ double randomParetoDouble(const double location, const double shape)
 }
 
 
-/* ###### poll() to select() wrapper to work around broken Apple poll() ## */
-#ifdef __APPLE__
-#warning Using poll() to select() wrapper to work around broken Apple poll().
-int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
-{
-   // ====== Prepare timeout setting ========================================
-   struct       timeval  timeout;
-   struct       timeval* to;
-   int          fdcount = 0;
-   int          n;
-   int          result;
-   unsigned int i;
-
-   if(time < 0)
-      to = NULL;
-   else {
-      to = &timeout;
-      timeout.tv_sec  = time / 1000;
-      timeout.tv_usec = (time % 1000) * 1000;
-   }
-
-   // ====== Prepare FD settings ============================================
-   fd_set readfdset;
-   fd_set writefdset;
-   fd_set exceptfdset;
-   FD_ZERO(&readfdset);
-   FD_ZERO(&writefdset);
-   FD_ZERO(&exceptfdset);
-   n = 0;
-   for(i = 0; i < count; i++) {
-      if(fdlist[i].fd < 0) {
-         continue;
-      }
-      if(fdlist[i].events & POLLIN) {
-         FD_SET(fdlist[i].fd, &readfdset);
-      }
-      if(fdlist[i].events & POLLOUT) {
-         FD_SET(fdlist[i].fd, &writefdset);
-      }
-      FD_SET(fdlist[i].fd, &exceptfdset);
-      n = std::max(n, fdlist[i].fd);
-      fdcount++;
-   }
-   for(i = 0;i < count;i++) {
-      fdlist[i].revents = 0;
-   }
-
-   // ====== Do ext_select() ================================================
-   result = ext_select(n + 1, &readfdset, &writefdset ,&exceptfdset, to);
-   if(result < 0) {
-      return(result);
-   }
-
-   // ====== Set result flags ===============================================
-   for(i = 0;i < count;i++) {
-      if(FD_ISSET(fdlist[i].fd,&readfdset) && (fdlist[i].events & POLLIN)) {
-         fdlist[i].revents |= POLLIN;
-      }
-      if(FD_ISSET(fdlist[i].fd,&writefdset) && (fdlist[i].events & POLLOUT)) {
-         fdlist[i].revents |= POLLOUT;
-      }
-      if(FD_ISSET(fdlist[i].fd,&exceptfdset)) {
-         fdlist[i].revents |= POLLERR;
-      }
-   }
-   return(result);
-}
-#endif
-
-
 /* ###### Word-around for lksctp bug ##################################### */
 ssize_t sctp_send_fixed(int                           sd,
                         const void*                   data,
@@ -1247,7 +1212,11 @@ ssize_t sctp_send_fixed(int                           sd,
 
    sri = (struct sctp_sndrcvinfo*)CMSG_DATA(cmsg);
    memcpy(sri, sinfo, sizeof(struct sctp_sndrcvinfo));
+#ifndef WITH_NEAT
    return(ext_sendmsg(sd, &msg, msg.msg_flags));
+#else
+   return(nsa_sendmsg(sd, &msg, msg.msg_flags));
+#endif   
 }
 
 
@@ -1255,14 +1224,22 @@ ssize_t sctp_send_fixed(int                           sd,
 bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
 {
    if(sndBufSize > 0) {
+#ifndef WITH_NEAT
       if(ext_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &sndBufSize, sizeof(sndBufSize)) < 0) {
+#else
+      if(nsa_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &sndBufSize, sizeof(sndBufSize)) < 0) {
+#endif
          std::cerr << "ERROR: Failed to configure send buffer size (SO_SNDBUF option) - "
                    << strerror(errno) << "!" << std::endl;
          return(false);
       }
       int newBufferSize = 0;
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
+#ifndef WITH_NEAT
       if(ext_getsockopt(sd, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
+#else
+      if(nsa_getsockopt(sd, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
+#endif
          std::cerr << "ERROR: Failed to obtain receive send size (SO_SNDBUF option) - "
                    << strerror(errno) << "!" << std::endl;
          return(false);
@@ -1276,14 +1253,22 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
       }
    }
    if(rcvBufSize > 0) {
+#ifndef WITH_NEAT
       if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvBufSize, sizeof(rcvBufSize)) < 0) {
+#else
+      if(nsa_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvBufSize, sizeof(rcvBufSize)) < 0) {
+#endif
          std::cerr << "ERROR: Failed to configure receive buffer size (SO_RCVBUF option) - "
                    << strerror(errno) << "!" << std::endl;
          return(false);
       }
       int newBufferSize = 0;
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
+#ifndef WITH_NEAT
       if(ext_getsockopt(sd, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
+#else
+      if(nsa_getsockopt(sd, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
+#endif
          std::cerr << "ERROR: Failed to obtain receive buffer size (SO_RCVBUF option) - "
                    << strerror(errno) << "!" << std::endl;
          return(false);

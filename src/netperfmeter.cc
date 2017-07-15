@@ -716,8 +716,13 @@ static Flow* createFlow(Flow*                  previousFlow,
          memset((char*)&initmsg, 0 ,sizeof(initmsg));
          initmsg.sinit_num_ostreams  = 65535;
          initmsg.sinit_max_instreams = 65535;
+#ifndef WITH_NEAT
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
                            &initmsg, sizeof(initmsg)) < 0) {
+#else
+         if(nsa_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
+                           &initmsg, sizeof(initmsg)) < 0) {
+#endif
             cerr << "ERROR: Failed to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - "
                  << strerror(errno) << "!" << endl;
             exit(1);
@@ -726,8 +731,13 @@ static Flow* createFlow(Flow*                  previousFlow,
          sctp_event_subscribe events;
          memset((char*)&events, 0 ,sizeof(events));
          events.sctp_data_io_event = 1;
+#ifndef WITH_NEAT
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
                            &events, sizeof(events)) < 0) {
+#else
+         if(nsa_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
+                           &events, sizeof(events)) < 0) {
+#endif
             cerr << "ERROR: Failed to configure events on SCTP socket (SCTP_EVENTS option) - "
                  << strerror(errno) << "!" << endl;
             exit(1);
@@ -737,7 +747,11 @@ static Flow* createFlow(Flow*                  previousFlow,
       if(flow->configureSocket(socketDescriptor) == false) {
          exit(1);
       }
+#ifndef WITH_NEAT
       if(ext_connect(socketDescriptor, &destinationAddress.sa, getSocklen(&destinationAddress.sa)) < 0) {
+#else
+      if(nsa_connect(socketDescriptor, &destinationAddress.sa, getSocklen(&destinationAddress.sa), NULL, 0) < 0) {
+#endif
          cerr << "ERROR: Unable to connect " << getProtocolName(trafficSpec.Protocol)
               << " socket - " << strerror(errno) << "!" << endl;
          exit(1);
@@ -809,7 +823,11 @@ bool mainLoop(const bool               isActiveMode,
                                    now + 1000000);
 
    // printf("timeout=%d\n",timeout);
+#ifndef WITH_NEAT
    const int result = ext_poll_wrapper((pollfd*)&fds, n, timeout);
+#else
+   const int result = nsa_poll((pollfd*)&fds, n, timeout);
+#endif
    // printf("result=%d\n",result);
 
 
@@ -823,14 +841,22 @@ bool mainLoop(const bool               isActiveMode,
          if(fds[controlID].revents & (POLLIN|POLLERR)) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
+#ifndef WITH_NEAT
                const int newSD = ext_accept(gControlSocket, NULL, 0);
+#else
+               const int newSD = nsa_accept(gControlSocket, NULL, 0);
+#endif
                if(newSD >= 0) {
                   gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
                }
             }
             else if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocketTCP) ) {
+#ifndef WITH_NEAT
                const int newSD = ext_accept(gControlSocketTCP, NULL, 0);
+#else
+               const int newSD = nsa_accept(gControlSocketTCP, NULL, 0);
+#endif
                if(newSD >= 0) {
                   gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                }
@@ -843,7 +869,11 @@ bool mainLoop(const bool               isActiveMode,
                      return(false);
                   }
                   gMessageReader.deregisterSocket(fds[controlID].fd);
+#ifndef WITH_NEAT
                   ext_close(fds[controlID].fd);
+#else
+                  nsa_close(fds[controlID].fd);
+#endif
                }
             }
          }
@@ -851,13 +881,21 @@ bool mainLoop(const bool               isActiveMode,
 
       // ====== Incoming data message =======================================
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
+#ifndef WITH_NEAT
          const int newSD = ext_accept(gTCPSocket, NULL, 0);
+#else
+         const int newSD = nsa_accept(gTCPSocket, NULL, 0);
+#endif
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_TCP, newSD);
          }
       }
       if( (mptcpID >= 0) && (fds[mptcpID].revents & POLLIN) ) {
+#ifndef WITH_NEAT
          const int newSD = ext_accept(gMPTCPSocket, NULL, 0);
+#else
+         const int newSD = nsa_accept(gMPTCPSocket, NULL, 0);
+#endif
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_MPTCP, newSD);
          }
@@ -868,14 +906,22 @@ bool mainLoop(const bool               isActiveMode,
          FlowManager::getFlowManager()->unlock();
       }
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
+#ifndef WITH_NEAT
          const int newSD = ext_accept(gSCTPSocket, NULL, 0);
+#else
+         const int newSD = nsa_accept(gSCTPSocket, NULL, 0);
+#endif
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_SCTP, newSD);
          }
       }
 #ifdef HAVE_DCCP
       if( (dccpID >= 0) && (fds[dccpID].revents & POLLIN) ) {
+#ifndef WITH_NEAT
          const int newSD = ext_accept(gDCCPSocket, NULL, 0);
+#else
+         const int newSD = nsa_accept(gDCCPSocket, NULL, 0);
+#endif
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_DCCP, newSD);
          }
@@ -920,7 +966,11 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       memset((char*)&events, 0 ,sizeof(events));
       events.sctp_data_io_event     = 1;
       events.sctp_association_event = 1;
+#ifndef WITH_NEAT
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
+#else
+      if(nsa_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
+#endif
          cerr << "ERROR: Failed to configure events on SCTP control socket - "
               << strerror(errno) << "!" << endl;
          exit(1);
@@ -959,16 +1009,26 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       }
    }
    else {
+#ifndef WITH_NEAT
       if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER_LEGACY, gPathMgr, strlen(gPathMgr)) < 0) {
          if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER, gPathMgr, strlen(gPathMgr)) < 0) {
+#else
+      if (nsa_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER_LEGACY, gPathMgr, strlen(gPathMgr)) < 0) {
+         if (nsa_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER, gPathMgr, strlen(gPathMgr)) < 0) {
+#endif
             if(strcmp(gPathMgr, "default") != 0) {
                std::cerr << "WARNING: Failed to set MPTCP_PATH_MANAGER on socket - "
                            << strerror(errno) << "!" << std::endl;
             }
          }
       }
+#ifndef WITH_NEAT
       if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER_LEGACY, gScheduler, strlen(gScheduler)) < 0) {
          if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER, gScheduler, strlen(gScheduler)) < 0) {
+#else
+      if (nsa_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER_LEGACY, gScheduler, strlen(gScheduler)) < 0) {
+         if (nsa_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER, gScheduler, strlen(gScheduler)) < 0) {
+#endif
             if(strcmp(gScheduler, "default") != 0) {
                std::cerr << "WARNING: Failed to set MPTCP_SCHEDULER on socket - "
                            << strerror(errno) << "!" << std::endl;
@@ -999,7 +1059,11 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    }
    else {
       const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };
+#ifndef WITH_NEAT
       if(ext_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
+#else
+      if(nsa_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
+#endif
          std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
                    << strerror(errno) << "!" << std::endl;
          exit(1);
@@ -1021,19 +1085,22 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    memset((char*)&initmsg, 0 ,sizeof(initmsg));
    initmsg.sinit_num_ostreams  = 65535;
    initmsg.sinit_max_instreams = 65535;
-   if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG,
-                     &initmsg, sizeof(initmsg)) < 0) {
+#ifndef WITH_NEAT
+   if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG, &initmsg, sizeof(initmsg)) < 0) {
       cerr << "ERROR: Failed to configure INIT parameters on SCTP socket - "
             << strerror(errno) << "!" << endl;
       exit(1);
    }
+#endif
    memset((char*)&events, 0 ,sizeof(events));
    events.sctp_data_io_event = 1;
+#ifndef WITH_NEAT
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
       cerr << "ERROR: Failed to configure events on SCTP socket - "
            << strerror(errno) << "!" << endl;
       exit(1);
    }
+#endif
    if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
       exit(1);
    }
@@ -1064,18 +1131,46 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
    // ====== Clean up =======================================================
    gMessageReader.deregisterSocket(gControlSocketTCP);
+#ifndef WITH_NEAT
    ext_close(gControlSocketTCP);
+#else
+   nsa_close(gControlSocketTCP);
+#endif
    gMessageReader.deregisterSocket(gControlSocket);
+#ifndef WITH_NEAT
    ext_close(gControlSocket);
+#else
+   nsa_close(gControlSocket);
+#endif
+#ifndef WITH_NEAT
    ext_close(gTCPSocket);
+#else
+   nsa_close(gTCPSocket);
+#endif
    if(gMPTCPSocket >= 0) {
+#ifndef WITH_NEAT
       ext_close(gMPTCPSocket);
+#else
+      nsa_close(gMPTCPSocket);
+#endif
    }
    FlowManager::getFlowManager()->removeSocket(gUDPSocket, false);
+#ifndef WITH_NEAT
    ext_close(gUDPSocket);
+#else
+   nsa_close(gUDPSocket);
+#endif
+#ifndef WITH_NEAT
    ext_close(gSCTPSocket);
+#else
+   nsa_close(gSCTPSocket);
+#endif
    if(gDCCPSocket >= 0) {
+#ifndef WITH_NEAT
       ext_close(gDCCPSocket);
+#else
+      nsa_close(gDCCPSocket);
+#endif
    }
 }
 
@@ -1128,7 +1223,11 @@ void activeMode(int argc, char** argv)
            << strerror(errno) << "!" << endl;
       exit(1);
    }
+#ifndef WITH_NEAT
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
+#else
+   if(nsa_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa), NULL, 0) < 0) {
+#endif
       cerr << "ERROR: Unable to establish control association - "
            << strerror(errno) << "!" << endl;
       exit(1);

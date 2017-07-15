@@ -767,7 +767,11 @@ void FlowManager::run()
                                       now + 250000,
                                       nextEvent);
       // printf("timeout=%d\n", timeout);
-      const int result = ext_poll_wrapper((pollfd*)&pollFDs, n, timeout);
+#ifndef WITH_NEAT
+      const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
+#else
+      const int result = nsa_poll((pollfd*)&pollFDs, n, timeout);
+#endif
       // printf("result=%d\n",result);
 
 
@@ -890,7 +894,12 @@ Flow::~Flow()
    if((SocketDescriptor >= 0) && (OriginalSocketDescriptor)) {
       if(DeleteWhenFinished) {
          FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
+#ifndef WITH_NEAT
          ext_close(SocketDescriptor);
+#else
+         nsa_close(SocketDescriptor);
+#endif
+         
       }
    }
 }
@@ -1062,7 +1071,11 @@ void Flow::deactivate(const bool asyncStop)
          }
          else {
             // const int shutdownOkay =
+#ifndef WITH_NEAT
                ext_shutdown(SocketDescriptor, 2);
+#else
+               nsa_shutdown(SocketDescriptor, 2);
+#endif
             /*
             if(shutdownOkay < 0) {
                perror("WARNING: Failed to shut down association");
@@ -1180,7 +1193,11 @@ void Flow::run()
          int timeout = pollTimeout(now, 2,
                                    now + 1000000,
                                    nextEvent);
-         ext_poll_wrapper(NULL, 0, timeout);
+#ifndef WITH_NEAT
+         ext_poll(NULL, 0, timeout);
+#else
+         nsa_poll(NULL, 0, timeout);
+#endif
          now = getMicroTime();
       }
 
@@ -1233,12 +1250,14 @@ bool Flow::configureSocket(const int socketDescriptor)
       return(false);
    }
    if( (TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP) ) {
+#ifndef WITH_NEAT
       const int noDelayOption = (TrafficSpec.NoDelay == true) ? 1 : 0;
       if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
          std::cerr << "ERROR: Failed to set TCP_NODELAY - "
                << strerror(errno) << "!" << std::endl;
          return(false);
       }
+#endif
 
       if(TrafficSpec.Protocol == IPPROTO_MPTCP) {
          // FIXME! Add proper, platform-independent code here!
@@ -1246,6 +1265,7 @@ bool Flow::configureSocket(const int socketDescriptor)
 #warning MPTCP is currently only available on Linux!
 #else
 
+#ifndef WITH_NEAT
          const int debugOption = (TrafficSpec.Debug == true) ? 1 : 0;
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_DEBUG_LEGACY, (const char*)&debugOption, sizeof(debugOption)) < 0) {
             if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_DEBUG, (const char*)&debugOption, sizeof(debugOption)) < 0) {
@@ -1278,7 +1298,10 @@ bool Flow::configureSocket(const int socketDescriptor)
             }
          }
 #endif
+#endif
       }
+      
+#ifndef WITH_NEAT
 #ifndef __linux__
 #warning Congestion Control selection is currently only available on Linux!
 #else
@@ -1292,8 +1315,11 @@ bool Flow::configureSocket(const int socketDescriptor)
          }
       }
 #endif
+#endif
    }
+
    else if(TrafficSpec.Protocol == IPPROTO_SCTP) {
+#ifndef WITH_NEAT
       if (TrafficSpec.NoDelay) {
          const int noDelayOption = 1;
          if (ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
@@ -1319,9 +1345,12 @@ bool Flow::configureSocket(const int socketDescriptor)
          return(false);
       }
 #endif
+#endif
    }
+
 #ifdef HAVE_DCCP
    else if(TrafficSpec.Protocol == IPPROTO_DCCP) {
+#ifndef WITH_NEAT
       const uint8_t value = TrafficSpec.CCID;
       if(value != 0) {
          if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
@@ -1337,6 +1366,7 @@ bool Flow::configureSocket(const int socketDescriptor)
                   << strerror(errno) << "!" << std::endl;
         return(false);
       }
+#endif
    }
 #endif
 

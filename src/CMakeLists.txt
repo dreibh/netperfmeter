@@ -6,7 +6,7 @@ include_directories(.)
 
 ADD_EXECUTABLE(netperfmeter
 netperfmeter.cc ext_socket.h netperfmeterpackets.h thread.cc thread.h mutex.cc mutex.h tools.h tools.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc outputfile.h outputfile.cc flowtrafficspec.h flowtrafficspec.cc flowbandwidthstats.h flowbandwidthstats.cc flow.h flow.cc cpustatus.h cpustatus.cc measurement.h measurement.cc defragmenter.h defragmenter.cc)
-TARGET_LINK_LIBRARIES(netperfmeter ${BZIP2_LIBRARIES} ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_LINK_LIBRARIES(netperfmeter ${BZIP2_LIBRARIES} ${NEAT_SOCKETAPI_LIB} ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
 INSTALL(TARGETS netperfmeter RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES netperfmeter.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
