@@ -48,6 +48,9 @@ FlowManager::FlowManager()
    FirstDisplayEvent = 0;
    LastDisplayEvent  = 0;
    NextDisplayEvent  = 0;
+#ifdef WITH_NEAT
+   nsa_init();   // Make sure NEAT gets initialised before using any networking functions!
+#endif
    start();
 }
 
@@ -734,7 +737,6 @@ void FlowManager::run()
                   pollFDs[n].events  = POLLIN;
                   pollFDs[n].revents = 0;
                   FlowSet[i]->PollFDEntry = &pollFDs[n];
-                  // printf("?pollin-1: %d\n", pollFDs[n].fd);
                   n++;
                   socketSet.insert(FlowSet[i]->SocketDescriptor);
                }
@@ -753,7 +755,6 @@ void FlowManager::run()
          pollFDs[n].fd      = iterator->first;
          pollFDs[n].events  = POLLIN;
          pollFDs[n].revents = 0;
-         // printf("?pollin-2: %d\n", pollFDs[n].fd);
          unidentifiedSocketsPollFDIndex[i] = &pollFDs[n];
          n++; i++;
       }

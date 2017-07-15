@@ -612,7 +612,36 @@ int createAndBindSocket(const int             family,
 #ifndef WITH_NEAT
    int sd = ext_socket(socketFamily, type, socketProtocol);
 #else
-   int sd = nsa_socket(socketFamily, type, socketProtocol, NULL);
+   char        neatProperties[1024];
+   const char* protocolName = NULL;
+   switch(protocol) {
+      case IPPROTO_UDP:
+         protocolName = "UDP";
+       break;
+      case IPPROTO_SCTP:
+         protocolName = "SCTP";
+       break;
+      case IPPROTO_DCCP:
+         protocolName = "DCCP";
+       break;
+      case IPPROTO_MPTCP:
+         protocolName = "MPTCP";
+       break;
+      default:
+         protocolName = "TCP";
+       break;
+   }
+   snprintf((char*)&neatProperties, sizeof(neatProperties),
+      "{\
+         \"transport\": [\
+            {\
+                  \"value\": \"%s\",\
+                  \"precedence\": 1\
+            }\
+         ]\
+      }",
+      protocolName);
+   int sd = nsa_socket(socketFamily, type, socketProtocol, neatProperties);
 #endif
    if(sd < 0) {
       return(-2);
@@ -623,7 +652,6 @@ int createAndBindSocket(const int             family,
    if(socketFamily == AF_INET6) {
       // Accept IPv4 and IPv6 connections.
       const int on = (bindV6Only == true) ? 1 : 0;
-      // printf("IPV6_V6ONLY=%d\n", on);
       if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) < 0) {
          return(-2);
       }

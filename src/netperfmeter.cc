@@ -712,36 +712,30 @@ static Flow* createFlow(Flow*                  previousFlow,
 
       // ====== Establish connection ========================================
       if(trafficSpec.Protocol == IPPROTO_SCTP) {
+#ifndef WITH_NEAT
          sctp_initmsg initmsg;
          memset((char*)&initmsg, 0 ,sizeof(initmsg));
          initmsg.sinit_num_ostreams  = 65535;
          initmsg.sinit_max_instreams = 65535;
-#ifndef WITH_NEAT
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
                            &initmsg, sizeof(initmsg)) < 0) {
-#else
-         if(nsa_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
-                           &initmsg, sizeof(initmsg)) < 0) {
-#endif
             cerr << "ERROR: Failed to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - "
                  << strerror(errno) << "!" << endl;
             exit(1);
          }
+#endif
 
+#ifndef WITH_NEAT
          sctp_event_subscribe events;
          memset((char*)&events, 0 ,sizeof(events));
          events.sctp_data_io_event = 1;
-#ifndef WITH_NEAT
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
                            &events, sizeof(events)) < 0) {
-#else
-         if(nsa_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
-                           &events, sizeof(events)) < 0) {
-#endif
             cerr << "ERROR: Failed to configure events on SCTP socket (SCTP_EVENTS option) - "
                  << strerror(errno) << "!" << endl;
             exit(1);
          }
+#endif
       }
 
       if(flow->configureSocket(socketDescriptor) == false) {
@@ -963,18 +957,16 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    }
    sctp_event_subscribe events;
    if(!gControlOverTCP) {
+#ifndef WITH_NEAT
       memset((char*)&events, 0 ,sizeof(events));
       events.sctp_data_io_event     = 1;
       events.sctp_association_event = 1;
-#ifndef WITH_NEAT
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-#else
-      if(nsa_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-#endif
          cerr << "ERROR: Failed to configure events on SCTP control socket - "
               << strerror(errno) << "!" << endl;
          exit(1);
       }
+#endif
    }
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
@@ -1417,7 +1409,7 @@ int main(int argc, char** argv)
       cout << "Network Performance Meter" << endl
            << "-------------------------" << endl << endl;
    }
-
+   
    const uint16_t localPort = atol(argv[1]);
    if( (localPort >= 1024) && (localPort < 65535) ) {
       passiveMode(argc, argv, localPort);
