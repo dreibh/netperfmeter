@@ -1,10 +1,10 @@
-netperfmeter (1.7.1~rc1.1-1ubuntu1) xenial; urgency=low
+netperfmeter (1.7.1-1ubuntu1) xenial; urgency=low
 
   * New upstream version.
   * debian/rules: autoconf/automake -> cmake
   * debian/control: autoconf/automake -> cmake
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 17 May 2017 08:08:08 +0200
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Mon, 07 Aug 2017 08:08:08 +0200
 
 netperfmeter (1.7.0-1ubuntu1) zesty; urgency=low
 

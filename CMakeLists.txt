@@ -3,7 +3,7 @@ PROJECT(netperfmeter)
 
 set(BUILD_MAJOR "1")
 set(BUILD_MINOR "7")
-set(BUILD_PATCH "1~rc1.1")
+set(BUILD_PATCH "1")
 set(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
