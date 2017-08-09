@@ -1,3 +1,384 @@
+commit 2466786a258102b75ac09722d1932432c68ebb16
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 9 12:58:45 2017 +0200
+
+    Updated LSM entry.
+
+ netperfmeter.lsm | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+commit 41f2be96a201def28cff5b9f02773d55b00f150e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 9 11:43:35 2017 +0200
+
+    Script update.
+
+ make-ppa | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 86085a83ed1b342293125a4f01a0e5219084f29e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 9 10:31:51 2017 +0200
+
+    Updated compiler options.
+
+ CMakeLists.txt | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+commit 752afdd57b2867276125faede4454b63652e742e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 9 10:30:46 2017 +0200
+
+    Header updates.
+
+ AUTHORS                   |  1 +
+ CMakeLists.txt            |  2 +-
+ debian/changelog          |  8 ++++++++
+ rpm/netperfmeter.spec     |  2 +-
+ src/control.cc            |  9 ++++++---
+ src/control.h             |  9 ++++++---
+ src/cpustatus.cc          |  9 ++++++---
+ src/cpustatus.h           |  9 ++++++---
+ src/debug.h               | 19 +++++++------------
+ src/defragmenter.cc       | 11 +++++++----
+ src/defragmenter.h        | 11 +++++++----
+ src/ext_socket.h          | 26 ++++++--------------------
+ src/flow.cc               | 13 +++++++------
+ src/flow.h                | 11 +++++++----
+ src/flowbandwidthstats.cc | 12 ++++++++----
+ src/flowbandwidthstats.h  | 11 +++++++----
+ src/flowtrafficspec.cc    | 13 +++++++------
+ src/flowtrafficspec.h     | 13 +++++++------
+ src/inputfile.cc          | 11 +++++++----
+ src/inputfile.h           | 11 +++++++----
+ src/measurement.cc        | 11 +++++++----
+ src/measurement.h         | 11 +++++++----
+ src/messagereader.cc      |  9 ++++++---
+ src/messagereader.h       |  9 ++++++---
+ src/mutex.cc              |  9 ++++++---
+ src/mutex.h               |  9 ++++++---
+ src/netperfmeter.cc       | 11 ++++++-----
+ src/netperfmeterpackets.h | 10 ++++++----
+ src/outputfile.cc         | 11 +++++++----
+ src/outputfile.h          | 11 +++++++----
+ src/redblacktree.h        | 19 +++++++------------
+ src/redblacktree_impl.h   | 19 +++++++------------
+ src/simpleredblacktree.h  | 19 +++++++------------
+ src/thread.cc             |  9 ++++++---
+ src/thread.h              |  9 ++++++---
+ src/tools.cc              | 10 ++++++----
+ src/tools.h               |  9 ++++++---
+ src/transfer.cc           |  9 ++++++---
+ src/transfer.h            |  9 ++++++---
+ 39 files changed, 240 insertions(+), 184 deletions(-)
+
+commit b9ab83f941c5abb0e3b6085b799c40ea83daec6f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 9 10:19:13 2017 +0200
+
+    Updated URL.
+
+ debian/control                          | 2 +-
+ debian/copyright                        | 2 +-
+ freebsd/netperfmeter/Makefile           | 2 +-
+ freebsd/netperfmeter/pkg-descr          | 2 +-
+ netperfmeter.lsm                        | 4 ++--
+ ppid-registrations-for-netperfmeter.txt | 2 +-
+ rpm/netperfmeter.spec                   | 4 ++--
+ sc-registrations-for-netperfmeter.txt   | 2 +-
+ src/combinesummaries.1                  | 2 +-
+ src/createsummary.1                     | 2 +-
+ src/extractvectors.1                    | 2 +-
+ src/netperfmeter.1                      | 2 +-
+ src/pdfembedfonts.1                     | 2 +-
+ src/pdfmetadata.1                       | 2 +-
+ src/plot-netperfmeter-results.1         | 2 +-
+ src/runtimeestimator.1                  | 2 +-
+ 16 files changed, 18 insertions(+), 18 deletions(-)
+
+commit c313a3f2a16e20232be63d77f3ab9c6ef473c79a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 7 16:59:01 2017 +0200
+
+    Version bump.
+
+ CMakeLists.txt        | 2 +-
+ debian/changelog      | 6 ++++++
+ rpm/netperfmeter.spec | 2 +-
+ 3 files changed, 8 insertions(+), 2 deletions(-)
+
+commit a90fbed4b1edf761a5a6cf84103fb56f363bc3a7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 7 16:56:49 2017 +0200
+
+    Fix for MPTCP handling.
+
+ CMakeLists.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+commit 1747809c616efcda588ca77f5876e9fd97f7f585
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 7 15:54:55 2017 +0200
+
+    Merged "cmake" branch => version bump.
+
+ CMakeLists.txt        | 2 +-
+ debian/changelog      | 7 +++++++
+ rpm/netperfmeter.spec | 2 +-
+ 3 files changed, 9 insertions(+), 2 deletions(-)
+
+commit 1129ecfec3bcce42fa68743f413c99a12e02356e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 7 15:24:50 2017 +0200
+
+    Updated watch file.
+
+ debian/watch | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 3e5f1c9852b76d606e3b5aafcba135347d89df42
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 7 15:20:36 2017 +0200
+
+    Version bump.
+
+ CMakeLists.txt        | 2 +-
+ debian/changelog      | 4 ++--
+ rpm/netperfmeter.spec | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+commit 6a2c1faf18c8dd46c0d5c0d635dc7d23af5af759
+Merge: db2e372 34b7b7a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 15:49:45 2017 +0200
+
+    Merge branch 'cmake' of https://github.com/dreibh/netperfmeter into cmake
+
+commit db2e3729381f53fe2731b2de37dd06417187bd3c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 15:49:38 2017 +0200
+
+    RPM packaging updates.
+
+ make-rpm              |  2 +-
+ rpm.conf              |  2 +-
+ rpm/netperfmeter.spec | 14 +++++---------
+ 3 files changed, 7 insertions(+), 11 deletions(-)
+
+commit 34b7b7a2b7431294262a0395fcb8941fea6e5668
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 15:49:25 2017 +0200
+
+    Fixed man path.
+
+ src/CMakeLists.txt | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+commit d72d65d252d7cf09205732b2642648438db035f5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 15:35:24 2017 +0200
+
+    Removed obsolete files.
+
+ ablage/control.full               | 42 ---------------------------------------
+ ablage/datatabletools.install     |  3 ---
+ ablage/datatabletools.manpages    |  3 ---
+ ablage/netperfmeter.install.full  |  4 ----
+ ablage/netperfmeter.manpages.full |  2 --
+ ablage/pdfproctools.install       |  2 --
+ ablage/pdfproctools.manpages      |  2 --
+ 7 files changed, 58 deletions(-)
+
+commit 7228c16102f3bfdeb9e2f546345de8923b10c9b5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 15:27:34 2017 +0200
+
+    Updated comment.
+
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 9cebbd994d3f234acc7c048b3f8d8d6d2f04b5ea
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 15:22:21 2017 +0200
+
+    Added missing sctplib/socketapi configuration into CMakeLists.txt.
+
+ CMakeLists.txt | 48 ++++++++++++++++++++++++++++++++++++++++++------
+ autogen.sh     |  2 +-
+ src/flow.h     |  2 +-
+ 3 files changed, 44 insertions(+), 8 deletions(-)
+
+commit 76acc4bf70a72cb44e555ee36dd63c51aa785bf9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 14:53:13 2017 +0200
+
+    Header updates.
+
+ src/combinesummaries.cc | 2 +-
+ src/createsummary.cc    | 2 +-
+ src/extractvectors.cc   | 2 +-
+ src/plotter-version1.R  | 3 +--
+ src/plotter.R           | 3 +--
+ src/runtimeestimator.cc | 2 +-
+ 6 files changed, 6 insertions(+), 8 deletions(-)
+
+commit 28b97d32b54e2c11c5161b2c9f24aba4b9059e8e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 14:49:24 2017 +0200
+
+    A fix.
+
+ debian/control | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit b7c29dfc2c2a6bd8668096c236988d75c84abb1c
+Merge: 89762f6 3017ee5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 14:44:00 2017 +0200
+
+    Merge remote-tracking branch 'origin/master' into cmake
+
+commit 89762f658a0108eb3da1a62c8c5a62234c576a5c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 14:43:50 2017 +0200
+
+    Updated packaging files.
+
+ debian/control                        | 34 +++++++++++++++++++++++++++++-----
+ debian/netperfmeter-plotting.install  |  3 +++
+ debian/netperfmeter-plotting.manpages |  1 +
+ debian/pdfproctools.install           |  2 ++
+ debian/pdfproctools.manpages          |  2 ++
+ debian/rules                          |  3 +++
+ 6 files changed, 40 insertions(+), 5 deletions(-)
+
+commit 3017ee51c3a9e20192e5ff3867dade1539582951
+Author: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Date:   Thu May 18 14:42:47 2017 +0200
+
+    Minor updates.
+
+ src/pdfembedfonts   | 4 ++--
+ src/pdfembedfonts.1 | 4 ++--
+ src/pdfmetadata.1   | 4 ++--
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+commit badf3b348ffa8c8574f7a2d2f093db73a761e378
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 18 13:18:08 2017 +0200
+
+    Some script updates.
+
+ CMakeLists.txt     |  2 +-
+ debian/changelog   |  2 +-
+ debian/control     | 20 +++++++++++++++++---
+ debian/rules       |  1 +
+ src/CMakeLists.txt | 24 ++++++------------------
+ 5 files changed, 26 insertions(+), 23 deletions(-)
+
+commit 4da1a68317728ad73b61795a20d1ec60f73e06ee
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 16 18:29:30 2017 +0200
+
+    Another update.
+
+ debian/control              |  2 --
+ debian/netperfmeter.install | 12 ++++++------
+ src/CMakeLists.txt          | 30 +++++++++++++++++++++---------
+ 3 files changed, 27 insertions(+), 17 deletions(-)
+
+commit 9029377f2d529dc6bc8942a3d8ae39322fd5e590
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 16 17:30:04 2017 +0200
+
+    Some fixes and improvements for the build scripts.
+
+ BUGS             |   0
+ CMakeLists.txt   | 226 ++++++++++++++++++++++++++++++
+ INSTALL          | 237 -------------------------------
+ NEWS             |   0
+ README           |   0
+ README.FreeBSD   |  10 --
+ configure.ac     | 415 -------------------------------------------------------
+ debian/changelog |   2 +
+ debian/control   |   3 +-
+ debian/rules     |   5 +-
+ make-deb         | 197 +++++++++++++++-----------
+ 11 files changed, 347 insertions(+), 748 deletions(-)
+
+commit a849a7c59a674a33520a8a22a69b6c3e3452dd62
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 16 17:29:51 2017 +0200
+
+    Build file updates.
+
+ ablage/datatabletools.install    | 6 +++---
+ ablage/datatabletools.manpages   | 6 +++---
+ ablage/netperfmeter.install.full | 8 ++++----
+ ablage/pdfproctools.install      | 4 ++--
+ ablage/pdfproctools.manpages     | 4 ++--
+ 5 files changed, 14 insertions(+), 14 deletions(-)
+
+commit 0c9eefdf0800b9ddfefc53028e70ef42889a0206
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 16 17:03:24 2017 +0200
+
+    Some more updates.
+
+ autogen.sh                  |  2 +-
+ debian/changelog            |  6 ++++++
+ debian/netperfmeter.install | 12 ++++++------
+ make-ppa                    |  3 +--
+ src/CMakeLists.txt          | 10 ++++++++++
+ 5 files changed, 24 insertions(+), 9 deletions(-)
+
+commit afa1fb86800256d5e7b48058724d59d5a281ff8f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 16 14:37:07 2017 +0200
+
+    Added CMake build files.
+
+ autogen.sh         | 13 +++++--------
+ bootstrap          | 45 ---------------------------------------------
+ debian.conf        |  2 +-
+ src/CMakeLists.txt | 47 +++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 53 insertions(+), 54 deletions(-)
+
+commit 4c4d2c87b0ec5409ea3b902330b7952bf8cd50e1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 16 13:53:37 2017 +0200
+
+    MPTCP options handling improvements.
+
+ src/flow.cc         | 32 ++++++++++++++++++++------------
+ src/netperfmeter.cc | 20 ++++++++++++--------
+ src/tools.cc        |  4 ++--
+ src/tools.h         | 22 ++++++++++++----------
+ 4 files changed, 46 insertions(+), 32 deletions(-)
+
+commit e7ae42592393f9f6a22bfc22d53c780aabbef175
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Apr 23 07:49:14 2017 +0200
+
+    Fedora packaging update.
+
+ rpm/netperfmeter.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit b86b7c0a079c333388917deaac220dd8824a1175
+Author: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Date:   Thu Apr 20 11:06:39 2017 +0200
+
+    Build script updates.
+
+ ChangeLog             | 10 ++++++++++
+ configure.ac          |  2 +-
+ debian/changelog      |  2 +-
+ make-ppa              |  2 +-
+ rpm/netperfmeter.spec |  2 +-
+ 5 files changed, 14 insertions(+), 4 deletions(-)
+
 commit eda34a6378ee89fe7d0acdda040a6eb5b54ebbd7
 Author: Thomas Dreibholz <dreibh@iem.uni-due.de>
 Date:   Thu Apr 20 11:04:02 2017 +0200
