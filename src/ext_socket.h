@@ -1,17 +1,8 @@
 /*
- *
- * SocketAPI implementation for the sctplib.
- * Copyright (C) 1999-2017 by Thomas Dreibholz
- *
- * Realized in co-operation between
- * - Siemens AG
- * - University of Essen, Institute of Computer Networking Technology
- * - University of Applied Sciences, Muenster
- *
- * Acknowledgement
- * This work was partially funded by the Bundesministerium fuer Bildung und
- * Forschung (BMBF) of the Federal Republic of Germany (Foerderkennzeichen 01AK045).
- * The authors alone are responsible for the contents.
+ * ==========================================================================
+ *                  NetPerfMeter -- Network Performance Meter                 
+ *                 Copyright (C) 2009-2017 by Thomas Dreibholz
+ * ==========================================================================
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,14 +17,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Contact: discussion@sctp.de
- *          dreibh@iem.uni-due.de
- *          tuexen@fh-muenster.de
- *
- * Purpose: Extended Socket API
- *
+ * Contact:  dreibh@iem.uni-due.de
+ * Homepage: https://www.uni-due.de/~be0001/netperfmeter/
  */
-
 
 #ifndef EXTSOCKET_H
 #define EXTSOCKET_H
