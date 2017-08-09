@@ -4,8 +4,8 @@ Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0
 Group: Applications/Internet
-URL: http://www.iem.uni-due.de/~dreibh/netperfmeter/
-Source: http://www.iem.uni-due.de/~dreibh/netperfmeter/download/%{name}-%{version}.tar.gz
+URL: https://www.uni-due.de/~be0001/netperfmeter/
+Source: https://www.uni-due.de/~be0001/netperfmeter/download/%{name}-%{version}.tar.gz
 
 AutoReqProv: on
 BuildRequires: cmake

@@ -1,7 +1,7 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: NetPerfMeter
 Upstream-Contact: Thomas Dreibholz <dreibh@iem.uni-due.de>
-Source: http://www.iem.uni-due.de/~dreibh/netperfmeter/
+Source: https://www.uni-due.de/~be0001/netperfmeter/
 
 Files: *
 Copyright: Copyright (C) 2009-2016 Thomas Dreibholz <dreibh@iem.uni-due.de>

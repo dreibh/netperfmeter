@@ -12,9 +12,9 @@ Keywords:       Network Performance, QoS, IPv4, IPv6, TCP, MPTCP, SCTP, UDP,
                 DCCP.
 Author:         dreibh@iem.uni-due.de (Thomas Dreibholz)
 Maintained-by:  dreibh@iem.uni-due.de (Thomas Dreibholz)
-Primary-site:   http://www.iem.uni-due.de/~dreibh/netperfmeter
+Primary-site:   https://www.uni-due.de/~be0001/netperfmeter
                 552 kB download/netperfmeter-1.7.0.tar.gz
-Original-site:  http://www.iem.uni-due.de/~dreibh/netperfmeter
+Original-site:  https://www.uni-due.de/~be0001/netperfmeter
 Platforms:      Linux, FreeBSD, MacOS, Solaris
 Copying-policy: GPL
 End
