@@ -1,3 +1,11 @@
+netperfmeter (1.7.4-1ubuntu1) xenial; urgency=low
+
+  * New upstream version.
+  * debian/watch: URL update
+  * debian/control: URL update
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 09 Aug 2017 08:08:08 +0200
+
 netperfmeter (1.7.3-1ubuntu1) xenial; urgency=low
 
   * New upstream version.
