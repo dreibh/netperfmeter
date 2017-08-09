@@ -246,8 +246,8 @@ ENDIF()
 # COMPILER FLAGS
 #################################################
 
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -std=c11   -Wall -Wno-unused-function -Wno-unused-parameter -Wno-overlength-strings -Wno-array-bounds")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-unused-function -Wno-unused-parameter -Wno-overlength-strings -Wno-array-bounds")
+SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -Wno-unused-function -Wno-unused-parameter -Wno-overlength-strings -Wno-array-bounds")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-function -Wno-unused-parameter -Wno-overlength-strings -Wno-array-bounds")
 
 IF (CMAKE_BUILD_TYPE MATCHES DEBUG)
     MESSAGE(STATUS "Building in DEBUG mode")
