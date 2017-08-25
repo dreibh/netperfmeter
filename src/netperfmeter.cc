@@ -952,7 +952,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 #ifdef HAVE_MPTCP
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
-                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
+                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
    if(gMPTCPSocket < 0) {
       if(gOutputVerbosity >= NPFOV_STATUS) {
          cerr << "NOTE: Unable to create and bind MPTCP socket - "
@@ -979,6 +979,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
          exit(1);
       }
+      ext_listen(gMPTCPSocket, 10);
    }
 #endif
 
