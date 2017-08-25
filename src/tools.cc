@@ -557,15 +557,54 @@ bool setPort(struct sockaddr* address, uint16_t port)
 }
 
 
-/* ###### Create server socket of appropriate family and bind it ######### */
-int createAndBindSocket(const int             family,
-                        const int             type,
-                        const int             protocol,
-                        const uint16_t        localPort,
-                        const unsigned int    localAddresses,
-                        const sockaddr_union* localAddressArray,
-                        const bool            listenMode,
-                        const bool            bindV6Only)
+/* ###### Create socket ################################################## */
+int createSocket(const int             family,
+                 const int             type,
+                 const int             protocol,
+                 const unsigned int    localAddresses,
+                 const sockaddr_union* localAddressArray)
+{
+   // ====== Get family =====================================================
+   int socketFamily = family;
+   if(socketFamily == AF_UNSPEC) {
+      socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
+      if( (localAddresses == 1) &&
+          (protocol != IPPROTO_SCTP) &&
+          (localAddressArray[0].sa.sa_family == AF_INET) ) {
+         socketFamily = AF_INET;   // Restrict to IPv4!
+      }
+   }
+
+   // ====== Get protocol ===================================================
+   int socketProtocol = protocol;
+#ifdef HAVE_MPTCP
+   if(socketProtocol == IPPROTO_MPTCP) {
+      socketProtocol = IPPROTO_TCP;
+      if(localAddresses > 1) {
+         printf("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
+      }
+   }
+#endif
+
+   // ====== Create socket ==================================================
+   int sd = ext_socket(socketFamily, type, socketProtocol);
+   if(sd < 0) {
+      return(-2);
+   }
+   return(sd);
+}
+
+
+/* ###### Bind socket #################################################### */
+int bindSocket(const int             sd,
+               const int             family,
+               const int             type,
+               const int             protocol,
+               const uint16_t        localPort,
+               const unsigned int    localAddresses,
+               const sockaddr_union* localAddressArray,
+               const bool            listenMode,
+               const bool            bindV6Only)
 {
    unsigned int localAddressCount = localAddresses;
 
@@ -604,11 +643,6 @@ int createAndBindSocket(const int             family,
    }
 #endif
 
-   // ====== Create socket ==================================================
-   int sd = ext_socket(socketFamily, type, socketProtocol);
-   if(sd < 0) {
-      return(-2);
-   }
 #ifdef IPV6_V6ONLY
    if(socketFamily == AF_INET6) {
       // Accept IPv4 and IPv6 connections.
@@ -640,7 +674,6 @@ int createAndBindSocket(const int             family,
    // ====== Bind socket ====================================================
    if(localAddressCount == 0) {
       if(ext_bind(sd, &anyAddress.sa, getSocklen(&anyAddress.sa)) != 0) {
-         ext_close(sd);
          return(-3);
       }
    }
@@ -666,7 +699,6 @@ int createAndBindSocket(const int             family,
          }
          if(sctp_bindx(sd, (sockaddr*)&buffer, localAddressCount,
                        SCTP_BINDX_ADD_ADDR) != 0) {
-            ext_close(sd);
             return(-3);
          }
       }
@@ -686,7 +718,6 @@ int createAndBindSocket(const int             family,
          }
 
          if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
-            ext_close(sd);
             return(-3);
          }
       }
@@ -695,6 +726,31 @@ int createAndBindSocket(const int             family,
    // ====== Put socket into listening mode =================================
    if(listenMode) {
       ext_listen(sd, 10);
+   }
+   return(sd);
+}
+
+
+/* ###### Create server socket of appropriate family and bind it ######### */
+int createAndBindSocket(const int             family,
+                        const int             type,
+                        const int             protocol,
+                        const uint16_t        localPort,
+                        const unsigned int    localAddresses,
+                        const sockaddr_union* localAddressArray,
+                        const bool            listenMode,
+                        const bool            bindV6Only)
+{
+   int sd = createSocket(family, type, protocol,
+                         localAddresses, localAddressArray);
+   if(sd >= 0) {
+      const int success = bindSocket(sd, family, type, protocol,
+                                     localPort, localAddresses, localAddressArray,
+                                     listenMode, bindV6Only);
+      if(success < 0) {
+         ext_close(sd);
+         return(success);      
+      }
    }
    return(sd);
 }
