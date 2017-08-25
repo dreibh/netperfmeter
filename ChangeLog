@@ -1,3 +1,50 @@
+commit 9d8e5ae2e11d6c56019d9d5f599d99c6aca23dfe
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Aug 25 13:53:57 2017 +0200
+
+    Version bump.
+
+ CMakeLists.txt        | 2 +-
+ debian/changelog      | 6 ++++++
+ rpm/netperfmeter.spec | 2 +-
+ 3 files changed, 8 insertions(+), 2 deletions(-)
+
+commit d9de55ad422c3397a452fd9a7da1f58f5670c46a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Aug 25 11:31:43 2017 +0000
+
+    Set MPTCP options before start listening.
+
+ src/netperfmeter.cc | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+commit a6f0375f0740fd2407c869be90c4c4576fc2e361
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Aug 25 11:57:04 2017 +0200
+
+    Updated tools.h.
+
+ src/tools.h | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+commit 1becdf1cfc9e9779adedefae65f5326a36fff258
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Aug 25 11:53:36 2017 +0200
+
+    Splitted createAndBindSocket() function.
+
+ src/tools.cc | 90 ++++++++++++++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 73 insertions(+), 17 deletions(-)
+
+commit 6acb5efaa17e0acfd0b14d4dec76ccdcb7734f21
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 9 12:58:51 2017 +0200
+
+    Updated ChangeLog.
+
+ ChangeLog | 381 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 381 insertions(+)
+
 commit 2466786a258102b75ac09722d1932432c68ebb16
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Wed Aug 9 12:58:45 2017 +0200
