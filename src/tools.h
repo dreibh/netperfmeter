@@ -117,6 +117,20 @@ const char* getProtocolName(const uint8_t protocol);
 uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
 bool sendAbort(int sd, sctp_assoc_t assocID = 0);
+int createSocket(const int             family,
+                 const int             type,
+                 const int             protocol,
+                 const unsigned int    localAddresses,
+                 const sockaddr_union* localAddressArray);
+int bindSocket(const int             sd,
+               const int             family,
+               const int             type,
+               const int             protocol,
+               const uint16_t        localPort,
+               const unsigned int    localAddresses,
+               const sockaddr_union* localAddressArray,
+               const bool            listenMode,
+               const bool            bindV6Only);
 int createAndBindSocket(const int             family,
                         const int             type,
                         const int             protocol,
