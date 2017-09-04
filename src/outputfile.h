@@ -71,7 +71,7 @@ class OutputFile
       return(Line);
    }
    inline unsigned long long nextLine() {
-      return(++Line);
+      return(Line++);
    }
 
    // ====== Private Data ===================================================

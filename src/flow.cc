@@ -964,9 +964,9 @@ bool Flow::initializeVectorFile(const char* name, const OutputFileFormat format)
 
    lock();
    if(VectorFile.initialize(name, format)) {
-      VectorFile.nextLine();
       success = VectorFile.printf(
                    "AbsTime RelTime SeqNumber Delay PrevPacketDelayDiff Jitter\n");
+      VectorFile.nextLine();
    }
    unlock();
 

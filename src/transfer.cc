@@ -239,7 +239,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
       // ====== Handle NETPERFMETER_DATA message ============================
       else if( (received >= (ssize_t)sizeof(NetPerfMeterDataMessage)) &&
                (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
-         // ====== Identifiy flow ===========================================
+         // ====== Identify flow ============================================
          Flow* flow;
          if(( protocol == IPPROTO_UDP) && (!isActiveMode) ) {
             flow = FlowManager::getFlowManager()->findFlow(&from.sa);
