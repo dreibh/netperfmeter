@@ -1,3 +1,24 @@
+commit 3544920315affaa37ee14ce806dbd387eabee6ce
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 29 20:12:20 2017 +0100
+
+    Script updates.
+
+ CMakeLists.txt                      |   2 +-
+ ChangeLog                           | 110 ++++++++++++++++++++++++++++++++++++
+ build-deb                           |   2 +-
+ clean-deb                           |   2 +-
+ debian/changelog                    |   6 ++
+ filter-empty-entries                |   2 +-
+ freebsd/netperfmeter/make-diff      |   2 +-
+ freebsd/netperfmeter/test-packaging |   2 +-
+ make-deb                            |   2 +-
+ make-ppa                            |   2 +-
+ make-rpm                            |   2 +-
+ netperfmeter.lsm                    |   6 +-
+ rpm/netperfmeter.spec               |   2 +-
+ 13 files changed, 129 insertions(+), 13 deletions(-)
+
 commit c0425f87a0b90612552abe8817e7dfa4a4c2e681
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Sun Oct 29 20:09:37 2017 +0100
