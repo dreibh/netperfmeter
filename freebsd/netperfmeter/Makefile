@@ -6,16 +6,15 @@
 #
 
 PORTNAME=	netperfmeter
-PORTVERSION=	1.3.0
+PORTVERSION=	1.7.6
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.uni-due.de/~be0001/netperfmeter/download/
 
 MAINTAINER=	dreibh@iem.uni-due.de
 COMMENT=	Network Performance Meter
 
-GNU_CONFIGURE=	yes
-USE_GMAKE=	yes
-
+USES=           cmake shebangfix
+SHEBANG_FILES=  src/pdfmetadata
 PLIST_FILES=	bin/netperfmeter
 MAN1=		netperfmeter.1
 
