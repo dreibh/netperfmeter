@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 #
 # Free Packaging Test Script
 # Copyright (C) 2010-2018 by Thomas Dreibholz
@@ -47,5 +46,6 @@ for file in $PACKAGING_FILES ; do
    fi
 done
 
+colordiff <$PACKAGE.diff
 echo ""
 echo "Results written to $PACKAGE.diff"
