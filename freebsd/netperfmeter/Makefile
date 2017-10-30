@@ -15,6 +15,6 @@ LICENSE_FILE=	${WRKSRC}/COPYING
 GNU_CONFIGURE=	yes
 USES=		cmake shebangfix
 CMAKE_ARGS+=	-DWITH_NEAT=0 -DBUILD_TEST_PROGRAMS=0 -DBUILD_PLOT_PROGRAMS=1
-SHEBANG_FILES=	src/pdfmetadata
+SHEBANG_FILES=	src/pdfembedfonts src/pdfmetadata src/plot-netperfmeter-results
 
 .include <bsd.port.mk>
