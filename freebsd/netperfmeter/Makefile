@@ -1,9 +1,5 @@
-# New ports collection makefile for: netperfmeter
-# Date created:                      27 July 2010
-# Whom:                              Thomas Dreibholz <dreibh@iem.uni-due.de>
-#
-# $FreeBSD: ports/benchmarks/netperfmeter/Makefile,v 1.2 2010/12/29 20:04:12 pgollucci Exp $
-#
+# Created by: Thomas Dreibholz <dreibh@iem.uni-due.de>
+# $FreeBSD: head/benchmarks/netperfmeter/Makefile 429903 2016-12-29 12:50:33Z amdmi3 $
 
 PORTNAME=	netperfmeter
 PORTVERSION=	1.7.6
@@ -13,20 +9,12 @@ MASTER_SITES=	https://www.uni-due.de/~be0001/netperfmeter/download/
 MAINTAINER=	dreibh@iem.uni-due.de
 COMMENT=	Network Performance Meter
 
-USES=           cmake shebangfix
-SHEBANG_FILES=  src/pdfmetadata
-PLIST_FILES=	bin/netperfmeter
-MAN1=		netperfmeter.1
-
-LICENSE=	GPLv3
+LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
-MAKE_JOBS_SAFE=	yes
+GNU_CONFIGURE=	yes
+USES=		cmake shebangfix
+CMAKE_ARGS+=	-DWITH_NEAT=0 -DBUILD_TEST_PROGRAMS=0 -DBUILD_PLOT_PROGRAMS=1
+SHEBANG_FILES=	src/pdfmetadata
 
-.include <bsd.port.pre.mk>
-
-.if ${OSVERSION} < 700000
-IGNORE=	not supported on systems earlier than 7.x
-.endif
-
-.include <bsd.port.post.mk>
+.include <bsd.port.mk>
