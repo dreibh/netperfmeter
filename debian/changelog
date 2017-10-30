@@ -1,3 +1,9 @@
+netperfmeter (1.7.6-1ubuntu1) xenial; urgency=low
+
+  * New upstream version.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sun, 29 Oct 2017 08:08:08 +0200
+
 netperfmeter (1.7.5-1ubuntu1) xenial; urgency=low
 
   * New upstream version.

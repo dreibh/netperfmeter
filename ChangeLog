@@ -1,3 +1,134 @@
+commit 3544920315affaa37ee14ce806dbd387eabee6ce
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 29 20:12:20 2017 +0100
+
+    Script updates.
+
+ CMakeLists.txt                      |   2 +-
+ ChangeLog                           | 110 ++++++++++++++++++++++++++++++++++++
+ build-deb                           |   2 +-
+ clean-deb                           |   2 +-
+ debian/changelog                    |   6 ++
+ filter-empty-entries                |   2 +-
+ freebsd/netperfmeter/make-diff      |   2 +-
+ freebsd/netperfmeter/test-packaging |   2 +-
+ make-deb                            |   2 +-
+ make-ppa                            |   2 +-
+ make-rpm                            |   2 +-
+ netperfmeter.lsm                    |   6 +-
+ rpm/netperfmeter.spec               |   2 +-
+ 13 files changed, 129 insertions(+), 13 deletions(-)
+
+commit c0425f87a0b90612552abe8817e7dfa4a4c2e681
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 29 20:09:37 2017 +0100
+
+    Header updates.
+
+ src/combinesummaries.1          | 2 +-
+ src/combinesummaries.cc         | 2 +-
+ src/control.cc                  | 2 +-
+ src/control.h                   | 2 +-
+ src/cpustatus.cc                | 2 +-
+ src/cpustatus.h                 | 2 +-
+ src/createsummary.1             | 2 +-
+ src/createsummary.cc            | 2 +-
+ src/debug.h                     | 2 +-
+ src/defragmenter.cc             | 2 +-
+ src/defragmenter.h              | 2 +-
+ src/ext_socket.h                | 2 +-
+ src/extractvectors.1            | 2 +-
+ src/extractvectors.cc           | 2 +-
+ src/flow.cc                     | 2 +-
+ src/flow.h                      | 2 +-
+ src/flowbandwidthstats.cc       | 2 +-
+ src/flowbandwidthstats.h        | 2 +-
+ src/flowtrafficspec.cc          | 2 +-
+ src/flowtrafficspec.h           | 2 +-
+ src/getabstime.1                | 2 +-
+ src/getabstime.cc               | 2 +-
+ src/inputfile.cc                | 2 +-
+ src/inputfile.h                 | 2 +-
+ src/make-rootshell              | 2 +-
+ src/measurement.cc              | 2 +-
+ src/measurement.h               | 2 +-
+ src/messagereader.cc            | 2 +-
+ src/messagereader.h             | 2 +-
+ src/mutex.cc                    | 2 +-
+ src/mutex.h                     | 2 +-
+ src/netperfmeter.1              | 2 +-
+ src/netperfmeter.cc             | 2 +-
+ src/netperfmeterpackets.h       | 2 +-
+ src/outputfile.cc               | 2 +-
+ src/outputfile.h                | 2 +-
+ src/pdfembedfonts               | 2 +-
+ src/pdfembedfonts.1             | 2 +-
+ src/pdfmetadata                 | 2 +-
+ src/pdfmetadata.1               | 2 +-
+ src/plot-netperfmeter-results   | 2 +-
+ src/plot-netperfmeter-results.1 | 2 +-
+ src/plot-netperfmeter-results.R | 2 +-
+ src/plot-version1.R             | 2 +-
+ src/plotter-version1.R          | 2 +-
+ src/plotter.R                   | 2 +-
+ src/redblacktree.h              | 2 +-
+ src/redblacktree_impl.h         | 2 +-
+ src/rootshell.c                 | 2 +-
+ src/runtimeestimator.1          | 2 +-
+ src/runtimeestimator.cc         | 2 +-
+ src/setqos                      | 2 +-
+ src/setsctp                     | 2 +-
+ src/simpleredblacktree.c        | 2 +-
+ src/simpleredblacktree.h        | 2 +-
+ src/storage/ldcalc.cc           | 2 +-
+ src/thread.cc                   | 2 +-
+ src/thread.h                    | 2 +-
+ src/tools.cc                    | 2 +-
+ src/tools.h                     | 2 +-
+ src/transfer.cc                 | 2 +-
+ src/transfer.h                  | 2 +-
+ 62 files changed, 62 insertions(+), 62 deletions(-)
+
+commit 99926a9ada6639b2061b354b6657f80871e83991
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 29 20:08:55 2017 +0100
+
+    Added helper script.
+
+ UpdateDoc1.sed |  3 +++
+ UpdateDocFiles | 24 ++++++++++++++++++++++++
+ 2 files changed, 27 insertions(+)
+
+commit fd20a3e1d318ba0826cce02e34d2c05969e68218
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 29 19:39:40 2017 +0100
+
+    Updated autogen.sh with FreeBSD support.
+
+ autogen.sh | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+commit e0b7951843f226a084b89f3a599236a84427a1b7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Sep 4 11:06:27 2017 +0200
+
+    Line numbering fix for per-flow vector output.
+
+ src/flow.cc      | 2 +-
+ src/outputfile.h | 2 +-
+ src/transfer.cc  | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+commit 0e1d5beb0b85cdfcc13e2be211c416ca8e26cebd
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Aug 25 13:54:29 2017 +0200
+
+    Packaging updates.
+
+ ChangeLog        | 47 +++++++++++++++++++++++++++++++++++++++++++++++
+ netperfmeter.lsm |  6 +++---
+ 2 files changed, 50 insertions(+), 3 deletions(-)
+
 commit 9d8e5ae2e11d6c56019d9d5f599d99c6aca23dfe
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Fri Aug 25 13:53:57 2017 +0200
