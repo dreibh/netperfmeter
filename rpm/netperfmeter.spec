@@ -10,7 +10,6 @@ Source: https://www.uni-due.de/~be0001/netperfmeter/download/%{name}-%{version}.
 AutoReqProv: on
 BuildRequires: cmake
 BuildRequires: gcc-c++
-BuildRequires: libtool
 BuildRequires: lksctp-tools-devel
 BuildRequires: valgrind-devel
 BuildRequires: bzip2-devel
