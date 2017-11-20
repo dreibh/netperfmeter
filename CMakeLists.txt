@@ -42,14 +42,14 @@ SET(CMAKE_INSTALL_MANDIR "share/man"
 # PACKAGING
 #################################################
 
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_PACKAGE_FILE_NAME
+SET(CPACK_SOURCE_GENERATOR "TGZ")
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME
    "${CMAKE_PROJECT_NAME}-${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH}")
-set(CPACK_SOURCE_IGNORE_FILES
+SET(CPACK_SOURCE_IGNORE_FILES
    "${PROJECT_SOURCE_DIR}/${CMAKE_PROJECT_NAME}-*;${PROJECT_SOURCE_DIR}/${CMAKE_PROJECT_NAME}_*;/build/;/.git/;/config.log;/CMakeFiles/;CMakeCache.txt$;.cmake$;.tar.gz$;/_CPack_Packages;/Makefile$;~$;/build-deb;/clean-deb;/filter-empty-entries;/make-symbols;/make-ppa;/make-deb;/debian.conf;/make-rpm;/rpm.conf;${CPACK_SOURCE_IGNORE_FILES}")
-include(CPack)
+INCLUDE(CPack)
 
-add_custom_target(dist COMMAND ${CMAKE_MAKE_PROGRAM} clean package_source)
+ADD_CUSTOM_TARGET(dist COMMAND ${CMAKE_MAKE_PROGRAM} clean package_source)
 
 
 INCLUDE(CheckIncludeFile)
@@ -138,11 +138,11 @@ ENDIF()
 
 # Debug build type as default
 IF (NOT CMAKE_BUILD_TYPE)
-    message(STATUS "No build type selected, using DEBUG")
-    set(CMAKE_BUILD_TYPE "DEBUG")
+    MESSAGE(STATUS "No build type selected, using DEBUG")
+    SET(CMAKE_BUILD_TYPE "DEBUG")
     # _FORTIFY_SOURCE requires compiling with optimization
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O")
-endif()
+ENDIF()
 
 
 #################################################
@@ -178,7 +178,7 @@ ELSE()
    IF (NOT HAVE_SCTPSOCKET_SCTP_H OR NOT SCTPSOCKET_LIB)
       MESSAGE(FATAL_ERROR "sctpsocket not found - libsctpsocket installed?")
    ENDIF()
-   
+
    FIND_PACKAGE(PkgConfig)
    PKG_CHECK_MODULES(GLIB glib-2.0)
    IF (NOT ${GLIB_LIBS})
