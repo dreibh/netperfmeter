@@ -1,3 +1,164 @@
+commit b24f371e32329d7f41a89d32ab65989d12e6a509
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 6 15:28:02 2018 +0200
+
+    Updated build scripts.
+
+ CMakeLists.txt |  2 +-
+ build-deb      | 99 +++++++++++++++++++++++++++++++++++++++++++++++++---------
+ clean-deb      |  9 ++++--
+ make-deb       | 58 +++++++++++++++++-----------------
+ make-ppa       |  2 +-
+ 5 files changed, 121 insertions(+), 49 deletions(-)
+
+commit f25410bbfd65097352270ebd22c13e8a7dabeb95
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 6 15:27:45 2018 +0200
+
+    Updated packaging files.
+
+ debian/changelog | 8 ++++++++
+ debian/control   | 2 +-
+ debian/copyright | 4 ++--
+ 3 files changed, 11 insertions(+), 3 deletions(-)
+
+commit 852d2b6cd3c399a7486ff0c6058c2d4eca5cfe6f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 20 18:18:44 2017 +0100
+
+    Minor build script updates.
+
+ CMakeLists.txt | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+commit 8224c3503149fe9cb5e6a930c01ef08e8f74f36a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 20 18:18:31 2017 +0100
+
+    libtool is not required for RPM build.
+
+ rpm/netperfmeter.spec | 1 -
+ 1 file changed, 1 deletion(-)
+
+commit d29a34506d9437cfd3e7d2f85d4e0185fd3145a4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Nov 19 11:53:22 2017 +0100
+
+    Consistency improvement.
+
+ debian/netperfmeter-plotting.install | 6 +++---
+ debian/pdfproctools.install          | 4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+commit 23f8fae39bb2812239533c9dcdd9eb3875476612
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 18 11:28:09 2017 +0100
+
+    Fixed comment.
+
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit cdf9900ed6fbb562d39c42a2a2f4c51a126a16e5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 30 21:17:46 2017 +0100
+
+    Updated FreeBSD port.
+
+ freebsd/netperfmeter/Makefile  |  2 +-
+ freebsd/netperfmeter/pkg-plist | 16 ++++++++--------
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+commit 1d00c4cf3f30be5a7634eeff5d010ca47368f5b7
+Merge: a5b5431 79ab7bc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 30 21:00:39 2017 +0100
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit a5b5431b85c66b0946acc82bd95ec85b8ee281e8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 30 21:00:14 2017 +0100
+
+    Removed obsolete file. It is in Wireshark now.
+
+ src/wireshark/packet-netperfmeter.c | 469 ------------------------------------
+ 1 file changed, 469 deletions(-)
+
+commit 79ab7bcaee6a32de7bc4dfdd0e0e6ae1e2d07edd
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 30 20:55:55 2017 +0100
+
+    Updated build scripts.
+
+ freebsd/netperfmeter/make-diff      | 2 +-
+ freebsd/netperfmeter/test-packaging | 1 -
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+commit c81f6d428cd695df5339d440631a97034a0280af
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 30 20:52:32 2017 +0100
+
+    Added missing file.
+
+ freebsd/netperfmeter/pkg-plist | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+
+commit 7949ad4f4d54d8a112a99b71e087c26e93c93289
+Merge: 967c27e 5994c08
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 30 20:49:22 2017 +0100
+
+    Merge branch 'master' of https://github.com/dreibh/netperfmeter
+
+commit 967c27e3031ff1dd7b15c0f06fac0c615ed9045f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 30 20:46:18 2017 +0100
+
+    Updated FreeBSD port.
+
+ freebsd/netperfmeter/Makefile | 28 ++++++++--------------------
+ 1 file changed, 8 insertions(+), 20 deletions(-)
+
+commit a4638a05c82ff52698f015ee3663f994f40e87b5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 30 20:44:37 2017 +0100
+
+    Improved script.
+
+ freebsd/netperfmeter/test-packaging | 26 ++++++++++++++++++--------
+ 1 file changed, 18 insertions(+), 8 deletions(-)
+
+commit 5994c08427034020632da67cb18f9b7d6ea7ea56
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 30 19:10:18 2017 +0100
+
+    Script update.
+
+ make-ppa | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+commit 8092bb31bfcca703651427cf19ef25b73ddf9cd2
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 29 20:45:00 2017 +0100
+
+    Updated FreeBSD port.
+
+ freebsd/netperfmeter/Makefile | 7 +++----
+ freebsd/netperfmeter/distinfo | 4 ++--
+ 2 files changed, 5 insertions(+), 6 deletions(-)
+
+commit d650aef632a0d032f5d4828cbbfd09eca81413e8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 29 20:33:02 2017 +0100
+
+    New release.
+
+ CMakeLists.txt   |  2 +-
+ ChangeLog        | 21 +++++++++++++++++++++
+ debian/changelog |  2 +-
+ 3 files changed, 23 insertions(+), 2 deletions(-)
+
 commit 3544920315affaa37ee14ce806dbd387eabee6ce
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Sun Oct 29 20:12:20 2017 +0100
