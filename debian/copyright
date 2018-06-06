@@ -1,10 +1,10 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: NetPerfMeter
 Upstream-Contact: Thomas Dreibholz <dreibh@iem.uni-due.de>
 Source: https://www.uni-due.de/~be0001/netperfmeter/
 
 Files: *
-Copyright: Copyright (C) 2009-2016 Thomas Dreibholz <dreibh@iem.uni-due.de>
+Copyright: Copyright (C) 2009-2018 Thomas Dreibholz <dreibh@iem.uni-due.de>
 License: GPL-3
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by

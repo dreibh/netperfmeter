@@ -8,7 +8,7 @@ Build-Depends: cmake,
                libbz2-dev (>= 1.0),
                libfile-fcntllock-perl,
                libsctp-dev (>= 1.0.5)
-Standards-Version: 3.9.7
+Standards-Version: 4.1.4
 
 Package: pdfproctools
 Architecture: all

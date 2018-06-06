@@ -1,3 +1,11 @@
+netperfmeter (1.7.7~rc1-1ubuntu1) xenial; urgency=low
+
+  * New upstream version.
+  * debian/control: updated standards version.
+  * debian/copyright: updated.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 06 Jun 2018 08:08:08 +0200
+
 netperfmeter (1.7.6-1ubuntu1) xenial; urgency=low
 
   * New upstream version.
