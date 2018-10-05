@@ -105,10 +105,10 @@ matrix:
     # ###### Fedora Linux ###################################################
 
     # ====== MacOS X ========================================================
-    - os: osx
-      osx_image: xcode9.4
-      compiler: clang
-      group: travis_latest
+    #- os: osx
+    #  osx_image: xcode9.4
+    #  compiler: clang
+    #  group: travis_latest
 
 
 before_install:
@@ -118,7 +118,7 @@ before_install:
        sudo docker ps
     elif [ "$TRAVIS_OS_NAME" = "osx" ] ; then
        brew update
-       brew install cmake
+       brew install bzip2
     fi
 
 
