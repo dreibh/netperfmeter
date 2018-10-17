@@ -1,5 +1,0 @@
-SUBDIRS = src
-
-ACLOCAL_AMFLAGS = -I m4
-
-EXTRA_DIST = AUTHORS BUGS COPYING ChangeLog INSTALL NEWS README README.FreeBSD bootstrap netperfmeter.lsm
