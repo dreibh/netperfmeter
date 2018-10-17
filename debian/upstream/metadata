@@ -1,0 +1,32 @@
+Name: NetPerfMeter
+Homepage: https://www.uni-due.de/~be0001/netperfmeter/
+Repository: https://github.com/dreibh/netperfmeter.git
+Repository-Browse: https://github.com/dreibh/netperfmeter
+Bug-Submit: https://github.com/dreibh/netperfmeter/issues
+Contact: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Security-Contact: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Reference:
+ -
+  Author: Thomas Dreibholz and Martin Becke and Hakim Adhari and Erwin Paul Rathgeb
+  Title: Evaluation of A New Multipath Congestion Control Scheme using the NetPerfMeter Tool-Chain
+  Year: 2011
+  Month: sep
+  Type: InProceedings
+  Booktitle: Proceedings of the 19th IEEE International Conference on Software, Telecommunications and Computer Networks (SoftCOM)
+  Eprint: https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/SoftCOM2011.pdf
+ -
+  Author: Thomas Dreibholz
+  Title: Evaluation and Optimisation of Multi-Path Transport using the Stream Control Transmission Protocol
+  Year: 2012
+  Month: mar
+  Type: Thesis
+  Eprint: https://duepublico.uni-duisburg-essen.de/servlets/DerivateServlet/Derivate-29737/Dre2012_final.pdf
+ -
+  Author: Thomas Dreibholz
+  Title: Evaluation and Optimisation of Multi-Path Transport using the Stream Control Transmission Protocol
+  Year: 2015
+  Month: sep
+  Type: Article
+  Journal: Multipath TCP Blog
+  URL: http://blog.multipath-tcp.org/blog/html/2015/09/07/netperfmeter.html
+Other-References: https://www.uni-due.de/~be0001/netperfmeter/
