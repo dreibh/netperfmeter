@@ -1,8 +1,8 @@
-include_directories(.)
+SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-#################################################
+#############################################################################
 # PROGRAMS
-#################################################
+#############################################################################
 
 ADD_EXECUTABLE(netperfmeter
 netperfmeter.cc ext_socket.h netperfmeterpackets.h thread.cc thread.h mutex.cc mutex.h tools.h tools.cc messagereader.h messagereader.cc control.h control.cc transfer.h transfer.cc outputfile.h outputfile.cc flowtrafficspec.h flowtrafficspec.cc flowbandwidthstats.h flowbandwidthstats.cc flow.h flow.cc cpustatus.h cpustatus.cc measurement.h measurement.cc defragmenter.h defragmenter.cc)
@@ -51,7 +51,6 @@ IF (BUILD_PLOT_PROGRAMS)
 ENDIF()
 
 IF (BUILD_TEST_PROGRAMS)
-   ADD_EXECUTABLE(rootshell
-   rootshell.c)
+   ADD_EXECUTABLE(rootshell rootshell.c)
    TARGET_LINK_LIBRARIES(rootshell)
 ENDIF()
