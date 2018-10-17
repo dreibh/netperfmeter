@@ -1,3 +1,13 @@
+netperfmeter (1.8.0-1ubuntu1) cosmic; urgency=low
+
+  * New upstream version.
+  * debian/control: updated standards version.
+  * debian/copyright: updated.
+  * debian/upstream/metadata: added metadata file.
+  * debian/tests/control: added tests control file.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 17 Oct 2018 08:08:08 +0200
+
 netperfmeter (1.7.7-1ubuntu1) xenial; urgency=low
 
   * New upstream version.
