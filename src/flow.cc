@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2019 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -440,7 +440,7 @@ void FlowManager::handleEvents(const unsigned long long now)
          if(CPUDisplayStats.getNumberOfCPUs() <= cpuDisplayLimit) {
             for(unsigned int i = 1; i <= CPUDisplayStats.getNumberOfCPUs(); i++) {
                const unsigned int load = (unsigned int)rint(10 * CPUDisplayStats.getCpuUtilization(i));
-               char str[32];
+               char str[48];
                snprintf((char*)&str, sizeof(str), "%s%s%3u.%u%%%s",
                         (i > 1) ? "/" : "",
                         (load < 900) ? colorCPU : colorCPUHighLoad,
