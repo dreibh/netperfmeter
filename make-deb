@@ -29,6 +29,7 @@
 # ---------------------------------------------------------------------------
 
 
+# ====== Obtain package and version information =============================
 DISTRIBUTIONS=`\
 ( \
 while [ x$1 != "x" ] ; do \
@@ -77,12 +78,16 @@ fi
 . ./debian.conf
 
 
-echo -e ""
-echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Calling wrap-and-sort ==========================================\x1b[0m"
-echo -e ""
-wrap-and-sort -a -v || true
+# ====== Run warp-and-sort tool =============================================
+if [ -e /usr/bin/wrap-and-sort ] ; then
+   echo -e ""
+   echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Calling wrap-and-sort ==========================================\x1b[0m"
+   echo -e ""
+   wrap-and-sort -a -v
+fi
 
 
+# ====== Create upstream source package =====================================
 echo -e ""
 echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Creating upstream package ======================================\x1b[0m"
 echo -e ""
@@ -123,6 +128,7 @@ echo -e "\x1b[34m==> Upstream package is ${UPSTREAM_PACKAGE} (type is ${UPSTREAM
 echo -e ""
 
 
+# ====== Sign upstream source package =======================================
 rm -f "${UPSTREAM_PACKAGE}.asc"
 if [ "${SKIP_PACKAGE_SIGNING}" != "" -a ! ${SKIP_PACKAGE_SIGNING} -eq 1 ] ; then
    echo -e ""
@@ -133,8 +139,9 @@ if [ "${SKIP_PACKAGE_SIGNING}" != "" -a ! ${SKIP_PACKAGE_SIGNING} -eq 1 ] ; then
 fi
 
 
+# ====== Build binary packages ==============================================
 echo -e ""
-echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Creating packages ==============================================\x1b[0m"
+echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Building binary packages =======================================\x1b[0m"
 for DISTRIBUTION in ${DISTRIBUTIONS} ; do
 
    echo -e ""
@@ -150,11 +157,11 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
    fi
    rm -rf ${PACKAGE}-${UPSTREAM_VERSION}
    rm -rf ${PACKAGE}-${UPSTREAM_VERSION}.orig
-   if [ "${UPSTREAM_PACKAGE_TYPE}" = "gz" ] ; then
+   if [ "${UPSTREAM_PACKAGE_TYPE}" == "gz" ] ; then
       tar xzf ${UPSTREAM_PACKAGE}
-   elif [ "${UPSTREAM_PACKAGE_TYPE}" = "bz2" ] ; then
+   elif [ "${UPSTREAM_PACKAGE_TYPE}" == "bz2" ] ; then
       tar xjf ${UPSTREAM_PACKAGE}
-   elif [ "${UPSTREAM_PACKAGE_TYPE}" = "xz" ] ; then
+   elif [ "${UPSTREAM_PACKAGE_TYPE}" == "xz" ] ; then
       tar xJf ${UPSTREAM_PACKAGE}
    else
       echo 2>&1 "ERROR: Bad archive format: ${UPSTREAM_PACKAGE}"
@@ -166,7 +173,7 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
    cd ${PACKAGE}-${UPSTREAM_VERSION}
 
    if [ "${DISTRIBUTION}" != "default" ] ; then
-      if [ "${DISTRIBUTION}" = "unstable" -o "${DISTRIBUTION}" = "testing" -o "${DISTRIBUTION}" = "stable" ] ; then
+      if [ "${DISTRIBUTION}" == "unstable" -o "${DISTRIBUTION}" == "testing" -o "${DISTRIBUTION}" == "stable" ] ; then
          # Debian: Also remove Launchpad Bug IDs.
          sed -e "s/${PACKAGE_DISTRIBUTION};/${DISTRIBUTION};/1" \
              -e "s/\(ubuntu\|ppa\)[0-9]//1" \
@@ -182,14 +189,14 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
              <debian/changelog | ../filter-empty-entries "$UBUNTU_LAST_ENTRY" >debian/changelog.new
 
          # ------ Old distributions not supporting c++/regex style symbols --
-         if [ "${DISTRIBUTION}" = "dapper"   -o \
-              "${DISTRIBUTION}" = "edgy"     -o \
-              "${DISTRIBUTION}" = "feisty"   -o \
-              "${DISTRIBUTION}" = "hardy"    -o \
-              "${DISTRIBUTION}" = "intrepid" -o \
-              "${DISTRIBUTION}" = "jaunty"   -o \
-              "${DISTRIBUTION}" = "karmic"   -o \
-              "${DISTRIBUTION}" = "lucid" ] ; then
+         if [ "${DISTRIBUTION}" == "dapper"   -o \
+              "${DISTRIBUTION}" == "edgy"     -o \
+              "${DISTRIBUTION}" == "feisty"   -o \
+              "${DISTRIBUTION}" == "hardy"    -o \
+              "${DISTRIBUTION}" == "intrepid" -o \
+              "${DISTRIBUTION}" == "jaunty"   -o \
+              "${DISTRIBUTION}" == "karmic"   -o \
+              "${DISTRIBUTION}" == "lucid" ] ; then
             # Just skip the symbols ...
             find debian/ -maxdepth 1 -name "*.symbols" | xargs --no-run-if-empty rm -f
          fi
@@ -201,12 +208,12 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
       mv debian/changelog.new debian/changelog
 
       # ------ Old distributions not supporting new Debian format -----------
-      if [ "${DISTRIBUTION}" = "dapper"   -o \
-           "${DISTRIBUTION}" = "edgy"     -o \
-           "${DISTRIBUTION}" = "feisty"   -o \
-           "${DISTRIBUTION}" = "hardy"    -o \
-           "${DISTRIBUTION}" = "intrepid" -o \
-           "${DISTRIBUTION}" = "jaunty" ] ; then
+      if [ "${DISTRIBUTION}" == "dapper"   -o \
+           "${DISTRIBUTION}" == "edgy"     -o \
+           "${DISTRIBUTION}" == "feisty"   -o \
+           "${DISTRIBUTION}" == "hardy"    -o \
+           "${DISTRIBUTION}" == "intrepid" -o \
+           "${DISTRIBUTION}" == "jaunty" ] ; then
          rm -rf debian/source
       fi
       # ---------------------------------------------------------------------
@@ -241,7 +248,7 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
    # Use -i to ignore .svn files!
 
 
-   if [ "${SKIP_PACKAGE_SIGNING}" = "" ] ; then
+   if [ "${SKIP_PACKAGE_SIGNING}" == "" ] ; then
       SKIP_PACKAGE_SIGNING=0
    fi
    if [ ${SKIP_PACKAGE_SIGNING} -eq 1 ] ; then
@@ -258,11 +265,11 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
 
    cd ..
 
-   if [ "${DISTRIBUTION}" = "unstable" -o \
-        "${DISTRIBUTION}" = "testing"  -o \
-        "${DISTRIBUTION}" = "stable"   -o \
-        "${DISTRIBUTION}" = "default" ] ; then
-      if [ "${DISTRIBUTION}" = "default" ] ; then
+   if [ "${DISTRIBUTION}" == "unstable" -o \
+        "${DISTRIBUTION}" == "testing"  -o \
+        "${DISTRIBUTION}" == "stable"   -o \
+        "${DISTRIBUTION}" == "default" ] ; then
+      if [ "${DISTRIBUTION}" == "default" ] ; then
          version=${PACKAGE_VERSION}
       else
          version=${DEBIAN_VERSION}
@@ -279,18 +286,18 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
 done
 
 
-
+# ====== Show results =======================================================
 echo -e ""
 echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Command overview ===============================================\x1b[0m"
 echo -e ""
 
 echo -e "\x1b[34mUpload to PPA:\x1b[0m"
 for DISTRIBUTION in ${DISTRIBUTIONS} ; do
-   if [ "${DISTRIBUTION}" = "unstable" -o \
-        "${DISTRIBUTION}" = "testing"  -o \
-        "${DISTRIBUTION}" = "stable"   -o \
-        "${DISTRIBUTION}" = "default" ] ; then
-      if [ "${DISTRIBUTION}" = "default" ] ; then
+   if [ "${DISTRIBUTION}" == "unstable" -o \
+        "${DISTRIBUTION}" == "testing"  -o \
+        "${DISTRIBUTION}" == "stable"   -o \
+        "${DISTRIBUTION}" == "default" ] ; then
+      if [ "${DISTRIBUTION}" == "default" ] ; then
          ppa="revu"
          version=${PACKAGE_VERSION}
       else
@@ -306,8 +313,6 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
 done
 echo -e ""
 
-
-
 if [ -e make-symbols ] ; then
    echo -e "\x1b[34m################################################################\x1b[0m"
    echo -e "\x1b[34mDo not forget to run make-symbols after library version changes!\x1b[0m"
@@ -317,11 +322,11 @@ fi
 
 echo -e "\x1b[34mBuild Test Commands:\x1b[0m"
 for DISTRIBUTION in ${DISTRIBUTIONS} ; do
-   if [ "${DISTRIBUTION}" = "unstable" -o \
-        "${DISTRIBUTION}" = "testing"  -o \
-        "${DISTRIBUTION}" = "stable"   -o \
-        "${DISTRIBUTION}" = "default" ] ; then
-      if [ "${DISTRIBUTION}" = "default" ] ; then
+   if [ "${DISTRIBUTION}" == "unstable" -o \
+        "${DISTRIBUTION}" == "testing"  -o \
+        "${DISTRIBUTION}" == "stable"   -o \
+        "${DISTRIBUTION}" == "default" ] ; then
+      if [ "${DISTRIBUTION}" == "default" ] ; then
          version=${PACKAGE_VERSION}
       else
          version=${DEBIAN_VERSION}
