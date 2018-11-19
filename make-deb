@@ -280,7 +280,7 @@ done
 
 # ====== Show results =======================================================
 echo -e ""
-echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Command overview ===============================================\x1b[0m"
+echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Results overview ============================================\x1b[0m"
 echo -e ""
 
 echo -e "\x1b[34mUpload to PPA:\x1b[0m"
