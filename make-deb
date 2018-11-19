@@ -91,16 +91,12 @@ fi
 echo -e ""
 echo -e "\x1b[34m`date +%FT%H:%M:%S`: ====== Creating upstream package ======================================\x1b[0m"
 echo -e ""
-UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "${PACKAGE}-*.gz" -printf '%f'`"
-UPSTREAM_PACKAGE_TYPE="gz"
-if [ ! -e "${UPSTREAM_PACKAGE}" ] ; then
-   UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "${PACKAGE}-*.bz2" -printf '%f'`"
-   UPSTREAM_PACKAGE_TYPE="bz2"
-   if [ ! -e "${UPSTREAM_PACKAGE}" ] ; then
-      UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "${PACKAGE}-*.xz" -printf '%f'`"
-      UPSTREAM_PACKAGE_TYPE="xz"
+for UPSTREAM_PACKAGE_TYPE in xz bz2 gz ; do
+   UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "${PACKAGE}-*.${UPSTREAM_PACKAGE_TYPE}" -printf '%f'`"
+   if [ -e "${UPSTREAM_PACKAGE}" ] ; then
+      break
    fi
-fi
+done
 if [ ! -e "${UPSTREAM_PACKAGE}" ]; then
    rm -f ${PACKAGE}-*.gz ${PACKAGE}"_"*.gz ${PACKAGE}-*.bz2 ${PACKAGE}"_"*.bz2 ${PACKAGE}-*.xz ${PACKAGE}"_"*.xz
    echo -e "\x1b[34m------ Running MAKE_DIST ... ------\x1b[0m"
@@ -108,16 +104,12 @@ if [ ! -e "${UPSTREAM_PACKAGE}" ]; then
    eval "$MAKE_DIST"
 
    echo -e "\x1b[34m------ Looking for upstream package ... ------\x1b[0m"
-   UPSTREAM_PACKAGE="`find . -maxdepth 1 -name ${PACKAGE}-*.gz -printf '%f'`"
-   UPSTREAM_PACKAGE_TYPE="gz"
-   if [ ! -e "${UPSTREAM_PACKAGE}" ] ; then
-      UPSTREAM_PACKAGE="`find . -maxdepth 1 -name ${PACKAGE}-*.bz2 -printf '%f'`"
-      UPSTREAM_PACKAGE_TYPE="bz2"
-      if [ ! -e "${UPSTREAM_PACKAGE}" ] ; then
-         UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "${PACKAGE}-*.xz" -printf '%f'`"
-         UPSTREAM_PACKAGE_TYPE="xz"
+   for UPSTREAM_PACKAGE_TYPE in xz bz2 gz ; do
+      UPSTREAM_PACKAGE="`find . -maxdepth 1 -name "${PACKAGE}-*.${UPSTREAM_PACKAGE_TYPE}" -printf '%f'`"
+      if [ -e "${UPSTREAM_PACKAGE}" ] ; then
+         break
       fi
-   fi
+   done
    if [ ! -e "${UPSTREAM_PACKAGE}" ] ; then
       echo -e "\x1b[34mERROR: No upstream package (${PACKAGE}-*, type ${UPSTREAM_PACKAGE_TYPE}) found!\x1b[0m"
       exit 1
