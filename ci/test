@@ -27,15 +27,17 @@ if [ "$TRAVIS_OS_NAME" = "linux" ] ; then
       CHANGELOG_HEADER="`head -n1 debian/changelog`"
       PACKAGE=`echo ${CHANGELOG_HEADER} | sed -e "s/(.*//" -e "s/ //g"`
       PACKAGE_VERSION=`echo ${CHANGELOG_HEADER} | sed -e "s/.*(//" -e "s/).*//" -e "s/ //g" -e "s/ //g" -e "s/^[0-9]://g"`
+      OUTPUT_VERSION=`echo ${PACKAGE_VERSION}   | sed -e "s/\(ubuntu\|ppa\)[0-9]*$/\1/"`
+      DEBIAN_VERSION=`echo ${OUTPUT_VERSION}    | sed -e "s/\(ubuntu\|ppa\)$//1"`
 
       packages=""
       if [ $#  -eq 0 ] ; then
-         echo "Looking for *${PACKAGE_VERSION}*.deb in /var/cache/pbuilder/result ..."
-         packages="`sudo docker exec ubuntu-test env LANG=C.UTF-8 find /var/cache/pbuilder/result -name "*${PACKAGE_VERSION}*.deb"`"
+         echo "Looking for *${DEBIAN_VERSION}*.deb in /var/cache/pbuilder/result ..."
+         packages="`sudo docker exec ubuntu-test env LANG=C.UTF-8 find /var/cache/pbuilder/result -name "*${DEBIAN_VERSION}*.deb"`"
       fi
       while [ $# -gt 0 ] ; do
-         echo "Looking for $1*${PACKAGE_VERSION}*.deb in /var/cache/pbuilder/result ..."
-         packages="${packages} `sudo docker exec ubuntu-test env LANG=C.UTF-8 find /var/cache/pbuilder/result -name "$1*${PACKAGE_VERSION}*.deb"`"
+         echo "Looking for $1*${DEBIAN_VERSION}*.deb in /var/cache/pbuilder/result ..."
+         packages="${packages} `sudo docker exec ubuntu-test env LANG=C.UTF-8 find /var/cache/pbuilder/result -name "$1*${DEBIAN_VERSION}*.deb"`"
          shift
       done
       packages=`echo "${packages}" | xargs -n1 | sort -u | xargs`
