@@ -32,7 +32,6 @@ make install DESTDIR=%{buildroot}
 rm -rf "$RPM_BUILD_ROOT"
 
 %files
-%defattr(-,root,root,-)
 %{_bindir}/combinesummaries
 %{_bindir}/createsummary
 %{_bindir}/extractvectors
