@@ -1,10 +1,10 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0.2)
 PROJECT(netperfmeter LANGUAGES C CXX)
 
-set(BUILD_MAJOR "1")
-set(BUILD_MINOR "8")
-set(BUILD_PATCH "1~rc1.0")
-set(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
+SET(BUILD_MAJOR "1")
+SET(BUILD_MINOR "8")
+SET(BUILD_PATCH "1~rc1.0")
+SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
 #############################################################################
