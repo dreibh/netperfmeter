@@ -41,15 +41,15 @@ rm -rf "$RPM_BUILD_ROOT"
 %{_bindir}/pdfmetadata
 %{_bindir}/plot-netperfmeter-results
 %{_bindir}/runtimeestimator
-%{_datadir}/man/man1/combinesummaries.1.gz
-%{_datadir}/man/man1/createsummary.1.gz
-%{_datadir}/man/man1/extractvectors.1.gz
-%{_datadir}/man/man1/getabstime.1.gz
-%{_datadir}/man/man1/netperfmeter.1.gz
-%{_datadir}/man/man1/pdfembedfonts.1.gz
-%{_datadir}/man/man1/pdfmetadata.1.gz
-%{_datadir}/man/man1/plot-netperfmeter-results.1.gz
-%{_datadir}/man/man1/runtimeestimator.1.gz
+%{_mandir}/man1/combinesummaries.1.gz
+%{_mandir}/man1/createsummary.1.gz
+%{_mandir}/man1/extractvectors.1.gz
+%{_mandir}/man1/getabstime.1.gz
+%{_mandir}/man1/netperfmeter.1.gz
+%{_mandir}/man1/pdfembedfonts.1.gz
+%{_mandir}/man1/pdfmetadata.1.gz
+%{_mandir}/man1/plot-netperfmeter-results.1.gz
+%{_mandir}/man1/runtimeestimator.1.gz
 %{_datadir}/netperfmeter/plot-netperfmeter-results.R
 %{_datadir}/netperfmeter/plotter.R
 
