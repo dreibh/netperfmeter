@@ -1,4 +1,4 @@
-netperfmeter (1.8.1~rc1.0-1ubuntu1) disco; urgency=low
+netperfmeter (1.8.1-1ubuntu1) disco; urgency=medium
 
   * New upstream version.
   * debian/control: updated standards version.
