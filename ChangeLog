@@ -1,3 +1,9 @@
+commit 48e84698324d4e6f220661038213734e3e7cbf76
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 22 11:03:30 2019 +0200
+
+    New release netperfmeter-1.8.2.
+
 commit c1303286ded3f0b68098a1e027b9857837fc1c7e
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Mon Jul 22 10:14:46 2019 +0200
