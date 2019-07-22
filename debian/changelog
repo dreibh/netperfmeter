@@ -1,3 +1,10 @@
+netperfmeter (1.8.2~alpha1.0-1ubuntu1) disco; urgency=medium
+
+  * New upstream release
+  * Renamed pdfmetadata to setpdfmetadata (Closes: #914333).
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Mon, 22 Jul 2019 09:59:56 +0200
+
 netperfmeter (1.8.1-1ubuntu1) disco; urgency=medium
 
   * New upstream version.
