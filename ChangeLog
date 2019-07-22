@@ -1,3 +1,63 @@
+commit c1303286ded3f0b68098a1e027b9857837fc1c7e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 22 10:14:46 2019 +0200
+
+    Dependency update.
+
+commit b3257e0f3b24ec3857dbf24ae2e8840750c9d407
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 22 10:05:18 2019 +0200
+
+    Minor updates.
+
+commit 3ed0ff72caec7656eb10efe730ee7e75529d0a7d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 22 09:59:09 2019 +0200
+
+    Improved RPM spec file.
+
+commit 53e7db7bad90c9ae3c0d3fae70cc85fd78290357
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 22 09:58:22 2019 +0200
+
+    Renamed pdfmetadata to setpdfmetadata to fix Debian Bug #914333.
+
+commit 6ea3a87a387b4927327ad51593d9e038a6f83b94
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 27 21:35:44 2019 +0200
+
+    CI script update.
+
+commit dc6166c72b8871eaf6cf2c22af3ebb0babca7a74
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 27 21:34:54 2019 +0200
+
+    Build script update.
+
+commit 7a9dba682809b966552c2997ecb2c60cdb77ba8d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 24 17:24:16 2019 +0200
+
+    Updated build scripts.
+
+commit e5b72d12f3f8c7de75637ed5bd10da3c3d8b88e8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 13 12:56:13 2019 +0200
+
+    Improved build script.
+
+commit 366ded42155b0d0b236979a21568985c387d128b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 21 17:22:10 2019 +0200
+
+    An update.
+
+commit 53176e87819ce2e3aba4549ea89437ce0862945a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 21 16:51:34 2019 +0200
+
+    New release 1.8.1.
+
 commit a9cc133281181f011f38f7ce151ef0e2945b746e
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Tue May 21 16:40:24 2019 +0200
