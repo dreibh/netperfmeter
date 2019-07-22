@@ -58,8 +58,8 @@ Summary: PDF Processing Tools
 Group: Applications/Internet
 BuildArch: noarch
 Requires: ghostscript
-Requires: libpdf-api2-perl
 Requires: perl >= 5.8.0
+Requires: perl-PDF-API2
 Requires: qpdf
 
 %description pdfproctools
