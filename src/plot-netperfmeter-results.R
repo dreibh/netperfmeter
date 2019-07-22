@@ -367,7 +367,7 @@ if(!plotOwnFile) {
    closePDFMetadata()
 
    # ------ Add PDF outlines and meta data ----------------------------------
-   cmd1 <- paste(sep="", "pdfmetadata ", pdfFileName, " ", pdfFileName, ".meta ", pdfFilePrefix, "-TEMP2.pdf",
+   cmd1 <- paste(sep="", "setpdfmetadata ", pdfFileName, " ", pdfFileName, ".meta ", pdfFilePrefix, "-TEMP2.pdf",
                          " || mv ", pdfFileName, " ", pdfFilePrefix, "-TEMP2.pdf")
 #    cat(cmd1,"\n")
    ret1 <- system(cmd1)

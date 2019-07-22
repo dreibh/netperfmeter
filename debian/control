@@ -23,7 +23,7 @@ Depends: ghostscript,
 Description: PDF Processing Tools
  This package contains tools for PDF file processing.
  .
- PDFMetadata updates the metadata of a PDF file. In particular, it can be
+ SetPDFMetadata updates the metadata of a PDF file. In particular, it can be
  used to add outlines (bookmarks) to a document. Furthermore, it can set the
  document properties (e.g. author, title, keywords, creator, producer).
  .
@@ -52,6 +52,7 @@ Architecture: any
 Depends: ${misc:Depends},
          ${shlibs:Depends}
 Recommends: bc,
+            hipercontracer,
             iputils-ping,
             iputils-tracepath,
             netperfmeter-plotting,

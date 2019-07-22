@@ -18,21 +18,21 @@
 .\"
 .\" ###### Setup ############################################################
 .Dd May 18, 2017
-.Dt pdfmetadata 1
-.Os pdfmetadata
+.Dt setpdfmetadata 1
+.Os setpdfmetadata
 .\" ###### Name #############################################################
 .Sh NAME
-.Nm pdfmetadata
+.Nm setpdfmetadata
 .Nd PDF Metadata Updater
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm pdfmetadata
+.Nm setpdfmetadata
 .Op Input PDF
 .Op Metadata
 .Op Output PDF
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
-.Nm pdfmetadata
+.Nm setpdfmetadata
 is tool to add and update the metadata of a PDF file. In particular, it can
 be used to add outlines (bookmarks) to a document. Furthermore, it can set
 the document properties (e.g. author, title,  keywords, creator, producer).
@@ -71,9 +71,9 @@ The output PDF file name.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
-A pdfmetadata usage example:
+A setpdfmetadata usage example:
 .Bl -tag -width indent
-.It pdfmetadata MyDocument.pdf MyMetadata.meta MyDocument-Updated.pdf
+.It setpdfmetadata MyDocument.pdf MyMetadata.meta MyDocument-Updated.pdf
 .El
 .br
 A metadata example:
@@ -90,7 +90,7 @@ author John Smith
 .br
 title An Example Document
 .br
-keywords Example, PDF, pdfmetadata
+keywords Example, PDF, setpdfmetadata
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
