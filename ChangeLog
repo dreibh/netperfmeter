@@ -1,3 +1,21 @@
+commit c213c635c84197963631f1cfef7292401309d902
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jul 26 11:42:17 2019 +0200
+
+    Using Tar/XZ for archive.
+
+commit 39b48cdb5e12319cd0b03c46242e3ef4ad9a03a0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 22 11:06:53 2019 +0200
+
+    Updated LSM entry.
+
+commit ce2b45ba4898c1ef70e0c4019d401b8eca3d5ae1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 22 11:03:52 2019 +0200
+
+    Updated ChangeLog.
+
 commit 48e84698324d4e6f220661038213734e3e7cbf76
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Mon Jul 22 11:03:30 2019 +0200

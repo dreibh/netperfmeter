@@ -1,3 +1,9 @@
+netperfmeter (1.8.3-1ubuntu1) disco; urgency=medium
+
+  * New upstream release.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 26 Jul 2019 12:08:26 +0200
+
 netperfmeter (1.8.2-1ubuntu1) disco; urgency=medium
 
   * New upstream release
