@@ -2,9 +2,10 @@
 # $FreeBSD: head/benchmarks/netperfmeter/Makefile 429903 2016-12-29 12:50:33Z amdmi3 $
 
 PORTNAME=	netperfmeter
-PORTVERSION=	1.8.0
+PORTVERSION=	1.8.3
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.uni-due.de/~be0001/netperfmeter/download/
+EXTRACT_SUFX=	.tar.xz
 
 MAINTAINER=	dreibh@iem.uni-due.de
 COMMENT=	Network Performance Meter
