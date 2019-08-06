@@ -1,6 +1,6 @@
-/usr/bin/combinesummaries
-/usr/bin/createsummary
-/usr/bin/extractvectors
-/usr/bin/getabstime
-/usr/bin/netperfmeter
-/usr/bin/runtimeestimator
+usr/bin/combinesummaries
+usr/bin/createsummary
+usr/bin/extractvectors
+usr/bin/getabstime
+usr/bin/netperfmeter
+usr/bin/runtimeestimator
