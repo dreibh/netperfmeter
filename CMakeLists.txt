@@ -112,14 +112,6 @@ ENDIF()
 OPTION(BUILD_TEST_PROGRAMS "Build test programs" 0)
 OPTION(BUILD_PLOT_PROGRAMS "Build plot programs" 0)
 
-# Debug build type as default
-IF (NOT CMAKE_BUILD_TYPE)
-    MESSAGE(STATUS "No build type selected, using DEBUG")
-    SET(CMAKE_BUILD_TYPE "DEBUG")
-    # _FORTIFY_SOURCE requires compiling with optimization
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O")
-ENDIF()
-
 
 #############################################################################
 # REQUIREMENTS
