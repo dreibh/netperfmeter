@@ -105,6 +105,8 @@ This package contains a plotting program for the results.
 %changelog
 * Wed Aug 07 2019 Thomas Dreibholz <dreibh@iem.uni-due.de> - 1.8.4
 - New upstream release.
+* Wed Aug 07 2019 Thomas Dreibholz <dreibh@iem.uni-due.de> - 1.8.4
+- New upstream release.
 * Fri Jul 26 2019 Thomas Dreibholz <dreibh@iem.uni-due.de> - 1.8.3
 - New upstream release.
 * Mon Jul 22 2019 Thomas Dreibholz <dreibh@iem.uni-due.de> - 1.8.2
