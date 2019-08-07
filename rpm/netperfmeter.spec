@@ -2,7 +2,7 @@ Name: netperfmeter
 Version: 1.8.4~rc1.0
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
-License: GPL-3.0
+License: GPL-3+
 Group: Applications/Internet
 URL: https://www.uni-due.de/~be0001/netperfmeter/
 Source: https://www.uni-due.de/~be0001/netperfmeter/download/%{name}-%{version}.tar.xz
