@@ -1,8 +1,9 @@
-netperfmeter (1.8.4-1ubuntu1) disco; urgency=medium
+netperfmeter (1.8.4~alpha1.0-1ubuntu1) disco; urgency=medium
 
-  * New upstream release (Closes: #914333).
+  * New upstream release.
+  * Closes: #914333 (ITP).
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 07 Aug 2019 17:40:55 +0200
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 07 Aug 2019 18:05:59 +0200
 
 netperfmeter (1.8.3-1ubuntu1) disco; urgency=medium
 
