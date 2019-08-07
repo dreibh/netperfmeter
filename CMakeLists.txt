@@ -3,7 +3,7 @@ PROJECT(netperfmeter LANGUAGES C CXX)
 
 SET(BUILD_MAJOR "1")
 SET(BUILD_MINOR "8")
-SET(BUILD_PATCH "4")
+SET(BUILD_PATCH "4~alpha1.0")
 SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
@@ -31,6 +31,7 @@ ADD_CUSTOM_TARGET(dist COMMAND ${CMAKE_MAKE_PROGRAM} clean package_source)
 
 INCLUDE(CheckIncludeFile)
 INCLUDE(CheckStructHasMember)
+INCLUDE(CheckCCompilerFlag)
 
 
 #############################################################################
@@ -221,6 +222,12 @@ IF (CMAKE_BUILD_TYPE MATCHES DEBUG)
     MESSAGE(STATUS "Building in DEBUG mode")
     # _FORTIFY_SOURCE requires compiling with optimization
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O")
+ENDIF()
+
+CHECK_C_COMPILER_FLAG(-Wno-address-of-packed-member HAS_WNO_ADDRESS_OF_PACKED_MEMBER)
+IF (HAS_WNO_ADDRESS_OF_PACKED_MEMBER)
+   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
+   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
 ENDIF()
 
 
