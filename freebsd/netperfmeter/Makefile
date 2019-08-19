@@ -12,7 +12,7 @@ COMMENT=	Network Performance Meter
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
-USES=		tar:xz cmake shebangfix
+USES=		cmake shebangfix tar:xz
 
 CMAKE_ARGS+=	-DCMAKE_INSTALL_MANDIR=${PREFIX}/man -DWITH_NEAT=0 -DBUILD_TEST_PROGRAMS=0 -DBUILD_PLOT_PROGRAMS=1
 SHEBANG_FILES=	src/pdfembedfonts src/setpdfmetadata src/plot-netperfmeter-results
