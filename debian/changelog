@@ -1,10 +1,10 @@
-netperfmeter (1.8.5~rc0-1ubuntu1) eoan; urgency=high
+netperfmeter (1.8.5-1ubuntu1) eoan; urgency=medium
 
   * New upstream release.
   * Renamed pdfmetadata to setpdfmetadata (Closes: #914333).
   * Added missing test script (Closes: #914336).
 
- -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 10 Sep 2019 10:07:01 +0300
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 10 Sep 2019 14:46:09 +0300
 
 netperfmeter (1.8.4-1ubuntu1) disco; urgency=medium
 

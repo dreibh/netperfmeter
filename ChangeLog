@@ -1,3 +1,177 @@
+commit 7d2fb801e8edbdf6ab6c31349d6ef91825410625
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Sep 10 12:29:36 2019 +0300
+
+    Another Travis CI update.
+
+commit 09da3baa9743bd4ec85815d48e518b39baa83f59
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Sep 10 12:14:25 2019 +0300
+
+    Trying Travis CI caching.
+
+commit 18b8f2a74f54a72352964766e468dfd7f17ad5c8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Sep 10 12:10:44 2019 +0300
+
+    Minor update.
+
+commit a763834f6e6a317075c8858958a05eff998c31cc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Sep 10 12:10:40 2019 +0300
+
+    Updated build scripts
+
+commit 162d318467613e0026a879395bd24ffdd24ffaf1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Sep 10 10:09:34 2019 +0300
+
+    Version bump.
+
+commit 924c24399a86976e74225094e43bf8304faa6022
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Sep 10 10:06:41 2019 +0300
+
+    Fixed broken DCCP detection in CMakeLists.txt.
+
+commit f1eb311a70699038c0b9041dd3cf94dc5dc0874b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Sep 10 10:06:31 2019 +0300
+
+    Added test.
+
+commit 1cc8d6bc547f258aa67b3706e649a6649b951e92
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Sep 5 17:36:45 2019 +0200
+
+    Updated build scripts
+
+commit 08d217badd43ff6f85f87a918d042c1bef9e7d8a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Sep 4 21:04:56 2019 +0200
+
+    Updated FreeBSD packaging files.
+
+commit 32a41a30dfe361f09d7cc44010f54955055fa39d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 21 17:20:24 2019 +0200
+
+    Replaced shebang "#!/bin/bash" by "#!/usr/bin/env bash" for compatibility with FreeBSD.
+
+commit 9786286563c34a4e6f8eba5fbacf59785e4f52b0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 21 17:19:06 2019 +0200
+
+    Minor update.
+
+commit ee5833ac2d3eaae6f62b36a444f050ecd931beeb
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 21 17:14:52 2019 +0200
+
+    Updated build scripts.
+
+commit fdcbb936985b752c101b7b61a8dec836f25e8e2d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 21 17:14:50 2019 +0200
+
+    Updated Travis CI configuration.
+
+commit 8435f6852bd761287051bb00e70fe90d28386935
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 21 17:14:21 2019 +0200
+
+    Updated CI scripts.
+
+commit 182d5906a422cf0e370a8a4a26445db786977351
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 19 23:26:20 2019 +0200
+
+    Updated Travis CI configuration.
+
+commit 004256773f9ca822e242502fa80fce3b4ed31f4f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 19 11:27:05 2019 +0200
+
+    Updated build helper script.
+
+commit 5ca222d9f4f76cef36a1a36d29f363f881b0f500
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 19 11:01:04 2019 +0200
+
+    Updated build helper script.
+
+commit 312557492c953281f873bfce49c6a33c26d04b26
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 19 10:03:54 2019 +0200
+
+    FreeBSD port updates.
+
+commit 4f88b458668338b2b8c9567357cd5dd42b14e575
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 19 09:48:46 2019 +0200
+
+    Updated build scripts.
+
+commit 9b503cf22c0c3f5d0680a0a259a82da011ed3f0b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Aug 17 22:50:12 2019 +0200
+
+    Updated Travis CI configuration.
+
+commit 810678410a6000f68ad7b8be5a174058d4d0f687
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Aug 17 22:44:07 2019 +0200
+
+    Updated CI scripts.
+
+commit f6491b076be6ea6e4fd63499ae9a095357e6764e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Aug 17 22:43:29 2019 +0200
+
+    Updated Travis CI configuration.
+
+commit 139716ee2c8f9ad7138fc86da61b679da89918c6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 14 11:27:33 2019 +0200
+
+    Removed obsolete helper scripts.
+
+commit e1992d2eb89e979ffe41b85f364c9972f7bf717a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 12 10:58:42 2019 +0200
+
+    Updated FreeBSD port files.
+
+commit e7d9f5d13b4dea0786d7e3588235005f2a2ef283
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Aug 12 09:05:37 2019 +0200
+
+    Improved Travis CI configuration.
+
+commit 15b0e90400be0b0b34f6c99d87204674b2d5b8dd
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Aug 8 14:05:25 2019 +0200
+
+    Build script update.
+
+commit f0dcd8f04da13b307839ec68276107fa9b592cde
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 7 18:22:33 2019 +0200
+
+    Updated distinfo.
+
+commit 5422ada3414734c072f36fe1b903f256b0974e79
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 7 18:22:03 2019 +0200
+
+    Updated LSM entry.
+
+commit 870b58d1d6d4da3a201a32215f4dab8bdcfd60e5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 7 18:14:17 2019 +0200
+
+    New release netperfmeter-1.8.4.
+
 commit 1672b8d27afac6633fba0e985f320280da9d4d02
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Wed Aug 7 18:14:05 2019 +0200
