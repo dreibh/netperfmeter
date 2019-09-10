@@ -1,6 +1,7 @@
 netperfmeter (1.8.5~rc0-1ubuntu1) eoan; urgency=high
 
   * New upstream release.
+  * Renamed pdfmetadata to setpdfmetadata (Closes: #914333).
   * Added missing test script (Closes: #914336).
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 10 Sep 2019 10:07:01 +0300
