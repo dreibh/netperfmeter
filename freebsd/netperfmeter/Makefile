@@ -2,7 +2,7 @@
 # $FreeBSD: head/benchmarks/netperfmeter/Makefile 510673 2019-09-01 01:46:45Z yuri $
 
 PORTNAME=	netperfmeter
-PORTVERSION=	1.8.4
+PORTVERSION=	1.8.5~rc0
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.uni-due.de/~be0001/netperfmeter/download/
 
