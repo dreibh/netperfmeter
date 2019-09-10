@@ -175,8 +175,8 @@ find_package(BZip2 REQUIRED)
 
 
 # ###### IEEE Floating-Point ################################################
-include(CheckCSourceRuns)
-check_c_source_runs("
+INCLUDE(CheckCSourceRuns)
+CHECK_C_SOURCE_RUNS("
 #include <stdio.h>
 
 union DoubleIntUnion
@@ -208,6 +208,24 @@ USES_IEEEFP_FP)
 
 IF (USES_IEEEFP_FP)
    ADD_DEFINITIONS(-DHAVE_IEEE_FP)
+ENDIF()
+
+
+# ###### DCCP support #######################################################
+CHECK_C_SOURCE_RUNS("
+#include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+int main (int argc, char** argv)
+{
+   volatile int proto = IPPROTO_DCCP;
+   return(0);
+}"
+HAVE_DCCP)
+
+IF (HAVE_DCCP)
+   ADD_DEFINITIONS(-DHAVE_DCCP)
 ENDIF()
 
 
