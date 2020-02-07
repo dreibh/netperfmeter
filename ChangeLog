@@ -1,3 +1,111 @@
+commit 07c9b5400fdfc963d95123424916ba01566bca15
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 7 13:18:53 2020 +0100
+
+    Updated Debian standards version.
+
+commit 31f3625e48006ffe91c74280a866efd5a7436394
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Feb 7 12:50:18 2020 +0100
+
+    Updated build scripts
+
+commit 2a98804b0a579b746483f8414530d282f34e5474
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 5 14:27:06 2019 +0100
+
+    Version bump.
+
+commit 5f763786e989c8e11b5f624465df65c44d196c79
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 5 13:37:12 2019 +0100
+
+    Updated Travis CI configuration: updated FreeBSD releases.
+
+commit 202918b47901f82369fab0966cefacd653044094
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 5 13:19:18 2019 +0100
+
+    Updated Travis CI configuration: added Ubuntu 20.04.
+
+commit 794222032469ec6f0df0bda4c9f3a3a169bd3fa6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 5 12:32:12 2019 +0100
+
+    Updated Travis CI configuration: removed Fedora 29, added Fedora 31.
+
+commit caae69e8d0d14dd467335de2c6157035706a9daa
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 5 12:13:35 2019 +0100
+
+    Header updates.
+
+commit 1b6990a82ef1110c2d30d9b615d9f099982f261d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 5 12:09:42 2019 +0100
+
+    Updated build scripts
+
+commit f06cca1ffdd7f0aaadb2351fc42ff0ced1f676f1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 5 12:09:42 2019 +0100
+
+    Updated build scripts
+
+commit 601754fa70f84f703539721e1ede30ce84601851
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 5 12:06:18 2019 +0100
+
+    Removed obsolete files.
+
+commit 1728ea7c0a3436d8d3541f0535cb8f94f05094c6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 28 14:41:24 2019 +0100
+
+    Updated Debian/Ubuntu packaging files.
+
+commit 1faf35ad65ed6597f0d37f438ea194caa6656868
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 18 12:26:40 2019 +0200
+
+    Updated build scripts
+
+commit f024191f0acba3731a4efb1d91c998a7dd9c2633
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Oct 16 14:50:15 2019 +0200
+
+    Fedora 28 is obsolete -> removed from Travis CI configuration.
+
+commit 66fedb5ad0009cd1860dbeebae88c6f35961c445
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Oct 16 13:52:29 2019 +0200
+
+    Updated build scripts
+
+commit 2d6fe2007b0d180d8a5ade9fc594318d0ad5d962
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Sep 13 12:40:33 2019 +0300
+
+    Updated build scripts
+
+commit d51430f42e6a6fbb185852aca64b738e1fb21b18
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Sep 10 15:24:46 2019 +0300
+
+    Updated Travis CI configuration.
+
+commit 4ec4270cacb7a3d726952fe857dc63e8864a374e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Sep 10 14:48:56 2019 +0300
+
+    Updated LSM entry.
+
+commit 949c97f3b31a43ef86f2575987114e3fc04fcc0e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Sep 10 14:46:12 2019 +0300
+
+    New release netperfmeter-1.8.5.
+
 commit 7d2fb801e8edbdf6ab6c31349d6ef91825410625
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Tue Sep 10 12:29:36 2019 +0300
