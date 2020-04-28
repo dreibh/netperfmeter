@@ -30,9 +30,12 @@
 #include <assert.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/sysctl.h>
+#ifdef __linux__
+#include <linux/sysctl.h>
+#endif
 #ifdef __FreeBSD__
 #include <sys/proc.h>
+#include <sys/sysctl.h>
 #endif
 #ifdef __APPLE__
 #include <mach/mach.h>
