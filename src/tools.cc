@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2020 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -497,7 +497,7 @@ void printAddress(std::ostream&          os,
 
 
 /* ###### Get protocol name ############################################## */
-const char* getProtocolName(const uint8_t protocol)
+const char* getProtocolName(const int protocol)
 {
    const char* protocolName = "unknown?!";
    switch(protocol) {
@@ -749,7 +749,7 @@ int createAndBindSocket(const int             family,
                                      listenMode, bindV6Only);
       if(success < 0) {
          ext_close(sd);
-         return(success);      
+         return(success);
       }
    }
    return(sd);
@@ -1183,7 +1183,7 @@ double randomExpDouble(const double p)
 //
 // Based on rpareto from GNU R's VGAM package
 // (http://cran.r-project.org/web/packages/VGAM/index.html):
-// rpareto <- function (n, location, shape) 
+// rpareto <- function (n, location, shape)
 // {
 //     ans <- location/runif(n)^(1/shape)
 //     ans[location <= 0] <- NaN

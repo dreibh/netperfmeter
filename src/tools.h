@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2020 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -46,7 +46,10 @@
 
 
 /* MPTCP as "pseudo-protocol". Just for internal representation. */
-#define IPPROTO_MPTCP IPPROTO_EGP
+#ifndef IPPROTO_MPTCP
+#define IPPROTO_MPTCP IPPROTO_EGP   // 262
+#endif
+
 
 /* FIXME: This is ugly, but currently the only way to easily get the #defines for Linux MPTCP! */
 #define MPTCP_ENABLED               42
@@ -113,7 +116,7 @@ void printAddress(std::ostream&          os,
                   const bool             port      = true,
                   const bool             hideScope = false);
 
-const char* getProtocolName(const uint8_t protocol);
+const char* getProtocolName(const int protocol);
 uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
 bool sendAbort(int sd, sctp_assoc_t assocID = 0);

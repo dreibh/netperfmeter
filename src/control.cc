@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2020 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -765,6 +765,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       // ====== Create new flow =============================================
       FlowTrafficSpec trafficSpec;
       trafficSpec.Protocol    = addFlowMsg->Protocol;
+      assert(addFlowMsg->Protocol <= 255);
       trafficSpec.Description = std::string(description);
       for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
          trafficSpec.OutboundFrameRate[i] = networkToDouble(addFlowMsg->FrameRate[i]);
@@ -1019,7 +1020,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       return(true);   // Partial read -> wait for next fragment.
    }
    else if(received < (ssize_t)sizeof(NetPerfMeterHeader)) {
-      if(received < 0) { 
+      if(received < 0) {
          std::cerr << "ERROR: Control connection is broken!" << std::endl;
          sendAbort(controlSocket, -1);
       }

@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2020 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -56,7 +56,7 @@ class FlowTrafficSpec
    static void showEntry(std::ostream& os, const double* valueArray, const uint8_t rng);
 
    std::string             Description;
-   uint8_t                 Protocol;
+   int                     Protocol;
 
    double                  OrderedMode;
    double                  ReliableMode;
