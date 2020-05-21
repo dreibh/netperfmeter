@@ -744,6 +744,12 @@ int createAndBindSocket(const int             family,
    int sd = createSocket(family, type, protocol,
                          localAddresses, localAddressArray);
    if(sd >= 0) {
+      int reuse = 1;
+      if(ext_setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+         std::cerr << "WARNING: Failed to configure socket reuse (SO_REUSEADDR option) - "
+                   << strerror(errno) << "!" << std::endl;
+      }
+
       const int success = bindSocket(sd, family, type, protocol,
                                      localPort, localAddresses, localAddressArray,
                                      listenMode, bindV6Only);
