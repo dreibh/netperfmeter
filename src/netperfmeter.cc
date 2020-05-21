@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2020 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -655,7 +655,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       cout << " ... ";
       cout.flush();
    }
-   
+
    // ====== Set up socket ==================================================
    int  socketDescriptor;
    bool originalSocketDescriptor;
@@ -912,7 +912,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                         gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                         true, gBindV6Only);
    if(gControlSocket < 0) {
-      cerr << "ERROR: Failed to create and bind SCTP socket for control port - "
+      cerr << "ERROR: Failed to create and bind SCTP socket for control port on port " << localPort + 1 << " - "
            << strerror(errno) << "!" << endl;
       exit(1);
    }
@@ -942,7 +942,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gTCPSocket < 0) {
-      cerr << "ERROR: Failed to create and bind TCP socket - "
+      cerr << "ERROR: Failed to create and bind TCP socket on port " << localPort << " - "
            << strerror(errno) << "!" << endl;
       exit(1);
    }
@@ -955,7 +955,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                       gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
    if(gMPTCPSocket < 0) {
       if(gOutputVerbosity >= NPFOV_STATUS) {
-         cerr << "NOTE: Unable to create and bind MPTCP socket - "
+         cerr << "NOTE: Unable to create and bind MPTCP socket on port " << localPort - 1 << " - "
               << strerror(errno) << "!" << endl;
       }
    }
@@ -986,7 +986,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gUDPSocket < 0) {
-      cerr << "ERROR: Failed to create and bind UDP socket - "
+      cerr << "ERROR: Failed to create and bind UDP socket on port " << localPort << " - "
            << strerror(errno) << "!" << endl;
       exit(1);
    }
@@ -1015,7 +1015,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gSCTPSocket < 0) {
-      cerr << "ERROR: Failed to create and bind SCTP socket - "
+      cerr << "ERROR: Failed to create and bind SCTP socket on port " << localPort << " - "
            << strerror(errno) << "!" << endl;
       exit(1);
    }
@@ -1150,7 +1150,7 @@ void activeMode(int argc, char** argv)
    const char*      configName        = "";
    uint8_t          protocol          = 0;
    Flow*            lastFlow          = NULL;
-   
+
    // ------ Handle other parameters ----------------------------------------
    for(int i = 2;i < argc;i++) {
       if(handleGlobalParameter(argv[i])) {
