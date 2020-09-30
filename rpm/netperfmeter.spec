@@ -30,13 +30,10 @@ NetPerfMeter is a network performance meter for the UDP, TCP, SCTP and DCCP tran
 
 %build
 %cmake -DCMAKE_INSTALL_PREFIX=/usr -DWITH_NEAT=0 -DBUILD_TEST_PROGRAMS=1 -DBUILD_PLOT_PROGRAMS=1 .
-make %{?_smp_mflags}
+%cmake_build
 
 %install
-make install DESTDIR=%{buildroot}
-
-%clean
-rm -rf "$RPM_BUILD_ROOT"
+%cmake_install
 
 %files
 %{_bindir}/combinesummaries
