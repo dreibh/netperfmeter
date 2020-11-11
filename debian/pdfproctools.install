@@ -1,2 +1,4 @@
 usr/bin/pdfembedfonts
 usr/bin/setpdfmetadata
+usr/share/man/man1/pdfembedfonts.1
+usr/share/man/man1/setpdfmetadata.1

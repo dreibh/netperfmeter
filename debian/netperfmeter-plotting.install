@@ -1,3 +1,4 @@
 usr/bin/plot-netperfmeter-results
+usr/share/man/man1/plot-netperfmeter-results.1
 usr/share/netperfmeter/plot-netperfmeter-results.R
 usr/share/netperfmeter/plotter.R
