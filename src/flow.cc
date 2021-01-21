@@ -208,7 +208,7 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
                flow->setMeasurement(measurement);
                if(flow->SocketDescriptor >= 0) {
                   flow->TimeBase     = now;
-                  flow->TimeOffset    = 0;
+                  flow->TimeOffset   = 0;
                   flow->InputStatus  = Flow::On;
                   flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
                   if(printFlows) {
@@ -514,6 +514,10 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
          const double transmissionDuration = (flow->LastTransmission - flow->FirstTransmission) / 1000000.0;
          const double receptionDuration    = (flow->LastReception - flow->FirstReception) / 1000000.0;
          scalarFile.printf(
+            "scalar \"%s.flow[%u]\" \"First Transmission\"      %llu\n"
+            "scalar \"%s.flow[%u]\" \"Last Transmission\"       %llu\n"
+            "scalar \"%s.flow[%u]\" \"First Reception\"         %llu\n"
+            "scalar \"%s.flow[%u]\" \"Last Reception\"          %llu\n"
             "scalar \"%s.flow[%u]\" \"Transmitted Bytes\"       %llu\n"
             "scalar \"%s.flow[%u]\" \"Transmitted Packets\"     %llu\n"
             "scalar \"%s.flow[%u]\" \"Transmitted Frames\"      %llu\n"
@@ -529,6 +533,11 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
             "scalar \"%s.flow[%u]\" \"Received Packet Rate\"    %1.6f\n"
             "scalar \"%s.flow[%u]\" \"Received Frame Rate\"     %1.6f\n"
             ,
+            objectName.c_str(), flow->FlowID, flow->FirstTransmission,
+            objectName.c_str(), flow->FlowID, flow->LastTransmission,
+            objectName.c_str(), flow->FlowID, flow->FirstReception,
+            objectName.c_str(), flow->FlowID, flow->LastReception,
+
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedBytes,
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedPackets,
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedFrames,
@@ -536,6 +545,7 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
             objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedBytes   / transmissionDuration : 0.0,
             objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedPackets / transmissionDuration : 0.0,
             objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedFrames  / transmissionDuration : 0.0,
+
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedBytes,
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedPackets,
             objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedFrames,
@@ -552,6 +562,8 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
    // ====== Write total statistics =========================================
    const double totalDuration = (now - firstStatisticsEvent) / 1000000.0;
    scalarFile.printf(
+      "scalar \"%s.total\" \"First Statistics Event\"  %llu\n"
+      "scalar \"%s.total\" \"Last Statistics Event\"   %llu\n"
       "scalar \"%s.total\" \"Transmitted Bytes\"       %llu\n"
       "scalar \"%s.total\" \"Transmitted Packets\"     %llu\n"
       "scalar \"%s.total\" \"Transmitted Frames\"      %llu\n"
@@ -571,6 +583,9 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
       "scalar \"%s.total\" \"Lost Packet Rate\"        %1.6f\n"
       "scalar \"%s.total\" \"Lost Frame Rate\"         %1.6f\n"
       ,
+      objectName.c_str(), firstStatisticsEvent,
+      objectName.c_str(), now,
+
       objectName.c_str(), totalBandwidthStats.TransmittedBytes,
       objectName.c_str(), totalBandwidthStats.TransmittedPackets,
       objectName.c_str(), totalBandwidthStats.TransmittedFrames,
