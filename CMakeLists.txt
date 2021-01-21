@@ -60,16 +60,10 @@ ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
     MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
-    LIST(APPEND neat_headers neat_bsd.h)
-    LIST(APPEND neat_sources neat_bsd.c)
     SET(CMAKE_REQUIRED_INCLUDES "/usr/pkg/include" "/usr/include" "/usr/local/include")
     SET(CMAKE_LIBRARY_PATH "/usr/local/lib")
     INCLUDE_DIRECTORIES("/usr/pkg/include" "/usr/local/include")
     ADD_DEFINITIONS("-DNetBSD")
-
-ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
-    MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
-    ADD_DEFINITIONS("-DSOLARIS")
 
 ELSE()
     MESSAGE(FATAL_ERROR ${CMAKE_SYSTEM_NAME} " not supported (yet?)")
@@ -233,8 +227,8 @@ ENDIF()
 # COMPILER FLAGS
 #############################################################################
 
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -O2 -Wall")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall")
 
 IF (CMAKE_BUILD_TYPE MATCHES DEBUG)
     MESSAGE(STATUS "Building in DEBUG mode")
