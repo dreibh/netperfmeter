@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2020 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -183,6 +183,9 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                                  from, fromSize, sinfo, msgFlags);
       }
       else {
+         if(from) {
+            memset(from, 0, *fromSize);   // Clear address (Valgrind report)
+         }
          received = ext_recvfrom(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  *msgFlags, from, fromSize);
