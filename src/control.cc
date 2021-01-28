@@ -982,13 +982,17 @@ static void handleControlAssocShutdown(int controlSocket)
 {
    FlowManager::getFlowManager()->lock();
 
+   Measurement* measurementToDelete = nullptr;
+
    std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
    while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
       Flow* flow = *iterator;
       if(flow->getRemoteControlSocketDescriptor() == controlSocket) {
          Measurement* measurement = flow->getMeasurement();
          if(measurement) {
-            delete measurement;
+             assert((measurementToDelete == nullptr) ||
+                    (measurementToDelete == measurement));
+             measurementToDelete = measurement;
          }
          delete flow;
          // Invalidated iterator. Is there a better solution?
@@ -996,6 +1000,10 @@ static void handleControlAssocShutdown(int controlSocket)
          continue;
       }
       iterator++;
+   }
+
+   if(measurementToDelete) {
+      delete measurementToDelete;
    }
 
    FlowManager::getFlowManager()->unlock();
