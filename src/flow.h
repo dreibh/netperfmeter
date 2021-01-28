@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2020 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -210,7 +210,7 @@ class Flow : public Thread
       return(InputStatus);
    }
    inline bool isAcceptedIncomingFlow() const {
-      return(AcceptedIncomingFlow);
+      return(RemoteControlSocketDescriptor != -1);
    }
 
    inline void endOfInput() {
@@ -334,7 +334,6 @@ class Flow : public Thread
 
    // ====== Socket Management ==============================================
    int                SocketDescriptor;
-   bool               AcceptedIncomingFlow;
    bool               OriginalSocketDescriptor;
    bool               DeleteWhenFinished;
    pollfd*            PollFDEntry;   // For internal usage by FlowManager
