@@ -345,7 +345,7 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
       flow->setSocketDescriptor(socketDescriptor, false,
                                 (flow->getTrafficSpec().Protocol != IPPROTO_UDP));
       flow->RemoteAddress        = *from;
-      flow->RemoteAddressIsValid = true;
+      flow->RemoteAddressIsValid = (from->sa.sa_family != AF_UNSPEC);
       controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
       success = flow->initializeVectorFile(NULL, vectorFileFormat);
       flow->unlock();
