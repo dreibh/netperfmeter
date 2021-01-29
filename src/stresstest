@@ -3,7 +3,8 @@
 make
 
 TARGET="$1"
-COUNT=1
+COUNT=10
+
 if [ "$TARGET" == "" ] ; then
    TARGET="localhost:9000"
 fi
@@ -13,7 +14,7 @@ while [ $i -lt $COUNT ] ; do
    let i=$i+1
    ./netperfmeter $TARGET -vector=x$i.vec -scalar=x$i.sca \
       -tcp const80:const10000:const80:const10000 \
-      -udp const80:const10000:const80:const10000 \
+      -udp const10:const1400:const10:const1400 \
       -sctp const20:const10000:const20:const10000 const20:const10000:const20:const10000 \
       -dccp const80:const1400:const80:const1400 \
       -runtime=10 &
