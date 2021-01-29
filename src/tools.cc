@@ -1288,6 +1288,7 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
 #endif
 
 
+#if 0
 /* ###### Word-around for lksctp bug ##################################### */
 ssize_t sctp_send_fixed(int                           sd,
                         const void*                   data,
@@ -1316,6 +1317,7 @@ ssize_t sctp_send_fixed(int                           sd,
    memcpy(sri, sinfo, sizeof(struct sctp_sndrcvinfo));
    return(ext_sendmsg(sd, &msg, msg.msg_flags));
 }
+#endif
 
 
 /* ###### Configure send and receive buffer sizes ######################## */

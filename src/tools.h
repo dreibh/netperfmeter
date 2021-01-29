@@ -188,6 +188,12 @@ inline int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int 
 }
 #endif
 
+/*
+
+FIXME!
+Commented out the LK-SCTP sctp_send() bug work-around.
+This should be removed once it is clear that no current system is still affected!
+
 #if defined(linux)
 #warning Added fix for broken sctp_send() with LK-SCTP
 ssize_t sctp_send_fixed(int                           sd,
@@ -197,6 +203,7 @@ ssize_t sctp_send_fixed(int                           sd,
                         int                           flags);
 #define sctp_send(a,b,c,d,e) sctp_send_fixed(a,b,c,d,e)
 #endif
+*/
 
 bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize);
 
