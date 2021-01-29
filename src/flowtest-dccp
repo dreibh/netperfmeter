@@ -1,6 +1,11 @@
 #!/bin/sh -e
 
-./netperfmeter localhost:9000 -vector=f.vec -scalar=f.sca \
+TARGET="$1"
+if [ "$TARGET" == "" ] ; then
+   TARGET="localhost:9000"
+fi
+
+./netperfmeter $TARGET -vector=f.vec -scalar=f.sca \
    -dccp const80:const10000:const80:const10000 \
    -dccp const80:const10000:const80:const10000 \
    -dccp const80:const10000:const80:const10000 \
