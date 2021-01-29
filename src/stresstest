@@ -1,0 +1,10 @@
+#!/bin/bash -e
+
+make
+
+i=0
+while [ $i -lt 50 ] ; do
+   let i=$i+1
+   ./netperfmeter localhost:9000 -vector=x$i.vec -scalar=x$i.sca  -tcp const80:const10000:const80:const10000 -udp const80:const10000:const80:const10000 -sctp const80:const10000:const80:const10000 -dccp const80:const10000:const80:const10000 -runtime=10 &
+done
+wait
