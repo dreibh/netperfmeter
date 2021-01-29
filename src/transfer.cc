@@ -154,8 +154,10 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       (!flow->isAcceptedIncomingFlow()) &&
       (flow->getTrafficSpec().ErrorOnAbort) &&
       (flow->getOutputStatus() == Flow::On)) {
+      gOutputMutex.lock();
       std::cerr << "ERROR: Flow #" << flow->getFlowID() << " has been aborted - "
                   << strerror(errno) << "!" << std::endl;
+      gOutputMutex.unlock();
       exit(1);
    }
 
@@ -252,11 +254,15 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
             updateStatistics(flow, now, dataMsg, received);
          }
          else {
+            gOutputMutex.lock();
             std::cout << "WARNING: Received data for unknown flow!" << std::endl;
+            gOutputMutex.unlock();
          }
       }
       else {
+         gOutputMutex.lock();
          std::cout << "WARNING: Received garbage!" << std::endl;
+         gOutputMutex.unlock();
       }
    }
 
@@ -264,7 +270,9 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
       Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
       if(flow) {
          if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+            gOutputMutex.lock();
             std::cout << "End of input for flow " <<  flow->getFlowID() << std::endl;
+            gOutputMutex.unlock();
          }
          flow->endOfInput();
       }

@@ -44,6 +44,8 @@
 
 #include <iostream>
 
+#include "mutex.h"
+
 
 /* MPTCP as "pseudo-protocol". Just for internal representation. */
 #ifndef IPPROTO_MPTCP
@@ -75,6 +77,9 @@
 // #else
 // #warning DCCP is not supported by the API of this system!
 #endif
+
+
+extern Mutex gOutputMutex;
 
 
 std::string format(const char* fmt, ...);

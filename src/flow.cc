@@ -31,9 +31,9 @@
 #include <assert.h>
 #include <math.h>
 #include <netinet/tcp.h>
-#include <set>
 
 #include <set>
+#include <sstream>
 
 
 // Flow Manager Singleton object
@@ -212,7 +212,9 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
                   flow->InputStatus  = Flow::On;
                   flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
                   if(printFlows) {
+                     gOutputMutex.lock();
                      flow->print(std::cout);
+                     gOutputMutex.unlock();
                   }
                   flow->activate();
                }
@@ -254,7 +256,9 @@ void FlowManager::stopMeasurement(const uint64_t           measurementID,
             else {
                flow->deactivate(false);
                if(printFlows) {
+                  gOutputMutex.lock();
                   flow->print(std::cout, true);
+                  gOutputMutex.unlock();
                }
             }
          }
@@ -461,6 +465,7 @@ void FlowManager::handleEvents(const unsigned long long now)
 
          // NOTE: ostream/cout has race condition problem according to helgrind.
          //       => simply using stdout instead.
+         gOutputMutex.lock();
          fprintf(stdout,
                  "\r<-- %sDuration: %2u:%02u:%02u   "
                  "%sFlows: %u   "
@@ -484,6 +489,7 @@ void FlowManager::handleEvents(const unsigned long long now)
                  cpuUtilization,
                  colorOff);
          fflush(stdout);
+         gOutputMutex.unlock();
       }
 
       LastDisplayEvent = now;
@@ -825,8 +831,10 @@ void FlowManager::run()
                                             iterator->second,
                                             iterator->first) == 0) {
                      // Incoming connection has already been closed -> remove it!
+                     gOutputMutex.lock();
                      std::cout << "NOTE: Shutdown of still unidentified incoming connection "
                                << iterator->first << "!" << std::endl;
+                     gOutputMutex.unlock();
                      removeSocket(iterator->first, true);
                      break;
                   }
@@ -865,7 +873,6 @@ Flow::Flow(const uint64_t         measurementID,
            const FlowTrafficSpec& trafficSpec,
            const int              controlSocketDescriptor)
 {
-   lock();
    MeasurementID                 = measurementID;
    FlowID                        = flowID;
    StreamID                      = streamID;
@@ -891,7 +898,6 @@ Flow::Flow(const uint64_t         measurementID,
    LastOutboundFrameID           = ~0;
    NextStatusChangeEvent         = ~0ULL;
    OnOffEventPointer             = 0;
-   unlock();
 
    FlowManager::getFlowManager()->addFlow(this);
 }
@@ -927,29 +933,33 @@ void Flow::resetStatistics()
 // ###### Print Flow ########################################################
 void Flow::print(std::ostream& os, const bool printStatistics)
 {
+   std::stringstream ss;
+
    lock();
    if(OriginalSocketDescriptor) {
       if(TrafficSpec.Protocol != IPPROTO_SCTP) {
-         os << "+ " << getProtocolName(TrafficSpec.Protocol) << " Flow (Flow ID #"
+         ss << "+ " << getProtocolName(TrafficSpec.Protocol) << " Flow (Flow ID #"
             << FlowID << " \"" << TrafficSpec.Description << "\"):" << std::endl;
       }
       else {
-         os << "+ " << getProtocolName(TrafficSpec.Protocol) << " Flow:" << std::endl;
+         ss << "+ " << getProtocolName(TrafficSpec.Protocol) << " Flow:" << std::endl;
       }
    }
    if(TrafficSpec.Protocol == IPPROTO_SCTP) {
-      os << "   o Stream #" << StreamID << " (Flow ID #"
+      ss << "   o Stream #" << StreamID << " (Flow ID #"
          << FlowID << " \"" << TrafficSpec.Description << "\"):" << std::endl;
    }
-   TrafficSpec.print(os);
+   TrafficSpec.print(ss);
 
 
    if(printStatistics) {
-      CurrentBandwidthStats.print(os,
+      CurrentBandwidthStats.print(ss,
                                   (LastTransmission - FirstTransmission) / 1000000.0,
                                   (LastReception    - FirstReception)    / 1000000.0);
    }
    unlock();
+
+   os << ss.str();
 }
 
 
@@ -1152,7 +1162,9 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
 //              FlowID, relNextEvent, (long long)absNextEvent - (long long)now);
 
       if((long long)absNextEvent - (long long)now < -10000000) {
+         gOutputMutex.lock();
          std::cerr << "WARNING: Schedule is more than 10s behind clock time! Check on/off parameters!" << std::endl;
+         gOutputMutex.unlock();
       }
    }
 
@@ -1259,8 +1271,10 @@ bool Flow::configureSocket(const int socketDescriptor)
    if( (TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP) ) {
       const int noDelayOption = (TrafficSpec.NoDelay == true) ? 1 : 0;
       if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+         gOutputMutex.lock();
          std::cerr << "ERROR: Failed to set TCP_NODELAY - "
                << strerror(errno) << "!" << std::endl;
+         gOutputMutex.unlock();
          return(false);
       }
 
@@ -1273,32 +1287,40 @@ bool Flow::configureSocket(const int socketDescriptor)
          const int debugOption = (TrafficSpec.Debug == true) ? 1 : 0;
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_DEBUG_LEGACY, (const char*)&debugOption, sizeof(debugOption)) < 0) {
             if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_DEBUG, (const char*)&debugOption, sizeof(debugOption)) < 0) {
+               gOutputMutex.lock();
                std::cerr << "WARNING: Failed to set MPTCP_DEBUG on MPTCP socket - "
                         << strerror(errno) << "!" << std::endl;
+               gOutputMutex.unlock();
             }
          }
 
          const int nDiffPorts = (int)TrafficSpec.NDiffPorts;
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_NDIFFPORTS_LEGACY, (const char*)&nDiffPorts, sizeof(nDiffPorts)) < 0) {
             if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_NDIFFPORTS, (const char*)&nDiffPorts, sizeof(nDiffPorts)) < 0) {
+               gOutputMutex.lock();
                std::cerr << "WARNING: Failed to set MPTCP_NDIFFPORTS on MPTCP socket - "
                         << strerror(errno) << "!" << std::endl;
+               gOutputMutex.unlock();
             }
          }
 
          const char* pathMgr = TrafficSpec.PathMgr.c_str();
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_PATH_MANAGER_LEGACY, pathMgr, strlen(pathMgr)) < 0) {
             if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_PATH_MANAGER, pathMgr, strlen(pathMgr)) < 0) {
+               gOutputMutex.lock();
                std::cerr << "WARNING: Failed to set MPTCP_PATH_MANAGER on MPTCP socket - "
                         << strerror(errno) << "!" << std::endl;
+               gOutputMutex.unlock();
             }
          }
 
          const char* scheduler = TrafficSpec.Scheduler.c_str();
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_SCHEDULER_LEGACY, scheduler, strlen(scheduler)) < 0) {
             if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_SCHEDULER, scheduler, strlen(scheduler)) < 0) {
+               gOutputMutex.lock();
                std::cerr << "WARNING: Failed to set MPTCP_SCHEDULER on MPTCP socket - "
                          << strerror(errno) << "!" << std::endl;
+               gOutputMutex.unlock();
             }
          }
 #endif
@@ -1309,9 +1331,11 @@ bool Flow::configureSocket(const int socketDescriptor)
       const char* congestionControl = TrafficSpec.CongestionControl.c_str();
       if(strcmp(congestionControl, "default") != 0) {
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
+            gOutputMutex.lock();
             std::cerr << "ERROR: Failed to set TCP_CONGESTION ("
                       << congestionControl << ") - "
                       << strerror(errno) << "!" << std::endl;
+            gOutputMutex.unlock();
             return(false);
          }
       }
@@ -1321,8 +1345,10 @@ bool Flow::configureSocket(const int socketDescriptor)
       if (TrafficSpec.NoDelay) {
          const int noDelayOption = 1;
          if (ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+            gOutputMutex.lock();
             std::cerr << "ERROR: Failed to set SCTP_NODELAY on SCTP socket - "
                   << strerror(errno) << "!" << std::endl;
+            gOutputMutex.unlock();
             return(false);
          }
       }
@@ -1332,14 +1358,18 @@ bool Flow::configureSocket(const int socketDescriptor)
       cmtOnOff.assoc_value = TrafficSpec.CMT;
       if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
          if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
+            gOutputMutex.lock();
             std::cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
                      << strerror(errno) << "!" << std::endl;
+            gOutputMutex.unlock();
             return(false);
          }
       }
 #else
       if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
+         gOutputMutex.lock();
          std::cerr << "ERROR: CMT usage on SCTP socket configured, but not supported by this system!" << std::endl;
+            gOutputMutex.unlock();
          return(false);
       }
 #endif
@@ -1349,17 +1379,21 @@ bool Flow::configureSocket(const int socketDescriptor)
       const uint8_t value = TrafficSpec.CCID;
       if(value != 0) {
          if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
+            gOutputMutex.lock();
             std::cerr << "WARNING: Failed to configure CCID #" << (unsigned int)value
                       << " on DCCP socket (DCCP_SOCKOPT_CCID option) - "
                       << strerror(errno) << "!" << std::endl;
+            gOutputMutex.unlock();
             // return(false);
          }
       }
       const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
-        std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
-                  << strerror(errno) << "!" << std::endl;
-        return(false);
+         gOutputMutex.lock();
+         std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
+                   << strerror(errno) << "!" << std::endl;
+         gOutputMutex.unlock();
+         return(false);
       }
    }
 #endif
