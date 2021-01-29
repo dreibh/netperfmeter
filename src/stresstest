@@ -2,9 +2,20 @@
 
 make
 
+TARGET="$1"
+COUNT=1
+if [ "$TARGET" == "" ] ; then
+   TARGET="localhost:9000"
+fi
+
 i=0
-while [ $i -lt 50 ] ; do
+while [ $i -lt $COUNT ] ; do
    let i=$i+1
-   ./netperfmeter localhost:9000 -vector=x$i.vec -scalar=x$i.sca  -tcp const80:const10000:const80:const10000 -udp const80:const10000:const80:const10000 -sctp const80:const10000:const80:const10000 -dccp const80:const10000:const80:const10000 -runtime=10 &
+   ./netperfmeter $TARGET -vector=x$i.vec -scalar=x$i.sca \
+      -tcp const80:const10000:const80:const10000 \
+      -udp const80:const10000:const80:const10000 \
+      -sctp const20:const10000:const20:const10000 const20:const10000:const20:const10000 \
+      -dccp const80:const1400:const80:const1400 \
+      -runtime=10 &
 done
 wait
