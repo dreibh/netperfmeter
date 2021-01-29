@@ -214,10 +214,13 @@ CHECK_C_SOURCE_RUNS("
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <linux/dccp.h>
 
 int main (int argc, char** argv)
 {
-   volatile int proto = IPPROTO_DCCP;
+   volatile int domain = IPPROTO_DCCP;
+   volatile int type   = SOCK_DCCP;
+   volatile int opt    = DCCP_SOCKOPT_SERVICE;
    return(0);
 }"
 HAVE_DCCP)
