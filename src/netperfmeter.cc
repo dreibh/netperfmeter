@@ -979,7 +979,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
          exit(1);
       }
-      ext_listen(gMPTCPSocket, 10);
+      ext_listen(gMPTCPSocket, 100);
    }
 #endif
 
