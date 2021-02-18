@@ -233,12 +233,6 @@ ENDIF()
 SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -O2 -Wall")
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall")
 
-IF (CMAKE_BUILD_TYPE MATCHES DEBUG)
-    MESSAGE(STATUS "Building in DEBUG mode")
-    # _FORTIFY_SOURCE requires compiling with optimization
-    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O")
-ENDIF()
-
 # ------ Check for "address-of-packed-member" -------------------------------
 CHECK_C_COMPILER_FLAG("-Waddress-of-packed-member -Werror" HAS_ADDRESS_OF_PACKED_MEMBER)
 IF (HAS_ADDRESS_OF_PACKED_MEMBER)
