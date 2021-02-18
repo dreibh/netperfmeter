@@ -1,0 +1,11 @@
+1. "Strange SCTP association breaks"
+
+If active and passive instances only have private addresses, and e.g. docker.io is installed:
+Both instances have interface virbr0 with 192.168.122.1 => SCTP assumes it is talking to the
+own machine, causing an ABORT of the association (OOTB handling).
+
+=> Not a bug of NetPerfMeter/SCTP.
+
+Possible solutions/work-arounds:
+- Remove virbr0, or configure unique IP ranges per device
+- Make sure the machine(s) have at least a global address
