@@ -1,0 +1,18 @@
+#!/bin/sh -e
+
+TARGET="$1"
+if [ "$TARGET" == "" ] ; then
+   TARGET="localhost:9000"
+fi
+
+./netperfmeter $TARGET -vector=f.vec -scalar=f.sca \
+   -tcp  const10:const1000:const10:const1000 \
+   -udp  const10:const1000:const10:const1000 \
+   -dccp const10:const1000:const10:const1000 \
+   -sctp \
+      const2:const1000:const2:const1000 \
+      const2:const1000:const2:const1000 \
+      const2:const1000:const2:const1000 \
+      const2:const1000:const2:const1000 \
+      const2:const1000:const2:const1000 \
+   -runtime=10
