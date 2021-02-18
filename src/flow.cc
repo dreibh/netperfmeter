@@ -192,7 +192,8 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
                                    const OutputFileFormat   scalarFileFormat,
                                    const bool               printFlows)
 {
-   bool success = false;
+   std::stringstream ss;
+   bool              success = false;
 
    lock();
    Measurement* measurement = new Measurement;
@@ -212,9 +213,7 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
                   flow->InputStatus  = Flow::On;
                   flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
                   if(printFlows) {
-                     gOutputMutex.lock();
-                     flow->print(std::cout);
-                     gOutputMutex.unlock();
+                     flow->print(ss);
                   }
                   flow->activate();
                }
@@ -227,6 +226,12 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
    }
    unlock();
    CPULoadStats.update();
+
+   if(printFlows) {
+      gOutputMutex.lock();
+      std::cout << ss.str();
+      gOutputMutex.unlock();
+   }
 
    return(success);
 }

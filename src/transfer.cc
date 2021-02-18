@@ -156,7 +156,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       (flow->getOutputStatus() == Flow::On)) {
       gOutputMutex.lock();
       std::cerr << "ERROR: Flow #" << flow->getFlowID() << " has been aborted - "
-                  << strerror(errno) << "!" << std::endl;
+                << strerror(errno) << "!" << std::endl;
       gOutputMutex.unlock();
       exit(1);
    }
@@ -270,9 +270,11 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
       Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
       if(flow) {
          if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+            flow->lock();
             gOutputMutex.lock();
             std::cout << "End of input for flow " <<  flow->getFlowID() << std::endl;
             gOutputMutex.unlock();
+            flow->unlock();
          }
          flow->endOfInput();
       }
