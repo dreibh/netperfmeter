@@ -845,6 +845,9 @@ bool mainLoop(const bool               isActiveMode,
                   }
                   gMessageReader.deregisterSocket(fds[controlID].fd);
                   ext_close(fds[controlID].fd);
+                  // Make sure to deregister all flows belonging to this
+                  // control connection!
+                  handleControlAssocShutdown(fds[controlID].fd);
                }
             }
          }

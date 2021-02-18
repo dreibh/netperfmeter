@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2020 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -88,5 +88,7 @@ bool sendNetPerfMeterAcknowledge(int            controlSocket,
                                  const uint32_t flowID,
                                  const uint16_t streamID,
                                  const uint32_t status);
+
+void handleControlAssocShutdown(int controlSocket);
 
 #endif

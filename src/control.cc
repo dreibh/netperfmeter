@@ -1072,7 +1072,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
 
 
 // ###### Delete all flows owned by a given remote node #####################
-static void handleControlAssocShutdown(int controlSocket)
+void handleControlAssocShutdown(int controlSocket)
 {
    FlowManager::getFlowManager()->lock();
 
