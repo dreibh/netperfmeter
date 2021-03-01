@@ -1137,6 +1137,29 @@ void activeMode(int argc, char** argv)
            << strerror(errno) << "!" << endl;
       exit(1);
    }
+   if(gControlOverTCP == false) {
+      sctp_paddrparams paddr;
+      memset(&paddr, 0, sizeof(paddr));
+      memcpy(&paddr.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
+      paddr.spp_flags      = SPP_HB_ENABLE;
+      paddr.spp_hbinterval = 30000;
+      if(setsockopt(gControlSocket, SOL_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, sizeof(paddr)) < 0) {
+         cerr << "WARNING: Unable to enable heartbeats on control association - "
+              << strerror(errno) << "!" << endl;
+      }
+#if 0
+      memset(&paddr, 0, sizeof(paddr));
+      memcpy(&paddr.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
+      socklen_t l = sizeof(paddr);
+      if(getsockopt(gControlSocket, SOL_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, &l) < 0) {
+         cerr << "ERROR: Unable to check heartbeats on control association - "
+              << strerror(errno) << "!" << endl;
+         exit(1);
+      }
+      printf("HeartbeatInterval=%u\n", paddr.spp_hbinterval);
+      exit(1);
+#endif
+   }
    if(gOutputVerbosity >= NPFOV_STATUS) {
       cout << "okay; sd=" << gControlSocket << endl << endl;
    }
