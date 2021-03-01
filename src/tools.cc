@@ -326,7 +326,6 @@ bool address2string(const struct sockaddr* address,
             ifname = if_indextoname(ipv6address->sin6_scope_id, (char*)&ifnamebuffer);
             if(ifname == NULL) {
                safestrcpy((char*)&ifnamebuffer, "(BAD!)", sizeof(ifnamebuffer));
-               ifname = (const char*)&ifnamebuffer;
                return(false);
             }
             snprintf((char*)&scope, sizeof(scope), "%%%s", ifname);
@@ -1072,7 +1071,6 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
          value = randomParetoDouble(valueArray[0], valueArray[1]);
        break;
       default:
-         value = 0.0;   // Avoids warning of uninitialized variable.
          assert(false);
        break;
    }

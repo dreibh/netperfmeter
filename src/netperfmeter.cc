@@ -670,7 +670,6 @@ static Flow* createFlow(Flow*                  previousFlow,
    }
    else {
       originalSocketDescriptor = true;
-      socketDescriptor          = -1;
       switch(trafficSpec.Protocol) {
          case IPPROTO_SCTP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_SCTP, 0,
