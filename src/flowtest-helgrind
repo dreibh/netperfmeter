@@ -3,6 +3,7 @@
 make netperfmeter
 
 # -control-over-tcp
-while ! valgrind --tool=helgrind ./netperfmeter 192.168.0.27:9000 -tcp const20:const1400 -runtime=10 ; do
+while true ; do
+   valgrind --tool=helgrind ./netperfmeter 192.168.0.27:9000 -tcp const20:const1400 -runtime=10
    sleep 1
 done
