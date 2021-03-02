@@ -88,11 +88,11 @@ matrix:
      dist: bionic
      group: travis_latest
      env: DOCKER="ubuntu:trusty" VARIANT="ubuntu" TOOL="compile" COMPILER_C="gcc" COMPILER_CXX="g++"
-   - name: "Ubuntu 14.04 (Trusty Tahr) with Clang"
-     os: linux
-     dist: bionic
-     group: travis_latest
-     env: DOCKER="ubuntu:trusty" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
+   # - name: "Ubuntu 14.04 (Trusty Tahr) with Clang"
+   #   os: linux
+   #   dist: bionic
+   #   group: travis_latest
+   #   env: DOCKER="ubuntu:trusty" VARIANT="ubuntu" TOOL="compile" COMPILER_C="clang" COMPILER_CXX="clang++"
    - name: "Ubuntu 14.04 (Trusty Tahr) packaging with pbuilder"
      os: linux
      dist: bionic
