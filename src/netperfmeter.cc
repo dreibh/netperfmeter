@@ -1143,7 +1143,7 @@ void activeMode(int argc, char** argv)
       memcpy(&paddr.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
       paddr.spp_flags      = SPP_HB_ENABLE;
       paddr.spp_hbinterval = 30000;
-      if(setsockopt(gControlSocket, SOL_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, sizeof(paddr)) < 0) {
+      if(setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, sizeof(paddr)) < 0) {
          cerr << "WARNING: Unable to enable heartbeats on control association - "
               << strerror(errno) << "!" << endl;
       }
@@ -1151,7 +1151,7 @@ void activeMode(int argc, char** argv)
       memset(&paddr, 0, sizeof(paddr));
       memcpy(&paddr.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
       socklen_t l = sizeof(paddr);
-      if(getsockopt(gControlSocket, SOL_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, &l) < 0) {
+      if(getsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, &l) < 0) {
          cerr << "ERROR: Unable to check heartbeats on control association - "
               << strerror(errno) << "!" << endl;
          exit(1);
