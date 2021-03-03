@@ -44,13 +44,28 @@ extern unsigned int gOutputVerbosity;
 
 
 // ###### Generate payload pattern ##########################################
-static void fillPayload(unsigned char* payload, const size_t length)
+static void fillPayload(unsigned char* payload,
+                        const size_t   length,
+                        const bool     reverse = false)
 {
-   unsigned char c = 30;
-   for(size_t i = 0;i < length;i++) {
-      *payload++ = c++;
-      if(c > 127) {
-         c = 30;
+   // ====== Pattern for Active -> Passive transfer =========================
+   if(!reverse) {
+      unsigned char c = 30;
+      for(size_t i = 0;i < length;i++) {
+         *payload++ = c++;
+         if(c > 127) {
+            c = 30;
+         }
+      }
+   }
+   // ====== Pattern for Passive -> Active transfer =========================
+   else {
+      unsigned char c = 127;
+      for(size_t i = 0;i < length;i++) {
+         *payload++ = c--;
+         if(c < 30) {
+            c = 127;
+         }
       }
    }
 }
@@ -93,7 +108,8 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
 
    // ------ Create payload data pattern ------------------
    fillPayload((unsigned char*)&dataMsg->Payload,
-               bytesToSend - sizeof(NetPerfMeterDataMessage));
+               bytesToSend - sizeof(NetPerfMeterDataMessage),
+               flow->isAcceptedIncomingFlow());
 
    // ====== Send NETPERFMETER_DATA message =================================
    ssize_t sent;
