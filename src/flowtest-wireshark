@@ -1,0 +1,44 @@
+#!/bin/bash -e
+
+# This is a simple test to include all protocols and different features,
+# particularly to test the NetPerfMeter dissector of Wireshark/T-Shark:
+# - Different protocols, multiple flows of each protocol
+# - Different UDP, DCCP and SCTP message sizes
+# - Small SCTP messages -> bundling?
+# - Large SCTP messages -> segmentation
+# - SCTP Reliable/Unreliable and Ordered/Unordered options
+#
+# Capture example:
+# tshark -i any -n -w netperfmeter.pcapng -f '(sctp port 9001) or ((tcp port 9000) or (tcp port 8999) or (udp port 9000) or (sctp port 9000) or (ip proto 33))'
+
+
+TARGET="$1"
+if [ "$TARGET" == "" ] ; then
+   TARGET="localhost:9000"
+fi
+
+./netperfmeter $TARGET \
+   -vector=f.vec -scalar=f.sca \
+   -tcp  const4:const1024:const3:const1024 \
+   -tcp  const2:const512:const3:const512 \
+   -udp  const4:const1024:const3:const1024 \
+   -udp  const2:const512:const3:const512 \
+   -dccp const4:const1024:const4:const1024 \
+   -dccp const2:const1024:const2:const1024 \
+   -dccp const2:const512:const2:const512 \
+   -dccp const2:const512:const2:const512 \
+   -dccp const3:const256:const2:const256 \
+   -dccp const4:const1024:const4:const1024 \
+   -dccp const2:const1024:const2:const1024 \
+   -dccp const2:const512:const2:const512 \
+   -dccp const2:const512:const2:const512 \
+   -dccp const3:const256:const2:const256 \
+   -sctp \
+      const2:const1024:const2:const1024 \
+      const2:const2048:const2:const2048 \
+      const8:const128:const2:const128 \
+      const2:const1024:const2:const1024:unreliable=0.5 \
+      const2:const1024:const2:const1024:unordered=0.5 \
+      const2:const1024:const2:const1024:unordered=0.5,unreliable=0.5 \
+   -sctp const2:const1024:const2:const1024
+   -runtime=10
