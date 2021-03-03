@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2021 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -209,7 +209,6 @@ void Defragmenter::purge(const unsigned long long now,
    if(getFirstFragment(frame, fragment)) {
       bool eraseCurrentFragment;
       do {
-         eraseCurrentFragment = false;
          if(frame->LastUpdate + defragmentTimeout <= now) {
             eraseCurrentFragment = true;
 
