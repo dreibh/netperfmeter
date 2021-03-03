@@ -17,6 +17,7 @@ if [ "$TARGET" == "" ] ; then
    TARGET="localhost:9000"
 fi
 
+# make && valgrind --tool=helgrind \
 ./netperfmeter $TARGET \
    -vector=f.vec -scalar=f.sca \
    -tcp  const4:const1024:const3:const1024 \
@@ -40,5 +41,5 @@ fi
       const2:const1024:const2:const1024:unreliable=0.5 \
       const2:const1024:const2:const1024:unordered=0.5 \
       const2:const1024:const2:const1024:unordered=0.5,unreliable=0.5 \
-   -sctp const2:const1024:const2:const1024
+   -sctp const2:const1024:const2:const1024 \
    -runtime=10
