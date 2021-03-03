@@ -908,6 +908,19 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    }
    printGlobalParameters();
 
+
+   // ====== Test for problems ==============================================
+   sockaddr_union testAddress;
+   assert(string2address("192.168.122.1:0", &testAddress));
+   int testSD = createAndBindSocket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, 0, 1, &testAddress, true, false);
+   if(testSD >= 0) {
+      cerr << "\nNOTE: This machine seems to have an interface with address 192.168.122.1!\n"
+              "This is typically used by Docker setups. If you connect from another machine\n"
+              "having the same configuration, in an environment with only private addresses,\n"
+              "SCTP may try to use this address -> OOTB ABORT.\n\n";
+      ext_close(testSD);
+   }
+
    // ====== Initialize control socket ======================================
    gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
                                         localPort + 1,
