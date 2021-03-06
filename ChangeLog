@@ -1,3 +1,330 @@
+commit 147278eaf134d4f4b8a576638158329abe71c9b1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Mar 5 18:52:37 2021 +0100
+
+    Updated Travis CI configuration
+
+commit 824be4a2f612501785c6a80db0e9109635e4f53b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Mar 5 16:01:45 2021 +0100
+
+    Updated build scripts
+
+commit 5c3963f1630120a63c5b17b5fe98ed83acffba23
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 3 19:35:50 2021 +0100
+
+    Updated script.
+
+commit a5fd313c28694fec547419d3ee4eb3fa779c51b6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 3 14:41:59 2021 +0100
+
+    Updated script.
+
+commit 697c8f4db8f781594dbdbf108238d5f561c9fbf7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 3 14:41:15 2021 +0100
+
+    Use different payload data patterns for Active -> Passive and Passive -> Active directions.
+
+commit a6016c41f75c5eddf01600cc1c201632f38e1959
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 3 14:07:38 2021 +0100
+
+    Minor updates.
+
+commit 6ee790c75524e4301f271bc59cbca9db3861d863
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 3 14:07:19 2021 +0100
+
+    Added note on SCTP usage with 192.168.122.1 interface.
+
+commit 20e3ca8ee9ddd2b4b84cbd514c23653ba2431f3d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 3 13:49:11 2021 +0100
+
+    Updated test script.
+
+commit db3e222a65f172b003c525e0d0e9916e85c65ecb
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 3 13:48:40 2021 +0100
+
+    Removed unnecessary variable assignemnt detected by static analysis.
+
+commit 643b1a09ceaf5cd5c59479225bf1d6ab7f069009
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Mar 3 13:47:08 2021 +0100
+
+    Added test script for Wireshark dissector tests.
+
+commit b7e6dd757ad13a8dd9975ee5687fc72da216ab36
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Mar 2 12:44:22 2021 +0100
+
+    Updated Travis CI configuration.
+
+commit 8299ddaa0e28c3fc5404c565e9038b09759eb084
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Mar 2 09:03:27 2021 +0100
+
+    Build fix for FreeBSD.
+
+commit f96e894d2c51c0400104041364478da0c5bcae9c
+Merge: aab20e6 f2b3986
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 1 21:26:43 2021 +0100
+
+    Merge branch 'dreibh/debug' of github.com:dreibh/netperfmeter into dreibh/debug
+
+commit aab20e6744250cb9bb2eb9f4dab1e19529d63d70
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 1 21:20:30 2021 +0100
+
+    Updated build scripts
+
+commit f2b398641a7c7cb9185f51c5c0b84ae789be8419
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 1 18:59:12 2021 +0100
+
+    Enable 30s SCTP Heartbeats on control connection, to ensure PAT/NAT will keep the connection alive.
+
+commit 8d4dcc07173bf7df1ba1e9f4ced95a2e3d4fdc47
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 1 16:30:36 2021 +0100
+
+    Updated build scripts
+
+commit 5f911503f58bcd23c86a75d210ca05fe12311058
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 1 15:42:36 2021 +0100
+
+    Fixed unnecessary variable assignments reported by static analysis.
+
+commit 9037886dc77a56dc035c75cf71ce1496dc40be5c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 1 15:37:24 2021 +0100
+
+    Improved autogen.sh with options for static analysis.
+
+commit 1c3601b464cc4245047bfe7ef97c3220c42c1cba
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Feb 22 12:06:16 2021 +0100
+
+    Updated Wireshark color filter example.
+
+commit 7d81fc342ee193e813e3a48615c6882686ea8fd7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Feb 18 22:09:50 2021 +0100
+
+    Added file.
+
+commit b17df0a8496711a8144f808d2ba06625319f5fbf
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Feb 18 21:50:02 2021 +0100
+
+    Added test script.
+
+commit 4fb3030a2cfb7ed0a991850600fd8101f172077d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Feb 18 20:48:00 2021 +0100
+
+    Bugfix: fixed locking issue reported by Helgrind.
+
+commit 488fa799fab2edd486d3b6a0bef8a5f695b30ee6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Feb 18 20:42:15 2021 +0100
+
+    Improved CMakeLists.txt.
+
+commit 670a910852a28145444b81ee66b39a7eb7cfe92d
+Merge: 2620219 36ade07
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Feb 18 15:11:30 2021 +0100
+
+    Merge branch 'master' into dreibh/debug
+
+commit 262021941e38880354dd079aebd385010c871d7e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Feb 18 15:09:51 2021 +0100
+
+    Bugfix: Make sure to deregister all flows belonging to a closed control connection.
+
+commit 36ade0770729e87da63816733e4bdd69e1e38316
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Feb 17 17:57:12 2021 +0100
+
+    Cleaned up CMakeLists.txt.
+
+commit ebc1d7016c57e71c80e754b95eb9fcea0a4eebb1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Feb 17 15:19:07 2021 +0100
+
+    Updated build scripts
+
+commit 02664484597a5cb7622ba17aff4f5b6e4e49cc66
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Feb 17 15:19:06 2021 +0100
+
+    Updated build scripts
+
+commit ce768111eb9d84134043ce2ba773f53e17a58394
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Feb 17 15:17:37 2021 +0100
+
+    Updated build scripts
+
+commit 3db3017f8e06e1cc58349ab3499ba829b741cbb7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Feb 17 15:17:37 2021 +0100
+
+    Updated build scripts
+
+commit d51770ff200ec9280f87cefabf2783956ea932e1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Feb 17 15:16:37 2021 +0100
+
+    Header updates.
+
+commit 2a5e43235aabf704f6339c6f63cd9a801f3eb145
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Feb 8 19:52:31 2021 +0100
+
+    Added script.
+
+commit 38cb723a7942e6c38298746214c360d84bedacef
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Feb 1 13:48:52 2021 +0100
+
+    Version bump.
+
+commit 9b3bfc6f88295987c6eef3e1067a07f6eb5f6323
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jan 30 07:40:00 2021 +0100
+
+    Updated Travis CI configuration
+
+commit c949abbf4b69ba56da5ecacd07552bf3c8908067
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 23:36:43 2021 +0100
+
+    Improved DCCP detection.
+
+commit 4229c54519305d9357313a30e2a16c2598f2edbc
+Merge: e1545e2 f09161d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 16:45:49 2021 +0100
+
+    Merge branch 'dreibh/timestamps' of github.com:dreibh/netperfmeter into dreibh/timestamps
+
+commit e1545e2775ee3a20b1881b4eb60f9ec96fa6adec
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 16:45:23 2021 +0100
+
+    Updated test script.
+
+commit f09161dbd5e0de4d1fda74b867a81bbcf5d6e007
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 16:36:39 2021 +0100
+
+    Updated test script.
+
+commit bacaeb28565b6f793166d589e778be979b8286d9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 16:22:55 2021 +0100
+
+    Improved script.
+
+commit ea86d11d6d487d194c50de0cb376bbf2dcaece37
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 16:12:10 2021 +0100
+
+    Commented out LK-SCTP bug work-around. It is hopefully not needed any more.
+
+commit ebea475013d3582fd67d97b3516f6c15f839d0ec
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 15:57:13 2021 +0100
+
+    Using C++14.
+
+commit c41cbf37035faaced31ee0b4e1ecd338fa426f4d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 15:54:54 2021 +0100
+
+    Added another test script.
+
+commit af1b6ca1cd3ec156f668e43815a4634435da4a5a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 13:54:53 2021 +0100
+
+    Incresed listen backlog for stresstesting.
+
+commit bf794c7fc08e96849bb25cdd2097f1acfb3508c0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 13:54:44 2021 +0100
+
+    Added simple stresstest script.
+
+commit 073ecfe75a5143eef37002841257939cb36ee387
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 13:36:28 2021 +0100
+
+    Bugfix: fixed possibilities for race conditions reported by Helgrind.
+
+commit ad33d9f9a625d0db3f7fd990341d62f6ed82d9db
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 29 00:05:25 2021 +0100
+
+    Bugfix: fixed UDP flow identification.
+
+commit c6d5f0f6a07c5e50feb4ae9020603a6fb32c6f65
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jan 28 23:11:53 2021 +0100
+
+    Improved vector output.
+
+commit a0d8e21543b3a954ee0cad8004c926d424bb80c7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jan 28 22:47:08 2021 +0100
+
+    Bugfix: fixed improper deletion. Access to deallocated memory was possible.
+
+commit 9e2ff1c426ca2dac969761ead87f481a618bc7a8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jan 28 22:15:36 2021 +0100
+
+    Bugfix: make sure to clear address space (Valgrind reported access to uninitialised memory).
+
+commit 1284266dac1fe31d04e38db8f0351aefd1fe46d9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jan 28 21:57:24 2021 +0100
+
+    Bugfix: fixed handling of new flows on active side (variable was uninitialised).
+
+commit 7065b5e65fff9ce229a7f7068c1250d93f733cf0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jan 21 22:17:06 2021 +0100
+
+    Improved CMakeLists.txt.
+
+commit a48ba91d38f949b34c144d319ac394863fef98db
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jan 21 22:14:57 2021 +0100
+
+    Also write time stamps into scalars.
+
+commit 16eac7561b0ee57f0827879e600d1a9c102c2a88
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 19:47:56 2020 +0100
+
+    Updated LSM entry.
+
+commit 088538803f3b0a4da50673480792bdd76520a9e7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 19:00:16 2020 +0100
+
+    New release netperfmeter-1.8.7.
+
 commit 8124ae2b59de4826fdea1edb854f7527d4822f18
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Fri Nov 13 10:24:50 2020 +0100

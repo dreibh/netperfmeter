@@ -19,7 +19,7 @@ fi
 
 # make && valgrind --tool=helgrind \
 ./netperfmeter $TARGET \
-   -vector=f.vec -scalar=f.sca \
+   -vector=f.vec.bz2 -scalar=f.sca.bz2 \
    -tcp  const4:const1024:const3:const1024 \
    -tcp  const2:const512:const3:const512 \
    -udp  const4:const1024:const3:const1024 \
@@ -41,5 +41,5 @@ fi
       const2:const1024:const2:const1024:unreliable=0.5 \
       const2:const1024:const2:const1024:unordered=0.5 \
       const2:const1024:const2:const1024:unordered=0.5,unreliable=0.5 \
-   -sctp const2:const1024:const2:const1024 \
-   -runtime=10
+   -sctp const1:const4096:const2:const1024:maxmsgsize=1400 \
+   -runtime=3
