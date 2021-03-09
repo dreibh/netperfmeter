@@ -14,6 +14,3 @@
 "HTTP" http
 "No ARP and no DNS" not arp and !(udp.port == 53)
 "Non-HTTP and non-SMTP to/from 192.0.2.1" ip.addr == 192.0.2.1 and not tcp.port in {80 25}
-"HENCSAT NECTOR" nector-control || nector-data
-"HENCSAT NECTOR Control" nector-control
-"HENCSAT NECTOR Data" nector-data
