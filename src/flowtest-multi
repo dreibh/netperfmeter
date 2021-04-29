@@ -5,7 +5,7 @@ if [ "$TARGET" == "" ] ; then
    TARGET="localhost:9000"
 fi
 
-./netperfmeter $TARGET -vector=f.vec -scalar=f.sca \
+./netperfmeter $TARGET -vector=results.vec -scalar=results.sca \
    -tcp  const10:const1000:const10:const1000 \
    -udp  const10:const1000:const10:const1000 \
    -dccp const10:const1000:const10:const1000 \
@@ -15,4 +15,4 @@ fi
       const2:const1000:const2:const1000 \
       const2:const1000:const2:const1000 \
       const2:const1000:const2:const1000 \
-   -runtime=10
+   -runtime=60
