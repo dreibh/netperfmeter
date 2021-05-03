@@ -1,5 +1,4 @@
 # Created by: Thomas Dreibholz <dreibh@iem.uni-due.de>
-# $FreeBSD: head/benchmarks/netperfmeter/Makefile 510673 2019-09-01 01:46:45Z yuri $
 
 PORTNAME=	netperfmeter
 PORTVERSION=	1.9.0
@@ -12,7 +11,7 @@ COMMENT=	Network Performance Meter
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
-USES=		cmake shebangfix tar:xz
+USES=		cmake compiler:c11 shebangfix tar:xz
 
 SHEBANG_FILES=	src/pdfembedfonts src/setpdfmetadata src/plot-netperfmeter-results
 
