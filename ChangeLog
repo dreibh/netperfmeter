@@ -1,3 +1,45 @@
+commit 53abc45dee18a4622f3c27f7dacc0782a6972a17
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 19 16:06:20 2021 +0200
+
+    Updated build scripts
+
+commit ea4aa05404f503e8d9ef6c82d5e8539eaf4809f6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon May 3 18:58:36 2021 +0000
+
+    Updated FreeBSD packaging.
+
+commit f06fe0194d5f5f9e6268498ae7b1e9aae8ae44fc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Apr 29 12:10:15 2021 +0200
+
+    Minor update.
+
+commit 11cfdfcecbe058292c1711fbf1145754e4c84ade
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Mar 9 19:09:01 2021 +0100
+
+    Added/updated Wireshark configuration example.
+
+commit dfd6f07a81458c1e55aa5f30c90f790bc811cbf4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Mar 9 19:07:58 2021 +0100
+
+    Added/updated Wireshark configuration example.
+
+commit 98d896331d27156c7a94b553f43279e394e3db15
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Mar 7 00:00:41 2021 +0100
+
+    Updated LSM entry.
+
+commit 7a2fa08aea006e59ef8938e80d7435d74d53c8af
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Mar 6 23:41:13 2021 +0100
+
+    New release netperfmeter-1.9.0.
+
 commit 147278eaf134d4f4b8a576638158329abe71c9b1
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Fri Mar 5 18:52:37 2021 +0100
