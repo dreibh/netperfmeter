@@ -1,8 +1,7 @@
 # Created by: Thomas Dreibholz <dreibh@iem.uni-due.de>
-# $FreeBSD: head/benchmarks/netperfmeter/Makefile 510673 2019-09-01 01:46:45Z yuri $
 
 PORTNAME=	netperfmeter
-PORTVERSION=	1.9.0
+PORTVERSION=	1.9.1
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.uni-due.de/~be0001/netperfmeter/download/
 
@@ -12,7 +11,7 @@ COMMENT=	Network Performance Meter
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
-USES=		cmake shebangfix tar:xz
+USES=		cmake compiler:c11 shebangfix tar:xz
 
 SHEBANG_FILES=	src/pdfembedfonts src/setpdfmetadata src/plot-netperfmeter-results
 
