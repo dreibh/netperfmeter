@@ -1,3 +1,9 @@
+netperfmeter (1.9.2~test1-1ubuntu1) hirsute; urgency=medium
+
+  * New upstream release.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sat, 06 Nov 2021 20:08:54 +0100
+
 netperfmeter (1.9.1-1ubuntu1) hirsute; urgency=medium
 
   * New upstream release.
