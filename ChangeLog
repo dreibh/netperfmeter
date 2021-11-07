@@ -1,6 +1,67 @@
+commit b5d9712877811d7da020698d8a4d9f8de3be5354
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Nov 7 19:00:41 2021 +0100
+
+    Updated build scripts
+
+commit 0408bd04d83857283173dc163701a853e5992954
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 6 20:49:30 2021 +0100
+
+    Updated build scripts
+
+commit 6f4822627bd243573b2d9af3bc5a1e4e0bbe9d2b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 6 20:11:19 2021 +0100
+
+    Version update.
+
+commit 0d9c08b942055c0c253d6fea3f279b2204eae52d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 6 20:04:50 2021 +0100
+
+    Updated build scripts
+
+commit e6d2221e5f5daad45cce4734f3a1e026e1ab7e98
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 4 19:10:24 2021 +0100
+
+    Updated build scripts
+
+commit ce7ef32eb50b5ba1eb95f44706fc720e8eb9f121
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 3 18:20:58 2021 +0100
+
+    Updated build scripts
+
+commit ce8a2f59950cfd1c129840155a9d0f383240684f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 3 18:20:56 2021 +0100
+
+    Updated build scripts
+
+commit c0c7bdfa5ddb8568a0db71b6c316e5e64a7a7292
+Merge: 1ef95f7 0dc6663
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 3 18:15:50 2021 +0100
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 0dc6663ab3ee8eec6d1cb202b3f1def9e9fdfeec
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 1 09:53:20 2021 +0100
+
+    New release netperfmeter-1.9.1.
+
 commit 53abc45dee18a4622f3c27f7dacc0782a6972a17
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Tue Oct 19 16:06:20 2021 +0200
+
+    Updated build scripts
+
+commit 1ef95f770d796d1546819ac6a6a4e0a83aaca31a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon May 3 21:22:02 2021 +0200
 
     Updated build scripts
 
