@@ -1,8 +1,6 @@
 netperfmeter (1.8.6~rc2~bpo1+1-1) buster-backports; urgency=medium
 
-  * New upstream release.
-  * debian/control: Updated standards version to 4.4.1.1.
-  * debian/control: Updated standards version to 4.4.1.2.
+  * Backport of 1.8.6~rc2 for Buster (Closes: #950271).
   * debian/control: Updated standards version to 4.6.0.1.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 09 Nov 2021 15:13:52 +0100
