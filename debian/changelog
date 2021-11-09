@@ -1,4 +1,4 @@
-netperfmeter (1.8.6~rc2-1ubuntu1) focal; urgency=medium
+netperfmeter (1.8.6~rc2-1) unstable; urgency=medium
 
   * New upstream release.
   * debian/control: Updated standards version to 4.4.1.1.
@@ -6,7 +6,7 @@ netperfmeter (1.8.6~rc2-1ubuntu1) focal; urgency=medium
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Thu, 05 Dec 2019 14:26:58 +0100
 
-netperfmeter (1.8.5-1ubuntu1) eoan; urgency=medium
+netperfmeter (1.8.5-1) eoan; urgency=medium
 
   * New upstream release.
   * Renamed pdfmetadata to setpdfmetadata (Closes: #914333).
@@ -14,34 +14,34 @@ netperfmeter (1.8.5-1ubuntu1) eoan; urgency=medium
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 10 Sep 2019 14:46:09 +0300
 
-netperfmeter (1.8.4-1ubuntu1) disco; urgency=medium
+netperfmeter (1.8.4-1) disco; urgency=medium
 
   * New upstream release.
   * Closes: #914333 (ITP).
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 07 Aug 2019 18:14:15 +0200
 
-netperfmeter (1.8.3-1ubuntu1) disco; urgency=medium
+netperfmeter (1.8.3-1) disco; urgency=medium
 
   * New upstream release.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 26 Jul 2019 12:08:26 +0200
 
-netperfmeter (1.8.2-1ubuntu1) disco; urgency=medium
+netperfmeter (1.8.2-1) disco; urgency=medium
 
   * New upstream release
   * Renamed pdfmetadata to setpdfmetadata (Closes: #914333).
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Mon, 22 Jul 2019 09:59:56 +0200
 
-netperfmeter (1.8.1-1ubuntu1) disco; urgency=medium
+netperfmeter (1.8.1-1) disco; urgency=medium
 
   * New upstream version.
   * debian/control: updated standards version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 27 Feb 2019 08:08:08 +0800
 
-netperfmeter (1.8.0-1ubuntu1) cosmic; urgency=low
+netperfmeter (1.8.0-1) cosmic; urgency=low
 
   * New upstream version.
   * debian/control: updated standards version.
@@ -51,7 +51,7 @@ netperfmeter (1.8.0-1ubuntu1) cosmic; urgency=low
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 17 Oct 2018 08:08:08 +0200
 
-netperfmeter (1.7.7-1ubuntu1) xenial; urgency=low
+netperfmeter (1.7.7-1) xenial; urgency=low
 
   * New upstream version.
   * debian/control: updated standards version.
@@ -59,19 +59,19 @@ netperfmeter (1.7.7-1ubuntu1) xenial; urgency=low
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 06 Jun 2018 08:08:08 +0200
 
-netperfmeter (1.7.6-1ubuntu1) xenial; urgency=low
+netperfmeter (1.7.6-1) xenial; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sun, 29 Oct 2017 08:08:08 +0200
 
-netperfmeter (1.7.5-1ubuntu1) xenial; urgency=low
+netperfmeter (1.7.5-1) xenial; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 25 Aug 2017 08:08:08 +0200
 
-netperfmeter (1.7.4-1ubuntu1) xenial; urgency=low
+netperfmeter (1.7.4-1) xenial; urgency=low
 
   * New upstream version.
   * debian/watch: URL update
@@ -79,20 +79,20 @@ netperfmeter (1.7.4-1ubuntu1) xenial; urgency=low
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 09 Aug 2017 08:08:08 +0200
 
-netperfmeter (1.7.3-1ubuntu1) xenial; urgency=low
+netperfmeter (1.7.3-1) xenial; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Tue, 08 Aug 2017 08:08:08 +0200
 
-netperfmeter (1.7.2-1ubuntu1) xenial; urgency=low
+netperfmeter (1.7.2-1) xenial; urgency=low
 
   * New upstream version.
   * debian/watch: fixed URL.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Mon, 07 Aug 2017 08:08:08 +0200
 
-netperfmeter (1.7.1-1ubuntu1) xenial; urgency=low
+netperfmeter (1.7.1-1) xenial; urgency=low
 
   * New upstream version.
   * debian/rules: autoconf/automake -> cmake
@@ -100,31 +100,31 @@ netperfmeter (1.7.1-1ubuntu1) xenial; urgency=low
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Mon, 07 Aug 2017 08:08:08 +0200
 
-netperfmeter (1.7.0-1ubuntu1) zesty; urgency=low
+netperfmeter (1.7.0-1) zesty; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Thu, 20 Apr 2017 08:08:08 +0200
 
-netperfmeter (1.6.1-1ubuntu1) zesty; urgency=low
+netperfmeter (1.6.1-1) zesty; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 04 Nov 2016 08:08:08 +0200
 
-netperfmeter (1.6.0-1ubuntu1) yakkety; urgency=low
+netperfmeter (1.6.0-1) yakkety; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 17 Aug 2016 08:08:08 +0200
 
-netperfmeter (1.5.6-1ubuntu1) yakkety; urgency=low
+netperfmeter (1.5.6-1) yakkety; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 29 Apr 2016 08:08:08 +0200
 
-netperfmeter (1.5.5-1ubuntu1) wily; urgency=low
+netperfmeter (1.5.5-1) wily; urgency=low
 
   * New upstream version.
   * debian/control: Updated standards version.
@@ -134,13 +134,13 @@ netperfmeter (1.5.5-1ubuntu1) wily; urgency=low
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Mon, 04 Apr 2016 08:08:08 +0200
 
-netperfmeter (1.5.4-1ubuntu1) vivid; urgency=low
+netperfmeter (1.5.4-1) vivid; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Mon, 11 May 2015 08:08:08 +0200
 
-netperfmeter (1.5.3-1ubuntu1) vivid; urgency=low
+netperfmeter (1.5.3-1) vivid; urgency=low
 
   * New upstream version.
   * debian/copyright: changed to machine-readable format.
@@ -150,19 +150,19 @@ netperfmeter (1.5.3-1ubuntu1) vivid; urgency=low
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sun, 01 Mar 2015 08:08:08 +0200
 
-netperfmeter (1.5.2-1ubuntu1) vivid; urgency=low
+netperfmeter (1.5.2-1) vivid; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Thu, 05 Feb 2015 08:08:08 +0200
 
-netperfmeter (1.5.0-1ubuntu1) utopic; urgency=low
+netperfmeter (1.5.0-1) utopic; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 14 Nov 2014 08:08:08 +0200
 
-netperfmeter (1.4.0-1ubuntu1) utopic; urgency=low
+netperfmeter (1.4.0-1) utopic; urgency=low
 
   * New upstream version.
   * debian/control: Added libfile-fcntllock-perl to get rid of
@@ -172,20 +172,20 @@ netperfmeter (1.4.0-1ubuntu1) utopic; urgency=low
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Mon, 28 Jul 2014 08:08:08 +0200
 
-netperfmeter (1.3.0-1ubuntu1) quantal; urgency=low
+netperfmeter (1.3.0-1) quantal; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 21 Dec 2012 23:23:23 +0200
 
-netperfmeter (1.2.4-1ubuntu1) quantal; urgency=low
+netperfmeter (1.2.4-1) quantal; urgency=low
 
   * New upstream version.
   * debian/control: added colorgcc as build dependency.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sun, 15 Jul 2012 12:12:12 +0200
 
-netperfmeter (1.2.3-1ubuntu1) precise; urgency=low
+netperfmeter (1.2.3-1) precise; urgency=low
 
   * New upstream version.
   * Removed gcc-4.7 patch, since changes are included upstream now.
@@ -194,7 +194,7 @@ netperfmeter (1.2.3-1ubuntu1) precise; urgency=low
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sun, 01 Jul 2012 22:22:22 +0800
 
-netperfmeter (1.1.7-1.1ubuntu1) unstable; urgency=low
+netperfmeter (1.1.7-1.1) unstable; urgency=low
 
   * Non-maintainer upload.
   * Fix "ftbfs with GCC-4.7": add patch gcc-4.7.patch (missing includes).
@@ -202,22 +202,20 @@ netperfmeter (1.1.7-1.1ubuntu1) unstable; urgency=low
 
  -- gregor herrmann <gregoa@debian.org>  Thu, 10 May 2012 23:55:03 +0200
 
-netperfmeter (1.1.7-1ubuntu1) unstable; urgency=low
+netperfmeter (1.1.7-1) unstable; urgency=low
 
   * New upstream version.
   * Changed package format to 3.0 (quilt).
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sat, 12 Feb 2011 11:11:11 +0200
 
-
-netperfmeter (1.1.0-1ubuntu1) maverick; urgency=low
+netperfmeter (1.1.0-1) maverick; urgency=low
 
   * New upstream version.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 03 Dec 2010 12:12:12 +0200
 
-
-netperfmeter (1.0.4-1ubuntu1) maverick; urgency=low
+netperfmeter (1.0.4-1) maverick; urgency=low
 
   * New upstream version.
   * Removed "conflict" and "replaces" to netmeter (old name of
@@ -225,18 +223,15 @@ netperfmeter (1.0.4-1ubuntu1) maverick; urgency=low
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Wed, 21 Jul 2010 15:22:22 +0200
 
-
-netperfmeter (1.0.3-3ubuntu1) maverick; urgency=low
+netperfmeter (1.0.3-3) maverick; urgency=low
 
   * Removed recommended package not being available in Debian.
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 02 Jul 2010 14:46:18 +0200
 
-
-netperfmeter (1.0.3-2ubuntu1) maverick; urgency=low
+netperfmeter (1.0.3-2) maverick; urgency=low
 
   * Closes Debian ITP bug with wnpp (Closes: #546738).
-  * Initial Ubuntu package (LP: #430012).
   * Switch to dpkg-source 3.0 (quilt) format
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Sun, 27 Jun 2010 12:27:40 +0200
