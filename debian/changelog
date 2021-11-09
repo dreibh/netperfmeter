@@ -1,4 +1,4 @@
-netperfmeter (1.8.6~rc2~bpo1+1-1) buster-backports; urgency=medium
+netperfmeter (1.8.6~rc2~bpo1+1) buster-backports; urgency=medium
 
   * Backport of 1.8.6~rc2 for Buster (Closes: #950271).
   * debian/control: Updated standards version to 4.6.0.1.
