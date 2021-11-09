@@ -213,13 +213,6 @@ for DISTRIBUTION in ${DISTRIBUTIONS} ; do
          updatedDebhelperVersion=1
       fi
 
-   else
-      # Ubuntu: Remove Debian Bug IDs.
-      sed -e "/(Closes: #/D" \
-             <debian/changelog >debian/changelog.new
-      mv debian/changelog.new debian/changelog
-      sed -e "s/^Maintainer:/Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>\nXSBC-Original-Maintainer:/g" <debian/control >debian/control.new
-      mv debian/control.new debian/control
    fi
 
    echo -e ""
