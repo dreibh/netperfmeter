@@ -588,7 +588,9 @@ static bool handleScalarFile(const std::string& varNames,
       else if(buffer[0] == '#') {
       }
       else if( (!(strncmp(buffer, "bin", 3))) ||
-               (!(strncmp(buffer, "attr", 4))) ) {
+               (!(strncmp(buffer, "par", 3))) ||
+               (!(strncmp(buffer, "attr", 4))) ||
+               (!(strncmp(buffer, "config", 6))) ) {
          // Skip this item
       }
       else if(!(strncmp(buffer, "run", 3))) {
@@ -994,7 +996,7 @@ int main(int argc, char** argv)
       else {
          cerr << "WARNING: Not all scalar files have been read -> continuing!" << endl;
       }
-   }      
+   }
    cout << "Writing scalar files..." << endl;
    dumpScalars(simulationsDirectory, resultsDirectory, varNames,
                compressionLevel, interactiveMode);
