@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Travis CI Scripts
-# Copyright (C) 2018-2019 by Thomas Dreibholz
+# Copyright (C) 2018-2020 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ if [ "${TRAVIS_OS_NAME}" == "linux" -a "${DOCKER}" == "" -a "${QEMU}" == "" ] ; 
 # ###### FreeBSD via QEMU ###################################################
 elif [ "${TRAVIS_OS_NAME}" == "linux" -a "${QEMU}" == "FreeBSD" ] ; then
 
-   ssh -p 8829 -i ~/.ssh/id_rsa root@localhost <<EOF
+   ssh -p 8829 -oStrictHostKeyChecking=no -i ~/.ssh/id_rsa root@localhost <<EOF
       cd /travis
 
       # ====== Configure ====================================================
