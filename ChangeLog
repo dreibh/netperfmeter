@@ -1,3 +1,112 @@
+commit d8deaf6e291c583ccad5d3a6a15c22f49d44bdf5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 31 11:47:24 2022 +0200
+
+    Removed Vcs-* fields from debian/control.
+
+commit 00a7535890aefa1d94d19605fd8990bbdbc57b61
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 31 11:18:59 2022 +0200
+
+    Updated CI scripts
+
+commit 82c8380038222d47ef9d0c74efa4a4e4bd4439cd
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Aug 31 11:18:58 2022 +0200
+
+    Updated build scripts
+
+commit 61bf7060da02960d20056c116304536514e684aa
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Feb 16 12:21:44 2022 +0100
+
+    Updated build scripts
+
+commit 120f4ee9ece459d01707ac7e18fa08b40959d7ee
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Dec 20 21:21:18 2021 +0100
+
+    createsummary: Paring of OMNeT++ 6.0 scalar files without warnings.
+
+commit 0bc5188395ddb403767519aa935a3f2d007130f2
+Merge: ab5e2a8 765f029
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 30 15:36:50 2021 +0100
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit ab5e2a8445a9936c14c1e409a58cd85f730ea0e5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 30 15:36:37 2021 +0100
+
+    Updated CI scripts
+
+commit 5100fbc11b545eaf0af7520217414804a4569e48
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 30 15:36:36 2021 +0100
+
+    Travis CI is dead. Removed obsolete Travis CI scripts and configuration.
+
+commit 7f4e94471b6ae0968c67e234a620febc4002bff3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 30 15:36:34 2021 +0100
+
+    Updated build scripts
+
+commit e8330dd2d8c6834e1cb43ded76cae2b6ed9f1345
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 30 15:36:31 2021 +0100
+
+    Removed invalid field "Homepage" from debian/upstream/metadata
+
+commit 765f0297b8792a23495ef133c9845304b02831d6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 26 21:50:56 2021 +0100
+
+    Improved CI workflows.
+
+commit ded8a40b29edd5e3cf18015147cb5019455ea560
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 26 21:49:00 2021 +0100
+
+    Updated build scripts
+
+commit b62df3789b177647d4debcbd4b51ba88d248f5ea
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 26 15:24:37 2021 +0100
+
+    Added CI workflows.
+
+commit ce62dcc8d9f1a6c577e65650165fddcd4636642e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 26 15:24:17 2021 +0100
+
+    Updated CI scripts
+
+commit a52cf8ebd5ae5e8e918cc6b1ec49b62ef5eef73d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 26 15:24:17 2021 +0100
+
+    Travis CI is dead. Removed obsolete Travis CI scripts and configuration.
+
+commit ee278e61294f3299a26f591091f13ec89654f91b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 26 15:24:17 2021 +0100
+
+    Updated build scripts
+
+commit ad3da9455223be1d31f6e9f59acdbccca25940ef
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 8 20:34:36 2021 +0100
+
+    Updated LSM entry.
+
+commit 338a1b4f38075374b2450a7dc7fd21a9c04b3346
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Nov 7 20:05:45 2021 +0100
+
+    New release netperfmeter-1.9.2.
+
 commit b5d9712877811d7da020698d8a4d9f8de3be5354
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Sun Nov 7 19:00:41 2021 +0100
