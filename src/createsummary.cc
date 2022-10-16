@@ -297,7 +297,7 @@ static unsigned int getAggregate(char*        objectName,
    // ------ Extract aggregate and its value --------------
    if((size_t)i < length - 1) {
      if(aggNames[0] != 0x00) {
-        safestrcat(aggNames, " ", aggNamesSize);
+        safestrcat(aggNames, "\t", aggNamesSize);
      }
      if(scalarName[0] != 0x00) {
        safestrcat(aggNames, scalarName, aggNamesSize);
@@ -307,9 +307,9 @@ static unsigned int getAggregate(char*        objectName,
 
      unsigned long value = atol((const char*)&segment[i + 1]);
      char valueString[16];
-     snprintf((char*)&valueString, sizeof(valueString), "%04lu", value);
+     snprintf((char*)&valueString, sizeof(valueString), "%lu", value);
      if(aggValues[0] != 0x00) {
-        safestrcat(aggValues, " ", aggValuesSize);
+        safestrcat(aggValues, "\t", aggValuesSize);
      }
      safestrcat(aggValues, valueString, aggValuesSize);
    }
@@ -553,7 +553,7 @@ static bool handleScalarFile(const std::string& varNames,
          break;
       }
 
-      // ====== Process lineNumber ==========================================
+      // ====== Process line ================================================
       if( (!(strncmp(buffer, "scalar ",  7))) ||
           (!(strncmp(buffer, "scalar\t", 7))) ) {
          // ====== Parse scalar line ========================================
@@ -632,7 +632,7 @@ static bool handleScalarFile(const std::string& varNames,
          }
       }
       else if(!(strncmp(buffer, "statistic ", 10))) {
-         // ====== Parse scalar lineNumber ========================================
+         // ====== Parse scalar line ========================================
          char* s = getWord((char*)&buffer[10], (char*)&statisticObjectName);
          if(s) {
             s = getWord(s, (char*)&statisticBlockName);
@@ -653,7 +653,7 @@ static bool handleScalarFile(const std::string& varNames,
          hasStatistic = true;
       }
       else if(buffer[0] == 0x00) {
-         // Empty lineNumber
+         // Empty line
       }
       else if(!(strncmp(buffer, "version", 7))) {
          // Skip this item
@@ -708,7 +708,8 @@ static void dumpScalars(const std::string& simulationsDirectory,
                         const std::string& resultsDirectory,
                         const std::string& varNames,
                         const unsigned int compressionLevel,
-                        const bool         interactiveMode)
+                        const bool         interactiveMode,
+                        const bool         addLineNumbers)
 {
    std::string        fileName           = "";
    std::string        lastStatisticsName = "";
@@ -754,7 +755,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
          lineNumber = 1;
 
          // ====== Write table header =======================================
-         if(outputFile.printf("RunNo ValueNo Split \t%s\t%s\t%s\n",
+         if(outputFile.printf("RunNo\tValueNo\tSplit\t%s\t%s\t%s\n",
                               scalarNode->AggNames,
                               varNames.c_str(),
                               scalarNode->ScalarName) == false) {
@@ -768,8 +769,12 @@ static void dumpScalars(const std::string& simulationsDirectory,
       size_t valueNumber = 1;
       vector<double>::iterator valueIterator = scalarNode->ValueSet.begin();
       while(valueIterator != scalarNode->ValueSet.end()) {
-         if(outputFile.printf("%07llu %04u %04u \"%s\"\t%s\t%s\t%1.12f\n",
-                              lineNumber,
+         if(addLineNumbers) {
+            if(outputFile.printf("%07llu\t", lineNumber) == false) {
+               exit(1);
+            }
+         }
+         if(outputFile.printf("%u\t%u\t\"%s\"\t%s\t%s\t%lf\n",
                               (unsigned int)scalarNode->Run,
                               (unsigned int)valueNumber,
                               scalarNode->SplitName,
@@ -807,7 +812,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
 static void usage(const char* name)
 {
    cerr << "Usage: "
-        << name << " [Var Names] {-compress=0-9} {-interactive|-batch|-splitall}" << endl;
+        << name << " [Var Names] {-compress=0-9} {-interactive|-batch} {-splitall} {-line-numbers|-no-line-numbers}" << endl;
    exit(1);
 }
 
@@ -817,6 +822,7 @@ int main(int argc, char** argv)
 {
    unsigned int compressionLevel       = 9;
    bool         interactiveMode        = true;
+   bool         addLineNumbers         = false;
    bool         splitAll               = false;
    bool         quietMode              = false;
    bool         ignoreScalarFileErrors = false;
@@ -837,6 +843,11 @@ int main(int argc, char** argv)
    // ====== Handle command-line arguments ==================================
    if(argc > 1) {
       varNames = argv[1];
+      for(size_t i = 0; i < varNames.size(); i++) {
+         if(varNames[i] == ' ') {
+            varNames[i] = '\t';
+         }
+      }
       for(int i = 2;i < argc;i++) {
          if(!(strncmp(argv[i], "-compress=", 10))) {
             compressionLevel = atol((char*)&argv[i][10]);
@@ -849,6 +860,12 @@ int main(int argc, char** argv)
          }
          else if(!(strcmp(argv[i], "-interactive"))) {
             interactiveMode = true;
+         }
+         else if(!(strcmp(argv[i], "-line-numbers"))) {
+            addLineNumbers = true;
+         }
+         else if(!(strcmp(argv[i], "-no-line-numbers"))) {
+            addLineNumbers = false;
          }
          else if(!(strcmp(argv[i], "-splitall"))) {
             splitAll = true;
@@ -870,10 +887,11 @@ int main(int argc, char** argv)
 
 
    if(!quietMode) {
-      cout << "CreateSummary - Version 4.4.0" << endl
+      cout << "CreateSummary - Version 5.0.0" << endl
            << "=============================" << endl << endl
            << "Compression Level: " << compressionLevel << endl
            << "Interactive Mode:  " << (interactiveMode ? "on" : "off") << endl
+           << "Line Numbers:      " << (addLineNumbers  ? "on" : "off") << endl
            << endl;
    }
 
@@ -903,11 +921,21 @@ int main(int argc, char** argv)
          if(varNames[0] == '\"') {
             varNames = varNames.substr(1, varNames.size() - 2);
          }
+         for(size_t i = 0; i < varNames.size(); i++) {
+            if(varNames[i] == ' ') {
+               varNames[i] = '\t';
+            }
+         }
       }
       else if(!(strncmp(command, "--values=", 9))) {
          varValues = (const char*)&command[9];
          if(varValues[0] == '\"') {
             varValues = varValues.substr(1, varValues.size() - 2);
+         }
+         for(size_t i = 0; i < varValues.size(); i++) {
+            if(varValues[i] == ' ') {
+               varValues[i] = '\t';
+            }
          }
       }
       else if(!(strncmp(command, "--logfile=", 10))) {
@@ -999,7 +1027,7 @@ int main(int argc, char** argv)
    }
    cout << "Writing scalar files..." << endl;
    dumpScalars(simulationsDirectory, resultsDirectory, varNames,
-               compressionLevel, interactiveMode);
+               compressionLevel, interactiveMode, addLineNumbers);
 
 
    // ====== Clean up =======================================================
