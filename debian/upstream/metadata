@@ -2,8 +2,8 @@ Name: NetPerfMeter
 Repository: https://github.com/dreibh/netperfmeter.git
 Repository-Browse: https://github.com/dreibh/netperfmeter
 Bug-Submit: https://github.com/dreibh/netperfmeter/issues
-Contact: Thomas Dreibholz <dreibh@iem.uni-due.de>
-Security-Contact: Thomas Dreibholz <dreibh@iem.uni-due.de>
+Contact: Thomas Dreibholz <thomas.dreibholz@gmail.com>
+Security-Contact: Thomas Dreibholz <thomas.dreibholz@gmail.com>
 Reference:
  -
   Author: Thomas Dreibholz and Martin Becke and Hakim Adhari and Erwin Paul Rathgeb
@@ -28,4 +28,4 @@ Reference:
   Type: Article
   Journal: Multipath TCP Blog
   URL: http://blog.multipath-tcp.org/blog/html/2015/09/07/netperfmeter.html
-Other-References: https://www.uni-due.de/~be0001/netperfmeter/
+Other-References: https://www.nntb.no/~dreibh/netperfmeter/

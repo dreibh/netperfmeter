@@ -10,11 +10,11 @@ Description:    NetPerfMeter is a network performance meter for the UDP,
                 files can e.g. be used to create plots of the results.
 Keywords:       Network Performance, QoS, IPv4, IPv6, TCP, MPTCP, SCTP, UDP,
                 DCCP.
-Author:         dreibh@iem.uni-due.de (Thomas Dreibholz)
-Maintained-by:  dreibh@iem.uni-due.de (Thomas Dreibholz)
-Primary-site:   https://www.uni-due.de/~be0001/netperfmeter
+Author:         thomas.dreibholz@gmail.com (Thomas Dreibholz)
+Maintained-by:  thomas.dreibholz@gmail.com (Thomas Dreibholz)
+Primary-site:   https://www.nntb.no/~dreibh/netperfmeter
                 279 kB download/netperfmeter-1.9.2.tar.xz
-Original-site:  https://www.uni-due.de/~be0001/netperfmeter
+Original-site:  https://www.nntb.no/~dreibh/netperfmeter
 Platforms:      Linux, FreeBSD, MacOS, Solaris
 Copying-policy: GPL-3+
 End

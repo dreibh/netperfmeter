@@ -2,7 +2,7 @@
 Thomas Dreibholz
 
 ## Contact Email:
-dreibh@iem.uni-due.de
+thomas.dreibholz@gmail.com
 
 ## What type of assignment/registration are you requesting?
 DCCP Service Code for the NetPerfMeter Protocol on the Data Channel (NPMP-DATA)
@@ -14,7 +14,7 @@ DCCP Parameters -> Service Codes
 The NetPerfMeter Protocol (NPMP) is used by the NetPerfMeter application, a performance test and analysis tool for DCCP transmissions. NPMP uses a Control Channel over SCTP (NPMP-CONTROL) to set up test scenarios between two nodes. DCCP performance tests are made over one or more Data Channels over DCCP (NPMP-DATA). In order to identify the service (NPMP-DATA), the registration of a DCCP Service Code for the NPMP-DATA is needed.
 
 The implementation of NetPerfMeter is available as Open Source under GPLv3 licence at:
-https://www.uni-due.de/~be0001/netperfmeter/#Download .
+https://www.nntb.no/~dreibh/netperfmeter/#Download .
 
 
 ## Additional Information. Please include a reference to the specification or RFC (if available) that defines this number or name space:

@@ -2,7 +2,7 @@
 Thomas Dreibholz
 
 ## Contact Email:
-dreibh@iem.uni-due.de
+thomas.dreibholz@gmail.com
 
 ## What type of assignment/registration are you requesting?
 SCTP Payload Protocol Identifier for the NetPerfMeter Protocol (NPMP):
@@ -17,7 +17,7 @@ SCTP Parameters -> SCTP Payload Protocol Identifiers
 The NetPerfMeter Protocol (NPMP) is used by the NetPerfMeter application, a performance test and analysis tool for SCTP transmissions. NPMP uses a Control Channel over SCTP (NPMP-CONTROL) to set up test scenarios between two nodes. Performance tests are made over one or more Data Channels over SCTP (NPMP-DATA). In order to differentiate Control and Data Channel messages, two distinct SCTP PPIDs are needed.
 
 The implementation of NetPerfMeter is available as Open Source under GPLv3 licence at:
-https://www.uni-due.de/~be0001/netperfmeter/#Download .
+https://www.nntb.no/~dreibh/netperfmeter/#Download .
 
 
 ## Additional Information. Please include a reference to the specification or RFC (if available) that defines this number or name space:

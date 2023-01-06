@@ -1,3 +1,10 @@
+netperfmeter (1.9.4~rc0-1ubuntu1) jammy; urgency=medium
+
+  * New upstream release.
+  * debian/control: Updated standards version to 4.6.2.
+
+ -- Thomas Dreibholz <thomas.dreibholz@gmail.com>  Fri, 06 Jan 2023 21:27:22 +1100
+
 netperfmeter (1.9.3-1ubuntu1) jammy; urgency=medium
 
   * New upstream release.

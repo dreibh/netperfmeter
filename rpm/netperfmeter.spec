@@ -1,11 +1,11 @@
 Name: netperfmeter
-Version: 1.9.3
+Version: 1.9.4~rc0
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3+
 Group: Applications/Internet
-URL: https://www.uni-due.de/~be0001/netperfmeter/
-Source: https://www.uni-due.de/~be0001/netperfmeter/download/%{name}-%{version}.tar.xz
+URL: https://www.nntb.no/~dreibh/netperfmeter/
+Source: https://www.nntb.no/~dreibh/netperfmeter/download/%{name}-%{version}.tar.xz
 
 AutoReqProv: on
 BuildRequires: bzip2-devel
