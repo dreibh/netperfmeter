@@ -1,7 +1,7 @@
 # Created by: Thomas Dreibholz <thomas.dreibholz@gmail.com>
 
 PORTNAME=	netperfmeter
-PORTVERSION=	1.9.4~rc0
+PORTVERSION=	1.9.4
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.nntb.no/~dreibh/netperfmeter/download/
 

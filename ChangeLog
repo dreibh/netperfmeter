@@ -1,3 +1,57 @@
+commit 27bb19342507d6d635fac96ab6d21ffa1c3e383c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jan 21 22:02:47 2023 +1100
+
+    Updated build scripts
+
+commit 5b779ea0770a9a1571ae28e86973d1401beb62c6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 6 21:38:01 2023 +1100
+
+    URL change from UDE to NNTB.
+
+commit a855e1f9f53fad2ea8b65ca23ebe4c32f6b88b4d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 6 10:22:09 2023 +1100
+
+    Updated CI scripts
+
+commit c2801e8fdf685785cbad7206e8dde3c2bea460a8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jan 6 10:21:46 2023 +1100
+
+    Updated build scripts
+
+commit c4cc74f977d06fd4665143f05fd7bad61982b62a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Dec 12 13:29:58 2022 +0100
+
+    Minor CMakeLists.txt updates.
+
+commit a45544a003f139085e54491c1bc289b09bf5dccb
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 20 19:48:27 2022 +0200
+
+    Updated FreeBSD packaging files.
+
+commit 54e8c614d5c00db33b5fbcc99131140ed123d9ce
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 16 14:09:22 2022 +0200
+
+    Header updates.
+
+commit 33fee160c6942470676d2d78349f9f5cdc3f4d1a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 16 14:08:49 2022 +0200
+
+    Improved CreateSummary to write output compatible with data.table's fread().
+
+commit fe08ddec63df20e456eaadd8042cf0114587f7b2
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Sep 11 13:05:07 2022 +0200
+
+    New release netperfmeter-1.9.3.
+
 commit d8deaf6e291c583ccad5d3a6a15c22f49d44bdf5
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Wed Aug 31 11:47:24 2022 +0200
