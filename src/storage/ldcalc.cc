@@ -1,4 +1,3 @@
-// $Id$
 // ###########################################################################
 //             Thomas Dreibholz's R Simulation Scripts Collection
 //                  Copyright (C) 2004-2024 Thomas Dreibholz
