@@ -6,7 +6,6 @@ Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 Build-Depends: cmake,
                debhelper (>= 12),
                libbz2-dev,
-               libfile-fcntllock-perl,
                libsctp-dev (>= 1.0.5)
 Standards-Version: 4.6.2
 Rules-Requires-Root: no
