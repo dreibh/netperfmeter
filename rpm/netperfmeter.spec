@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 1.9.5~rc1
+Version: 1.9.5
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3+
@@ -100,6 +100,8 @@ This package contains a plotting program for the results.
 
 
 %changelog
+* Wed Dec 06 2023 Thomas Dreibholz <thomas.dreibholz@gmail.com> - 1.9.5
+- New upstream release.
 * Sun Jan 22 2023 Thomas Dreibholz <thomas.dreibholz@gmail.com> - 1.9.4
 - New upstream release.
 * Sun Sep 11 2022 Thomas Dreibholz <dreibh@iem.uni-due.de> - 1.9.3

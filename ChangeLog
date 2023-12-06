@@ -1,3 +1,69 @@
+commit 812800b4119a3eeae5c2f39e24fe6e33452e77da
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Dec 6 15:34:05 2023 +0100
+
+    Added Lintian override for long lines warning.
+
+commit 2a8e4d5171bc6314bc424539a01f579763dde800
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 15 11:42:31 2023 +0100
+
+    Dependency improvements.
+
+commit 36b25556446efe5d5af3dc1a17abfe29c9505a37
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 15 10:55:52 2023 +0100
+
+    Packaging clean-ups.
+
+commit a800a21eefdf4447414d710d071130fd25e323a5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 15 09:52:18 2023 +0100
+
+    Updated build scripts
+
+commit 88a3dcf37c81ab27b56ea25b6d43fb5d35a2753b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 15 09:33:07 2023 +0100
+
+    Updated build scripts
+
+commit 643a594a082c816e88b974bd6120272bc9458832
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 11 17:50:51 2023 +0100
+
+    Workflows update.
+
+commit 416917af2e99782e62b068a2dd22697f8b0047cf
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 11 16:23:39 2023 +0100
+
+    Removed CVS $Id$ tag.
+
+commit c88d64a3bbec908d313fb0609d5cedceb7d513ad
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 11 16:22:36 2023 +0100
+
+    Header updates.
+
+commit 6134ad081beb0b5315edead3b43f88e569b1f076
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 11 16:16:27 2023 +0100
+
+    Travis CI is dead. Removed obsolete Travis CI scripts and configuration.
+
+commit 69749258958fda966a6fed48100b91f6748da72b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 11 16:15:53 2023 +0100
+
+    Updated build scripts
+
+commit bc01bb2bebdf08c03e68f4bdb554b276857dbd5b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Jan 22 22:39:53 2023 +1100
+
+    New release netperfmeter-1.9.4.
+
 commit 27bb19342507d6d635fac96ab6d21ffa1c3e383c
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Sat Jan 21 22:02:47 2023 +1100

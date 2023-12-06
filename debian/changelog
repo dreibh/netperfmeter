@@ -1,8 +1,8 @@
-netperfmeter (1.9.5~rc1-1ubuntu1) jammy; urgency=medium
+netperfmeter (1.9.5-1ubuntu1) jammy; urgency=medium
 
   * New upstream release.
 
- -- Thomas Dreibholz <thomas.dreibholz@gmail.com>  Wed, 15 Nov 2023 10:52:55 +0100
+ -- Thomas Dreibholz <thomas.dreibholz@gmail.com>  Wed, 06 Dec 2023 16:54:30 +0100
 
 netperfmeter (1.9.4-1ubuntu1) jammy; urgency=medium
 
