@@ -1,5 +1,5 @@
 PORTNAME=	netperfmeter
-PORTVERSION=	1.9.5
+PORTVERSION=	1.9.6
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.nntb.no/~dreibh/netperfmeter/download/
 
