@@ -1135,7 +1135,7 @@ uint64_t random64()
 /* ###### Get 32-bit random value ######################################## */
 uint32_t random32()
 {
-#ifdef NDEBUG
+#if defined(SIM_IMPORT) || defined(OMNETPPLIBS_IMPORT)
 #warning Using OMNeT++ random generator instead of time-seeded one!
    const double value = uniform(0.0, (double)0xffffffff);
    return((uint32_t)rint(value));
