@@ -1,9 +1,9 @@
-netperfmeter (1.9.7~rc0-1ubuntu1) jammy; urgency=medium
+netperfmeter (1.9.7-1ubuntu1) jammy; urgency=medium
 
   * New upstream release.
   * Fix for typo in manpage of setpdfmetadata (Closes: #1060277).
 
- -- Thomas Dreibholz <thomas.dreibholz@gmail.com>  Sat, 10 Feb 2024 15:49:31 +0100
+ -- Thomas Dreibholz <thomas.dreibholz@gmail.com>  Sat, 10 Feb 2024 15:58:17 +0100
 
 netperfmeter (1.9.6-1ubuntu1) jammy; urgency=medium
 

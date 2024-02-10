@@ -1,3 +1,40 @@
+commit 5e9b7dcc1efc07e07878b2c8dd3bd1c72fc07380
+Merge: 666eda1 aa62f39
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Feb 10 15:51:52 2024 +0100
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 666eda1e7ebb7fbf387ae883199511461282ba50
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Feb 10 15:50:46 2024 +0100
+
+    Fix for typo in manpage of setpdfmetadata (Debian Bug #1060277).
+
+commit aa62f39738ce576744bfc8d1ffe5354ffcbb985f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Feb 10 13:10:12 2024 +0100
+
+    Updated FreeBSD packaging files.
+
+commit 0f2404fbf877b22f228e62912ccdc4de23988f20
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Dec 18 13:18:50 2023 +0100
+
+    Updated distinfo.
+
+commit bc4a53c43c34c891d778605b7ab48f6a570de4bb
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Dec 18 13:18:18 2023 +0100
+
+    Updated LSM entry.
+
+commit 78b51ddd3377144d499d155eb93a0bc4eaa39cce
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Dec 18 13:16:31 2023 +0100
+
+    New release netperfmeter-1.9.6.
+
 commit fcd6afc9443337cca787996f24d4aa8d48643b7f
 Merge: 9b033d5 8eb520e
 Author: Thomas Dreibholz <dreibh@simula.no>
