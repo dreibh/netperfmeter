@@ -2,11 +2,11 @@ PORTNAME=	netperfmeter
 PORTVERSION=	1.9.7
 PORTREVISION=	1
 CATEGORIES=	benchmarks
-MASTER_SITES=	https://www.uni-due.de/~be0001/netperfmeter/download/
+MASTER_SITES=	https://www.nntb.no/~dreibh/netperfmeter/download/
 
-MAINTAINER=	dreibh@iem.uni-due.de
+MAINTAINER=	thomas.dreibholz@gmail.com
 COMMENT=	Network Performance Meter
-WWW=		https://www.uni-due.de/~be0001/netperfmeter/
+WWW=		https://www.nntb.no/~dreibh/netperfmeter/
 
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
