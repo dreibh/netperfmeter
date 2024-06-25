@@ -24,15 +24,24 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=nobody
-Group=nogroup
+DynamicUser=yes
+# User=nobody
+# Group=nogroup
 WorkingDirectory=/tmp
 EnvironmentFile=/etc/netperfmeter.conf
+
+# Load TCP congestion control modules:
+ExecStartPre=+/bin/sh -c "find /lib/modules/$(uname -r)/kernel/net/ipv4/ -name 'tcp_*.ko' | xargs -r -n1 basename | sed 's/\\.ko$//g' | sort | xargs -r -I MODULE sh -c 'modprobe MODULE || true'"
+# Allow all TCP congestion controls:
+ExecStartPre=+/bin/sh -c "sysctl -w net.ipv4.tcp_allowed_congestion_control=\"$(sysctl -n net.ipv4.tcp_available_congestion_control)\""
 
 ExecStart=/usr/bin/netperfmeter \
    "${NETPERFMETER_PORT}" \
    "${NETPERFMETER_OPTIONS}" \
    -verbosity="${VERBOSITY}"
+
+# Unload TCP congestion control modules:
+ExecStopPost=+/bin/sh -c "lsmod | grep 'tcp_' | sort -k3n | cut -d' ' -f1 | xargs -r -I MODULE sh -c 'rmmod MODULE || true'"
 
 KillSignal=SIGINT
 KillMode=control-group
