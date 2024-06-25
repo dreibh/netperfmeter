@@ -1,0 +1,49 @@
+# Network Performance Meter
+# Copyright (C) 2009-2024 by Thomas Dreibholz
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact: thomas.dreibholz@gmail.com
+
+[Unit]
+Description=NetPerfMeter
+Documentation=man:netperfmeter(1)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nobody
+Group=nogroup
+WorkingDirectory=/tmp
+EnvironmentFile=/etc/netperfmeter.conf
+
+ExecStart=/usr/bin/netperfmeter \
+   "${NETPERFMETER_PORT}" \
+   "${NETPERFMETER_OPTIONS}" \
+   -verbosity="${VERBOSITY}"
+
+KillSignal=SIGINT
+KillMode=control-group
+TimeoutStopSec=60
+Restart=on-failure
+RestartSec=30
+
+PrivateNetwork=no
+PrivateTmp=yes
+InaccessibleDirectories=/home
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target
