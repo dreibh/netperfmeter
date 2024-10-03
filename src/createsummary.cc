@@ -291,7 +291,9 @@ static unsigned int getAggregate(char*        objectName,
       }
    }
    char aggregate[i + 2];
-   strncpy((char*)&aggregate, segment, i + 1);
+   if(i >= 0) {
+      strncpy((char*)&aggregate, segment, i + 1);
+   }
    aggregate[i + 1] = 0x00;
 
    // ------ Extract aggregate and its value --------------
