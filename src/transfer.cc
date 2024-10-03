@@ -200,8 +200,9 @@ ssize_t transmitFrame(Flow*                    flow,
    const uint32_t frameID = flow->nextOutboundFrameID();
    while(bytesSent < (ssize_t)bytesToSend) {
       // ====== Send message ================================================
-      size_t chunkSize = std::min(bytesToSend, std::min((size_t)flow->getTrafficSpec().MaxMsgSize,
-                                                        MAXIMUM_MESSAGE_SIZE));
+      size_t chunkSize = std::min(bytesToSend - bytesSent,
+                                  std::min((size_t)flow->getTrafficSpec().MaxMsgSize,
+                                           MAXIMUM_MESSAGE_SIZE));
       const ssize_t sent =
          sendNetPerfMeterData(flow, frameID,
                               (bytesSent == 0),                       // Is frame begin?
