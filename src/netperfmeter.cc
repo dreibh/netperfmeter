@@ -1347,7 +1347,7 @@ int main(int argc, char** argv)
       cerr << "Usage: " << argv[0]
            << " [Local Port|Remote Endpoint] {-control-over-tcp} {-tcp|-udp|-sctp|-dccp} {flow spec} ..."
            << endl;
-      exit(1);
+      return 0;
    }
 
    for(int i = 2;i < argc;i++) {
