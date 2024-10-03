@@ -38,7 +38,8 @@ ExecStartPre=+/bin/sh -c "sysctl -w net.ipv4.tcp_allowed_congestion_control=\"$(
 ExecStart=/usr/bin/netperfmeter \
    "${NETPERFMETER_PORT}" \
    "${NETPERFMETER_OPTIONS}" \
-   -verbosity="${VERBOSITY}"
+   -verbosity="${VERBOSITY}" \
+   -nodisplay
 
 # Unload TCP congestion control modules:
 ExecStopPost=+/bin/sh -c "lsmod | grep 'tcp_' | sort -k3n | cut -d' ' -f1 | xargs -r -I MODULE sh -c 'rmmod MODULE || true'"

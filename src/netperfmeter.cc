@@ -62,6 +62,7 @@ static int            gUDPSocket        = -1;
 static int            gSCTPSocket       = -1;
 static int            gDCCPSocket       = -1;
 static double         gRuntime          = -1.0;
+static bool           gDisplayEnabled   = true;
 static bool           gStopTimeReached  = false;
 MessageReader         gMessageReader;
 
@@ -105,6 +106,12 @@ bool handleGlobalParameter(char* parameter)
    }
    else if(strncmp(parameter, "-verbosity=", 11) == 0) {
       // Already handled before!
+   }
+   else if(strcmp(parameter, "-display") == 0) {
+      gDisplayEnabled = true;
+   }
+   else if(strcmp(parameter, "-nodisplay") == 0) {
+      gDisplayEnabled = false;
    }
    else if(strncmp(parameter, "-local=", 7) == 0) {
       gLocalDataAddresses = 0;
@@ -1068,7 +1075,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    // ====== Main loop ======================================================
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
-   FlowManager::getFlowManager()->enableDisplay();
+   if( (gDisplayEnabled) && (gOutputVerbosity >= NPFOV_BANDWIDTH_INFO) ) {
+      FlowManager::getFlowManager()->enableDisplay();
+   }
 
    const unsigned long long stopAt = (gRuntime > 0) ?
       (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
@@ -1300,7 +1309,7 @@ void activeMode(int argc, char** argv)
       (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
-   if(gOutputVerbosity >= NPFOV_BANDWIDTH_INFO) {
+   if( (gDisplayEnabled) && (gOutputVerbosity >= NPFOV_BANDWIDTH_INFO) ) {
       FlowManager::getFlowManager()->enableDisplay();
    }
 

@@ -42,6 +42,8 @@
 .Fl quiet
 .Fl verbose
 .Fl verbosity=Level
+.Fl display
+.Fl nodisplay
 .Fl v6only
 .Fl pathmgr=name
 .Fl scheduler=name
@@ -96,6 +98,10 @@ Reduces verbosity of log output. May be specified multiple times.
 Increases verbosity of log output. May be specified multiple times.
 .It Fl verbosity=Level
 Sets the verbosity of the log output to a given level, from 0 (lowest) to 6 (highest).
+.It Fl display
+Display live I/O statistics, updated every second. This is enabled by default.
+.It Fl nodisplay
+No not display live I/O statistics. This is useful for running NetPerfMeter in background as a service.
 .It Fl v6only
 Use sockets with IPv6 only (by setting IPV6_V6ONLY socket option).
 .It Fl pathmgr=name
