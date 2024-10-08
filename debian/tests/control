@@ -1,1 +1,2 @@
 Tests: multiprotocol-flow-test
+Restrictions: isolation-machine
