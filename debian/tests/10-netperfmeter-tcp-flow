@@ -22,35 +22,36 @@
 # Bash options:
 set -e
 
-rm -f *.vec *.sca
+rm -f ./*.vec ./*.sca
 
 # ====== Start the passive side =============================================
-netperfmeter 9000 &
+netperfmeter 9000 -nodisplay &
 SERVER_PID=$!
 sleep 5
 
 cleanup() {
-   kill ${SERVER_PID}
+   if [ "${SERVER_PID}" != "" ] ; then
+      kill "${SERVER_PID}"
+      SERVER_PID=
+   fi
 }
 trap cleanup 0
 
 netperfmeter localhost:9000 \
    -vector=vector.vec \
    -scalar=scalar.sca \
-   -tcp  const10:const1452:const5:const1452 \
-   -sctp const10:const1452:const5:const1452 \
-   -dccp const10:const1452:const5:const1452 \
-   -udp  const10:const1452:const5:const1452 \
-   -runtime=10
+   -tcp const10:const1452:const5:const1452 \
+   -runtime=10 \
+   -nodisplay
 
 # ====== Stop the passive side ==============================================
-kill ${SERVER_PID}
+cleanup
 
 # ====== Check results ======================================================
-RESULTS="scalar-active.sca scalar-passive.sca vector-active-00000000-0000.vec vector-active-00000001-0000.vec vector-active-00000002-0000.vec vector-active-00000003-0000.vec vector-active.vec vector-passive-00000000-0000.vec vector-passive-00000001-0000.vec vector-passive-00000002-0000.vec vector-passive-00000003-0000.vec vector-passive.vec"
+RESULTS="scalar-active.sca scalar-passive.sca vector-active-00000000-0000.vec vector-active.vec vector-passive-00000000-0000.vec vector-passive.vec"
 for result in ${RESULTS} ; do
-   if [ -s ${result} ] ; then
-      ls -l  ${result}
+   if [ -s "${result}" ] ; then
+      ls -l  "${result}"
    else
       echo >&2 "ERROR: ${result} does not exist or is empty!"
       exit 1

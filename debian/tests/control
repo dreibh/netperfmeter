@@ -1,2 +1,7 @@
-Tests: multiprotocol-flow-test
-Restrictions: isolation-machine
+Tests: 10-netperfmeter-tcp-flow
+Restrictions: allow-stderr
+Depends: netperfmeter
+
+Tests: 20-netperfmeter-multiprotocol-flows
+Restrictions: isolation-machine, allow-stderr
+Depends: netperfmeter
