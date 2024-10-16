@@ -218,6 +218,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 #endif
                   socket->MessageSize = ntohs(header->Length);
                   if(socket->MessageSize < sizeof(TLVHeader)) {
+                     printTimeStamp(std::cerr);
                      std::cerr << "ERROR: Message size < TLV size in message from ";
                      printAddress(std::cout, from, true);
                      std::cerr << " on socket " << socket->SocketDescriptor << "!\n";
@@ -225,6 +226,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                      return(MRRM_STREAM_ERROR);
                   }
                   else if(socket->MessageSize > socket->MessageBufferSize) {
+                     printTimeStamp(std::cerr);
                      std::cerr << "ERROR: Message too large to fit buffer for message from ";
                      printAddress(std::cout, from, true);
                      std::cerr << " on socket " << socket->SocketDescriptor << "!\n";
@@ -258,6 +260,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                if(socket->Protocol == IPPROTO_SCTP) {
                   if(*msgFlags & MSG_EOR) {   // end of SCTP message
                      if(!(*msgFlags & MSG_NOTIFICATION)) {   // data message
+                        printTimeStamp(std::cerr);
                         std::cerr << "ERROR: SCTP message end before TLV message end (\n"
                                   << "read " << socket->BytesRead
                                   << ", expected " << socket->MessageSize << ") in message from ";
@@ -281,6 +284,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 
             // ====== Completed reading =====================================
             if(socket->MessageSize > bufferSize) {
+               printTimeStamp(std::cerr);
                std::cerr << "ERROR: Buffer size for MessageReader::receiveMessage() is too small in message from ";
                printAddress(std::cout, from, true);
                std::cerr << " on socket " << socket->SocketDescriptor << "!\n";
@@ -288,6 +292,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                return(MRRM_STREAM_ERROR);
             }
             if((socket->Protocol == IPPROTO_SCTP) && (!(*msgFlags & MSG_EOR))) {
+               printTimeStamp(std::cerr);
                std::cerr << "ERROR: TLV message end does not match with SCTP message end in message from ";
                printAddress(std::cout, from, true);
                std::cerr << " on socket " << socket->SocketDescriptor << "!\n";
@@ -312,6 +317,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       }
    }
    else {
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: Unknown socket " << sd
                 << " given in call of MessageReader::receiveMessage()!\n";
       return(MRRM_BAD_SOCKET);
