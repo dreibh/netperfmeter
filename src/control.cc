@@ -461,6 +461,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
 
       if(gOutputVerbosity >= NPFOV_STATUS) {
          gOutputMutex.lock();
+         printTimeStamp(std::cout);
          std::cout << "Starting measurement ... <S1> "; std::cout.flush();
          gOutputMutex.unlock();
       }
@@ -550,6 +551,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
 
    if(gOutputVerbosity >= NPFOV_STATUS) {
       gOutputMutex.lock();
+      printTimeStamp(std::cout);
       std::cout << "Stopping measurement ... <S1> "; std::cout.flush();
       gOutputMutex.unlock();
    }
@@ -572,7 +574,9 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
          measurement->getVectorNamePattern(), "passive");
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
          gOutputMutex.lock();
-         std::cout << "\nDownloading results [" << vectorName << "] ";
+         std::cout << "\n";
+         printTimeStamp(std::cout);
+         std::cout << "Downloading results [" << vectorName << "] ";
          std::cout.flush();
          gOutputMutex.unlock();
       }
@@ -593,7 +597,9 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
          measurement->getScalarNamePattern(), "passive");
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
          gOutputMutex.lock();
-         std::cout << "\nDownloading results [" << scalarName << "] ";
+         std::cout << "\n";
+         printTimeStamp(std::cout);
+         std::cout << "Downloading results [" << scalarName << "] ";
          std::cout.flush();
          gOutputMutex.unlock();
       }
@@ -733,7 +739,9 @@ static bool uploadOutputFile(const int         controlSocket,
 
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       gOutputMutex.lock();
-      std::cout << "\nUploading results ";
+      std::cout << "\n";
+      printTimeStamp(std::cout);
+      std::cout << "Uploading results ";
       std::cout.flush();
       gOutputMutex.unlock();
    }
@@ -978,7 +986,9 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
 
    if(gOutputVerbosity >= NPFOV_STATUS) {
       gOutputMutex.lock();
-      std::cout << "\nStarting measurement "
+      std::cout << "\n";
+      printTimeStamp(std::cout);
+      std::cout << "Starting measurement "
                 << format("$%llx", (unsigned long long)measurementID) << " ...\n";
       gOutputMutex.unlock();
    }
@@ -1026,7 +1036,9 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
 
    if(gOutputVerbosity >= NPFOV_STATUS) {
       gOutputMutex.lock();
-      std::cout << "\nStopping measurement "
+      std::cout << "\n";
+      printTimeStamp(std::cout);
+      std::cout << "Stopping measurement "
                 << format("$%llx", (unsigned long long)measurementID)
                 << " ...\n";
       gOutputMutex.unlock();
