@@ -31,7 +31,7 @@
 unsigned long long getMicroTime()
 {
   struct timeval tv;
-  gettimeofday(&tv,NULL);
+  gettimeofday(&tv,nullptr);
   return(((unsigned long long)tv.tv_sec * (unsigned long long)1000000) +
          (unsigned long long)tv.tv_usec);
 }

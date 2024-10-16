@@ -31,7 +31,7 @@
 static unsigned long long getMicroTime()
 {
   struct timeval tv;
-  gettimeofday(&tv,NULL);
+  gettimeofday(&tv,nullptr);
   return(((unsigned long long)tv.tv_sec * (unsigned long long)1000000) +
          (unsigned long long)tv.tv_usec);
 }
@@ -59,7 +59,7 @@ int main(int argc, char** argv)
 
    if(currentRun == 0) {
       FILE* fh = fopen(argv[1], "w");
-      if(fh == NULL) {
+      if(fh == nullptr) {
          fprintf(stderr, "ERROR: Unable to create file <%s>!\n", argv[1]);
          exit(1);
       }
@@ -74,7 +74,7 @@ int main(int argc, char** argv)
    else {
       unsigned long long startTimeStamp;
       FILE* fh = fopen(argv[1], "r");
-      if(fh == NULL) {
+      if(fh == nullptr) {
          fprintf(stderr, "ERROR: Unable to open file <%s>!\n", argv[1]);
          exit(1);
       }

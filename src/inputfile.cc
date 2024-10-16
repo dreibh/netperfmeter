@@ -29,8 +29,8 @@
 // ###### Constructor #######################################################
 InputFile::InputFile()
 {
-   File      = NULL;
-   BZFile    = NULL;
+   File      = nullptr;
+   BZFile    = nullptr;
    ReadError = false;
    Line      = 0;
 }
@@ -53,7 +53,7 @@ bool InputFile::initialize(const char*           name,
    StoragePos = 0;
    Line       = 0;
    Format     = format;
-   if(name != NULL) {
+   if(name != nullptr) {
       Name = std::string(name);
    }
    else {
@@ -61,9 +61,9 @@ bool InputFile::initialize(const char*           name,
    }
 
    // ====== Initialize file ================================================
-   BZFile = NULL;
-   File = (name != NULL) ? fopen(name, "r") : tmpfile();
-   if(File == NULL) {
+   BZFile = nullptr;
+   File = (name != nullptr) ? fopen(name, "r") : tmpfile();
+   if(File == nullptr) {
       std::cerr << "ERROR: Unable to open input file <" << Name << ">!\n";
       ReadError = true;
       return(false);
@@ -72,11 +72,11 @@ bool InputFile::initialize(const char*           name,
    // ====== Initialize BZip2 compressor ====================================
    if(format == IFF_BZip2) {
       int bzerror;
-      BZFile = BZ2_bzReadOpen(&bzerror, File, 0, 0, NULL, 0);
+      BZFile = BZ2_bzReadOpen(&bzerror, File, 0, 0, nullptr, 0);
       if(bzerror != BZ_OK) {
          std::cerr << "ERROR: Unable to initialize BZip2 compression on file <" << Name << ">!\n"
                    << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
-         BZ2_bzWriteClose(&bzerror, BZFile, 0, NULL, NULL);
+         BZ2_bzWriteClose(&bzerror, BZFile, 0, nullptr, nullptr);
          ReadError = true;
          finish();
          return(false);
@@ -95,14 +95,14 @@ bool InputFile::finish(const bool closeFile)
    if(BZFile) {
       int bzerror;
       BZ2_bzReadClose(&bzerror, BZFile);
-      BZFile = NULL;
+      BZFile = nullptr;
    }
 
    // ====== Close or rewind file ===========================================
    if(File) {
       if(closeFile) {
          fclose(File);
-         File = NULL;
+         File = nullptr;
       }
       else {
          rewind(File);

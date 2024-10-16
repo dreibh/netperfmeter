@@ -55,7 +55,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
    NetPerfMeterResults* resultsMsg = (NetPerfMeterResults*)&messageBuffer;
 
    FILE* fh = fopen(fileName, "w");
-   if(fh == NULL) {
+   if(fh == nullptr) {
       gOutputMutex.lock();
       std::cerr << "ERROR: Unable to create file " << fileName
                 << " - " << strerror(errno) << "!" << std::endl;
@@ -352,10 +352,10 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
                               const OutputFileFormat scalarFileFormat)
 {
    // ====== Write config file ==============================================
-   FILE* configFile = NULL;
+   FILE* configFile = nullptr;
    if(configName[0] != 0x00) {
       configFile = fopen(configName, "w");
-      if(configFile == NULL) {
+      if(configFile == nullptr) {
          gOutputMutex.lock();
          std::cerr << "ERROR: Unable to create config file <"
                   << configName << ">!" << std::endl;
@@ -526,7 +526,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    FlowManager::getFlowManager()->lock();
    FlowManager::getFlowManager()->stopMeasurement(measurementID);
    Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(measurementID);
-   assert(measurement != NULL);
+   assert(measurement != nullptr);
    measurement->writeScalarStatistics(getMicroTime());
    FlowManager::getFlowManager()->unlock();
 
@@ -907,7 +907,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
                             controlSocket);
       return(sendNetPerfMeterAcknowledge(controlSocket,
                                          measurementID, flowID, streamID,
-                                         (flow != NULL) ? NETPERFMETER_STATUS_OKAY :
+                                         (flow != nullptr) ? NETPERFMETER_STATUS_OKAY :
                                                           NETPERFMETER_STATUS_ERROR));
    }
 }
@@ -930,7 +930,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
    const uint32_t flowID        = ntohl(removeFlowMsg->FlowID);
    const uint16_t streamID      = ntohs(removeFlowMsg->StreamID);
    Flow* flow = FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID);
-   if(flow == NULL) {
+   if(flow == nullptr) {
       gOutputMutex.lock();
       std::cerr << "ERROR: NETPERFMETER_ADD_REMOVE tried to remove not-existing flow!"
                 << std::endl;
@@ -993,8 +993,8 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    const unsigned long long now = getMicroTime();
    bool success = FlowManager::getFlowManager()->startMeasurement(
       measurementID, now,
-      NULL, vectorFileFormat,
-      NULL, scalarFileFormat,
+      nullptr, vectorFileFormat,
+      nullptr, scalarFileFormat,
       (gOutputVerbosity >= NPFOV_FLOWS));
 
    return(sendNetPerfMeterAcknowledge(controlSocket,
@@ -1044,7 +1044,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       iterator++) {
       Flow* flow = *iterator;
       if(flow->getMeasurement() == measurement) {
-         flow->setMeasurement(NULL);
+         flow->setMeasurement(nullptr);
       }
    }
    FlowManager::getFlowManager()->unlock();
@@ -1205,7 +1205,7 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                                         sd, from,
                                                         vectorFileFormat,
                                                         controlSocketDescriptor);
-   if(flow != NULL) {
+   if(flow != nullptr) {
       const bool success = flow->configureSocket(sd);
       sendNetPerfMeterAcknowledge(controlSocketDescriptor,
                                   ntoh64(identifyMsg->MeasurementID),

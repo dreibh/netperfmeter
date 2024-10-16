@@ -36,7 +36,7 @@ Mutex::Mutex()
 #else
    MutexOwner          = 0;
    MutexRecursionLevel = 0;
-   pthread_mutex_init(&MyMutex, NULL);
+   pthread_mutex_init(&MyMutex, nullptr);
 #endif
 }
 

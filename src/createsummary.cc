@@ -69,11 +69,11 @@ ScalarNode::ScalarNode()
 {
    Run        = 0;
    Entries    = 0;
-   ScalarName = NULL;
-   SplitName  = NULL;
-   VarValues  = NULL;
-   AggNames   = NULL;
-   AggValues  = NULL;
+   ScalarName = nullptr;
+   SplitName  = nullptr;
+   VarValues  = nullptr;
+   AggNames   = nullptr;
+   AggValues  = nullptr;
    simpleRedBlackTreeNodeNew(&Node);
 }
 
@@ -83,23 +83,23 @@ ScalarNode::~ScalarNode()
 {
    if(ScalarName) {
       free(ScalarName);
-      ScalarName = NULL;
+      ScalarName = nullptr;
    }
    if(SplitName) {
       free(SplitName);
-      SplitName = NULL;
+      SplitName = nullptr;
    }
    if(VarValues) {
       free(VarValues);
-      VarValues = NULL;
+      VarValues = nullptr;
    }
    if(AggNames) {
       free(AggNames);
-      AggNames = NULL;
+      AggNames = nullptr;
    }
    if(AggValues) {
       free(AggValues);
-      AggValues = NULL;
+      AggValues = nullptr;
    }
 }
 
@@ -163,8 +163,8 @@ static int scalarNodeComparisonFunction(const void* node1, const void* node2)
 
 
 static struct SimpleRedBlackTree StatisticsStorage;
-static ScalarNode*               NextScalarNode = NULL;
-static SkipListNode*             SkipList       = NULL;
+static ScalarNode*               NextScalarNode = nullptr;
+static SkipListNode*             SkipList       = nullptr;
 
 
 
@@ -212,7 +212,7 @@ static void removeBrackets(char* str)
 static void removeScenarioName(char* str)
 {
    char* s1 = index(str, '.');
-   if(s1 != NULL) {
+   if(s1 != nullptr) {
       s1++;
       while(*s1 != 0x00) {
          *str++ = *s1++;
@@ -263,7 +263,7 @@ static unsigned int getAggregate(char*        objectName,
    // ====== Get segment ====================================================
    unsigned int levels;
    char*        segment = rindex(objectName, '.');
-   if(segment == NULL) {
+   if(segment == nullptr) {
       segment       = objectName;
       scalarName[0] = 0x00;
       aggNames[0]   = 0x00;
@@ -330,7 +330,7 @@ static unsigned int getAggregate(char*        objectName,
          for(size_t i = 1;i < identifierLength;i++) {
             if(!isdigit(identifier[i])) {
                // Identifier is not a number -> skip it!
-               identifier = NULL;
+               identifier = nullptr;
                break;
             }
          }
@@ -370,7 +370,7 @@ static char* getWord(char* str, char* word)
       n++;
    }
    if(str[n] == 0x00) {
-      return(NULL);
+      return(nullptr);
    }
    if(str[n] == '\"') {
       quoted = true;
@@ -381,7 +381,7 @@ static char* getWord(char* str, char* word)
    while( ((quoted) && (str[n] != '\"')) ||
           ((!quoted) && (str[n] != ' ') && (str[n] != '\t')) ) {
       if( (quoted == true) && (str[n] == 0x00) ) {
-         return(NULL);
+         return(nullptr);
       }
       word[i++] = str[n++];
    }
@@ -405,9 +405,9 @@ static void addScalar(const char*  scalarName,
    // printf("addScalar: scalarName=<%s> splitName=<%s> aggN=<%s> aggV=<%s> varN=<%s> varV=<%s> run=%lu val=%f\n",
    //        scalarName, splitName, aggNames, aggValues, varNames, varValues, runNumber, value);
 
-   if(NextScalarNode == NULL) {
+   if(NextScalarNode == nullptr) {
       NextScalarNode = new ScalarNode;
-      if(NextScalarNode == NULL) {
+      if(NextScalarNode == nullptr) {
          cerr << "ERROR: Out of memory!" << endl;
          exit(1);
       }
@@ -429,22 +429,22 @@ static void addScalar(const char*  scalarName,
       NextScalarNode->AggNames   = strdup(aggNames);
       NextScalarNode->AggValues  = strdup(aggValues);
       NextScalarNode->VarValues  = strdup(varValues);
-      if( (NextScalarNode->ScalarName == NULL) ||
-          (NextScalarNode->SplitName  == NULL) ||
-          (NextScalarNode->AggNames   == NULL) ||
-          (NextScalarNode->AggValues  == NULL) ||
-          (NextScalarNode->VarValues  == NULL) ) {
+      if( (NextScalarNode->ScalarName == nullptr) ||
+          (NextScalarNode->SplitName  == nullptr) ||
+          (NextScalarNode->AggNames   == nullptr) ||
+          (NextScalarNode->AggValues  == nullptr) ||
+          (NextScalarNode->VarValues  == nullptr) ) {
          cerr << "ERROR: Out of memory!" << endl;
          exit(1);
       }
-      NextScalarNode = NULL;
+      NextScalarNode = nullptr;
    }
    else {
-      NextScalarNode->ScalarName = NULL;
-      NextScalarNode->SplitName  = NULL;
-      NextScalarNode->AggNames   = NULL;
-      NextScalarNode->AggValues  = NULL;
-      NextScalarNode->VarValues  = NULL;
+      NextScalarNode->ScalarName = nullptr;
+      NextScalarNode->SplitName  = nullptr;
+      NextScalarNode->AggNames   = nullptr;
+      NextScalarNode->AggValues  = nullptr;
+      NextScalarNode->VarValues  = nullptr;
    }
 
    scalarNode->ValueSet.push_back(value);
@@ -497,14 +497,14 @@ static void handleScalar(const std::string& varNames,
 
    // ====== Reconciliate with skip list ====================================
    SkipListNode* skipListNode = SkipList;
-   while(skipListNode != NULL) {
+   while(skipListNode != nullptr) {
       if(strncmp(scalarName, skipListNode->Prefix,
                  strlen(skipListNode->Prefix)) == 0) {
          break;
       }
       skipListNode = skipListNode->Next;;
    }
-   if(skipListNode == NULL) {
+   if(skipListNode == nullptr) {
       addScalar(scalarName, splitName, aggNames, aggValues,
                 varNames.c_str(), varValues.c_str(), run, value);
    }
@@ -560,9 +560,9 @@ static bool handleScalarFile(const std::string& varNames,
           (!(strncmp(buffer, "scalar\t", 7))) ) {
          // ====== Parse scalar line ========================================
          char* s = getWord((char*)&buffer[7], (char*)&objectName);
-         if(s != NULL) {
+         if(s != nullptr) {
             s = getWord(s, (char*)&statName);
-            if(s != NULL) {
+            if(s != nullptr) {
                if(sscanf(s, "%lf", &value) != 1) {
                   cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
                        << " - Value expected!" << endl;
@@ -638,7 +638,7 @@ static bool handleScalarFile(const std::string& varNames,
          char* s = getWord((char*)&buffer[10], (char*)&statisticObjectName);
          if(s) {
             s = getWord(s, (char*)&statisticBlockName);
-            if(s == NULL) {
+            if(s == nullptr) {
                cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
                     << " - Statistics name expected for \"statistic\"!" << endl;
                success = false;
@@ -725,7 +725,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
    // simpleRedBlackTreePrint(&StatisticsStorage, stdout);
 
    SimpleRedBlackTreeNode* node = simpleRedBlackTreeGetFirst(&StatisticsStorage);
-   while(node != NULL) {
+   while(node != nullptr) {
       ScalarNode* scalarNode = getScalarNodeFromStorageNode(node);
 
       if(strcmp(lastStatisticsName.c_str(), scalarNode->ScalarName) != 0) {
@@ -967,7 +967,7 @@ int main(int argc, char** argv)
       }
       else if(!(strncmp(command, "--skip=", 7))) {
          SkipListNode* skipListNode = new SkipListNode;
-         if(skipListNode == NULL) {
+         if(skipListNode == nullptr) {
             cerr << "ERROR: Out of memory!" << endl;
             exit(1);
          }
@@ -1035,7 +1035,7 @@ int main(int argc, char** argv)
    // ====== Clean up =======================================================
    if(NextScalarNode) {
       delete NextScalarNode;
-      NextScalarNode = NULL;
+      NextScalarNode = nullptr;
    }
    ScalarNode* scalarNode = (ScalarNode*)simpleRedBlackTreeGetFirst(&StatisticsStorage);
    while(scalarNode) {

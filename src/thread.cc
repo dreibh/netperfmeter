@@ -53,7 +53,7 @@ void* Thread::startRoutine(void* object)
 {
    Thread* thread = (Thread*)object;
    thread->run();
-   return(NULL);
+   return(nullptr);
 }
 
 
@@ -64,7 +64,7 @@ bool Thread::start()
       lock();
       Stopping = false;
       unlock();
-      if(pthread_create(&MyThread, NULL, startRoutine, (void*)this) == 0) {
+      if(pthread_create(&MyThread, nullptr, startRoutine, (void*)this) == 0) {
          return(true);
       }
       MyThread = 0;
@@ -90,7 +90,7 @@ void Thread::stop()
 void Thread::waitForFinish()
 {
    if(MyThread != 0) {
-      pthread_join(MyThread, NULL);
+      pthread_join(MyThread, nullptr);
       MyThread = 0;
    }
 }

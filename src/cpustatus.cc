@@ -65,7 +65,7 @@ const char* CPUStatus::CpuStateNames[] = {
 bool CPUStatus::getSysCtl(const char* name, void* ptr, size_t len)
 {
    size_t nlen = len;
-   if(sysctlbyname(name, ptr, &nlen, NULL, 0) < 0) {
+   if(sysctlbyname(name, ptr, &nlen, nullptr, 0) < 0) {
       std::cerr << "ERROR: sysctlbyname(" << name << ") failed: "
                 << strerror(errno) << std::endl;
       exit(1);
@@ -93,7 +93,7 @@ CPUStatus::CPUStatus()
    }
 
    ProcStatFD = fopen("/proc/stat", "r");
-   if(ProcStatFD == NULL) {
+   if(ProcStatFD == nullptr) {
       std::cerr << "ERROR: Unable to open /proc/stat!" << std::endl;
       exit(1);
    }
@@ -105,7 +105,7 @@ CPUStatus::CPUStatus()
 #endif
 
    CpuStates = CPU_STATE_MAX;
-   if ((host = mach_host_self()) == MACH_PORT_NULL) {
+   if ((host = mach_host_self()) == MACH_PORT_nullptr) {
       std::cerr << "ERROR: Couldn't receive send rights." << std::endl;
       exit(1);
    }
@@ -128,18 +128,18 @@ CPUStatus::CPUStatus()
    // ====== Allocate current times array ===================================
    size_t cpuTimesSize = sizeof(tick_t) * (CPUs + 1) * CpuStates;
    CpuTimes = (tick_t*)calloc(1, cpuTimesSize);
-   assert(CpuTimes != NULL);
+   assert(CpuTimes != nullptr);
 
    // ====== Allocate old times array =======================================
    cpuTimesSize = sizeof(tick_t) * (CPUs + 1) * CpuStates;
    OldCpuTimes = (tick_t*)malloc(cpuTimesSize);
-   assert(OldCpuTimes != NULL);
+   assert(OldCpuTimes != nullptr);
    memcpy(OldCpuTimes, CpuTimes, cpuTimesSize);
 
    // ====== Allocate percentages array =====================================
    const size_t percentagesSize = sizeof(float) * (CPUs + 1) * CpuStates;
    Percentages = (float*)malloc(percentagesSize);
-   assert(Percentages != NULL);
+   assert(Percentages != nullptr);
    for(unsigned int i = 0; i < (CPUs + 1) * CpuStates; i++) {
       Percentages[i] = 100.0 / CpuStates;
    }
@@ -153,14 +153,14 @@ CPUStatus::CPUStatus()
 CPUStatus::~CPUStatus()
 {
    free(CpuTimes);
-   CpuTimes = NULL;
+   CpuTimes = nullptr;
    free(OldCpuTimes);
-   OldCpuTimes = NULL;
+   OldCpuTimes = nullptr;
    free(Percentages);
-   Percentages = NULL;
+   Percentages = nullptr;
 #ifdef __linux__
    fclose(ProcStatFD);
-   ProcStatFD = NULL;
+   ProcStatFD = nullptr;
 #endif
 #ifdef __APPLE__
 #ifdef USE_PER_CPU_STATISTICS

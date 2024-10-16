@@ -69,7 +69,7 @@ std::string format(const char* fmt, ...)
 unsigned long long getMicroTime()
 {
   struct timeval tv;
-  gettimeofday(&tv,NULL);
+  gettimeofday(&tv,nullptr);
   return(((unsigned long long)tv.tv_sec * (unsigned long long)1000000) +
          (unsigned long long)tv.tv_usec);
 }
@@ -141,16 +141,16 @@ int safestrcat(char* dest, const char* src, const size_t size)
 /* ###### Find first occurrence of character in string ################### */
 static char* strindex(char* string, const char character)
 {
-   if(string != NULL) {
+   if(string != nullptr) {
       while(*string != character) {
          if(*string == 0x00) {
-            return(NULL);
+            return(nullptr);
          }
          string++;
       }
       return(string);
    }
-   return(NULL);
+   return(nullptr);
 }
 
 
@@ -160,17 +160,17 @@ static char* strrindex(char* string, const char character)
 {
    const char* original = string;
 
-   if(original != NULL) {
+   if(original != nullptr) {
       string = (char*)&string[strlen(string)];
       while(*string != character) {
          if(string == original) {
-            return(NULL);
+            return(nullptr);
          }
          string--;
       }
       return(string);
    }
-   return(NULL);
+   return(nullptr);
 }
 
 
@@ -324,7 +324,7 @@ bool address2string(const struct sockaddr* address,
              (IN6_IS_ADDR_LINKLOCAL(&ipv6address->sin6_addr) ||
               IN6_IS_ADDR_MC_LINKLOCAL(&ipv6address->sin6_addr)) ) {
             ifname = if_indextoname(ipv6address->sin6_scope_id, (char*)&ifnamebuffer);
-            if(ifname == NULL) {
+            if(ifname == nullptr) {
                safestrcpy((char*)&ifnamebuffer, "(BAD!)", sizeof(ifnamebuffer));
                return(false);
             }
@@ -333,7 +333,7 @@ bool address2string(const struct sockaddr* address,
          else {
             scope[0] = 0x00;
          }
-         if(inet_ntop(AF_INET6, &ipv6address->sin6_addr, str, sizeof(str)) != NULL) {
+         if(inet_ntop(AF_INET6, &ipv6address->sin6_addr, str, sizeof(str)) != nullptr) {
             if(port) {
                snprintf(buffer, length,
                         "[%s%s]:%d", str, scope, ntohs(ipv6address->sin6_port));
@@ -381,7 +381,7 @@ bool string2address(const char*           string,
    /* ====== Handle RFC2732-compliant addresses ========================== */
    if(string[0] == '[') {
       p1 = strindex(host,']');
-      if(p1 != NULL) {
+      if(p1 != nullptr) {
          if((p1[1] == ':') || (p1[1] == '!')) {
             strcpy((char*)&port, &p1[2]);
          }
@@ -401,10 +401,10 @@ bool string2address(const char*           string,
          }
          if(colons == 1) {
             p1 = strrindex(host,':');
-            if(p1 == NULL) {
+            if(p1 == nullptr) {
                p1 = strrindex(host,'!');
             }
-            if(p1 != NULL) {
+            if(p1 != nullptr) {
                p1[0] = 0x00;
                strcpy((char*)&port, &p1[1]);
             }
@@ -424,7 +424,7 @@ bool string2address(const char*           string,
    /* ====== Create address structure ==================================== */
 
    /* ====== Get information for host ==================================== */
-   res        = NULL;
+   res        = nullptr;
    isNumeric  = true;
    isIPv6     = false;
    hostLength = strlen(host);
@@ -451,7 +451,7 @@ bool string2address(const char*           string,
       hints.ai_flags = AI_NUMERICHOST;
    }
 
-   if(getaddrinfo(host, NULL, &hints, &res) != 0) {
+   if(getaddrinfo(host, nullptr, &hints, &res) != 0) {
       return(false);
    }
 
@@ -528,7 +528,7 @@ const char* getProtocolName(const int protocol)
 /* ###### Get port ####################################################### */
 uint16_t getPort(const struct sockaddr* address)
 {
-   if(address != NULL) {
+   if(address != nullptr) {
       switch(address->sa_family) {
          case AF_INET:
             return(ntohs(((struct sockaddr_in*)address)->sin_port));
@@ -545,7 +545,7 @@ uint16_t getPort(const struct sockaddr* address)
 /* ###### Set port ####################################################### */
 bool setPort(struct sockaddr* address, uint16_t port)
 {
-   if(address != NULL) {
+   if(address != nullptr) {
       switch(address->sa_family) {
          case AF_INET:
             ((struct sockaddr_in*)address)->sin_port = htons(port);
@@ -772,7 +772,7 @@ bool sendAbort(int sd, sctp_assoc_t assocID)
    sinfo.sinfo_assoc_id = assocID;
    sinfo.sinfo_flags    = SCTP_ABORT;
 
-   return(sctp_send(sd, NULL, 0, &sinfo, 0) >= 0);
+   return(sctp_send(sd, nullptr, 0, &sinfo, 0) >= 0);
 }
 
 
@@ -1108,7 +1108,7 @@ const char* getRandomGeneratorName(const uint8_t rng)
 #define RS_CLIB       2
 
 static int   RandomSource = RS_TRY_DEVICE;
-static FILE* RandomDevice = NULL;
+static FILE* RandomDevice = nullptr;
 
 
 /* ###### Get 8-bit random value ######################################### */
@@ -1150,7 +1150,7 @@ uint32_t random32()
          RandomSource = RS_CLIB;
       case RS_TRY_DEVICE:
          RandomDevice = fopen("/dev/urandom", "r");
-         if(RandomDevice != NULL) {
+         if(RandomDevice != nullptr) {
             if(fread(&number, sizeof(number), 1, RandomDevice) == 1) {
                srandom(number);
                RandomSource = RS_DEVICE;
@@ -1230,7 +1230,7 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
    unsigned int i;
 
    if(time < 0)
-      to = NULL;
+      to = nullptr;
    else {
       to = &timeout;
       timeout.tv_sec  = time / 1000;

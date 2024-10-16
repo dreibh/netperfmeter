@@ -144,8 +144,8 @@ bool Defragmenter::getFirstFragment(Frame*&    frame,
       fragment = FragmentIterator->second;
       return(true);
    }
-   frame    = NULL;
-   fragment = NULL;
+   frame    = nullptr;
+   fragment = nullptr;
    return(false);
 }
 
@@ -164,8 +164,8 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
    if(FragmentIterator == frame->FragmentSet.end()) {
       FrameIterator++;
       if(FrameIterator == FrameSet.end()) {
-         frame    = NULL;
-         fragment = NULL;
+         frame    = nullptr;
+         fragment = nullptr;
       }
       else {
          frame            = FrameIterator->second;
@@ -185,15 +185,15 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
          FrameSet.erase(lastFrameIterator);
          delete lastFrame;
          if(lastFrame == frame) {   // Ensure reference gets invalidated!
-            frame = NULL;
+            frame = nullptr;
          }
       }
       if(lastFragment == fragment) {   // Ensure reference gets invalidated!
-         fragment = NULL;
+         fragment = nullptr;
       }
    }
 
-   return(fragment != NULL);
+   return(fragment != nullptr);
 }
 
 

@@ -230,7 +230,7 @@ static const char* parseNextEntry(const char* parameters,
       exit(1);
    }
    if(parameters[n] == 0x00) {
-      return(NULL);
+      return(nullptr);
    }
    return((const char*)&parameters[n + 1]);
 }
@@ -420,7 +420,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
             break;
          }
          const char* p = parseNextEntry((const char*)&parameters[m], (double*)&event.ValueArray, (uint8_t*)&event.RandNumGen);
-         if(p != NULL) {
+         if(p != nullptr) {
             m += (long)p - (long)&parameters[m + 1];
          }
          else {
@@ -545,7 +545,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       exit(1);
    }
    if(parameters[n] == 0x00) {
-      return(NULL);
+      return(nullptr);
    }
    return((const char*)&parameters[n + 1]);
 }
@@ -562,7 +562,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 {
    // ====== Get flow ID and stream ID ======================================
    static uint32_t flowID   = 0; // will be increased with each successfull call
-   uint16_t        streamID = (previousFlow != NULL) ? previousFlow->getStreamID() + 1 : 0;
+   uint16_t        streamID = (previousFlow != nullptr) ? previousFlow->getStreamID() + 1 : 0;
 
    // ====== Get FlowTrafficSpec ============================================
    FlowTrafficSpec trafficSpec;
@@ -614,12 +614,12 @@ static Flow* createFlow(Flow*                  previousFlow,
    }
 
    // ====== Create new flow ================================================
-   if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID) != NULL) {
+   if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID) != nullptr) {
       std::cerr << "ERROR: Flow ID " << flowID << " is used twice. Ensure correct id=<ID> parameters!\n";
       exit(1);
    }
    Flow* flow = new Flow(measurementID, flowID, streamID, trafficSpec);
-   assert(flow != NULL);
+   assert(flow != nullptr);
 
    // ====== Initialize vector file =========================================
    const std::string vectorName = flow->getNodeOutputName(vectorNamePattern,
@@ -759,7 +759,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 
 
 // ###### Initialize pollFD entry in main loop ##############################
-static void addToPollFDs(pollfd* pollFDs, const int fd, int& n, int* index = NULL)
+static void addToPollFDs(pollfd* pollFDs, const int fd, int& n, int* index = nullptr)
 {
    if(fd >= 0) {
       pollFDs[n].fd      = fd;
@@ -799,7 +799,7 @@ bool mainLoop(const bool               isActiveMode,
    size_t controlFDs = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
    const int controlIDMin = n;
    for(size_t i = 0; i < controlFDs; i++) {
-      addToPollFDs((pollfd*)&fds, controlFDSet[i], n, NULL);
+      addToPollFDs((pollfd*)&fds, controlFDSet[i], n, nullptr);
    }
    const int controlIDMax = n - 1;
 
@@ -824,14 +824,14 @@ bool mainLoop(const bool               isActiveMode,
          if(fds[controlID].revents & (POLLIN|POLLERR)) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
-               const int newSD = ext_accept(gControlSocket, NULL, 0);
+               const int newSD = ext_accept(gControlSocket, nullptr, 0);
                if(newSD >= 0) {
                   gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
                }
             }
             else if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocketTCP) ) {
-               const int newSD = ext_accept(gControlSocketTCP, NULL, 0);
+               const int newSD = ext_accept(gControlSocketTCP, nullptr, 0);
                if(newSD >= 0) {
                   gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                }
@@ -855,13 +855,13 @@ bool mainLoop(const bool               isActiveMode,
 
       // ====== Incoming data message =======================================
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
-         const int newSD = ext_accept(gTCPSocket, NULL, 0);
+         const int newSD = ext_accept(gTCPSocket, nullptr, 0);
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_TCP, newSD);
          }
       }
       if( (mptcpID >= 0) && (fds[mptcpID].revents & POLLIN) ) {
-         const int newSD = ext_accept(gMPTCPSocket, NULL, 0);
+         const int newSD = ext_accept(gMPTCPSocket, nullptr, 0);
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_MPTCP, newSD);
          }
@@ -872,14 +872,14 @@ bool mainLoop(const bool               isActiveMode,
          FlowManager::getFlowManager()->unlock();
       }
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
-         const int newSD = ext_accept(gSCTPSocket, NULL, 0);
+         const int newSD = ext_accept(gSCTPSocket, nullptr, 0);
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_SCTP, newSD);
          }
       }
 #ifdef HAVE_DCCP
       if( (dccpID >= 0) && (fds[dccpID].revents & POLLIN) ) {
-         const int newSD = ext_accept(gDCCPSocket, NULL, 0);
+         const int newSD = ext_accept(gDCCPSocket, nullptr, 0);
          if(newSD >= 0) {
             FlowManager::getFlowManager()->addSocket(IPPROTO_DCCP, newSD);
          }
@@ -946,7 +946,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
    gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP,
-                                           localPort + 1, 0, NULL, true, gBindV6Only);
+                                           localPort + 1, 0, nullptr, true, gBindV6Only);
    if(gControlSocketTCP < 0) {
       std::cerr << "ERROR: Failed to create and bind TCP socket for control port - "
            << strerror(errno) << "!\n";
@@ -1192,7 +1192,7 @@ void activeMode(int argc, char** argv)
    OutputFileFormat scalarFileFormat  = OFF_None;
    const char*      configName        = "";
    uint8_t          protocol          = 0;
-   Flow*            lastFlow          = NULL;
+   Flow*            lastFlow          = nullptr;
 
    // ------ Handle other parameters ----------------------------------------
    for(int i = 2;i < argc;i++) {
@@ -1200,7 +1200,7 @@ void activeMode(int argc, char** argv)
          // Parameter has been handled in handleGlobalParameter()!
       }
       else if(argv[i][0] == '-') {
-         lastFlow = NULL;
+         lastFlow = nullptr;
          if(strcmp(argv[i], "-tcp") == 0) {
             protocol = IPPROTO_TCP;
          }
@@ -1277,7 +1277,7 @@ void activeMode(int argc, char** argv)
          }
 
          if(protocol != IPPROTO_SCTP) {
-            lastFlow = NULL;
+            lastFlow = nullptr;
             protocol = 0;
          }
       }

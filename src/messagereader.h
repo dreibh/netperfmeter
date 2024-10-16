@@ -50,10 +50,10 @@ class MessageReader
    ssize_t receiveMessage(const int        sd,
                           void*            buffer,
                           size_t           bufferSize,
-                          sockaddr*        from     = NULL,
-                          socklen_t*       fromSize = NULL,
-                          sctp_sndrcvinfo* sinfo    = NULL,
-                          int*             msgFlags = NULL);
+                          sockaddr*        from     = nullptr,
+                          socklen_t*       fromSize = nullptr,
+                          sctp_sndrcvinfo* sinfo    = nullptr,
+                          int*             msgFlags = nullptr);
    size_t getAllSDs(int* sds, const size_t maxEntries);
    
    inline size_t size() {
@@ -89,7 +89,7 @@ class MessageReader
       if(found != SocketMap.end()) {
          return(found->second);
       }
-      return(NULL);
+      return(nullptr);
    }
 
    std::map<int, Socket*> SocketMap;

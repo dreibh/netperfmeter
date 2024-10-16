@@ -50,8 +50,8 @@ class OutputFile
                    const OutputFileFormat format,
                    const unsigned int     compressionLevel = 9);
    bool finish(const bool          closeFile    = true,
-               unsigned long long* bytesIn      = NULL,
-               unsigned long long* bytesOut     = NULL);
+               unsigned long long* bytesIn      = nullptr,
+               unsigned long long* bytesOut     = nullptr);
    bool printf(const char* str, ...);
    bool write(const char* buffer, const size_t bufferLength);
 

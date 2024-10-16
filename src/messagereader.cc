@@ -65,9 +65,9 @@ bool MessageReader::registerSocket(const int    protocol,
       assert(maxMessageSize >= sizeof(TLVHeader));
 
       socket = new Socket;
-      assert(socket != NULL);
+      assert(socket != nullptr);
       socket->MessageBuffer = new char[maxMessageSize];
-      assert(socket->MessageBuffer != NULL);
+      assert(socket->MessageBuffer != nullptr);
       socket->MessageBufferSize = maxMessageSize;
       socket->MessageSize       = 0;
       socket->BytesRead         = 0;
@@ -134,7 +134,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                                       int*             msgFlags)
 {
    Socket* socket = getSocket(sd);
-   if(socket != NULL) {
+   if(socket != nullptr) {
       // ====== Find out the number of bytes to read ========================
       ssize_t received;
       size_t  bytesToRead;
@@ -172,7 +172,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 
       // ====== Read from socket ============================================
       int dummyFlags;
-      if(msgFlags == NULL) {
+      if(msgFlags == nullptr) {
          dummyFlags = 0;
          msgFlags   = &dummyFlags;
       }

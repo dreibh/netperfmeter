@@ -62,17 +62,17 @@ bool Measurement::initialize(const unsigned long long now,
    NextStatisticsEvent  = 0;
 
    if(FlowManager::getFlowManager()->addMeasurement(this)) {
-      VectorNamePattern = (vectorNamePattern != NULL) ?
+      VectorNamePattern = (vectorNamePattern != nullptr) ?
                              std::string(vectorNamePattern) : std::string();
       const bool s1 = VectorFile.initialize(
-                         (vectorNamePattern != NULL) ?
-                            Flow::getNodeOutputName(vectorNamePattern, "active").c_str() : NULL,
+                         (vectorNamePattern != nullptr) ?
+                            Flow::getNodeOutputName(vectorNamePattern, "active").c_str() : nullptr,
                          vectorFileFormat);
-      ScalarNamePattern = (scalarNamePattern != NULL) ?
+      ScalarNamePattern = (scalarNamePattern != nullptr) ?
                              std::string(scalarNamePattern) : std::string();
       const bool s2 = ScalarFile.initialize(
-                         (scalarNamePattern != NULL) ?
-                            Flow::getNodeOutputName(scalarNamePattern, "active").c_str() : NULL,
+                         (scalarNamePattern != nullptr) ?
+                            Flow::getNodeOutputName(scalarNamePattern, "active").c_str() : nullptr,
                          scalarFileFormat);
       return(s1 && s2);
    }

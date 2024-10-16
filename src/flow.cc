@@ -65,7 +65,7 @@ FlowManager::~FlowManager()
 void FlowManager::addFlow(Flow* flow)
 {
    lock();
-   flow->PollFDEntry = NULL;
+   flow->PollFDEntry = nullptr;
    FlowSet.push_back(flow);
    unlock();
 }
@@ -78,7 +78,7 @@ void FlowManager::removeFlow(Flow* flow)
    flow->deactivate();
 
    // ====== Remove flow from flow set ======================================
-   flow->PollFDEntry = NULL;
+   flow->PollFDEntry = nullptr;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end();iterator++) {
        if(*iterator == flow) {
@@ -120,7 +120,7 @@ Flow* FlowManager::findFlow(const uint64_t measurementID,
                             const uint32_t flowID,
                             const uint16_t streamID)
 {
-   Flow* found = NULL;
+   Flow* found = nullptr;
 
    lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
@@ -143,7 +143,7 @@ Flow* FlowManager::findFlow(const uint64_t measurementID,
 Flow* FlowManager::findFlow(const int      socketDescriptor,
                             const uint16_t streamID)
 {
-   Flow* found = NULL;
+   Flow* found = nullptr;
 
    lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
@@ -165,7 +165,7 @@ Flow* FlowManager::findFlow(const int      socketDescriptor,
 // ###### Find Flow by source address #######################################
 Flow* FlowManager::findFlow(const struct sockaddr* from)
 {
-   Flow* found = NULL;
+   Flow* found = nullptr;
 
    lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
@@ -197,7 +197,7 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
 
    lock();
    Measurement* measurement = new Measurement;
-   if(measurement != NULL) {
+   if(measurement != nullptr) {
       if(measurement->initialize(now, measurementID,
                                  vectorNamePattern, vectorFileFormat,
                                  scalarNamePattern, scalarFileFormat)) {
@@ -311,7 +311,7 @@ Measurement* FlowManager::findMeasurement(const uint64_t measurementID)
    if(found != MeasurementSet.end()) {
       return(found->second);
    }
-   return(NULL);
+   return(nullptr);
 }
 
 
@@ -349,21 +349,21 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
 
    lock();
    Flow* flow = findFlow(measurementID, flowID, streamID);
-   if( (flow != NULL) && (flow->RemoteAddressIsValid == false) ) {
+   if( (flow != nullptr) && (flow->RemoteAddressIsValid == false) ) {
       flow->lock();
       flow->setSocketDescriptor(socketDescriptor, false,
                                 (flow->getTrafficSpec().Protocol != IPPROTO_UDP));
       flow->RemoteAddress        = *from;
       flow->RemoteAddressIsValid = (from->sa.sa_family != AF_UNSPEC);
       controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
-      success = flow->initializeVectorFile(NULL, vectorFileFormat);
+      success = flow->initializeVectorFile(nullptr, vectorFileFormat);
       flow->unlock();
       removeSocket(socketDescriptor, false);   // Socket is now managed as flow!
    }
    unlock();
 
    if(!success) {
-      flow = NULL;
+      flow = nullptr;
    }
 
    return(flow);
@@ -768,7 +768,7 @@ void FlowManager::run()
             }
          }
          else {
-            FlowSet[i]->PollFDEntry = NULL;
+            FlowSet[i]->PollFDEntry = nullptr;
          }
          FlowSet[i]->unlock();
       }
@@ -894,7 +894,7 @@ Flow::Flow(const uint64_t         measurementID,
 
    TrafficSpec                   = trafficSpec;
 
-   MyMeasurement                 = NULL;
+   MyMeasurement                 = nullptr;
    FirstTransmission             = 0;
    LastTransmission              = 0;
    FirstReception                = 0;
@@ -1113,7 +1113,7 @@ void Flow::deactivate(const bool asyncStop)
       if(!asyncStop) {
          waitForFinish();
          FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
-         PollFDEntry = NULL;   // Poll FD entry is now invalid!
+         PollFDEntry = nullptr;   // Poll FD entry is now invalid!
       }
    }
 }
@@ -1222,7 +1222,7 @@ void Flow::run()
          int timeout = pollTimeout(now, 2,
                                    now + 1000000,
                                    nextEvent);
-         ext_poll_wrapper(NULL, 0, timeout);
+         ext_poll_wrapper(nullptr, 0, timeout);
          now = getMicroTime();
       }
 

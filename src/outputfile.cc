@@ -30,8 +30,8 @@
 // ###### Constructor #######################################################
 OutputFile::OutputFile()
 {
-   File       = NULL;
-   BZFile     = NULL;
+   File       = nullptr;
+   BZFile     = nullptr;
    WriteError = false;
    Line       = 0;
 }
@@ -54,7 +54,7 @@ bool OutputFile::initialize(const char*            name,
 
    Line   = 0;
    Format = format;
-   if(name != NULL) {
+   if(name != nullptr) {
       Name = std::string(name);
    }
    else {
@@ -62,11 +62,11 @@ bool OutputFile::initialize(const char*            name,
    }
 
    // ====== Initialize file ================================================
-   File   = NULL;
-   BZFile = NULL;
+   File   = nullptr;
+   BZFile = nullptr;
    if(format != OFF_None) {
-      File = (name != NULL) ? fopen(name, "w+") : tmpfile();
-      if(File == NULL) {
+      File = (name != nullptr) ? fopen(name, "w+") : tmpfile();
+      if(File == nullptr) {
          std::cerr << "ERROR: Unable to create output file <" << Name << ">!\n";
          WriteError = true;
          return(false);
@@ -79,7 +79,7 @@ bool OutputFile::initialize(const char*            name,
          if(bzerror != BZ_OK) {
             std::cerr << "ERROR: Unable to initialize BZip2 compression on file <" << Name << ">!\n"
                       << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
-            BZ2_bzWriteClose(&bzerror, BZFile, 0, NULL, NULL);
+            BZ2_bzWriteClose(&bzerror, BZFile, 0, nullptr, nullptr);
             WriteError = true;
             finish();
             return(false);
@@ -114,7 +114,7 @@ bool OutputFile::finish(const bool          closeFile,
                    << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
          WriteError = true;
       }
-      BZFile = NULL;
+      BZFile = nullptr;
    }
    else {
       if(bytesIn) {
@@ -132,7 +132,7 @@ bool OutputFile::finish(const bool          closeFile,
             std::cerr << "ERROR: Unable to close output file <" << Name << ">!\n";
             WriteError = true;
          }
-         File = NULL;
+         File = nullptr;
       }
       else {
          rewind(File);
