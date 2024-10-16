@@ -272,13 +272,17 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          }
          else {
             gOutputMutex.lock();
-            std::cout << "WARNING: Received data for unknown flow!" << std::endl;
+            std::cout << "WARNING: Received data for unknown flow from ";
+            printAddress(std::cout, &from.sa, true);
+            std::cout << " on sd=" << sd << "!" << std::endl;
             gOutputMutex.unlock();
          }
       }
       else {
          gOutputMutex.lock();
-         std::cout << "WARNING: Received garbage!" << std::endl;
+         std::cout << "WARNING: Received garbage from ";
+         printAddress(std::cout, &from.sa, true);
+         std::cout << " on sd=" << sd << "!" << std::endl;
          gOutputMutex.unlock();
       }
    }
@@ -289,7 +293,9 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
             flow->lock();
             gOutputMutex.lock();
-            std::cout << "End of input for flow " <<  flow->getFlowID() << std::endl;
+            std::cout << "End of input for flow " <<  flow->getFlowID() << " from ";
+            printAddress(std::cout, &from.sa, true);
+            std::cout << " on sd=" << sd << "!" << std::endl;
             gOutputMutex.unlock();
             flow->unlock();
          }
