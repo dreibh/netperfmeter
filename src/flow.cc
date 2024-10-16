@@ -1281,7 +1281,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
          gOutputMutex.lock();
          printTimeStamp(std::cerr);
-         std::cerr << "ERROR: Failed to set TCP_NODELAY - "
+         std::cerr << "ERROR: Failed to set TCP_NODELAY on socket " << socketDescriptor << " - "
                    << strerror(errno) << "!\n";
          gOutputMutex.unlock();
          return(false);
@@ -1298,8 +1298,8 @@ bool Flow::configureSocket(const int socketDescriptor)
             if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_DEBUG, (const char*)&debugOption, sizeof(debugOption)) < 0) {
                gOutputMutex.lock();
                printTimeStamp(std::cerr);
-               std::cerr << "WARNING: Failed to set MPTCP_DEBUG on MPTCP socket - "
-                        << strerror(errno) << "!\n";
+               std::cerr << "WARNING: Failed to set MPTCP_DEBUG on MPTCP  socket " << socketDescriptor << " - "
+                         << strerror(errno) << "!\n";
                gOutputMutex.unlock();
             }
          }
@@ -1309,7 +1309,7 @@ bool Flow::configureSocket(const int socketDescriptor)
             if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_NDIFFPORTS, (const char*)&nDiffPorts, sizeof(nDiffPorts)) < 0) {
                gOutputMutex.lock();
                printTimeStamp(std::cerr);
-               std::cerr << "WARNING: Failed to set MPTCP_NDIFFPORTS on MPTCP socket - "
+               std::cerr << "WARNING: Failed to set MPTCP_NDIFFPORTS on MPTCP socket " << socketDescriptor << " - "
                         << strerror(errno) << "!\n";
                gOutputMutex.unlock();
             }
@@ -1320,7 +1320,7 @@ bool Flow::configureSocket(const int socketDescriptor)
             if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_PATH_MANAGER, pathMgr, strlen(pathMgr)) < 0) {
                gOutputMutex.lock();
                printTimeStamp(std::cerr);
-               std::cerr << "WARNING: Failed to set MPTCP_PATH_MANAGER on MPTCP socket - "
+               std::cerr << "WARNING: Failed to set MPTCP_PATH_MANAGER on MPTCP socket " << socketDescriptor << " - "
                         << strerror(errno) << "!\n";
                gOutputMutex.unlock();
             }
@@ -1331,7 +1331,7 @@ bool Flow::configureSocket(const int socketDescriptor)
             if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_SCHEDULER, scheduler, strlen(scheduler)) < 0) {
                gOutputMutex.lock();
                printTimeStamp(std::cerr);
-               std::cerr << "WARNING: Failed to set MPTCP_SCHEDULER on MPTCP socket - "
+               std::cerr << "WARNING: Failed to set MPTCP_SCHEDULER on MPTCP socket " << socketDescriptor << " - "
                          << strerror(errno) << "!\n";
                gOutputMutex.unlock();
             }
@@ -1345,8 +1345,9 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(strcmp(congestionControl, "default") != 0) {
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
             gOutputMutex.lock();
+            printTimeStamp(std::cerr);
             std::cerr << "ERROR: Failed to set TCP_CONGESTION ("
-                      << congestionControl << ") - "
+                      << congestionControl << ") on socket " << socketDescriptor << " - "
                       << strerror(errno) << "!\n";
             gOutputMutex.unlock();
             return(false);
@@ -1360,7 +1361,7 @@ bool Flow::configureSocket(const int socketDescriptor)
          if (ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
             gOutputMutex.lock();
             printTimeStamp(std::cerr);
-            std::cerr << "ERROR: Failed to set SCTP_NODELAY on SCTP socket - "
+            std::cerr << "ERROR: Failed to set SCTP_NODELAY on SCTP socket " << socketDescriptor << " - "
                       << strerror(errno) << "!\n";
             gOutputMutex.unlock();
             return(false);
@@ -1374,7 +1375,7 @@ bool Flow::configureSocket(const int socketDescriptor)
          if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
             gOutputMutex.lock();
             printTimeStamp(std::cerr);
-            std::cerr << "ERROR: Failed to configure CMT usage on SCTP socket (SCTP_CMT_ON_OFF option) - "
+            std::cerr << "ERROR: Failed to configure CMT usage (SCTP_CMT_ON_OFF option) on SCTP socket " << socketDescriptor << " - "
                       << strerror(errno) << "!\n";
             gOutputMutex.unlock();
             return(false);
@@ -1398,8 +1399,8 @@ bool Flow::configureSocket(const int socketDescriptor)
             gOutputMutex.lock();
             printTimeStamp(std::cerr);
             std::cerr << "WARNING: Failed to configure CCID #" << (unsigned int)value
-                      << " on DCCP socket (DCCP_SOCKOPT_CCID option) - "
-                      << strerror(errno) << "!\n";
+                      << " (DCCP_SOCKOPT_CCID option) on DCCP socket - "
+                      << socketDescriptor << " - " << strerror(errno) << "!\n";
             gOutputMutex.unlock();
          }
       }
@@ -1407,8 +1408,8 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          gOutputMutex.lock();
          printTimeStamp(std::cerr);
-         std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
-                   << strerror(errno) << "!\n";
+         std::cerr << "ERROR: Failed to configure DCCP service code (DCCP_SOCKOPT_SERVICE option) on DCCP socket "
+                   << socketDescriptor << " - " << strerror(errno) << "!\n";
          gOutputMutex.unlock();
          return(false);
       }

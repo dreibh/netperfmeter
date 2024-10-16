@@ -1143,6 +1143,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
    else if(received < (ssize_t)sizeof(NetPerfMeterHeader)) {
       if(received < 0) {
          gOutputMutex.lock();
+         printTimeStamp(std::cerr);
          std::cerr << "ERROR: Control connection is broken!\n";
          gOutputMutex.unlock();
          sendAbort(controlSocket, -1);
@@ -1165,6 +1166,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       const NetPerfMeterHeader* header = (const NetPerfMeterHeader*)&inputBuffer;
       if(ntohs(header->Length) != received) {
          gOutputMutex.lock();
+         printTimeStamp(std::cerr);
          std::cerr << "ERROR: Received malformed control message!\n"
             << "       expected=" << ntohs(header->Length)
             << ", received="<< received << "\n";
@@ -1191,6 +1193,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
                       (const NetPerfMeterStopMessage*)&inputBuffer, received));
          default:
             gOutputMutex.lock();
+            printTimeStamp(std::cerr);
             std::cerr << "ERROR: Received invalid control message of type "
                      << (unsigned int)header->Type << "!\n";
             gOutputMutex.unlock();
