@@ -184,6 +184,12 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
       if(lastFrame->FragmentSet.size() == 0) {
          FrameSet.erase(lastFrameIterator);
          delete lastFrame;
+         if(lastFrame == frame) {   // Ensure reference gets invalidated!
+            frame = NULL;
+         }
+      }
+      if(lastFragment == fragment) {   // Ensure reference gets invalidated!
+         fragment = NULL;
       }
    }
 
