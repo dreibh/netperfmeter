@@ -6,10 +6,6 @@ SET(BUILD_MINOR "9")
 SET(BUILD_PATCH "7")
 SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
-SET(CMAKE_CXX_STANDARD 14)
-SET(CMAKE_CXX_STANDARD_REQUIRED ON)
-SET(CMAKE_CXX_EXTENSIONS OFF)
-
 
 #############################################################################
 #### INSTALLATION_DIRECTORIES                                            ####
@@ -235,48 +231,13 @@ ENDIF()
 
 INCLUDE(CheckCCompilerFlag)
 
-# SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -O2 -Wall")
-# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall")
-#
-# # ------ Check for "address-of-packed-member" -------------------------------
-# CHECK_C_COMPILER_FLAG("-Waddress-of-packed-member -Werror" HAS_ADDRESS_OF_PACKED_MEMBER)
-# IF (HAS_ADDRESS_OF_PACKED_MEMBER)
-#    # Disable "address-of-packed-member" warning:
-#    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
-#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
-# ENDIF()
-
-# # ------ Check for "array-bounds" -------------------------------------------
-# CHECK_C_COMPILER_FLAG("-Warray-bounds -Werror" HAS_ARRAY_BOUNDS)
-# IF (HAS_ARRAY_BOUNDS)
-#    # Disable "array-bounds" warning:
-#    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-array-bounds")
-#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds")
-# ENDIF()
-
-# # ------ Check for "overlength-strings" -------------------------------------
-# CHECK_C_COMPILER_FLAG("-Woverlength-strings -Werror" HAS_OVERLENGTH_STRINGS)
-# IF (HAS_OVERLENGTH_STRINGS)
-#    # Disable "overlength-strings" warning:
-#    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-overlength-strings")
-#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-overlength-strings")
-# ENDIF()
-
-# # ------ Check for "unused-function" ----------------------------------------
-# CHECK_C_COMPILER_FLAG("-Wunused-function -Werror" HAS_UNUSED_FUNCTION)
-# IF (HAS_UNUSED_FUNCTION)
-#    # Disable "unused-function" warning:
-#    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-function")
-#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
-# ENDIF()
-
-# # ------ Check for "unused-parameter" ---------------------------------------
-# CHECK_C_COMPILER_FLAG("-Wunused-parameter -Werror" HAS_UNUSED_PARAMETER)
-# IF (HAS_UNUSED_PARAMETER)
-#    # Disable "unused-parameter" warning:
-#    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-parameter")
-#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
-# ENDIF()
+# ------ Check for "address-of-packed-member" -------------------------------
+CHECK_C_COMPILER_FLAG("-Waddress-of-packed-member -Werror" HAS_ADDRESS_OF_PACKED_MEMBER)
+IF (HAS_ADDRESS_OF_PACKED_MEMBER)
+   # Disable "address-of-packed-member" warning:
+   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
+   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
+ENDIF()
 
 
 #############################################################################
