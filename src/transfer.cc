@@ -171,6 +171,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       (flow->getTrafficSpec().ErrorOnAbort) &&
       (flow->getOutputStatus() == Flow::On)) {
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: Flow #" << flow->getFlowID() << " has been aborted - "
                 << strerror(errno) << "!\n";
       gOutputMutex.unlock();
@@ -272,6 +273,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          }
          else {
             gOutputMutex.lock();
+            printTimeStamp(std::cerr);
             std::cout << "WARNING: Received data for unknown flow from ";
             printAddress(std::cout, &from.sa, true);
             std::cout << " on socket " << sd << "!\n";
@@ -280,6 +282,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
       }
       else {
          gOutputMutex.lock();
+         printTimeStamp(std::cerr);
          std::cout << "WARNING: Received garbage from ";
          printAddress(std::cout, &from.sa, true);
          std::cout << " on socket " << sd << "!\n";

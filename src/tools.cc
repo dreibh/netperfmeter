@@ -748,6 +748,7 @@ int createAndBindSocket(const int             family,
    if(sd >= 0) {
       int reuse = 1;
       if(ext_setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
+         printTimeStamp(std::cerr);
          std::cerr << "WARNING: Failed to configure socket reuse (SO_REUSEADDR option) - "
                    << strerror(errno) << "!\n";
       }

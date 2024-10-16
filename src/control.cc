@@ -57,6 +57,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
    FILE* fh = fopen(fileName, "w");
    if(fh == nullptr) {
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: Unable to create file " << fileName
                 << " - " << strerror(errno) << "!\n";
       gOutputMutex.unlock();
@@ -69,6 +70,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
          const size_t bytes = ntohs(resultsMsg->Header.Length);
          if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
             gOutputMutex.lock();
+            printTimeStamp(std::cerr);
             std::cerr << "ERROR: Received unexpected message type "
                       << (unsigned int)resultsMsg->Header.Type <<  "!\n";
             gOutputMutex.unlock();
@@ -76,6 +78,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
          }
          if(bytes != (size_t)received) {
             gOutputMutex.lock();
+            printTimeStamp(std::cerr);
             std::cerr << "ERROR: Received malformed NETPERFMETER_RESULTS message!\n";
             gOutputMutex.unlock();
             // printf("%u + %u > %u\n", (unsigned int)bytes, (unsigned int)sizeof(NetPerfMeterResults), (unsigned int)received);
@@ -90,6 +93,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
          if(bytes > sizeof(NetPerfMeterResults)) {
             if(fwrite((char*)&resultsMsg->Data, bytes - sizeof(NetPerfMeterResults), 1, fh) != 1) {
                gOutputMutex.lock();
+               printTimeStamp(std::cerr);
                std::cerr << "ERROR: Unable to write results to file " << fileName
                          << " - " << strerror(errno) << "!\n";
                gOutputMutex.unlock();
@@ -98,6 +102,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
          }
          else {
             gOutputMutex.lock();
+            printTimeStamp(std::cerr);
             std::cerr << "WARNING: No results received for "
                       << fileName << "!\n";
             gOutputMutex.unlock();
@@ -117,7 +122,9 @@ static bool downloadOutputFile(MessageReader* messageReader,
    }
    if(!success) {
       gOutputMutex.lock();
-      std::cerr << "\nERROR: Unable to download results (errno=" << errno << "): "
+      std::cerr << "\n";
+      printTimeStamp(std::cerr);
+      std::cerr << "ERROR: Unable to download results (errno=" << errno << "): "
                 << strerror(errno) << "\n";
       gOutputMutex.unlock();
    }
@@ -356,8 +363,8 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       configFile = fopen(configName, "w");
       if(configFile == nullptr) {
          gOutputMutex.lock();
-         std::cerr << "ERROR: Unable to create config file <"
-                   << configName << ">!\n";
+         printTimeStamp(std::cerr);
+         std::cerr << "ERROR: Unable to create config file <" << configName << ">!\n";
          gOutputMutex.unlock();
          return(false);
       }
@@ -675,6 +682,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    }
    if(ackMsg.Header.Type != NETPERFMETER_ACKNOWLEDGE) {
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received message type " << (unsigned int)ackMsg.Header.Type
                 << " instead of NETPERFMETER_ACKNOWLEDGE!\n";
       gOutputMutex.unlock();
@@ -686,6 +694,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
        (ntohl(ackMsg.FlowID) != flowID) ||
        (ntohs(ackMsg.StreamID) != streamID) ) {
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received NETPERFMETER_ACKNOWLEDGE for wrong measurement/flow/stream!\n";
       gOutputMutex.unlock();
       return(false);
@@ -741,6 +750,7 @@ static bool uploadOutputFile(const int         controlSocket,
       // printf("   -> b=%d   snd=%d\n",(int)bytes, (int)(sizeof(NetPerfMeterResults) + bytes));
       if(ferror(outputFile.getFile())) {
          gOutputMutex.lock();
+         printTimeStamp(std::cerr);
          std::cerr << "ERROR: Failed to read results from " << outputFile.getName() << " - "
                    << strerror(errno) << "!\n";
          gOutputMutex.unlock();
@@ -751,6 +761,7 @@ static bool uploadOutputFile(const int         controlSocket,
       // ====== Transmit chunk ==============================================
       if(sctp_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, &sinfo, 0) < 0) {
          gOutputMutex.lock();
+         printTimeStamp(std::cerr);
          std::cerr << "ERROR: Failed to upload results - " << strerror(errno) << "!\n";
          gOutputMutex.unlock();
          success = false;
@@ -769,8 +780,9 @@ static bool uploadOutputFile(const int         controlSocket,
    // ====== Check results ==================================================
    if(!success) {
       gOutputMutex.lock();
-      std::cerr << "\n"
-                << "WARNING: Unable to upload results (errno=" << errno << "): "
+      std::cerr << "\n";
+      printTimeStamp(std::cerr);
+      std::cerr << "WARNING: Unable to upload results (errno=" << errno << "): "
                 << strerror(errno) << "\n";
       gOutputMutex.unlock();
       sendAbort(controlSocket);
@@ -814,6 +826,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
 {
    if(received < sizeof(NetPerfMeterAddFlowMessage)) {
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message!\n";
       gOutputMutex.unlock();
       return(false);
@@ -824,6 +837,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    const size_t   startStopEvents = ntohs(addFlowMsg->OnOffEvents);
    if(received < sizeof(NetPerfMeterAddFlowMessage) + (startStopEvents * sizeof(unsigned int))) {
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message "
                    "(too few start/stop entries)!\n";
       gOutputMutex.unlock();
@@ -834,6 +848,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    description[sizeof(addFlowMsg->Description)] = 0x00;
    if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID)) {
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: NETPERFMETER_ADD_FLOW tried to add already-existing flow!\n";
       gOutputMutex.unlock();
       return(sendNetPerfMeterAcknowledge(controlSocket,
@@ -903,7 +918,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       return(sendNetPerfMeterAcknowledge(controlSocket,
                                          measurementID, flowID, streamID,
                                          (flow != nullptr) ? NETPERFMETER_STATUS_OKAY :
-                                                          NETPERFMETER_STATUS_ERROR));
+                                                             NETPERFMETER_STATUS_ERROR));
    }
 }
 
@@ -1209,6 +1224,7 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
    else {
       // No known flow -> no association to send response to!
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "WARNING: NETPERFMETER_IDENTIFY_FLOW message for unknown flow!\n";
       gOutputMutex.unlock();
    }

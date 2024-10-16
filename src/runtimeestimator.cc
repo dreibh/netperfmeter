@@ -66,6 +66,7 @@ int main(int argc, char** argv)
       unsigned long long now = getMicroTime();
       if(fwrite((void*)&now, sizeof(now), 1, fh) != 1) {
          fprintf(stderr, "ERROR: Unable to write timestamp to file <%s>!\n", argv[1]);
+         fclose(fh);
          exit(1);
       }
       fclose(fh);
@@ -80,6 +81,7 @@ int main(int argc, char** argv)
       }
       if(fread((void*)&startTimeStamp, sizeof(startTimeStamp), 1, fh) != 1) {
          fprintf(stderr, "ERROR: Unable to read timestamp from file <%s>!\n", argv[1]);
+         fclose(fh);
          exit(1);
       }
       fclose(fh);
