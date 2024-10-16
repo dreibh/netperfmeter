@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2024 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -67,7 +67,7 @@ bool CPUStatus::getSysCtl(const char* name, void* ptr, size_t len)
    size_t nlen = len;
    if(sysctlbyname(name, ptr, &nlen, nullptr, 0) < 0) {
       std::cerr << "ERROR: sysctlbyname(" << name << ") failed: "
-                << strerror(errno) << std::endl;
+                << strerror(errno) << "\n";
       exit(1);
    }
    if(nlen != len) {
@@ -94,7 +94,7 @@ CPUStatus::CPUStatus()
 
    ProcStatFD = fopen("/proc/stat", "r");
    if(ProcStatFD == nullptr) {
-      std::cerr << "ERROR: Unable to open /proc/stat!" << std::endl;
+      std::cerr << "ERROR: Unable to open /proc/stat!\n";
       exit(1);
    }
 #elif defined __APPLE__
@@ -106,7 +106,7 @@ CPUStatus::CPUStatus()
 
    CpuStates = CPU_STATE_MAX;
    if ((host = mach_host_self()) == MACH_PORT_nullptr) {
-      std::cerr << "ERROR: Couldn't receive send rights." << std::endl;
+      std::cerr << "ERROR: Couldn't receive send rights.\n";
       exit(1);
    }
 #ifdef USE_PER_CPU_STATISTICS
@@ -198,7 +198,7 @@ void CPUStatus::update()
    for(unsigned int i = 0; i <= CPUs; i++) {
       char buffer[1024];
       if(fgets(buffer, sizeof(buffer), ProcStatFD) == 0) {
-         std::cerr << "ERROR: Unable to read from /proc/stat!" << std::endl;
+         std::cerr << "ERROR: Unable to read from /proc/stat!\n";
          exit(1);
       }
       int result;
@@ -227,7 +227,7 @@ void CPUStatus::update()
                          &CpuTimes[(i * CpuStates) + 7]);
       }
       if( ((i == 0) && (result < 8)) || ((i > 0) && (result < 9)) ) {
-         std::cerr << "ERROR: Bad input fromat in /proc/stat!" << std::endl;
+         std::cerr << "ERROR: Bad input fromat in /proc/stat!\n";
          exit(1);
       }
    }

@@ -92,7 +92,7 @@ int main(int argc, char** argv)
    // ====== Process arguments ==============================================
    if(argc < 3) {
       std::cerr << "Usage: " << argv[0]
-                << " [Output File] [Var Names] {-compress=0-9} {-quiet}" << std::endl;
+                << " [Output File] [Var Names] {-compress=0-9} {-quiet}\n";
       exit(1);
    }
    for(int i = 3;i < argc;i++) {
@@ -110,8 +110,8 @@ int main(int argc, char** argv)
 
    // ====== Print information ==============================================
    if(!quiet) {
-      std::cout << "CombineSummaries - Version 2.20" << std::endl
-                << "===============================" << std::endl << std::endl;
+      std::cout << "CombineSummaries - Version 2.30\n"
+                << "===============================\n\n";
    }
 
 
@@ -144,11 +144,11 @@ int main(int argc, char** argv)
    while((command = fgets((char*)&commandBuffer, sizeof(commandBuffer), stdin))) {
       command[strlen(command) - 1] = 0x00;
       if(command[0] == 0x00) {
-         std::cout << "*** End of File ***" << std::endl;
+         std::cout << "*** End of File ***\n";
          break;
       }
       if(!quiet) {
-         std::cout << command << std::endl;
+         std::cout << command << "\n";
       }
 
       if(!(strncmp(command, "--values=", 9))) {
@@ -159,7 +159,7 @@ int main(int argc, char** argv)
       }
       else if(!(strncmp(command, "--input=", 8))) {
          if(varValues[0] == 0x00) {
-            std::cerr << "ERROR: No values given (parameter --values=...)!" << std::endl;
+            std::cerr << "ERROR: No values given (parameter --values=...)!\n";
             exit(1);
          }
          addDataFile(outputFile, outputLineNumber,
@@ -170,7 +170,7 @@ int main(int argc, char** argv)
          simulationsDirectory = (const char*)&simulationsDirectory[23];
       }
       else {
-         std::cerr << "ERROR: Invalid command!" << std::endl;
+         std::cerr << "ERROR: Invalid command!\n";
          exit(1);
       }
 
@@ -187,12 +187,12 @@ int main(int argc, char** argv)
       exit(1);
    }
    if(!quiet) {
-      std::cout << std::endl << "Wrote " << outputLineNumber << " lines";
+      std::cout << "\n" << "Wrote " << outputLineNumber << " lines";
       if(in > 0) {
          std::cout << " (" << in << " -> " << out << " - "
                    << ((double)out * 100.0 / in) << "%)";
       }
-      std::cout << std::endl;
+      std::cout << "\n";
    }
 
    return(0);

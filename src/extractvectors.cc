@@ -77,7 +77,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
             (sscanf(inBuffer, "version %u", &version) == 1)) {
             if(version != 2) {
                std::cerr << "ERROR: Got unknown version number "
-                         << version << " (expected 2)" << std::endl;
+                         << version << " (expected 2)\n";
                exit(1);
             }
             versionOkay = true;
@@ -85,8 +85,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                      "Time Event Object Vector Split Value\n");
          }
          else {
-            std::cerr << "ERROR: Missing \"version\" entry in input file!"
-                      << std::endl;
+            std::cerr << "ERROR: Missing \"version\" entry in input file!\n";
             exit(1);
          }
       }
@@ -144,11 +143,11 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                         }
                      }
                      std::cout << "Adding vector \"" << vectorName << "\", split \""
-                               << splitName << "\" of object " << objectName << " ..." << std::endl;
+                               << splitName << "\" of object " << objectName << " ...\n";
                   }
                   else {
                      std::cout << "Adding vector \"" << vectorName << "\" of object "
-                               << objectName << " ..." << std::endl;
+                               << objectName << " ...\n";
                   }
 
                   vectorToNameMap.insert(std::pair<unsigned int, const std::string>(
@@ -161,7 +160,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
             }
             else {
                std::cerr << "ERROR: Unexpected vector definition on input file "
-                         << inputFile.getLine() << "!" << std::endl;
+                         << inputFile.getLine() << "!\n";
                exit(1);
             }
          }
@@ -181,7 +180,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
    if( (foundVectors < vectorsToExtract.size()) &&
        (vectorsToExtract.size() != 0) ) {
       std::cerr << "WARNING: Found only " << foundVectors << " of "
-                << vectorsToExtract.size() << " specified!" << std::endl;
+                << vectorsToExtract.size() << " specified!\n";
    }
 
    return(outputLine);
@@ -200,7 +199,7 @@ int main(int argc, char** argv)
    if(argc < 4) {
       std::cerr << "Usage: " << argv[0]
                 << " [Input File] [Output File] {-quiet} {-splitall} {-compress=}"
-                   " {{-split}  {Vector Name Prefix} ...}" << std::endl;
+                   " {{-split}  {Vector Name Prefix} ...}\n";
       exit(1);
    }
    for(int i = 3;i < argc;i++) {
@@ -223,8 +222,8 @@ int main(int argc, char** argv)
 
 
    if(!quiet) {
-      std::cout << "ExtractVectors - Version 1.20" << std::endl
-                << "=============================" << std::endl << std::endl;
+      std::cout << "ExtractVectors - Version 1.30\n"
+                << "=============================\n\n";
    }
 
 
@@ -265,8 +264,7 @@ int main(int argc, char** argv)
             splitAll = true;
          }
          else {
-            std::cerr << "ERROR: Bad parameter \"" << argv[i] << "\"!"
-                      << std::endl;
+            std::cerr << "ERROR: Bad parameter \"" << argv[i] << "\"!\n";
             exit(1);
          }
       }
@@ -295,7 +293,7 @@ int main(int argc, char** argv)
          std::cout << " (" << in << " -> " << out << " - "
                      << ((double)out * 100.0 / in) << "%)";
       }
-      std::cout << std::endl;
+      std::cout << "\n";
    }
 
    return(0);

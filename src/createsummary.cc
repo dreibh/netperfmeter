@@ -32,9 +32,6 @@
 #include "outputfile.h"
 
 
-using namespace std;
-
-
 #define MAX_NAME_SIZE    256
 #define MAX_VALUES_SIZE 8192
 
@@ -60,7 +57,7 @@ class ScalarNode
    char*                         VarValues;
    size_t                        Run;
    size_t                        Entries;
-   vector<double>                ValueSet;
+   std::vector<double>           ValueSet;
 };
 
 
@@ -120,7 +117,7 @@ static void scalarNodePrintFunction(const void* node, FILE* fd)
            (unsigned int)scalarNode->Run, scalarNode->ScalarName, scalarNode->SplitName,
            scalarNode->AggValues, scalarNode->VarValues);
 
-   vector<double>::iterator valueIterator = scalarNode->ValueSet.begin();
+   std::vector<double>::iterator valueIterator = scalarNode->ValueSet.begin();
    while(valueIterator != scalarNode->ValueSet.end()) {
       fprintf(fd, "%f ", *valueIterator);
       valueIterator++;
@@ -408,7 +405,7 @@ static void addScalar(const char*  scalarName,
    if(NextScalarNode == nullptr) {
       NextScalarNode = new ScalarNode;
       if(NextScalarNode == nullptr) {
-         cerr << "ERROR: Out of memory!" << endl;
+         std::cerr << "ERROR: Out of memory!\n";
          exit(1);
       }
    }
@@ -434,7 +431,7 @@ static void addScalar(const char*  scalarName,
           (NextScalarNode->AggNames   == nullptr) ||
           (NextScalarNode->AggValues  == nullptr) ||
           (NextScalarNode->VarValues  == nullptr) ) {
-         cerr << "ERROR: Out of memory!" << endl;
+         std::cerr << "ERROR: Out of memory!\n";
          exit(1);
       }
       NextScalarNode = nullptr;
@@ -463,9 +460,9 @@ static void handleScalar(const std::string& varNames,
                          const double       value)
 {
 /*
-   cout << "Object=" << objectName << endl;
-   cout << "Statistic=" << statName << endl;
-   cout << "Value=" << value << endl;
+   std::cout << "Object=" << objectName << "\n";
+   std::cout << "Statistic=" << statName << "\n";
+   std::cout << "Value=" << value << "\n";
 */
 
    // ====== Try to split scalar name =======================================
@@ -510,7 +507,7 @@ static void handleScalar(const std::string& varNames,
    }
    else {
       if(interactiveMode) {
-         cout << "Skipping entry " << scalarName << endl;
+         std::cout << "Skipping entry " << scalarName << "\n";
       }
    }
 }
@@ -564,22 +561,22 @@ static bool handleScalarFile(const std::string& varNames,
             s = getWord(s, (char*)&statName);
             if(s != nullptr) {
                if(sscanf(s, "%lf", &value) != 1) {
-                  cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                       << " - Value expected!" << endl;
+                  std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                       << " - Value expected!\n";
                   success = false;
                   break;
                }
             }
             else {
-               cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                    << " - Statistics name expected for \"scalar\"!" << endl;
+               std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                    << " - Statistics name expected for \"scalar\"!\n";
                success = false;
                break;
             }
          }
          else {
-            cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                 << " - Object name expected for \"scalar\"!" << endl;
+            std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                 << " - Object name expected for \"scalar\"!\n";
             success = false;
             break;
          }
@@ -603,8 +600,8 @@ static bool handleScalarFile(const std::string& varNames,
             char* s = getWord((char*)&buffer[6], (char*)&fieldName);
             if(s) {
                if(sscanf(s, "%lf", &value) != 1) {
-                  cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                       << " - Value expected!" << endl;
+                  std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                       << " - Value expected!\n";
                   success = false;
                   break;
                }
@@ -627,8 +624,8 @@ static bool handleScalarFile(const std::string& varNames,
             }
          }
          else {
-            cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                 << " - \"field\" without \"statistic\"!" << endl;
+            std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                 << " - \"field\" without \"statistic\"!\n";
             success = false;
             break;
          }
@@ -639,15 +636,15 @@ static bool handleScalarFile(const std::string& varNames,
          if(s) {
             s = getWord(s, (char*)&statisticBlockName);
             if(s == nullptr) {
-               cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                    << " - Statistics name expected for \"statistic\"!" << endl;
+               std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                    << " - Statistics name expected for \"statistic\"!\n";
                success = false;
                break;
             }
          }
          else {
-            cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                 << " - Object name expected for \"statistic\"!" << endl;
+            std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                 << " - Object name expected for \"statistic\"!\n";
             success = false;
             break;
          }
@@ -661,8 +658,8 @@ static bool handleScalarFile(const std::string& varNames,
          // Skip this item
       }
       else {
-         cerr << "NOTE: " << fileName << ":" << inputFile.getLine()
-              << " - Ignoring line \"" << buffer << "\"" << endl;
+         std::cerr << "NOTE: " << fileName << ":" << inputFile.getLine()
+              << " - Ignoring line \"" << buffer << "\"\n";
          // Skip this item
       }
    }
@@ -694,12 +691,12 @@ static void closeOutputFile(OutputFile&              outputFile,
       totalLines += lineNumber;
       totalFiles++;
       if(interactiveMode) {
-         cout << " (" << lineNumber << " lines";
+         std::cout << " (" << lineNumber << " lines";
          if(in > 0) {
-            cout << ", " << in << " -> " << out << " - "
+            std::cout << ", " << in << " -> " << out << " - "
                   << ((double)out * 100.0 / in) << "%";
          }
-         cout << ")" << endl;
+         std::cout << ")\n";
       }
    }
 }
@@ -746,9 +743,9 @@ static void dumpScalars(const std::string& simulationsDirectory,
             fileName = resultsDirectory + "/" + scalarNode->ScalarName + ".data";
          }
          if(interactiveMode) {
-            cout << "Statistics \"" << scalarNode->ScalarName << "\" ...";
+            std::cout << "Statistics \"" << scalarNode->ScalarName << "\" ...";
          }
-         cout.flush();
+         std::cout.flush();
          if(outputFile.initialize(fileName.c_str(),
                                   (compressionLevel > 0) ? OFF_BZip2 : OFF_Plain,
                                   compressionLevel) == false) {
@@ -769,7 +766,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
 
       // ====== Write table rows =========================================
       size_t valueNumber = 1;
-      vector<double>::iterator valueIterator = scalarNode->ValueSet.begin();
+      std::vector<double>::iterator valueIterator = scalarNode->ValueSet.begin();
       while(valueIterator != scalarNode->ValueSet.end()) {
          if(addLineNumbers) {
             if(outputFile.printf("%07llu\t", lineNumber) == false) {
@@ -799,22 +796,22 @@ static void dumpScalars(const std::string& simulationsDirectory,
                      interactiveMode);
 
    // ====== Display some compression information ===========================
-   cout << "Wrote " << totalLines << " lines into "
+   std::cout << "Wrote " << totalLines << " lines into "
         << totalFiles << " files";
    if(totalIn > 0) {
-      cout << ", "
+      std::cout << ", "
            << totalIn << " -> " << totalOut << " - "
            << ((double)totalOut * 100.0 / totalIn) << "%";
    }
-   cout << endl;
+   std::cout << "\n";
 }
 
 
 // ###### Print usage and exit ##############################################
 static void usage(const char* name)
 {
-   cerr << "Usage: "
-        << name << " [Var Names] {-compress=0-9} {-interactive|-batch} {-splitall} {-line-numbers|-no-line-numbers}" << endl;
+   std::cerr << "Usage: " << name
+             << " [Var Names] {-compress=0-9} {-interactive|-batch} {-splitall} {-line-numbers|-no-line-numbers}\n";
    exit(1);
 }
 
@@ -889,33 +886,33 @@ int main(int argc, char** argv)
 
 
    if(!quietMode) {
-      cout << "CreateSummary - Version 5.0.0" << endl
-           << "=============================" << endl << endl
-           << "Compression Level: " << compressionLevel << endl
-           << "Interactive Mode:  " << (interactiveMode ? "on" : "off") << endl
-           << "Line Numbers:      " << (addLineNumbers  ? "on" : "off") << endl
-           << endl;
+      std::cout << "CreateSummary - Version 5.1.0\n"
+           << "=============================\n\n"
+           << "Compression Level: " << compressionLevel << "\n"
+           << "Interactive Mode:  " << (interactiveMode ? "on" : "off") << "\n"
+           << "Line Numbers:      " << (addLineNumbers  ? "on" : "off") << "\n"
+           << "\n";
    }
 
 
    // ====== Handle interactiveMode commands ====================================
    if(interactiveMode) {
-      cout << "Ready> ";
-      cout.flush();
+      std::cout << "Ready> ";
+      std::cout.flush();
    }
    else {
-      cout << "Processing input ..." << endl;
+      std::cout << "Processing input ...\n";
    }
    bool scalarFileError = false;
    while((command = fgets((char*)&buffer, sizeof(buffer), stdin))) {
       command[strlen(command) - 1] = 0x00;
       if(command[0] == 0x00) {
-         cout << "*** End of File ***" << endl;
+         std::cout << "*** End of File ***\n";
          break;
       }
 
       if(interactiveMode) {
-         cout << command << endl;
+         std::cout << command << "\n";
       }
 
       if(!(strncmp(command, "--varnames=", 11))) {
@@ -948,16 +945,16 @@ int main(int argc, char** argv)
       }
       else if(!(strncmp(command, "--input=", 8))) {
          if(varValues == "") {
-            cerr << "ERROR: No values given (parameter --values=...)!" << endl;
+            std::cerr << "ERROR: No values given (parameter --values=...)!\n";
             exit(1);
          }
          if(!handleScalarFile(varNames, varValues, (char*)&command[8], interactiveMode, splitAll)) {
             scalarFileError = true;
             if(logFileName != "") {
-               cerr << " => see logfile " << logFileName << endl;
+               std::cerr << " => see logfile " << logFileName << "\n";
             }
             if(statusFileName != "") {
-               cerr << " Removing status file; restart simulation to re-create this run!" << endl;
+               std::cerr << " Removing status file; restart simulation to re-create this run!\n";
                unlink(statusFileName.c_str());
             }
          }
@@ -968,7 +965,7 @@ int main(int argc, char** argv)
       else if(!(strncmp(command, "--skip=", 7))) {
          SkipListNode* skipListNode = new SkipListNode;
          if(skipListNode == nullptr) {
-            cerr << "ERROR: Out of memory!" << endl;
+            std::cerr << "ERROR: Out of memory!\n";
             exit(1);
          }
          skipListNode->Next = SkipList;
@@ -992,42 +989,42 @@ int main(int argc, char** argv)
          // Deprecated, ignore ...
       }
       else {
-         cerr << "ERROR: Invalid command \"" << command << "\"!" << endl
-              << "Examples:" << endl
-              << "   --skip=calcAppServer" << endl
-              << "   --simulationsdirectory=MySimulationsDirectory" << endl
-              << "   --resultsdirectory=MySimulationsDirectory/Results" << endl
-              << "   --skip=calcAppServer" << endl
-              << "   --varnames=Alpha Beta Gamma" << endl
-              << "   --values=alpha100 beta200 gamma300" << endl
-              << "   --input=simulations/scalar-file.sca.bz2" << endl
-              << "   (Ctrl-D, EOF)" << endl;
+         std::cerr << "ERROR: Invalid command \"" << command << "\"!\n"
+              << "Examples:\n"
+              << "   --skip=calcAppServer\n"
+              << "   --simulationsdirectory=MySimulationsDirectory\n"
+              << "   --resultsdirectory=MySimulationsDirectory/Results\n"
+              << "   --skip=calcAppServer\n"
+              << "   --varnames=Alpha Beta Gamma\n"
+              << "   --values=alpha100 beta200 gamma300\n"
+              << "   --input=simulations/scalar-file.sca.bz2\n"
+              << "   (Ctrl-D, EOF)\n";
          if(!interactiveMode) {
             exit(1);
          }
       }
 
       if(interactiveMode) {
-         cout << "Ready> ";
-         cout.flush();
+         std::cout << "Ready> ";
+         std::cout.flush();
       }
    }
 
 
    // ====== Write results ==================================================
    if(interactiveMode) {
-      cout << endl << endl;
+      std::cout << "\n" << "\n";
    }
    if(scalarFileError) {
       if(ignoreScalarFileErrors == false) {
-         cerr << "ERROR: Not all scalar files have been read -> aborting!" << endl;
+         std::cerr << "ERROR: Not all scalar files have been read -> aborting!\n";
          exit(1);
       }
       else {
-         cerr << "WARNING: Not all scalar files have been read -> continuing!" << endl;
+         std::cerr << "WARNING: Not all scalar files have been read -> continuing!\n";
       }
    }
-   cout << "Writing scalar files..." << endl;
+   std::cout << "Writing scalar files...\n";
    dumpScalars(simulationsDirectory, resultsDirectory, varNames,
                compressionLevel, interactiveMode, addLineNumbers);
 
