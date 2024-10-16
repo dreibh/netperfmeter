@@ -784,6 +784,7 @@ void FlowManager::run()
          unidentifiedSocketsPollFDIndex[i] = &pollFDs[n];
          n++; i++;
       }
+      assert(n == FlowSet.size() + UnidentifiedSockets.size());
       const unsigned long long nextEvent = getNextEvent();
       unlock();
 

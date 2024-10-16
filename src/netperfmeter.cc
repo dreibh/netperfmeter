@@ -37,9 +37,6 @@
 #include "transfer.h"
 
 
-using namespace std;
-
-
 #define MAX_LOCAL_ADDRESSES 16
 static unsigned int   gLocalDataAddresses = 0;
 static sockaddr_union gLocalDataAddressArray[MAX_LOCAL_ADDRESSES];
@@ -164,16 +161,16 @@ bool handleGlobalParameter(char* parameter)
 void printGlobalParameters()
 {
    if(gOutputVerbosity >= NPFOV_STATUS) {
-      std::cout << "Global Parameters:" << std::endl
+      std::cout << "Global Parameters:\n"
                << "   - Runtime                   = ";
       if(gRuntime >= 0.0) {
-         std::cout << gRuntime << "s" << std::endl;
+         std::cout << gRuntime << "s\n";
       }
       else {
-         std::cout << "until manual stop" << std::endl;
+         std::cout << "until manual stop\n";
       }
-      std::cout << "   - Active Node Name          = " << gActiveNodeName  << std::endl
-                << "   - Passive Node Name         = " << gPassiveNodeName << std::endl;
+      std::cout << "   - Active Node Name          = " << gActiveNodeName  << "\n"
+                << "   - Passive Node Name         = " << gPassiveNodeName << "\n";
       std::cout << "   - Local Data Address(es)    = ";
       if(gLocalDataAddresses > 0) {
          for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
@@ -186,7 +183,7 @@ void printGlobalParameters()
       else {
          std::cout << "(any)";
       }
-      std::cout << std::endl;
+      std::cout << "\n";
       std::cout << "   - Local Control Address(es) = ";
       if(gLocalControlAddresses > 0) {
          for(unsigned int i = 0;i < gLocalControlAddresses;i++) {
@@ -199,9 +196,8 @@ void printGlobalParameters()
       else {
          std::cout << "(any)";
       }
-      std::cout << std::endl;
-      std::cout << "   - Logging Verbosity         = " << gOutputVerbosity << std::endl
-                << std::endl;
+      std::cout << "\n";
+      std::cout << "   - Logging Verbosity         = " << gOutputVerbosity << "\n\n";
    }
 }
 
@@ -232,7 +228,7 @@ static const char* parseNextEntry(const char* parameters,
       *rng = RANDOM_CONSTANT;
    }
    else {
-      cerr << "ERROR: Invalid parameters " << parameters << endl;
+      std::cerr << "ERROR: Invalid parameters " << parameters << std::endl;
       exit(1);
    }
    if(parameters[n] == 0x00) {
@@ -269,28 +265,28 @@ static const char* parseTrafficSpecOption(const char*      parameters,
    }
    else if(sscanf(parameters, "ordered=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         cerr << "ERROR: Bad probability for \"ordered\" option in " << parameters << "!" << endl;
+         std::cerr << "ERROR: Bad probability for \"ordered\" option in " << parameters << "!" << std::endl;
          exit(1);
       }
       trafficSpec.OrderedMode = dblValue;
    }
    else if(sscanf(parameters, "unordered=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         cerr << "ERROR: Bad probability for \"unordered\" option in " << parameters << "!" << endl;
+         std::cerr << "ERROR: Bad probability for \"unordered\" option in " << parameters << "!" << std::endl;
          exit(1);
       }
       trafficSpec.OrderedMode = 1.0 - dblValue;
    }
    else if(sscanf(parameters, "reliable=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         cerr << "ERROR: Bad probability for \"reliable\" option in " << parameters << "!" << endl;
+         std::cerr << "ERROR: Bad probability for \"reliable\" option in " << parameters << "!" << std::endl;
          exit(1);
       }
       trafficSpec.ReliableMode = dblValue;
    }
    else if(sscanf(parameters, "unreliable=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         cerr << "ERROR: Bad probability for \"unreliable\" option in " << parameters << "!" << endl;
+         std::cerr << "ERROR: Bad probability for \"unreliable\" option in " << parameters << "!" << std::endl;
          exit(1);
       }
       trafficSpec.ReliableMode = 1.0 - dblValue;
@@ -350,7 +346,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 4 + pos;
       }
       else {
-         cerr << "ERROR: Invalid \"cmt\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         std::cerr << "ERROR: Invalid \"cmt\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
          exit(1);
       }
 
@@ -363,7 +359,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          else {
             trafficSpec.Protocol = IPPROTO_MPTCP;
             if(trafficSpec.CMT != NPAF_LikeMPTCP) {
-               cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
+               std::cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
                     << " for MPTCP! Using default instead!" << std::endl;
             }
          }
@@ -378,7 +374,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 5 + pos;
       }
       else {
-         cerr << "ERROR: Invalid \"ccid\" setting: " << (const char*)&parameters[5] << "!" << std::endl;
+         std::cerr << "ERROR: Invalid \"ccid\" setting: " << (const char*)&parameters[5] << "!" << std::endl;
          exit(1);
       }
    }
@@ -392,7 +388,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 15 + 3;
       }
       else {
-         cerr << "ERROR: Invalid \"error_on_abort\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
+         std::cerr << "ERROR: Invalid \"error_on_abort\" setting: " << (const char*)&parameters[4] << "!" << std::endl;
          exit(1);
       }
    }
@@ -437,13 +433,13 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       if(trafficSpec.RepeatOnOff == true) {
          if((trafficSpec.OnOffEvents.size() % 2) != 0) {
-            cerr << "ERROR: Repeated on/off traffic needs even number of events!" << endl;
+            std::cerr << "ERROR: Repeated on/off traffic needs even number of events!" << std::endl;
             exit(1);
          }
          for(std::vector<OnOffEvent>::const_iterator iterator = trafficSpec.OnOffEvents.begin();
             iterator != trafficSpec.OnOffEvents.end();iterator++) {
             if((*iterator).RelativeTime == false) {
-               cerr << "ERROR: Repeated on/off traffic needs relative times!" << endl;
+               std::cerr << "ERROR: Repeated on/off traffic needs relative times!" << std::endl;
                exit(1);
             }
          }
@@ -460,7 +456,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 8 + 3;
       }
       else {
-         cerr << "ERROR: Invalid \"nodelay\" setting: " << (const char*)&parameters[8] << "!" << std::endl;
+         std::cerr << "ERROR: Invalid \"nodelay\" setting: " << (const char*)&parameters[8] << "!" << std::endl;
          exit(1);
       }
    }
@@ -474,7 +470,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 6 + 3;
       }
       else {
-         cerr << "ERROR: Invalid \"debug\" setting: " << (const char*)&parameters[6] << "!" << std::endl;
+         std::cerr << "ERROR: Invalid \"debug\" setting: " << (const char*)&parameters[6] << "!" << std::endl;
          exit(1);
       }
    }
@@ -499,7 +495,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       pathMgr[i] = 0x00;
       if( (parameters[8 + i] != ':') && (parameters[8 + i] != 0x00) ) {
-         cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
+         std::cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
               << " - name too long!" << std::endl;
           exit(1);
       }
@@ -519,7 +515,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       scheduler[i] = 0x00;
       if( (parameters[10 + i] != ':') && (parameters[10 + i] != 0x00) ) {
-         cerr << "ERROR: Invalid \"scheduler\" setting: " << (const char*)&parameters[10]
+         std::cerr << "ERROR: Invalid \"scheduler\" setting: " << (const char*)&parameters[10]
               << " - name too long!" << std::endl;
           exit(1);
       }
@@ -539,7 +535,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       congestionControl[i] = 0x00;
       if( (parameters[3 + i] != ':') && (parameters[3 + i] != 0x00) ) {
-         cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
+         std::cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
               << " - name too long!" << std::endl;
           exit(1);
       }
@@ -547,7 +543,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       n = 3 + strlen((const char*)&congestionControl);
    }
    else {
-      cerr << "ERROR: Invalid option \"" << parameters << "\"!" << endl;
+      std::cerr << "ERROR: Invalid option \"" << parameters << "\"!" << std::endl;
       exit(1);
    }
    if(parameters[n] == 0x00) {
@@ -644,10 +640,10 @@ static Flow* createFlow(Flow*                  previousFlow,
 
    // ====== Print information ==============================================
    if(gOutputVerbosity >= NPFOV_STATUS) {
-      cout << "Flow #" << flow->getFlowID() << ": connecting "
-         << getProtocolName(trafficSpec.Protocol) << " socket to ";
-      printAddress(cout, &destinationAddress.sa, true);
-      cout << " from ";
+      std::cout << "Flow #" << flow->getFlowID() << ": connecting "
+                << getProtocolName(trafficSpec.Protocol) << " socket to ";
+      printAddress(std::cout, &destinationAddress.sa, true);
+      std::cout << " from ";
       if(gLocalDataAddresses > 0) {
          for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
             if(i > 0) {
@@ -659,8 +655,8 @@ static Flow* createFlow(Flow*                  previousFlow,
       else {
          std::cout << "(any)";
       }
-      cout << " ... ";
-      cout.flush();
+      std::cout << " ... ";
+      std::cout.flush();
    }
 
    // ====== Set up socket ==================================================
@@ -671,7 +667,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       originalSocketDescriptor = false;
       socketDescriptor         = previousFlow->getSocketDescriptor();
       if(gOutputVerbosity >= NPFOV_STATUS) {
-         cout << "Flow #" << flow->getFlowID()
+         std::cout << "Flow #" << flow->getFlowID()
             << ": connection okay <sd=" << socketDescriptor << "> ";
       }
    }
@@ -712,8 +708,8 @@ static Flow* createFlow(Flow*                  previousFlow,
 
       }
       if(socketDescriptor < 0) {
-         cerr << "ERROR: Unable to create " << getProtocolName(trafficSpec.Protocol)
-              << " socket - " << strerror(errno) << "!" << endl;
+         std::cerr << "ERROR: Unable to create " << getProtocolName(trafficSpec.Protocol)
+              << " socket - " << strerror(errno) << "!" << std::endl;
          exit(1);
       }
 
@@ -725,8 +721,8 @@ static Flow* createFlow(Flow*                  previousFlow,
          initmsg.sinit_max_instreams = 65535;
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
                            &initmsg, sizeof(initmsg)) < 0) {
-            cerr << "ERROR: Failed to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - "
-                 << strerror(errno) << "!" << endl;
+            std::cerr << "ERROR: Failed to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - "
+                 << strerror(errno) << "!" << std::endl;
             exit(1);
          }
 
@@ -735,8 +731,8 @@ static Flow* createFlow(Flow*                  previousFlow,
          events.sctp_data_io_event = 1;
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
                            &events, sizeof(events)) < 0) {
-            cerr << "ERROR: Failed to configure events on SCTP socket (SCTP_EVENTS option) - "
-                 << strerror(errno) << "!" << endl;
+            std::cerr << "ERROR: Failed to configure events on SCTP socket (SCTP_EVENTS option) - "
+                 << strerror(errno) << "!" << std::endl;
             exit(1);
          }
       }
@@ -745,16 +741,16 @@ static Flow* createFlow(Flow*                  previousFlow,
          exit(1);
       }
       if(ext_connect(socketDescriptor, &destinationAddress.sa, getSocklen(&destinationAddress.sa)) < 0) {
-         cerr << "ERROR: Unable to connect " << getProtocolName(trafficSpec.Protocol)
-              << " socket - " << strerror(errno) << "!" << endl;
+         std::cerr << "ERROR: Unable to connect " << getProtocolName(trafficSpec.Protocol)
+              << " socket - " << strerror(errno) << "!" << std::endl;
          exit(1);
       }
 
       if(gOutputVerbosity >= NPFOV_STATUS) {
-         cout << "okay <sd=" << socketDescriptor << "> ";
+         std::cout << "okay <sd=" << socketDescriptor << "> ";
       }
    }
-   cout.flush();
+   std::cout.flush();
 
    // ====== Update flow with socket descriptor =============================
    flow->setSocketDescriptor(socketDescriptor, originalSocketDescriptor);
@@ -921,7 +917,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    assert(string2address("192.168.122.1:0", &testAddress));
    int testSD = createAndBindSocket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, 0, 1, &testAddress, true, false);
    if(testSD >= 0) {
-      cerr << "\nNOTE: This machine seems to have an interface with address 192.168.122.1!\n"
+      std::cerr << "\nNOTE: This machine seems to have an interface with address 192.168.122.1!\n"
               "This is typically used by Docker setups. If you connect from another machine\n"
               "having the same configuration, in an environment with only private addresses,\n"
               "SCTP may try to use this address -> OOTB ABORT.\n\n";
@@ -934,8 +930,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                         gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                         true, gBindV6Only);
    if(gControlSocket < 0) {
-      cerr << "ERROR: Failed to create and bind SCTP socket for control port on port " << localPort + 1 << " - "
-           << strerror(errno) << "!" << endl;
+      std::cerr << "ERROR: Failed to create and bind SCTP socket for control port on port " << localPort + 1 << " - "
+           << strerror(errno) << "!" << std::endl;
       exit(1);
    }
    sctp_event_subscribe events;
@@ -944,8 +940,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       events.sctp_data_io_event     = 1;
       events.sctp_association_event = 1;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-         cerr << "ERROR: Failed to configure events on SCTP control socket - "
-              << strerror(errno) << "!" << endl;
+         std::cerr << "ERROR: Failed to configure events on SCTP control socket - "
+              << strerror(errno) << "!" << std::endl;
          exit(1);
       }
    }
@@ -954,8 +950,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP,
                                            localPort + 1, 0, NULL, true, gBindV6Only);
    if(gControlSocketTCP < 0) {
-      cerr << "ERROR: Failed to create and bind TCP socket for control port - "
-           << strerror(errno) << "!" << endl;
+      std::cerr << "ERROR: Failed to create and bind TCP socket for control port - "
+           << strerror(errno) << "!" << std::endl;
       exit(1);
    }
    gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
@@ -964,8 +960,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gTCPSocket < 0) {
-      cerr << "ERROR: Failed to create and bind TCP socket on port " << localPort << " - "
-           << strerror(errno) << "!" << endl;
+      std::cerr << "ERROR: Failed to create and bind TCP socket on port " << localPort << " - "
+           << strerror(errno) << "!" << std::endl;
       exit(1);
    }
    if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
@@ -977,8 +973,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                       gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
    if(gMPTCPSocket < 0) {
       if(gOutputVerbosity >= NPFOV_STATUS) {
-         cerr << "NOTE: Unable to create and bind MPTCP socket on port " << localPort - 1 << " - "
-              << strerror(errno) << "!" << endl;
+         std::cerr << "NOTE: Unable to create and bind MPTCP socket on port " << localPort - 1 << " - "
+              << strerror(errno) << "!" << std::endl;
       }
    }
    else {
@@ -1008,8 +1004,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gUDPSocket < 0) {
-      cerr << "ERROR: Failed to create and bind UDP socket on port " << localPort << " - "
-           << strerror(errno) << "!" << endl;
+      std::cerr << "ERROR: Failed to create and bind UDP socket on port " << localPort << " - "
+           << strerror(errno) << "!" << std::endl;
       exit(1);
    }
    // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
@@ -1019,7 +1015,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gDCCPSocket < 0) {
-      cerr << "NOTE: Your kernel does not provide DCCP support." << endl;
+      std::cerr << "NOTE: Your kernel does not provide DCCP support." << std::endl;
    }
    else {
       const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };
@@ -1037,8 +1033,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gSCTPSocket < 0) {
-      cerr << "ERROR: Failed to create and bind SCTP socket on port " << localPort << " - "
-           << strerror(errno) << "!" << endl;
+      std::cerr << "ERROR: Failed to create and bind SCTP socket on port " << localPort << " - "
+           << strerror(errno) << "!" << std::endl;
       exit(1);
    }
    sctp_initmsg initmsg;
@@ -1047,15 +1043,15 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    initmsg.sinit_max_instreams = 65535;
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG,
                      &initmsg, sizeof(initmsg)) < 0) {
-      cerr << "ERROR: Failed to configure INIT parameters on SCTP socket - "
-            << strerror(errno) << "!" << endl;
+      std::cerr << "ERROR: Failed to configure INIT parameters on SCTP socket - "
+            << strerror(errno) << "!" << std::endl;
       exit(1);
    }
    memset((char*)&events, 0 ,sizeof(events));
    events.sctp_data_io_event = 1;
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-      cerr << "ERROR: Failed to configure events on SCTP socket - "
-           << strerror(errno) << "!" << endl;
+      std::cerr << "ERROR: Failed to configure events on SCTP socket - "
+           << strerror(errno) << "!" << std::endl;
       exit(1);
    }
    if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
@@ -1065,10 +1061,10 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
    // ====== Print status ===================================================
    if(gOutputVerbosity >= NPFOV_STATUS) {
-      cout << "Passive Mode: Accepting TCP"
+      std::cout << "Passive Mode: Accepting TCP"
            << ((gMPTCPSocket > 0) ? "+MPTCP" : "")
            << "/UDP/SCTP" << ((gDCCPSocket > 0) ? "/DCCP" : "")
-           << " connections on port " << localPort << endl << endl;
+           << " connections on port " << localPort << std::endl << std::endl;
    }
 
 
@@ -1113,7 +1109,7 @@ void activeMode(int argc, char** argv)
    // ====== Initialize remote and control addresses ========================
    sockaddr_union remoteAddress;
    if(string2address(argv[1], &remoteAddress) == false) {
-      cerr << "ERROR: Invalid remote address " << argv[1] << "!" << endl;
+      std::cerr << "ERROR: Invalid remote address " << argv[1] << "!" << std::endl;
       exit(1);
    }
    if(getPort(&remoteAddress.sa) < 2) {
@@ -1130,13 +1126,15 @@ void activeMode(int argc, char** argv)
    uint64_t measurementID = random64();
 
    if(gOutputVerbosity >= NPFOV_STATUS) {
-      cout << "Active Mode:" << endl
-         << "   - Measurement ID  = " << format("%lx", measurementID) << endl
-         << "   - Remote Address  = "; printAddress(cout, &remoteAddress.sa, true);
-      cout << endl
-         << "   - Control Address = "; printAddress(cout, &controlAddress.sa, true);
-      cout << " - connecting ... ";
-      cout.flush();
+      std::cout << "Active Mode:" << std::endl
+                << "   - Measurement ID  = " << format("%lx", measurementID) << std::endl
+                << "   - Remote Address  = ";
+      printAddress(std::cout, &remoteAddress.sa, true);
+      std::cout << std::endl
+                << "   - Control Address = ";
+      printAddress(std::cout, &controlAddress.sa, true);
+      std::cout << " - connecting ... ";
+      std::cout.flush();
    }
 
    // ====== Initialize control socket ======================================
@@ -1150,13 +1148,13 @@ void activeMode(int argc, char** argv)
                                         0, gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                         false, gBindV6Only);
    if(gControlSocket < 0) {
-      cerr << "ERROR: Failed to create and bind SCTP socket - "
-           << strerror(errno) << "!" << endl;
+      std::cerr << "ERROR: Failed to create and bind SCTP socket - "
+           << strerror(errno) << "!" << std::endl;
       exit(1);
    }
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
-      cerr << "ERROR: Unable to establish control association - "
-           << strerror(errno) << "!" << endl;
+      std::cerr << "ERROR: Unable to establish control association - "
+           << strerror(errno) << "!" << std::endl;
       exit(1);
    }
    if(gControlOverTCP == false) {
@@ -1166,16 +1164,16 @@ void activeMode(int argc, char** argv)
       paddr.spp_flags      = SPP_HB_ENABLE;
       paddr.spp_hbinterval = 30000;
       if(setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, sizeof(paddr)) < 0) {
-         cerr << "WARNING: Unable to enable heartbeats on control association - "
-              << strerror(errno) << "!" << endl;
+         std::cerr << "WARNING: Unable to enable heartbeats on control association - "
+              << strerror(errno) << "!" << std::endl;
       }
 #if 0
       memset(&paddr, 0, sizeof(paddr));
       memcpy(&paddr.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
       socklen_t l = sizeof(paddr);
       if(getsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, &l) < 0) {
-         cerr << "ERROR: Unable to check heartbeats on control association - "
-              << strerror(errno) << "!" << endl;
+         std::cerr << "ERROR: Unable to check heartbeats on control association - "
+              << strerror(errno) << "!" << std::endl;
          exit(1);
       }
       printf("HeartbeatInterval=%u\n", paddr.spp_hbinterval);
@@ -1183,7 +1181,7 @@ void activeMode(int argc, char** argv)
 #endif
    }
    if(gOutputVerbosity >= NPFOV_STATUS) {
-      cout << "okay; sd=" << gControlSocket << endl << endl;
+      std::cout << "okay; sd=" << gControlSocket << std::endl << std::endl;
    }
    gMessageReader.registerSocket(controlSocketProtocol, gControlSocket);
 
@@ -1218,13 +1216,13 @@ void activeMode(int argc, char** argv)
 #ifdef HAVE_DCCP
             protocol = IPPROTO_DCCP;
 #else
-            cerr << "ERROR: DCCP support is not compiled in!" << endl;
+            std::cerr << "ERROR: DCCP support is not compiled in!" << std::endl;
             exit(1);
 #endif
          }
          else if(strncmp(argv[i], "-vector=", 8) == 0) {
             if(hasFlow) {
-               cerr << "ERROR: Vector file must be set *before* first flow!" << endl;
+               std::cerr << "ERROR: Vector file must be set *before* first flow!" << std::endl;
                exit(1);
             }
             vectorNamePattern = (const char*)&argv[i][8];
@@ -1239,7 +1237,7 @@ void activeMode(int argc, char** argv)
          }
          else if(strncmp(argv[i], "-scalar=", 8) == 0) {
             if(hasFlow) {
-               cerr << "ERROR: Scalar file must be set *before* first flow!" << endl;
+               std::cerr << "ERROR: Scalar file must be set *before* first flow!" << std::endl;
                exit(1);
             }
             scalarNamePattern = (const char*)&argv[i][8];
@@ -1262,8 +1260,8 @@ void activeMode(int argc, char** argv)
       }
       else {
          if(protocol == 0) {
-            cerr << "ERROR: Protocol specification needed before flow specification at argument \""
-                 << argv[i] << "\"!" << endl;
+            std::cerr << "ERROR: Protocol specification needed before flow specification at argument \""
+                 << argv[i] << "\"!" << std::endl;
             exit(1);
          }
 
@@ -1273,11 +1271,11 @@ void activeMode(int argc, char** argv)
          hasFlow = true;
 
          if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
-            cerr << endl << "ERROR: Failed to add flow to remote node!" << endl;
+            std::cerr << std::endl << "ERROR: Failed to add flow to remote node!" << std::endl;
             exit(1);
          }
          if(gOutputVerbosity >= NPFOV_STATUS) {
-            cout << "okay" << endl;
+            std::cout << "okay" << std::endl;
          }
 
          if(protocol != IPPROTO_SCTP) {
@@ -1287,7 +1285,7 @@ void activeMode(int argc, char** argv)
       }
    }
    if(gOutputVerbosity >= NPFOV_STATUS) {
-      cout << endl;
+      std::cout << std::endl;
    }
 
    printGlobalParameters();
@@ -1315,7 +1313,7 @@ void activeMode(int argc, char** argv)
 
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       if(!mainLoop(true, stopAt, measurementID)) {
-         cout << endl << "*** Aborted ***" << endl;
+         std::cout << std::endl << "*** Aborted ***" << std::endl;
          break;
       }
    }
@@ -1323,14 +1321,14 @@ void activeMode(int argc, char** argv)
    if(gOutputVerbosity >= NPFOV_BANDWIDTH_INFO) {
       FlowManager::getFlowManager()->disableDisplay();
       if(gStopTimeReached) {
-         cout << endl;
+         std::cout << std::endl;
       }
    }
 
 
    // ====== Stop measurement ===============================================
    if(gOutputVerbosity >= NPFOV_STATUS) {
-      cout << "Shutdown:" << endl;
+      std::cout << "Shutdown:" << std::endl;
    }
    if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID)) {
       std::cerr << "ERROR: Failed to stop measurement and download the results!" << std::endl;
@@ -1344,9 +1342,9 @@ void activeMode(int argc, char** argv)
 int main(int argc, char** argv)
 {
    if(argc < 2) {
-      cerr << "Usage: " << argv[0]
+      std::cerr << "Usage: " << argv[0]
            << " [Local Port|Remote Endpoint] {-control-over-tcp} {-tcp|-udp|-sctp|-dccp} {flow spec} ..."
-           << endl;
+           << std::endl;
       return 0;
    }
 
@@ -1364,8 +1362,8 @@ int main(int argc, char** argv)
       }
    }
    if(gOutputVerbosity >= NPFOV_STATUS) {
-      cout << "Network Performance Meter" << endl
-           << "-------------------------" << endl << endl;
+      std::cout << "Network Performance Meter" << std::endl
+           << "-------------------------" << std::endl << std::endl;
    }
 
    const uint16_t localPort = atol(argv[1]);
