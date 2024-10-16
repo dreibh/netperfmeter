@@ -939,6 +939,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
 {
    if(received < sizeof(NetPerfMeterRemoveFlowMessage)) {
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received malformed NETPERFMETER_REMOVE_FLOW control message!\n";
       gOutputMutex.unlock();
       return(false);
@@ -949,6 +950,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
    Flow* flow = FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID);
    if(flow == nullptr) {
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: NETPERFMETER_ADD_REMOVE tried to remove not-existing flow!\n";
       gOutputMutex.unlock();
       return(sendNetPerfMeterAcknowledge(controlSocket,
@@ -978,6 +980,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
 {
    if(received < sizeof(NetPerfMeterStartMessage)) {
       gOutputMutex.lock();
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received malformed NETPERFMETER_START control message!\n";
       gOutputMutex.unlock();
       return(false);
@@ -1029,6 +1032,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
                                    const size_t                   received)
 {
    if(received < sizeof(NetPerfMeterStopMessage)) {
+      printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received malformed NETPERFMETER_STOP control message!\n";
       return(false);
    }
