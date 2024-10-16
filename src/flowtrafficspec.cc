@@ -73,33 +73,26 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
 // ###### Print FlowTrafficSpec #############################################
 void FlowTrafficSpec::print(std::ostream& os) const
 {
-   os << "      - Receive Buffer Size: "
-      << RcvBufferSize << std::endl;
-   os << "      - Send Buffer Size:    "
-      << SndBufferSize << std::endl;
-   os << "      - Max. Message Size:   "
-      << MaxMsgSize << std::endl;
-   os << "      - Defragment Timeout:  "
-      << DefragmentTimeout / 1000 << "ms" << std::endl;
+   os << "      - Receive Buffer Size: " << RcvBufferSize << "\n";
+   os << "      - Send Buffer Size:    " << SndBufferSize << "\n";
+   os << "      - Max. Message Size:   " << MaxMsgSize << "\n";
+   os << "      - Defragment Timeout:  " << DefragmentTimeout / 1000 << "ms\n";
    os << "      - Outbound Frame Rate: ";
    showEntry(os, (const double*)&OutboundFrameRate, OutboundFrameRateRng);
-   os << std::endl;
-   os << "      - Outbound Frame Size: ";
+   os << "\n      - Outbound Frame Size: ";
    showEntry(os, (const double*)&OutboundFrameSize, OutboundFrameSizeRng);
-   os << std::endl;
-   os << "      - Inbound Frame Rate:  ";
+   os << "\n      - Inbound Frame Rate:  ";
    showEntry(os, (const double*)&InboundFrameRate, InboundFrameRateRng);
-   os << std::endl;
-   os << "      - Inbound Frame Size:  ";
+   os << "\n      - Inbound Frame Size:  ";
    showEntry(os, (const double*)&InboundFrameSize, InboundFrameSizeRng);
-   os << std::endl;
+   os << "\n";
    if(Protocol == IPPROTO_SCTP) {
       char ordered[32];
       char reliable[32];
       snprintf((char*)&ordered, sizeof(ordered), "%1.2f%%", 100.0 * OrderedMode);
       snprintf((char*)&reliable, sizeof(reliable), "%1.2f%%", 100.0 * ReliableMode);
-      os << "      - Ordered Mode:        " << ordered  << std::endl;
-      os << "      - Reliable Mode:       " << reliable << std::endl;
+      os << "      - Ordered Mode:        " << ordered  << "\n";
+      os << "      - Reliable Mode:       " << reliable << "\n";
       os << "      - Retransmissions:     ";
       if( (RetransmissionTrialsInMS) && (RetransmissionTrials == ~((uint32_t)0)) ) {
          os << "unlimited";
@@ -108,7 +101,7 @@ void FlowTrafficSpec::print(std::ostream& os) const
          os << RetransmissionTrials
             << (RetransmissionTrialsInMS ? "ms" : " trials");
       }
-      os << std::endl;
+      os << "\n";
    }
 
    os << "      - On/Off:              {";
@@ -116,7 +109,7 @@ void FlowTrafficSpec::print(std::ostream& os) const
       bool start = true;
       for(std::vector<OnOffEvent>::const_iterator iterator = OnOffEvents.begin();
           iterator != OnOffEvents.end();iterator++) {
-         os << std::endl << "         " << ((start == true) ? "* " : "~ ");
+         os << "\n" << "         " << ((start == true) ? "* " : "~ ");
          showEntry(os, (const double*)&(*iterator).ValueArray, (*iterator).RandNumGen);
          start = !start;
       }
@@ -124,19 +117,19 @@ void FlowTrafficSpec::print(std::ostream& os) const
    else {
       os << "*0 ";
    }
-   os << "}" << std::endl
-      << "      - Repeat On/Off:       " << ((RepeatOnOff == true) ? "yes" : "no") << std::endl;
+   os << "}\n"
+      << "      - Repeat On/Off:       " << ((RepeatOnOff == true) ? "yes" : "no") << "\n";
 
    os << "      - Error on Abort:      "
-      << ((ErrorOnAbort == true) ? "yes" : "no") << std::endl
+      << ((ErrorOnAbort == true) ? "yes" : "no") << "\n"
       << "      - Debug:               "
-      << ((Debug == true) ? "yes" : "no") << std::endl
+      << ((Debug == true) ? "yes" : "no") << "\n"
       << "      - No Delay:            "
-      << ((NoDelay == true) ? "yes" : "no") << std::endl
-      << "      Congestion Control:    " << CongestionControl << std::endl
-      << "      Number of Diff. Ports: " << NDiffPorts        << std::endl
-      << "      Path Manager:          " << PathMgr           << std::endl
-      << "      Scheduler:             " << Scheduler         << std::endl;
+      << ((NoDelay == true) ? "yes" : "no") << "\n"
+      << "      Congestion Control:    " << CongestionControl << "\n"
+      << "      Number of Diff. Ports: " << NDiffPorts        << "\n"
+      << "      Path Manager:          " << PathMgr           << "\n"
+      << "      Scheduler:             " << Scheduler         << "\n";
 
    os << "      - CMT:                 #" << (unsigned int)CMT << " ";
    switch(CMT) {
@@ -156,8 +149,8 @@ void FlowTrafficSpec::print(std::ostream& os) const
          os << "(MPTCP)";
        break;
    }
-   os << std::endl;
-   os << "      - CCID:                #" << (unsigned int)CCID << std::endl;
+   os << "\n";
+   os << "      - CCID:                #" << (unsigned int)CCID << "\n";
 }
 
 

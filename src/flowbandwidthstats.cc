@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2024 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -110,38 +110,38 @@ void FlowBandwidthStats::print(std::ostream& os,
    const unsigned long long lostFrames            = LostFrames;
    const unsigned long long lostFrameRate         = calculateRate(lostFrames, receptionDuration);
 
-   os << "      - Transmission:"         << std::endl
-      << "         * Duration:         " << transmissionDuration << " s" << std::endl
+   os << "      - Transmission:\n"
+      << "         * Duration:         " << transmissionDuration << " s\n"
       << "         * Bytes:            " << transmittedBytes << " B\t-> "
-                                         << transmittedByteRate << " B/s" << std::endl
+                                         << transmittedByteRate << " B/s\n"
       << "         * Bits:             " << transmittedBits << " bit\t-> "
-                                         << transmittedBitRate << " bit/s" << std::endl
+                                         << transmittedBitRate << " bit/s\n"
       << "         * Packets:          " << transmittedPackets << " packets\t-> "
-                                         << transmittedPacketRate << " packets/s" << std::endl
+                                         << transmittedPacketRate << " packets/s\n"
       << "         * Frames:           " << transmittedFrames << " frames\t-> "
-                                         << transmittedFrameRate << " frames/s" << std::endl;
+                                         << transmittedFrameRate << " frames/s\n";
 
-   os << "      - Reception:"            << std::endl
-      << "         * Duration:         " << receptionDuration << "s" << std::endl
+   os << "      - Reception:\n"
+      << "         * Duration:         " << receptionDuration << "s\n"
       << "         * Bytes:            " << receivedBytes << " B\t-> "
-                                         << receivedByteRate << " B/s" << std::endl
+                                         << receivedByteRate << " B/s\n"
       << "         * Bits:             " << receivedBits << " bit\t-> "
-                                         << receivedBitRate << " bit/s" << std::endl
+                                         << receivedBitRate << " bit/s\n"
       << "         * Packets:          " << receivedPackets << " packets\t-> "
-                                         << receivedPacketRate << " packets/s" << std::endl
+                                         << receivedPacketRate << " packets/s\n"
       << "         * Frames:           " << receivedFrames << " frames\t-> "
-                                         << receivedFrameRate << " frames/s" << std::endl;
+                                         << receivedFrameRate << " frames/s\n";
 
-   os << "      - Loss:"                 << std::endl
-      << "         * Duration:         " << receptionDuration << "s" << std::endl
+   os << "      - Loss:\n"
+      << "         * Duration:         " << receptionDuration << "s\n"
       << "         * Bytes:            " << lostBytes << " B\t-> "
-                                         << lostByteRate << " B/s" << std::endl
+                                         << lostByteRate << " B/s\n"
       << "         * Bits:             " << lostBits << " bit\t-> "
-                                         << lostBitRate << " bit/s" << std::endl
+                                         << lostBitRate << " bit/s\n"
       << "         * Packets:          " << lostPackets << " packets\t-> "
-                                         << lostPacketRate << " packets/s" << std::endl
+                                         << lostPacketRate << " packets/s\n"
       << "         * Frames:           " << lostFrames << " frames\t-> "
-                                         << lostFrameRate << " frames/s" << std::endl;
+                                         << lostFrameRate << " frames/s\n";
 }
 
 

@@ -25,17 +25,18 @@ INCLUDE(GNUInstallDirs)
 
 SET(CPACK_SOURCE_GENERATOR "TXZ")
 SET(CPACK_SOURCE_PACKAGE_FILE_NAME
-   "${CMAKE_PROJECT_NAME}-${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH}")
-SET(CPACK_SOURCE_IGNORE_FILES
-   "${PROJECT_SOURCE_DIR}/${CMAKE_PROJECT_NAME}-*;${PROJECT_SOURCE_DIR}/${CMAKE_PROJECT_NAME}_*;/build/;/.git/;/config.log;/CMakeFiles/;CMakeCache.txt$;.cmake$;.tar.gz$;/_CPack_Packages;/Makefile$;~$;/build-deb;/clean-deb;/filter-empty-entries;/make-symbols;/make-ppa;/make-deb;/debian.conf;/make-rpm;/rpm.conf;${CPACK_SOURCE_IGNORE_FILES}")
+    "${CMAKE_PROJECT_NAME}-${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH}")
+SET(CPACK_SOURCE_IGNORE_FILES "\\\\.git;\\\\.swp$;~$;\\\\.\\\\#;/\\\\#")
+LIST(APPEND CPACK_SOURCE_IGNORE_FILES "^${PROJECT_SOURCE_DIR}/${CMAKE_PROJECT_NAME}[_-]")
+LIST(APPEND CPACK_SOURCE_IGNORE_FILES "\\\\.cmake$|\\\\.make$|\\\\.log$")
+LIST(APPEND CPACK_SOURCE_IGNORE_FILES "/CMakeCache\\\\.txt$")
+LIST(APPEND CPACK_SOURCE_IGNORE_FILES "/(CMakeFiles|CMakeScripts|_CPack_Packages)/")
+LIST(APPEND CPACK_SOURCE_IGNORE_FILES "/package-version\\\\.h$")
+LIST(APPEND CPACK_SOURCE_IGNORE_FILES "/packaging\\\\.conf$")
+LIST(APPEND CPACK_SOURCE_IGNORE_FILES "^${PROJECT_SOURCE_DIR}/(po.*/|src.*/|)Makefile$")
 INCLUDE(CPack)
 
 ADD_CUSTOM_TARGET(dist COMMAND ${CMAKE_MAKE_PROGRAM} clean package_source)
-
-
-INCLUDE(CheckIncludeFile)
-INCLUDE(CheckStructHasMember)
-INCLUDE(CheckCCompilerFlag)
 
 
 #############################################################################
@@ -74,6 +75,8 @@ ENDIF()
 #############################################################################
 #### CHECK STRUCT MEMBERS                                                ####
 #############################################################################
+
+INCLUDE(CheckStructHasMember)
 
 CHECK_STRUCT_HAS_MEMBER("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
 IF (HAVE_SA_LEN)
@@ -230,48 +233,50 @@ ENDIF()
 #### COMPILER FLAGS                                                      ####
 #############################################################################
 
-SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -O2 -Wall")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall")
+INCLUDE(CheckCCompilerFlag)
 
-# ------ Check for "address-of-packed-member" -------------------------------
-CHECK_C_COMPILER_FLAG("-Waddress-of-packed-member -Werror" HAS_ADDRESS_OF_PACKED_MEMBER)
-IF (HAS_ADDRESS_OF_PACKED_MEMBER)
-   # Disable "address-of-packed-member" warning:
-   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
-   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
-ENDIF()
+# SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -O2 -Wall")
+# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall")
+#
+# # ------ Check for "address-of-packed-member" -------------------------------
+# CHECK_C_COMPILER_FLAG("-Waddress-of-packed-member -Werror" HAS_ADDRESS_OF_PACKED_MEMBER)
+# IF (HAS_ADDRESS_OF_PACKED_MEMBER)
+#    # Disable "address-of-packed-member" warning:
+#    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
+#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
+# ENDIF()
 
-# ------ Check for "array-bounds" -------------------------------------------
-CHECK_C_COMPILER_FLAG("-Warray-bounds -Werror" HAS_ARRAY_BOUNDS)
-IF (HAS_ARRAY_BOUNDS)
-   # Disable "array-bounds" warning:
-   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-array-bounds")
-   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds")
-ENDIF()
+# # ------ Check for "array-bounds" -------------------------------------------
+# CHECK_C_COMPILER_FLAG("-Warray-bounds -Werror" HAS_ARRAY_BOUNDS)
+# IF (HAS_ARRAY_BOUNDS)
+#    # Disable "array-bounds" warning:
+#    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-array-bounds")
+#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-array-bounds")
+# ENDIF()
 
-# ------ Check for "overlength-strings" -------------------------------------
-CHECK_C_COMPILER_FLAG("-Woverlength-strings -Werror" HAS_OVERLENGTH_STRINGS)
-IF (HAS_OVERLENGTH_STRINGS)
-   # Disable "overlength-strings" warning:
-   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-overlength-strings")
-   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-overlength-strings")
-ENDIF()
+# # ------ Check for "overlength-strings" -------------------------------------
+# CHECK_C_COMPILER_FLAG("-Woverlength-strings -Werror" HAS_OVERLENGTH_STRINGS)
+# IF (HAS_OVERLENGTH_STRINGS)
+#    # Disable "overlength-strings" warning:
+#    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-overlength-strings")
+#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-overlength-strings")
+# ENDIF()
 
-# ------ Check for "unused-function" ----------------------------------------
-CHECK_C_COMPILER_FLAG("-Wunused-function -Werror" HAS_UNUSED_FUNCTION)
-IF (HAS_UNUSED_FUNCTION)
-   # Disable "unused-function" warning:
-   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-function")
-   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
-ENDIF()
+# # ------ Check for "unused-function" ----------------------------------------
+# CHECK_C_COMPILER_FLAG("-Wunused-function -Werror" HAS_UNUSED_FUNCTION)
+# IF (HAS_UNUSED_FUNCTION)
+#    # Disable "unused-function" warning:
+#    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-function")
+#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-function")
+# ENDIF()
 
-# ------ Check for "unused-parameter" ---------------------------------------
-CHECK_C_COMPILER_FLAG("-Wunused-parameter -Werror" HAS_UNUSED_PARAMETER)
-IF (HAS_UNUSED_PARAMETER)
-   # Disable "unused-parameter" warning:
-   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-parameter")
-   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
-ENDIF()
+# # ------ Check for "unused-parameter" ---------------------------------------
+# CHECK_C_COMPILER_FLAG("-Wunused-parameter -Werror" HAS_UNUSED_PARAMETER)
+# IF (HAS_UNUSED_PARAMETER)
+#    # Disable "unused-parameter" warning:
+#    SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-unused-parameter")
+#    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-parameter")
+# ENDIF()
 
 
 #############################################################################

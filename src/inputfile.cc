@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2024 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -64,8 +64,7 @@ bool InputFile::initialize(const char*           name,
    BZFile = NULL;
    File = (name != NULL) ? fopen(name, "r") : tmpfile();
    if(File == NULL) {
-      std::cerr << "ERROR: Unable to open input file <"
-                << Name << ">!" << std::endl;
+      std::cerr << "ERROR: Unable to open input file <" << Name << ">!\n";
       ReadError = true;
       return(false);
    }
@@ -75,9 +74,8 @@ bool InputFile::initialize(const char*           name,
       int bzerror;
       BZFile = BZ2_bzReadOpen(&bzerror, File, 0, 0, NULL, 0);
       if(bzerror != BZ_OK) {
-         std::cerr << "ERROR: Unable to initialize BZip2 compression on file <"
-                   << Name << ">!" << std::endl
-                   << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << std::endl;
+         std::cerr << "ERROR: Unable to initialize BZip2 compression on file <" << Name << ">!\n"
+                   << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
          BZ2_bzWriteClose(&bzerror, BZFile, 0, NULL, NULL);
          ReadError = true;
          finish();
@@ -128,7 +126,7 @@ ssize_t InputFile::readLine(char* buffer, size_t bufferSize, bool& eof)
    for(;;) {
       if(StoragePos >= bufferSize) {
          std::cerr << "ERROR: Line " << Line << " of file <"
-                   << Name << "> is too long to fit into buffer!" << std::endl;
+                   << Name << "> is too long to fit into buffer!\n";
          return(-1);
       }
       memcpy(buffer, (const char*)&Storage, StoragePos);

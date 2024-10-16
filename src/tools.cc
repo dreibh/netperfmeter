@@ -749,7 +749,7 @@ int createAndBindSocket(const int             family,
       int reuse = 1;
       if(ext_setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
          std::cerr << "WARNING: Failed to configure socket reuse (SO_REUSEADDR option) - "
-                   << strerror(errno) << "!" << std::endl;
+                   << strerror(errno) << "!\n";
       }
 
       const int success = bindSocket(sd, family, type, protocol,
@@ -1286,80 +1286,46 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
 #endif
 
 
-#if 0
-/* ###### Word-around for lksctp bug ##################################### */
-ssize_t sctp_send_fixed(int                           sd,
-                        const void*                   data,
-                        size_t                        len,
-                        const struct sctp_sndrcvinfo* sinfo,
-                        int                           flags)
-{
-   struct sctp_sndrcvinfo* sri;
-   struct iovec            iov = { (char*)data, len };
-   struct cmsghdr*         cmsg;
-   socklen_t               cmsglen = CMSG_SPACE(sizeof(struct sctp_sndrcvinfo));
-   char                    cbuf[CMSG_SPACE(sizeof(struct sctp_sndrcvinfo))];
-   struct msghdr msg = {
-      NULL, 0,
-      &iov, 1,
-      cbuf, cmsglen,
-      flags
-   };
-
-   cmsg = (struct cmsghdr*)CMSG_FIRSTHDR(&msg);
-   cmsg->cmsg_len   = CMSG_LEN(sizeof(struct sctp_sndrcvinfo));
-   cmsg->cmsg_level = IPPROTO_SCTP;
-   cmsg->cmsg_type  = SCTP_SNDRCV;
-
-   sri = (struct sctp_sndrcvinfo*)CMSG_DATA(cmsg);
-   memcpy(sri, sinfo, sizeof(struct sctp_sndrcvinfo));
-   return(ext_sendmsg(sd, &msg, msg.msg_flags));
-}
-#endif
-
-
 /* ###### Configure send and receive buffer sizes ######################## */
 bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
 {
    if(sndBufSize > 0) {
       if(ext_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &sndBufSize, sizeof(sndBufSize)) < 0) {
          std::cerr << "ERROR: Failed to configure send buffer size (SO_SNDBUF option) - "
-                   << strerror(errno) << "!" << std::endl;
+                   << strerror(errno) << "!\n";
          return(false);
       }
       int newBufferSize = 0;
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(sd, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
          std::cerr << "ERROR: Failed to obtain receive send size (SO_SNDBUF option) - "
-                   << strerror(errno) << "!" << std::endl;
+                   << strerror(errno) << "!\n";
          return(false);
       }
       // printf("SET-SNDBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, sndBufSize);
       if(newBufferSize < sndBufSize) {
          std::cerr << "ERROR: actual send buffer size < configured send buffer size: "
-                   << newBufferSize << " < " << sndBufSize
-                   << std::endl;
+                   << newBufferSize << " < " << sndBufSize << "\n";
          return(false);
       }
    }
    if(rcvBufSize > 0) {
       if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvBufSize, sizeof(rcvBufSize)) < 0) {
          std::cerr << "ERROR: Failed to configure receive buffer size (SO_RCVBUF option) - "
-                   << strerror(errno) << "!" << std::endl;
+                   << strerror(errno) << "!\n";
          return(false);
       }
       int newBufferSize = 0;
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(sd, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
          std::cerr << "ERROR: Failed to obtain receive buffer size (SO_RCVBUF option) - "
-                   << strerror(errno) << "!" << std::endl;
+                   << strerror(errno) << "!\n";
          return(false);
       }
       // printf("SET-RCVBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, rcvBufSize);
       if(newBufferSize < rcvBufSize) {
          std::cerr << "ERROR: actual receive buffer size < configured receive buffer size: "
-                   << newBufferSize << " < " << rcvBufSize
-                   << std::endl;
+                   << newBufferSize << " < " << rcvBufSize << "\n";
          return(false);
       }
    }

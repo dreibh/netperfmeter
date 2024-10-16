@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2024 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -67,8 +67,7 @@ bool OutputFile::initialize(const char*            name,
    if(format != OFF_None) {
       File = (name != NULL) ? fopen(name, "w+") : tmpfile();
       if(File == NULL) {
-         std::cerr << "ERROR: Unable to create output file <"
-                   << Name << ">!" << std::endl;
+         std::cerr << "ERROR: Unable to create output file <" << Name << ">!\n";
          WriteError = true;
          return(false);
       }
@@ -78,9 +77,8 @@ bool OutputFile::initialize(const char*            name,
          int bzerror;
          BZFile = BZ2_bzWriteOpen(&bzerror, File, compressionLevel, 0, 30);
          if(bzerror != BZ_OK) {
-            std::cerr << "ERROR: Unable to initialize BZip2 compression on file <"
-                      << Name << ">!" << std::endl
-                      << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << std::endl;
+            std::cerr << "ERROR: Unable to initialize BZip2 compression on file <" << Name << ">!\n"
+                      << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
             BZ2_bzWriteClose(&bzerror, BZFile, 0, NULL, NULL);
             WriteError = true;
             finish();
@@ -112,9 +110,8 @@ bool OutputFile::finish(const bool          closeFile,
          }
       }
       else {
-         std::cerr << "ERROR: Unable to finish BZip2 compression on file <"
-                   << Name << ">!" << std::endl
-                   << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << std::endl;
+         std::cerr << "ERROR: Unable to finish BZip2 compression on file <" << Name << ">!\n"
+                   << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
          WriteError = true;
       }
       BZFile = NULL;
@@ -132,8 +129,7 @@ bool OutputFile::finish(const bool          closeFile,
    if(File) {
       if(closeFile) {
          if(fclose(File) != 0) {
-            std::cerr << "ERROR: Unable to close output file <"
-                      << Name << ">!" << std::endl;
+            std::cerr << "ERROR: Unable to close output file <" << Name << ">!\n";
             WriteError = true;
          }
          File = NULL;
@@ -178,10 +174,8 @@ bool OutputFile::write(const char* buffer, const size_t bufferLength)
          int bzerror;
          BZ2_bzWrite(&bzerror, BZFile, (void*)buffer, bufferLength);
          if(bzerror != BZ_OK) {
-            std::cerr << std::endl
-                      << "ERROR: libbz2 failed to write into file <"
-                      << Name << ">!" << std::endl
-                      << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << std::endl;
+            std::cerr << "\nERROR: libbz2 failed to write into file <" << Name << ">!\n"
+                      << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
             return(false);
          }
       }
@@ -189,8 +183,7 @@ bool OutputFile::write(const char* buffer, const size_t bufferLength)
       // ====== Write string as plain text ==================================
       else if(File) {
          if(fwrite(buffer, bufferLength, 1, File) != 1) {
-            std::cerr << "ERROR: Failed to write into file <"
-                     << Name << ">!" << std::endl;
+            std::cerr << "ERROR: Failed to write into file <" << Name << ">!\n";
             return(false);
          }
       }

@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2024 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -68,10 +68,10 @@ bool Thread::start()
          return(true);
       }
       MyThread = 0;
-      std::cerr << "ERROR: Unable to start new thread!" << std::endl;
+      std::cerr << "ERROR: Unable to start new thread!\n";
    }
    else {
-      std::cerr << "ERROR: Thread already running!" << std::endl;
+      std::cerr << "ERROR: Thread already running!\n";
    }
    return(false);
 }

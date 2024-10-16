@@ -63,13 +63,13 @@ Defragmenter::~Defragmenter()
 // ###### Print FragmentSet #################################################
 void Defragmenter::print(std::ostream& os)
 {
-   os << "FragmentSet:" << std::endl;
+   os << "FragmentSet:\n";
    for(std::map<uint32_t, Frame*>::iterator frameIterator = FrameSet.begin();
          frameIterator != FrameSet.end(); frameIterator++) {
       Frame* frame = frameIterator->second;
       os << "   - Frame " << frame->FrameID
          << ", LastUpdate=" << frame->LastUpdate
-         << ":" << std::endl;
+         << ":\n";
 
       for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
           fragmentIterator != frame->FragmentSet.end(); fragmentIterator++) {
@@ -83,7 +83,7 @@ void Defragmenter::print(std::ostream& os)
          if(fragment->Flags & NPMDF_FRAME_END) {
             os << "<End> ";
          }
-         os << std::endl;
+         os << "\n";
       }
    }
 }

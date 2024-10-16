@@ -172,7 +172,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       (flow->getOutputStatus() == Flow::On)) {
       gOutputMutex.lock();
       std::cerr << "ERROR: Flow #" << flow->getFlowID() << " has been aborted - "
-                << strerror(errno) << "!" << std::endl;
+                << strerror(errno) << "!\n";
       gOutputMutex.unlock();
       exit(1);
    }
@@ -274,7 +274,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
             gOutputMutex.lock();
             std::cout << "WARNING: Received data for unknown flow from ";
             printAddress(std::cout, &from.sa, true);
-            std::cout << " on sd=" << sd << "!" << std::endl;
+            std::cout << " on socket " << sd << "!\n";
             gOutputMutex.unlock();
          }
       }
@@ -282,7 +282,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          gOutputMutex.lock();
          std::cout << "WARNING: Received garbage from ";
          printAddress(std::cout, &from.sa, true);
-         std::cout << " on sd=" << sd << "!" << std::endl;
+         std::cout << " on socket " << sd << "!\n";
          gOutputMutex.unlock();
       }
    }
@@ -295,7 +295,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
             gOutputMutex.lock();
             std::cout << "End of input for flow " <<  flow->getFlowID() << " from ";
             printAddress(std::cout, &from.sa, true);
-            std::cout << " on sd=" << sd << "!" << std::endl;
+            std::cout << " on socket " << sd << "!\n";
             gOutputMutex.unlock();
             flow->unlock();
          }
