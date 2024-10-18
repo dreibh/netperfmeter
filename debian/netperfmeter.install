@@ -12,3 +12,5 @@ usr/share/man/man1/getabstime.1
 usr/share/man/man1/netperfmeter.1
 usr/share/man/man1/runtimeestimator.1
 usr/share/mime/packages/netperfmeter.xml
+usr/share/icons/hicolor/512x512/apps/netperfmeter.png
+usr/share/icons/hicolor/scalable/apps/netperfmeter.svg

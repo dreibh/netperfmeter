@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+dia -n -t eps-pango -e netperfmeter.eps logo/Logo-NetPerfMeter.dia
+epstopdf --outfile=netperfmeter.pdf.tmp netperfmeter.eps
+pdfcrop  netperfmeter.pdf.tmp netperfmeter.pdf
+gm convert netperfmeter.pdf -resize 512x netperfmeter.png
+pdf2svg netperfmeter.pdf netperfmeter.svg

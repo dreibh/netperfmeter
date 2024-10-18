@@ -43,6 +43,8 @@ NetPerfMeter is a network performance meter for the UDP, TCP, SCTP and DCCP tran
 %{_bindir}/netperfmeter
 %{_bindir}/runtimeestimator
 %{_datadir}/bash-completion/completions/netperfmeter
+%{_datadir}/icons/hicolor/512x512/apps/netperfmeter.png
+%{_datadir}/icons/hicolor/scalable/apps/netperfmeter.svg
 %{_datadir}/mime/packages/netperfmeter.xml
 %{_mandir}/man1/combinesummaries.1.gz
 %{_mandir}/man1/createsummary.1.gz

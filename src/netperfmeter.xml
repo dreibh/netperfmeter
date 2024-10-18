@@ -39,6 +39,7 @@
     </magic>
     <glob weight="75" pattern="*.sca" />
     <glob weight="80" pattern="*.sca.bz2" />
+    <icon name="netperfmeter" />
   </mime-type>
 
   <!-- ====== NetPerfMeter Vector file ================================== -->
@@ -51,6 +52,7 @@
     </magic>
     <glob weight="75" pattern="*.vec" />
     <glob weight="80" pattern="*.vec.bz2" />
+    <icon name="netperfmeter" />
   </mime-type>
 
 </mime-info>
