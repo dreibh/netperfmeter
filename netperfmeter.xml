@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+
+  <!-- ====== NetPerfMeter Scalar file ================================== -->
+  <mime-type type="application/x-netperfmeter-scalar">
+    <comment>NetPerfMeter scalar file</comment>
+    <comment xml:lang="de">NetPerfMeter-Skalardatei</comment>
+    <comment xml:lang="nb">NetPerfMeter skalarfil</comment>
+    <magic priority="80">
+      <match type="string" offset="0" value="scalar " />
+    </magic>
+    <glob weight="75" pattern="*.sca" />
+    <glob weight="80" pattern="*.sca.bz2" />
+  </mime-type>
+
+  <!-- ====== NetPerfMeter Vector file ================================== -->
+  <mime-type type="application/x-netperfmeter-vector">
+    <comment>NetPerfMeter vector file</comment>
+    <comment xml:lang="de">NetPerfMeter-Vektordatei</comment>
+    <comment xml:lang="nb">NetPerfMeter vektorfil</comment>
+    <magic priority="80">
+      <match type="string" offset="0" value="AbsTime " />
+    </magic>
+    <glob weight="75" pattern="*.vec" />
+    <glob weight="80" pattern="*.vec.bz2" />
+  </mime-type>
+
+</mime-info>
