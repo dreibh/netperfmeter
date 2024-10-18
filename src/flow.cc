@@ -801,9 +801,9 @@ void FlowManager::run()
       const int timeout = pollTimeout(getMicroTime(), 2,
                                       now + 250000,
                                       nextEvent);
-      printf("poll with timeout=%d\n", timeout);
+      // printf("poll with timeout=%d\n", timeout);
       const int result = ext_poll_wrapper((pollfd*)&pollFDs, n, timeout);
-      printf("poll result=%d\n",result);
+      // printf("poll result=%d\n",result);
 
 
       // ====== Handle events ===============================================
