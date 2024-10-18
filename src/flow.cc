@@ -358,7 +358,9 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
       controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
       success = flow->initializeVectorFile(nullptr, vectorFileFormat);
       flow->unlock();
-      removeSocket(socketDescriptor, false);   // Socket is now managed as flow!
+      if(flow->getTrafficSpec().Protocol != IPPROTO_UDP) {
+         removeSocket(socketDescriptor, false);   // Socket is now managed as flow!
+      }
    }
    unlock();
 
@@ -818,13 +820,16 @@ void FlowManager::run()
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
                   if(handleNetPerfMeterData(true, now, protocol, entry->fd) == 0) {
-                     if(gOutputVerbosity >= NPFOV_FLOWS) {
-                        printTimeStamp(std::cerr);
-                        std::cerr << "Closing disconnected socket "
-                                  << FlowSet[i]->SocketDescriptor << "\n";
+                     if(protocol != IPPROTO_UDP) {
+                        // Close the broken connection!
+                        if(gOutputVerbosity >= NPFOV_FLOWS) {
+                           printTimeStamp(std::cerr);
+                           std::cerr << "Closing disconnected socket "
+                                     << FlowSet[i]->SocketDescriptor << "\n";
+                        }
+                        ext_close(FlowSet[i]->SocketDescriptor);
+                        FlowSet[i]->SocketDescriptor = -1;
                      }
-                     ext_close(FlowSet[i]->SocketDescriptor);
-                     FlowSet[i]->SocketDescriptor = -1;
                   }
                }
             }
