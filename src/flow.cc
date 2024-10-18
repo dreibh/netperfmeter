@@ -839,6 +839,7 @@ void FlowManager::run()
                                             iterator->first) == 0) {
                      // Incoming connection has already been closed -> remove it!
                      gOutputMutex.lock();
+                     printTimeStamp(std::cout);
                      std::cout << "NOTE: Shutdown of still unidentified incoming connection "
                                << iterator->first << "!\n";
                      gOutputMutex.unlock();

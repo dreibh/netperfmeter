@@ -278,6 +278,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
             printAddress(std::cout, &from.sa, true);
             std::cout << " on socket " << sd << "!\n";
             gOutputMutex.unlock();
+            ext_shutdown(sd, 2);
          }
       }
       else {
@@ -287,6 +288,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          printAddress(std::cout, &from.sa, true);
          std::cout << " on socket " << sd << "!\n";
          gOutputMutex.unlock();
+         ext_shutdown(sd, 2);
       }
    }
 
@@ -301,6 +303,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
             std::cout << " on socket " << sd << "!\n";
             gOutputMutex.unlock();
             flow->unlock();
+            ext_shutdown(sd, 2);
          }
          flow->endOfInput();
       }

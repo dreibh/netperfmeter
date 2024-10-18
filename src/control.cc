@@ -793,7 +793,7 @@ static bool uploadOutputFile(const int         controlSocket,
       std::cerr << "WARNING: Unable to upload results (errno=" << errno << "): "
                 << strerror(errno) << "\n";
       gOutputMutex.unlock();
-      sendAbort(controlSocket);
+      ext_shutdown(controlSocket, 2);
    }
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       gOutputMutex.lock();
@@ -1150,7 +1150,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
          printTimeStamp(std::cerr);
          std::cerr << "ERROR: Control connection is broken!\n";
          gOutputMutex.unlock();
-         sendAbort(controlSocket, -1);
+         ext_shutdown(controlSocket, 2);
       }
       return(false);
    }
@@ -1201,7 +1201,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
             std::cerr << "ERROR: Received invalid control message of type "
                      << (unsigned int)header->Type << "!\n";
             gOutputMutex.unlock();
-            sendAbort(controlSocket);
+            ext_shutdown(controlSocket, 2);
             return(false);
       }
    }
