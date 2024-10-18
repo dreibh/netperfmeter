@@ -4,9 +4,11 @@ usr/bin/extractvectors
 usr/bin/getabstime
 usr/bin/netperfmeter
 usr/bin/runtimeestimator
+usr/share/bash-completion/completions/netperfmeter
 usr/share/man/man1/combinesummaries.1
 usr/share/man/man1/createsummary.1
 usr/share/man/man1/extractvectors.1
 usr/share/man/man1/getabstime.1
 usr/share/man/man1/netperfmeter.1
 usr/share/man/man1/runtimeestimator.1
+usr/share/mime/packages/netperfmeter.xml
