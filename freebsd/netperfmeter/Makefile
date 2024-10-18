@@ -4,7 +4,7 @@ PORTREVISION=	1
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.nntb.no/~dreibh/netperfmeter/download/
 
-MAINTAINER=	thomas.dreibholz@gmail.com
+MAINTAINER=	dreibh@simula.no
 COMMENT=	Network Performance Meter
 WWW=		https://www.nntb.no/~dreibh/netperfmeter/
 
