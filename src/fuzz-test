@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+procs=16
+(
+   while true ; do
+      echo "cat /dev/urandom | nc localhost 9000"
+      echo "cat /dev/urandom | nc localhost 9001"
+   done
+) | parallel -j${procs}
