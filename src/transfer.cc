@@ -298,6 +298,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
             flow->lock();
             gOutputMutex.lock();
+            printTimeStamp(std::cerr);
             std::cerr << "End of input for flow " <<  flow->getFlowID() << " from ";
             printAddress(std::cerr, &from.sa, true);
             std::cerr << " on socket " << sd << "!\n";
