@@ -1,9 +1,23 @@
 #!/usr/bin/env bash
 
-procs=16
+# ====== Handle arguments ===================================================
+if [ $# -lt 2 ] ; then
+   echo >&2 "Usage: $0 netperfmeter_server:port [processes]"
+   exit 1
+fi
+NETPERFMETER="$1"
+if [ "$2" != "" ] ; then
+   procs="$2"
+else
+   procs=16
+fi
+
+
+# ====== Run fuzz-test with given number of processes =======================
+echo "Running fuzz-test with ${procs} processes ..."
 (
    while true ; do
       echo "cat /dev/urandom | nc localhost 9000"
       echo "cat /dev/urandom | nc localhost 9001"
    done
-) | parallel -j${procs}
+) | parallel -j${procs} | strings
