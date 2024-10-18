@@ -779,6 +779,7 @@ void FlowManager::run()
       for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
           iterator != UnidentifiedSockets.end(); iterator++) {
          pollFDs[n].fd      = iterator->first;
+         printf("u=%d ", pollFDs[n].fd);
          pollFDs[n].events  = POLLIN;
          pollFDs[n].revents = 0;
          // printf("?pollin-2: %d\n", pollFDs[n].fd);
@@ -786,6 +787,7 @@ void FlowManager::run()
          n++; i++;
       }
       assert(i == UnidentifiedSockets.size());
+      if(i > 0) puts("");
       const unsigned long long nextEvent = getNextEvent();
       unlock();
 
@@ -795,9 +797,9 @@ void FlowManager::run()
       const int timeout = pollTimeout(getMicroTime(), 2,
                                       now + 250000,
                                       nextEvent);
-      // printf("timeout=%d\n", timeout);
+      printf("poll with timeout=%d\n", timeout);
       const int result = ext_poll_wrapper((pollfd*)&pollFDs, n, timeout);
-      // printf("result=%d\n",result);
+      printf("poll result=%d\n",result);
 
 
       // ====== Handle events ===============================================
