@@ -229,7 +229,7 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
 
    if(printFlows) {
       gOutputMutex.lock();
-      std::cout << ss.str();
+      std::cerr << ss.str();
       gOutputMutex.unlock();
    }
 
@@ -262,7 +262,7 @@ void FlowManager::stopMeasurement(const uint64_t           measurementID,
                flow->deactivate(false);
                if(printFlows) {
                   gOutputMutex.lock();
-                  flow->print(std::cout, true);
+                  flow->print(std::cerr, true);
                   gOutputMutex.unlock();
                }
             }
@@ -812,16 +812,20 @@ void FlowManager::run()
             FlowSet[i]->lock();
             const pollfd* entry    = FlowSet[i]->PollFDEntry;
             const int     protocol = FlowSet[i]->getTrafficSpec().Protocol;
-            // FlowSet[i]->unlock(); --- not necessary: FlowManager is locked
-            // NOTE: Release the lock here, because the FlowSet enty may belong
-            //       to another stream of the socket. handleNetPerfMeterData()
-            //       will find and lock the actual FlowSet entry!
             if(entry) {
                // printf("***pollin-1: %d REV=%x\n", entry->fd, entry->revents);
                if(entry->revents & (POLLIN|POLLERR)) {
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
-                  handleNetPerfMeterData(true, now, protocol, entry->fd);
+                  if(handleNetPerfMeterData(true, now, protocol, entry->fd) == 0) {
+                     if(gOutputVerbosity >= NPFOV_FLOWS) {
+                        printTimeStamp(std::cerr);
+                        std::cerr << "Closing disconnected socket "
+                                  << FlowSet[i]->SocketDescriptor << "\n";
+                     }
+                     ext_close(FlowSet[i]->SocketDescriptor);
+                     FlowSet[i]->SocketDescriptor = -1;
+                  }
                }
             }
             FlowSet[i]->unlock();
@@ -841,9 +845,11 @@ void FlowManager::run()
                                             iterator->first) == 0) {
                      // Incoming connection has already been closed -> remove it!
                      gOutputMutex.lock();
-                     printTimeStamp(std::cout);
-                     std::cout << "NOTE: Shutdown of still unidentified incoming connection "
-                               << iterator->first << "!\n";
+                     if(gOutputVerbosity >= NPFOV_FLOWS) {
+                        printTimeStamp(std::cerr);
+                        std::cerr << "Shutdown of still unidentified incoming connection "
+                                  << iterator->first << "!\n";
+                     }
                      gOutputMutex.unlock();
                      removeSocket(iterator->first, true);
                      break;

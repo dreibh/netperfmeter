@@ -274,9 +274,9 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          else {
             gOutputMutex.lock();
             printTimeStamp(std::cerr);
-            std::cout << "WARNING: Received data for unknown flow from ";
-            printAddress(std::cout, &from.sa, true);
-            std::cout << " on socket " << sd << "!\n";
+            std::cerr << "WARNING: Received data for unknown flow from ";
+            printAddress(std::cerr, &from.sa, true);
+            std::cerr << " on socket " << sd << "!\n";
             gOutputMutex.unlock();
             ext_shutdown(sd, 2);
          }
@@ -284,9 +284,9 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
       else {
          gOutputMutex.lock();
          printTimeStamp(std::cerr);
-         std::cout << "WARNING: Received garbage from ";
-         printAddress(std::cout, &from.sa, true);
-         std::cout << " on socket " << sd << "!\n";
+         std::cerr << "WARNING: Received garbage from ";
+         printAddress(std::cerr, &from.sa, true);
+         std::cerr << " on socket " << sd << "!\n";
          gOutputMutex.unlock();
          ext_shutdown(sd, 2);
       }
@@ -298,9 +298,9 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
             flow->lock();
             gOutputMutex.lock();
-            std::cout << "End of input for flow " <<  flow->getFlowID() << " from ";
-            printAddress(std::cout, &from.sa, true);
-            std::cout << " on socket " << sd << "!\n";
+            std::cerr << "End of input for flow " <<  flow->getFlowID() << " from ";
+            printAddress(std::cerr, &from.sa, true);
+            std::cerr << " on socket " << sd << "!\n";
             gOutputMutex.unlock();
             flow->unlock();
             ext_shutdown(sd, 2);
