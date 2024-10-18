@@ -358,9 +358,11 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
       controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
       success = flow->initializeVectorFile(nullptr, vectorFileFormat);
       flow->unlock();
-      if(flow->getTrafficSpec().Protocol != IPPROTO_UDP) {
+// FIXME!
+      // if(flow->getTrafficSpec().Protocol != IPPROTO_UDP) {
          removeSocket(socketDescriptor, false);   // Socket is now managed as flow!
-      }
+      // }
+// FIXME!
    }
    unlock();
 

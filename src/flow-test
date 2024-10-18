@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+make
+rm -f vgcore.* core.* core
+
+./netperfmeter localhost:9000 -control-over-tcp -udp const30:const68000:const30:const68000:maxmsgsize=1300 -runtime=3
