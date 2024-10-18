@@ -7,7 +7,7 @@ Build-Depends: cmake,
                debhelper (>= 12),
                libbz2-dev,
                libsctp-dev (>= 1.0.5)
-Standards-Version: 4.6.2
+Standards-Version: 4.7.0
 Rules-Requires-Root: no
 
 Package: pdfproctools
