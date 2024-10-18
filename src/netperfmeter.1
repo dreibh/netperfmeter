@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd April 29, 2016
+.Dd October 18, 2024
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -36,32 +36,39 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm netperfmeter
-.Op Port
+Port
+.Op Fl control-over-tcp
+.Op Fl quiet
+.Op Fl verbose
+.Op Fl verbosity=Level
+.Op Fl display
+.Op Fl nodisplay
+.Op Fl v6only
 .Nm netperfmeter
-.Op Destination:Port
-.Fl control-over-tcp
-.Fl local=Address[,Address,...]
-.Fl controllocal=Address[,Address,...]
-.Fl runtime=Seconds
-.Fl config=Name
-.Fl scalar=Name
-.Fl vector=Name
-.Fl activenodename=Description
-.Fl passivenodename=Description
-.Fl quiet
-.Fl verbose
-.Fl verbosity=Level
-.Fl display
-.Fl nodisplay
-.Fl v6only
-.Fl pathmgr=name
-.Fl scheduler=name
-.Fl sndbuf=bytes
-.Fl rcvbuf=bytes
-.Fl tcp
-.Fl sctp
-.Fl udp
-.Fl dccp
+Destination:Port
+.Op Fl control-over-tcp
+.Op Fl local=Address[,Address,...]
+.Op Fl controllocal=Address[,Address,...]
+.Op Fl runtime=Seconds
+.Op Fl config=Name
+.Op Fl scalar=Name
+.Op Fl vector=Name
+.Op Fl activenodename=Description
+.Op Fl passivenodename=Description
+.Op Fl quiet
+.Op Fl verbose
+.Op Fl verbosity=Level
+.Op Fl display
+.Op Fl nodisplay
+.Op Fl v6only
+.Op Fl pathmgr=name
+.Op Fl scheduler=name
+.Op Fl sndbuf=bytes
+.Op Fl rcvbuf=bytes
+.Op Fl tcp
+.Op Fl sctp
+.Op Fl udp
+.Op Fl dccp
 .Op FLOWSPEC
 .Op ...
 .\" ###### Description ######################################################
@@ -220,5 +227,5 @@ Thomas Dreibholz
 .br
 https://www.nntb.no/~dreibh/netperfmeter
 .br
-mailto://thomas.dreibholz@gmail.com
+mailto://dreibh@simula.no
 .br
