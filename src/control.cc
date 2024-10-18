@@ -844,7 +844,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    const uint32_t flowID          = ntohl(addFlowMsg->FlowID);
    const uint16_t streamID        = ntohs(addFlowMsg->StreamID);
    const size_t   startStopEvents = ntohs(addFlowMsg->OnOffEvents);
-   if(received < sizeof(NetPerfMeterAddFlowMessage) + (startStopEvents * sizeof(unsigned int))) {
+   if(received < sizeof(NetPerfMeterAddFlowMessage) + (startStopEvents * sizeof(NetPerfMeterOnOffEvent))) {
       gOutputMutex.lock();
       printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message "
