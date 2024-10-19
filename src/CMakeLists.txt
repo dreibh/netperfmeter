@@ -66,8 +66,6 @@ TARGET_LINK_LIBRARIES(netperfmeter ${BZIP2_LIBRARIES} ${SCTP_LIB} "${CMAKE_THREA
 INSTALL(TARGETS netperfmeter     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   netperfmeter.1   DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES   netperfmeter.xml DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)
-INSTALL(FILES   netperfmeter.png DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/512x512/apps)
-INSTALL(FILES   netperfmeter.svg DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps)
 INSTALL(FILES       netperfmeter.bash-completion
         DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
         RENAME      netperfmeter)
@@ -134,3 +132,11 @@ IF (BUILD_TEST_PROGRAMS)
    ADD_EXECUTABLE(rootshell rootshell.c)
    TARGET_LINK_LIBRARIES(rootshell)
 ENDIF()
+
+
+#############################################################################
+#### SUBDIRECTORIES                                                      ####
+#############################################################################
+
+ADD_SUBDIRECTORY(logo)
+ADD_SUBDIRECTORY(results-examples)

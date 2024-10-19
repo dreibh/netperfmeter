@@ -30,6 +30,7 @@
 dia -n -t eps-pango -e netperfmeter.eps logo/Logo-NetPerfMeter.dia
 epstopdf --outfile=netperfmeter.pdf.tmp netperfmeter.eps
 pdfcrop --hires netperfmeter.pdf.tmp netperfmeter.pdf
+rm -f netperfmeter.pdf.tmp
 
 # Conversion of PDF to PNG with alpha channel:
 # * Add border of 1 pixel
