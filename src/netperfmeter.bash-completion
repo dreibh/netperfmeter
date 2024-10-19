@@ -34,7 +34,18 @@ _netperfmeter()
    # * /usr/share/bash-completion/completions/dd
 
    local cur prev words cword
-   _init_completion -n = || return
+   if type -t _comp_initialize >/dev/null; then
+      _comp_initialize -n = || return
+   elif type -t _init_completion >/dev/null; then
+      _init_completion -n = || return
+   else
+      # Manual initialization for older bash completion versions:
+      COMPREPLY=()
+      cur="${COMP_WORDS[COMP_CWORD]}"
+      prev="${COMP_WORDS[COMP_CWORD-1]}"
+      words="${COMP_WORDS}"
+      cword="${COMP_CWORD}"
+   fi
 
    # echo "cur=$cur prev=$prev words=${words[@]} cword=$cword"
    # echo ""
