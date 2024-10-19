@@ -15,6 +15,7 @@ BuildRequires: lksctp-tools-devel
 BuildRequires: valgrind-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 
+Requires: %{name}-common = %{version}-%{release}
 Recommends: %{name}-plotting = %{version}-%{release}
 Recommends: bc
 Recommends: hipercontracer
@@ -43,15 +44,34 @@ NetPerfMeter is a network performance meter for the UDP, TCP, SCTP and DCCP tran
 %{_bindir}/netperfmeter
 %{_bindir}/runtimeestimator
 %{_datadir}/bash-completion/completions/netperfmeter
-%{_datadir}/icons/hicolor/512x512/apps/netperfmeter.png
-%{_datadir}/icons/hicolor/scalable/apps/netperfmeter.svg
-%{_datadir}/mime/packages/netperfmeter.xml
 %{_mandir}/man1/combinesummaries.1.gz
 %{_mandir}/man1/createsummary.1.gz
 %{_mandir}/man1/extractvectors.1.gz
 %{_mandir}/man1/getabstime.1.gz
 %{_mandir}/man1/netperfmeter.1.gz
 %{_mandir}/man1/runtimeestimator.1.gz
+
+
+%package common
+Summary: Network Performance Meter (common files)
+Group: Applications/Internet
+BuildArch: noarch
+
+%description common
+NetPerfMeter is a network performance meter for the UDP,
+TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
+It simultaneously transmits bidirectional flows to an endpoint
+and measures the resulting flow bandwidths and QoS. The
+results are written as vector and scalar files. The vector
+files can e.g. be used to create plots of the results.
+This package contains common NetPerfMeter files.
+
+%files common
+%{_datadir}/icons/hicolor/512x512/apps/netperfmeter.png
+%{_datadir}/icons/hicolor/scalable/apps/netperfmeter.svg
+%{_datadir}/mime/packages/netperfmeter.xml
+%{_datadir}/netperfmeter/results-examples/*.sca*
+%{_datadir}/netperfmeter/results-examples/*.vec*
 
 
 %package pdfproctools
