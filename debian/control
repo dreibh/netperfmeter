@@ -3,6 +3,8 @@ Section: net
 Priority: optional
 Maintainer: Thomas Dreibholz <dreibh@simula.no>
 Homepage: https://www.nntb.no/~dreibh/netperfmeter/
+Vcs-Git: https://github.com/dreibh/netperfmeter.git
+Vcs-Browser: https://github.com/dreibh/netperfmeter
 Build-Depends: cmake,
                debhelper (>= 12),
                libbz2-dev,
