@@ -135,6 +135,18 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 {
    Socket* socket = getSocket(sd);
    if(socket != nullptr) {
+      // ===== UDP ==========================================================
+      if(socket->Protocol == IPPROTO_UDP) {
+         // For UDP, reading always returns a full message. There is no
+         // particul reading!
+         const ssize_t received =
+            ext_recvfrom(socket->SocketDescriptor,
+                         buffer, bufferSize,
+                         *msgFlags, from, fromSize);
+         printf("rf=%d\n", received);
+         return received;
+      }
+
       // ====== Find out the number of bytes to read ========================
       ssize_t received;
       size_t  bytesToRead;
@@ -177,20 +189,15 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          msgFlags   = &dummyFlags;
       }
       if(socket->Protocol == IPPROTO_SCTP) {
-         // printf("toRead=%d\n", bytesToRead);
          received = sctp_recvmsg(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  from, fromSize, sinfo, msgFlags);
       }
       else {
-         if(from) {
-            memset(from, 0, *fromSize);   // Clear address (Valgrind report)
-         }
          received = ext_recvfrom(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  *msgFlags, from, fromSize);
       }
-      // printf("recv(%d)=%d, eor=%d\n", socket->SocketDescriptor, received, ((*msgFlags & MSG_EOR) != 0));
 
 
       // ====== Handle received data ========================================
