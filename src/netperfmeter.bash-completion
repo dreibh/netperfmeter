@@ -32,6 +32,10 @@ _netperfmeter()
    # Based on:
    # * https://www.benningtons.net/index.php/bash-completion/
    # * /usr/share/bash-completion/completions/dd
+   # * https://unix.stackexchange.com/questions/781584/complete-compgen-fails-to-suggest-when-options-contain-colon
+
+   # This is necessary to properly handle ":" in completion words!
+   local COMP_WORDBREAKS="${COMP_WORDBREAKS//:}"
 
    local cur prev words cword
    if type -t _comp_initialize >/dev/null; then
@@ -54,26 +58,36 @@ _netperfmeter()
    if [ $cword -gt 1 ] ; then
       case "${cur}" in
          #  ====== Generic value ============================================
-         -activenodename=  | \
-         -config=          | \
-         -controllocal=    | \
-         -local=           | \
-         -passivenodename= | \
-         -pathmgr=         | \
-         -rcvbuf=          | \
-         -runtime=         | \
-         -scheduler=       | \
-         -sndbuf=          | \
-         -verbosity=       | \
-         -activenodename=  | \
-         -controllocal=    | \
-         -passivenodename)
+         -activenodename=*  | \
+         -config=*          | \
+         -passivenodename=* | \
+         -pathmgr=*         | \
+         -rcvbuf=*          | \
+         -runtime=*         | \
+         -scheduler=*       | \
+         -sndbuf=*          | \
+         -verbosity=*)
             cur=${cur#*=}
             return
             ;;
+         # ====== Local address =============================================
+         -controllocal=* | \
+         -local=*)
+            cur="${cur#*=}"
+            # Suggest local IP addresses:
+            local addreses
+            if [ -x /usr/bin/ip ] ; then
+               addresses="$(/usr/bin/ip addr show | awk '/[ ]+inet/ { print $2 }' | sed -e 's#/.*$##')"
+            elif [ -x /sbin/ifconfig ] ; then
+               addresses="$(/sbin/ifconfig | awk '/[ \t]+inet/ { print $2 }' | sed -e 's#/.*$##')"
+            fi
+            COMPREPLY=($(compgen -W "${addresses}" -- "${cur}"))
+            return
+            ;;
          # ====== Scalar/vector file pattern ================================
-         -scalar= | \
-         -vector=)
+         -scalar=* | \
+         -vector=*)
+            cur="${cur#*=}"
             _filedir
             return
             ;;
@@ -91,7 +105,7 @@ _netperfmeter()
    local opts2
 
    # ------ Passive side ----------------------------------------------------
-   if [ ${cword} -ge 2 ] && [[ "${words[2]}" =~ [:] ]] ; then
+   if [ ${cword} -ge 2 ] && [[ "${words[1]}" =~ [:] ]] ; then
       # NetPerfMeter simple options without parameter(s)
       opts1="
 -control-over-tcp
