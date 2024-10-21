@@ -770,6 +770,7 @@ void FlowManager::run()
       std::cerr << "poll-init:\n";
       for(unsigned int i = 0;i  < FlowSet.size(); i++) {
          FlowSet[i]->lock();
+         FlowSet[i]->PollFDEntry = nullptr;
          if( (FlowSet[i]->InputStatus != Flow::Off) &&
              (FlowSet[i]->SocketDescriptor >= 0) ) {
             if(!((FlowSet[i]->getTrafficSpec().Protocol == IPPROTO_UDP) &&   // Global UDP socket is handled by main loop!
@@ -798,6 +799,7 @@ void FlowManager::run()
       for(std::map<int, UnidentifiedSocket*>::iterator iterator = UnidentifiedSockets.begin();
           iterator != UnidentifiedSockets.end(); iterator++) {
          UnidentifiedSocket* ud = iterator->second;
+         ud->PollFDEntry = nullptr;
          // See note above about UDP: UDP is handled by mainLoop()!
          if(ud->Protocol != IPPROTO_UDP) {
             pollFDs[n].fd      = ud->SocketDescriptor;
@@ -824,13 +826,14 @@ void FlowManager::run()
       const int result = ext_poll_wrapper((pollfd*)&pollFDs, n, timeout);
       std::cerr << "poll result=" << result << "\n";
 
+
       // ====== Handle events ===============================================
       lock();
 
       now = getMicroTime();
       if(result > 0) {
          // ====== Handle read events of flows ==============================
-         for(unsigned int i = 0; i  < FlowSet.size(); i++) {
+         for(unsigned int i = 0; i < FlowSet.size(); i++) {
             FlowSet[i]->lock();
             const pollfd* entry    = FlowSet[i]->PollFDEntry;
             const int     protocol = FlowSet[i]->getTrafficSpec().Protocol;
@@ -840,7 +843,10 @@ void FlowManager::run()
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
-                  if(handleNetPerfMeterData(true, now, protocol, entry->fd) == 0) {
+                  const ssize_t result = handleNetPerfMeterData(true, now,
+                                                                protocol, entry->fd);
+                  if( (result <= 0) && (result != MRRM_PARTIAL_READ) ) {
+                     assert(protocol != IPPROTO_UDP);
                      if(protocol != IPPROTO_UDP) {
                         // Close the broken connection!
                         if(gOutputVerbosity >= NPFOV_FLOWS) {
@@ -857,7 +863,6 @@ void FlowManager::run()
             FlowSet[i]->unlock();
          }
 
-
          // ====== Handle read events of yet unidentified sockets ===========
          if(!UpdatedUnidentifiedSockets) {
             for(std::map<int, UnidentifiedSocket*>::iterator iterator = UnidentifiedSockets.begin();
@@ -869,9 +874,10 @@ void FlowManager::run()
                   if(entry->revents & POLLIN) {
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                << " protocol " << ud->Protocol << "\n";
-                     if(handleNetPerfMeterData(true, now,
-                                               ud->Protocol,
-                                               ud->SocketDescriptor) == 0) {
+                     const ssize_t result = handleNetPerfMeterData(true, now,
+                                                                   ud->Protocol,
+                                                                   ud->SocketDescriptor);
+                     if( (result <= 0) && (result != MRRM_PARTIAL_READ) ) {
                         // Incoming connection has already been closed -> remove it!
                         gOutputMutex.lock();
                         if(gOutputVerbosity >= NPFOV_FLOWS) {
@@ -1140,13 +1146,7 @@ void Flow::deactivate(const bool asyncStop)
             // timeout.
          }
          else {
-            // const int shutdownOkay =
-               ext_shutdown(SocketDescriptor, 2);
-            /*
-            if(shutdownOkay < 0) {
-               perror("WARNING: Failed to shut down association");
-            }
-            */
+            ext_shutdown(SocketDescriptor, 2);
          }
       }
       if(!asyncStop) {
