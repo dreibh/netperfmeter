@@ -821,12 +821,19 @@ bool mainLoop(const bool               isActiveMode,
       // ====== Incoming control message ====================================
       int controlID;
       for(controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
-         if(fds[controlID].revents & (POLLIN|POLLERR)) {
+         if(fds[controlID].revents & POLLIN) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
                const int newSD = ext_accept(gControlSocket, nullptr, 0);
                if(newSD >= 0) {
                   gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
+               }
+               else {
+                  gOutputMutex.lock();
+                  printTimeStamp(std::cerr);
+                  std::cerr << "Accept on SCTP control socket " << gControlSocket << " failed: "
+                            << strerror(errno) << "\n";
+                  gOutputMutex.unlock();
                }
             }
             else if( (isActiveMode == false) &&
@@ -834,6 +841,13 @@ bool mainLoop(const bool               isActiveMode,
                const int newSD = ext_accept(gControlSocketTCP, nullptr, 0);
                if(newSD >= 0) {
                   gMessageReader.registerSocket(IPPROTO_TCP, newSD);
+               }
+               else {
+                  gOutputMutex.lock();
+                  printTimeStamp(std::cerr);
+                  std::cerr << "Accept on TCP control socket " << gControlSocketTCP << " failed: "
+                            << strerror(errno) << "\n";
+                  gOutputMutex.unlock();
                }
             }
             else {
@@ -843,11 +857,11 @@ bool mainLoop(const bool               isActiveMode,
                   if(isActiveMode) {
                      return(false);
                   }
-                  gMessageReader.deregisterSocket(fds[controlID].fd);
-                  ext_close(fds[controlID].fd);
                   // Make sure to deregister all flows belonging to this
                   // control connection!
                   handleControlAssocShutdown(fds[controlID].fd);
+                  gMessageReader.deregisterSocket(fds[controlID].fd);
+                  ext_close(fds[controlID].fd);
                }
             }
          }
