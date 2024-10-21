@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 18, 2024
+.Dd October 21, 2024
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -150,7 +150,20 @@ The frame size of the outgoing transfer (i.e. active node to passive node). If s
 The frame rate of the incoming transfer (i.e. passive node to active node). See outgoing_frame_rate for details.
 .It incoming_frame_size
 The frame size of the incoming transfer (i.e. active node to passive node). See outgoing_frame_size for details.
-.It Possible options:
+.It Random distribution:
+Frame rate and frame size may be distributed randomly, using different random distributions. A new random value is drawn for the next frame send time or next frame size.
+The following distributions are supported:
+.Bl -tag -width indent
+.It const<value>
+Constant, i.e. always the same. Example: a frame rate const1000 for means all frames have a size of 1000 bytes.
+.It uniform<a>,<b>
+Uniformly distributed from the interval [a,b). Example: uniform900,1100.
+.It exp<p>
+Exponential distribution with average <p>. Example: exp1000.
+.It exp<location>,<shape>
+Pareto distribution with location <location> and shape <shape>. Example: pareto0.166667,1.5.
+.El
+.It Possible flow options:
 .Bl -tag -width indent
 .It id=Flow Identifier
 Sets an ID number for the flow. The IDs within a measurement must be unique!
@@ -187,7 +200,7 @@ Deactivate Nagle algorithm (TCP and SCTP only; default: off).
 Set debug mode on socket (currently: MPTCP for Linux only. Requires socket options kernel patch!).
 .It ndiffports=number
 Set number of different MPTCP subflows (MPTCP for Linux only. Requires socket options kernel patch!).
-.It Fl v6only
+.It v6only
 Use socket with IPv6 only (by setting IPV6_V6ONLY socket option).
 .It pathmgr=name
 Set MPTCP path manager (MPTCP for Linux only. Requires socket options kernel patch!).
@@ -220,6 +233,10 @@ At t=60s, start flow "Gamma" over the TCP connection (same parameters as flow "A
 At t=300s, stop the measurement.
 .It netperfmeter 172.16.255.254:9000 -control-over-tcp -tcp const2:const1000
 Start in active mode, i.e. establish connection to 172.16.255.254, port 9000. The control connection uses TCP instead of SCTP.
+.It netperfmeter 172.16.255.254:9000 -sctp const0:const0:uniform20,30:uniform900,1100
+SCTP traffic with some variation.
+.It netperfmeter 172.16.255.254:9000 -udp const0:const0:const25:const2500:onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
+Some on-off background traffic with Pareto distribution.
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
