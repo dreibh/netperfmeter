@@ -838,6 +838,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message!\n";
       gOutputMutex.unlock();
+      ext_shutdown(controlSocket, 2);
       return(false);
    }
    const uint64_t measurementID   = ntoh64(addFlowMsg->MeasurementID);
@@ -850,6 +851,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message "
                    "(too few start/stop entries)!\n";
       gOutputMutex.unlock();
+      ext_shutdown(controlSocket, 2);
       return(false);
    }
    char description[sizeof(addFlowMsg->Description) + 1];
@@ -943,6 +945,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
       printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received malformed NETPERFMETER_REMOVE_FLOW control message!\n";
       gOutputMutex.unlock();
+      ext_shutdown(controlSocket, 2);
       return(false);
    }
    const uint64_t measurementID = ntoh64(removeFlowMsg->MeasurementID);
@@ -984,6 +987,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
       printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received malformed NETPERFMETER_START control message!\n";
       gOutputMutex.unlock();
+      ext_shutdown(controlSocket, 2);
       return(false);
    }
    const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
@@ -1033,8 +1037,11 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
                                    const size_t                   received)
 {
    if(received < sizeof(NetPerfMeterStopMessage)) {
+      gOutputMutex.lock();
       printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received malformed NETPERFMETER_STOP control message!\n";
+      gOutputMutex.unlock();
+      ext_shutdown(controlSocket, 2);
       return(false);
    }
    const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
@@ -1176,6 +1183,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
             << "       expected=" << ntohs(header->Length)
             << ", received="<< received << "\n";
          gOutputMutex.unlock();
+         ext_shutdown(controlSocket, 2);
          return(false);
       }
 
