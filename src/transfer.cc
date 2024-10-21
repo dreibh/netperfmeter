@@ -278,7 +278,9 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
             printAddress(std::cerr, &from.sa, true);
             std::cerr << " on socket " << sd << "!\n";
             gOutputMutex.unlock();
-            ext_shutdown(sd, 2);
+            if(protocol != IPPROTO_UDP) {
+               ext_shutdown(sd, 2);
+            }
          }
       }
       else {
@@ -288,7 +290,9 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          printAddress(std::cerr, &from.sa, true);
          std::cerr << " on socket " << sd << "!\n";
          gOutputMutex.unlock();
-         ext_shutdown(sd, 2);
+         if(protocol != IPPROTO_UDP) {
+            ext_shutdown(sd, 2);
+         }
       }
    }
 
@@ -304,7 +308,9 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
             std::cerr << " on socket " << sd << "!\n";
             gOutputMutex.unlock();
             flow->unlock();
-            ext_shutdown(sd, 2);
+            if(protocol != IPPROTO_UDP) {
+               ext_shutdown(sd, 2);
+            }
          }
          flow->endOfInput();
       }
