@@ -1072,7 +1072,7 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
          value = randomParetoDouble(valueArray[0], valueArray[1]);
        break;
       default:
-         assert(false);
+         abort();
        break;
    }
    return(value);
