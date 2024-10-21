@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eu
+
 # ====== Handle arguments ===================================================
 if [ $# -lt 2 ] ; then
    echo >&2 "Usage: $0 netperfmeter_server:port [processes]"
