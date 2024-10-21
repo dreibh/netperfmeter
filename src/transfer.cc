@@ -274,12 +274,14 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
                updateStatistics(flow, now, dataMsg, received);
             }
             else {
-               gOutputMutex.lock();
-               printTimeStamp(std::cerr);
-               std::cerr << "WARNING: Received data for unknown flow from ";
-               printAddress(std::cerr, &from.sa, true);
-               std::cerr << " on socket " << sd << "!\n";
-               gOutputMutex.unlock();
+               if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {
+                  gOutputMutex.lock();
+                  printTimeStamp(std::cerr);
+                  std::cerr << "Received NETPERFMETER_DATA for unknown flow from ";
+                  printAddress(std::cerr, &from.sa, true);
+                  std::cerr << " on socket " << sd << "!\n";
+                  gOutputMutex.unlock();
+               }
             }
             if(protocol != IPPROTO_UDP) {
                ext_shutdown(sd, 2);
