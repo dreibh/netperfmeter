@@ -2,7 +2,7 @@
 Thomas Dreibholz
 
 ## Contact Email:
-thomas.dreibholz@gmail.com
+dreibh@simula.no
 
 ## What type of assignment/registration are you requesting?
 DCCP Service Code for the NetPerfMeter Protocol on the Data Channel (NPMP-DATA)

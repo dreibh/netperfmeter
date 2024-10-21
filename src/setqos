@@ -1,7 +1,14 @@
 #!/bin/sh
+# ==========================================================================
+#         _   _      _   ____            __ __  __      _
+#        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
+#        |  \| |/ _ \ __| |_) / _ \ '__| |_| |\/| |/ _ \ __/ _ \ '__|
+#        | |\  |  __/ |_|  __/  __/ |  |  _| |  | |  __/ ||  __/ |
+#        |_| \_|\___|\__|_|   \___|_|  |_| |_|  |_|\___|\__\___|_|
 #
-# Network Performance Meter
-# Copyright (C) 2009-2024 by Thomas Dreibholz
+#                  NetPerfMeter -- Network Performance Meter
+#                 Copyright (C) 2009-2024 by Thomas Dreibholz
+# ==========================================================================
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +23,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Contact: thomas.dreibholz@gmail.com
-#
+# Contact:  dreibh@simula.no
+# Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 if [ $# -lt 1 ] ; then
    echo >&2 "Usage: $0 id source destination bandwidth_kbit_per_s delay_ms loss_rate error_rate [-interfaces name] [-bidirectional] [-queueType type] [-frameCapacity packets] [-redMinTh threshold] [-redMaxTh threshold] [-redMaxP probability] [-redWq wq]"
@@ -73,20 +80,20 @@ if [ $# -ge 4 ] ; then
    fi
 
    shift ; shift ; shift ; shift ; shift ; shift ; shift
-   while [ "$1" != "" ] ; do      
+   while [ "$1" != "" ] ; do
       if [ "$1" = "-bidirectional" ] ; then
          bidirectionalQoS=1
       elif [ "$1" = "-queueType" ] ; then
          QUEUE_TYPE="$2"
          shift
       elif [ "$1" = "-redMinTh" ] ; then
-         RED_MINTH="$2"    
+         RED_MINTH="$2"
          shift
       elif [ "$1" = "-redMaxTh" ] ; then
-         RED_MAXTH="$2"     
+         RED_MAXTH="$2"
          shift
       elif [ "$1" = "-redMaxP" ] ; then
-         RED_MAXP="$2"      
+         RED_MAXP="$2"
          shift
       elif [ "$1" = "-redWq" ] ; then
          RED_WQ="$2"
@@ -117,7 +124,7 @@ if [ "$SYSTEM" = "Linux" ] ; then
    if [ "$INTERFACES" = "" ] ; then   # Use *all* interfaces
       INTERFACES=`eval "ifconfig -a" 2>/dev/null | sed -ne 's|^\('$cur'[^[:space:][:punct:]]\{1,\}\).*$|\1|p'`
    fi
-   
+
    for iface in $INTERFACES ; do
       tc qdisc del dev $iface root 2>/dev/null   # Ohne ID-Angabe wird Root mit jeder ID entfernt!
    done
@@ -147,7 +154,7 @@ if [ "$SYSTEM" = "Linux" ] ; then
          tc class add dev $iface parent 9$ID:0 classid 9$ID:3 cbq \
             bandwidth 100Mbit $bandwidthParameter $weightParameter \
             prio 8 allot 1514 cell 8 maxburst 20 avpkt 1500 bounded || success=0
-            
+
          if [ "$QUEUE_TYPE" = "fifo" ] ; then
             tc qdisc add dev $iface handle 8$ID:0 parent 9$ID:3 pfifo limit $FRAME_CAPACITY
          elif [ "$QUEUE_TYPE" = "red" ] ; then

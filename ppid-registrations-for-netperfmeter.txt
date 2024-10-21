@@ -2,7 +2,7 @@
 Thomas Dreibholz
 
 ## Contact Email:
-thomas.dreibholz@gmail.com
+dreibh@simula.no
 
 ## What type of assignment/registration are you requesting?
 SCTP Payload Protocol Identifier for the NetPerfMeter Protocol (NPMP):

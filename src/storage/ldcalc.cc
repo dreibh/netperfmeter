@@ -2,7 +2,7 @@
 //             Thomas Dreibholz's R Simulation Scripts Collection
 //                  Copyright (C) 2004-2024 Thomas Dreibholz
 //
-//           Author: Thomas Dreibholz, thomas.dreibholz@gmail.com
+//           Author: Thomas Dreibholz, dreibh@simula.no
 // ###########################################################################
 //
 // This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Contact: thomas.dreibholz@gmail.com
+// Contact: dreibh@simula.no
 
 #include <stdio.h>
 #include <stdlib.h>

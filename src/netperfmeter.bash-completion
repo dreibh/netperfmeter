@@ -1,0 +1,154 @@
+# ==========================================================================
+#         _   _      _   ____            __ __  __      _
+#        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
+#        |  \| |/ _ \ __| |_) / _ \ '__| |_| |\/| |/ _ \ __/ _ \ '__|
+#        | |\  |  __/ |_|  __/  __/ |  |  _| |  | |  __/ ||  __/ |
+#        |_| \_|\___|\__|_|   \___|_|  |_| |_|  |_|\___|\__\___|_|
+#
+#                  NetPerfMeter -- Network Performance Meter
+#                 Copyright (C) 2009-2024 by Thomas Dreibholz
+# ==========================================================================
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact:  dreibh@simula.no
+# Homepage: https://www.nntb.no/~dreibh/netperfmeter/
+
+
+# ###### Bash completion for netperfmeter ###################################
+_netperfmeter()
+{
+   # Based on:
+   # * https://www.benningtons.net/index.php/bash-completion/
+   # * /usr/share/bash-completion/completions/dd
+
+   local cur prev words cword
+   if type -t _comp_initialize >/dev/null; then
+      _comp_initialize -n = || return
+   elif type -t _init_completion >/dev/null; then
+      _init_completion -n = || return
+   else
+      # Manual initialization for older bash completion versions:
+      COMPREPLY=()
+      cur="${COMP_WORDS[COMP_CWORD]}"
+      prev="${COMP_WORDS[COMP_CWORD-1]}"
+      words="${COMP_WORDS}"
+      cword="${COMP_CWORD}"
+   fi
+
+   # echo "cur=$cur prev=$prev words=${words[@]} cword=$cword"
+   # echo ""
+
+   # ====== Parameters ======================================================
+   if [ $cword -gt 1 ] ; then
+      case "${cur}" in
+         #  ====== Generic value ============================================
+         -activenodename=  | \
+         -config=          | \
+         -controllocal=    | \
+         -local=           | \
+         -passivenodename= | \
+         -pathmgr=         | \
+         -rcvbuf=          | \
+         -runtime=         | \
+         -scheduler=       | \
+         -sndbuf=          | \
+         -verbosity=       | \
+         -activenodename=  | \
+         -controllocal=    | \
+         -passivenodename)
+            cur=${cur#*=}
+            return
+            ;;
+         # ====== Scalar/vector file pattern ================================
+         -scalar= | \
+         -vector=)
+            _filedir
+            return
+            ;;
+      esac
+
+   # ====== Port (passive side) or Address:Port (active side) ===============
+   else
+      COMPREPLY=($(compgen -W 'localhost:9000 9000' -- "$cur"))
+      return
+   fi
+
+
+   # ====== All options =====================================================
+   local opts1
+   local opts2
+
+   # ------ Passive side ----------------------------------------------------
+   if [ ${cword} -ge 2 ] && [[ "${words[2]}" =~ [:] ]] ; then
+      # NetPerfMeter simple options without parameter(s)
+      opts1="
+-control-over-tcp
+-dccp
+-display
+-nodisplay
+-quiet
+-sctp
+-tcp
+-udp
+-v6only
+-verbose
+"
+      # NetPerfMeter options with "=" and parameter(s)
+      local opts2="
+-activenodename
+-config
+-controllocal
+-local
+-passivenodename
+-pathmgr
+-rcvbuf
+-runtime
+-scalar
+-scheduler
+-sndbuf
+-vector
+-verbosity
+"
+   # ------ Active side -----------------------------------------------------
+   else
+      opts1="
+-control-over-tcp
+-display
+-nodisplay
+-quiet
+-v6only
+-verbose
+"
+      # NetPerfMeter options with "=" and parameter(s)
+      local opts2="
+-config
+-controllocal
+-local
+-pathmgr
+-rcvbuf
+-runtime
+-scheduler
+-sndbuf
+-verbosity
+"
+   fi
+
+   COMPREPLY=( $( compgen -W "${opts1}"        -- "${cur}" )
+               $( compgen -W "${opts2}" -S "=" -- "${cur}" ) )
+   [[ ${COMPREPLY-} == *= ]] && compopt -o nospace
+   return 0
+}
+
+complete -F _netperfmeter netperfmeter

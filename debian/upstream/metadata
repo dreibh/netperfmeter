@@ -2,8 +2,8 @@ Name: NetPerfMeter
 Repository: https://github.com/dreibh/netperfmeter.git
 Repository-Browse: https://github.com/dreibh/netperfmeter
 Bug-Submit: https://github.com/dreibh/netperfmeter/issues
-Contact: Thomas Dreibholz <thomas.dreibholz@gmail.com>
-Security-Contact: Thomas Dreibholz <thomas.dreibholz@gmail.com>
+Contact: Thomas Dreibholz <dreibh@simula.no>
+Security-Contact: Thomas Dreibholz <dreibh@simula.no>
 Reference:
  -
   Author: Thomas Dreibholz and Martin Becke and Hakim Adhari and Erwin Paul Rathgeb

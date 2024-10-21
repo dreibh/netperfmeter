@@ -1,13 +1,15 @@
 Source: netperfmeter
 Section: net
 Priority: optional
-Maintainer: Thomas Dreibholz <thomas.dreibholz@gmail.com>
+Maintainer: Thomas Dreibholz <dreibh@simula.no>
 Homepage: https://www.nntb.no/~dreibh/netperfmeter/
+Vcs-Git: https://github.com/dreibh/netperfmeter.git
+Vcs-Browser: https://github.com/dreibh/netperfmeter
 Build-Depends: cmake,
                debhelper (>= 12),
                libbz2-dev,
                libsctp-dev (>= 1.0.5)
-Standards-Version: 4.6.2
+Standards-Version: 4.7.0
 Rules-Requires-Root: no
 
 Package: pdfproctools
@@ -43,9 +45,23 @@ Description: Network Performance Meter (plotting program)
  .
  This package contains a plotting program for the results.
 
+Package: netperfmeter-common
+Architecture: all
+Depends: ${misc:Depends}
+Description: Network Performance Meter (common files)
+ NetPerfMeter is a network performance meter for the UDP,
+ TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
+ It simultaneously transmits bidirectional flows to an endpoint
+ and measures the resulting flow bandwidths and QoS. The
+ results are written as vector and scalar files. The vector
+ files can e.g. be used to create plots of the results.
+ .
+ This package contains common NetPerfMeter files.
+
 Package: netperfmeter
 Architecture: any
-Depends: ${misc:Depends},
+Depends: netperfmeter-common,
+         ${misc:Depends},
          ${shlibs:Depends}
 Recommends: bc,
             hipercontracer,
