@@ -34,7 +34,8 @@ _netperfmeter()
    # * /usr/share/bash-completion/completions/dd
    # * https://unix.stackexchange.com/questions/781584/complete-compgen-fails-to-suggest-when-options-contain-colon
 
-   # This is necessary to properly handle ":" in completion words!
+   # This is necessary to properly handle ":" in completion words, in order
+   # to properly handle IPv6 addresses!
    local COMP_WORDBREAKS="${COMP_WORDBREAKS//:}"
 
    local cur prev words cword
@@ -75,6 +76,8 @@ _netperfmeter()
          -local=*)
             cur="${cur#*=}"
             # Suggest local IP addresses:
+            # NOTE: For IPv6, ":" must bave been removed from COMP_WORDBREAKS
+            #       See comment above!
             local addreses
             if [ -x /usr/bin/ip ] ; then
                addresses="$(/usr/bin/ip addr show | awk '/[ ]+inet/ { print $2 }' | sed -e 's#/.*$##')"
