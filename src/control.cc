@@ -430,7 +430,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
 
    // ====== Start flows ====================================================
    const bool success = FlowManager::getFlowManager()->startMeasurement(
-                           measurementID, getMicroTime(),
+                           controlSocket, measurementID, getMicroTime(),
                            vectorNamePattern, vectorFileFormat,
                            scalarNamePattern, scalarFileFormat,
                            (gOutputVerbosity >= NPFOV_FLOWS));
@@ -531,8 +531,9 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
 {
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
-   FlowManager::getFlowManager()->stopMeasurement(measurementID);
-   Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(measurementID);
+   FlowManager::getFlowManager()->stopMeasurement(controlSocket, measurementID);
+   Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(controlSocket,
+                                                                             measurementID);
    assert(measurement != nullptr);
    measurement->writeScalarStatistics(getMicroTime());
    FlowManager::getFlowManager()->unlock();
@@ -1018,7 +1019,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
 
    const unsigned long long now = getMicroTime();
    bool success = FlowManager::getFlowManager()->startMeasurement(
-      measurementID, now,
+      controlSocket, measurementID, now,
       nullptr, vectorFileFormat,
       nullptr, scalarFileFormat,
       (gOutputVerbosity >= NPFOV_FLOWS));
@@ -1058,10 +1059,10 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
 
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
-   FlowManager::getFlowManager()->stopMeasurement(measurementID, (gOutputVerbosity >= NPFOV_FLOWS));
+   FlowManager::getFlowManager()->stopMeasurement(controlSocket, measurementID, (gOutputVerbosity >= NPFOV_FLOWS));
    bool         success     = false;
    Measurement* measurement =
-      FlowManager::getFlowManager()->findMeasurement(measurementID);
+      FlowManager::getFlowManager()->findMeasurement(controlSocket, measurementID);
    if(measurement) {
       measurement->lock();
       measurement->writeScalarStatistics(getMicroTime());
@@ -1105,33 +1106,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
 // ###### Delete all flows owned by a given remote node #####################
 void handleControlAssocShutdown(int controlSocket)
 {
-   FlowManager::getFlowManager()->lock();
-
-   Measurement* measurementToDelete = nullptr;
-
-   std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
-   while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
-      Flow* flow = *iterator;
-      if(flow->getRemoteControlSocketDescriptor() == controlSocket) {
-         Measurement* measurement = flow->getMeasurement();
-         if(measurement) {
-             assert((measurementToDelete == nullptr) ||
-                    (measurementToDelete == measurement));
-             measurementToDelete = measurement;
-         }
-         delete flow;
-         // Invalidated iterator. Is there a better solution?
-         iterator = FlowManager::getFlowManager()->getFlowSet().begin();
-         continue;
-      }
-      iterator++;
-   }
-
-   if(measurementToDelete) {
-      delete measurementToDelete;
-   }
-
-   FlowManager::getFlowManager()->unlock();
+   FlowManager::getFlowManager()->removeAllMeasurements(controlSocket);
 }
 
 

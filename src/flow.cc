@@ -184,7 +184,8 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
 
 
 // ###### Start measurement #################################################
-bool FlowManager::startMeasurement(const uint64_t           measurementID,
+bool FlowManager::startMeasurement(const int                controlSocketID,
+                                   const uint64_t           measurementID,
                                    const unsigned long long now,
                                    const char*              vectorNamePattern,
                                    const OutputFileFormat   vectorFileFormat,
@@ -198,7 +199,7 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
    lock();
    Measurement* measurement = new Measurement;
    if(measurement != nullptr) {
-      if(measurement->initialize(now, measurementID,
+      if(measurement->initialize(now, controlSocketID, measurementID,
                                  vectorNamePattern, vectorFileFormat,
                                  scalarNamePattern, scalarFileFormat)) {
          success = true;
@@ -206,17 +207,25 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
             iterator != FlowSet.end();iterator++) {
             Flow* flow = *iterator;
             if(flow->MeasurementID == measurementID) {
-               flow->setMeasurement(measurement);
-               if(flow->SocketDescriptor >= 0) {
-                  flow->TimeBase     = now;
-                  flow->TimeOffset   = 0;
-                  flow->InputStatus  = Flow::On;
-                  flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ?
-                                          Flow::Off : Flow::On;
-                  if(printFlows) {
-                     flow->print(ss);
+               if(flow->setMeasurement(measurement)) {
+                  if(flow->SocketDescriptor >= 0) {
+                     flow->TimeBase     = now;
+                     flow->TimeOffset   = 0;
+                     flow->InputStatus  = Flow::On;
+                     flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ?
+                                             Flow::Off : Flow::On;
+                     if(printFlows) {
+                        flow->print(ss);
+                     }
+                     flow->activate();
                   }
-                  flow->activate();
+               }
+               else {
+                  gOutputMutex.lock();
+                  printTimeStamp(std::cerr);
+                  std::cerr << "WARNING: Flow associated with measurement " << measurementID << " is already owned by another measurement!\n";
+                  abort();
+                  gOutputMutex.unlock();
                }
             }
          }
@@ -239,12 +248,14 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
 
 
 // ###### Stop measurement ##################################################
-void FlowManager::stopMeasurement(const uint64_t           measurementID,
+void FlowManager::stopMeasurement(const int                controlSocketID,
+                                  const uint64_t           measurementID,
                                   const bool               printFlows,
                                   const unsigned long long now)
 {
    CPULoadStats.update();
    lock();
+
    // We make a two-staged stopping process here:
    // In stage 0, the flows' sender threads are told to stop.
    //   => all threads can perform shutdown simultaneously
@@ -275,14 +286,16 @@ void FlowManager::stopMeasurement(const uint64_t           measurementID,
 
 
 // ###### Add measurement ###################################################
-bool FlowManager::addMeasurement(Measurement* measurement)
+bool FlowManager::addMeasurement(const int    controlSocket,
+                                 Measurement* measurement)
 {
    bool success = false;
 
    lock();
-   if(!findMeasurement(measurement->MeasurementID)) {
-      MeasurementSet.insert(std::pair<uint64_t, Measurement*>(measurement->MeasurementID,
-                                                              measurement));
+   if(!findMeasurement(controlSocket, measurement->MeasurementID)) {
+      MeasurementSet.insert(std::pair<std::pair<int, uint64_t>, Measurement*>(
+         std::pair<int, uint64_t>(controlSocket, measurement->MeasurementID),
+         measurement));
       success = true;
    }
    unlock();
@@ -291,24 +304,12 @@ bool FlowManager::addMeasurement(Measurement* measurement)
 }
 
 
-// ###### Print measurements ################################################
-void FlowManager::printMeasurements(std::ostream& os)
-{
-   os << "Measurements:\n";
-   for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
-       iterator != MeasurementSet.end(); iterator++) {
-      char str[64];
-      snprintf((char*)&str, sizeof(str), "%llx -> ptr=%p",
-               (unsigned long long)iterator->first, iterator->second);
-      os << "   - " << str << "\n";
-   }
-}
-
-
 // ###### Find measurement ##################################################
-Measurement* FlowManager::findMeasurement(const uint64_t measurementID)
+Measurement* FlowManager::findMeasurement(const int      controlSocket,
+                                          const uint64_t measurementID)
 {
-   std::map<uint64_t, Measurement*>::iterator found = MeasurementSet.find(measurementID);
+   std::map<std::pair<int, uint64_t>, Measurement*>::iterator found = MeasurementSet.find(
+      std::pair<int, uint64_t>(controlSocket, measurementID));
    if(found != MeasurementSet.end()) {
       return(found->second);
    }
@@ -317,11 +318,59 @@ Measurement* FlowManager::findMeasurement(const uint64_t measurementID)
 
 
 // ###### Remove measurement ################################################
-void FlowManager::removeMeasurement(Measurement* measurement)
+void FlowManager::removeMeasurement(const int    controlSocket,
+                                    Measurement* measurement)
 {
    lock();
-   MeasurementSet.erase(measurement->MeasurementID);
+   MeasurementSet.erase(std::pair<int, uint64_t>(controlSocket, measurement->MeasurementID));
    unlock();
+}
+
+
+// ###### Remove all measurements belonging to control socket ###############
+void FlowManager::removeAllMeasurements(const int controlSocket)
+{
+   lock();
+
+   std::vector<Flow*>::iterator flowIterator = FlowSet.begin();
+   while(flowIterator != FlowSet.end()) {
+      Flow* flow = *flowIterator;
+      if(flow->getRemoteControlSocketDescriptor() == controlSocket) {
+         flowIterator = FlowSet.erase(flowIterator);
+         delete flow;
+      }
+      else {
+         flowIterator++;
+      }
+   }
+
+   std::map<std::pair<int, uint64_t>, Measurement*>::iterator measurementIterator = MeasurementSet.begin();
+   while(measurementIterator != MeasurementSet.end()) {
+      Measurement* measurement = measurementIterator->second;
+      if(measurement->ControlSocketDescriptor == controlSocket) {
+         measurementIterator = MeasurementSet.erase(measurementIterator);
+         delete measurement;
+      }
+      else {
+         measurementIterator++;
+      }
+   }
+
+   unlock();
+}
+
+
+// ###### Print measurements ################################################
+void FlowManager::printMeasurements(std::ostream& os)
+{
+   os << "Measurements:\n";
+   for(std::map<std::pair<int, uint64_t>, Measurement*>::iterator iterator = MeasurementSet.begin();
+       iterator != MeasurementSet.end(); iterator++) {
+      char str[64];
+      snprintf((char*)&str, sizeof(str), "%llx -> ptr=%p",
+               (unsigned long long)iterator->first.second, iterator->second);
+      os << "   - " << str << "\n";
+   }
 }
 
 
@@ -404,7 +453,7 @@ unsigned long long FlowManager::getNextEvent()
    unsigned long long nextEvent = NextDisplayEvent;
 
    lock();
-   for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
+   for(std::map<std::pair<int, uint64_t>, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
        const Measurement* measurement = iterator->second;
        nextEvent = std::min(nextEvent, measurement->NextStatisticsEvent);
@@ -421,7 +470,7 @@ void FlowManager::handleEvents(const unsigned long long now)
    lock();
 
    // ====== Handle statistics events =======================================
-   for(std::map<uint64_t, Measurement*>::iterator iterator = MeasurementSet.begin();
+   for(std::map<std::pair<int, uint64_t>, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
        Measurement* measurement = iterator->second;
        if(measurement->NextStatisticsEvent <= now) {
@@ -979,6 +1028,23 @@ void Flow::resetStatistics()
    Jitter = 0;
    Delay  = 0;
    unlock();
+}
+
+
+// ###### Set reference to measurement ######################################
+bool Flow::setMeasurement(Measurement* measurement)
+{
+   bool success;
+   lock();
+   if( (MyMeasurement == nullptr) || (measurement == nullptr) ) {
+      MyMeasurement = measurement;
+      success = true;
+   }
+   else {
+      success = false;
+   }
+   unlock();
+   return success;
 }
 
 

@@ -143,7 +143,6 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             ext_recvfrom(socket->SocketDescriptor,
                          buffer, bufferSize,
                          *msgFlags, from, fromSize);
-         printf("rf=%d\n", received);
          return received;
       }
 

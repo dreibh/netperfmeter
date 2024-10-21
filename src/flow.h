@@ -89,14 +89,16 @@ class FlowManager : public Thread
    void printFlows(std::ostream& os,
                    const bool    printStatistics);
 
-   bool startMeasurement(const uint64_t           measurementID,
+   bool startMeasurement(const int                controlSocketID,
+                         const uint64_t           measurementID,
                          const unsigned long long now,
                          const char*              vectorNamePattern,
                          const OutputFileFormat   vectorFileFormat,
                          const char*              scalarNamePattern,
                          const OutputFileFormat   scalarFileFormat,
                          const bool               printFlows = false);
-   void stopMeasurement(const uint64_t            measurementID,
+   void stopMeasurement(const int                 controlSocketID,
+                        const uint64_t            measurementID,
                         const bool                printFlows = false,
                         const unsigned long long  now        = getMicroTime());
 
@@ -120,10 +122,11 @@ class FlowManager : public Thread
    Flow* findFlow(const struct sockaddr* from);
 
 
-   bool addMeasurement(Measurement* measurement);
-   Measurement* findMeasurement(const uint64_t measurementID);
+   bool addMeasurement(const int controlSocket, Measurement* measurement);
+   Measurement* findMeasurement(const int controlSocket, const uint64_t measurementID);
+   void removeMeasurement(const int controlSocket, Measurement* measurement);
+   void removeAllMeasurements(const int controlSocket);
    void printMeasurements(std::ostream& os);
-   void removeMeasurement(Measurement* measurement);
 
 
    // ====== Protected Methods ==============================================
@@ -149,7 +152,8 @@ class FlowManager : public Thread
    FlowBandwidthStats                 LastGlobalStats;
 
    // ------ Measurement Management -----------------------------------------
-   std::map<uint64_t, Measurement*>   MeasurementSet;
+   std::map<std::pair<int, uint64_t>,
+            Measurement*>             MeasurementSet;
    unsigned long long                 DisplayInterval;
    unsigned long long                 FirstDisplayEvent;
    unsigned long long                 LastDisplayEvent;
@@ -278,11 +282,7 @@ class Flow : public Thread
    inline Measurement* getMeasurement() const {
       return(MyMeasurement);
    }
-   inline void setMeasurement(Measurement* measurement) {
-      lock();
-      MyMeasurement = measurement;
-      unlock();
-   }
+   bool setMeasurement(Measurement* measurement);
 
    inline static std::string getNodeOutputName(const std::string& pattern,
                                                const char*        type,

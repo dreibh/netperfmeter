@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2024 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -59,6 +59,7 @@ class Measurement : public Mutex
    }
 
    bool initialize(const unsigned long long now,
+                   const int                controlSocketDescriptor,
                    const uint64_t           measurementID,
                    const char*              vectorNamePattern,
                    const OutputFileFormat   vectorFileFormat,
@@ -74,6 +75,7 @@ class Measurement : public Mutex
 
    // ====== Private Data ===================================================
    private:
+   int                ControlSocketDescriptor;
    uint64_t           MeasurementID;
    unsigned long long StatisticsInterval;
    unsigned long long FirstStatisticsEvent;

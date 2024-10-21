@@ -1,6 +1,6 @@
 /*
  * ==========================================================================
- *                  NetPerfMeter -- Network Performance Meter                 
+ *                  NetPerfMeter -- Network Performance Meter
  *                 Copyright (C) 2009-2024 by Thomas Dreibholz
  * ==========================================================================
  *
@@ -50,18 +50,20 @@ Measurement::~Measurement()
 
 // ###### Initialize measurement ############################################
 bool Measurement::initialize(const unsigned long long now,
+                             const int                controlSocketDescriptor,
                              const uint64_t           measurementID,
                              const char*              vectorNamePattern,
                              const OutputFileFormat   vectorFileFormat,
                              const char*              scalarNamePattern,
                              const OutputFileFormat   scalarFileFormat)
 {
-   MeasurementID        = measurementID;
-   FirstStatisticsEvent = 0;
-   LastStatisticsEvent  = 0;
-   NextStatisticsEvent  = 0;
+   ControlSocketDescriptor = controlSocketDescriptor;
+   MeasurementID           = measurementID;
+   FirstStatisticsEvent    = 0;
+   LastStatisticsEvent     = 0;
+   NextStatisticsEvent     = 0;
 
-   if(FlowManager::getFlowManager()->addMeasurement(this)) {
+   if(FlowManager::getFlowManager()->addMeasurement(ControlSocketDescriptor, this)) {
       VectorNamePattern = (vectorNamePattern != nullptr) ?
                              std::string(vectorNamePattern) : std::string();
       const bool s1 = VectorFile.initialize(
@@ -83,7 +85,7 @@ bool Measurement::initialize(const unsigned long long now,
 // ###### Finish measurement ################################################
 bool Measurement::finish(const bool closeFiles)
 {
-   FlowManager::getFlowManager()->removeMeasurement(this);
+   FlowManager::getFlowManager()->removeMeasurement(ControlSocketDescriptor, this);
    const bool s1 = VectorFile.finish(closeFiles);
    const bool s2 = ScalarFile.finish(closeFiles);
    return(s1 && s2);
