@@ -211,7 +211,8 @@ bool FlowManager::startMeasurement(const uint64_t           measurementID,
                   flow->TimeBase     = now;
                   flow->TimeOffset   = 0;
                   flow->InputStatus  = Flow::On;
-                  flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ? Flow::Off : Flow::On;
+                  flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ?
+                                          Flow::Off : Flow::On;
                   if(printFlows) {
                      flow->print(ss);
                   }
