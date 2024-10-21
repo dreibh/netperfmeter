@@ -358,7 +358,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
             trafficSpec.Protocol = IPPROTO_MPTCP;
             if(trafficSpec.CMT != NPAF_LikeMPTCP) {
                std::cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
-                    << " for MPTCP! Using default instead!\n";
+                         << " for MPTCP! Using default instead!\n";
             }
          }
       }
@@ -494,7 +494,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       pathMgr[i] = 0x00;
       if( (parameters[8 + i] != ':') && (parameters[8 + i] != 0x00) ) {
          std::cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
-              << " - name too long!\n";
+                   << " - name too long!\n";
           exit(1);
       }
       trafficSpec.PathMgr = std::string((const char*)&pathMgr);
@@ -514,7 +514,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       scheduler[i] = 0x00;
       if( (parameters[10 + i] != ':') && (parameters[10 + i] != 0x00) ) {
          std::cerr << "ERROR: Invalid \"scheduler\" setting: " << (const char*)&parameters[10]
-              << " - name too long!\n";
+                   << " - name too long!\n";
           exit(1);
       }
       trafficSpec.Scheduler = std::string((const char*)&scheduler);
@@ -534,7 +534,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       congestionControl[i] = 0x00;
       if( (parameters[3 + i] != ':') && (parameters[3 + i] != 0x00) ) {
          std::cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
-              << " - name too long!\n";
+                   << " - name too long!\n";
           exit(1);
       }
       trafficSpec.CongestionControl = std::string((const char*)&congestionControl);
@@ -707,7 +707,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       }
       if(socketDescriptor < 0) {
          std::cerr << "ERROR: Unable to create " << getProtocolName(trafficSpec.Protocol)
-              << " socket - " << strerror(errno) << "!\n";
+                   << " socket - " << strerror(errno) << "!\n";
          exit(1);
       }
 
@@ -720,7 +720,7 @@ static Flow* createFlow(Flow*                  previousFlow,
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
                            &initmsg, sizeof(initmsg)) < 0) {
             std::cerr << "ERROR: Failed to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - "
-                 << strerror(errno) << "!\n";
+                      << strerror(errno) << "!\n";
             exit(1);
          }
 
@@ -730,7 +730,7 @@ static Flow* createFlow(Flow*                  previousFlow,
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
                            &events, sizeof(events)) < 0) {
             std::cerr << "ERROR: Failed to configure events on SCTP socket (SCTP_EVENTS option) - "
-                 << strerror(errno) << "!\n";
+                      << strerror(errno) << "!\n";
             exit(1);
          }
       }
@@ -740,7 +740,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       }
       if(ext_connect(socketDescriptor, &destinationAddress.sa, getSocklen(&destinationAddress.sa)) < 0) {
          std::cerr << "ERROR: Unable to connect " << getProtocolName(trafficSpec.Protocol)
-              << " socket - " << strerror(errno) << "!\n";
+                   << " socket - " << strerror(errno) << "!\n";
          exit(1);
       }
 
@@ -912,13 +912,13 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
    // ====== Test for problems ==============================================
    sockaddr_union testAddress;
-   assert(string2address("192.168.122.1:0", &testAddress));
+   assert(string2address("172.17.0.1:0", &testAddress));
    int testSD = createAndBindSocket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, 0, 1, &testAddress, true, false);
    if(testSD >= 0) {
-      std::cerr << "\nNOTE: This machine seems to have an interface with address 192.168.122.1!\n"
-              "This is typically used by Docker setups. If you connect from another machine\n"
-              "having the same configuration, in an environment with only private addresses,\n"
-              "SCTP may try to use this address -> OOTB ABORT.\n\n";
+      std::cerr << "NOTE: This machine seems to have an interface with address 172.17.0.1!\n"
+                   "This is typically used by Docker setups. If you connect from another machine\n"
+                   "having the same configuration, in an environment with only private addresses,\n"
+                   "SCTP may try to use this address -> OOTB ABORT.\n";
       ext_close(testSD);
    }
 
@@ -929,7 +929,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                         true, gBindV6Only);
    if(gControlSocket < 0) {
       std::cerr << "ERROR: Failed to create and bind SCTP socket for control port on port " << localPort + 1 << " - "
-           << strerror(errno) << "!\n";
+                << strerror(errno) << "!\n";
       exit(1);
    }
    sctp_event_subscribe events;
@@ -939,7 +939,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       events.sctp_association_event = 1;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
          std::cerr << "ERROR: Failed to configure events on SCTP control socket - "
-              << strerror(errno) << "!\n";
+                   << strerror(errno) << "!\n";
          exit(1);
       }
    }
@@ -949,7 +949,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                            localPort + 1, 0, nullptr, true, gBindV6Only);
    if(gControlSocketTCP < 0) {
       std::cerr << "ERROR: Failed to create and bind TCP socket for control port - "
-           << strerror(errno) << "!\n";
+                << strerror(errno) << "!\n";
       exit(1);
    }
    gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
@@ -959,7 +959,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gTCPSocket < 0) {
       std::cerr << "ERROR: Failed to create and bind TCP socket on port " << localPort << " - "
-           << strerror(errno) << "!\n";
+                << strerror(errno) << "!\n";
       exit(1);
    }
    if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
@@ -972,7 +972,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(gMPTCPSocket < 0) {
       if(gOutputVerbosity >= NPFOV_STATUS) {
          std::cerr << "NOTE: Unable to create and bind MPTCP socket on port " << localPort - 1 << " - "
-              << strerror(errno) << "!\n";
+                   << strerror(errno) << "!\n";
       }
    }
    else {
@@ -980,7 +980,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
          if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER, gPathMgr, strlen(gPathMgr)) < 0) {
             if(strcmp(gPathMgr, "default") != 0) {
                std::cerr << "WARNING: Failed to set MPTCP_PATH_MANAGER on socket - "
-                           << strerror(errno) << "!\n";
+                         << strerror(errno) << "!\n";
             }
          }
       }
@@ -988,7 +988,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
          if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER, gScheduler, strlen(gScheduler)) < 0) {
             if(strcmp(gScheduler, "default") != 0) {
                std::cerr << "WARNING: Failed to set MPTCP_SCHEDULER on socket - "
-                           << strerror(errno) << "!\n";
+                         << strerror(errno) << "!\n";
             }
          }
       }
@@ -1003,7 +1003,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gUDPSocket < 0) {
       std::cerr << "ERROR: Failed to create and bind UDP socket on port " << localPort << " - "
-           << strerror(errno) << "!\n";
+                << strerror(errno) << "!\n";
       exit(1);
    }
    // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
@@ -1032,7 +1032,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gSCTPSocket < 0) {
       std::cerr << "ERROR: Failed to create and bind SCTP socket on port " << localPort << " - "
-           << strerror(errno) << "!\n";
+                << strerror(errno) << "!\n";
       exit(1);
    }
    sctp_initmsg initmsg;
@@ -1042,14 +1042,14 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG,
                      &initmsg, sizeof(initmsg)) < 0) {
       std::cerr << "ERROR: Failed to configure INIT parameters on SCTP socket - "
-            << strerror(errno) << "!\n";
+                << strerror(errno) << "!\n";
       exit(1);
    }
    memset((char*)&events, 0 ,sizeof(events));
    events.sctp_data_io_event = 1;
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
       std::cerr << "ERROR: Failed to configure events on SCTP socket - "
-           << strerror(errno) << "!\n";
+                << strerror(errno) << "!\n";
       exit(1);
    }
    if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
@@ -1060,9 +1060,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    // ====== Print status ===================================================
    if(gOutputVerbosity >= NPFOV_STATUS) {
       std::cout << "Passive Mode: Accepting TCP"
-           << ((gMPTCPSocket > 0) ? "+MPTCP" : "")
-           << "/UDP/SCTP" << ((gDCCPSocket > 0) ? "/DCCP" : "")
-           << " connections on port " << localPort << "\n\n";
+                << ((gMPTCPSocket > 0) ? "+MPTCP" : "")
+                << "/UDP/SCTP" << ((gDCCPSocket > 0) ? "/DCCP" : "")
+                << " connections on port " << localPort << "\n\n";
    }
 
 
@@ -1147,12 +1147,12 @@ void activeMode(int argc, char** argv)
                                         false, gBindV6Only);
    if(gControlSocket < 0) {
       std::cerr << "ERROR: Failed to create and bind SCTP socket - "
-           << strerror(errno) << "!\n";
+                << strerror(errno) << "!\n";
       exit(1);
    }
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
       std::cerr << "ERROR: Unable to establish control association - "
-           << strerror(errno) << "!\n";
+                << strerror(errno) << "!\n";
       exit(1);
    }
    if(gControlOverTCP == false) {
@@ -1163,7 +1163,7 @@ void activeMode(int argc, char** argv)
       paddr.spp_hbinterval = 30000;
       if(setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, sizeof(paddr)) < 0) {
          std::cerr << "WARNING: Unable to enable heartbeats on control association - "
-              << strerror(errno) << "!\n";
+                   << strerror(errno) << "!\n";
       }
 #if 0
       memset(&paddr, 0, sizeof(paddr));
@@ -1171,7 +1171,7 @@ void activeMode(int argc, char** argv)
       socklen_t l = sizeof(paddr);
       if(getsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, &l) < 0) {
          std::cerr << "ERROR: Unable to check heartbeats on control association - "
-              << strerror(errno) << "!\n";
+                   << strerror(errno) << "!\n";
          exit(1);
       }
       printf("HeartbeatInterval=%u\n", paddr.spp_hbinterval);
@@ -1259,7 +1259,7 @@ void activeMode(int argc, char** argv)
       else {
          if(protocol == 0) {
             std::cerr << "ERROR: Protocol specification needed before flow specification at argument \""
-                 << argv[i] << "\"!\n";
+                      << argv[i] << "\"!\n";
             exit(1);
          }
 
