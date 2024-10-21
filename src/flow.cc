@@ -327,9 +327,14 @@ void FlowManager::removeMeasurement(Measurement* measurement)
 // ###### Add socket to flow manager ########################################
 void FlowManager::addSocket(const int protocol, const int socketDescriptor)
 {
+   UnidentifiedSocket* us = new UnidentifiedSocket;
+   us->SocketDescriptor = socketDescriptor;
+   us->Protocol         = protocol;
+   us->PollFDEntry      = nullptr;
+
    lock();
    FlowManager::getFlowManager()->getMessageReader()->registerSocket(protocol, socketDescriptor);
-   UnidentifiedSockets.insert(std::pair<int, int>(socketDescriptor, protocol));
+   UnidentifiedSockets.insert(std::pair<int, UnidentifiedSocket*>(socketDescriptor, us));
    UpdatedUnidentifiedSockets = true;
    unlock();
 }
@@ -340,9 +345,12 @@ void FlowManager::removeSocket(const int  socketDescriptor,
                                const bool closeSocket)
 {
    lock();
-   std::map<int, int>::iterator found = UnidentifiedSockets.find(socketDescriptor);
+   std::map<int, UnidentifiedSocket*>::iterator found =
+      UnidentifiedSockets.find(socketDescriptor);
    if(found != UnidentifiedSockets.end()) {
+      UnidentifiedSocket* us = found->second;
       UnidentifiedSockets.erase(found);
+      delete us;
       UpdatedUnidentifiedSockets = true;
    }
    if(closeSocket) {
@@ -375,11 +383,9 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
       controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
       success = flow->initializeVectorFile(nullptr, vectorFileFormat);
       flow->unlock();
-// FIXME!
-      // if(flow->getTrafficSpec().Protocol != IPPROTO_UDP) {
+      if(flow->getTrafficSpec().Protocol != IPPROTO_UDP) {
          removeSocket(socketDescriptor, false);   // Socket is now managed as flow!
-      // }
-// FIXME!
+      }
    }
    unlock();
 
@@ -752,12 +758,17 @@ void FlowManager::run()
       // ====== Collect PollFDs for poll() ==================================
       lock();
 
+      // NOTE:
+      // The UDP socket handles flows and incoming new connects.
+      // It is handled by mainLoop() of netperfmeter.cc, i.e. it must to be
+      // ignored here!
+
       // ------ Get socket descriptors for flows ----------------------------
       std::set<int> socketSet;
       pollfd        pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
-      size_t        n = 0;
+      unsigned int  n = 0;
       std::cerr << "poll-init:\n";
-      for(size_t i = 0;i  < FlowSet.size();i++) {
+      for(unsigned int i = 0;i  < FlowSet.size(); i++) {
          FlowSet[i]->lock();
          if( (FlowSet[i]->InputStatus != Flow::Off) &&
              (FlowSet[i]->SocketDescriptor >= 0) ) {
@@ -770,7 +781,7 @@ void FlowManager::run()
                   FlowSet[i]->PollFDEntry = &pollFDs[n];
                   n++;
                   socketSet.insert(FlowSet[i]->SocketDescriptor);
-                  std::cerr << "\t" << n << ": flow " << FlowSet[i]->SocketDescriptor
+                  std::cerr << "\t" << n << ": flow socket " << FlowSet[i]->SocketDescriptor
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
                }
             }
@@ -781,20 +792,25 @@ void FlowManager::run()
          FlowSet[i]->unlock();
       }
       assert(n <= FlowSet.size());
+
+      // ------ Get socket descriptors for yet unidentified associations ----
       UpdatedUnidentifiedSockets = false;
-      pollfd* unidentifiedSocketsPollFDIndex[UnidentifiedSockets.size()];
-      size_t i = 0;
-      for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
+      for(std::map<int, UnidentifiedSocket*>::iterator iterator = UnidentifiedSockets.begin();
           iterator != UnidentifiedSockets.end(); iterator++) {
-         pollFDs[n].fd      = iterator->first;
-         pollFDs[n].events  = POLLIN;
-         pollFDs[n].revents = 0;
-         unidentifiedSocketsPollFDIndex[i] = &pollFDs[n];
-         std::cerr << "\t" << n << ": unidentified " << iterator->first
-                   << " protocol " << iterator->second << "\n";
-         n++; i++;
+         UnidentifiedSocket* ud = iterator->second;
+         // See note above about UDP: UDP is handled by mainLoop()!
+         if(ud->Protocol != IPPROTO_UDP) {
+            pollFDs[n].fd      = ud->SocketDescriptor;
+            pollFDs[n].events  = POLLIN;
+            pollFDs[n].revents = 0;
+            ud->PollFDEntry = &pollFDs[n];
+            std::cerr << "\t" << n << ": unidentified socket "
+                      << ud->SocketDescriptor
+                      << " protocol " << ud->Protocol << "\n";
+            n++;
+         }
       }
-      assert(i == UnidentifiedSockets.size());
+      assert(n <= FlowSet.size() + UnidentifiedSockets.size());
       const unsigned long long nextEvent = getNextEvent();
       unlock();
 
@@ -814,12 +830,11 @@ void FlowManager::run()
       now = getMicroTime();
       if(result > 0) {
          // ====== Handle read events of flows ==============================
-         for(i = 0;i  < FlowSet.size();i++) {
+         for(unsigned int i = 0; i  < FlowSet.size(); i++) {
             FlowSet[i]->lock();
             const pollfd* entry    = FlowSet[i]->PollFDEntry;
             const int     protocol = FlowSet[i]->getTrafficSpec().Protocol;
             if(entry) {
-               // printf("***pollin-1: %d REV=%x\n", entry->fd, entry->revents);
                if(entry->revents & POLLIN) {
                   std::cerr << "\tPOLLIN: flow " << FlowSet[i]->SocketDescriptor
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
@@ -845,35 +860,37 @@ void FlowManager::run()
 
          // ====== Handle read events of yet unidentified sockets ===========
          if(!UpdatedUnidentifiedSockets) {
-            i = 0;
-            for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
+            for(std::map<int, UnidentifiedSocket*>::iterator iterator = UnidentifiedSockets.begin();
                iterator != UnidentifiedSockets.end(); iterator++) {
-               assert(unidentifiedSocketsPollFDIndex[i]->fd == iterator->first);
-               if(unidentifiedSocketsPollFDIndex[i]->revents & POLLIN) {
-                  std::cerr << "\tPOLLIN: unidentified " << unidentifiedSocketsPollFDIndex[i]
-                            << " protocol " << iterator->second << "\n";
-                  if(handleNetPerfMeterData(true, now,
-                                            iterator->second,
-                                            iterator->first) == 0) {
-                     // Incoming connection has already been closed -> remove it!
-                     gOutputMutex.lock();
-                     if(gOutputVerbosity >= NPFOV_FLOWS) {
-                        printTimeStamp(std::cerr);
-                        std::cerr << "Shutdown of still unidentified incoming connection "
-                                  << iterator->first << "!\n";
+               const UnidentifiedSocket* ud = iterator->second;
+               // See note above about UDP: UDP is handled by mainLoop()!
+               if(ud->Protocol != IPPROTO_UDP) {
+                  const pollfd* entry = ud->PollFDEntry;
+                  if(entry->revents & POLLIN) {
+                     std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
+                               << " protocol " << ud->Protocol << "\n";
+                     if(handleNetPerfMeterData(true, now,
+                                               ud->Protocol,
+                                               ud->SocketDescriptor) == 0) {
+                        // Incoming connection has already been closed -> remove it!
+                        gOutputMutex.lock();
+                        if(gOutputVerbosity >= NPFOV_FLOWS) {
+                           printTimeStamp(std::cerr);
+                           std::cerr << "Shutdown of still unidentified incoming connection "
+                                     << ud->SocketDescriptor << "!\n";
+                        }
+                        gOutputMutex.unlock();
+                        removeSocket(ud->SocketDescriptor, true);
+                        break;
                      }
-                     gOutputMutex.unlock();
-                     removeSocket(iterator->first, true);
-                     break;
-                  }
-                  if(UpdatedUnidentifiedSockets) {
-                     // NOTE: The UnidentifiedSockets set may have changed in
-                     // handleDataMessage -> ... -> FlowManager::identifySocket
-                     // => stop processing if this is the case
-                     break;
+                     if(UpdatedUnidentifiedSockets) {
+                        // NOTE: The UnidentifiedSockets set may have changed in
+                        // handleDataMessage -> ... -> FlowManager::identifySocket
+                        // => stop processing if this is the case
+                        break;
+                     }
                   }
                }
-               i++;
             }
          }
       }

@@ -138,27 +138,33 @@ class FlowManager : public Thread
 
    // ====== Private Data ===================================================
    private:
-   static FlowManager               FlowManagerSingleton;
+   static FlowManager                 FlowManagerSingleton;
 
    // ------ Flow Management ------------------------------------------------
-   MessageReader                    Reader;
-   std::vector<Flow*>               FlowSet;
-   std::map<int, int>               UnidentifiedSockets;
-   bool                             UpdatedUnidentifiedSockets;
-   bool                             DisplayOn;
-   FlowBandwidthStats               CurrentGlobalStats;
-   FlowBandwidthStats               LastGlobalStats;
+   MessageReader                      Reader;
+   std::vector<Flow*>                 FlowSet;
+   bool                               UpdatedUnidentifiedSockets;
+   bool                               DisplayOn;
+   FlowBandwidthStats                 CurrentGlobalStats;
+   FlowBandwidthStats                 LastGlobalStats;
 
    // ------ Measurement Management -----------------------------------------
-   std::map<uint64_t, Measurement*> MeasurementSet;
-   unsigned long long               DisplayInterval;
-   unsigned long long               FirstDisplayEvent;
-   unsigned long long               LastDisplayEvent;
-   unsigned long long               NextDisplayEvent;
-   CPUStatus                        CPULoadStats;
-   FlowBandwidthStats               GlobalStats;      // For displaying only
-   FlowBandwidthStats               RelGlobalStats;   // For displaying only
-   CPUStatus                        CPUDisplayStats;  // For displaying only
+   std::map<uint64_t, Measurement*>   MeasurementSet;
+   unsigned long long                 DisplayInterval;
+   unsigned long long                 FirstDisplayEvent;
+   unsigned long long                 LastDisplayEvent;
+   unsigned long long                 NextDisplayEvent;
+   CPUStatus                          CPULoadStats;
+   FlowBandwidthStats                 GlobalStats;      // For displaying only
+   FlowBandwidthStats                 RelGlobalStats;   // For displaying only
+   CPUStatus                          CPUDisplayStats;  // For displaying only
+
+   struct UnidentifiedSocket {
+      int     SocketDescriptor;
+      int     Protocol;
+      pollfd* PollFDEntry;
+   };
+   std::map<int, UnidentifiedSocket*> UnidentifiedSockets;
 };
 
 
