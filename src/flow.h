@@ -74,6 +74,8 @@ class FlowManager : public Thread
    }
 
    void addSocket(const int protocol, const int socketDescriptor);
+   void removeSocket(const int  socketDescriptor,
+                     const bool closeSocket = true);
    Flow* identifySocket(const uint64_t         measurementID,
                         const uint32_t         flowID,
                         const uint16_t         streamID,
@@ -81,8 +83,6 @@ class FlowManager : public Thread
                         const sockaddr_union*  from,
                         const OutputFileFormat vectorFileFormat,
                         int&                   controlSocketDescriptor);
-   void removeSocket(const int  socketDescriptor,
-                     const bool closeSocket = true);
 
    void addFlow(Flow* flow);
    void removeFlow(Flow* flow);
@@ -138,16 +138,16 @@ class FlowManager : public Thread
 
    // ====== Private Data ===================================================
    private:
-   static FlowManager FlowManagerSingleton;
+   static FlowManager               FlowManagerSingleton;
 
    // ------ Flow Management ------------------------------------------------
-   MessageReader      Reader;
-   std::vector<Flow*> FlowSet;
-   std::map<int, int> UnidentifiedSockets;
-   bool               UpdatedUnidentifiedSockets;
-   bool               DisplayOn;
-   FlowBandwidthStats CurrentGlobalStats;
-   FlowBandwidthStats LastGlobalStats;
+   MessageReader                    Reader;
+   std::vector<Flow*>               FlowSet;
+   std::map<int, int>               UnidentifiedSockets;
+   bool                             UpdatedUnidentifiedSockets;
+   bool                             DisplayOn;
+   FlowBandwidthStats               CurrentGlobalStats;
+   FlowBandwidthStats               LastGlobalStats;
 
    // ------ Measurement Management -----------------------------------------
    std::map<uint64_t, Measurement*> MeasurementSet;

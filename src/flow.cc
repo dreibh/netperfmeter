@@ -335,6 +335,23 @@ void FlowManager::addSocket(const int protocol, const int socketDescriptor)
 }
 
 
+// ###### Remove socket #####################################################
+void FlowManager::removeSocket(const int  socketDescriptor,
+                               const bool closeSocket)
+{
+   lock();
+   std::map<int, int>::iterator found = UnidentifiedSockets.find(socketDescriptor);
+   if(found != UnidentifiedSockets.end()) {
+      UnidentifiedSockets.erase(found);
+      UpdatedUnidentifiedSockets = true;
+   }
+   if(closeSocket) {
+      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(socketDescriptor);
+   }
+   unlock();
+}
+
+
 // ###### Map socket to flow ################################################
 Flow* FlowManager::identifySocket(const uint64_t         measurementID,
                                   const uint32_t         flowID,
@@ -371,23 +388,6 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
    }
 
    return(flow);
-}
-
-
-// ###### Remove socket #####################################################
-void FlowManager::removeSocket(const int  socketDescriptor,
-                               const bool closeSocket)
-{
-   lock();
-   std::map<int, int>::iterator found = UnidentifiedSockets.find(socketDescriptor);
-   if(found != UnidentifiedSockets.end()) {
-      UnidentifiedSockets.erase(found);
-      UpdatedUnidentifiedSockets = true;
-   }
-   if(closeSocket) {
-      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(socketDescriptor);
-   }
-   unlock();
 }
 
 
@@ -751,9 +751,12 @@ void FlowManager::run()
    do {
       // ====== Collect PollFDs for poll() ==================================
       lock();
+
+      // ------ Get socket descriptors for flows ----------------------------
       std::set<int> socketSet;
       pollfd        pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
       size_t        n = 0;
+      std::cerr << "poll-init:\n";
       for(size_t i = 0;i  < FlowSet.size();i++) {
          FlowSet[i]->lock();
          if( (FlowSet[i]->InputStatus != Flow::Off) &&
@@ -765,9 +768,10 @@ void FlowManager::run()
                   pollFDs[n].events  = POLLIN;
                   pollFDs[n].revents = 0;
                   FlowSet[i]->PollFDEntry = &pollFDs[n];
-                  // printf("?pollin-1: %d\n", pollFDs[n].fd);
                   n++;
                   socketSet.insert(FlowSet[i]->SocketDescriptor);
+                  std::cerr << "\t" << n << ": flow " << FlowSet[i]->SocketDescriptor
+                            << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
                }
             }
          }
@@ -783,15 +787,14 @@ void FlowManager::run()
       for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
           iterator != UnidentifiedSockets.end(); iterator++) {
          pollFDs[n].fd      = iterator->first;
-         printf("u=%d ", pollFDs[n].fd);
          pollFDs[n].events  = POLLIN;
          pollFDs[n].revents = 0;
-         // printf("?pollin-2: %d\n", pollFDs[n].fd);
          unidentifiedSocketsPollFDIndex[i] = &pollFDs[n];
+         std::cerr << "\t" << n << ": unidentified " << iterator->first
+                   << " protocol " << iterator->second << "\n";
          n++; i++;
       }
       assert(i == UnidentifiedSockets.size());
-      if(i > 0) puts("");
       const unsigned long long nextEvent = getNextEvent();
       unlock();
 
@@ -799,12 +802,11 @@ void FlowManager::run()
       // ====== Wait for events =============================================
       unsigned long long now = getMicroTime();
       const int timeout = pollTimeout(getMicroTime(), 2,
-                                      now + 250000,
+                                      now + 2500000,
                                       nextEvent);
-      printf("poll with timeout=%d\n", timeout);
+      std::cerr << "poll with timeout=" << timeout << " ms\n";
       const int result = ext_poll_wrapper((pollfd*)&pollFDs, n, timeout);
-      printf("poll result=%d\n",result);
-
+      std::cerr << "poll result=" << result << "\n";
 
       // ====== Handle events ===============================================
       lock();
@@ -818,7 +820,9 @@ void FlowManager::run()
             const int     protocol = FlowSet[i]->getTrafficSpec().Protocol;
             if(entry) {
                // printf("***pollin-1: %d REV=%x\n", entry->fd, entry->revents);
-               if(entry->revents & (POLLIN|POLLERR)) {
+               if(entry->revents & POLLIN) {
+                  std::cerr << "\tPOLLIN: flow " << FlowSet[i]->SocketDescriptor
+                            << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
                   if(handleNetPerfMeterData(true, now, protocol, entry->fd) == 0) {
@@ -845,8 +849,9 @@ void FlowManager::run()
             for(std::map<int, int>::iterator iterator = UnidentifiedSockets.begin();
                iterator != UnidentifiedSockets.end(); iterator++) {
                assert(unidentifiedSocketsPollFDIndex[i]->fd == iterator->first);
-               if(unidentifiedSocketsPollFDIndex[i]->revents & (POLLIN|POLLERR)) {
-                  // printf("***pollin-2: %d REV=%x\n", unidentifiedSocketsPollFDIndex[i]->fd, unidentifiedSocketsPollFDIndex[i]->revents);
+               if(unidentifiedSocketsPollFDIndex[i]->revents & POLLIN) {
+                  std::cerr << "\tPOLLIN: unidentified " << unidentifiedSocketsPollFDIndex[i]
+                            << " protocol " << iterator->second << "\n";
                   if(handleNetPerfMeterData(true, now,
                                             iterator->second,
                                             iterator->first) == 0) {
