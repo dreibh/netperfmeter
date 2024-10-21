@@ -31,8 +31,8 @@
 #include "tools.h"
 
 
-#define DEBUG_SOCKETS
-#define DEBUG_MESSAGEREADER
+// #define DEBUG_SOCKETS
+// #define DEBUG_MESSAGEREADER
 
 
 

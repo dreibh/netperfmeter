@@ -242,7 +242,6 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
    const ssize_t received =
       FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
          sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
-   printf("r(%d)=%d\n", sd, (int)received);
 
    // ====== Handle data ====================================================
    if(received > 0) {
@@ -303,7 +302,6 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
    // ====== Handle error ===================================================
    else {
       if (received != MRRM_PARTIAL_READ) {
-         puts("R1 partial");
          Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
          if(flow) {
             if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
@@ -321,9 +319,6 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          if(protocol != IPPROTO_UDP) {
             ext_shutdown(sd, 2);
          }
-      }
-      else {
-         puts("R2");
       }
    }
 

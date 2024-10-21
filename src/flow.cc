@@ -36,9 +36,11 @@
 #include <sstream>
 
 
+// #define DEBUG_POLL
+
+
 // Flow Manager Singleton object
 FlowManager FlowManager::FlowManagerSingleton;
-
 
 
 // ###### Constructor #######################################################
@@ -383,7 +385,7 @@ void FlowManager::addSocket(const int protocol, const int socketDescriptor)
    us->PollFDEntry      = nullptr;
 
    lock();
-   FlowManager::getFlowManager()->getMessageReader()->registerSocket(protocol, socketDescriptor);
+   Reader.registerSocket(protocol, socketDescriptor);
    UnidentifiedSockets.insert(std::pair<int, UnidentifiedSocket*>(socketDescriptor, us));
    UpdatedUnidentifiedSockets = true;
    unlock();
@@ -404,7 +406,8 @@ void FlowManager::removeSocket(const int  socketDescriptor,
       UpdatedUnidentifiedSockets = true;
    }
    if(closeSocket) {
-      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(socketDescriptor);
+      Reader.deregisterSocket(socketDescriptor);
+      ext_close(socketDescriptor);
    }
    unlock();
 }
@@ -817,7 +820,9 @@ void FlowManager::run()
       std::set<int> socketSet;
       pollfd        pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
       unsigned int  n = 0;
+#ifdef DEBUG_POLL
       std::cerr << "poll-init:\n";
+#endif
       for(unsigned int i = 0;i  < FlowSet.size(); i++) {
          FlowSet[i]->lock();
          FlowSet[i]->PollFDEntry = nullptr;
@@ -832,8 +837,10 @@ void FlowManager::run()
                   FlowSet[i]->PollFDEntry = &pollFDs[n];
                   n++;
                   socketSet.insert(FlowSet[i]->SocketDescriptor);
+#ifdef DEBUG_POLL
                   std::cerr << "\t" << n << ": flow socket " << FlowSet[i]->SocketDescriptor
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
+#endif
                }
             }
          }
@@ -856,9 +863,11 @@ void FlowManager::run()
             pollFDs[n].events  = POLLIN;
             pollFDs[n].revents = 0;
             ud->PollFDEntry = &pollFDs[n];
+#ifdef DEBUG_POLL
             std::cerr << "\t" << n << ": unidentified socket "
                       << ud->SocketDescriptor
                       << " protocol " << ud->Protocol << "\n";
+#endif
             n++;
          }
       }
@@ -872,9 +881,13 @@ void FlowManager::run()
       const int timeout = pollTimeout(getMicroTime(), 2,
                                       now + 2500000,
                                       nextEvent);
+#ifdef DEBUG_POLL
       std::cerr << "poll with timeout=" << timeout << " ms\n";
+#endif
       const int result = ext_poll_wrapper((pollfd*)&pollFDs, n, timeout);
+#ifdef DEBUG_POLL
       std::cerr << "poll result=" << result << "\n";
+#endif
 
 
       // ====== Handle events ===============================================
@@ -889,8 +902,10 @@ void FlowManager::run()
             const int     protocol = FlowSet[i]->getTrafficSpec().Protocol;
             if(entry) {
                if(entry->revents & POLLIN) {
+#ifdef DEBUG_POLL
                   std::cerr << "\tPOLLIN: flow " << FlowSet[i]->SocketDescriptor
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
+#endif
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
                   const ssize_t result = handleNetPerfMeterData(true, now,
@@ -900,9 +915,11 @@ void FlowManager::run()
                      if(protocol != IPPROTO_UDP) {
                         // Close the broken connection!
                         if(gOutputVerbosity >= NPFOV_FLOWS) {
+                           gOutputMutex.lock();
                            printTimeStamp(std::cerr);
                            std::cerr << "Closing disconnected socket "
                                      << FlowSet[i]->SocketDescriptor << "\n";
+                           gOutputMutex.unlock();
                         }
                         ext_close(FlowSet[i]->SocketDescriptor);
                         FlowSet[i]->SocketDescriptor = -1;
@@ -922,20 +939,22 @@ void FlowManager::run()
                if(ud->Protocol != IPPROTO_UDP) {
                   const pollfd* entry = ud->PollFDEntry;
                   if(entry->revents & POLLIN) {
+#ifdef DEBUG_POLL
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                << " protocol " << ud->Protocol << "\n";
+#endif
                      const ssize_t result = handleNetPerfMeterData(true, now,
                                                                    ud->Protocol,
                                                                    ud->SocketDescriptor);
                      if( (result <= 0) && (result != MRRM_PARTIAL_READ) ) {
                         // Incoming connection has already been closed -> remove it!
-                        gOutputMutex.lock();
                         if(gOutputVerbosity >= NPFOV_FLOWS) {
+                           gOutputMutex.lock();
                            printTimeStamp(std::cerr);
                            std::cerr << "Shutdown of still unidentified incoming connection "
                                      << ud->SocketDescriptor << "!\n";
+                           gOutputMutex.unlock();
                         }
-                        gOutputMutex.unlock();
                         removeSocket(ud->SocketDescriptor, true);
                         break;
                      }
