@@ -242,77 +242,88 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
    const ssize_t received =
       FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
          sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
+   printf("r(%d)=%d\n", sd, (int)received);
 
-   if( (received > 0) && (!(flags & MSG_NOTIFICATION)) ) {
-      const NetPerfMeterDataMessage*     dataMsg     =
-         (const NetPerfMeterDataMessage*)&inputBuffer;
-      const NetPerfMeterIdentifyMessage* identifyMsg =
-         (const NetPerfMeterIdentifyMessage*)&inputBuffer;
+   // ====== Handle data ====================================================
+   if(received > 0) {
+      if(!(flags & MSG_NOTIFICATION)) {
+         const NetPerfMeterDataMessage*     dataMsg     =
+            (const NetPerfMeterDataMessage*)&inputBuffer;
+         const NetPerfMeterIdentifyMessage* identifyMsg =
+            (const NetPerfMeterIdentifyMessage*)&inputBuffer;
 
-      // ====== Handle NETPERFMETER_IDENTIFY_FLOW message ===================
-      if( (received >= (ssize_t)sizeof(NetPerfMeterIdentifyMessage)) &&
-          (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
-          (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
-          handleNetPerfMeterIdentify(identifyMsg, sd, &from);
-      }
-
-      // ====== Handle NETPERFMETER_DATA message ============================
-      else if( (received >= (ssize_t)sizeof(NetPerfMeterDataMessage)) &&
-               (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
-         // ====== Identify flow ============================================
-         Flow* flow;
-         if(( protocol == IPPROTO_UDP) && (!isActiveMode) ) {
-            flow = FlowManager::getFlowManager()->findFlow(&from.sa);
+         // ====== Handle NETPERFMETER_IDENTIFY_FLOW message ================
+         if( (received >= (ssize_t)sizeof(NetPerfMeterIdentifyMessage)) &&
+            (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
+            (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
+            handleNetPerfMeterIdentify(identifyMsg, sd, &from);
          }
-         else {
-            flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
-         }
-         if(flow) {
-            // Update flow statistics by received NETPERFMETER_DATA message.
-            updateStatistics(flow, now, dataMsg, received);
+
+         // ====== Handle NETPERFMETER_DATA message =========================
+         else if( (received >= (ssize_t)sizeof(NetPerfMeterDataMessage)) &&
+                  (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
+            // ====== Identify flow =========================================
+            Flow* flow;
+            if(( protocol == IPPROTO_UDP) && (!isActiveMode) ) {
+               flow = FlowManager::getFlowManager()->findFlow(&from.sa);
+            }
+            else {
+               flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
+            }
+            if(flow) {
+               // Update flow statistics by received NETPERFMETER_DATA message.
+               updateStatistics(flow, now, dataMsg, received);
+            }
+            else {
+               gOutputMutex.lock();
+               printTimeStamp(std::cerr);
+               std::cerr << "WARNING: Received data for unknown flow from ";
+               printAddress(std::cerr, &from.sa, true);
+               std::cerr << " on socket " << sd << "!\n";
+               gOutputMutex.unlock();
+            }
+            if(protocol != IPPROTO_UDP) {
+               ext_shutdown(sd, 2);
+            }
          }
          else {
             gOutputMutex.lock();
             printTimeStamp(std::cerr);
-            std::cerr << "WARNING: Received data for unknown flow from ";
+            std::cerr << "WARNING: Received garbage from ";
             printAddress(std::cerr, &from.sa, true);
             std::cerr << " on socket " << sd << "!\n";
             gOutputMutex.unlock();
             if(protocol != IPPROTO_UDP) {
                ext_shutdown(sd, 2);
             }
-         }
-      }
-      else {
-         gOutputMutex.lock();
-         printTimeStamp(std::cerr);
-         std::cerr << "WARNING: Received garbage from ";
-         printAddress(std::cerr, &from.sa, true);
-         std::cerr << " on socket " << sd << "!\n";
-         gOutputMutex.unlock();
-         if(protocol != IPPROTO_UDP) {
-            ext_shutdown(sd, 2);
          }
       }
    }
 
-   else if( (received <= 0) && (received != MRRM_PARTIAL_READ) ) {
-      Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
-      if(flow) {
-         if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-            flow->lock();
-            gOutputMutex.lock();
-            printTimeStamp(std::cerr);
-            std::cerr << "End of input for flow " <<  flow->getFlowID() << " from ";
-            printAddress(std::cerr, &from.sa, true);
-            std::cerr << " on socket " << sd << "!\n";
-            gOutputMutex.unlock();
-            flow->unlock();
-            if(protocol != IPPROTO_UDP) {
-               ext_shutdown(sd, 2);
+   // ====== Handle error ===================================================
+   else {
+      if (received != MRRM_PARTIAL_READ) {
+         puts("R1 partial");
+         Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
+         if(flow) {
+            if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
+               flow->lock();
+               gOutputMutex.lock();
+               printTimeStamp(std::cerr);
+               std::cerr << "End of input for flow " <<  flow->getFlowID() << " from ";
+               printAddress(std::cerr, &from.sa, true);
+               std::cerr << " on socket " << sd << "!\n";
+               gOutputMutex.unlock();
+               flow->unlock();
             }
+            flow->endOfInput();
          }
-         flow->endOfInput();
+         if(protocol != IPPROTO_UDP) {
+            ext_shutdown(sd, 2);
+         }
+      }
+      else {
+         puts("R2");
       }
    }
 
