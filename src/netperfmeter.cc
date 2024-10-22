@@ -68,8 +68,9 @@ static int            gDCCPSocket       = -1;
 static double         gRuntime          = -1.0;
 static bool           gDisplayEnabled   = true;
 static bool           gStopTimeReached  = false;
+// This is the MessageReader for the Control messages only!
+// (The Data messages are handled by the Flow Manager)
 static MessageReader  gMessageReader;
-
 
 
 // ###### Handle global command-line parameter ##############################
@@ -873,13 +874,13 @@ bool mainLoop(const bool               isActiveMode,
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gTCPSocket, nullptr, 0);
          if(newSD >= 0) {
-            FlowManager::getFlowManager()->addSocket(IPPROTO_TCP, newSD);
+            FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
          }
       }
       if( (mptcpID >= 0) && (fds[mptcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gMPTCPSocket, nullptr, 0);
          if(newSD >= 0) {
-            FlowManager::getFlowManager()->addSocket(IPPROTO_MPTCP, newSD);
+            FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_MPTCP, newSD);
          }
       }
       if( (udpID >= 0) && (fds[udpID].revents & POLLIN) ) {
@@ -890,14 +891,14 @@ bool mainLoop(const bool               isActiveMode,
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gSCTPSocket, nullptr, 0);
          if(newSD >= 0) {
-            FlowManager::getFlowManager()->addSocket(IPPROTO_SCTP, newSD);
+            FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_SCTP, newSD);
          }
       }
 #ifdef HAVE_DCCP
       if( (dccpID >= 0) && (fds[dccpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gDCCPSocket, nullptr, 0);
          if(newSD >= 0) {
-            FlowManager::getFlowManager()->addSocket(IPPROTO_DCCP, newSD);
+            FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_DCCP, newSD);
          }
       }
 #endif
@@ -1049,7 +1050,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       exit(1);
    }
    // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
-   FlowManager::getFlowManager()->addSocket(IPPROTO_UDP, gUDPSocket);
+   FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDPSocket);
 
 #ifdef HAVE_DCCP
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
@@ -1151,7 +1152,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    if(gMPTCPSocket >= 0) {
       ext_close(gMPTCPSocket);
    }
-   FlowManager::getFlowManager()->removeSocket(gUDPSocket, false);
+   FlowManager::getFlowManager()->removeUnidentifiedSocket(gUDPSocket, false);
    ext_close(gUDPSocket);
    ext_close(gSCTPSocket);
    if(gDCCPSocket >= 0) {

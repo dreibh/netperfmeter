@@ -73,7 +73,7 @@ extern Mutex         gLogMutex;
         *gStdLog << "\e[0m";                   \
       }                                        \
       gStdLog->flush();                        \
-      abort();                                 \
+      exit(1);                                 \
    }
 
 

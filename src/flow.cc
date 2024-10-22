@@ -281,6 +281,7 @@ void Flow::deactivate(const bool asyncStop)
       lock();
       InputStatus  = Off;
       OutputStatus = Off;
+      PollFDEntry  = nullptr;   // Poll FD entry is now invalid!
       unlock();
       stop();
       if(SocketDescriptor >= 0) {
@@ -296,7 +297,6 @@ void Flow::deactivate(const bool asyncStop)
       if(!asyncStop) {
          waitForFinish();
          FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
-         PollFDEntry = nullptr;   // Poll FD entry is now invalid!
       }
    }
 }

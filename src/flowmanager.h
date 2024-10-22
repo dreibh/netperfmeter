@@ -79,9 +79,9 @@ class FlowManager : public Thread
       unlock();
    }
 
-   void addSocket(const int protocol, const int socketDescriptor);
-   void removeSocket(const int  socketDescriptor,
-                     const bool closeSocket = true);
+   void addUnidentifiedSocket(const int protocol, const int socketDescriptor);
+   void removeUnidentifiedSocket(const int  socketDescriptor,
+                                 const bool closeSocket = true);
    Flow* identifySocket(const uint64_t         measurementID,
                         const uint32_t         flowID,
                         const uint16_t         streamID,
@@ -171,6 +171,8 @@ class FlowManager : public Thread
       int     SocketDescriptor;
       int     Protocol;
       pollfd* PollFDEntry;
+      bool    ToBeRemoved;
+      bool    ToBeClosed;
    };
    std::map<int, UnidentifiedSocket*> UnidentifiedSockets;
 };
