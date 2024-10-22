@@ -38,9 +38,11 @@
 .Nm netperfmeter
 Port
 .Op Fl control-over-tcp
-.Op Fl quiet
-.Op Fl verbose
-.Op Fl verbosity=Level
+.Op Fl L Ar level | Fl Fl loglevel Ar level
+.Op Fl Z Ar on|off | Fl Fl logcolor Ar on|off
+.Op Fl O Ar file | Fl Fl logfile Ar file
+.Op Fl q | Fl Fl quiet
+.Op Fl v | Fl Fl verbose
 .Op Fl display
 .Op Fl nodisplay
 .Op Fl v6only
@@ -55,9 +57,11 @@ Destination:Port
 .Op Fl vector=Name
 .Op Fl activenodename=Description
 .Op Fl passivenodename=Description
-.Op Fl quiet
-.Op Fl verbose
-.Op Fl verbosity=Level
+.Op Fl L Ar level | Fl Fl loglevel Ar level
+.Op Fl Z Ar on|off | Fl Fl logcolor Ar on|off
+.Op Fl O Ar file | Fl Fl logfile Ar file
+.Op Fl q | Fl Fl quiet
+.Op Fl v | Fl Fl verbose
 .Op Fl display
 .Op Fl nodisplay
 .Op Fl v6only
@@ -108,12 +112,17 @@ Default is scalar.vec.bz2, hence the name of the scalar file for flow 5, stream 
 Sets a textual description of the active node (e.g. Client).
 .It Fl passivenodename=Description
 Sets a textual description of the passive node (e.g. Server).
-.It Fl quiet
-Reduces verbosity of log output. May be specified multiple times.
-.It Fl verbose
-Increases verbosity of log output. May be specified multiple times.
-.It Fl verbosity=Level
-Sets the verbosity of the log output to a given level, from 0 (lowest) to 6 (highest).
+.It Fl L Ar level | Fl Fl loglevel Ar level
+Sets the minimum logging level to the provided value: 0=trace, 1=debug, 2=info, 3=warning, 4=error, 5=fatal.
+.It Fl Z Ar on|off | Fl Fl logcolor Ar on|off
+Enables (on) or disables (off) the usage of ANSI color escape sequences to colorise the log output according to its level.
+.It Fl O Ar file | Fl Fl logfile Ar file
+Sets a file name for appending the log output to. If a file is set, no log output is made to the console.
+Otherwise, all log output will be written to the console.
+.It Fl q | Fl Fl quiet
+Sets the minimum logging level to 3 (warning).
+.It Fl v | Fl Fl verbose
+Sets the minimum logging level to 0 (trace).
 .It Fl display
 Display live I/O statistics, updated every second. This is enabled by default.
 .It Fl nodisplay
