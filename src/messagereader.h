@@ -63,7 +63,7 @@ class MessageReader
    size_t getAllSDs(int* sds, const size_t maxEntries);
 
    inline size_t size() {
-      return(SocketMap.size());
+      return SocketMap.size();
    }
 
    // ====== Private Data ===================================================
@@ -93,9 +93,9 @@ class MessageReader
    inline Socket* getSocket(const int sd) {
       std::map<int, Socket*>::iterator found = SocketMap.find(sd);
       if(found != SocketMap.end()) {
-         return(found->second);
+         return found->second;
       }
-      return(nullptr);
+      return nullptr;
    }
 
    std::map<int, Socket*> SocketMap;

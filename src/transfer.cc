@@ -184,7 +184,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       exit(1);
    }
 
-   return(sent);
+   return sent;
 }
 
 
@@ -228,7 +228,7 @@ ssize_t transmitFrame(Flow*                    flow,
    }
 
    flow->updateTransmissionStatistics(now, 1, packetsSent, bytesSent);
-   return(bytesSent);
+   return bytesSent;
 }
 
 
@@ -330,7 +330,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
       }
    }
 
-   return(received);
+   return received;
 }
 
 

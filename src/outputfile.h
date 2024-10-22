@@ -62,22 +62,22 @@ class OutputFile
    bool write(const char* buffer, const size_t bufferLength);
 
    inline bool exists() const {
-      return(File || BZFile);
+      return File || BZFile;
    }
    inline OutputFileFormat getFormat() const {
-      return(Format);
+      return Format;
    }
    inline FILE* getFile() const {
-      return(File);
+      return File;
    }
    inline const std::string& getName() const {
-      return(Name);
+      return Name;
    }
    inline unsigned long long getLine() const {
-      return(Line);
+      return Line;
    }
    inline unsigned long long nextLine() {
-      return(Line++);
+      return Line++;
    }
 
    // ====== Private Data ===================================================

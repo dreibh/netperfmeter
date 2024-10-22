@@ -143,7 +143,7 @@ Flow* FlowManager::findFlow(const uint64_t measurementID,
    }
    unlock();
 
-   return(found);
+   return found;
 }
 
 
@@ -166,7 +166,7 @@ Flow* FlowManager::findFlow(const int      socketDescriptor,
    }
    unlock();
 
-   return(found);
+   return found;
 }
 
 
@@ -187,7 +187,7 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
    }
    unlock();
 
-   return(found);
+   return found;
 }
 
 
@@ -251,7 +251,7 @@ bool FlowManager::startMeasurement(const int                controlSocketID,
       gOutputMutex.unlock();
    }
 
-   return(success);
+   return success;
 }
 
 
@@ -308,7 +308,7 @@ bool FlowManager::addMeasurement(const int    controlSocket,
    }
    unlock();
 
-   return(success);
+   return success;
 }
 
 
@@ -319,9 +319,9 @@ Measurement* FlowManager::findMeasurement(const int      controlSocket,
    std::map<std::pair<int, uint64_t>, Measurement*>::iterator found = MeasurementSet.find(
       std::pair<int, uint64_t>(controlSocket, measurementID));
    if(found != MeasurementSet.end()) {
-      return(found->second);
+      return found->second;
    }
-   return(nullptr);
+   return nullptr;
 }
 
 
@@ -452,7 +452,7 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
       flow = nullptr;
    }
 
-   return(flow);
+   return flow;
 }
 
 
@@ -469,7 +469,7 @@ unsigned long long FlowManager::getNextEvent()
    }
    unlock();
 
-   return(nextEvent);
+   return nextEvent;
 }
 
 
@@ -1141,7 +1141,7 @@ bool Flow::initializeVectorFile(const char* name, const OutputFileFormat format)
    }
    unlock();
 
-   return(success);
+   return success;
 }
 
 
@@ -1218,7 +1218,7 @@ bool Flow::activate()
 {
    deactivate();
    assert(SocketDescriptor >= 0);
-   return(start());
+   return start();
 }
 
 
@@ -1270,7 +1270,7 @@ unsigned long long Flow::scheduleNextTransmissionEvent()
    }
    unlock();
 
-   return(nextTransmissionEvent);
+   return nextTransmissionEvent;
 }
 
 
@@ -1307,7 +1307,7 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
    }
 
    unlock();
-   return(NextStatusChangeEvent);
+   return NextStatusChangeEvent;
 }
 
 
@@ -1404,7 +1404,7 @@ bool Flow::configureSocket(const int socketDescriptor)
    if(setBufferSizes(socketDescriptor,
                      (int)TrafficSpec.SndBufferSize,
                      (int)TrafficSpec.RcvBufferSize) == false) {
-      return(false);
+      return false;
    }
    if( (TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP) ) {
       const int noDelayOption = (TrafficSpec.NoDelay == true) ? 1 : 0;
@@ -1414,7 +1414,7 @@ bool Flow::configureSocket(const int socketDescriptor)
          std::cerr << "ERROR: Failed to set TCP_NODELAY on socket " << socketDescriptor << " - "
                    << strerror(errno) << "!\n";
          gOutputMutex.unlock();
-         return(false);
+         return false;
       }
 
       if(TrafficSpec.Protocol == IPPROTO_MPTCP) {
@@ -1480,7 +1480,7 @@ bool Flow::configureSocket(const int socketDescriptor)
                       << congestionControl << ") on socket " << socketDescriptor << " - "
                       << strerror(errno) << "!\n";
             gOutputMutex.unlock();
-            return(false);
+            return false;
          }
       }
 #endif
@@ -1494,7 +1494,7 @@ bool Flow::configureSocket(const int socketDescriptor)
             std::cerr << "ERROR: Failed to set SCTP_NODELAY on SCTP socket " << socketDescriptor << " - "
                       << strerror(errno) << "!\n";
             gOutputMutex.unlock();
-            return(false);
+            return false;
          }
       }
 #ifdef SCTP_CMT_ON_OFF
@@ -1508,7 +1508,7 @@ bool Flow::configureSocket(const int socketDescriptor)
             std::cerr << "ERROR: Failed to configure CMT usage (SCTP_CMT_ON_OFF option) on SCTP socket " << socketDescriptor << " - "
                       << strerror(errno) << "!\n";
             gOutputMutex.unlock();
-            return(false);
+            return false;
          }
       }
 #else
@@ -1517,7 +1517,7 @@ bool Flow::configureSocket(const int socketDescriptor)
          printTimeStamp(std::cerr);
          std::cerr << "ERROR: CMT usage on SCTP socket configured, but not supported by this system!\n";
          gOutputMutex.unlock();
-         return(false);
+         return false;
       }
 #endif
    }
@@ -1541,10 +1541,10 @@ bool Flow::configureSocket(const int socketDescriptor)
          std::cerr << "ERROR: Failed to configure DCCP service code (DCCP_SOCKOPT_SERVICE option) on DCCP socket "
                    << socketDescriptor << " - " << strerror(errno) << "!\n";
          gOutputMutex.unlock();
-         return(false);
+         return false;
       }
    }
 #endif
 
-   return(true);
+   return true;
 }

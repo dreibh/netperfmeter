@@ -46,22 +46,22 @@ class Measurement : public Mutex
    ~Measurement();
 
    const uint64_t getMeasurementID() const {
-      return(MeasurementID);
+      return MeasurementID;
    }
    const std::string& getVectorNamePattern() const {
-      return(VectorNamePattern);
+      return VectorNamePattern;
    }
    const OutputFile& getVectorFile() const {
-      return(VectorFile);
+      return VectorFile;
    }
    const std::string& getScalarNamePattern() const {
-      return(ScalarNamePattern);
+      return ScalarNamePattern;
    }
    const OutputFile& getScalarFile() const {
-      return(ScalarFile);
+      return ScalarFile;
    }
    inline unsigned long long getFirstStatisticsEvent() const {
-      return(FirstStatisticsEvent);
+      return FirstStatisticsEvent;
    }
 
    bool initialize(const unsigned long long now,

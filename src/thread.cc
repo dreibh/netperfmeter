@@ -59,7 +59,7 @@ void* Thread::startRoutine(void* object)
 {
    Thread* thread = (Thread*)object;
    thread->run();
-   return(nullptr);
+   return nullptr;
 }
 
 
@@ -71,7 +71,7 @@ bool Thread::start()
       Stopping = false;
       unlock();
       if(pthread_create(&MyThread, nullptr, startRoutine, (void*)this) == 0) {
-         return(true);
+         return true;
       }
       MyThread = 0;
       std::cerr << "ERROR: Unable to start new thread!\n";
@@ -79,7 +79,7 @@ bool Thread::start()
    else {
       std::cerr << "ERROR: Thread already running!\n";
    }
-   return(false);
+   return false;
 }
 
 

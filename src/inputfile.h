@@ -56,19 +56,19 @@ class InputFile
    bool finish(const bool closeFile = true);
 
    inline bool exists() const {
-      return(File || BZFile);
+      return File || BZFile;
    }
    inline InputFileFormat getFormat() const {
-      return(Format);
+      return Format;
    }
    inline FILE* getFile() const {
-      return(File);
+      return File;
    }
    inline const std::string& getName() const {
-      return(Name);
+      return Name;
    }
    inline unsigned long long getLine() const {
-      return(Line);
+      return Line;
    }
    ssize_t readLine(char* buffer, size_t bufferSize, bool& eof);
 

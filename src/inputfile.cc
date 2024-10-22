@@ -72,7 +72,7 @@ bool InputFile::initialize(const char*           name,
    if(File == nullptr) {
       std::cerr << "ERROR: Unable to open input file <" << Name << ">!\n";
       ReadError = true;
-      return(false);
+      return false;
    }
 
    // ====== Initialize BZip2 compressor ====================================
@@ -85,12 +85,12 @@ bool InputFile::initialize(const char*           name,
          BZ2_bzWriteClose(&bzerror, BZFile, 0, nullptr, nullptr);
          ReadError = true;
          finish();
-         return(false);
+         return false;
       }
    }
 
    ReadError = false;
-   return(true);
+   return true;
 }
 
 
@@ -114,7 +114,7 @@ bool InputFile::finish(const bool closeFile)
          rewind(File);
       }
    }
-   return(!ReadError);
+   return !ReadError;
 }
 
 
@@ -124,7 +124,7 @@ ssize_t InputFile::readLine(char* buffer, size_t bufferSize, bool& eof)
    eof = false;
 
    if(bufferSize < 1) {
-      return(-1);
+      return -1;
    }
    bufferSize--;  // Leave one byte for terminating 0x00 byte.
 
@@ -133,7 +133,7 @@ ssize_t InputFile::readLine(char* buffer, size_t bufferSize, bool& eof)
       if(StoragePos >= bufferSize) {
          std::cerr << "ERROR: Line " << Line << " of file <"
                    << Name << "> is too long to fit into buffer!\n";
-         return(-1);
+         return -1;
       }
       memcpy(buffer, (const char*)&Storage, StoragePos);
       if(Format == IFF_BZip2) {
@@ -150,14 +150,14 @@ ssize_t InputFile::readLine(char* buffer, size_t bufferSize, bool& eof)
       }
 
       if(bytesRead < 0) {
-         return(bytesRead);   // Error.
+         return bytesRead;   // Error.
       }
       else {
          bytesRead += StoragePos;
          buffer[bytesRead] = 0x00;
          if(bytesRead == 0) {
             eof = true;
-            return(0);   // End of file.
+            return 0;   // End of file.
          }
 
          StoragePos = 0;
@@ -167,7 +167,7 @@ ssize_t InputFile::readLine(char* buffer, size_t bufferSize, bool& eof)
                memcpy((char*)&Storage, &buffer[i + 1], StoragePos);
                buffer[i] = 0x00;
                Line++;
-               return(i);   // A line has been read.
+               return i;   // A line has been read.
             }
          }
       }

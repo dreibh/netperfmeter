@@ -112,7 +112,7 @@ ScalarNode::~ScalarNode()
 static inline ScalarNode* getScalarNodeFromStorageNode(struct SimpleRedBlackTreeNode* node)
 {
    const long offset = (long)(&((class ScalarNode*)node)->Node) - (long)node;
-   return( (class ScalarNode*)( (long)node - offset ));
+   return  (class ScalarNode*)( (long)node - offset );
 }
 
 
@@ -141,27 +141,27 @@ static int scalarNodeComparisonFunction(const void* node1, const void* node2)
    const ScalarNode* scalarNode2 = getScalarNodeFromStorageNode((struct SimpleRedBlackTreeNode*)node2);
    int result = strcmp(scalarNode1->ScalarName, scalarNode2->ScalarName);
    if(result != 0) {
-      return(result);
+      return result;
    }
    result = strcmp(scalarNode1->SplitName, scalarNode2->SplitName);
    if(result != 0) {
-      return(result);
+      return result;
    }
    result = strcmp(scalarNode1->AggValues, scalarNode2->AggValues);
    if(result != 0) {
-      return(result);
+      return result;
    }
    result = strcmp(scalarNode1->VarValues, scalarNode2->VarValues);
    if(result != 0) {
-      return(result);
+      return result;
    }
    if(scalarNode1->Run < scalarNode2->Run) {
-      return(-1);
+      return -1;
    }
    if(scalarNode1->Run > scalarNode2->Run) {
-      return(1);
+      return 1;
    }
-   return(0);
+   return 0;
 }
 
 
@@ -234,7 +234,7 @@ static int safestrcat(char* dest, const char* src, const size_t size)
 
    strncat(dest, src, size - l1 - 1);
    dest[size - 1] = 0x00;
-   return(l1 + l2 < size);
+   return l1 + l2 < size;
 }
 
 
@@ -360,7 +360,7 @@ static unsigned int getAggregate(char*        objectName,
    // printf("Level %u: scalarName=<%s> statName=<%s> aggNames=<%s> aggValues=<%s>\n",
    //        levels, scalarName, statName, aggNames, aggValues);
 
-   return(levels + 1);
+   return levels + 1;
 }
 
 
@@ -374,7 +374,7 @@ static char* getWord(char* str, char* word)
       n++;
    }
    if(str[n] == 0x00) {
-      return(nullptr);
+      return nullptr;
    }
    if(str[n] == '\"') {
       quoted = true;
@@ -385,14 +385,14 @@ static char* getWord(char* str, char* word)
    while( ((quoted) && (str[n] != '\"')) ||
           ((!quoted) && (str[n] != ' ') && (str[n] != '\t')) ) {
       if( (quoted == true) && (str[n] == 0x00) ) {
-         return(nullptr);
+         return nullptr;
       }
       word[i++] = str[n++];
    }
    word[i] = 0x00;
    n++;
 
-   return((char*)&str[n]);
+   return (char*)&str[n];
 }
 
 
@@ -536,7 +536,7 @@ static bool handleScalarFile(const std::string& varNames,
        inputFileFormat = IFF_BZip2;
    }
    if(inputFile.initialize(fileName.c_str(), inputFileFormat) == false) {
-      return(false);
+      return false;
    }
 
 
@@ -674,7 +674,7 @@ static bool handleScalarFile(const std::string& varNames,
 
    // ====== Close input file ===============================================
    inputFile.finish();
-   return(success);
+   return success;
 }
 
 
@@ -1048,5 +1048,5 @@ int main(int argc, char** argv)
       scalarNode = (ScalarNode*)simpleRedBlackTreeGetFirst(&StatisticsStorage);
    }
    simpleRedBlackTreeDelete(&StatisticsStorage);
-   return(0);
+   return 0;
 }

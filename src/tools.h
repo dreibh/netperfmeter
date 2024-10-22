@@ -190,7 +190,7 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time);
 #else
 inline int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
 {
-   return(ext_poll(fdlist, count, time));
+   return ext_poll(fdlist, count, time);
 }
 #endif
 

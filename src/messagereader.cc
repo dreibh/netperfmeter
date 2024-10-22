@@ -91,7 +91,7 @@ bool MessageReader::registerSocket(const int    protocol,
    printf("RegisterSocket: UseCount[sd=%d,proto=%d]=%u\n",
           socket->SocketDescriptor, socket->Protocol, (unsigned int)socket->UseCount);
 #endif
-   return(true);
+   return true;
 }
 
 
@@ -103,7 +103,7 @@ size_t MessageReader::getAllSDs(int* sds, const size_t maxEntries)
    for(std::map<int, Socket*>::iterator iterator = SocketMap.begin(); iterator != SocketMap.end(); iterator++) {
       sds[count++] = iterator->second->SocketDescriptor;
    }
-   return(count);
+   return count;
 }
 
 
@@ -122,11 +122,11 @@ bool MessageReader::deregisterSocket(const int sd)
          SocketMap.erase(found);
          delete [] socket->MessageBuffer;
          delete socket;
-         return(true);
+         return true;
       }
-      return(false);   // Socket is still in use!
+      return false;   // Socket is still in use!
    }
-   return(true);
+   return true;
 }
 
 
@@ -176,7 +176,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             }
             else {
                // Not useful to retry when synchronization has been lost for TCP!
-               return(MRRM_STREAM_ERROR);
+               return MRRM_STREAM_ERROR;
             }
          }
          assert(bytesToRead + socket->BytesRead <= socket->MessageBufferSize);
@@ -238,7 +238,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                      printAddress(std::cout, from, true);
                      std::cerr << " on socket " << socket->SocketDescriptor << "!\n";
                      socket->Status = Socket::MRS_StreamError;
-                     return(MRRM_STREAM_ERROR);
+                     return MRRM_STREAM_ERROR;
                   }
                   else if(socket->MessageSize > socket->MessageBufferSize) {
                      printTimeStamp(std::cerr);
@@ -246,12 +246,12 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                      printAddress(std::cout, from, true);
                      std::cerr << " on socket " << socket->SocketDescriptor << "!\n";
                      socket->Status = Socket::MRS_StreamError;
-                     return(MRRM_STREAM_ERROR);
+                     return MRRM_STREAM_ERROR;
                   }
                   socket->Status = Socket::MRS_PartialRead;
                }
                else {
-                  return(MRRM_PARTIAL_READ);
+                  return MRRM_PARTIAL_READ;
                }
             }
             // Continue here with MRS_PartialRead status!
@@ -282,18 +282,18 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                         printAddress(std::cout, from, true);
                         std::cerr << " on socket " << socket->SocketDescriptor << "!\n";
                         socket->Status = Socket::MRS_StreamError;
-                        return(MRRM_STREAM_ERROR);
+                        return MRRM_STREAM_ERROR;
                      }
                      // This is the end of the SCTP notification. The message
                      // is complete here. Return it to the caller.
                      socket->MessageSize = socket->BytesRead;
                   }
                   else {
-                     return(MRRM_PARTIAL_READ);
+                     return MRRM_PARTIAL_READ;
                   }
                }
                else {
-                  return(MRRM_PARTIAL_READ);
+                  return MRRM_PARTIAL_READ;
                }
             }
 
@@ -304,7 +304,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                printAddress(std::cout, from, true);
                std::cerr << " on socket " << socket->SocketDescriptor << "!\n";
                socket->Status = Socket::MRS_StreamError;
-               return(MRRM_STREAM_ERROR);
+               return MRRM_STREAM_ERROR;
             }
             if((socket->Protocol == IPPROTO_SCTP) && (!(*msgFlags & MSG_EOR))) {
                printTimeStamp(std::cerr);
@@ -312,29 +312,29 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                printAddress(std::cout, from, true);
                std::cerr << " on socket " << socket->SocketDescriptor << "!\n";
                socket->Status = Socket::MRS_StreamError;
-               return(MRRM_STREAM_ERROR);
+               return MRRM_STREAM_ERROR;
             }
             received = socket->MessageSize;
             memcpy(buffer, socket->MessageBuffer, socket->MessageSize);
             socket->Status      = Socket::MRS_WaitingForHeader;
             socket->MessageSize = 0;
             socket->BytesRead   = 0;
-            return(received);
+            return received;
          }
-         return(MRRM_BAD_SOCKET);
+         return MRRM_BAD_SOCKET;
       }
       // ====== Handle read errors ==========================================
       else if(received < 0) {
-         return(MRRM_SOCKET_ERROR);
+         return MRRM_SOCKET_ERROR;
       }
       else {   // received == 0
-         return(received);
+         return received;
       }
    }
    else {
       printTimeStamp(std::cerr);
       std::cerr << "ERROR: Unknown socket " << sd
                 << " given in call of MessageReader::receiveMessage()!\n";
-      return(MRRM_BAD_SOCKET);
+      return MRRM_BAD_SOCKET;
    }
 }

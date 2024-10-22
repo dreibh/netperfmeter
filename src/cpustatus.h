@@ -47,21 +47,21 @@ class CPUStatus
    void update();
 
    inline unsigned int getNumberOfCPUs() const {
-      return(CPUs);
+      return CPUs;
    }
    inline unsigned int getCpuStates() const {
-      return(CpuStates);
+      return CpuStates;
    }
    inline const char* getCpuStateName(const unsigned int index) const {
       assert(index < CpuStates);
-      return(CpuStateNames[index]);
+      return CpuStateNames[index];
    }
    inline float getCpuStatePercentage(const unsigned int cpuIndex,
                                       const unsigned int stateIndex) const {
       assert(cpuIndex <= CPUs);
       assert(stateIndex < CpuStates);
       const unsigned int index = (cpuIndex * CpuStates) + stateIndex;
-      return(Percentages[index]);
+      return Percentages[index];
    }
    float getCpuUtilization(const unsigned int cpuIndex) const;
 

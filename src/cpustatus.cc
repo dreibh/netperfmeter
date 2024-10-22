@@ -77,9 +77,9 @@ bool CPUStatus::getSysCtl(const char* name, void* ptr, size_t len)
       exit(1);
    }
    if(nlen != len) {
-      return(false);
+      return false;
    }
-   return(true);
+   return true;
 }
 #endif
 
@@ -311,5 +311,5 @@ void CPUStatus::update()
 // ###### Get CPU utilization ###############################################
 float CPUStatus::getCpuUtilization(const unsigned int cpuIndex) const
 {
-   return(100.0 - getCpuStatePercentage(cpuIndex, IDLE_INDEX));
+   return 100.0 - getCpuStatePercentage(cpuIndex, IDLE_INDEX);
 }

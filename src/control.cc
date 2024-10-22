@@ -67,7 +67,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
       std::cerr << "ERROR: Unable to create file " << fileName
                 << " - " << strerror(errno) << "!\n";
       gOutputMutex.unlock();
-      return(false);
+      return false;
    }
    bool success = false;
    ssize_t received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer));
@@ -135,7 +135,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
       gOutputMutex.unlock();
    }
    fclose(fh);
-   return(success);
+   return success;
 }
 
 
@@ -174,7 +174,7 @@ static bool downloadResults(MessageReader*     messageReader,
       std::cerr << " " << ((success == true) ? "okay": "FAILED") << "\n";
       gOutputMutex.unlock();
    }
-   return(success);
+   return success;
 }
 
 
@@ -266,7 +266,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
       std::cerr << "Sending message failed on socket " << controlSocket << ": "
                 << strerror(errno) << "\n";
       gOutputMutex.unlock();
-      return(false);
+      return false;
    }
 
    // ====== Wait for NETPERFMETER_ACKNOWLEDGE ==============================
@@ -283,11 +283,11 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
       std::cerr << "Receiving message failed on socket " << controlSocket << ": "
                 << strerror(errno) << "\n";
       gOutputMutex.unlock();
-      return(false);
+      return false;
    }
 
    // ======  Let remote identify the new flow ==============================
-   return(performNetPerfMeterIdentifyFlow(messageReader, controlSocket, flow));
+   return performNetPerfMeterIdentifyFlow(messageReader, controlSocket, flow);
 }
 
 
@@ -331,12 +331,12 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
          sinfo.sinfo_stream = flow->getStreamID();
          sinfo.sinfo_ppid   = htonl(PPID_NETPERFMETER_CONTROL);
          if(sctp_send(flow->getSocketDescriptor(), &identifyMsg, sizeof(identifyMsg), &sinfo, 0) <= 0) {
-            return(false);
+            return false;
          }
       }
       else {
          if(ext_send(flow->getSocketDescriptor(), &identifyMsg, sizeof(identifyMsg), 0) <= 0) {
-            return(false);
+            return false;
          }
       }
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
@@ -348,10 +348,10 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
                                       flow->getMeasurementID(),
                                       flow->getFlowID(), flow->getStreamID(),
                                       IDENTIFY_TIMEOUT) == true) {
-         return(true);
+         return true;
       }
    }
-   return(false);
+   return false;
 }
 
 
@@ -376,7 +376,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          printTimeStamp(std::cerr);
          std::cerr << "ERROR: Unable to create config file <" << configName << ">!\n";
          gOutputMutex.unlock();
-         return(false);
+         return false;
       }
 
       FlowManager::getFlowManager()->lock();
@@ -472,7 +472,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          gOutputMutex.unlock();
       }
       if(ext_send(controlSocket, &startMsg, sizeof(startMsg), 0) < 0) {
-         return(false);
+         return false;
       }
       if(gOutputVerbosity >= NPFOV_STATUS) {
          gOutputMutex.lock();
@@ -481,16 +481,16 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       }
       if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                       measurementID, 0, 0) == false) {
-         return(false);
+         return false;
       }
       if(gOutputVerbosity >= NPFOV_STATUS) {
          gOutputMutex.lock();
          std::cerr << "okay\n\n";
          gOutputMutex.unlock();
       }
-      return(true);
+      return true;
    }
-   return(false);
+   return false;
 }
 
 
@@ -516,13 +516,13 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
       gOutputMutex.unlock();
    }
    if(ext_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), 0) <= 0) {
-      return(false);
+      return false;
    }
    if(measurement->getVectorNamePattern() != "") {
       return(downloadResults(messageReader, controlSocket,
                              measurement->getVectorNamePattern(), flow));
    }
-   return(true);
+   return true;
 }
 
 
@@ -556,7 +556,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       gOutputMutex.unlock();
    }
    if(ext_send(controlSocket, &stopMsg, sizeof(stopMsg), 0) < 0) {
-      return(false);
+      return false;
    }
    if(gOutputVerbosity >= NPFOV_STATUS) {
       gOutputMutex.lock();
@@ -565,7 +565,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    }
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    measurementID, 0, 0) == false) {
-      return(false);
+      return false;
    }
 
    // ====== Download passive node's vector file ============================
@@ -582,7 +582,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       }
       if(downloadOutputFile(messageReader, controlSocket, vectorName.c_str()) == false) {
          delete measurement;
-         return(false);
+         return false;
       }
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
          gOutputMutex.lock();
@@ -605,7 +605,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       }
       if(downloadOutputFile(messageReader, controlSocket, scalarName.c_str()) == false) {
          delete measurement;
-         return(false);
+         return false;
       }
       if(gOutputVerbosity >= NPFOV_STATUS) {
          gOutputMutex.lock();
@@ -623,7 +623,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
          if(sendNetPerfMeterRemoveFlow(messageReader, controlSocket,
                                        measurement, flow) == false) {
             delete measurement;
-            return(false);
+            return false;
          }
          if(gOutputVerbosity >= NPFOV_FLOWS) {
             gOutputMutex.lock();
@@ -641,7 +641,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
 
    // ====== Remove the Measurement object =================================
    delete measurement;
-   return(true);
+   return true;
 }
 
 
@@ -666,7 +666,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
          std::cerr.flush();
          gOutputMutex.unlock();
       }
-      return(false);
+      return false;
    }
    if(!(pfd.revents & (POLLIN|POLLERR))) {
       if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
@@ -674,7 +674,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
          std::cerr << "<no answer> ";
          gOutputMutex.unlock();
       }
-      return(false);
+      return false;
    }
 
    // ====== Read NETPERFMETER_ACKNOWLEDGE message ==========================
@@ -684,7 +684,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
       received = gMessageReader.receiveMessage(controlSocket, &ackMsg, sizeof(ackMsg));
    } while(received == MRRM_PARTIAL_READ);
    if(received < (ssize_t)sizeof(ackMsg)) {
-      return(false);
+      return false;
    }
    if(ackMsg.Header.Type != NETPERFMETER_ACKNOWLEDGE) {
       gOutputMutex.lock();
@@ -692,7 +692,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
       std::cerr << "ERROR: Received message type " << (unsigned int)ackMsg.Header.Type
                 << " instead of NETPERFMETER_ACKNOWLEDGE!\n";
       gOutputMutex.unlock();
-      return(false);
+      return false;
    }
 
    // ====== Check whether NETPERFMETER_ACKNOWLEDGE is okay =================
@@ -703,7 +703,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
       printTimeStamp(std::cerr);
       std::cerr << "ERROR: Received NETPERFMETER_ACKNOWLEDGE for wrong measurement/flow/stream!\n";
       gOutputMutex.unlock();
-      return(false);
+      return false;
    }
 
    const uint32_t status = ntohl(ackMsg.Status);
@@ -713,7 +713,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
       std::cerr.flush();
       gOutputMutex.unlock();
    }
-   return(status == NETPERFMETER_STATUS_OKAY);
+   return status == NETPERFMETER_STATUS_OKAY;
 }
 
 
@@ -796,7 +796,7 @@ static bool uploadOutputFile(const int         controlSocket,
       std::cerr << " " << ((success == true) ? "okay": "FAILED") << "\n";
       gOutputMutex.unlock();
    }
-   return(success);
+   return success;
 }
 
 
@@ -818,7 +818,7 @@ static bool uploadResults(const int controlSocket,
       }
    }
    flow->getVectorFile().finish(true);
-   return(success);
+   return success;
 }
 
 
@@ -834,7 +834,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message!\n";
       gOutputMutex.unlock();
       ext_shutdown(controlSocket, 2);
-      return(false);
+      return false;
    }
    const uint64_t measurementID   = ntoh64(addFlowMsg->MeasurementID);
    const uint32_t flowID          = ntohl(addFlowMsg->FlowID);
@@ -847,7 +847,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
                    "(too few start/stop entries)!\n";
       gOutputMutex.unlock();
       ext_shutdown(controlSocket, 2);
-      return(false);
+      return false;
    }
    char description[sizeof(addFlowMsg->Description) + 1];
    memcpy((char*)&description, (const char*)&addFlowMsg->Description, sizeof(addFlowMsg->Description));
@@ -941,7 +941,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
       std::cerr << "ERROR: Received malformed NETPERFMETER_REMOVE_FLOW control message!\n";
       gOutputMutex.unlock();
       ext_shutdown(controlSocket, 2);
-      return(false);
+      return false;
    }
    const uint64_t measurementID = ntoh64(removeFlowMsg->MeasurementID);
    const uint32_t flowID        = ntohl(removeFlowMsg->FlowID);
@@ -967,7 +967,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
 
       delete flow;
    }
-   return(true);
+   return true;
 }
 
 
@@ -983,7 +983,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
       std::cerr << "ERROR: Received malformed NETPERFMETER_START control message!\n";
       gOutputMutex.unlock();
       ext_shutdown(controlSocket, 2);
-      return(false);
+      return false;
    }
    const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
 
@@ -1037,7 +1037,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       std::cerr << "ERROR: Received malformed NETPERFMETER_STOP control message!\n";
       gOutputMutex.unlock();
       ext_shutdown(controlSocket, 2);
-      return(false);
+      return false;
    }
    const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
 
@@ -1093,7 +1093,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       }
       delete measurement;
    }
-   return(true);
+   return true;
 }
 
 
@@ -1119,7 +1119,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       messageReader->receiveMessage(controlSocket, &inputBuffer, sizeof(inputBuffer),
                                     &from.sa, &fromlen, &sinfo, &flags);
    if(received == MRRM_PARTIAL_READ) {
-      return(true);   // Partial read -> wait for next fragment.
+      return true;   // Partial read -> wait for next fragment.
    }
    else if(received < (ssize_t)sizeof(NetPerfMeterHeader)) {
       if(received < 0) {
@@ -1129,7 +1129,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
          gOutputMutex.unlock();
          ext_shutdown(controlSocket, 2);
       }
-      return(false);
+      return false;
    }
 
    // ====== Received a SCTP notification ===================================
@@ -1153,7 +1153,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
             << ", received="<< received << "\n";
          gOutputMutex.unlock();
          ext_shutdown(controlSocket, 2);
-         return(false);
+         return false;
       }
 
       switch(header->Type) {
@@ -1180,10 +1180,10 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
                      << (unsigned int)header->Type << "!\n";
             gOutputMutex.unlock();
             ext_shutdown(controlSocket, 2);
-            return(false);
+            return false;
       }
    }
-   return(true);
+   return true;
 }
 
 
@@ -1245,5 +1245,5 @@ bool sendNetPerfMeterAcknowledge(int            controlSocket,
    ackMsg.Padding       = 0x0000;
    ackMsg.Status        = htonl(status);
 
-   return(ext_send(controlSocket, &ackMsg, sizeof(ackMsg), 0) > 0);
+   return ext_send(controlSocket, &ackMsg, sizeof(ackMsg), 0) > 0;
 }

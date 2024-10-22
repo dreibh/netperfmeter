@@ -82,9 +82,9 @@ bool Measurement::initialize(const unsigned long long now,
                          (scalarNamePattern != nullptr) ?
                             Flow::getNodeOutputName(scalarNamePattern, "active").c_str() : nullptr,
                          scalarFileFormat);
-      return(s1 && s2);
+      return s1 && s2;
    }
-   return(false);
+   return false;
 }
 
 
@@ -94,7 +94,7 @@ bool Measurement::finish(const bool closeFiles)
    FlowManager::getFlowManager()->removeMeasurement(ControlSocketDescriptor, this);
    const bool s1 = VectorFile.finish(closeFiles);
    const bool s2 = ScalarFile.finish(closeFiles);
-   return(s1 && s2);
+   return s1 && s2;
 }
 
 

@@ -40,13 +40,13 @@ class Thread : public Mutex
    virtual ~Thread();
 
    inline bool isRunning() const {
-      return(MyThread != 0);
+      return MyThread != 0;
    }
    inline bool isStopping() {
       lock();
       const bool stopping = Stopping;
       unlock();
-      return(stopping);
+      return stopping;
    }
 
    virtual bool start();

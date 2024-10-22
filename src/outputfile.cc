@@ -75,7 +75,7 @@ bool OutputFile::initialize(const char*            name,
       if(File == nullptr) {
          std::cerr << "ERROR: Unable to create output file <" << Name << ">!\n";
          WriteError = true;
-         return(false);
+         return false;
       }
 
       // ====== Initialize BZip2 compressor ====================================
@@ -88,12 +88,12 @@ bool OutputFile::initialize(const char*            name,
             BZ2_bzWriteClose(&bzerror, BZFile, 0, nullptr, nullptr);
             WriteError = true;
             finish();
-            return(false);
+            return false;
          }
       }
       WriteError = false;
    }
-   return(true);
+   return true;
 }
 
 
@@ -149,7 +149,7 @@ bool OutputFile::finish(const bool          closeFile,
    if(WriteError) {
       unlink(Name.c_str());
    }
-   return(!WriteError);
+   return !WriteError;
 }
 
 
@@ -165,9 +165,9 @@ bool OutputFile::printf(const char* str, ...)
       buffer[sizeof(buffer) - 1] = 0x00;   // Just to be really sure ...
       va_end(va);
 
-      return(write((const char*)&buffer, bufferLength));
+      return write((const char*)&buffer, bufferLength);
    }
-   return(true);
+   return true;
 }
 
 
@@ -182,7 +182,7 @@ bool OutputFile::write(const char* buffer, const size_t bufferLength)
          if(bzerror != BZ_OK) {
             std::cerr << "\nERROR: libbz2 failed to write into file <" << Name << ">!\n"
                       << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
-            return(false);
+            return false;
          }
       }
 
@@ -190,9 +190,9 @@ bool OutputFile::write(const char* buffer, const size_t bufferLength)
       else if(File) {
          if(fwrite(buffer, bufferLength, 1, File) != 1) {
             std::cerr << "ERROR: Failed to write into file <" << Name << ">!\n";
-            return(false);
+            return false;
          }
       }
    }
-   return(true);
+   return true;
 }

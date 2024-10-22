@@ -50,9 +50,9 @@ class FlowBandwidthStats
    inline static unsigned long long calculateRate(const unsigned long long value,
                                                   const double             duration) {
       if(duration < 0.000001) {
-         return(0);
+         return 0;
       }
-      return((unsigned long long)rint(value / duration));
+      return (unsigned long long)rint(value / duration);
    }
 
    // ====== Public Data ====================================================

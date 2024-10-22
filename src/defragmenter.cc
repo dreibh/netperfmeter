@@ -148,11 +148,11 @@ bool Defragmenter::getFirstFragment(Frame*&    frame,
       FragmentIterator = frame->FragmentSet.begin();
       assert(FragmentIterator != frame->FragmentSet.end());
       fragment = FragmentIterator->second;
-      return(true);
+      return true;
    }
    frame    = nullptr;
    fragment = nullptr;
-   return(false);
+   return false;
 }
 
 
@@ -199,7 +199,7 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
       }
    }
 
-   return(fragment != nullptr);
+   return fragment != nullptr;
 }
 
 

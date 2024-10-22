@@ -59,7 +59,7 @@ FlowBandwidthStats operator+(const FlowBandwidthStats& s1,
    result.LostBytes          = s1.LostBytes + s2.LostBytes;
    result.LostPackets        = s1.LostPackets + s2.LostPackets;
    result.LostFrames         = s1.LostFrames + s2.LostFrames;
-   return(result);
+   return result;
 }
 
 
@@ -79,7 +79,7 @@ FlowBandwidthStats operator-(const FlowBandwidthStats& s1,
    result.LostBytes          = s1.LostBytes - s2.LostBytes;
    result.LostPackets        = s1.LostPackets - s2.LostPackets;
    result.LostFrames         = s1.LostFrames - s2.LostFrames;
-   return(result);
+   return result;
 }
 
 

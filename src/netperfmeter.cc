@@ -157,9 +157,9 @@ bool handleGlobalParameter(char* parameter)
       }
    }
    else {
-      return(false);
+      return false;
    }
-   return(true);
+   return true;
 }
 
 
@@ -236,9 +236,9 @@ static const char* parseNextEntry(const char* parameters,
       exit(1);
    }
    if(parameters[n] == 0x00) {
-      return(nullptr);
+      return nullptr;
    }
-   return((const char*)&parameters[n + 1]);
+   return (const char*)&parameters[n + 1];
 }
 
 
@@ -551,9 +551,9 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       exit(1);
    }
    if(parameters[n] == 0x00) {
-      return(nullptr);
+      return nullptr;
    }
-   return((const char*)&parameters[n + 1]);
+   return (const char*)&parameters[n + 1];
 }
 
 
@@ -762,7 +762,7 @@ static Flow* createFlow(Flow*                  previousFlow,
    flow->setSocketDescriptor(socketDescriptor, originalSocketDescriptor);
 
    flowID++;
-   return(flow);
+   return flow;
 }
 
 
@@ -863,7 +863,7 @@ bool mainLoop(const bool               isActiveMode,
                                            &gMessageReader, fds[controlID].fd);
                if(!controlOkay) {
                   if(isActiveMode) {
-                     return(false);
+                     return false;
                   }
                   // Make sure to deregister all flows belonging to this
                   // control connection!
@@ -914,7 +914,7 @@ bool mainLoop(const bool               isActiveMode,
    if(now >= stopAt) {
       gStopTimeReached = true;
    }
-   return(true);
+   return true;
 }
 
 

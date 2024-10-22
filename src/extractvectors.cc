@@ -190,7 +190,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                 << vectorsToExtract.size() << " specified!\n";
    }
 
-   return(outputLine);
+   return outputLine;
 }
 
 
@@ -303,5 +303,5 @@ int main(int argc, char** argv)
       std::cout << "\n";
    }
 
-   return(0);
+   return 0;
 }

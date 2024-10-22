@@ -59,13 +59,13 @@ class FlowManager : public Thread
 
    public:
    inline static FlowManager* getFlowManager() {
-      return(&FlowManagerSingleton);
+      return &FlowManagerSingleton;
    }
    inline MessageReader* getMessageReader() {
-      return(&Reader);
+      return &Reader;
    }
    inline std::vector<Flow*>& getFlowSet() {   // Internal usage only!
-      return(FlowSet);
+      return FlowSet;
    }
 
    inline void enableDisplay() {
@@ -199,34 +199,34 @@ class Flow : public Thread
 
 
    inline uint64_t getMeasurementID() const {
-      return(MeasurementID);
+      return MeasurementID;
    }
    inline uint32_t getFlowID() const {
-      return(FlowID);
+      return FlowID;
    }
    inline uint16_t getStreamID() const {
-      return(StreamID);
+      return StreamID;
    }
    inline int getSocketDescriptor() const {
-      return(SocketDescriptor);
+      return SocketDescriptor;
    }
    inline Defragmenter* getDefragmenter() {
-      return(&MyDefragmenter);
+      return &MyDefragmenter;
    }
    inline int getRemoteControlSocketDescriptor() const {
-      return(RemoteControlSocketDescriptor);
+      return RemoteControlSocketDescriptor;
    }
    inline const FlowTrafficSpec& getTrafficSpec() const {
-      return(TrafficSpec);
+      return TrafficSpec;
    }
    inline FlowStatus getOutputStatus() const {
-      return(OutputStatus);
+      return OutputStatus;
    }
    inline FlowStatus getInputStatus() const {
-      return(InputStatus);
+      return InputStatus;
    }
    inline bool isAcceptedIncomingFlow() const {
-      return(RemoteControlSocketDescriptor != -1);
+      return RemoteControlSocketDescriptor != -1;
    }
 
    inline void endOfInput() {
@@ -234,59 +234,59 @@ class Flow : public Thread
    }
 
    inline const FlowBandwidthStats& getCurrentBandwidthStats() const {
-      return(CurrentBandwidthStats);
+      return CurrentBandwidthStats;
    }
    inline FlowBandwidthStats& getCurrentBandwidthStats() {
-      return(CurrentBandwidthStats);
+      return CurrentBandwidthStats;
    }
    inline unsigned long long getFirstTransmission() const {
-      return(FirstTransmission);
+      return FirstTransmission;
    }
    inline unsigned long long getLastTransmission() const {
-      return(LastTransmission);
+      return LastTransmission;
    }
    inline unsigned long long getFirstReception() const {
-      return(FirstReception);
+      return FirstReception;
    }
    inline unsigned long long getLastReception() const {
-      return(LastReception);
+      return LastReception;
    }
 
    inline uint32_t nextOutboundFrameID() {
-      return(++LastOutboundFrameID);
+      return ++LastOutboundFrameID;
    }
    inline uint64_t nextOutboundSeqNumber() {
-      return(++LastOutboundSeqNumber);
+      return ++LastOutboundSeqNumber;
    }
 
    inline bool isRemoteAddressValid() const {
-      return(RemoteAddressIsValid);
+      return RemoteAddressIsValid;
    }
    inline const sockaddr* getRemoteAddress() const {
-      return(&RemoteAddress.sa);
+      return &RemoteAddress.sa;
    }
 
    inline OutputFile& getVectorFile() {
-      return(VectorFile);
+      return VectorFile;
    }
    inline const OutputFile& getVectorFile() const {
-      return(VectorFile);
+      return VectorFile;
    }
    inline double getJitter() const {
-      return(Jitter);
+      return Jitter;
    }
    inline void setJitter(const double jitter) {
       Jitter = jitter;
    }
    inline double getDelay() const {
-      return(Delay);
+      return Delay;
    }
    inline void setDelay(const double transitTime) {
       Delay = transitTime;
    }
 
    inline Measurement* getMeasurement() const {
-      return(MyMeasurement);
+      return MyMeasurement;
    }
    bool setMeasurement(Measurement* measurement);
 
@@ -298,7 +298,7 @@ class Flow : public Thread
       dissectName(pattern, prefix, suffix);
       const std::string result = prefix + "-" + std::string(type) +
                                  std::string(extension) + suffix;
-      return(result);
+      return result;
    }
 
    bool initializeVectorFile(const char* name, const OutputFileFormat format);
