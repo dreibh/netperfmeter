@@ -1305,11 +1305,10 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
       int newBufferSize = 0;
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(sd, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
-         std::cerr << "ERROR: Failed to obtain receive send size (SO_SNDBUF option) - "
+         std::cerr << "ERROR: Failed to obtain send buffer size (SO_SNDBUF option) - "
                    << strerror(errno) << "!\n";
          return false;
       }
-      // printf("SET-SNDBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, sndBufSize);
       if(newBufferSize < sndBufSize) {
          std::cerr << "ERROR: actual send buffer size < configured send buffer size: "
                    << newBufferSize << " < " << sndBufSize << "\n";
@@ -1329,7 +1328,6 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
                    << strerror(errno) << "!\n";
          return false;
       }
-      // printf("SET-RCVBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, rcvBufSize);
       if(newBufferSize < rcvBufSize) {
          std::cerr << "ERROR: actual receive buffer size < configured receive buffer size: "
                    << newBufferSize << " < " << rcvBufSize << "\n";

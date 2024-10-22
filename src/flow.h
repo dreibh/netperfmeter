@@ -88,14 +88,14 @@ class FlowManager : public Thread
                         const int              socketDescriptor,
                         const sockaddr_union*  from,
                         const OutputFileFormat vectorFileFormat,
-                        int&                   controlSocketDescriptor);
+                        int&                   controlSocket);
 
    void addFlow(Flow* flow);
    void removeFlow(Flow* flow);
    void printFlows(std::ostream& os,
                    const bool    printStatistics);
 
-   bool startMeasurement(const int                controlSocketID,
+   bool startMeasurement(const int                controlSocket,
                          const uint64_t           measurementID,
                          const unsigned long long now,
                          const char*              vectorNamePattern,
@@ -103,7 +103,7 @@ class FlowManager : public Thread
                          const char*              scalarNamePattern,
                          const OutputFileFormat   scalarFileFormat,
                          const bool               printFlows = false);
-   void stopMeasurement(const int                 controlSocketID,
+   void stopMeasurement(const int                 controlSocket,
                         const uint64_t            measurementID,
                         const bool                printFlows = false,
                         const unsigned long long  now        = getMicroTime());
@@ -194,7 +194,7 @@ class Flow : public Thread
         const uint32_t         flowID,
         const uint16_t         streamID,
         const FlowTrafficSpec& trafficSpec,
-        const int              controlSocketDescriptor = -1);
+        const int              controlSocket = -1);
    virtual ~Flow();
 
 
