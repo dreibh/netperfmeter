@@ -30,165 +30,21 @@
 #ifndef FLOW_H
 #define FLOW_H
 
-#include "thread.h"
+#include "cpustatus.h"
+#include "defragmenter.h"
+#include "flowbandwidthstats.h"
+#include "flowmanager.h"
+#include "flowtrafficspec.h"
+#include "measurement.h"
 #include "messagereader.h"
 #include "outputfile.h"
-#include "flowbandwidthstats.h"
-#include "flowtrafficspec.h"
-#include "defragmenter.h"
-#include "measurement.h"
-#include "cpustatus.h"
+#include "thread.h"
 #include "tools.h"
 
-#include <poll.h>
+// #include <poll.h>
 
 #include <vector>
 #include <map>
-
-
-class Flow;
-
-class FlowManager : public Thread
-{
-   friend class Flow;
-
-   // ====== Methods ========================================================
-   protected:
-   FlowManager();
-   virtual ~FlowManager();
-
-   public:
-   inline static FlowManager* getFlowManager() {
-      return &FlowManagerSingleton;
-   }
-   inline MessageReader* getMessageReader() {
-      return &Reader;
-   }
-   inline std::vector<Flow*>& getFlowSet() {   // Internal usage only!
-      return FlowSet;
-   }
-
-   inline void enableDisplay() {
-      lock();
-      DisplayOn = true;
-      unlock();
-   }
-   inline void disableDisplay() {
-      lock();
-      DisplayOn = false;
-      unlock();
-   }
-
-   void addSocket(const int protocol, const int socketDescriptor);
-   void removeSocket(const int  socketDescriptor,
-                     const bool closeSocket = true);
-   Flow* identifySocket(const uint64_t         measurementID,
-                        const uint32_t         flowID,
-                        const uint16_t         streamID,
-                        const int              socketDescriptor,
-                        const sockaddr_union*  from,
-                        const OutputFileFormat vectorFileFormat,
-                        int&                   controlSocket);
-
-   void addFlow(Flow* flow);
-   void removeFlow(Flow* flow);
-   void printFlows(std::ostream& os,
-                   const bool    printStatistics);
-
-   bool startMeasurement(const int                controlSocket,
-                         const uint64_t           measurementID,
-                         const unsigned long long now,
-                         const char*              vectorNamePattern,
-                         const OutputFileFormat   vectorFileFormat,
-                         const char*              scalarNamePattern,
-                         const OutputFileFormat   scalarFileFormat,
-                         const bool               printFlows = false);
-   void stopMeasurement(const int                 controlSocket,
-                        const uint64_t            measurementID,
-                        const bool                printFlows = false,
-                        const unsigned long long  now        = getMicroTime());
-
-   void writeScalarStatistics(const uint64_t           measurementID,
-                              const unsigned long long now,
-                              OutputFile&              scalarFile,
-                              const unsigned long long firstStatisticsEvent);
-   void writeVectorStatistics(const uint64_t           measurementID,
-                              const unsigned long long now,
-                              OutputFile&              vectorFile,
-                              FlowBandwidthStats&      globalStats,
-                              FlowBandwidthStats&      relGlobalStats,
-                              const unsigned long long firstStatisticsEvent,
-                              const unsigned long long lastStatisticsEvent);
-
-   Flow* findFlow(const uint64_t measurementID,
-                  const uint32_t flowID,
-                  const uint16_t streamID);
-   Flow* findFlow(const int socketDescriptor,
-                  uint16_t  streamID);
-   Flow* findFlow(const struct sockaddr* from);
-
-
-   bool addMeasurement(const int controlSocket, Measurement* measurement);
-   Measurement* findMeasurement(const int controlSocket, const uint64_t measurementID);
-   void removeMeasurement(const int controlSocket, Measurement* measurement);
-   void removeAllMeasurements(const int controlSocket);
-   void printMeasurements(std::ostream& os);
-
-
-   // ====== Protected Methods ==============================================
-   protected:
-   void run();
-
-
-   // ====== Private Methods ================================================
-   unsigned long long getNextEvent();
-   void handleEvents(const unsigned long long now);
-
-
-   // ====== Private Data ===================================================
-   private:
-   static FlowManager                 FlowManagerSingleton;
-
-   // ------ Flow Management ------------------------------------------------
-   MessageReader                      Reader;
-   std::vector<Flow*>                 FlowSet;
-   bool                               UpdatedUnidentifiedSockets;
-   bool                               DisplayOn;
-   FlowBandwidthStats                 CurrentGlobalStats;
-   FlowBandwidthStats                 LastGlobalStats;
-
-   // ------ Measurement Management -----------------------------------------
-   std::map<std::pair<int, uint64_t>,
-            Measurement*>             MeasurementSet;
-   unsigned long long                 DisplayInterval;
-   unsigned long long                 FirstDisplayEvent;
-   unsigned long long                 LastDisplayEvent;
-   unsigned long long                 NextDisplayEvent;
-   CPUStatus                          CPULoadStats;
-   FlowBandwidthStats                 GlobalStats;      // For displaying only
-   FlowBandwidthStats                 RelGlobalStats;   // For displaying only
-   CPUStatus                          CPUDisplayStats;  // For displaying only
-
-   struct UnidentifiedSocket {
-      int     SocketDescriptor;
-      int     Protocol;
-      pollfd* PollFDEntry;
-   };
-   std::map<int, UnidentifiedSocket*> UnidentifiedSockets;
-};
-
-
-int createAndBindSocket(const int             family,
-                        const int             type,
-                        const int             protocol,
-                        const uint16_t        localPort,
-                        const unsigned int    localAddresses,
-                        const sockaddr_union* localAddressArray,
-                        const bool            listenMode,
-                        const bool            bindV6Only);
-bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize);
-
-
 
 
 class Flow : public Thread

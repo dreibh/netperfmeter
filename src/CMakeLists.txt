@@ -43,6 +43,8 @@ ADD_EXECUTABLE(netperfmeter
    flowbandwidthstats.h
    flow.cc
    flow.h
+   flowmanager.cc
+   flowmanager.h
    flowtrafficspec.cc
    flowtrafficspec.h
    loglevel.cc
@@ -136,8 +138,8 @@ IF (BUILD_TEST_PROGRAMS)
 ENDIF()
 
 
-ADD_EXECUTABLE(t1 t1.cc loglevel.cc tools.cc mutex.cc)
-TARGET_LINK_LIBRARIES(t1 ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
+# ADD_EXECUTABLE(t1 t1.cc loglevel.cc tools.cc mutex.cc)
+# TARGET_LINK_LIBRARIES(t1 ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
 
 
 #############################################################################
