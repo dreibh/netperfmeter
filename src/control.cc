@@ -28,6 +28,7 @@
  */
 
 #include "control.h"
+#include "loglevel.h"
 #include "tools.h"
 
 #include <string.h>
@@ -38,7 +39,7 @@
 #include <iostream>
 
 
-unsigned int         gOutputVerbosity = 9;
+unsigned int         gOutputVerbosity = 9;   // FIXME!
 extern MessageReader gMessageReader;
 
 
@@ -660,20 +661,15 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    pfd.revents = 0;
    const int result = ext_poll_wrapper(&pfd, 1, timeout);
    if(result < 1) {
-      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-         gOutputMutex.lock();
-         std::cerr << "<timeout> ";
-         std::cerr.flush();
-         gOutputMutex.unlock();
-      }
+      LOG_DEBUG
+      stdlog << "<timeout>" << "\n";
+      LOG_END
       return false;
    }
-   if(!(pfd.revents & (POLLIN|POLLERR))) {
-      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-         gOutputMutex.lock();
-         std::cerr << "<no answer> ";
-         gOutputMutex.unlock();
-      }
+   if(!(pfd.revents & POLLIN)) {
+      LOG_DEBUG
+      stdlog << "<no answer>" << "\n";
+      LOG_END
       return false;
    }
 
@@ -687,11 +683,10 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
       return false;
    }
    if(ackMsg.Header.Type != NETPERFMETER_ACKNOWLEDGE) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: Received message type " << (unsigned int)ackMsg.Header.Type
-                << " instead of NETPERFMETER_ACKNOWLEDGE!\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("Received message type 0x%02x instead of NETPERFMETER_ACKNOWLEDGE on socket %d!",
+                       (unsigned int)ackMsg.Header.Type, controlSocket) << "\n";
+      LOG_END
       return false;
    }
 
@@ -699,20 +694,17 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    if( (ntoh64(ackMsg.MeasurementID) != measurementID) ||
        (ntohl(ackMsg.FlowID) != flowID) ||
        (ntohs(ackMsg.StreamID) != streamID) ) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: Received NETPERFMETER_ACKNOWLEDGE for wrong measurement/flow/stream!\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("Received NETPERFMETER_ACKNOWLEDGE for wrong measurement/flow/stream on socket %d!",
+                       controlSocket) << "\n";
+      LOG_END
       return false;
    }
 
    const uint32_t status = ntohl(ackMsg.Status);
-   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-      gOutputMutex.lock();
-      std::cerr << "<status=" << status << "> ";
-      std::cerr.flush();
-      gOutputMutex.unlock();
-   }
+   LOG_DEBUG
+   stdlog << format("<status=%u>", status) << "\n";
+   LOG_END
    return status == NETPERFMETER_STATUS_OKAY;
 }
 

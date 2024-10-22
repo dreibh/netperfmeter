@@ -40,7 +40,7 @@
 
 
 std::ostream* gStdLog        = &std::cerr;
-unsigned int  gLogLevel      = LOGLEVEL_ERROR;
+unsigned int  gLogLevel      = LOGLEVEL_TRACE;
 bool          gColorMode     = true;
 bool          gCloseStdLog   = false;
 char          gHostName[256] = { 0x00 };

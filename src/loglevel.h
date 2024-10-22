@@ -69,8 +69,10 @@ extern Mutex         gLogMutex;
 
 #define LOG_END_FATAL                          \
       *gStdLog << "FATAL ERROR - ABORTING!\n"; \
-      setLogColor(0);                          \
-      *gStdLog->flush();                       \
+      if(gColorMode) {                         \
+        *gStdLog << "\e[0m";                   \
+      }                                        \
+      gStdLog->flush();                        \
       abort();                                 \
    }
 

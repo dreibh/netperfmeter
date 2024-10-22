@@ -5,4 +5,10 @@ set -eu
 make
 rm -f vgcore.* core.* core
 
-./netperfmeter localhost:9000 -control-over-tcp -udp const30:const68000:const30:const68000:maxmsgsize=1300 -runtime=3
+./netperfmeter localhost:9000 \
+   -control-over-tcp \
+   -scalar=x.sca.bz2 -vector=x.vec.bz2 \
+   -udp const30:const68000:const30:const68000:maxmsgsize=1300 \
+   -runtime=3
+
+# ./netperfmeter localhost:9000 -sctp const30:const68000:const30:const68000:maxmsgsize=1300 -runtime=3

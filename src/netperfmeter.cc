@@ -40,6 +40,7 @@
 
 #include "flow.h"
 #include "control.h"
+#include "loglevel.h"
 #include "transfer.h"
 
 
@@ -74,7 +75,10 @@ MessageReader         gMessageReader;
 // ###### Handle global command-line parameter ##############################
 bool handleGlobalParameter(char* parameter)
 {
-   if(strncmp(parameter, "-runtime=", 9) == 0) {
+   if(!(strncmp(parameter, "-log" ,4))) {
+      return initLogging(parameter);
+   }
+   else if(strncmp(parameter, "-runtime=", 9) == 0) {
       gRuntime = atof((const char*)&parameter[9]);
    }
    else if(strcmp(parameter, "-control-over-tcp") == 0) {
@@ -1146,8 +1150,9 @@ void activeMode(int argc, char** argv)
    // ====== Initialize remote and control addresses ========================
    sockaddr_union remoteAddress;
    if(string2address(argv[1], &remoteAddress) == false) {
-      std::cerr << "ERROR: Invalid remote address " << argv[1] << "!\n";
-      exit(1);
+      LOG_FATAL
+      std::cerr << format("ERROR: Invalid remote address %s", argv[1]) << "!\n";
+      LOG_END_FATAL
    }
    if(getPort(&remoteAddress.sa) < 2) {
       setPort(&remoteAddress.sa, 9000);
@@ -1185,24 +1190,27 @@ void activeMode(int argc, char** argv)
                                         0, gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                         false, gBindV6Only);
    if(gControlSocket < 0) {
-      std::cerr << "ERROR: Failed to create and bind SCTP socket - "
-                << strerror(errno) << "!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << format("Failed to create and bind control socket: %s!",
+                       strerror(errno)) << "\n";
+      LOG_END_FATAL
    }
    if(gControlOverTCP == false) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
-         std::cerr << "ERROR: Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket - "
-                   << strerror(errno) << "!\n";
-         exit(1);
+         LOG_FATAL
+         stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket: %s!",
+                          strerror(errno)) << "\n";
+         LOG_END_FATAL
       }
    }
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
-      std::cerr << "ERROR: Unable to establish control association - "
-                << strerror(errno) << "!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << format("Unable to establish control association: %s!",
+                       strerror(errno)) << "\n";
+      LOG_END_FATAL
    }
    if(gControlOverTCP == false) {
       sctp_paddrparams paddr;
@@ -1211,21 +1219,11 @@ void activeMode(int argc, char** argv)
       paddr.spp_flags      = SPP_HB_ENABLE;
       paddr.spp_hbinterval = 30000;
       if(setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, sizeof(paddr)) < 0) {
-         std::cerr << "WARNING: Unable to enable heartbeats on control association - "
-                   << strerror(errno) << "!\n";
+         LOG_WARNING
+         stdlog << format("Unable to enable heartbeats on control association: %s!",
+                          strerror(errno)) << "\n";
+         LOG_END
       }
-#if 0
-      memset(&paddr, 0, sizeof(paddr));
-      memcpy(&paddr.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
-      socklen_t l = sizeof(paddr);
-      if(getsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, &l) < 0) {
-         std::cerr << "ERROR: Unable to check heartbeats on control association - "
-                   << strerror(errno) << "!\n";
-         exit(1);
-      }
-      printf("HeartbeatInterval=%u\n", paddr.spp_hbinterval);
-      exit(1);
-#endif
    }
    if(gOutputVerbosity >= NPFOV_STATUS) {
       std::cout << "okay; sd=" << gControlSocket << "\n" << "\n";
@@ -1263,14 +1261,16 @@ void activeMode(int argc, char** argv)
 #ifdef HAVE_DCCP
             protocol = IPPROTO_DCCP;
 #else
-            std::cerr << "ERROR: DCCP support is not compiled in!\n";
-            exit(1);
+            LOG_FATAL
+            stdlog << "ERROR: DCCP support is not compiled in!" << "\n";
+            LOG_END_FATAL
 #endif
          }
          else if(strncmp(argv[i], "-vector=", 8) == 0) {
             if(hasFlow) {
-               std::cerr << "ERROR: Vector file must be set *before* first flow!\n";
-               exit(1);
+               LOG_FATAL
+               stdlog << "ERROR: Vector file must be set *before* first flow!" << "\n";
+               LOG_END_FATAL
             }
             vectorNamePattern = (const char*)&argv[i][8];
             if(vectorNamePattern[0] == 0x00)
@@ -1284,8 +1284,9 @@ void activeMode(int argc, char** argv)
          }
          else if(strncmp(argv[i], "-scalar=", 8) == 0) {
             if(hasFlow) {
-               std::cerr << "ERROR: Scalar file must be set *before* first flow!\n";
-               exit(1);
+               LOG_FATAL
+               stdlog << "ERROR: Scalar file must be set *before* first flow!" << "\n";
+               LOG_END_FATAL
             }
             scalarNamePattern = (const char*)&argv[i][8];
             if(scalarNamePattern[0] == 0x00)
@@ -1301,15 +1302,17 @@ void activeMode(int argc, char** argv)
             configName = (const char*)&argv[i][8];
          }
          else {
-            std::cerr << "Invalid argument: " << argv[i] << "!\n";
-            exit(1);
+            LOG_FATAL
+            stdlog << format("Invalid argument %s!", argv[i]) << "\n";
+            LOG_END_FATAL
          }
       }
       else {
          if(protocol == 0) {
-            std::cerr << "ERROR: Protocol specification needed before flow specification at argument \""
-                      << argv[i] << "\"!\n";
-            exit(1);
+            LOG_FATAL
+            stdlog << format("Protocol specification needed before flow specification at argument %s!",
+                             argv[i]) << "\n";
+            LOG_END_FATAL
          }
 
          lastFlow = createFlow(lastFlow, argv[i], measurementID,
@@ -1318,8 +1321,9 @@ void activeMode(int argc, char** argv)
          hasFlow = true;
 
          if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
-            std::cerr << "\n" << "ERROR: Failed to add flow to remote node!\n";
-            exit(1);
+            LOG_FATAL
+            stdlog << "ERROR: Failed to add flow to remote node!\n";
+            LOG_END_FATAL
          }
          if(gOutputVerbosity >= NPFOV_STATUS) {
             std::cout << "okay\n";
@@ -1344,8 +1348,9 @@ void activeMode(int argc, char** argv)
                                 configName,
                                 vectorNamePattern, vectorFileFormat,
                                 scalarNamePattern, scalarFileFormat)) {
-      std::cerr << "ERROR: Failed to start measurement!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << "ERROR: Failed to start measurement!\n";
+      LOG_END_FATAL
    }
 
 
@@ -1374,12 +1379,13 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Stop measurement ===============================================
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      std::cout << "Shutdown:\n";
-   }
+   LOG_INFO
+   stdlog << "Shutdown" << "\n";
+   LOG_END
    if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID)) {
-      std::cerr << "ERROR: Failed to stop measurement and download the results!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << "ERROR: Failed to stop measurement and download the results!\n";
+      LOG_END_FATAL
    }
 }
 
