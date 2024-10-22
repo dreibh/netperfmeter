@@ -288,9 +288,9 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
                   std::cerr << " on socket " << sd << "!\n";
                   gOutputMutex.unlock();
                }
-            }
-            if(protocol != IPPROTO_UDP) {
-               ext_shutdown(sd, 2);
+               if(protocol != IPPROTO_UDP) {
+                  ext_shutdown(sd, 2);
+               }
             }
          }
          else {
