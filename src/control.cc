@@ -1075,8 +1075,8 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
                       (const NetPerfMeterStopMessage*)&inputBuffer, received);
          default:
             LOG_WARNING
-            stdlog << format("Received invalid control message of type $%02x!",
-                             (unsigned int)header->Type) << "\n";
+            stdlog << format("Received invalid control message of type $%02x on socket %d!",
+                             (unsigned int)header->Type, controlSocket) << "\n";
             LOG_END
             ext_shutdown(controlSocket, SHUT_RDWR);
             return false;
