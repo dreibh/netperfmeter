@@ -75,8 +75,8 @@ MessageReader         gMessageReader;
 // ###### Handle global command-line parameter ##############################
 bool handleGlobalParameter(char* parameter)
 {
-   if(!(strncmp(parameter, "-log" ,4))) {
-      return initLogging(parameter);
+   if(strncmp(parameter, "-log", 4) == 0) {
+      // Already handled!
    }
    else if(strncmp(parameter, "-runtime=", 9) == 0) {
       gRuntime = atof((const char*)&parameter[9]);
@@ -106,12 +106,6 @@ bool handleGlobalParameter(char* parameter)
       gBindV6Only = true;
    }
    else if(strcmp(parameter, "-quiet") == 0) {
-      // Already handled before!
-   }
-   else if(strcmp(parameter, "-verbose") == 0) {
-      // Already handled before!
-   }
-   else if(strncmp(parameter, "-verbosity=", 11) == 0) {
       // Already handled before!
    }
    else if(strcmp(parameter, "-display") == 0) {
@@ -170,43 +164,43 @@ bool handleGlobalParameter(char* parameter)
 // ###### Print global parameter settings ###################################
 void printGlobalParameters()
 {
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      std::cout << "Global Parameters:\n"
-               << "   - Runtime                   = ";
-      if(gRuntime >= 0.0) {
-         std::cout << gRuntime << "s\n";
-      }
-      else {
-         std::cout << "until manual stop\n";
-      }
-      std::cout << "   - Active Node Name          = " << gActiveNodeName  << "\n"
-                << "   - Passive Node Name         = " << gPassiveNodeName << "\n";
-      std::cout << "   - Local Data Address(es)    = ";
-      if(gLocalDataAddresses > 0) {
-         for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
-            if(i > 0) {
-               std::cout << ", ";
-            }
-            printAddress(std::cout, &gLocalDataAddressArray[i].sa, false);
-         }
-      }
-      else {
-         std::cout << "(any)";
-      }
-      std::cout << "\n   - Local Control Address(es) = ";
-      if(gLocalControlAddresses > 0) {
-         for(unsigned int i = 0;i < gLocalControlAddresses;i++) {
-            if(i > 0) {
-               std::cout << ", ";
-            }
-            printAddress(std::cout, &gLocalControlAddressArray[i].sa, false);
-         }
-      }
-      else {
-         std::cout << "(any)";
-      }
-      std::cout << "\n   - Logging Verbosity         = " << gOutputVerbosity << "\n\n";
+   LOG_INFO
+   stdlog << "Global Parameters:\n"
+          << "   - Runtime                   = ";
+   if(gRuntime >= 0.0) {
+      stdlog << gRuntime << " s\n";
    }
+   else {
+      stdlog << "until manual stop\n";
+   }
+   stdlog << "   - Active Node Name          = " << gActiveNodeName  << "\n"
+          << "   - Passive Node Name         = " << gPassiveNodeName << "\n"
+          << "   - Local Data Address(es)    = ";
+   if(gLocalDataAddresses > 0) {
+      for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
+         if(i > 0) {
+            stdlog << ", ";
+         }
+         printAddress(stdlog, &gLocalDataAddressArray[i].sa, false);
+      }
+   }
+   else {
+      stdlog << "(any)";
+   }
+   stdlog << "\n   - Local Control Address(es) = ";
+   if(gLocalControlAddresses > 0) {
+      for(unsigned int i = 0;i < gLocalControlAddresses;i++) {
+         if(i > 0) {
+            stdlog << ", ";
+         }
+         printAddress(stdlog, &gLocalControlAddressArray[i].sa, false);
+      }
+   }
+   else {
+      stdlog << "(any)";
+   }
+   stdlog << "\n   - Logging Verbosity         = " << gLogLevel << "\n\n";
+   LOG_END
 }
 
 
@@ -647,25 +641,24 @@ static Flow* createFlow(Flow*                  previousFlow,
    }
 
    // ====== Print information ==============================================
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      std::cout << "Flow #" << flow->getFlowID() << ": connecting "
-                << getProtocolName(trafficSpec.Protocol) << " socket to ";
-      printAddress(std::cout, &destinationAddress.sa, true);
-      std::cout << " from ";
-      if(gLocalDataAddresses > 0) {
-         for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
-            if(i > 0) {
-               std::cout << ", ";
-            }
-            printAddress(std::cout, &gLocalDataAddressArray[i].sa, false);
+   LOG_INFO
+   stdlog << format("Flow #%u: connecting %s socket to",
+                     flow->getFlowID(), getProtocolName(trafficSpec.Protocol)) << " ";
+   printAddress(stdlog, &destinationAddress.sa, true);
+   stdlog << " from ";
+   if(gLocalDataAddresses > 0) {
+      for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
+         if(i > 0) {
+            stdlog << ", ";
          }
+         printAddress(stdlog, &gLocalDataAddressArray[i].sa, false);
       }
-      else {
-         std::cout << "(any)";
-      }
-      std::cout << " ... ";
-      std::cout.flush();
    }
+   else {
+      stdlog << "(any)";
+   }
+   stdlog << " ...\n";
+   LOG_END
 
    // ====== Set up socket ==================================================
    int  socketDescriptor;
@@ -674,10 +667,10 @@ static Flow* createFlow(Flow*                  previousFlow,
    if(previousFlow) {
       originalSocketDescriptor = false;
       socketDescriptor         = previousFlow->getSocketDescriptor();
-      if(gOutputVerbosity >= NPFOV_STATUS) {
-         std::cout << "Flow #" << flow->getFlowID()
-            << ": connection okay <sd=" << socketDescriptor << "> ";
-      }
+      LOG_INFO
+      stdlog << format("Flow #%u: connected socket %d",
+                       flow->getFlowID(), socketDescriptor) << "\n";
+      LOG_END
    }
    else {
       originalSocketDescriptor = true;
@@ -756,11 +749,10 @@ static Flow* createFlow(Flow*                  previousFlow,
          exit(1);
       }
 
-      if(gOutputVerbosity >= NPFOV_STATUS) {
-         std::cout << "okay <sd=" << socketDescriptor << "> ";
-      }
+      LOG_TRACE
+      stdlog << "okay <sd=" << socketDescriptor << ">\n";
+      LOG_END
    }
-   std::cout.flush();
 
    // ====== Update flow with socket descriptor =============================
    flow->setSocketDescriptor(socketDescriptor, originalSocketDescriptor);
@@ -841,11 +833,10 @@ bool mainLoop(const bool               isActiveMode,
                   gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
                }
                else {
-                  gOutputMutex.lock();
-                  printTimeStamp(std::cerr);
-                  std::cerr << "Accept on SCTP control socket " << gControlSocket << " failed: "
-                            << strerror(errno) << "\n";
-                  gOutputMutex.unlock();
+                  LOG_ERROR
+                  stdlog << format("Accept on SCTP control socket %d failed: %s!",
+                                   gControlSocket, strerror(errno)) << "\n";
+                  LOG_END
                }
             }
             else if( (isActiveMode == false) &&
@@ -855,11 +846,10 @@ bool mainLoop(const bool               isActiveMode,
                   gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                }
                else {
-                  gOutputMutex.lock();
-                  printTimeStamp(std::cerr);
-                  std::cerr << "Accept on TCP control socket " << gControlSocketTCP << " failed: "
-                            << strerror(errno) << "\n";
-                  gOutputMutex.unlock();
+                  LOG_ERROR
+                  stdlog << format("Accept on TCP control socket %d failed: %s!",
+                                   gControlSocketTCP, strerror(errno)) << "\n";
+                  LOG_END
                }
             }
             else {
@@ -929,8 +919,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    // ====== Set options ====================================================
    for(int i = 2;i < argc;i++) {
       if(!handleGlobalParameter(argv[i])) {
-         std::cerr << "Invalid argument: " << argv[i] << "!\n";
-         exit(1);
+         LOG_FATAL
+         stdlog << format("Invalid argument %s!", argv[i]) << "\n";
+         LOG_END_FATAL
       }
    }
    printGlobalParameters();
@@ -941,10 +932,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    assert(string2address("172.17.0.1:0", &testAddress));
    int testSD = createAndBindSocket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, 0, 1, &testAddress, true, false);
    if(testSD >= 0) {
-      std::cerr << "NOTE: This machine seems to have an interface with address 172.17.0.1!\n"
-                   "This is typically used by Docker setups. If you connect from another machine\n"
-                   "having the same configuration, in an environment with only private addresses,\n"
-                   "SCTP may try to use this address -> OOTB ABORT.\n";
+      LOG_WARNING
+      stdlog << "NOTE: This machine seems to have an interface with address 172.17.0.1! This is typically used by Docker setups. If you connect from another machine having the same configuration, in an environment with only private addresses SCTP may try to use this address -> OOTB ABORT." << "\n";
+      LOG_END
       ext_close(testSD);
    }
 
@@ -954,9 +944,10 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                                         gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                         true, gBindV6Only);
    if(gControlSocket < 0) {
-      std::cerr << "ERROR: Failed to create and bind SCTP socket for control port on port " << localPort + 1 << " - "
-                << strerror(errno) << "!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << format("Failed to create and bind SCTP socket on port %d: %s!",
+                       localPort + 1, strerror(errno)) << "\n";
+      LOG_END_FATAL
    }
    sctp_event_subscribe events;
    if(!gControlOverTCP) {
@@ -965,9 +956,10 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
-         std::cerr << "ERROR: Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket - "
-                   << strerror(errno) << "!\n";
-         exit(1);
+         LOG_FATAL
+         stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
+                          gControlSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
       }
 
       // ------ Enable SCTP events ------------------------------------------
@@ -975,9 +967,10 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       events.sctp_data_io_event     = 1;
       events.sctp_association_event = 1;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-         std::cerr << "ERROR: Failed to configure events (SCTP_EVENTS) on SCTP control socket - "
-                   << strerror(errno) << "!\n";
-         exit(1);
+         LOG_FATAL
+         stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
+                           gControlSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
       }
    }
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
@@ -985,9 +978,10 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP,
                                            localPort + 1, 0, nullptr, true, gBindV6Only);
    if(gControlSocketTCP < 0) {
-      std::cerr << "ERROR: Failed to create and bind TCP socket for control port - "
-                << strerror(errno) << "!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << format("Failed to create and bind TCP socket on port %d: %s!",
+                       localPort + 1, strerror(errno)) << "\n";
+      LOG_END_FATAL
    }
    gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
 
@@ -995,42 +989,53 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gTCPSocket < 0) {
-      std::cerr << "ERROR: Failed to create and bind TCP socket on port " << localPort << " - "
-                << strerror(errno) << "!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << format("Failed to create and bind TCP socket on port %d: %s!",
+                       localPort, strerror(errno)) << "\n";
+      LOG_END_FATAL
    }
    if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
-      exit(1);
+      LOG_FATAL
+      stdlog << format("Failed to configure buffer sizes on TCP socket %d!",
+                        gSCTPSocket) << "\n";
+      LOG_END_FATAL
    }
 
 #ifdef HAVE_MPTCP
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
                                       gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
    if(gMPTCPSocket < 0) {
-      if(gOutputVerbosity >= NPFOV_STATUS) {
-         std::cerr << "NOTE: Unable to create and bind MPTCP socket on port " << localPort - 1 << " - "
-                   << strerror(errno) << "!\n";
-      }
+      LOG_DEBUG
+      stdlog << format("NOTE: Failed to create and bind MPTCP socket on port %d: %s!",
+                        localPort - 1, strerror(errno)) << "\n";
+      LOG_END
    }
    else {
       if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER_LEGACY, gPathMgr, strlen(gPathMgr)) < 0) {
          if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER, gPathMgr, strlen(gPathMgr)) < 0) {
             if(strcmp(gPathMgr, "default") != 0) {
-               std::cerr << "WARNING: Failed to set MPTCP_PATH_MANAGER on socket - "
-                         << strerror(errno) << "!\n";
+               LOG_WARNING
+               stdlog << format("Failed to configure path manager %s (MPTCP_PATH_MANAGER option) on MPTCP socket %d: %s!",
+                                gPathMgr, gMPTCPSocket, strerror(errno)) << "\n";
+               LOG_END
             }
          }
       }
       if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER_LEGACY, gScheduler, strlen(gScheduler)) < 0) {
          if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER, gScheduler, strlen(gScheduler)) < 0) {
             if(strcmp(gScheduler, "default") != 0) {
-               std::cerr << "WARNING: Failed to set MPTCP_SCHEDULER on socket - "
-                         << strerror(errno) << "!\n";
+               LOG_WARNING
+               stdlog << format("Failed to configure scheduler %s (MPTCP_SCHEDULER option) on MPTCP socket %d: %s!",
+                                gScheduler, gMPTCPSocket, strerror(errno)) << "\n";
+               LOG_END
             }
          }
       }
       if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
-         exit(1);
+         LOG_FATAL
+         stdlog << format("Failed to configure buffer sizes on MPTCP socket %d!",
+                          gMPTCPSocket) << "\n";
+         LOG_END_FATAL
       }
       ext_listen(gMPTCPSocket, 100);
    }
@@ -1050,17 +1055,24 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gDCCPSocket < 0) {
-      std::cerr << "NOTE: Your kernel does not provide DCCP support.\n";
+      LOG_INFO
+      stdlog << format("NOTE: Failed to create and bind DCCP socket on port %d: %s!",
+                        localPort, strerror(errno)) << "\n";
+      LOG_END
    }
    else {
       const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
-         std::cerr << "ERROR: Failed to configure DCCP service code on DCCP socket (DCCP_SOCKOPT_SERVICE option) - "
-                   << strerror(errno) << "!\n";
-         exit(1);
+         LOG_FATAL
+         stdlog << format("Failed to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket: %s!",
+                           (unsigned int)ntohl(service[0]), gDCCPSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
       }
       if(setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize) == false) {
-         exit(1);
+         LOG_FATAL
+         stdlog << format("Failed to configure buffer sizes on DCCP socket %d!",
+                          gDCCPSocket) << "\n";
+         LOG_END_FATAL
       }
    }
 #endif
@@ -1080,39 +1092,44 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    initmsg.sinit_max_instreams = 65535;
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG,
                      &initmsg, sizeof(initmsg)) < 0) {
-      std::cerr << "ERROR: Failed to configure INIT parameters on SCTP socket - "
-                << strerror(errno) << "!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << format("Failed to configure INIT parameters (SCTP_INITMSG option) on SCTP socket %d: %s!",
+                        gSCTPSocket, strerror(errno)) << "\n";
+      LOG_END_FATAL
    }
 
    // ------ Enable SCTP events ---------------------------------------------
    memset((char*)&events, 0 ,sizeof(events));
    events.sctp_data_io_event = 1;
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-      std::cerr << "ERROR: Failed to configure events on SCTP socket - "
-                << strerror(errno) << "!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
+                        gSCTPSocket, strerror(errno)) << "\n";
+      LOG_END_FATAL
    }
 
    // ------ Set SCTP buffer sizes ------------------------------------------
    if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
-      exit(1);
+      LOG_FATAL
+      stdlog << format("Failed to configure buffer sizes on SCTP socket %d!",
+                        gSCTPSocket) << "\n";
+      LOG_END_FATAL
    }
 
 
    // ====== Print status ===================================================
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      std::cout << "Passive Mode: Accepting TCP"
-                << ((gMPTCPSocket > 0) ? "+MPTCP" : "")
-                << "/UDP/SCTP" << ((gDCCPSocket > 0) ? "/DCCP" : "")
-                << " connections on port " << localPort << "\n\n";
-   }
+   LOG_INFO
+   stdlog << format("Passive Mode: Accepting TCP%s/UDP/SCTP%s connections on port %u",
+                    ((gMPTCPSocket > 0) ? "+MPTCP" : ""),
+                    ((gDCCPSocket > 0)  ? "/DCCP"  : ""),
+                    localPort) << "\n";
+   LOG_END
 
 
    // ====== Main loop ======================================================
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
-   if( (gDisplayEnabled) && (gOutputVerbosity >= NPFOV_BANDWIDTH_INFO) ) {
+   if(gDisplayEnabled) {
       FlowManager::getFlowManager()->enableDisplay();
    }
 
@@ -1167,17 +1184,16 @@ void activeMode(int argc, char** argv)
    // ====== Initialize IDs and print status ================================
    uint64_t measurementID = random64();
 
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      std::cout << "Active Mode:\n"
-                << "   - Measurement ID  = " << format("%lx", measurementID) << "\n"
-                << "   - Remote Address  = ";
-      printAddress(std::cout, &remoteAddress.sa, true);
-      std::cout << "\n"
-                << "   - Control Address = ";
-      printAddress(std::cout, &controlAddress.sa, true);
-      std::cout << " - connecting ... ";
-      std::cout.flush();
-   }
+   LOG_INFO
+   stdlog << "Active Mode:\n"
+          << "   - Measurement ID  = " << format("%lx", measurementID) << "\n"
+          << "   - Remote Address  = ";
+   printAddress(stdlog, &remoteAddress.sa, true);
+   stdlog << "\n"
+          << "   - Control Address = ";
+   printAddress(stdlog, &controlAddress.sa, true);
+   stdlog << " - connecting ..." << "\n";
+   LOG_END
 
    // ====== Initialize control socket ======================================
    for(int i = 2;i < argc;i++) {
@@ -1225,9 +1241,9 @@ void activeMode(int argc, char** argv)
          LOG_END
       }
    }
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      std::cout << "okay; sd=" << gControlSocket << "\n" << "\n";
-   }
+   LOG_TRACE
+   stdlog << "<okay; sd=" << gControlSocket << ">\n";
+   LOG_END
    gMessageReader.registerSocket(controlSocketProtocol, gControlSocket);
 
 
@@ -1325,9 +1341,9 @@ void activeMode(int argc, char** argv)
             stdlog << "ERROR: Failed to add flow to remote node!\n";
             LOG_END_FATAL
          }
-         if(gOutputVerbosity >= NPFOV_STATUS) {
-            std::cout << "okay\n";
-         }
+         LOG_TRACE
+         stdlog << "<okay; sd=" << gControlSocket << ">\n";
+         LOG_END
 
          if(protocol != IPPROTO_SCTP) {
             lastFlow = nullptr;
@@ -1335,10 +1351,6 @@ void activeMode(int argc, char** argv)
          }
       }
    }
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      std::cout << "\n";
-   }
-
    printGlobalParameters();
 
 
@@ -1359,7 +1371,7 @@ void activeMode(int argc, char** argv)
       (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
-   if( (gDisplayEnabled) && (gOutputVerbosity >= NPFOV_BANDWIDTH_INFO) ) {
+   if(gDisplayEnabled) {
       FlowManager::getFlowManager()->enableDisplay();
    }
 
@@ -1370,11 +1382,9 @@ void activeMode(int argc, char** argv)
       }
    }
 
-   if(gOutputVerbosity >= NPFOV_BANDWIDTH_INFO) {
-      FlowManager::getFlowManager()->disableDisplay();
-      if(gStopTimeReached) {
-         std::cout << "\n";
-      }
+   FlowManager::getFlowManager()->disableDisplay();
+   if(gStopTimeReached) {
+      std::cout << "\n";
    }
 
 
@@ -1401,23 +1411,17 @@ int main(int argc, char** argv)
       return 0;
    }
 
-   for(int i = 2;i < argc;i++) {
-      if(strcmp(argv[i], "-quiet") == 0) {
-         if(gOutputVerbosity > 0) {
-            gOutputVerbosity--;
+   for(int i = 2; i < argc; i++) {
+      if(!(strncmp(argv[i], "-log" , 4))) {
+         if(!initLogging(argv[i])) {
+            return 1;
          }
       }
-      else if(strcmp(argv[i], "-verbose") == 0) {
-         gOutputVerbosity++;
-      }
-      else if(strncmp(argv[i], "-verbosity=", 11) == 0) {
-         gOutputVerbosity = atol((const char*)&argv[i][11]);
-      }
    }
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      std::cout << "Network Performance Meter\n"
-           << "-------------------------\n\n";
-   }
+   LOG_INFO
+   stdlog << "Network Performance Meter\n"
+          << "-------------------------\n\n";
+   LOG_END
 
    const uint16_t localPort = atol(argv[1]);
    if( (localPort >= 1024) && (localPort < 65535) ) {

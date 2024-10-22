@@ -101,12 +101,10 @@ class FlowManager : public Thread
                          const char*              vectorNamePattern,
                          const OutputFileFormat   vectorFileFormat,
                          const char*              scalarNamePattern,
-                         const OutputFileFormat   scalarFileFormat,
-                         const bool               printFlows = false);
+                         const OutputFileFormat   scalarFileFormat);
    void stopMeasurement(const int                 controlSocket,
                         const uint64_t            measurementID,
-                        const bool                printFlows = false,
-                        const unsigned long long  now        = getMicroTime());
+                        const unsigned long long  now = getMicroTime());
 
    void writeScalarStatistics(const uint64_t           measurementID,
                               const unsigned long long now,

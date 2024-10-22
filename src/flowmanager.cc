@@ -198,8 +198,7 @@ bool FlowManager::startMeasurement(const int                controlSocket,
                                    const char*              vectorNamePattern,
                                    const OutputFileFormat   vectorFileFormat,
                                    const char*              scalarNamePattern,
-                                   const OutputFileFormat   scalarFileFormat,
-                                   const bool               printFlows)
+                                   const OutputFileFormat   scalarFileFormat)
 {
    std::stringstream ss;
    bool              success = false;
@@ -222,9 +221,7 @@ bool FlowManager::startMeasurement(const int                controlSocket,
                      flow->InputStatus  = Flow::On;
                      flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ?
                                              Flow::Off : Flow::On;
-                     if(printFlows) {
-                        flow->print(ss);
-                     }
+                     flow->print(ss);
                      flow->activate();
                   }
                }
@@ -244,12 +241,9 @@ bool FlowManager::startMeasurement(const int                controlSocket,
    unlock();
    CPULoadStats.update();
 
-   if(printFlows) {
-      LOG_INFO
-      stdlog << ss.str();
-      LOG_END
-   }
-
+   LOG_INFO
+   stdlog << ss.str();
+   LOG_END
    return success;
 }
 
@@ -257,9 +251,10 @@ bool FlowManager::startMeasurement(const int                controlSocket,
 // ###### Stop measurement ##################################################
 void FlowManager::stopMeasurement(const int                controlSocket,
                                   const uint64_t           measurementID,
-                                  const bool               printFlows,
                                   const unsigned long long now)
 {
+   std::stringstream ss;
+
    CPULoadStats.update();
    lock();
 
@@ -279,16 +274,16 @@ void FlowManager::stopMeasurement(const int                controlSocket,
             }
             else {
                flow->deactivate(false);
-               if(printFlows) {
-                  LOG_INFO
-                  flow->print(stdlog, true);
-                  LOG_END
-               }
+               flow->print(ss);
             }
          }
       }
    }
    unlock();
+
+   LOG_INFO
+   stdlog << ss.str();
+   LOG_END
 }
 
 
@@ -499,7 +494,7 @@ void FlowManager::handleEvents(const unsigned long long now)
       }
 
       // ====== Print bandwidth/CPU information line ========================
-      if((DisplayOn) && (gOutputVerbosity >= NPFOV_BANDWIDTH_INFO)) {
+      if(DisplayOn) {
          static const unsigned int cpuDisplayLimit = 4;
          static const char* colorOff         = "\x1b[0m";
          static const char* colorDuration    = "\x1b[34m";
@@ -536,9 +531,6 @@ void FlowManager::handleEvents(const unsigned long long now)
                   (CPUDisplayStats.getNumberOfCPUs() > cpuDisplayLimit) ? " total" : "]");
          safestrcat((char*)&cpuUtilization, str, sizeof(cpuUtilization));
 
-         // NOTE: ostream/cout has race condition problem according to helgrind.
-         //       => simply using stdout instead.
-         gOutputMutex.lock();
          fprintf(stdout,
                  "\r<-- %sDuration: %2u:%02u:%02u   "
                  "%sFlows: %u   "
@@ -562,7 +554,6 @@ void FlowManager::handleEvents(const unsigned long long now)
                  cpuUtilization,
                  colorOff);
          fflush(stdout);
-         gOutputMutex.unlock();
       }
 
       LastDisplayEvent = now;

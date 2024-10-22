@@ -563,7 +563,6 @@ bool Flow::configureSocket(const int socketDescriptor)
             stdlog << format("Failed to configure CCID %u (DCCP_SOCKOPT_CCID option) on DCCP socket: %s!",
                              (unsigned int)value, socketDescriptor, strerror(errno)) << "\n";
             LOG_END
-            gOutputMutex.unlock();
          }
       }
       const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };

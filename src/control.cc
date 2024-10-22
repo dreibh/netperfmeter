@@ -36,7 +36,6 @@
 #include <cstring>
 
 
-unsigned int         gOutputVerbosity = 9;   // FIXME!
 extern MessageReader gMessageReader;
 
 
@@ -236,7 +235,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    addFlowMsg->NDiffPorts = htons(flow->getTrafficSpec().NDiffPorts);
 
    LOG_TRACE
-   stdlog << "<R1>" << "\n";
+   stdlog << format("<R1 sd=%d>", controlSocket) << "\n";
    LOG_END
    if(ext_send(controlSocket, addFlowMsg, addFlowMsgSize, 0) <= 0) {
       LOG_ERROR
@@ -248,7 +247,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
 
    // ====== Wait for NETPERFMETER_ACKNOWLEDGE ==============================
    LOG_TRACE
-   stdlog << "<R2>" << "\n";
+   stdlog << format("<R2 sd=%d>", controlSocket) << "\n";
    LOG_END
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    flow->getMeasurementID(),
@@ -295,7 +294,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       identifyMsg.StreamID      = htons(flow->getStreamID());
 
       LOG_TRACE
-      stdlog << "<R3>" << "\n";
+      stdlog << format("<R3 sd=%d>", controlSocket) << "\n";
       LOG_END
       if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
@@ -312,7 +311,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
          }
       }
       LOG_TRACE
-      stdlog << "<R4>" << "\n";
+      stdlog << format("<R4 sd=%d>", controlSocket) << "\n";
       LOG_END
       if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                       flow->getMeasurementID(),
@@ -412,8 +411,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
    const bool success = FlowManager::getFlowManager()->startMeasurement(
                            controlSocket, measurementID, getMicroTime(),
                            vectorNamePattern, vectorFileFormat,
-                           scalarNamePattern, scalarFileFormat,
-                           (gOutputVerbosity >= NPFOV_FLOWS));
+                           scalarNamePattern, scalarFileFormat);
    if(success) {
       // ====== Tell passive node to start measurement ======================
       NetPerfMeterStartMessage startMsg;
@@ -443,14 +441,14 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          return false;
       }
       LOG_TRACE
-      stdlog << "<wait>";
+      stdlog << format("<wait sd=%d>", controlSocket) << "\n";
       LOG_END
       if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                       measurementID, 0, 0) == false) {
          return false;
       }
       LOG_TRACE
-      stdlog << "<okay>" << "\n";
+      stdlog << format("<okay sd=%d>", controlSocket) << "\n";
       LOG_END
       return true;
    }
@@ -518,7 +516,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       return false;
    }
    LOG_TRACE
-   stdlog << "<waiting>" << "\n";
+   stdlog << format("<wait sd=%d>", controlSocket) << "\n";
    LOG_END
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    measurementID, 0, 0) == false) {
@@ -539,7 +537,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
          return false;
       }
       LOG_TRACE
-      stdlog << "<okay>" << "\n";
+      stdlog << format("<okay sd=%d>", controlSocket) << "\n";
       LOG_END
    }
 
@@ -556,7 +554,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
          return false;
       }
       LOG_TRACE
-      stdlog << "<okay>" << "\n";
+      stdlog << format("<okay sd=%d>", controlSocket) << "\n";
       LOG_END
    }
 
@@ -926,8 +924,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    bool success = FlowManager::getFlowManager()->startMeasurement(
       controlSocket, measurementID, now,
       nullptr, vectorFileFormat,
-      nullptr, scalarFileFormat,
-      (gOutputVerbosity >= NPFOV_FLOWS));
+      nullptr, scalarFileFormat);
 
    return(sendNetPerfMeterAcknowledge(controlSocket,
                                       measurementID, 0, 0,
@@ -958,7 +955,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
 
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
-   FlowManager::getFlowManager()->stopMeasurement(controlSocket, measurementID, (gOutputVerbosity >= NPFOV_FLOWS));
+   FlowManager::getFlowManager()->stopMeasurement(controlSocket, measurementID);
    bool         success     = false;
    Measurement* measurement =
       FlowManager::getFlowManager()->findMeasurement(controlSocket, measurementID);

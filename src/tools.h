@@ -85,9 +85,6 @@
 #endif
 
 
-extern Mutex gOutputMutex;
-
-
 std::string format(const char* fmt, ...);
 
 unsigned long long getMicroTime();

@@ -56,9 +56,6 @@
 #include <iostream>
 
 
-Mutex gOutputMutex;
-
-
 // ###### Create formatted string (printf-like) #############################
 std::string format(const char* fmt, ...)
 {

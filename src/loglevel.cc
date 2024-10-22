@@ -53,7 +53,7 @@ static bool initLogFile(const unsigned int logLevel,
                         const bool         appendMode)
 {
    finishLogging();
-   if(fileName != NULL) {
+   if(fileName != nullptr) {
       std::ofstream* newLogFile =
          (appendMode == true) ? new std::ofstream(fileName, std::ios_base::app) :
                                 new std::ofstream(fileName);
@@ -74,10 +74,10 @@ static bool initLogFile(const unsigned int logLevel,
 // ###### Initialise logging ################################################
 bool initLogging(const char* parameter)
 {
-   if(!(strncmp(parameter,"-logfile=",9))) {
+   if(!(strncmp(parameter, "-logfile=", 9))) {
       return(initLogFile(gLogLevel, (char*)&parameter[9], false));
    }
-   else if(!(strncmp(parameter,"-logappend=",11))) {
+   else if(!(strncmp(parameter, "-logappend=", 11))) {
       return(initLogFile(gLogLevel, (char*)&parameter[11], true));
    }
    else if(!(strcmp(parameter, "-logquiet"))) {
@@ -97,9 +97,9 @@ bool initLogging(const char* parameter)
    }
    else {
       std::cerr << format("ERROR: Invalid logging parameter %s", parameter) << "\n";
-      return(false);
+      return false;
    }
-   return(true);
+   return true;
 }
 
 
