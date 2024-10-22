@@ -255,17 +255,17 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
 
    addFlowMsg->NDiffPorts = htons(flow->getTrafficSpec().NDiffPorts);
 
-   sctp_sndrcvinfo sinfo;
-   memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
-
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
       gOutputMutex.lock();
       std::cerr << "<R1> "; std::cerr.flush();
       gOutputMutex.unlock();
    }
-   if(sctp_send(controlSocket, addFlowMsg, addFlowMsgSize, &sinfo, 0) <= 0) {
-      perror("sctp_send error");
+   if(ext_send(controlSocket, addFlowMsg, addFlowMsgSize, 0) <= 0) {
+      gOutputMutex.lock();
+      printTimeStamp(std::cerr);
+      std::cerr << "Sending message failed on socket " << controlSocket << ": "
+                << strerror(errno) << "\n";
+      gOutputMutex.unlock();
       return(false);
    }
 
@@ -278,7 +278,11 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    flow->getMeasurementID(),
                                    flow->getFlowID(), flow->getStreamID()) == false) {
-      perror("sctp_recv error");
+      gOutputMutex.lock();
+      printTimeStamp(std::cerr);
+      std::cerr << "Receiving message failed on socket " << controlSocket << ": "
+                << strerror(errno) << "\n";
+      gOutputMutex.unlock();
       return(false);
    }
 
@@ -461,17 +465,13 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          startMsg.Header.Flags |= NPMSF_COMPRESS_VECTORS;
       }
 
-      sctp_sndrcvinfo sinfo;
-      memset(&sinfo, 0, sizeof(sinfo));
-      sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
-
       if(gOutputVerbosity >= NPFOV_STATUS) {
          gOutputMutex.lock();
          printTimeStamp(std::cerr);
          std::cerr << "Starting measurement ... <S1> "; std::cerr.flush();
          gOutputMutex.unlock();
       }
-      if(sctp_send(controlSocket, &startMsg, sizeof(startMsg), &sinfo, 0) < 0) {
+      if(ext_send(controlSocket, &startMsg, sizeof(startMsg), 0) < 0) {
          return(false);
       }
       if(gOutputVerbosity >= NPFOV_STATUS) {
@@ -510,16 +510,12 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
    removeFlowMsg.FlowID        = htonl(flow->getFlowID());
    removeFlowMsg.StreamID      = htons(flow->getStreamID());
 
-   sctp_sndrcvinfo sinfo;
-   memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
-
    if(gOutputVerbosity >= NPFOV_STATUS) {
       gOutputMutex.lock();
       std::cerr << "<flow " << flow->getFlowID() << "> "; std::cerr.flush();
       gOutputMutex.unlock();
    }
-   if(sctp_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), &sinfo, 0) <= 0) {
+   if(ext_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), 0) <= 0) {
       return(false);
    }
    if(measurement->getVectorNamePattern() != "") {
@@ -552,10 +548,6 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    stopMsg.Padding       = 0x00000000;
    stopMsg.MeasurementID = hton64(measurementID);
 
-   sctp_sndrcvinfo sinfo;
-   memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
-
    if(gOutputVerbosity >= NPFOV_STATUS) {
       gOutputMutex.lock();
       printTimeStamp(std::cerr);
@@ -563,7 +555,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       std::cerr.flush();
       gOutputMutex.unlock();
    }
-   if(sctp_send(controlSocket, &stopMsg, sizeof(stopMsg), &sinfo, 0) < 0) {
+   if(ext_send(controlSocket, &stopMsg, sizeof(stopMsg), 0) < 0) {
       return(false);
    }
    if(gOutputVerbosity >= NPFOV_STATUS) {
@@ -740,9 +732,6 @@ static bool uploadOutputFile(const int         controlSocket,
    NetPerfMeterResults* resultsMsg = (NetPerfMeterResults*)&messageBuffer;
 
    // ====== Initialize header ==============================================
-   sctp_sndrcvinfo sinfo;
-   memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
    resultsMsg->Header.Type = NETPERFMETER_RESULTS;
 
    if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
@@ -763,7 +752,6 @@ static bool uploadOutputFile(const int         controlSocket,
                                  outputFile.getFile());
       resultsMsg->Header.Flags  = feof(outputFile.getFile()) ? NPMRF_EOF : 0x00;
       resultsMsg->Header.Length = htons(sizeof(NetPerfMeterResults) + bytes);
-      // printf("   -> b=%d   snd=%d\n",(int)bytes, (int)(sizeof(NetPerfMeterResults) + bytes));
       if(ferror(outputFile.getFile())) {
          gOutputMutex.lock();
          printTimeStamp(std::cerr);
@@ -775,7 +763,7 @@ static bool uploadOutputFile(const int         controlSocket,
       }
 
       // ====== Transmit chunk ==============================================
-      if(sctp_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, &sinfo, 0) < 0) {
+      if(ext_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, 0) < 0) {
          gOutputMutex.lock();
          printTimeStamp(std::cerr);
          std::cerr << "ERROR: Failed to upload results - " << strerror(errno) << "!\n";
@@ -1257,9 +1245,5 @@ bool sendNetPerfMeterAcknowledge(int            controlSocket,
    ackMsg.Padding       = 0x0000;
    ackMsg.Status        = htonl(status);
 
-   sctp_sndrcvinfo sinfo;
-   memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
-
-   return(sctp_send(controlSocket, &ackMsg, sizeof(ackMsg), &sinfo, 0) > 0);
+   return(ext_send(controlSocket, &ackMsg, sizeof(ackMsg), 0) > 0);
 }

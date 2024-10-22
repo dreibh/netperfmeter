@@ -719,6 +719,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 
       // ====== Establish connection ========================================
       if(trafficSpec.Protocol == IPPROTO_SCTP) {
+         // ------ Set SCTP stream parameters--------------------------------
          sctp_initmsg initmsg;
          memset((char*)&initmsg, 0 ,sizeof(initmsg));
          initmsg.sinit_num_ostreams  = 65535;
@@ -730,6 +731,7 @@ static Flow* createFlow(Flow*                  previousFlow,
             exit(1);
          }
 
+         // ------ Enable SCTP events ---------------------------------------
          sctp_event_subscribe events;
          memset((char*)&events, 0 ,sizeof(events));
          events.sctp_data_io_event = 1;
@@ -954,11 +956,22 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    }
    sctp_event_subscribe events;
    if(!gControlOverTCP) {
+      // ------ Set default send parameters ---------------------------------
+      sctp_sndrcvinfo sinfo;
+      memset(&sinfo, 0, sizeof(sinfo));
+      sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
+         std::cerr << "ERROR: Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket - "
+                   << strerror(errno) << "!\n";
+         exit(1);
+      }
+
+      // ------ Enable SCTP events ------------------------------------------
       memset((char*)&events, 0 ,sizeof(events));
       events.sctp_data_io_event     = 1;
       events.sctp_association_event = 1;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-         std::cerr << "ERROR: Failed to configure events on SCTP control socket - "
+         std::cerr << "ERROR: Failed to configure events (SCTP_EVENTS) on SCTP control socket - "
                    << strerror(errno) << "!\n";
          exit(1);
       }
@@ -1055,6 +1068,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                 << strerror(errno) << "!\n";
       exit(1);
    }
+
+   // ------ Set SCTP stream parameters--------------------------------------
    sctp_initmsg initmsg;
    memset((char*)&initmsg, 0 ,sizeof(initmsg));
    initmsg.sinit_num_ostreams  = 65535;
@@ -1065,6 +1080,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                 << strerror(errno) << "!\n";
       exit(1);
    }
+
+   // ------ Enable SCTP events ---------------------------------------------
    memset((char*)&events, 0 ,sizeof(events));
    events.sctp_data_io_event = 1;
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
@@ -1072,6 +1089,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                 << strerror(errno) << "!\n";
       exit(1);
    }
+
+   // ------ Set SCTP buffer sizes ------------------------------------------
    if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
       exit(1);
    }
@@ -1169,6 +1188,16 @@ void activeMode(int argc, char** argv)
       std::cerr << "ERROR: Failed to create and bind SCTP socket - "
                 << strerror(errno) << "!\n";
       exit(1);
+   }
+   if(gControlOverTCP == false) {
+      sctp_sndrcvinfo sinfo;
+      memset(&sinfo, 0, sizeof(sinfo));
+      sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
+         std::cerr << "ERROR: Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket - "
+                   << strerror(errno) << "!\n";
+         exit(1);
+      }
    }
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
       std::cerr << "ERROR: Unable to establish control association - "

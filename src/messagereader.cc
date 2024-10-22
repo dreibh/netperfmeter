@@ -193,15 +193,15 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          flags    = 0;
          msgFlags = &flags;
       }
+      if(from) {
+         memset(from, 0, *fromSize);   // Clear address (Valgrind report)
+      }
       if(socket->Protocol == IPPROTO_SCTP) {
          received = sctp_recvmsg(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  from, fromSize, sinfo, msgFlags);
       }
       else {
-         if(from) {
-            memset(from, 0, *fromSize);   // Clear address (Valgrind report)
-         }
          received = ext_recvfrom(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  *msgFlags, from, fromSize);
