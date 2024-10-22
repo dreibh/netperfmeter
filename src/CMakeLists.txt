@@ -45,6 +45,8 @@ ADD_EXECUTABLE(netperfmeter
    flow.h
    flowtrafficspec.cc
    flowtrafficspec.h
+   loglevel.cc
+   loglevel.h
    measurement.cc
    measurement.h
    messagereader.cc
@@ -132,6 +134,10 @@ IF (BUILD_TEST_PROGRAMS)
    ADD_EXECUTABLE(rootshell rootshell.c)
    TARGET_LINK_LIBRARIES(rootshell)
 ENDIF()
+
+
+ADD_EXECUTABLE(t1 t1.cc loglevel.cc tools.cc mutex.cc)
+TARGET_LINK_LIBRARIES(t1 ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
 
 
 #############################################################################
