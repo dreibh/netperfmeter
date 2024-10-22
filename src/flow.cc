@@ -31,13 +31,12 @@
 #include "control.h"
 #include "transfer.h"
 
-#include <string.h>
-#include <signal.h>
-#include <poll.h>
 #include <assert.h>
-#include <math.h>
+#include <poll.h>
+#include <signal.h>
 #include <netinet/tcp.h>
 
+#include <cstring>
 #include <set>
 #include <sstream>
 

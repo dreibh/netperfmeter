@@ -27,15 +27,13 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
-#include "transfer.h"
 #include "control.h"
+#include "loglevel.h"
 #include "tools.h"
-#include "netperfmeterpackets.h"
 
-#include <string.h>
 #include <assert.h>
 #include <math.h>
-#include <iostream>
+#include <cstring>
 
 
 static void updateStatistics(Flow*                          flowSpec,
@@ -176,12 +174,11 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       (!flow->isAcceptedIncomingFlow()) &&
       (flow->getTrafficSpec().ErrorOnAbort) &&
       (flow->getOutputStatus() == Flow::On)) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: Flow #" << flow->getFlowID() << " has been aborted - "
-                << strerror(errno) << "!\n";
-      gOutputMutex.unlock();
-      exit(1);
+      LOG_FATAL
+      stdlog << format("Flow #%u on socket %d has been aborted: %s!",
+                       flow->getFlowID(), flow->getSocketDescriptor(),
+                       strerror(errno)) << "\n";
+      LOG_END_FATAL
    }
 
    return sent;
@@ -280,26 +277,18 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
                updateStatistics(flow, now, dataMsg, received);
             }
             else {
-               if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {
-                  gOutputMutex.lock();
-                  printTimeStamp(std::cerr);
-                  std::cerr << "Received NETPERFMETER_DATA for unknown flow from ";
-                  printAddress(std::cerr, &from.sa, true);
-                  std::cerr << " on socket " << sd << "!\n";
-                  gOutputMutex.unlock();
-               }
+               LOG_WARNING
+               stdlog << format("Received NETPERFMETER_DATA for unknown flow on socket %d!", sd) << "\n";
+               LOG_END
                if(protocol != IPPROTO_UDP) {
                   ext_shutdown(sd, 2);
                }
             }
          }
          else {
-            gOutputMutex.lock();
-            printTimeStamp(std::cerr);
-            std::cerr << "WARNING: Received garbage from ";
-            printAddress(std::cerr, &from.sa, true);
-            std::cerr << " on socket " << sd << "!\n";
-            gOutputMutex.unlock();
+            LOG_WARNING
+            stdlog << format("Received garbage on socket %d!", sd) << "\n";
+            LOG_END
             if(protocol != IPPROTO_UDP) {
                ext_shutdown(sd, 2);
             }
@@ -312,16 +301,12 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
       if (received != MRRM_PARTIAL_READ) {
          Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
          if(flow) {
-            if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-               flow->lock();
-               gOutputMutex.lock();
-               printTimeStamp(std::cerr);
-               std::cerr << "End of input for flow " <<  flow->getFlowID() << " from ";
-               printAddress(std::cerr, &from.sa, true);
-               std::cerr << " on socket " << sd << "!\n";
-               gOutputMutex.unlock();
-               flow->unlock();
-            }
+            flow->lock();
+            LOG_WARNING
+            stdlog << format("End of input for flow #%u on socket %d!",
+                           flow->getFlowID(), sd) << "\n";
+            LOG_END
+            flow->unlock();
             flow->endOfInput();
          }
          if(protocol != IPPROTO_UDP) {

@@ -31,12 +31,9 @@
 #include "loglevel.h"
 #include "tools.h"
 
-#include <string.h>
-#include <math.h>
-#include <poll.h>
 #include <assert.h>
-
-#include <iostream>
+#include <math.h>
+#include <cstring>
 
 
 unsigned int         gOutputVerbosity = 9;   // FIXME!
@@ -76,7 +73,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
          const size_t bytes = ntohs(resultsMsg->Header.Length);
          if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
             LOG_ERROR
-            stdlog << format("Received unexpected message type 0x%02x on socket %d!",
+            stdlog << format("Received unexpected message type $%02x on socket %d!",
                              (unsigned int)resultsMsg->Header.Type, controlSocket) << "\n";
             LOG_END
             fclose(fh);
@@ -297,11 +294,9 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       identifyMsg.FlowID        = htonl(flow->getFlowID());
       identifyMsg.StreamID      = htons(flow->getStreamID());
 
-      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-         gOutputMutex.lock();
-         std::cerr << "<R3> "; std::cerr.flush();
-         gOutputMutex.unlock();
-      }
+      LOG_TRACE
+      stdlog << "<R3>" << "\n";
+      LOG_END
       if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
@@ -316,11 +311,9 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
             return false;
          }
       }
-      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-         gOutputMutex.lock();
-         std::cerr << "<R4> "; std::cerr.flush();
-         gOutputMutex.unlock();
-      }
+      LOG_TRACE
+      stdlog << "<R4>" << "\n";
+      LOG_END
       if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                       flow->getMeasurementID(),
                                       flow->getFlowID(), flow->getStreamID(),
@@ -443,8 +436,8 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       }
 
       LOG_INFO
-      stdlog << format("Starting measurement on socket %d ...",
-                       controlSocket) << "\n";
+      stdlog << format("Starting measurement $%llx on socket %d ...",
+                       (unsigned long long)measurementID, controlSocket) << "\n";
       LOG_END
       if(ext_send(controlSocket, &startMsg, sizeof(startMsg), 0) < 0) {
          return false;
@@ -634,7 +627,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    }
    if(ackMsg.Header.Type != NETPERFMETER_ACKNOWLEDGE) {
       LOG_WARNING
-      stdlog << format("Received message type 0x%02x instead of NETPERFMETER_ACKNOWLEDGE on socket %d!",
+      stdlog << format("Received message type $%02x instead of NETPERFMETER_ACKNOWLEDGE on socket %d!",
                        (unsigned int)ackMsg.Header.Type, controlSocket) << "\n";
       LOG_END
       return false;
@@ -909,15 +902,10 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
       return false;
    }
    const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
-
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      gOutputMutex.lock();
-      std::cerr << "\n";
-      printTimeStamp(std::cerr);
-      std::cerr << "Starting measurement "
-                << format("$%llx", (unsigned long long)measurementID) << " ...\n";
-      gOutputMutex.unlock();
-   }
+   LOG_INFO
+   stdlog << format("Starting measurement $%llx on socket %d ...",
+                    (unsigned long long)measurementID, controlSocket) << "\n";
+   LOG_END
 
    OutputFileFormat scalarFileFormat = OFF_Plain;
    if(startMsg->Header.Flags & NPMSF_COMPRESS_SCALARS) {
@@ -963,16 +951,10 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       return false;
    }
    const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
-
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      gOutputMutex.lock();
-      std::cerr << "\n";
-      printTimeStamp(std::cerr);
-      std::cerr << "Stopping measurement "
-                << format("$%llx", (unsigned long long)measurementID)
-                << " ...\n";
-      gOutputMutex.unlock();
-   }
+   LOG_INFO
+   stdlog << format("Stopping measurement $%llx on socket %d ...",
+                    (unsigned long long)measurementID, controlSocket) << "\n";
+   LOG_END
 
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
@@ -1096,7 +1078,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
                       (const NetPerfMeterStopMessage*)&inputBuffer, received);
          default:
             LOG_WARNING
-            stdlog << format("Received invalid control message of type 0x%02x!",
+            stdlog << format("Received invalid control message of type $%02x!",
                              (unsigned int)header->Type) << "\n";
             LOG_END
             ext_shutdown(controlSocket, 2);
@@ -1140,10 +1122,10 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
    }
    else {
       // No known flow -> no association to send response to!
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "WARNING: NETPERFMETER_IDENTIFY_FLOW message for unknown flow!\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("NETPERFMETER_IDENTIFY_FLOW message for unknown flow on socket %d!",
+                       sd) << "\n";
+      LOG_END
    }
 }
 
