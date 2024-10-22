@@ -127,18 +127,22 @@ void Flow::print(std::ostream& os, const bool printStatistics)
    std::stringstream ss;
 
    lock();
-   if(OriginalSocketDescriptor) {
-      if(TrafficSpec.Protocol != IPPROTO_SCTP) {
-         ss << "+ " << getProtocolName(TrafficSpec.Protocol) << " Flow (Flow ID #"
-            << FlowID << " \"" << TrafficSpec.Description << "\"):\n";
-      }
-      else {
-         ss << "+ " << getProtocolName(TrafficSpec.Protocol) << " Flow:\n";
-      }
+   if(TrafficSpec.Protocol != IPPROTO_SCTP) {
+      ss << format("+ %s Flow (Flow #%u \"%s\" of Measurement $%llx):",
+                   getProtocolName(TrafficSpec.Protocol),
+                   FlowID, TrafficSpec.Description.c_str(),
+                   MeasurementID) << "\n";
+   }
+   else {
+      ss << format("+ %s Flow (of Measurement $%llx):",
+                   getProtocolName(TrafficSpec.Protocol),
+                   MeasurementID) << "\n";
    }
    if(TrafficSpec.Protocol == IPPROTO_SCTP) {
-      ss << "   o Stream #" << StreamID << " (Flow ID #"
-         << FlowID << " \"" << TrafficSpec.Description << "\"):\n";
+      ss << format("   o Stream #%u (Flow ID #%u \"%s\" of Measurement $%llx):",
+                   StreamID,
+                   FlowID, TrafficSpec.Description.c_str(),
+                   MeasurementID) << "\n";
    }
    TrafficSpec.print(ss);
 

@@ -434,7 +434,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       }
 
       LOG_INFO
-      stdlog << format("Starting measurement $%llx on socket %d ...",
+      stdlog << format("Starting Measurement $%llx on socket %d ...",
                        (unsigned long long)measurementID, controlSocket) << "\n";
       LOG_END
       if(ext_send(controlSocket, &startMsg, sizeof(startMsg), 0) < 0) {
@@ -668,7 +668,7 @@ static bool uploadOutputFile(const int         controlSocket,
    resultsMsg->Header.Type = NETPERFMETER_RESULTS;
 
    // ====== Transmission loop ==============================================
-   LOG_INFO
+   LOG_DEBUG
    stdlog << format("Uploading results on socket %d ...", controlSocket) << "\n";
    LOG_END
 
@@ -901,7 +901,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    }
    const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
    LOG_INFO
-   stdlog << format("Starting measurement $%llx on socket %d ...",
+   stdlog << format("Starting Measurement $%llx on socket %d ...",
                     (unsigned long long)measurementID, controlSocket) << "\n";
    LOG_END
 
@@ -949,7 +949,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
    }
    const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
    LOG_INFO
-   stdlog << format("Stopping measurement $%llx on socket %d ...",
+   stdlog << format("Stopping Measurement $%llx on socket %d ...",
                     (unsigned long long)measurementID, controlSocket) << "\n";
    LOG_END
 

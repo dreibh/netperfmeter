@@ -110,7 +110,7 @@ void FlowTrafficSpec::print(std::ostream& os) const
       os << "\n";
    }
 
-   os << "      - On/Off:              {";
+   os << "      - On/Off:              { ";
    if(OnOffEvents.size() > 0) {
       bool start = true;
       for(std::vector<OnOffEvent>::const_iterator iterator = OnOffEvents.begin();

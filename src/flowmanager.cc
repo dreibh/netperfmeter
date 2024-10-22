@@ -227,7 +227,7 @@ bool FlowManager::startMeasurement(const int                controlSocket,
                }
                else {
                   LOG_WARNING
-                  stdlog << format("Flow associated with measurement $%llx on socket %d is already owned by another measurement!",
+                  stdlog << format("Flow associated with Measurement $%llx on socket %d is already owned by another measurement!",
                                    measurementID, controlSocket) << "\n";
                   LOG_END
                }
