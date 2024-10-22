@@ -706,7 +706,7 @@ static bool uploadOutputFile(const int         controlSocket,
       stdlog << format("Unable to upload results on socket %d (errno=%s)!",
                        controlSocket, strerror(errno)) << "\n";
       LOG_END
-      ext_shutdown(controlSocket, 2);
+      ext_shutdown(controlSocket, SHUT_RDWR);
    }
    LOG_TRACE
    stdlog << ((success == true) ? "okay": "FAILED") << "\n";
@@ -748,7 +748,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       stdlog << format("Received malformed NETPERFMETER_ADD_FLOW control message on socket %d!",
                        controlSocket) << "\n";
       LOG_END
-      ext_shutdown(controlSocket, 2);
+      ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
    }
    const uint64_t measurementID   = ntoh64(addFlowMsg->MeasurementID);
@@ -760,7 +760,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       stdlog << format("Too few start/stop entries in NETPERFMETER_ADD_FLOW control message on socket %d!",
                        controlSocket) << "\n";
       LOG_END
-      ext_shutdown(controlSocket, 2);
+      ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
    }
    char description[sizeof(addFlowMsg->Description) + 1];
@@ -854,7 +854,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
       stdlog << format("Received malformed NETPERFMETER_REMOVE_FLOW control message on socket %d!",
                        controlSocket) << "\n";
       LOG_END
-      ext_shutdown(controlSocket, 2);
+      ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
    }
    const uint64_t measurementID = ntoh64(removeFlowMsg->MeasurementID);
@@ -896,7 +896,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
       stdlog << format("Received malformed NETPERFMETER_START control message on socket %d!",
                        controlSocket) << "\n";
       LOG_END
-      ext_shutdown(controlSocket, 2);
+      ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
    }
    const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
@@ -944,7 +944,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       stdlog << format("Received malformed NETPERFMETER_STOP control message on socket %d!",
                        controlSocket) << "\n";
       LOG_END
-      ext_shutdown(controlSocket, 2);
+      ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
    }
    const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
@@ -1029,7 +1029,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
          stdlog << format("Control connection is broken on socket %d!",
                           controlSocket) << "\n";
          LOG_END
-         ext_shutdown(controlSocket, 2);
+         ext_shutdown(controlSocket, SHUT_RDWR);
       }
       return false;
    }
@@ -1052,7 +1052,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
          stdlog << format("Received malformed control message on socket %d: expected length %u, but received length %u!",
                           controlSocket, (unsigned int)ntohs(header->Length), (unsigned int)received) << "\n";
          LOG_END
-         ext_shutdown(controlSocket, 2);
+         ext_shutdown(controlSocket, SHUT_RDWR);
          return false;
       }
 
@@ -1078,7 +1078,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
             stdlog << format("Received invalid control message of type $%02x!",
                              (unsigned int)header->Type) << "\n";
             LOG_END
-            ext_shutdown(controlSocket, 2);
+            ext_shutdown(controlSocket, SHUT_RDWR);
             return false;
       }
    }

@@ -281,7 +281,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
                stdlog << format("Received NETPERFMETER_DATA for unknown flow on socket %d!", sd) << "\n";
                LOG_END
                if(protocol != IPPROTO_UDP) {
-                  ext_shutdown(sd, 2);
+                  ext_shutdown(sd, SHUT_RDWR);
                }
             }
          }
@@ -290,7 +290,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
             stdlog << format("Received garbage on socket %d!", sd) << "\n";
             LOG_END
             if(protocol != IPPROTO_UDP) {
-               ext_shutdown(sd, 2);
+               ext_shutdown(sd, SHUT_RDWR);
             }
          }
       }
@@ -310,7 +310,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
             flow->endOfInput();
          }
          if(protocol != IPPROTO_UDP) {
-            ext_shutdown(sd, 2);
+            ext_shutdown(sd, SHUT_RDWR);
          }
       }
    }

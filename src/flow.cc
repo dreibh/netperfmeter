@@ -290,7 +290,7 @@ void Flow::deactivate(const bool asyncStop)
             // timeout.
          }
          else {
-            ext_shutdown(SocketDescriptor, 2);
+            ext_shutdown(SocketDescriptor, SHUT_RDWR);
          }
       }
       if(!asyncStop) {
