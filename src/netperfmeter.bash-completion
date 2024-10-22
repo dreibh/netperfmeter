@@ -32,6 +32,14 @@ _netperfmeter()
    # Based on:
    # * https://www.benningtons.net/index.php/bash-completion/
    # * /usr/share/bash-completion/completions/dd
+   # * https://unix.stackexchange.com/questions/781584/complete-compgen-fails-to-suggest-when-options-contain-colon
+
+   # This is necessary to properly handle ":" in completion words, in order
+   # to properly handle IPv6 addresses!
+   local COMP_WORDBREAKS="${COMP_WORDBREAKS//:}"
+#    FIXME!
+#    # Also need for removal of "=", to handle flowspec options:
+#    local COMP_WORDBREAKS="${COMP_WORDBREAKS//=}"
 
    local cur prev words cword
    if type -t _comp_initialize >/dev/null; then
@@ -51,29 +59,107 @@ _netperfmeter()
    # echo ""
 
    # ====== Parameters ======================================================
+   local flowSpec=0
    if [ $cword -gt 1 ] ; then
+      if [ "${prev}" == "-sctp" ] || \
+         [ "${prev}" == "-tcp" ]  || \
+         [ "${prev}" == "-udp" ]  || \
+         [ "${prev}" == "-dccp" ] ; then
+         flowSpec=1
+      elif [[ "${cur}" =~ ^(const|exp|pareto|uniform) ]] ; then
+         flowSpec=1
+      fi
+
       case "${cur}" in
          #  ====== Generic value ============================================
-         -activenodename=  | \
-         -config=          | \
-         -controllocal=    | \
-         -local=           | \
-         -passivenodename= | \
-         -pathmgr=         | \
-         -rcvbuf=          | \
-         -runtime=         | \
-         -scheduler=       | \
-         -sndbuf=          | \
-         -verbosity=       | \
-         -activenodename=  | \
-         -controllocal=    | \
-         -passivenodename)
-            cur=${cur#*=}
+         -activenodename=*  | \
+         -config=*          | \
+         -passivenodename=* | \
+         -pathmgr=*         | \
+         -rcvbuf=*          | \
+         -runtime=*         | \
+         -scheduler=*       | \
+         -sndbuf=*          | \
+         -verbosity=*)
+            cur="${cur#*=}"
+            return
+            ;;
+         # ====== Flowspec ==================================================
+         const*   | \
+         exp*     | \
+         pareto*  | \
+         uniform*)
+            local base="$(echo "${cur}" | sed -e 's/:[^:]*$/:/')"
+            local blocks="$(echo "${base}" | tr -cd ":" | wc -c)"
+            local entry="$(echo "${cur}" | sed -e 's/^.*://')"
+
+#             echo ""
+#             echo "B=$blocks  cur=$cur b=$base e=$entry"
+#             echo ""
+
+            if [ ${blocks} -lt 4 ] ; then
+               if [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)([0-9]+)$ ]] ; then
+                  COMPREPLY=($(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}, ${cur}:" -- "${cur}"))
+                  compopt -o nospace
+                  return
+               elif [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)$ ]] ; then
+                  COMPREPLY=($(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}," -- "${cur}"))
+                  compopt -o nospace
+                  return
+               else
+                  COMPREPLY=( $( compgen -W "${base}const ${base}exp ${base}pareto ${base}uniform" -- "${cur}" ) )
+                  compopt -o nospace
+                  return
+               fi
+            else
+               COMPREPLY=( $( compgen -W "
+${base}cc=
+${base}cmt=
+${base}debug=
+${base}defragtimeout=
+${base}description=
+${base}error_on_abort=
+${base}id=
+${base}maxmsgsize=
+${base}ndiffports=
+${base}nodelay=
+${base}onoff=
+${base}ordered=
+${base}pathmgr=
+${base}rcvbuf=
+${base}reliable=
+${base}rtx_timeout=
+${base}rtx_trials=
+${base}scheduler=
+${base}sndbuf=
+${base}unordered=
+${base}unreliable=
+${base}v6only
+" -- "${cur}" ) )
+               compopt -o nospace
+               return
+            fi
+            ;;
+         # ====== Local address =============================================
+         -controllocal=* | \
+         -local=*)
+            cur="${cur#*=}"
+            # Suggest local IP addresses:
+            # NOTE: For IPv6, ":" must bave been removed from COMP_WORDBREAKS
+            #       See comment above!
+            local addreses
+            if [ -x /usr/bin/ip ] ; then
+               addresses="$(/usr/bin/ip addr show | awk '/[ ]+inet/ { print $2 }' | sed -e 's#/.*$##')"
+            elif [ -x /sbin/ifconfig ] ; then
+               addresses="$(/sbin/ifconfig | awk '/[ \t]+inet/ { print $2 }' | sed -e 's#/.*$##')"
+            fi
+            COMPREPLY=($(compgen -W "${addresses}" -- "${cur}"))
             return
             ;;
          # ====== Scalar/vector file pattern ================================
-         -scalar= | \
-         -vector=)
+         -scalar=* | \
+         -vector=*)
+            cur="${cur#*=}"
             _filedir
             return
             ;;
@@ -90,10 +176,11 @@ _netperfmeter()
    local opts1
    local opts2
 
-   # ------ Passive side ----------------------------------------------------
-   if [ ${cword} -ge 2 ] && [[ "${words[2]}" =~ [:] ]] ; then
-      # NetPerfMeter simple options without parameter(s)
-      opts1="
+   # ------ Active side -----------------------------------------------------
+   if [ ${cword} -ge 2 ] && [[ "${words[1]}" =~ [:] ]] ; then
+      if [ ${flowSpec} -eq 0 ] ; then
+         # NetPerfMeter simple options without parameter(s)
+         opts1="
 -control-over-tcp
 -dccp
 -display
@@ -105,8 +192,8 @@ _netperfmeter()
 -v6only
 -verbose
 "
-      # NetPerfMeter options with "=" and parameter(s)
-      local opts2="
+         # NetPerfMeter options with "=" and parameter(s)
+         local opts2="
 -activenodename
 -config
 -controllocal
@@ -121,8 +208,14 @@ _netperfmeter()
 -vector
 -verbosity
 "
-   # ------ Active side -----------------------------------------------------
+      else
+         opts1="const exp pareto uniform"
+         opts2=""
+      fi
+
+   # ------ Passive side ----------------------------------------------------
    else
+      # NetPerfMeter simple options without parameter(s)
       opts1="
 -control-over-tcp
 -display
@@ -148,6 +241,7 @@ _netperfmeter()
    COMPREPLY=( $( compgen -W "${opts1}"        -- "${cur}" )
                $( compgen -W "${opts2}" -S "=" -- "${cur}" ) )
    [[ ${COMPREPLY-} == *= ]] && compopt -o nospace
+   [ ${flowSpec} -eq 1  ] && compopt -o nospace
    return 0
 }
 
