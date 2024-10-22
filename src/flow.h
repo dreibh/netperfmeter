@@ -178,6 +178,19 @@ class FlowManager : public Thread
 };
 
 
+int createAndBindSocket(const int             family,
+                        const int             type,
+                        const int             protocol,
+                        const uint16_t        localPort,
+                        const unsigned int    localAddresses,
+                        const sockaddr_union* localAddressArray,
+                        const bool            listenMode,
+                        const bool            bindV6Only);
+bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize);
+
+
+
+
 class Flow : public Thread
 {
    public:

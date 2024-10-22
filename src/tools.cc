@@ -739,38 +739,6 @@ int bindSocket(const int             sd,
 }
 
 
-/* ###### Create server socket of appropriate family and bind it ######### */
-int createAndBindSocket(const int             family,
-                        const int             type,
-                        const int             protocol,
-                        const uint16_t        localPort,
-                        const unsigned int    localAddresses,
-                        const sockaddr_union* localAddressArray,
-                        const bool            listenMode,
-                        const bool            bindV6Only)
-{
-   int sd = createSocket(family, type, protocol,
-                         localAddresses, localAddressArray);
-   if(sd >= 0) {
-      int reuse = 1;
-      if(ext_setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
-         printTimeStamp(std::cerr);
-         std::cerr << "WARNING: Failed to configure socket reuse (SO_REUSEADDR option) - "
-                   << strerror(errno) << "!\n";
-      }
-
-      const int success = bindSocket(sd, family, type, protocol,
-                                     localPort, localAddresses, localAddressArray,
-                                     listenMode, bindV6Only);
-      if(success < 0) {
-         ext_close(sd);
-         return success;
-      }
-   }
-   return sd;
-}
-
-
 /* ###### Send SCTP ABORT ################################################ */
 bool sendAbort(int sd, sctp_assoc_t assocID)
 {
@@ -1291,48 +1259,3 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
    return result;
 }
 #endif
-
-
-/* ###### Configure send and receive buffer sizes ######################## */
-bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
-{
-   if(sndBufSize > 0) {
-      if(ext_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &sndBufSize, sizeof(sndBufSize)) < 0) {
-         std::cerr << "ERROR: Failed to configure send buffer size (SO_SNDBUF option) - "
-                   << strerror(errno) << "!\n";
-         return false;
-      }
-      int newBufferSize = 0;
-      socklen_t newBufferSizeLength = sizeof(newBufferSize);
-      if(ext_getsockopt(sd, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
-         std::cerr << "ERROR: Failed to obtain send buffer size (SO_SNDBUF option) - "
-                   << strerror(errno) << "!\n";
-         return false;
-      }
-      if(newBufferSize < sndBufSize) {
-         std::cerr << "ERROR: actual send buffer size < configured send buffer size: "
-                   << newBufferSize << " < " << sndBufSize << "\n";
-         return false;
-      }
-   }
-   if(rcvBufSize > 0) {
-      if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvBufSize, sizeof(rcvBufSize)) < 0) {
-         std::cerr << "ERROR: Failed to configure receive buffer size (SO_RCVBUF option) - "
-                   << strerror(errno) << "!\n";
-         return false;
-      }
-      int newBufferSize = 0;
-      socklen_t newBufferSizeLength = sizeof(newBufferSize);
-      if(ext_getsockopt(sd, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
-         std::cerr << "ERROR: Failed to obtain receive buffer size (SO_RCVBUF option) - "
-                   << strerror(errno) << "!\n";
-         return false;
-      }
-      if(newBufferSize < rcvBufSize) {
-         std::cerr << "ERROR: actual receive buffer size < configured receive buffer size: "
-                   << newBufferSize << " < " << rcvBufSize << "\n";
-         return false;
-      }
-   }
-   return true;
-}

@@ -145,14 +145,6 @@ int bindSocket(const int             sd,
                const sockaddr_union* localAddressArray,
                const bool            listenMode,
                const bool            bindV6Only);
-int createAndBindSocket(const int             family,
-                        const int             type,
-                        const int             protocol,
-                        const uint16_t        localPort,
-                        const unsigned int    localAddresses,
-                        const sockaddr_union* localAddressArray,
-                        const bool            listenMode,
-                        const bool            bindV6Only);
 uint64_t hton64(const uint64_t value);
 uint64_t ntoh64(const uint64_t value);
 
@@ -210,7 +202,5 @@ ssize_t sctp_send_fixed(int                           sd,
 #define sctp_send(a,b,c,d,e) sctp_send_fixed(a,b,c,d,e)
 #endif
 */
-
-bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize);
 
 #endif
