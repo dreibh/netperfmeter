@@ -63,11 +63,10 @@ static bool downloadOutputFile(MessageReader* messageReader,
 
    FILE* fh = fopen(fileName, "w");
    if(fh == nullptr) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: Unable to create file " << fileName
-                << " - " << strerror(errno) << "!\n";
-      gOutputMutex.unlock();
+      LOG_ERROR
+      stdlog << format("Unable to create file %s: %s!",
+                       fileName, strerror(errno)) << "\n";
+      LOG_END
       return false;
    }
    bool success = false;
@@ -76,51 +75,42 @@ static bool downloadOutputFile(MessageReader* messageReader,
       if(received > 0) {
          const size_t bytes = ntohs(resultsMsg->Header.Length);
          if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
-            gOutputMutex.lock();
-            printTimeStamp(std::cerr);
-            std::cerr << "ERROR: Received unexpected message type "
-                      << (unsigned int)resultsMsg->Header.Type <<  "!\n";
-            gOutputMutex.unlock();
-            exit(1);
+            LOG_ERROR
+            stdlog << format("Received unexpected message type 0x%02x on socket %d!",
+                             (unsigned int)resultsMsg->Header.Type, controlSocket) << "\n";
+            LOG_END
+            fclose(fh);
+            return false;
          }
          if(bytes != (size_t)received) {
-            gOutputMutex.lock();
-            printTimeStamp(std::cerr);
-            std::cerr << "ERROR: Received malformed NETPERFMETER_RESULTS message!\n";
-            gOutputMutex.unlock();
-            // printf("%u + %u > %u\n", (unsigned int)bytes, (unsigned int)sizeof(NetPerfMeterResults), (unsigned int)received);
-            exit(1);
-         }
-         if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {
-            gOutputMutex.lock();
-            std::cerr << ".";
-            gOutputMutex.unlock();
+            LOG_ERROR
+            stdlog << "Received malformed NETPERFMETER_RESULTS message!" << "\n";
+            LOG_END
+            fclose(fh);
+            return false;
          }
 
          if(bytes > sizeof(NetPerfMeterResults)) {
             if(fwrite((char*)&resultsMsg->Data, bytes - sizeof(NetPerfMeterResults), 1, fh) != 1) {
-               gOutputMutex.lock();
-               printTimeStamp(std::cerr);
-               std::cerr << "ERROR: Unable to write results to file " << fileName
-                         << " - " << strerror(errno) << "!\n";
-               gOutputMutex.unlock();
-               exit(1);
+               LOG_ERROR
+               stdlog << format("Unable to write results to file %s: %s!",
+                                fileName, strerror(errno)) << "\n";
+               LOG_END
+               fclose(fh);
+               return false;
             }
          }
          else {
-            gOutputMutex.lock();
-            printTimeStamp(std::cerr);
-            std::cerr << "WARNING: No results received for "
-                      << fileName << "!\n";
-            gOutputMutex.unlock();
+            LOG_WARNING
+            stdlog << format("No results received for file %s from socket %d!",
+                             fileName, controlSocket) << "\n";
+            LOG_END
          }
 
          if(resultsMsg->Header.Flags & NPMRF_EOF) {
-            if(gOutputVerbosity >= NPFOV_STATUS) {
-               gOutputMutex.lock();
-               std::cerr << " <done>"; std::cerr.flush();
-               gOutputMutex.unlock();
-            }
+            LOG_TRACE
+            stdlog << "<done>" << "\n";
+            LOG_END
             success = true;
             break;
          }
@@ -128,12 +118,10 @@ static bool downloadOutputFile(MessageReader* messageReader,
       received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer));
    }
    if(!success) {
-      gOutputMutex.lock();
-      std::cerr << "\n";
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: Unable to download results (errno=" << errno << "): "
-                << strerror(errno) << "\n";
-      gOutputMutex.unlock();
+      LOG_ERROR
+      stdlog << format("Unable to download results from socket %d (errno=%s)!",
+                       controlSocket, strerror(errno)) << "\n";
+      LOG_END
    }
    fclose(fh);
    return success;
@@ -151,30 +139,24 @@ static bool downloadResults(MessageReader*     messageReader,
          namePattern, "passive",
          format("-%08x-%04x", flow->getFlowID(), flow->getStreamID()));
 
-   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-      gOutputMutex.lock();
-      std::cerr << "Downloading results [" << outputName << "] ";
-      std::cerr.flush();
-      gOutputMutex.unlock();
-   }
+   LOG_INFO
+   stdlog << format("Downloading results [%s] from socket %d",
+                    outputName.c_str(), controlSocket) << "\n";
+   LOG_END
    bool success = awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                                flow->getMeasurementID(),
                                                flow->getFlowID(),
                                                flow->getStreamID());
    if(success) {
-      if(gOutputVerbosity >= NPFOV_STATUS) {
-         gOutputMutex.lock();
-         std::cerr << "<ack> "; std::cerr.flush();
-         gOutputMutex.unlock();
-      }
+      LOG_TRACE
+      stdlog << "<ack>" << "\n";
+      LOG_END
       success = downloadOutputFile(messageReader, controlSocket, outputName.c_str());
    }
 
-   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-      gOutputMutex.lock();
-      std::cerr << " " << ((success == true) ? "okay": "FAILED") << "\n";
-      gOutputMutex.unlock();
-   }
+   LOG_TRACE
+   stdlog << ((success == true) ? "okay": "FAILED") << "\n";
+   LOG_END
    return success;
 }
 
@@ -256,34 +238,28 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
 
    addFlowMsg->NDiffPorts = htons(flow->getTrafficSpec().NDiffPorts);
 
-   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-      gOutputMutex.lock();
-      std::cerr << "<R1> "; std::cerr.flush();
-      gOutputMutex.unlock();
-   }
+   LOG_TRACE
+   stdlog << "<R1>" << "\n";
+   LOG_END
    if(ext_send(controlSocket, addFlowMsg, addFlowMsgSize, 0) <= 0) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "Sending message failed on socket " << controlSocket << ": "
-                << strerror(errno) << "\n";
-      gOutputMutex.unlock();
+      LOG_ERROR
+      stdlog << format("Sending message failed on socket %d: %s!",
+                       controlSocket, strerror(errno)) << "\n";
+      LOG_END
       return false;
    }
 
    // ====== Wait for NETPERFMETER_ACKNOWLEDGE ==============================
-   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-      gOutputMutex.lock();
-      std::cerr << "<R2> "; std::cerr.flush();
-      gOutputMutex.unlock();
-   }
+   LOG_TRACE
+   stdlog << "<R2>" << "\n";
+   LOG_END
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    flow->getMeasurementID(),
                                    flow->getFlowID(), flow->getStreamID()) == false) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "Receiving message failed on socket " << controlSocket << ": "
-                << strerror(errno) << "\n";
-      gOutputMutex.unlock();
+      LOG_ERROR
+      stdlog << format("Receiving message failed on socket %d: %s!",
+                       controlSocket, strerror(errno)) << "\n";
+      LOG_END
       return false;
    }
 
@@ -373,10 +349,10 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
    if(configName[0] != 0x00) {
       configFile = fopen(configName, "w");
       if(configFile == nullptr) {
-         gOutputMutex.lock();
-         printTimeStamp(std::cerr);
-         std::cerr << "ERROR: Unable to create config file <" << configName << ">!\n";
-         gOutputMutex.unlock();
+         LOG_ERROR
+         stdlog << format("Unable to create config file %s: %s!",
+                          configName, strerror(errno)) << "\n";
+         LOG_END
          return false;
       }
 
@@ -466,29 +442,23 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          startMsg.Header.Flags |= NPMSF_COMPRESS_VECTORS;
       }
 
-      if(gOutputVerbosity >= NPFOV_STATUS) {
-         gOutputMutex.lock();
-         printTimeStamp(std::cerr);
-         std::cerr << "Starting measurement ... <S1> "; std::cerr.flush();
-         gOutputMutex.unlock();
-      }
+      LOG_INFO
+      stdlog << format("Starting measurement on socket %d ...",
+                       controlSocket) << "\n";
+      LOG_END
       if(ext_send(controlSocket, &startMsg, sizeof(startMsg), 0) < 0) {
          return false;
       }
-      if(gOutputVerbosity >= NPFOV_STATUS) {
-         gOutputMutex.lock();
-         std::cerr << "<S2> "; std::cerr.flush();
-         gOutputMutex.unlock();
-      }
+      LOG_TRACE
+      stdlog << "<wait>";
+      LOG_END
       if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                       measurementID, 0, 0) == false) {
          return false;
       }
-      if(gOutputVerbosity >= NPFOV_STATUS) {
-         gOutputMutex.lock();
-         std::cerr << "okay\n\n";
-         gOutputMutex.unlock();
-      }
+      LOG_TRACE
+      stdlog << "<okay>" << "\n";
+      LOG_END
       return true;
    }
    return false;
@@ -511,11 +481,9 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
    removeFlowMsg.FlowID        = htonl(flow->getFlowID());
    removeFlowMsg.StreamID      = htons(flow->getStreamID());
 
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      gOutputMutex.lock();
-      std::cerr << "<flow " << flow->getFlowID() << "> "; std::cerr.flush();
-      gOutputMutex.unlock();
-   }
+   LOG_TRACE
+   stdlog << format("<flow %u>", flow->getFlowID()) << "\n";
+   LOG_END
    if(ext_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), 0) <= 0) {
       return false;
    }
@@ -549,21 +517,16 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    stopMsg.Padding       = 0x00000000;
    stopMsg.MeasurementID = hton64(measurementID);
 
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "Stopping measurement ... <S1> ";
-      std::cerr.flush();
-      gOutputMutex.unlock();
-   }
+   LOG_INFO
+   stdlog << format("Stopping measurement on socket %d ...",
+                    controlSocket) << "\n";
+   LOG_END
    if(ext_send(controlSocket, &stopMsg, sizeof(stopMsg), 0) < 0) {
       return false;
    }
-   if(gOutputVerbosity >= NPFOV_STATUS) {
-      gOutputMutex.lock();
-      std::cerr << "<S2> "; std::cerr.flush();
-      gOutputMutex.unlock();
-   }
+   LOG_TRACE
+   stdlog << "<waiting>" << "\n";
+   LOG_END
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    measurementID, 0, 0) == false) {
       return false;
@@ -573,46 +536,35 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    if(measurement->getVectorNamePattern() != "") {
       const std::string vectorName = Flow::getNodeOutputName(
          measurement->getVectorNamePattern(), "passive");
-      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-         gOutputMutex.lock();
-         std::cerr << "\n";
-         printTimeStamp(std::cerr);
-         std::cerr << "Downloading results [" << vectorName << "] ";
-         std::cerr.flush();
-         gOutputMutex.unlock();
-      }
+
+      LOG_INFO
+      stdlog << format("Downloading vector results [%s] from socket %d",
+                       vectorName.c_str(), controlSocket) << "\n";
+      LOG_END
       if(downloadOutputFile(messageReader, controlSocket, vectorName.c_str()) == false) {
          delete measurement;
          return false;
       }
-      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-         gOutputMutex.lock();
-         std::cerr << " ";
-         gOutputMutex.unlock();
-      }
+      LOG_TRACE
+      stdlog << "<okay>" << "\n";
+      LOG_END
    }
 
    // ====== Download passive node's scalar file ============================
    if(measurement->getScalarNamePattern() != "") {
       const std::string scalarName = Flow::getNodeOutputName(
          measurement->getScalarNamePattern(), "passive");
-      if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-         gOutputMutex.lock();
-         std::cerr << "\n";
-         printTimeStamp(std::cerr);
-         std::cerr << "Downloading results [" << scalarName << "] ";
-         std::cerr.flush();
-         gOutputMutex.unlock();
-      }
+      LOG_INFO
+      stdlog << format("Downloading scalar results [%s] from socket %d",
+                       scalarName.c_str(), controlSocket) << "\n";
+      LOG_END
       if(downloadOutputFile(messageReader, controlSocket, scalarName.c_str()) == false) {
          delete measurement;
          return false;
       }
-      if(gOutputVerbosity >= NPFOV_STATUS) {
-         gOutputMutex.lock();
-         std::cerr << " okay\n";
-         gOutputMutex.unlock();
-      }
+      LOG_TRACE
+      stdlog << "<okay>" << "\n";
+      LOG_END
    }
 
    // ====== Download flow results and remove the flows =====================
@@ -626,11 +578,9 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
             delete measurement;
             return false;
          }
-         if(gOutputVerbosity >= NPFOV_FLOWS) {
-            gOutputMutex.lock();
-            flow->print(std::cerr, true);
-            gOutputMutex.unlock();
-         }
+         LOG_INFO
+         flow->print(stdlog, true);
+         LOG_END
          delete flow;
          // Invalidated iterator. Is there a better solution?
          iterator = FlowManager::getFlowManager()->getFlowSet().begin();
@@ -661,13 +611,13 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    pfd.revents = 0;
    const int result = ext_poll_wrapper(&pfd, 1, timeout);
    if(result < 1) {
-      LOG_DEBUG
+      LOG_TRACE
       stdlog << "<timeout>" << "\n";
       LOG_END
       return false;
    }
    if(!(pfd.revents & POLLIN)) {
-      LOG_DEBUG
+      LOG_TRACE
       stdlog << "<no answer>" << "\n";
       LOG_END
       return false;
@@ -702,7 +652,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    }
 
    const uint32_t status = ntohl(ackMsg.Status);
-   LOG_DEBUG
+   LOG_TRACE
    stdlog << format("<status=%u>", status) << "\n";
    LOG_END
    return status == NETPERFMETER_STATUS_OKAY;
@@ -726,16 +676,11 @@ static bool uploadOutputFile(const int         controlSocket,
    // ====== Initialize header ==============================================
    resultsMsg->Header.Type = NETPERFMETER_RESULTS;
 
-   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-      gOutputMutex.lock();
-      std::cerr << "\n";
-      printTimeStamp(std::cerr);
-      std::cerr << "Uploading results ";
-      std::cerr.flush();
-      gOutputMutex.unlock();
-   }
-
    // ====== Transmission loop ==============================================
+   LOG_INFO
+   stdlog << format("Uploading results on socket %d ...", controlSocket) << "\n";
+   LOG_END
+
    bool success = true;
    do {
       // ====== Read chunk from file ========================================
@@ -745,49 +690,36 @@ static bool uploadOutputFile(const int         controlSocket,
       resultsMsg->Header.Flags  = feof(outputFile.getFile()) ? NPMRF_EOF : 0x00;
       resultsMsg->Header.Length = htons(sizeof(NetPerfMeterResults) + bytes);
       if(ferror(outputFile.getFile())) {
-         gOutputMutex.lock();
-         printTimeStamp(std::cerr);
-         std::cerr << "ERROR: Failed to read results from " << outputFile.getName() << " - "
-                   << strerror(errno) << "!\n";
-         gOutputMutex.unlock();
+         LOG_ERROR
+         stdlog << format("Failed to read results from %s: %s!",
+                          outputFile.getName().c_str(), strerror(errno)) << "\n";
+         LOG_END
          success = false;
          break;
       }
 
       // ====== Transmit chunk ==============================================
       if(ext_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, 0) < 0) {
-         gOutputMutex.lock();
-         printTimeStamp(std::cerr);
-         std::cerr << "ERROR: Failed to upload results - " << strerror(errno) << "!\n";
-         gOutputMutex.unlock();
+         LOG_ERROR
+         stdlog << format("Failed to upload results on socket %d: %s!",
+                          controlSocket, strerror(errno)) << "\n";
+         LOG_END
          success = false;
          break;
       }
-      if(gOutputVerbosity >= NPFOV_REALLY_VERBOSE) {
-         gOutputMutex.lock();
-         std::cerr << ".";
-         gOutputMutex.unlock();
-      }
-      gOutputMutex.lock();
-      std::cerr.flush();
-      gOutputMutex.unlock();
    } while(!(resultsMsg->Header.Flags & NPMRF_EOF));
 
    // ====== Check results ==================================================
    if(!success) {
-      gOutputMutex.lock();
-      std::cerr << "\n";
-      printTimeStamp(std::cerr);
-      std::cerr << "WARNING: Unable to upload results (errno=" << errno << "): "
-                << strerror(errno) << "\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("Unable to upload results on socket %d (errno=%s)!",
+                       controlSocket, strerror(errno)) << "\n";
+      LOG_END
       ext_shutdown(controlSocket, 2);
    }
-   if(gOutputVerbosity >= NPFOV_CONNECTIONS) {
-      gOutputMutex.lock();
-      std::cerr << " " << ((success == true) ? "okay": "FAILED") << "\n";
-      gOutputMutex.unlock();
-   }
+   LOG_TRACE
+   stdlog << ((success == true) ? "okay": "FAILED") << "\n";
+   LOG_END
    return success;
 }
 
@@ -821,10 +753,10 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
                                       const size_t                      received)
 {
    if(received < sizeof(NetPerfMeterAddFlowMessage)) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message!\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("Received malformed NETPERFMETER_ADD_FLOW control message on socket %d!",
+                       controlSocket) << "\n";
+      LOG_END
       ext_shutdown(controlSocket, 2);
       return false;
    }
@@ -833,11 +765,10 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    const uint16_t streamID        = ntohs(addFlowMsg->StreamID);
    const size_t   startStopEvents = ntohs(addFlowMsg->OnOffEvents);
    if(received < sizeof(NetPerfMeterAddFlowMessage) + (startStopEvents * sizeof(NetPerfMeterOnOffEvent))) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: Received malformed NETPERFMETER_ADD_FLOW control message "
-                   "(too few start/stop entries)!\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("Too few start/stop entries in NETPERFMETER_ADD_FLOW control message on socket %d!",
+                       controlSocket) << "\n";
+      LOG_END
       ext_shutdown(controlSocket, 2);
       return false;
    }
@@ -845,10 +776,10 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    memcpy((char*)&description, (const char*)&addFlowMsg->Description, sizeof(addFlowMsg->Description));
    description[sizeof(addFlowMsg->Description)] = 0x00;
    if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID)) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: NETPERFMETER_ADD_FLOW tried to add already-existing flow!\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("NETPERFMETER_ADD_FLOW tried to add already-existing flow on socket %d!",
+                       controlSocket) << "\n";
+      LOG_END
       return(sendNetPerfMeterAcknowledge(controlSocket,
                                          measurementID, flowID, streamID,
                                          NETPERFMETER_STATUS_ERROR));
@@ -928,10 +859,10 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
                                          const size_t                         received)
 {
    if(received < sizeof(NetPerfMeterRemoveFlowMessage)) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: Received malformed NETPERFMETER_REMOVE_FLOW control message!\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("Received malformed NETPERFMETER_REMOVE_FLOW control message on socket %d!",
+                       controlSocket) << "\n";
+      LOG_END
       ext_shutdown(controlSocket, 2);
       return false;
    }
@@ -940,10 +871,10 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
    const uint16_t streamID      = ntohs(removeFlowMsg->StreamID);
    Flow* flow = FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID);
    if(flow == nullptr) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: NETPERFMETER_ADD_REMOVE tried to remove not-existing flow!\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("NETPERFMETER_ADD_REMOVE tried to remove not-existing flow on socket %d!",
+                       controlSocket) << "\n";
+      LOG_END
       return(sendNetPerfMeterAcknowledge(controlSocket,
                                          measurementID, flowID, streamID,
                                          NETPERFMETER_STATUS_ERROR));
@@ -970,10 +901,10 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
                                     const size_t                    received)
 {
    if(received < sizeof(NetPerfMeterStartMessage)) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: Received malformed NETPERFMETER_START control message!\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("Received malformed NETPERFMETER_START control message on socket %d!",
+                       controlSocket) << "\n";
+      LOG_END
       ext_shutdown(controlSocket, 2);
       return false;
    }
@@ -1024,10 +955,10 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
                                    const size_t                   received)
 {
    if(received < sizeof(NetPerfMeterStopMessage)) {
-      gOutputMutex.lock();
-      printTimeStamp(std::cerr);
-      std::cerr << "ERROR: Received malformed NETPERFMETER_STOP control message!\n";
-      gOutputMutex.unlock();
+      LOG_WARNING
+      stdlog << format("Received malformed NETPERFMETER_STOP control message on socket %d!",
+                       controlSocket) << "\n";
+      LOG_END
       ext_shutdown(controlSocket, 2);
       return false;
    }
@@ -1115,10 +1046,10 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
    }
    else if(received < (ssize_t)sizeof(NetPerfMeterHeader)) {
       if(received < 0) {
-         gOutputMutex.lock();
-         printTimeStamp(std::cerr);
-         std::cerr << "ERROR: Control connection is broken!\n";
-         gOutputMutex.unlock();
+         LOG_WARNING
+         stdlog << format("Control connection is broken on socket %d!",
+                          controlSocket) << "\n";
+         LOG_END
          ext_shutdown(controlSocket, 2);
       }
       return false;
@@ -1138,39 +1069,36 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
    else {
       const NetPerfMeterHeader* header = (const NetPerfMeterHeader*)&inputBuffer;
       if(ntohs(header->Length) != received) {
-         gOutputMutex.lock();
-         printTimeStamp(std::cerr);
-         std::cerr << "ERROR: Received malformed control message!\n"
-            << "       expected=" << ntohs(header->Length)
-            << ", received="<< received << "\n";
-         gOutputMutex.unlock();
+         LOG_WARNING
+         stdlog << format("Received malformed control message on socket %d: expected length %u, but received length %u!",
+                          controlSocket, (unsigned int)ntohs(header->Length), (unsigned int)received) << "\n";
+         LOG_END
          ext_shutdown(controlSocket, 2);
          return false;
       }
 
       switch(header->Type) {
          case NETPERFMETER_ADD_FLOW:
-            return(handleNetPerfMeterAddFlow(
+            return handleNetPerfMeterAddFlow(
                       messageReader, controlSocket,
-                      (const NetPerfMeterAddFlowMessage*)&inputBuffer, received));
+                      (const NetPerfMeterAddFlowMessage*)&inputBuffer, received);
          case NETPERFMETER_REMOVE_FLOW:
-            return(handleNetPerfMeterRemoveFlow(
+            return handleNetPerfMeterRemoveFlow(
                       messageReader, controlSocket,
-                      (const NetPerfMeterRemoveFlowMessage*)&inputBuffer, received));
+                      (const NetPerfMeterRemoveFlowMessage*)&inputBuffer, received);
          case NETPERFMETER_START:
-            return(handleNetPerfMeterStart(
+            return handleNetPerfMeterStart(
                       messageReader, controlSocket,
-                      (const NetPerfMeterStartMessage*)&inputBuffer, received));
+                      (const NetPerfMeterStartMessage*)&inputBuffer, received);
          case NETPERFMETER_STOP:
-            return(handleNetPerfMeterStop(
+            return handleNetPerfMeterStop(
                       messageReader, controlSocket,
-                      (const NetPerfMeterStopMessage*)&inputBuffer, received));
+                      (const NetPerfMeterStopMessage*)&inputBuffer, received);
          default:
-            gOutputMutex.lock();
-            printTimeStamp(std::cerr);
-            std::cerr << "ERROR: Received invalid control message of type "
-                     << (unsigned int)header->Type << "!\n";
-            gOutputMutex.unlock();
+            LOG_WARNING
+            stdlog << format("Received invalid control message of type 0x%02x!",
+                             (unsigned int)header->Type) << "\n";
+            LOG_END
             ext_shutdown(controlSocket, 2);
             return false;
       }
