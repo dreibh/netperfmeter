@@ -68,14 +68,9 @@ class FlowManager : public Thread
       return FlowSet;
    }
 
-   inline void enableDisplay() {
+   inline void configureDisplay(const bool on) {
       lock();
-      DisplayOn = true;
-      unlock();
-   }
-   inline void disableDisplay() {
-      lock();
-      DisplayOn = false;
+      DisplayEnabled = on;
       unlock();
    }
 
@@ -150,10 +145,9 @@ class FlowManager : public Thread
    // ------ Flow Management ------------------------------------------------
    MessageReader                      Reader;
    std::vector<Flow*>                 FlowSet;
-   bool                               UpdatedUnidentifiedSockets;
-   bool                               DisplayOn;
    FlowBandwidthStats                 CurrentGlobalStats;
    FlowBandwidthStats                 LastGlobalStats;
+   bool                               DisplayEnabled;
 
    // ------ Measurement Management -----------------------------------------
    std::map<std::pair<int, uint64_t>,

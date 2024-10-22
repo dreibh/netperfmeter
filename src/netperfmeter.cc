@@ -1130,9 +1130,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    // ====== Main loop ======================================================
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
-   if(gDisplayEnabled) {
-      FlowManager::getFlowManager()->enableDisplay();
-   }
+
+   FlowManager::getFlowManager()->configureDisplay(gDisplayEnabled);
 
    const unsigned long long stopAt = (gRuntime > 0) ?
       (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
@@ -1140,7 +1139,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       mainLoop(false, stopAt, 0);
    }
 
-   FlowManager::getFlowManager()->disableDisplay();
+   FlowManager::getFlowManager()->configureDisplay(false);
 
 
    // ====== Clean up =======================================================
@@ -1372,18 +1371,16 @@ void activeMode(int argc, char** argv)
       (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
-   if(gDisplayEnabled) {
-      FlowManager::getFlowManager()->enableDisplay();
-   }
 
+   FlowManager::getFlowManager()->configureDisplay(gDisplayEnabled);
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       if(!mainLoop(true, stopAt, measurementID)) {
          std::cout << "\n" << "*** Aborted ***\n";
          break;
       }
    }
+   FlowManager::getFlowManager()->configureDisplay(false);
 
-   FlowManager::getFlowManager()->disableDisplay();
    if(gStopTimeReached) {
       std::cout << "\n";
    }

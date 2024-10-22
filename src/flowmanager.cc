@@ -52,7 +52,7 @@ FlowManager FlowManager::FlowManagerSingleton;
 // ###### Constructor #######################################################
 FlowManager::FlowManager()
 {
-   DisplayOn         = false;
+   DisplayEnabled    = false;
    DisplayInterval   = 1000000;
    FirstDisplayEvent = 0;
    LastDisplayEvent  = 0;
@@ -390,7 +390,6 @@ void FlowManager::addUnidentifiedSocket(const int protocol,
    lock();
    Reader.registerSocket(protocol, socketDescriptor);
    UnidentifiedSockets.insert(std::pair<int, UnidentifiedSocket*>(socketDescriptor, us));
-   UpdatedUnidentifiedSockets = true;
    unlock();
 }
 
@@ -405,17 +404,12 @@ void FlowManager::removeUnidentifiedSocket(const int  socketDescriptor,
    if(found != UnidentifiedSockets.end()) {
       UnidentifiedSocket* us = found->second;
       assert(us->ToBeRemoved == false);
-      // Mark socket for removal FIXME
+      // Mark socket for removal. The actual remove cannot be done here,
+      // since this function may be called in the loop iterating over the
+      // UnidentifiedSockets. Removing would invalidate the iterator!
       us->ToBeRemoved = true;
       us->ToBeClosed  = closeSocket;
-//       UnidentifiedSockets.erase(found);
-//       delete us;
-      UpdatedUnidentifiedSockets = true;
    }
-//    if(closeSocket) {
-//       Reader.deregisterSocket(socketDescriptor);
-//       ext_close(socketDescriptor);
-//    }
    unlock();
 }
 
@@ -501,7 +495,7 @@ void FlowManager::handleEvents(const unsigned long long now)
       }
 
       // ====== Print bandwidth/CPU information line ========================
-      if(DisplayOn) {
+      if(DisplayEnabled) {
          static const unsigned int cpuDisplayLimit = 4;
          static const char* colorOff         = "\x1b[0m";
          static const char* colorDuration    = "\x1b[34m";
@@ -852,7 +846,6 @@ void FlowManager::run()
       assert(n <= FlowSet.size());
 
       // ------ Get socket descriptors for yet unidentified associations ----
-      UpdatedUnidentifiedSockets = false;
       for(std::map<int, UnidentifiedSocket*>::iterator iterator = UnidentifiedSockets.begin();
           iterator != UnidentifiedSockets.end(); iterator++) {
          UnidentifiedSocket* ud = iterator->second;
@@ -900,6 +893,8 @@ void FlowManager::run()
             FlowSet[i]->lock();
             const pollfd* entry = FlowSet[i]->PollFDEntry;
             if(entry) {
+
+               // ====== Handle data message ================================
                if(entry->revents & POLLIN) {
                   const int protocol = FlowSet[i]->getTrafficSpec().Protocol;
 #ifdef DEBUG_POLL
@@ -928,6 +923,7 @@ void FlowManager::run()
          }
 
          // ====== Handle read events of yet unidentified sockets ===========
+         // Iterate in while loop, for removals and necessary iterator updates!
          std::map<int, UnidentifiedSocket*>::iterator iterator = UnidentifiedSockets.begin();
          while(iterator != UnidentifiedSockets.end()) {
             UnidentifiedSocket* ud = iterator->second;
@@ -935,18 +931,18 @@ void FlowManager::run()
             if(ud->Protocol != IPPROTO_UDP) {
                const pollfd* entry = ud->PollFDEntry;
                if(entry) {
+
+                  // ====== Handle data message =============================
                   if( (ud->ToBeRemoved == false) &&
                       (entry->revents & POLLIN) ) {
 #ifdef DEBUG_POLL
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                  << " protocol " << ud->Protocol << "\n";
 #endif
-                                 puts("x1");
                      const bool dataOkay = handleNetPerfMeterData(true, now,
                                                                   ud->Protocol,
                                                                   ud->SocketDescriptor);
                      if(!dataOkay) {
-                        puts("x2");
                         // Incoming connection has already been closed -> remove it!
                         LOG_WARNING
                         stdlog << format("Shutdown of still unidentified incoming connection on socket %d!",
@@ -954,10 +950,12 @@ void FlowManager::run()
                         LOG_END
                         ud->ToBeRemoved = true;   // Mark for removal
                      }
-                     puts("x3");
                   }
+
+                  // ====== Check removal from UnidentifiedSockets ==========
                   if(ud->ToBeRemoved == true) {
-                     // NOTE: This is like for removeUnidentifiedSocket().
+                     // Remove the socket marked by removeUnidentifiedSocket(),
+                     // or by ud->ToBeRemoved = true above:
                      // However, since we are in an interation loop, we
                      // must ensure that the iterator remains valid!
                      iterator = UnidentifiedSockets.erase(iterator);
