@@ -949,6 +949,7 @@ void FlowManager::run()
                                          ud->SocketDescriptor) << "\n";
                         LOG_END
                         ud->ToBeRemoved = true;   // Mark for removal
+                        ud->ToBeClosed  = true;
                      }
                   }
 
