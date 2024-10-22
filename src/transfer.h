@@ -38,9 +38,9 @@
 ssize_t transmitFrame(Flow*                    flow,
                       const unsigned long long now);
 
-ssize_t handleNetPerfMeterData(const bool               isActiveMode,
-                               const unsigned long long now,
-                               const int                protocol,
-                               const int                sd);
+bool handleNetPerfMeterData(const bool               isActiveMode,
+                            const unsigned long long now,
+                            const int                protocol,
+                            const int                sd);
 
 #endif

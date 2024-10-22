@@ -4,10 +4,10 @@ set -eu
 
 # ====== Handle arguments ===================================================
 if [ $# -lt 2 ] ; then
-   echo >&2 "Usage: $0 netperfmeter_server:port [processes]"
+   echo >&2 "Usage: $0 netperfmeter_server [processes]"
    exit 1
 fi
-NETPERFMETER="$1"
+SERVER="$1"
 if [ "$2" != "" ] ; then
    procs="$2"
 else
@@ -19,7 +19,7 @@ fi
 echo "Running fuzz-test with ${procs} processes ..."
 (
    while true ; do
-      echo "cat /dev/urandom | nc localhost 9000"
-      echo "cat /dev/urandom | nc localhost 9001"
+      echo "cat /dev/urandom | nc "${SERVER}" 9000"
+      echo "cat /dev/urandom | nc "${SERVER}" 9001"
    done
 ) | parallel -j${procs} | strings

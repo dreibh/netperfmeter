@@ -230,10 +230,10 @@ ssize_t transmitFrame(Flow*                    flow,
 
 
 // ###### Handle data message ###############################################
-ssize_t handleNetPerfMeterData(const bool               isActiveMode,
-                               const unsigned long long now,
-                               const int                protocol,
-                               const int                sd)
+bool handleNetPerfMeterData(const bool               isActiveMode,
+                            const unsigned long long now,
+                            const int                protocol,
+                            const int                sd)
 {
    char            inputBuffer[65536];
    sockaddr_union  from;
@@ -241,10 +241,13 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
    int             flags   = 0;
    sctp_sndrcvinfo sinfo;
 
-   sinfo.sinfo_stream = 0;
+   // ====== Read message (or fragment) =====================================
    const ssize_t received =
       FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
          sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
+   if(received == MRRM_PARTIAL_READ) {
+      return true;   // Partial read -> wait for next fragment.
+   }
 
    // ====== Handle data ====================================================
    if(received > 0) {
@@ -283,6 +286,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
                if(protocol != IPPROTO_UDP) {
                   ext_shutdown(sd, SHUT_RDWR);
                }
+               return false;
             }
          }
          else {
@@ -292,6 +296,7 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
             if(protocol != IPPROTO_UDP) {
                ext_shutdown(sd, SHUT_RDWR);
             }
+            return false;
          }
       }
    }
@@ -312,10 +317,11 @@ ssize_t handleNetPerfMeterData(const bool               isActiveMode,
          if(protocol != IPPROTO_UDP) {
             ext_shutdown(sd, SHUT_RDWR);
          }
+         return false;
       }
    }
 
-   return received;
+   return true;
 }
 
 

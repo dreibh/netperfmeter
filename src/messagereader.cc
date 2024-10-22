@@ -301,8 +301,8 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             if(socket->MessageSize > bufferSize) {
                LOG_WARNING
                stdlog << format("Buffer size is too small (buffer %u, message %u) for message from socket %d!",
-                                 socket->SocketDescriptor,
-                                 bufferSize, socket->MessageSize) << "\n";
+                                socket->SocketDescriptor,
+                                bufferSize, socket->MessageSize) << "\n";
                LOG_END
                socket->Status = Socket::MRS_StreamError;
                return MRRM_STREAM_ERROR;
@@ -310,7 +310,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             if((socket->Protocol == IPPROTO_SCTP) && (!(*msgFlags & MSG_EOR))) {
                LOG_WARNING
                stdlog << format("TLV message end does not match with SCTP message end in message from socket %d!",
-                                 socket->SocketDescriptor) << "\n";
+                                socket->SocketDescriptor) << "\n";
                LOG_END
                socket->Status = Socket::MRS_StreamError;
                return MRRM_STREAM_ERROR;

@@ -904,9 +904,9 @@ void FlowManager::run()
 #endif
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
-                  const ssize_t result = handleNetPerfMeterData(true, now,
-                                                                protocol, entry->fd);
-                  if( (result <= 0) && (result != MRRM_PARTIAL_READ) ) {
+                  const bool dataOkay = handleNetPerfMeterData(true, now,
+                                                               protocol, entry->fd);
+                  if(!dataOkay) {
                      assert(protocol != IPPROTO_UDP);
                      if(protocol != IPPROTO_UDP) {
                         // Close the broken connection!
@@ -925,8 +925,8 @@ void FlowManager::run()
 
          // ====== Handle read events of yet unidentified sockets ===========
          if(!UpdatedUnidentifiedSockets) {
-            for(std::map<int, UnidentifiedSocket*>::iterator iterator = UnidentifiedSockets.begin();
-               iterator != UnidentifiedSockets.end(); iterator++) {
+            std::map<int, UnidentifiedSocket*>::iterator iterator = UnidentifiedSockets.begin();
+            while(iterator != UnidentifiedSockets.end()) {
                const UnidentifiedSocket* ud = iterator->second;
                // See note above about UDP: UDP is handled by mainLoop()!
                if(ud->Protocol != IPPROTO_UDP) {
@@ -936,26 +936,32 @@ void FlowManager::run()
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                << " protocol " << ud->Protocol << "\n";
 #endif
-                     const ssize_t result = handleNetPerfMeterData(true, now,
-                                                                   ud->Protocol,
-                                                                   ud->SocketDescriptor);
-                     if( (result <= 0) && (result != MRRM_PARTIAL_READ) ) {
+                     const bool dataOkay = handleNetPerfMeterData(true, now,
+                                                                  ud->Protocol,
+                                                                  ud->SocketDescriptor);
+                     if(!dataOkay) {
                         // Incoming connection has already been closed -> remove it!
                         LOG_WARNING
                         stdlog << format("Shutdown of still unidentified incoming connection on socket %d!",
                                          ud->SocketDescriptor) << "\n";
                         LOG_END
-                        removeSocket(ud->SocketDescriptor, true);
-                        break;
+                        iterator = UnidentifiedSockets.erase(iterator);
+                        Reader.deregisterSocket(ud->SocketDescriptor);
+                        ext_close(ud->SocketDescriptor);
+                        assert(UnidentifiedSockets.find(ud->SocketDescriptor) == UnidentifiedSockets.end());
+                        delete ud;
+                        continue;
                      }
-                     if(UpdatedUnidentifiedSockets) {
-                        // NOTE: The UnidentifiedSockets set may have changed in
-                        // handleDataMessage -> ... -> FlowManager::identifySocket
-                        // => stop processing if this is the case
-                        break;
-                     }
+
+//                      if(UpdatedUnidentifiedSockets) {
+//                         // NOTE: The UnidentifiedSockets set may have changed in
+//                         // handleDataMessage -> ... -> FlowManager::identifySocket
+//                         // => stop processing if this is the case
+//                         break;
+//                      }
                   }
                }
+               iterator++;
             }
          }
       }

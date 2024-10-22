@@ -36,9 +36,6 @@
 #include <cstring>
 
 
-extern MessageReader gMessageReader;
-
-
 // ##########################################################################
 // #### Active Side Control                                              ####
 // ##########################################################################
@@ -66,7 +63,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
       return false;
    }
    bool success = false;
-   ssize_t received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer));
+   ssize_t received = messageReader->receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer));
    while( (received == MRRM_PARTIAL_READ) || (received >= (ssize_t)sizeof(NetPerfMeterResults)) ) {
       if(received > 0) {
          const size_t bytes = ntohs(resultsMsg->Header.Length);
@@ -111,7 +108,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
             break;
          }
       }
-      received = gMessageReader.receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer));
+      received = messageReader->receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer));
    }
    if(!success) {
       LOG_ERROR
@@ -618,7 +615,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    NetPerfMeterAcknowledgeMessage ackMsg;
    ssize_t                        received;
    do {
-      received = gMessageReader.receiveMessage(controlSocket, &ackMsg, sizeof(ackMsg));
+      received = messageReader->receiveMessage(controlSocket, &ackMsg, sizeof(ackMsg));
    } while(received == MRRM_PARTIAL_READ);
    if(received < (ssize_t)sizeof(ackMsg)) {
       return false;

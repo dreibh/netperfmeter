@@ -68,7 +68,7 @@ static int            gDCCPSocket       = -1;
 static double         gRuntime          = -1.0;
 static bool           gDisplayEnabled   = true;
 static bool           gStopTimeReached  = false;
-MessageReader         gMessageReader;
+static MessageReader  gMessageReader;
 
 
 
