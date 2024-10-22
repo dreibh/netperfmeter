@@ -67,7 +67,7 @@ std::string format(const char* fmt, ...)
    va_start(va, fmt);
    vsnprintf(buffer, sizeof(buffer), fmt, va);
    va_end(va);
-   return(std::string(buffer));
+   return std::string(buffer);
 }
 
 
@@ -107,16 +107,16 @@ int pollTimeout(const unsigned long long now, const size_t n, ...)
       timeout = std::min(timeout, t);
    }
    if(timeout == ~0ULL) {
-      return(-1);   // Infinite wait time (only care for sockets/files)
+      return -1;   // Infinite wait time (only care for sockets/files)
    }
    const double delta = (double)timeout - (double)now;
    if(delta <= 0.0) {
-      return(0);   // Do not wait, just check sockets/files
+      return 0;   // Do not wait, just check sockets/files
    }
    else {
       // Return wait time in milliseconds.
       // NOTE: Return ceiling of the value, since 999ULL/1000ULL == 0!
-      return((int)ceil(delta / 1000.0));
+      return (int)ceil(delta / 1000.0);
    }
 }
 
@@ -127,7 +127,7 @@ int safestrcpy(char* dest, const char* src, const size_t size)
    assert(size > 0);
    strncpy(dest, src, size);
    dest[size - 1] = 0x00;
-   return(strlen(dest) < size);
+   return strlen(dest) < size;
 }
 
 
@@ -140,7 +140,7 @@ int safestrcat(char* dest, const char* src, const size_t size)
    assert(size > 0);
    strncat(dest, src, size - l1 - 1);
    dest[size - 1] = 0x00;
-   return(l1 + l2 < size);
+   return l1 + l2 < size;
 }
 
 
@@ -150,13 +150,13 @@ static char* strindex(char* string, const char character)
    if(string != nullptr) {
       while(*string != character) {
          if(*string == 0x00) {
-            return(nullptr);
+            return nullptr;
          }
          string++;
       }
-      return(string);
+      return string;
    }
-   return(nullptr);
+   return nullptr;
 }
 
 
@@ -170,13 +170,13 @@ static char* strrindex(char* string, const char character)
       string = (char*)&string[strlen(string)];
       while(*string != character) {
          if(string == original) {
-            return(nullptr);
+            return nullptr;
          }
          string--;
       }
-      return(string);
+      return string;
    }
-   return(nullptr);
+   return nullptr;
 }
 
 
@@ -185,9 +185,9 @@ bool hasSuffix(const std::string& name, const std::string& suffix)
 {
    const size_t found = name.rfind(suffix);
    if(found == name.length() - suffix.length()) {
-      return(true);
+      return true;
    }
-   return(false);
+   return false;
 }
 
 
@@ -227,9 +227,9 @@ bool checkIPv6()
    int sd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
    if(sd >= 0) {
       close(sd);
-      return(true);
+      return true;
    }
-   return(false);
+   return false;
 }
 
 
@@ -238,11 +238,11 @@ size_t getSocklen(const struct sockaddr* address)
 {
    switch(address->sa_family) {
       case AF_INET:
-         return(sizeof(struct sockaddr_in));
+         return sizeof(struct sockaddr_in);
       case AF_INET6:
-         return(sizeof(struct sockaddr_in6));
+         return sizeof(struct sockaddr_in6);
       default:
-         return(sizeof(struct sockaddr));
+         return sizeof(struct sockaddr);
    }
 }
 
@@ -279,22 +279,22 @@ int addresscmp(const struct sockaddr* a1, const struct sockaddr* a2, const bool 
 
       result = memcmp((void*)&x1,(void*)&x2,16);
       if(result != 0) {
-         return(result);
+         return result;
       }
 
       if(port) {
          p1 = getPort((struct sockaddr*)a1);
          p2 = getPort((struct sockaddr*)a2);
          if(p1 < p2) {
-            return(-1);
+            return -1;
          }
          else if(p1 > p2) {
-            return(1);
+            return 1;
          }
       }
-      return(0);
+      return 0;
    }
-   return(0);
+   return 0;
 }
 
 
@@ -322,7 +322,7 @@ bool address2string(const struct sockaddr* address,
          else {
             snprintf(buffer, length, "%s", inet_ntoa(ipv4address->sin_addr));
          }
-         return(true);
+         return true;
 
       case AF_INET6:
          ipv6address = (const struct sockaddr_in6*)address;
@@ -332,7 +332,7 @@ bool address2string(const struct sockaddr* address,
             ifname = if_indextoname(ipv6address->sin6_scope_id, (char*)&ifnamebuffer);
             if(ifname == nullptr) {
                safestrcpy((char*)&ifnamebuffer, "(BAD!)", sizeof(ifnamebuffer));
-               return(false);
+               return false;
             }
             snprintf((char*)&scope, sizeof(scope), "%%%s", ifname);
          }
@@ -347,15 +347,15 @@ bool address2string(const struct sockaddr* address,
             else {
                snprintf(buffer, length, "%s%s", str, scope);
             }
-            return(true);
+            return true;
          }
        break;
 
       case AF_UNSPEC:
          safestrcpy(buffer, "(unspecified)", length);
-         return(true);
+         return true;
    }
-   return(false);
+   return false;
 }
 
 
@@ -379,7 +379,7 @@ bool string2address(const char*           string,
    size_t i;
 
    if(strlen(string) > sizeof(host)) {
-      return(false);
+      return false;
    }
    strcpy((char*)&host,string);
    strcpy((char*)&port, "0");
@@ -423,7 +423,7 @@ bool string2address(const char*           string,
    if((sscanf(port, "%d", &portNumber) != 1) ||
       (portNumber < 0) ||
       (portNumber > 65535)) {
-      return(false);
+      return false;
    }
 
 
@@ -458,7 +458,7 @@ bool string2address(const char*           string,
    }
 
    if(getaddrinfo(host, nullptr, &hints, &res) != 0) {
-      return(false);
+      return false;
    }
 
    memset((char*)address,0,sizeof(union sockaddr_union));
@@ -479,11 +479,11 @@ bool string2address(const char*           string,
        break;
 
       default:
-         return(false);
+         return false;
    }
 
    freeaddrinfo(res);
-   return(true);
+   return true;
 }
 
 
@@ -527,7 +527,7 @@ const char* getProtocolName(const int protocol)
          break;
 #endif
    }
-   return(protocolName);
+   return protocolName;
 }
 
 
@@ -537,14 +537,14 @@ uint16_t getPort(const struct sockaddr* address)
    if(address != nullptr) {
       switch(address->sa_family) {
          case AF_INET:
-            return(ntohs(((struct sockaddr_in*)address)->sin_port));
+            return ntohs(((struct sockaddr_in*)address)->sin_port);
          case AF_INET6:
-            return(ntohs(((struct sockaddr_in6*)address)->sin6_port));
+            return ntohs(((struct sockaddr_in6*)address)->sin6_port);
          default:
-            return(0);
+            return 0;
       }
    }
-   return(0);
+   return 0;
 }
 
 
@@ -555,13 +555,13 @@ bool setPort(struct sockaddr* address, uint16_t port)
       switch(address->sa_family) {
          case AF_INET:
             ((struct sockaddr_in*)address)->sin_port = htons(port);
-            return(true);
+            return true;
          case AF_INET6:
             ((struct sockaddr_in6*)address)->sin6_port = htons(port);
-            return(true);
+            return true;
       }
    }
-   return(false);
+   return false;
 }
 
 
@@ -597,9 +597,9 @@ int createSocket(const int             family,
    // ====== Create socket ==================================================
    int sd = ext_socket(socketFamily, type, socketProtocol);
    if(sd < 0) {
-      return(-2);
+      return -2;
    }
-   return(sd);
+   return sd;
 }
 
 
@@ -657,7 +657,7 @@ int bindSocket(const int             sd,
       const int on = (bindV6Only == true) ? 1 : 0;
       // printf("IPV6_V6ONLY=%d\n", on);
       if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) < 0) {
-         return(-2);
+         return -2;
       }
    }
 #else
@@ -672,7 +672,7 @@ int bindSocket(const int             sd,
       if(ext_setsockopt(sd, IPPROTO_TCP, MPTCP_ENABLED_LEGACY, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
          if(ext_setsockopt(sd, IPPROTO_TCP, MPTCP_ENABLED, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
             if(protocol == IPPROTO_MPTCP) {
-               return(-2);
+               return -2;
             }
          }
       }
@@ -682,7 +682,7 @@ int bindSocket(const int             sd,
    // ====== Bind socket ====================================================
    if(localAddressCount == 0) {
       if(ext_bind(sd, &anyAddress.sa, getSocklen(&anyAddress.sa)) != 0) {
-         return(-3);
+         return -3;
       }
    }
    else {
@@ -707,7 +707,7 @@ int bindSocket(const int             sd,
          }
          if(sctp_bindx(sd, (sockaddr*)&buffer, localAddressCount,
                        SCTP_BINDX_ADD_ADDR) != 0) {
-            return(-3);
+            return -3;
          }
       }
       else {
@@ -726,7 +726,7 @@ int bindSocket(const int             sd,
          }
 
          if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
-            return(-3);
+            return -3;
          }
       }
    }
@@ -735,7 +735,7 @@ int bindSocket(const int             sd,
    if(listenMode) {
       ext_listen(sd, 10);
    }
-   return(sd);
+   return sd;
 }
 
 
@@ -764,10 +764,10 @@ int createAndBindSocket(const int             family,
                                      listenMode, bindV6Only);
       if(success < 0) {
          ext_close(sd);
-         return(success);
+         return success;
       }
    }
-   return(sd);
+   return sd;
 }
 
 
@@ -779,7 +779,7 @@ bool sendAbort(int sd, sctp_assoc_t assocID)
    sinfo.sinfo_assoc_id = assocID;
    sinfo.sinfo_flags    = SCTP_ABORT;
 
-   return(sctp_send(sd, nullptr, 0, &sinfo, 0) >= 0);
+   return sctp_send(sd, nullptr, 0, &sinfo, 0) >= 0;
 }
 
 
@@ -794,7 +794,7 @@ static uint64_t byteswap64(const uint64_t value)
            ((int64_t)((b << 24) | ((b & 0x0000ff00) << 8) |
            ((b & 0x00ff0000) >> 8) | (b >> 24)) << 32) );
 #elif BYTE_ORDER == BIG_ENDIAN
-   return(value);
+   return value;
 #else
 #error Byte order undefined!
 #endif
@@ -804,14 +804,14 @@ static uint64_t byteswap64(const uint64_t value)
 /* ###### Convert byte order of 64 bit value ############################# */
 uint64_t hton64(const uint64_t value)
 {
-   return(byteswap64(value));
+   return byteswap64(value);
 }
 
 
 /* ###### Convert byte order of 64 bit value ############################# */
 uint64_t ntoh64(const uint64_t value)
 {
-   return(byteswap64(value));
+   return byteswap64(value);
 }
 
 
@@ -894,7 +894,7 @@ network_double_t doubleToNetwork(const double d)
       ieee.f1 = (unsigned long)ldexp (frac, DBL_FRC1_BITS);
       ieee.f2 = (unsigned long)ldexp (frac, DBL_FRC_BITS);
    }
-   return(hton64(*((network_double_t*)&ieee)));
+   return hton64(*((network_double_t*)&ieee));
 }
 
 
@@ -936,7 +936,7 @@ double networkToDouble(network_double_t value)
          d = -d;
       }
    }
-   return(d);
+   return d;
 }
 
 #else
@@ -952,7 +952,7 @@ network_double_t doubleToNetwork(const double d)
 {
    union DoubleIntUnion valueUnion;
    valueUnion.Double = d;
-   return(hton64(valueUnion.Integer));
+   return hton64(valueUnion.Integer);
 }
 
 /* ###### Convert machine-independent form to double ##################### */
@@ -960,7 +960,7 @@ double networkToDouble(network_double_t value)
 {
    union DoubleIntUnion valueUnion;
    valueUnion.Integer = ntoh64(value);
-   return(valueUnion.Double);
+   return valueUnion.Double;
 }
 
 #endif
@@ -1044,7 +1044,7 @@ bool breakDetected()
       }
       PrintedBreak = getMicroTime();
    }
-   return(DetectedBreak);
+   return DetectedBreak;
 }
 
 
@@ -1081,7 +1081,7 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
          abort();
        break;
    }
-   return(value);
+   return value;
 }
 
 
@@ -1090,15 +1090,15 @@ const char* getRandomGeneratorName(const uint8_t rng)
 {
    switch(rng) {
       case RANDOM_CONSTANT:
-         return("constant");
+         return "constant";
       case RANDOM_EXPONENTIAL:
-         return("exponential");
+         return "exponential";
       case RANDOM_UNIFORM:
-         return("uniform");
+         return "uniform";
       case RANDOM_PARETO:
-         return("pareto");
+         return "pareto";
    }
-   return("(invalid!)");
+   return "(invalid!)";
 }
 
 
@@ -1121,21 +1121,21 @@ static FILE* RandomDevice = nullptr;
 /* ###### Get 8-bit random value ######################################### */
 uint8_t random8()
 {
-   return((uint8_t)random32());
+   return (uint8_t)random32();
 }
 
 
 /* ###### Get 16-bit random value ######################################## */
 uint16_t random16()
 {
-   return((uint16_t)random32());
+   return (uint16_t)random32();
 }
 
 
 /* ###### Get 64-bit random value ######################################## */
 uint64_t random64()
 {
-   return( (((uint64_t)random32()) << 32) | (uint64_t)random32() );
+   return  (((uint64_t)random32()) << 32) | (uint64_t)random32() ;
 }
 
 
@@ -1145,14 +1145,14 @@ uint32_t random32()
 #if defined(SIM_IMPORT) || defined(OMNETPPLIBS_IMPORT)
 #warning Using OMNeT++ random generator instead of time-seeded one!
    const double value = uniform(0.0, (double)0xffffffff);
-   return((uint32_t)rint(value));
+   return (uint32_t)rint(value);
 #else
    uint32_t number;
 
    switch(RandomSource) {
       case RS_DEVICE:
          if(fread(&number, sizeof(number), 1, RandomDevice) == 1) {
-            return(number);
+            return number;
          }
          RandomSource = RS_CLIB;
       case RS_TRY_DEVICE:
@@ -1161,7 +1161,7 @@ uint32_t random32()
             if(fread(&number, sizeof(number), 1, RandomDevice) == 1) {
                srandom(number);
                RandomSource = RS_DEVICE;
-               return(number);
+               return number;
             }
             fclose(RandomDevice);
          }
@@ -1171,7 +1171,7 @@ uint32_t random32()
    }
    const uint16_t a = random() & 0xffff;
    const uint16_t b = random() & 0xffff;
-   return( (((uint32_t)a) << 16) | (uint32_t)b );
+   return  (((uint32_t)a) << 16) | (uint32_t)b ;
 #endif
 }
 
@@ -1179,14 +1179,14 @@ uint32_t random32()
 /* ###### Get double random value ######################################## */
 double randomDouble()
 {
-   return( (double)random32() / (double)4294967296.0 );
+   return  (double)random32() / (double)4294967296.0 ;
 }
 
 
 /* ###### Get exponential-distributed double random value ################ */
 double randomExpDouble(const double p)
 {
-   return( -p * log(randomDouble()) );
+   return  -p * log(randomDouble()) ;
 }
 
 
@@ -1219,7 +1219,7 @@ double randomParetoDouble(const double location, const double shape)
    while ((r <= 0.0) || (r >= 1.0)) {
       r = randomDouble();
    }
-   return( location / pow(r, 1.0 / shape) );
+   return  location / pow(r, 1.0 / shape) ;
 }
 
 
@@ -1273,7 +1273,7 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
    // ====== Do ext_select() ================================================
    result = ext_select(n + 1, &readfdset, &writefdset ,&exceptfdset, to);
    if(result < 0) {
-      return(result);
+      return result;
    }
 
    // ====== Set result flags ===============================================
@@ -1288,7 +1288,7 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
          fdlist[i].revents |= POLLERR;
       }
    }
-   return(result);
+   return result;
 }
 #endif
 
@@ -1300,41 +1300,41 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
       if(ext_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &sndBufSize, sizeof(sndBufSize)) < 0) {
          std::cerr << "ERROR: Failed to configure send buffer size (SO_SNDBUF option) - "
                    << strerror(errno) << "!\n";
-         return(false);
+         return false;
       }
       int newBufferSize = 0;
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(sd, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
          std::cerr << "ERROR: Failed to obtain receive send size (SO_SNDBUF option) - "
                    << strerror(errno) << "!\n";
-         return(false);
+         return false;
       }
       // printf("SET-SNDBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, sndBufSize);
       if(newBufferSize < sndBufSize) {
          std::cerr << "ERROR: actual send buffer size < configured send buffer size: "
                    << newBufferSize << " < " << sndBufSize << "\n";
-         return(false);
+         return false;
       }
    }
    if(rcvBufSize > 0) {
       if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvBufSize, sizeof(rcvBufSize)) < 0) {
          std::cerr << "ERROR: Failed to configure receive buffer size (SO_RCVBUF option) - "
                    << strerror(errno) << "!\n";
-         return(false);
+         return false;
       }
       int newBufferSize = 0;
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(sd, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
          std::cerr << "ERROR: Failed to obtain receive buffer size (SO_RCVBUF option) - "
                    << strerror(errno) << "!\n";
-         return(false);
+         return false;
       }
       // printf("SET-RCVBUF: sd=%d - %d (requested %d)\n", sd, newBufferSize, rcvBufSize);
       if(newBufferSize < rcvBufSize) {
          std::cerr << "ERROR: actual receive buffer size < configured receive buffer size: "
                    << newBufferSize << " < " << rcvBufSize << "\n";
-         return(false);
+         return false;
       }
    }
-   return(true);
+   return true;
 }
