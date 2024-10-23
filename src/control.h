@@ -82,7 +82,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
 // #### Passive Side Control                                             ####
 // ##########################################################################
 
-void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
+bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                 const int                          sd,
                                 const sockaddr_union*              from);
 

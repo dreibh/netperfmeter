@@ -82,7 +82,6 @@ class FlowManager : public Thread
                         const uint16_t         streamID,
                         const int              socketDescriptor,
                         const sockaddr_union*  from,
-                        const OutputFileFormat vectorFileFormat,
                         int&                   controlSocket);
 
    void addFlow(Flow* flow);
