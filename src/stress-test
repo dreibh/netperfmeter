@@ -1,0 +1,48 @@
+#!/bin/bash -e
+
+# ====== Handle arguments ===================================================
+if [ $# -lt 2 ] ; then
+   echo >&2 "Usage: $0 server:port [processes]"
+   exit 1
+fi
+SERVER="$(echo "$1" | sed -s 's/:.*$//g')"
+PORT="$(echo "$1" | sed -s 's/^.*://g')"
+if [[ ! "${PORT}" =~ ^[0-9]+$ ]] ; then
+   echo >&2 "ERROR: Invalid port ${PORT}!"
+   exit 1
+fi
+
+if [ "$2" != "" ] ; then
+   procs="$2"
+else
+   procs=16
+fi
+
+RUNTIME=5
+SLEEP=3
+
+mkdir -p stresstest-output
+(
+n=0
+while true ; do
+
+   # ====== Test #1 =========================================================
+   n=$((n+1))
+   label="$(printf "S%08u" "${n}")"
+   echo "\
+random-sleep 0 ${SLEEP} ; ./netperfmeter ${SERVER}:${PORT} \
+-config=stresstest-output/${label}.config \
+-vector=stresstest-output/${label}.vec.bz2 \
+-scalar=stresstest-output/${label}.sca.bz2 \
+-udp const10:const1400:const10:const1400 \
+-runtime=${RUNTIME}"
+
+done
+) | parallel -j${procs}
+
+
+# -control-over-tcp \
+
+# -tcp const80:const10000:const80:const10000 \
+# -sctp const20:const10000:const20:const10000 const20:const10000:const20:const10000 \
+# -dccp const80:const1400:const80:const1400 \

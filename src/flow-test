@@ -2,17 +2,30 @@
 
 set -eu
 
+# ====== Handle arguments ===================================================
+if [ $# -lt 1 ] ; then
+   echo >&2 "Usage: $0 server:port"
+   exit 1
+fi
+SERVER="$(echo "$1" | sed -s 's/:.*$//g')"
+PORT="$(echo "$1" | sed -s 's/^.*://g')"
+if [[ ! "${PORT}" =~ ^[0-9]+$ ]] ; then
+   echo >&2 "ERROR: Invalid port ${PORT}!"
+   exit 1
+fi
+
+
 make
 rm -f vgcore.* core.* core
 
-./netperfmeter localhost:9000 \
+./netperfmeter "${SERVER}:${PORT}" \
    -control-over-tcp \
    -scalar=x.sca.bz2 -vector=x.vec.bz2 \
    -udp const30:const68000:const30:const68000:maxmsgsize=1300 \
    -runtime=5
 
-# ./netperfmeter localhost:9000 \
+# ./netperfmeter "${SERVER}:${PORT}" \
 #    -control-over-tcp \
 #    -scalar=y.sca.bz2 -vector=y.vec.bz2 \
-#    -sctp const30:const6800:const30:const6800:maxmsgsize=1300 const30:const6800:const30:const6800:maxmsgsize=1300 const30:const6800:const30:const6800:maxmsgsize=1300\
+#    -sctp const30:const6800:const30:const6800:maxmsgsize=1300 const30:const6800:const30:const6800:maxmsgsize=1300 const30:const6800:const30:const6800:maxmsgsize=1300 \
 #    -runtime=5
