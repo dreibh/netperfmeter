@@ -1,11 +1,34 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 
-TARGET="$1"
-if [ "$TARGET" == "" ] ; then
-   TARGET="localhost:9000"
+set -eu
+
+# ====== Handle arguments ===================================================
+if [ $# -lt 1 ] ; then
+   echo >&2 "Usage: $0 server:port [runtime]"
+   exit 1
+fi
+SERVER="$(echo "$1" | sed -s 's/:.*$//g')"
+PORT="$(echo "$1" | sed -s 's/^.*://g')"
+if [[ ! "${PORT}" =~ ^[0-9]+$ ]] ; then
+   echo >&2 "ERROR: Invalid port ${PORT}!"
+   exit 1
+fi
+RUNTIME=10
+if [ $# -ge 2 ] ; then
+   RUNTIME="$2"
+fi
+if [[ ! "${RUNTIME}" =~ ^[0-9]+$ ]] ; then
+   echo >&2 "ERROR: Invalid runtime ${RUNTIME}!"
+   exit 1
 fi
 
-./netperfmeter $TARGET -vector=f.vec -scalar=f.sca \
+
+# ====== Run test ===========================================================
+make
+rm -f vgcore.* core.* core
+
+./netperfmeter "${SERVER}:${PORT}" \
+   -vector=sctp.vec -scalar=sctp.sca \
    -sctp \
      const8:const10000:const8:const10000 \
      const8:const10000:const8:const10000 \
@@ -17,4 +40,4 @@ fi
      const8:const10000:const8:const10000 \
      const8:const10000:const8:const10000 \
      const8:const10000:const8:const10000 \
-   -runtime=10
+   -runtime="${RUNTIME}"
