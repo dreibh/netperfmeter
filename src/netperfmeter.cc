@@ -1472,5 +1472,7 @@ int main(int argc, char** argv)
       activeMode(argc, argv);
    }
 
+   finishLogging();
+
    return 0;
 }
