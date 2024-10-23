@@ -31,9 +31,11 @@
 #include "loglevel.h"
 #include "tools.h"
 
-#include <assert.h>
-#include <math.h>
 #include <cstring>
+
+
+#define MAXIMUM_MESSAGE_SIZE (size_t)65536
+#define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetPerfMeterDataMessage))
 
 
 static void updateStatistics(Flow*                          flowSpec,
@@ -41,10 +43,6 @@ static void updateStatistics(Flow*                          flowSpec,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   received);
 
-extern unsigned int gOutputVerbosity;
-
-#define MAXIMUM_MESSAGE_SIZE (size_t)65536
-#define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetPerfMeterDataMessage))
 
 
 // ###### Generate payload pattern ##########################################
@@ -304,22 +302,26 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 
    // ====== Handle error ===================================================
    else {
-      if (received != MRRM_PARTIAL_READ) {
-         Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
-         if(flow) {
-            flow->lock();
-            LOG_WARNING
-            stdlog << format("End of input for flow #%u on socket %d!",
-                           flow->getFlowID(), sd) << "\n";
-            LOG_END
-            flow->unlock();
-            flow->endOfInput();
-         }
-         if(protocol != IPPROTO_UDP) {
-            ext_shutdown(sd, SHUT_RDWR);
-         }
-         return false;
+      Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
+      if(flow) {
+         flow->lock();
+         LOG_WARNING
+         stdlog << format("End of input for flow #%u on socket %d!",
+                          flow->getFlowID(), sd) << "\n";
+         LOG_END
+         flow->unlock();
+         flow->endOfInput();
       }
+      else {
+         LOG_WARNING
+         stdlog << format("End of input for unidentified flow on socket %d!",
+                          sd) << "\n";
+         LOG_END
+      }
+      if(protocol != IPPROTO_UDP) {
+         ext_shutdown(sd, SHUT_RDWR);
+      }
+      return false;
    }
 
    return true;
