@@ -67,6 +67,15 @@ FlowManager::~FlowManager()
    stop();
    waitForFinish();
 
+   // ====== Clean up measurements ==========================================
+   std::map<std::pair<int, uint64_t>, Measurement*>::iterator measurementIterator = MeasurementSet.begin();
+   while(measurementIterator != MeasurementSet.end()) {
+      Measurement* measurement = measurementIterator->second;
+      measurementIterator = MeasurementSet.erase(measurementIterator);
+      delete measurement;
+   }
+
+   // ====== Clean up flows =================================================
    std::vector<Flow*>::iterator flowIterator = FlowSet.begin();
    while(flowIterator != FlowSet.end()) {
       Flow* flow = *flowIterator;
@@ -78,6 +87,7 @@ FlowManager::~FlowManager()
       delete flow;
    }
 
+   // ====== Clean up unidentified sockets ==================================
    std::map<int, UnidentifiedSocket*>::iterator udSocketsIterator = UnidentifiedSockets.begin();
    while(udSocketsIterator != UnidentifiedSockets.end()) {
       UnidentifiedSocket* ud = udSocketsIterator->second;
