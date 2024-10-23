@@ -40,7 +40,7 @@
 
 
 std::ostream* gStdLog        = &std::cerr;
-unsigned int  gLogLevel      = LOGLEVEL_TRACE;
+unsigned int  gLogLevel      = LOGLEVEL_INFO;
 bool          gColorMode     = true;
 bool          gCloseStdLog   = false;
 char          gHostName[256] = { 0x00 };
@@ -80,9 +80,8 @@ bool initLogging(const char* parameter)
    else if(!(strncmp(parameter, "-logappend=", 11))) {
       return(initLogFile(gLogLevel, (char*)&parameter[11], true));
    }
-   else if(!(strcmp(parameter, "-logquiet"))) {
+   else if(!(strcmp(parameter, "-logstderr"))) {
       initLogFile(0, nullptr, false);
-      gLogLevel = 0;
    }
    else if(!(strncmp(parameter, "-loglevel=", 10))) {
       gLogLevel = std::max((unsigned int)atoi((char*)&parameter[10]), MIN_LOGLEVEL);
