@@ -70,11 +70,11 @@ extern Mutex         gLogMutex;
 #define LOG_END_FATAL                          \
       *gStdLog << "FATAL ERROR - ABORTING!\n"; \
       if(gColorMode) {                         \
-        *gStdLog << "\e[0m";                   \
+        *gStdLog << "\e[0m\e[2K";              \
       }                                        \
       gStdLog->flush();                        \
-      exit(1);                                 \
-   }
+   }                                           \
+   exit(1);
 
 
 #define LOG_FATAL   if((LOGLEVEL_FATAL   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_FATAL))   LOG_BEGIN("\e[37;41;1m")

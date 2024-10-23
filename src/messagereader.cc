@@ -346,7 +346,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
    }
 
    LOG_ERROR
-   stdlog << format("Invalid socket %d!", socket->SocketDescriptor) << "\n";
+   stdlog << format("Invalid socket %d!", sd) << "\n";
    LOG_END
    return MRRM_BAD_SOCKET;
 }
