@@ -203,7 +203,7 @@ void printGlobalParameters()
    else {
       stdlog << "(any)";
    }
-   stdlog << "\n   - Logging Verbosity         = " << gLogLevel << "\n\n";
+   stdlog << "\n   - Logging Verbosity         = " << gLogLevel << "\n";
    LOG_END
 }
 
@@ -1189,7 +1189,7 @@ void activeMode(int argc, char** argv)
 
    LOG_INFO
    stdlog << "Active Mode:\n"
-          << "   - Measurement ID  = " << format("%lx", measurementID) << "\n"
+          << "   - Measurement ID  = " << format("$%llx", measurementID) << "\n"
           << "   - Remote Address  = ";
    printAddress(stdlog, &remoteAddress.sa, true);
    stdlog << "\n"
@@ -1420,8 +1420,7 @@ int main(int argc, char** argv)
       }
    }
    LOG_INFO
-   stdlog << "Network Performance Meter\n"
-          << "-------------------------\n\n";
+   stdlog << "Network Performance Meter\n";
    LOG_END
 
    const uint16_t localPort = atol(argv[1]);

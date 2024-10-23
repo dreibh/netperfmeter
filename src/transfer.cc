@@ -242,6 +242,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
    sctp_sndrcvinfo sinfo;
 
    // ====== Read message (or fragment) =====================================
+   sinfo.sinfo_stream = 0;
    const ssize_t received =
       FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
          sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
