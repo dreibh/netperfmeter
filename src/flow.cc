@@ -27,12 +27,12 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include "assure.h"
 #include "flow.h"
 #include "control.h"
 #include "loglevel.h"
 #include "transfer.h"
 
-#include <assert.h>
 #include <signal.h>
 #include <netinet/tcp.h>
 
@@ -165,13 +165,14 @@ void Flow::setSocketDescriptor(const int  socketDescriptor,
 {
    deactivate();
    lock();
+   assure(SocketDescriptor == -1);
    SocketDescriptor         = socketDescriptor;
    OriginalSocketDescriptor = originalSocketDescriptor;
    DeleteWhenFinished       = deleteWhenFinished;
 
    if(SocketDescriptor >= 0) {
       FlowManager::getFlowManager()->getMessageReader()->registerSocket(
-         TrafficSpec.Protocol, SocketDescriptor);
+         TrafficSpec.Protocol, SocketDescriptor, false);
    }
    unlock();
 }
@@ -269,7 +270,7 @@ void Flow::updateReceptionStatistics(const unsigned long long now,
 bool Flow::activate()
 {
    deactivate();
-   assert(SocketDescriptor >= 0);
+   assure(SocketDescriptor >= 0);
    return start();
 }
 
@@ -363,7 +364,7 @@ void Flow::handleStatusChangeEvent(const unsigned long long now)
 {
    lock();
    if(NextStatusChangeEvent <= now) {
-      assert(OnOffEventPointer < TrafficSpec.OnOffEvents.size());
+      assure(OnOffEventPointer < TrafficSpec.OnOffEvents.size());
 
       if(OutputStatus == Off) {
          OutputStatus = On;
@@ -372,7 +373,7 @@ void Flow::handleStatusChangeEvent(const unsigned long long now)
          OutputStatus = Off;
       }
       else {
-         assert(false);
+         abort();
       }
 
       OnOffEventPointer++;

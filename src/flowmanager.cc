@@ -27,6 +27,7 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include "assure.h"
 #include "flow.h"
 #include "control.h"
 #include "loglevel.h"
@@ -123,6 +124,7 @@ void FlowManager::printFlows(std::ostream& os,
                              const bool    printStatistics)
 {
    lock();
+   os << "FlowManager:\n";
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end();iterator++) {
       Flow* flow= *iterator;
@@ -250,9 +252,13 @@ bool FlowManager::startMeasurement(const int                controlSocket,
    unlock();
    CPULoadStats.update();
 
-   LOG_INFO
-   stdlog << ss.str();
-   LOG_END
+   if(success) {
+      LOG_INFO
+      stdlog << format("Started Measurement $%llx on socket %d:",
+                       measurementID, controlSocket)
+             << "\n" << ss.str();
+      LOG_END
+   }
    return success;
 }
 
@@ -291,7 +297,9 @@ void FlowManager::stopMeasurement(const int                controlSocket,
    unlock();
 
    LOG_INFO
-   stdlog << ss.str();
+   stdlog << format("Stopped Measurement $%llx on socket %d:",
+                     measurementID, controlSocket)
+            << "\n" << ss.str();
    LOG_END
 }
 
@@ -915,16 +923,15 @@ void FlowManager::run()
                   const bool dataOkay = handleNetPerfMeterData(true, now,
                                                                protocol, entry->fd);
                   if(!dataOkay) {
+                     // Close the broken connection!
                      assert(protocol != IPPROTO_UDP);
-                     if(protocol != IPPROTO_UDP) {
-                        // Close the broken connection!
-                        LOG_WARNING
-                        stdlog << format("Closing disconnected socket %d!",
-                                         FlowSet[i]->SocketDescriptor) << "\n";
-                        LOG_END
-                        ext_close(FlowSet[i]->SocketDescriptor);
-                        FlowSet[i]->SocketDescriptor = -1;
-                     }
+                     LOG_WARNING
+                     stdlog << format("Closing disconnected socket %d!",
+                                       FlowSet[i]->SocketDescriptor) << "\n";
+                     LOG_END
+                     assure(Reader.deregisterSocket(FlowSet[i]->SocketDescriptor));
+                     ext_close(FlowSet[i]->SocketDescriptor);
+                     FlowSet[i]->SocketDescriptor = -1;
                   }
                }
             }
@@ -969,9 +976,10 @@ void FlowManager::run()
                      // However, since we are in an interation loop, we
                      // must ensure that the iterator remains valid!
                      iterator = UnidentifiedSockets.erase(iterator);
-                     assert(UnidentifiedSockets.find(ud->SocketDescriptor) == UnidentifiedSockets.end());
-                     if(ud->ToBeClosed) {
+                     const bool deregisteredFromReader =
                         Reader.deregisterSocket(ud->SocketDescriptor);
+                     if(ud->ToBeClosed) {
+                        assure(deregisteredFromReader);
                         ext_close(ud->SocketDescriptor);
                      }
                      delete ud;

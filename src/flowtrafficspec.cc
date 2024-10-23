@@ -79,17 +79,17 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
 // ###### Print FlowTrafficSpec #############################################
 void FlowTrafficSpec::print(std::ostream& os) const
 {
-   os << "- Receive Buffer Size: " << RcvBufferSize << "\n";
-   os << "- Send Buffer Size:    " << SndBufferSize << "\n";
-   os << "- Max. Message Size:   " << MaxMsgSize << "\n";
-   os << "- Defragment Timeout:  " << DefragmentTimeout / 1000 << "ms\n";
-   os << "- Outbound Frame Rate: ";
+   os << " - Receive Buffer Size: " << RcvBufferSize << "\n";
+   os << " - Send Buffer Size:    " << SndBufferSize << "\n";
+   os << " - Max. Message Size:   " << MaxMsgSize << "\n";
+   os << " - Defragment Timeout:  " << DefragmentTimeout / 1000 << "ms\n";
+   os << " - Outbound Frame Rate: ";
    showEntry(os, (const double*)&OutboundFrameRate, OutboundFrameRateRng);
-   os << "\n- Outbound Frame Size: ";
+   os << "\n - Outbound Frame Size: ";
    showEntry(os, (const double*)&OutboundFrameSize, OutboundFrameSizeRng);
-   os << "\n- Inbound Frame Rate:  ";
+   os << "\n - Inbound Frame Rate:  ";
    showEntry(os, (const double*)&InboundFrameRate, InboundFrameRateRng);
-   os << "\n- Inbound Frame Size:  ";
+   os << "\n - Inbound Frame Size:  ";
    showEntry(os, (const double*)&InboundFrameSize, InboundFrameSizeRng);
    os << "\n";
    if(Protocol == IPPROTO_SCTP) {
@@ -97,9 +97,9 @@ void FlowTrafficSpec::print(std::ostream& os) const
       char reliable[32];
       snprintf((char*)&ordered, sizeof(ordered), "%1.2f%%", 100.0 * OrderedMode);
       snprintf((char*)&reliable, sizeof(reliable), "%1.2f%%", 100.0 * ReliableMode);
-      os << "- Ordered Mode:        " << ordered  << "\n";
-      os << "- Reliable Mode:       " << reliable << "\n";
-      os << "- Retransmissions:     ";
+      os << " - Ordered Mode:        " << ordered  << "\n";
+      os << " - Reliable Mode:       " << reliable << "\n";
+      os << " - Retransmissions:     ";
       if( (RetransmissionTrialsInMS) && (RetransmissionTrials == ~((uint32_t)0)) ) {
          os << "unlimited";
       }
@@ -110,7 +110,7 @@ void FlowTrafficSpec::print(std::ostream& os) const
       os << "\n";
    }
 
-   os << "- On/Off:              { ";
+   os << " - On/Off:              { ";
    if(OnOffEvents.size() > 0) {
       bool start = true;
       for(std::vector<OnOffEvent>::const_iterator iterator = OnOffEvents.begin();
@@ -124,26 +124,26 @@ void FlowTrafficSpec::print(std::ostream& os) const
       os << "*0 ";
    }
    os << "}\n"
-      << "- Repeat On/Off:       " << ((RepeatOnOff == true) ? "yes" : "no") << "\n";
+      << " - Repeat On/Off:       " << ((RepeatOnOff == true) ? "yes" : "no") << "\n";
 
-   os << "- Error on Abort:      "
+   os << " - Error on Abort:      "
       << ((ErrorOnAbort == true) ? "yes" : "no") << "\n";
    if( (Protocol == IPPROTO_SCTP) || (Protocol == IPPROTO_TCP) || (Protocol == IPPROTO_MPTCP) ) {
-      os << "- No Delay:            "
+      os << " - No Delay:            "
          << ((NoDelay == true) ? "yes" : "no") << "\n";
    }
    if( (Protocol == IPPROTO_TCP) || (Protocol == IPPROTO_MPTCP) ) {
-      os << "- Congestion Control:  " << CongestionControl << "\n";
+      os << " - Congestion Control:  " << CongestionControl << "\n";
    }
    if(Protocol == IPPROTO_MPTCP) {
-      os << "- N. of Diff. Ports: " << NDiffPorts        << "\n"
-         << "- Path Manager:      " << PathMgr           << "\n"
-         << "- Scheduler:         " << Scheduler         << "\n"
-         << "- Debug:             "
+      os << " - N. of Diff. Ports: " << NDiffPorts        << "\n"
+         << " - Path Manager:      " << PathMgr           << "\n"
+         << " - Scheduler:         " << Scheduler         << "\n"
+         << " - Debug:             "
          << ((Debug == true) ? "yes" : "no") << "\n";
    }
    if(Protocol == IPPROTO_SCTP) {
-      os << "- CMT:                 #" << (unsigned int)CMT << " ";
+      os << " - CMT:                 #" << (unsigned int)CMT << " ";
       switch(CMT) {
          case NPAF_PRIMARY_PATH:
             os << "(off)";
@@ -164,7 +164,7 @@ void FlowTrafficSpec::print(std::ostream& os) const
       os << "\n";
    }
    if(Protocol == IPPROTO_DCCP) {
-      os << "- CCID:                #" << (unsigned int)CCID << "\n";
+      os << " - CCID:                #" << (unsigned int)CCID << "\n";
    }
 }
 
