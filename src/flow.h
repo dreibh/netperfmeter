@@ -79,11 +79,15 @@ class Flow : public Thread
    inline int getSocketDescriptor() const {
       return SocketDescriptor;
    }
+   void setSocketDescriptor(const int  socketDescriptor,
+                            const bool originalSocketDescriptor = true,
+                            const bool deleteWhenFinished       = true);
+
    inline Defragmenter* getDefragmenter() {
       return &MyDefragmenter;
    }
-   inline int getRemoteControlSocketDescriptor() const {
-      return RemoteControlSocketDescriptor;
+   inline int getControlSocketDescriptor() const {
+      return ControlSocketDescriptor;
    }
    inline const FlowTrafficSpec& getTrafficSpec() const {
       return TrafficSpec;
@@ -95,7 +99,7 @@ class Flow : public Thread
       return InputStatus;
    }
    inline bool isAcceptedIncomingFlow() const {
-      return RemoteControlSocketDescriptor != -1;
+      return ControlSocketDescriptor != -1;
    }
 
    inline void endOfInput() {
@@ -191,9 +195,7 @@ class Flow : public Thread
    void resetStatistics();
 
    bool configureSocket(const int socketDescriptor);
-   void setSocketDescriptor(const int  socketDescriptor,
-                            const bool originalSocketDescriptor = true,
-                            const bool deleteWhenFinished       = true);
+
    bool activate();
    void deactivate(const bool asyncStop = false);
 
@@ -219,7 +221,7 @@ class Flow : public Thread
    bool               DeleteWhenFinished;
    pollfd*            PollFDEntry;   // For internal usage by FlowManager
 
-   int                RemoteControlSocketDescriptor;
+   int                ControlSocketDescriptor;
    sockaddr_union     RemoteAddress;
    bool               RemoteAddressIsValid;
 

@@ -41,8 +41,10 @@
 // ##########################################################################
 
 
-#define IDENTIFY_MAX_TRIALS 10
-#define IDENTIFY_TIMEOUT    30000
+#define UNRELIABLE_IDENTIFY_MAX_TRIALS     5   // UDP, DCCP
+#define UNRELIABLE_IDENTIFY_TIMEOUT     2000   // UDP, DCCP
+#define RELIABLE_IDENTIFY_MAX_TRIALS       1   // TCP+MPTCP, SCTP
+#define RELIABLE_IDENTIFY_TIMEOUT      10000   // TCP+MPTCP, SCTP
 
 
 // ###### Download file #####################################################
@@ -256,7 +258,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
       return false;
    }
 
-   // ======  Let remote identify the new flow ==============================
+   // ======  Let passive side identify the new flow ========================
    return performNetPerfMeterIdentifyFlow(messageReader, controlSocket, flow);
 }
 
@@ -267,14 +269,21 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
                                      const Flow*    flow)
 {
    // ====== Sent NETPERFMETER_IDENTIFY_FLOW to remote node =================
-   unsigned int maxTrials = 1;
+   unsigned int maxTrials;
+   unsigned int timeout;
    if( (flow->getTrafficSpec().Protocol != IPPROTO_SCTP) &&
        (flow->getTrafficSpec().Protocol != IPPROTO_TCP) &&
        (flow->getTrafficSpec().Protocol != IPPROTO_MPTCP) ) {
-      // SCTP and TCP are reliable transport protocols => no retransmissions
-      maxTrials = IDENTIFY_MAX_TRIALS;
+      maxTrials = UNRELIABLE_IDENTIFY_MAX_TRIALS;
+      timeout   = UNRELIABLE_IDENTIFY_TIMEOUT;
    }
-   for(unsigned int trial = 0;trial < maxTrials;trial++) {
+   else {
+      // SCTP and TCP are reliable transport protocols
+      // => no retransmissions necessary!
+      maxTrials = RELIABLE_IDENTIFY_MAX_TRIALS;
+      timeout   = RELIABLE_IDENTIFY_TIMEOUT;
+   }
+   for(unsigned int trial = 1; trial <= maxTrials; trial++) {
       NetPerfMeterIdentifyMessage identifyMsg;
       identifyMsg.Header.Type   = NETPERFMETER_IDENTIFY_FLOW;
       identifyMsg.Header.Flags  = 0x00;
@@ -291,7 +300,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       identifyMsg.StreamID      = htons(flow->getStreamID());
 
       LOG_TRACE
-      stdlog << format("<R3 sd=%d>", controlSocket) << "\n";
+      stdlog << format("<R3 sd=%d trial=%u/%u>", controlSocket, trial, maxTrials) << "\n";
       LOG_END
       if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
@@ -308,12 +317,12 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
          }
       }
       LOG_TRACE
-      stdlog << format("<R4 sd=%d>", controlSocket) << "\n";
+      stdlog << format("<R4 sd=%d trial=%u/%u>", controlSocket, trial, maxTrials) << "\n";
       LOG_END
       if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                       flow->getMeasurementID(),
                                       flow->getFlowID(), flow->getStreamID(),
-                                      IDENTIFY_TIMEOUT) == true) {
+                                      timeout) == true) {
          return true;
       }
    }
@@ -1087,32 +1096,33 @@ bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                 const int                          sd,
                                 const sockaddr_union*              from)
 {
-   int   controlSocketDescriptor;
-   Flow* flow;
-
-   OutputFileFormat vectorFileFormat = OFF_Plain;
-   if(identifyMsg->Header.Flags & NPMIF_COMPRESS_VECTORS) {
-      vectorFileFormat = OFF_BZip2;
-   }
-   if(identifyMsg->Header.Flags & NPMIF_NO_VECTORS) {
-      vectorFileFormat = OFF_None;
-   }
-
-   flow = FlowManager::getFlowManager()->identifySocket(ntoh64(identifyMsg->MeasurementID),
-                                                        ntohl(identifyMsg->FlowID),
-                                                        ntohs(identifyMsg->StreamID),
-                                                        sd, from,
-                                                        controlSocketDescriptor);
+   bool  isAlreadyInitialised;
+   Flow* flow = FlowManager::getFlowManager()->identifySocket(
+                   ntoh64(identifyMsg->MeasurementID),
+                   ntohl(identifyMsg->FlowID), ntohs(identifyMsg->StreamID),
+                   sd, from, isAlreadyInitialised);
    if(flow != nullptr) {
-      const bool vectorFileOkay   = flow->initializeVectorFile(nullptr, vectorFileFormat);
-      const bool socketConfigured = flow->configureSocket(sd);
-      const bool success = (vectorFileOkay && socketConfigured);
-      sendNetPerfMeterAcknowledge(controlSocketDescriptor,
-                                  ntoh64(identifyMsg->MeasurementID),
-                                  ntohl(identifyMsg->FlowID),
-                                  ntohs(identifyMsg->StreamID),
-                                  (success == true) ? NETPERFMETER_STATUS_OKAY :
-                                                      NETPERFMETER_STATUS_ERROR);
+      if(!isAlreadyInitialised) {
+         OutputFileFormat vectorFileFormat = OFF_Plain;
+         if(identifyMsg->Header.Flags & NPMIF_COMPRESS_VECTORS) {
+            vectorFileFormat = OFF_BZip2;
+         }
+         if(identifyMsg->Header.Flags & NPMIF_NO_VECTORS) {
+            vectorFileFormat = OFF_None;
+         }
+         flow->lock();
+         const int  controlSocketDescriptor = flow->getControlSocketDescriptor();
+         const bool vectorFileOkay          = flow->initializeVectorFile(nullptr, vectorFileFormat);
+         const bool socketConfigured        = flow->configureSocket(sd);
+         const bool success                 = (vectorFileOkay && socketConfigured);
+         flow->unlock();
+         sendNetPerfMeterAcknowledge(controlSocketDescriptor,
+                                     ntoh64(identifyMsg->MeasurementID),
+                                     ntohl(identifyMsg->FlowID),
+                                     ntohs(identifyMsg->StreamID),
+                                     (success == true) ? NETPERFMETER_STATUS_OKAY :
+                                                         NETPERFMETER_STATUS_ERROR);
+      }
       return true;
    }
    else {

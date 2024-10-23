@@ -47,31 +47,31 @@ Flow::Flow(const uint64_t         measurementID,
            const FlowTrafficSpec& trafficSpec,
            const int              controlSocketDescriptor)
 {
-   MeasurementID                 = measurementID;
-   FlowID                        = flowID;
-   StreamID                      = streamID;
+   MeasurementID            = measurementID;
+   FlowID                   = flowID;
+   StreamID                 = streamID;
 
-   SocketDescriptor              = -1;
-   OriginalSocketDescriptor      = false;
-   RemoteControlSocketDescriptor = controlSocketDescriptor;
-   RemoteAddressIsValid          = false;
+   SocketDescriptor         = -1;
+   OriginalSocketDescriptor = false;
+   ControlSocketDescriptor  = controlSocketDescriptor;
+   RemoteAddressIsValid     = false;
 
-   InputStatus                   = WaitingForStartup;
-   OutputStatus                  = WaitingForStartup;
-   TimeBase                      = getMicroTime();
+   InputStatus              = WaitingForStartup;
+   OutputStatus             = WaitingForStartup;
+   TimeBase                 = getMicroTime();
 
-   TrafficSpec                   = trafficSpec;
+   TrafficSpec              = trafficSpec;
 
-   MyMeasurement                 = nullptr;
-   FirstTransmission             = 0;
-   LastTransmission              = 0;
-   FirstReception                = 0;
-   LastReception                 = 0;
+   MyMeasurement            = nullptr;
+   FirstTransmission        = 0;
+   LastTransmission         = 0;
+   FirstReception           = 0;
+   LastReception            = 0;
    resetStatistics();
-   LastOutboundSeqNumber         = ~0;
-   LastOutboundFrameID           = ~0;
-   NextStatusChangeEvent         = ~0ULL;
-   OnOffEventPointer             = 0;
+   LastOutboundSeqNumber    = ~0;
+   LastOutboundFrameID      = ~0;
+   NextStatusChangeEvent    = ~0ULL;
+   OnOffEventPointer        = 0;
 
    FlowManager::getFlowManager()->addFlow(this);
 }

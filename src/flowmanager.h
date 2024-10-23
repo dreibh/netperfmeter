@@ -82,7 +82,7 @@ class FlowManager : public Thread
                         const uint16_t         streamID,
                         const int              socketDescriptor,
                         const sockaddr_union*  from,
-                        int&                   controlSocket);
+                        bool&                  isAlreadyInitialised);
 
    void addFlow(Flow* flow);
    void removeFlow(Flow* flow);

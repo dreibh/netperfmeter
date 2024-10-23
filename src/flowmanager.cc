@@ -71,7 +71,7 @@ FlowManager::~FlowManager()
    while(flowIterator != FlowSet.end()) {
       Flow* flow = *flowIterator;
       if(flow->SocketDescriptor >= 0) {
-         assure(Reader.deregisterSocket(flow->SocketDescriptor));
+         Reader.deregisterSocket(flow->SocketDescriptor);
          ext_close(flow->SocketDescriptor);
       }
       flowIterator = FlowSet.erase(flowIterator);
@@ -364,7 +364,7 @@ void FlowManager::removeAllMeasurements(const int controlSocket)
    std::vector<Flow*>::iterator flowIterator = FlowSet.begin();
    while(flowIterator != FlowSet.end()) {
       Flow* flow = *flowIterator;
-      if(flow->getRemoteControlSocketDescriptor() == controlSocket) {
+      if(flow->getControlSocketDescriptor() == controlSocket) {
          flowIterator = FlowSet.erase(flowIterator);
          delete flow;
       }
@@ -447,22 +447,26 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
                                   const uint16_t         streamID,
                                   const int              socketDescriptor,
                                   const sockaddr_union*  from,
-                                  int&                   controlSocketDescriptor)
+                                  bool&                  isAlreadyInitialised)
 {
-   controlSocketDescriptor = -1;
-
    lock();
    Flow* flow = findFlow(measurementID, flowID, streamID);
-   if( (flow != nullptr) && (flow->RemoteAddressIsValid == false) ) {
-      flow->lock();
-      flow->setSocketDescriptor(socketDescriptor, false,
-                                (flow->getTrafficSpec().Protocol != IPPROTO_UDP));
-      flow->RemoteAddress        = *from;
-      flow->RemoteAddressIsValid = (from->sa.sa_family != AF_UNSPEC);
-      controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
-      flow->unlock();
-      if(flow->getTrafficSpec().Protocol != IPPROTO_UDP) {
-         removeUnidentifiedSocket(socketDescriptor, false);   // Socket is now managed as flow!
+   if(flow != nullptr) {
+      isAlreadyInitialised = (flow->getSocketDescriptor() >= 0);
+      if(!isAlreadyInitialised) {
+         flow->lock();
+         flow->setSocketDescriptor(socketDescriptor, false,
+                                   (flow->getTrafficSpec().Protocol != IPPROTO_UDP));
+         flow->RemoteAddress        = *from;
+         flow->RemoteAddressIsValid = (from->sa.sa_family != AF_UNSPEC);
+         const int protocol         = flow->getTrafficSpec().Protocol;
+         flow->unlock();
+         if(protocol != IPPROTO_UDP) {
+            // Socket is now managed in a Flow!
+            removeUnidentifiedSocket(socketDescriptor, false);
+         }
+      } else {
+         // Already initialised -> nothing to do here!
       }
    }
    unlock();
@@ -847,7 +851,7 @@ void FlowManager::run()
          if( (FlowSet[i]->InputStatus != Flow::Off) &&
              (FlowSet[i]->SocketDescriptor >= 0) ) {
             if(!((FlowSet[i]->getTrafficSpec().Protocol == IPPROTO_UDP) &&   // Global UDP socket is handled by main loop!
-                 (FlowSet[i]->RemoteControlSocketDescriptor >= 0)) ) {       // Incoming UDP association has RemoteControlSocketDescriptor >= 0.
+                 (FlowSet[i]->ControlSocketDescriptor >= 0)) ) {             // Incoming UDP association has ControlSocketDescriptor >= 0.
                if(socketSet.find(FlowSet[i]->SocketDescriptor) == socketSet.end()) {
                   pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
                   pollFDs[n].events  = POLLIN;
