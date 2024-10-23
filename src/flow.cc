@@ -511,9 +511,6 @@ bool Flow::configureSocket(const int socketDescriptor)
          }
 #endif
       }
-#ifndef __linux__
-#warning Congestion Control selection is currently only available on Linux!
-#else
       const char* congestionControl = TrafficSpec.CongestionControl.c_str();
       if(strcmp(congestionControl, "default") != 0) {
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
@@ -524,7 +521,6 @@ bool Flow::configureSocket(const int socketDescriptor)
             return false;
          }
       }
-#endif
    }
    else if(TrafficSpec.Protocol == IPPROTO_SCTP) {
       if (TrafficSpec.NoDelay) {
