@@ -27,7 +27,7 @@
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 # Conversion of Dia to EPS and PDF:
-dia -n -t eps-pango -e netperfmeter.eps logo/Logo-NetPerfMeter.dia
+dia -n -t eps-pango -e netperfmeter.eps Logo-NetPerfMeter.dia
 epstopdf --outfile=netperfmeter.pdf.tmp netperfmeter.eps
 pdfcrop --hires netperfmeter.pdf.tmp netperfmeter.pdf
 rm -f netperfmeter.pdf.tmp
