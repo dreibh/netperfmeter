@@ -1083,7 +1083,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
 
 
 // ###### Handle NETPERFMETER_IDENTIFY_FLOW message #########################
-void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
+bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                 const int                          sd,
                                 const sockaddr_union*              from)
 {
@@ -1102,16 +1102,18 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                                                         ntohl(identifyMsg->FlowID),
                                                         ntohs(identifyMsg->StreamID),
                                                         sd, from,
-                                                        vectorFileFormat,
                                                         controlSocketDescriptor);
    if(flow != nullptr) {
-      const bool success = flow->configureSocket(sd);
+      const bool vectorFileOkay   = flow->initializeVectorFile(nullptr, vectorFileFormat);
+      const bool socketConfigured = flow->configureSocket(sd);
+      const bool success = (vectorFileOkay && socketConfigured);
       sendNetPerfMeterAcknowledge(controlSocketDescriptor,
                                   ntoh64(identifyMsg->MeasurementID),
                                   ntohl(identifyMsg->FlowID),
                                   ntohs(identifyMsg->StreamID),
                                   (success == true) ? NETPERFMETER_STATUS_OKAY :
                                                       NETPERFMETER_STATUS_ERROR);
+      return true;
    }
    else {
       // No known flow -> no association to send response to!
@@ -1119,6 +1121,7 @@ void handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
       stdlog << format("NETPERFMETER_IDENTIFY_FLOW message for unknown flow on socket %d!",
                        sd) << "\n";
       LOG_END
+      return false;
    }
 }
 

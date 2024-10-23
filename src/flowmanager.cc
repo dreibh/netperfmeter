@@ -100,7 +100,7 @@ void FlowManager::removeFlow(Flow* flow)
        iterator != FlowSet.end();iterator++) {
        if(*iterator == flow) {
           FlowSet.erase(iterator);
-         break;
+          break;
       }
    }
 
@@ -436,10 +436,8 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
                                   const uint16_t         streamID,
                                   const int              socketDescriptor,
                                   const sockaddr_union*  from,
-                                  const OutputFileFormat vectorFileFormat,
                                   int&                   controlSocketDescriptor)
 {
-   bool success            = false;
    controlSocketDescriptor = -1;
 
    lock();
@@ -451,17 +449,12 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
       flow->RemoteAddress        = *from;
       flow->RemoteAddressIsValid = (from->sa.sa_family != AF_UNSPEC);
       controlSocketDescriptor    = flow->RemoteControlSocketDescriptor;
-      success = flow->initializeVectorFile(nullptr, vectorFileFormat);
       flow->unlock();
       if(flow->getTrafficSpec().Protocol != IPPROTO_UDP) {
          removeUnidentifiedSocket(socketDescriptor, false);   // Socket is now managed as flow!
       }
    }
    unlock();
-
-   if(!success) {
-      flow = nullptr;
-   }
 
    return flow;
 }
@@ -550,7 +543,7 @@ void FlowManager::handleEvents(const unsigned long long now)
 
          fprintf(stdout,
                  "\r<-- %sDuration: %2u:%02u:%02u   "
-                 "%sFlows: %u   "
+                 "%sFlows: %u Measurements: %u   "
                  "%sTransmitted: %1.2f MiB at %1.1f Kbit/s   "
                  "%sReceived: %1.2f MiB at %1.1f Kbit/s   "
                  "%sCPU: %s "
@@ -561,6 +554,7 @@ void FlowManager::handleEvents(const unsigned long long now)
                  totalDuration % 60,
                  colorFlows,
                  (unsigned int)FlowSet.size(),
+                 (unsigned int)MeasurementSet.size(),
                  colorTransmitted,
                  GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
                  (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,

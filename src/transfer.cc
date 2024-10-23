@@ -260,7 +260,17 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
          if( (received >= (ssize_t)sizeof(NetPerfMeterIdentifyMessage)) &&
             (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
             (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
-            handleNetPerfMeterIdentify(identifyMsg, sd, &from);
+            const bool identifyOkay =
+               handleNetPerfMeterIdentify(identifyMsg, sd, &from);
+            if(!identifyOkay) {
+               LOG_WARNING
+               stdlog << format("Failed handling NETPERFMETER_IDENTIFY on socket %d!", sd) << "\n";
+               LOG_END
+               if(protocol != IPPROTO_UDP) {
+                  ext_shutdown(sd, SHUT_RDWR);
+               }
+               return false;
+            }
          }
 
          // ====== Handle NETPERFMETER_DATA message =========================
