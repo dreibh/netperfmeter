@@ -944,9 +944,18 @@ void FlowManager::run()
                      stdlog << format("Closing disconnected socket %d!",
                                        FlowSet[i]->SocketDescriptor) << "\n";
                      LOG_END
-                     assure(Reader.deregisterSocket(FlowSet[i]->SocketDescriptor));
-                     ext_close(FlowSet[i]->SocketDescriptor);
-                     FlowSet[i]->SocketDescriptor = -1;
+                     const bool deregisteredFromReader =
+                        Reader.deregisterSocket(FlowSet[i]->SocketDescriptor);
+                     if(protocol != IPPROTO_SCTP) {
+                        // Only SCTP has streams. For other protocols, there is
+                        // just one flow using this socket. Then, it cannot be
+                        // referenced any more.
+                        assure(deregisteredFromReader);
+                     }
+                     if(deregisteredFromReader) {
+                        ext_close(FlowSet[i]->SocketDescriptor);
+                        FlowSet[i]->SocketDescriptor = -1;
+                     }
                   }
                }
             }
@@ -993,7 +1002,7 @@ void FlowManager::run()
                      iterator = UnidentifiedSockets.erase(iterator);
                      const bool deregisteredFromReader =
                         Reader.deregisterSocket(ud->SocketDescriptor);
-                     if(ud->ToBeClosed) {
+                     if( (deregisteredFromReader) && (ud->ToBeClosed) ) {
                         assure(deregisteredFromReader);
                         ext_close(ud->SocketDescriptor);
                      }
