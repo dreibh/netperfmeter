@@ -78,8 +78,7 @@ _netperfmeter()
          -rcvbuf=*          | \
          -runtime=*         | \
          -scheduler=*       | \
-         -sndbuf=*          | \
-         -verbosity=*)
+         -sndbuf=*)
             cur="${cur#*=}"
             return
             ;;

@@ -21,4 +21,4 @@ done
 
 echo "OPTIONS=$options"
 # make -j2 && ./
-netperfmeter $REMOTE $options -verbosity=5
+netperfmeter $REMOTE $options
