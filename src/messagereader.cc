@@ -63,6 +63,7 @@ MessageReader::~MessageReader()
 // ###### Register a socket #################################################
 bool MessageReader::registerSocket(const int    protocol,
                                    const int    sd,
+                                   const bool   mustBeNew,
                                    const size_t maxMessageSize)
 {
    Socket*                          socket;
@@ -84,6 +85,13 @@ bool MessageReader::registerSocket(const int    protocol,
       SocketMap.insert(std::pair<int, Socket*>(sd, socket));
    }
    else {
+      if(mustBeNew) {
+         LOG_FATAL
+         stdlog << format("Socket %d should be new, but MessageReader already has a state!",
+                          sd) << "\n";
+         abort();
+         LOG_END_FATAL
+      }
       socket = found->second;
       socket->UseCount++;
    }
@@ -92,18 +100,6 @@ bool MessageReader::registerSocket(const int    protocol,
           socket->SocketDescriptor, socket->Protocol, (unsigned int)socket->UseCount);
 #endif
    return true;
-}
-
-
-// ###### Get all socket descriptors ########################################
-size_t MessageReader::getAllSDs(int* sds, const size_t maxEntries)
-{
-   assert(maxEntries >= SocketMap.size());
-   size_t count = 0;
-   for(std::map<int, Socket*>::iterator iterator = SocketMap.begin(); iterator != SocketMap.end(); iterator++) {
-      sds[count++] = iterator->second->SocketDescriptor;
-   }
-   return count;
 }
 
 
@@ -127,6 +123,18 @@ bool MessageReader::deregisterSocket(const int sd)
       return false;   // Socket is still in use!
    }
    return true;
+}
+
+
+// ###### Get all socket descriptors ########################################
+size_t MessageReader::getAllSDs(int* sds, const size_t maxEntries)
+{
+   assert(maxEntries >= SocketMap.size());
+   size_t count = 0;
+   for(std::map<int, Socket*>::iterator iterator = SocketMap.begin(); iterator != SocketMap.end(); iterator++) {
+      sds[count++] = iterator->second->SocketDescriptor;
+   }
+   return count;
 }
 
 
@@ -324,18 +332,20 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          }
          return MRRM_BAD_SOCKET;
       }
+
       // ====== Handle read errors ==========================================
       else if(received < 0) {
          return MRRM_SOCKET_ERROR;
       }
+
+      // ====== Shutdown ====================================================
       else {   // received == 0
          return received;
       }
    }
-   else {
-      LOG_ERROR
-      stdlog << format("Invalid socket %d!", socket->SocketDescriptor) << "\n";
-      LOG_END
-      return MRRM_BAD_SOCKET;
-   }
+
+   LOG_ERROR
+   stdlog << format("Invalid socket %d!", socket->SocketDescriptor) << "\n";
+   LOG_END
+   return MRRM_BAD_SOCKET;
 }

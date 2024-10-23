@@ -50,6 +50,7 @@ class MessageReader
 
    bool registerSocket(const int    protocol,
                        const int    sd,
+                       const bool   mustBeNew      = true,
                        const size_t maxMessageSize = 65535);
    bool deregisterSocket(const int sd);
 
