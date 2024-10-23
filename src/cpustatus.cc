@@ -28,6 +28,7 @@
  */
 
 #include "cpustatus.h"
+#include "loglevel.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -72,9 +73,10 @@ bool CPUStatus::getSysCtl(const char* name, void* ptr, size_t len)
 {
    size_t nlen = len;
    if(sysctlbyname(name, ptr, &nlen, nullptr, 0) < 0) {
-      std::cerr << "ERROR: sysctlbyname(" << name << ") failed: "
-                << strerror(errno) << "\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << format("sysctlbyname(%s) failed: %s!",
+                       name, strerror(errno)) << "\n";
+      LOG_END_FATAL
    }
    if(nlen != len) {
       return false;
@@ -100,8 +102,9 @@ CPUStatus::CPUStatus()
 
    ProcStatFD = fopen("/proc/stat", "r");
    if(ProcStatFD == nullptr) {
-      std::cerr << "ERROR: Unable to open /proc/stat!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << "Unable to open /proc/stat!" << "\n";
+      LOG_END_FATAL
    }
 #elif defined __APPLE__
 #ifdef USE_PER_CPU_STATISTICS
@@ -112,18 +115,21 @@ CPUStatus::CPUStatus()
 
    CpuStates = CPU_STATE_MAX;
    if ((host = mach_host_self()) == MACH_PORT_nullptr) {
-      std::cerr << "ERROR: Couldn't receive send rights.\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << "Couldn't receive send rights!" << "\n";
+      LOG_END_FATAL
    }
 #ifdef USE_PER_CPU_STATISTICS
    if((kr = host_get_host_priv_port(host, &host_priv)) != KERN_SUCCESS) {
+      LOG_FATAL
       mach_error("host_get_host_priv_port():", kr);
-      exit(1);
+      LOG_END_FATAL
    }
    count = HOST_BASIC_INFO_COUNT;
    if((kr = host_info(host, HOST_BASIC_INFO, (host_info_t)&hinfo, &count)) != KERN_SUCCESS) {
+      LOG_FATAL
       mach_error("host_info():", kr);
-      exit(1);
+      LOG_END_FATAL
    };
    CPUs = hinfo.max_cpus;
 #else
@@ -204,8 +210,9 @@ void CPUStatus::update()
    for(unsigned int i = 0; i <= CPUs; i++) {
       char buffer[1024];
       if(fgets(buffer, sizeof(buffer), ProcStatFD) == 0) {
-         std::cerr << "ERROR: Unable to read from /proc/stat!\n";
-         exit(1);
+         LOG_FATAL
+         stdlog << "Unable to read from /proc/stat!" << "\n";
+         LOG_END_FATAL
       }
       int result;
       if(i == 0) {   // Get totals
@@ -233,8 +240,9 @@ void CPUStatus::update()
                          &CpuTimes[(i * CpuStates) + 7]);
       }
       if( ((i == 0) && (result < 8)) || ((i > 0) && (result < 9)) ) {
-         std::cerr << "ERROR: Bad input fromat in /proc/stat!\n";
-         exit(1);
+         LOG_FATAL
+         stdlog << "Bad input fromat in /proc/stat!" << "\n";
+         LOG_END_FATAL
       }
    }
 

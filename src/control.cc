@@ -641,7 +641,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
 
    const uint32_t status = ntohl(ackMsg.Status);
    LOG_TRACE
-   stdlog << format("<status=%u>", status) << "\n";
+   stdlog << format("<status=%u sd=%d>", status, controlSocket) << "\n";
    LOG_END
    return status == NETPERFMETER_STATUS_OKAY;
 }

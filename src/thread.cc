@@ -27,12 +27,10 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <iostream>
-
 #include "thread.h"
+#include "loglevel.h"
+
+#include <pthread.h>
 
 
 // ###### Constructor #######################################################
@@ -74,10 +72,14 @@ bool Thread::start()
          return true;
       }
       MyThread = 0;
-      std::cerr << "ERROR: Unable to start new thread!\n";
+      LOG_ERROR
+      stdlog << "Unable to start new thread!" << "\n";
+      LOG_END
    }
    else {
-      std::cerr << "ERROR: Thread already running!\n";
+      LOG_ERROR
+      stdlog << "Thread is already running!" << "\n";
+      LOG_END
    }
    return false;
 }
