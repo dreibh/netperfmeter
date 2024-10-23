@@ -27,11 +27,11 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include "assure.h"
 #include "control.h"
 #include "loglevel.h"
 #include "tools.h"
 
-#include <assert.h>
 #include <math.h>
 #include <cstring>
 
@@ -493,7 +493,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    FlowManager::getFlowManager()->stopMeasurement(controlSocket, measurementID);
    Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(controlSocket,
                                                                              measurementID);
-   assert(measurement != nullptr);
+   assure(measurement != nullptr);
    measurement->writeScalarStatistics(getMicroTime());
    FlowManager::getFlowManager()->unlock();
 
@@ -776,7 +776,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       // ====== Create new flow =============================================
       FlowTrafficSpec trafficSpec;
       trafficSpec.Protocol    = addFlowMsg->Protocol;
-      assert(addFlowMsg->Protocol <= 255);
+      assure(addFlowMsg->Protocol <= 255);
       trafficSpec.Description = std::string(description);
       for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
          trafficSpec.OutboundFrameRate[i] = networkToDouble(addFlowMsg->FrameRate[i]);

@@ -33,7 +33,6 @@
 #include "loglevel.h"
 #include "transfer.h"
 
-#include <assert.h>
 #include <poll.h>
 #include <signal.h>
 #include <netinet/tcp.h>
@@ -420,7 +419,7 @@ void FlowManager::removeUnidentifiedSocket(const int  socketDescriptor,
       UnidentifiedSockets.find(socketDescriptor);
    if(found != UnidentifiedSockets.end()) {
       UnidentifiedSocket* us = found->second;
-      assert(us->ToBeRemoved == false);
+      assure(us->ToBeRemoved == false);
       // Mark socket for removal. The actual remove cannot be done here,
       // since this function may be called in the loop iterating over the
       // UnidentifiedSockets. Removing would invalidate the iterator!
@@ -860,7 +859,6 @@ void FlowManager::run()
          }
          FlowSet[i]->unlock();
       }
-      assert(n <= FlowSet.size());
 
       // ------ Get socket descriptors for yet unidentified associations ----
       for(std::map<int, UnidentifiedSocket*>::iterator iterator = UnidentifiedSockets.begin();
@@ -881,7 +879,6 @@ void FlowManager::run()
             n++;
          }
       }
-      assert(n <= FlowSet.size() + UnidentifiedSockets.size());
       const unsigned long long nextEvent = getNextEvent();
       unlock();
 
@@ -924,7 +921,6 @@ void FlowManager::run()
                                                                protocol, entry->fd);
                   if(!dataOkay) {
                      // Close the broken connection!
-                     assert(protocol != IPPROTO_UDP);
                      LOG_WARNING
                      stdlog << format("Closing disconnected socket %d!",
                                        FlowSet[i]->SocketDescriptor) << "\n";

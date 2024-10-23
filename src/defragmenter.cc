@@ -27,11 +27,11 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include "assure.h"
 #include "defragmenter.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <map>
 
 
@@ -146,7 +146,7 @@ bool Defragmenter::getFirstFragment(Frame*&    frame,
    if(FrameIterator != FrameSet.end()) {
       frame            = FrameIterator->second;
       FragmentIterator = frame->FragmentSet.begin();
-      assert(FragmentIterator != frame->FragmentSet.end());
+      assure(FragmentIterator != frame->FragmentSet.end());
       fragment = FragmentIterator->second;
       return true;
    }
@@ -176,7 +176,7 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
       else {
          frame            = FrameIterator->second;
          FragmentIterator = frame->FragmentSet.begin();
-         assert(FragmentIterator != frame->FragmentSet.end());
+         assure(FragmentIterator != frame->FragmentSet.end());
          fragment = FragmentIterator->second;
       }
    }

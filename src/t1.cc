@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "loglevel.h"
+#include "assure.h"
 
 int main(int argc, char** argv)
 {
@@ -36,6 +37,9 @@ int main(int argc, char** argv)
    LOG_TRACE
    stdlog << "Trace\n";
    LOG_END
+
+   assure(true);
+   assure(false);
 
    return 0;
 }

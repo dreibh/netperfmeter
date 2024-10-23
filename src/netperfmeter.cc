@@ -27,6 +27,7 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include "assure.h"
 #include "flow.h"
 #include "control.h"
 #include "loglevel.h"
@@ -40,7 +41,6 @@
 #include <poll.h>
 #include <signal.h>
 #include <math.h>
-#include <assert.h>
 
 #include <iostream>
 
@@ -172,18 +172,18 @@ void printGlobalParameters()
 {
    LOG_INFO
    stdlog << "Global Parameters:\n"
-          << "- Runtime                   = ";
+          << " - Runtime                   = ";
    if(gRuntime >= 0.0) {
       stdlog << gRuntime << " s\n";
    }
    else {
       stdlog << "until manual stop\n";
    }
-   stdlog << "- Active Node Name          = " << gActiveNodeName  << "\n"
-          << "- Passive Node Name         = " << gPassiveNodeName << "\n"
-          << "- Local Data Address(es)    = ";
+   stdlog << " - Active Node Name          = " << gActiveNodeName  << "\n"
+          << " - Passive Node Name         = " << gPassiveNodeName << "\n"
+          << " - Local Data Address(es)    = ";
    if(gLocalDataAddresses > 0) {
-      for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
+      for(unsigned int i = 0; i < gLocalDataAddresses; i++) {
          if(i > 0) {
             stdlog << ", ";
          }
@@ -193,9 +193,9 @@ void printGlobalParameters()
    else {
       stdlog << "(any)";
    }
-   stdlog << "\n- Local Control Address(es) = ";
+   stdlog << "\n - Local Control Address(es) = ";
    if(gLocalControlAddresses > 0) {
-      for(unsigned int i = 0;i < gLocalControlAddresses;i++) {
+      for(unsigned int i = 0; i < gLocalControlAddresses; i++) {
          if(i > 0) {
             stdlog << ", ";
          }
@@ -205,7 +205,7 @@ void printGlobalParameters()
    else {
       stdlog << "(any)";
    }
-   stdlog << "\n- Minimum Logging Level     = " << gLogLevel << "\n";
+   stdlog << "\n - Minimum Logging Level     = " << gLogLevel << "\n";
    LOG_END
 }
 
@@ -629,7 +629,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       exit(1);
    }
    Flow* flow = new Flow(measurementID, flowID, streamID, trafficSpec);
-   assert(flow != nullptr);
+   assure(flow != nullptr);
 
    // ====== Initialize vector file =========================================
    const std::string vectorName = flow->getNodeOutputName(vectorNamePattern,
@@ -836,6 +836,10 @@ bool mainLoop(const bool               isActiveMode,
                 (fds[controlID].fd == gControlSocket) ) {
                const int newSD = ext_accept(gControlSocket, nullptr, 0);
                if(newSD >= 0) {
+                  LOG_TRACE
+                  stdlog << format("Accept on SCTP control socket %d -> new control connection %d",
+                                   gControlSocket, newSD) << "\n";
+                  LOG_END
                   gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
                }
                else {
@@ -846,9 +850,13 @@ bool mainLoop(const bool               isActiveMode,
                }
             }
             else if( (isActiveMode == false) &&
-                (fds[controlID].fd == gControlSocketTCP) ) {
+                     (fds[controlID].fd == gControlSocketTCP) ) {
                const int newSD = ext_accept(gControlSocketTCP, nullptr, 0);
                if(newSD >= 0) {
+                  LOG_TRACE
+                  stdlog << format("Accept on TCP control socket %d -> new control connection %d",
+                                   gControlSocketTCP, newSD) << "\n";
+                  LOG_END
                   gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                }
                else {
@@ -879,12 +887,20 @@ bool mainLoop(const bool               isActiveMode,
       if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gTCPSocket, nullptr, 0);
          if(newSD >= 0) {
+            LOG_TRACE
+            stdlog << format("Accept on TCP data socket %d -> new TCP data connection %d",
+                             gTCPSocket, newSD) << "\n";
+            LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
          }
       }
       if( (mptcpID >= 0) && (fds[mptcpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gMPTCPSocket, nullptr, 0);
          if(newSD >= 0) {
+            LOG_TRACE
+            stdlog << format("Accept on MPTCP data socket %d -> new MPTCP data connection %d",
+                             gMPTCPSocket, newSD) << "\n";
+            LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_MPTCP, newSD);
          }
       }
@@ -896,6 +912,10 @@ bool mainLoop(const bool               isActiveMode,
       if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gSCTPSocket, nullptr, 0);
          if(newSD >= 0) {
+            LOG_TRACE
+            stdlog << format("Accept on SCTP data socket %d -> new SCTP data connection %d",
+                             gMPTCPSocket, newSD) << "\n";
+            LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_SCTP, newSD);
          }
       }
@@ -903,6 +923,10 @@ bool mainLoop(const bool               isActiveMode,
       if( (dccpID >= 0) && (fds[dccpID].revents & POLLIN) ) {
          const int newSD = ext_accept(gDCCPSocket, nullptr, 0);
          if(newSD >= 0) {
+            LOG_TRACE
+            stdlog << format("Accept on DCCP data socket %d -> new DCCP data connection %d",
+                             gMPTCPSocket, newSD) << "\n";
+            LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_DCCP, newSD);
          }
       }
@@ -935,7 +959,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
    // ====== Test for problems ==============================================
    sockaddr_union testAddress;
-   assert(string2address("172.17.0.1:0", &testAddress));
+   assure(string2address("172.17.0.1:0", &testAddress));
    int testSD = createAndBindSocket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, 0, 1, &testAddress, true, false);
    if(testSD >= 0) {
       LOG_WARNING
@@ -1129,6 +1153,21 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
                     ((gMPTCPSocket > 0) ? "+MPTCP" : ""),
                     ((gDCCPSocket > 0)  ? "/DCCP"  : ""),
                     localPort) << "\n";
+   LOG_END
+   LOG_TRACE
+   stdlog << "Sockets:\n"
+          << "- SCTP Control = " << gControlSocket    << "\n"
+          << "- TCP Control  = " << gControlSocketTCP << "\n"
+          << "- TCP Data     = " << gTCPSocket        << "\n"
+#ifdef HAVE_MPTCP
+          << "- MPTCP Data   = " << gMPTCPSocket      << "\n"
+#endif
+          << "- UDP Data     = " << gUDPSocket        << "\n"
+          << "- SCTP Data    = " << gSCTPSocket       << "\n"
+#ifdef HAVE_DCCP
+          << "- DCCP Data    = " << gDCCPSocket       << "\n"
+#endif
+          ;
    LOG_END
 
 

@@ -27,12 +27,13 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include "assure.h"
 #include "messagereader.h"
 #include "loglevel.h"
 #include "tools.h"
 
 #include <stdlib.h>
-#include <assert.h>
+#include <assure.h>
 #include <string.h>
 #include <iostream>
 
@@ -69,12 +70,12 @@ bool MessageReader::registerSocket(const int    protocol,
    Socket*                          socket;
    std::map<int, Socket*>::iterator found = SocketMap.find(sd);
    if(found == SocketMap.end()) {
-      assert(maxMessageSize >= sizeof(TLVHeader));
+      assure(maxMessageSize >= sizeof(TLVHeader));
 
       socket = new Socket;
-      assert(socket != nullptr);
+      assure(socket != nullptr);
       socket->MessageBuffer = new char[maxMessageSize];
-      assert(socket->MessageBuffer != nullptr);
+      assure(socket->MessageBuffer != nullptr);
       socket->MessageBufferSize = maxMessageSize;
       socket->MessageSize       = 0;
       socket->BytesRead         = 0;
@@ -129,7 +130,7 @@ bool MessageReader::deregisterSocket(const int sd)
 // ###### Get all socket descriptors ########################################
 size_t MessageReader::getAllSDs(int* sds, const size_t maxEntries)
 {
-   assert(maxEntries >= SocketMap.size());
+   assure(maxEntries >= SocketMap.size());
    size_t count = 0;
    for(std::map<int, Socket*>::iterator iterator = SocketMap.begin(); iterator != SocketMap.end(); iterator++) {
       sds[count++] = iterator->second->SocketDescriptor;
@@ -169,7 +170,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          // SCTP and TCP can return partial messages upon recv() calls. TCP
          // may event return multiple messages, if the buffer size is large enough!
          if(socket->Status == Socket::MRS_WaitingForHeader) {
-            assert(sizeof(TLVHeader) >= socket->BytesRead);
+            assure(sizeof(TLVHeader) >= socket->BytesRead);
             bytesToRead = sizeof(TLVHeader) - socket->BytesRead;
          }
          else if(socket->Status == Socket::MRS_PartialRead) {
@@ -187,7 +188,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                return MRRM_STREAM_ERROR;
             }
          }
-         assert(bytesToRead + socket->BytesRead <= socket->MessageBufferSize);
+         assure(bytesToRead + socket->BytesRead <= socket->MessageBufferSize);
       }
       else {
          // DCCP and UDP will always return only a single message on recv() calls.
