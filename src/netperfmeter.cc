@@ -27,6 +27,12 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include "flow.h"
+#include "control.h"
+#include "loglevel.h"
+#include "transfer.h"
+#include "package-version.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -38,10 +44,6 @@
 
 #include <iostream>
 
-#include "flow.h"
-#include "control.h"
-#include "loglevel.h"
-#include "transfer.h"
 
 
 #define MAX_LOCAL_ADDRESSES 16
@@ -170,16 +172,16 @@ void printGlobalParameters()
 {
    LOG_INFO
    stdlog << "Global Parameters:\n"
-          << "   - Runtime                   = ";
+          << "- Runtime                   = ";
    if(gRuntime >= 0.0) {
       stdlog << gRuntime << " s\n";
    }
    else {
       stdlog << "until manual stop\n";
    }
-   stdlog << "   - Active Node Name          = " << gActiveNodeName  << "\n"
-          << "   - Passive Node Name         = " << gPassiveNodeName << "\n"
-          << "   - Local Data Address(es)    = ";
+   stdlog << "- Active Node Name          = " << gActiveNodeName  << "\n"
+          << "- Passive Node Name         = " << gPassiveNodeName << "\n"
+          << "- Local Data Address(es)    = ";
    if(gLocalDataAddresses > 0) {
       for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
          if(i > 0) {
@@ -191,7 +193,7 @@ void printGlobalParameters()
    else {
       stdlog << "(any)";
    }
-   stdlog << "\n   - Local Control Address(es) = ";
+   stdlog << "\n- Local Control Address(es) = ";
    if(gLocalControlAddresses > 0) {
       for(unsigned int i = 0;i < gLocalControlAddresses;i++) {
          if(i > 0) {
@@ -203,7 +205,7 @@ void printGlobalParameters()
    else {
       stdlog << "(any)";
    }
-   stdlog << "\n   - Logging Verbosity         = " << gLogLevel << "\n";
+   stdlog << "\n- Minimum Logging Level     = " << gLogLevel << "\n";
    LOG_END
 }
 
@@ -1189,13 +1191,13 @@ void activeMode(int argc, char** argv)
 
    LOG_INFO
    stdlog << "Active Mode:\n"
-          << "   - Measurement ID  = " << format("$%llx", measurementID) << "\n"
-          << "   - Remote Address  = ";
+          << "- Measurement ID  = " << format("$%llx", measurementID) << "\n"
+          << "- Remote Address  = ";
    printAddress(stdlog, &remoteAddress.sa, true);
    stdlog << "\n"
-          << "   - Control Address = ";
+          << "- Control Address = ";
    printAddress(stdlog, &controlAddress.sa, true);
-   stdlog << " - connecting ..." << "\n";
+   stdlog << "- connecting ..." << "\n";
    LOG_END
 
    // ====== Initialize control socket ======================================
@@ -1420,7 +1422,7 @@ int main(int argc, char** argv)
       }
    }
    LOG_INFO
-   stdlog << "Network Performance Meter\n";
+   stdlog << "Network Performance Meter " << NETPERFMETER_VERSION << "\n";
    LOG_END
 
    const uint16_t localPort = atol(argv[1]);

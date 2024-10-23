@@ -21,7 +21,7 @@ rm -f vgcore.* core.* core
 ./netperfmeter "${SERVER}:${PORT}" \
    -control-over-tcp \
    -scalar=x.sca.bz2 -vector=x.vec.bz2 \
-   -udp const30:const68000:const30:const68000:maxmsgsize=1300 \
+   -tcp const30:const68000:const30:const68000:maxmsgsize=1300 \
    -runtime=5
 
 # ./netperfmeter "${SERVER}:${PORT}" \

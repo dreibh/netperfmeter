@@ -127,36 +127,45 @@ void FlowTrafficSpec::print(std::ostream& os) const
       << "      - Repeat On/Off:       " << ((RepeatOnOff == true) ? "yes" : "no") << "\n";
 
    os << "      - Error on Abort:      "
-      << ((ErrorOnAbort == true) ? "yes" : "no") << "\n"
-      << "      - Debug:               "
-      << ((Debug == true) ? "yes" : "no") << "\n"
-      << "      - No Delay:            "
-      << ((NoDelay == true) ? "yes" : "no") << "\n"
-      << "      Congestion Control:    " << CongestionControl << "\n"
-      << "      Number of Diff. Ports: " << NDiffPorts        << "\n"
-      << "      Path Manager:          " << PathMgr           << "\n"
-      << "      Scheduler:             " << Scheduler         << "\n";
-
-   os << "      - CMT:                 #" << (unsigned int)CMT << " ";
-   switch(CMT) {
-      case NPAF_PRIMARY_PATH:
-         os << "(off)";
-       break;
-      case NPAF_CMT:
-         os << "(CMT)";
-       break;
-      case NPAF_CMTRPv1:
-         os << "(CMT/RPv1)";
-       break;
-      case NPAF_CMTRPv2:
-         os << "(CMT/RPv2)";
-       break;
-      case NPAF_LikeMPTCP:
-         os << "(MPTCP)";
-       break;
+      << ((ErrorOnAbort == true) ? "yes" : "no") << "\n";
+   if( (Protocol == IPPROTO_SCTP) || (Protocol == IPPROTO_TCP) || (Protocol == IPPROTO_MPTCP) ) {
+      os << "      - No Delay:            "
+         << ((NoDelay == true) ? "yes" : "no") << "\n";
    }
-   os << "\n";
-   os << "      - CCID:                #" << (unsigned int)CCID << "\n";
+   if( (Protocol == IPPROTO_TCP) || (Protocol == IPPROTO_MPTCP) ) {
+      os << "      - Congestion Control:  " << CongestionControl << "\n";
+   }
+   if(Protocol == IPPROTO_MPTCP) {
+      os << "      - N. of Diff. Ports: " << NDiffPorts        << "\n"
+         << "      - Path Manager:      " << PathMgr           << "\n"
+         << "      - Scheduler:         " << Scheduler         << "\n"
+         << "      - Debug:             "
+         << ((Debug == true) ? "yes" : "no") << "\n";
+   }
+   if(Protocol == IPPROTO_SCTP) {
+      os << "      - CMT:                 #" << (unsigned int)CMT << " ";
+      switch(CMT) {
+         case NPAF_PRIMARY_PATH:
+            os << "(off)";
+         break;
+         case NPAF_CMT:
+            os << "(CMT)";
+         break;
+         case NPAF_CMTRPv1:
+            os << "(CMT/RPv1)";
+         break;
+         case NPAF_CMTRPv2:
+            os << "(CMT/RPv2)";
+         break;
+         case NPAF_LikeMPTCP:
+            os << "(MPTCP)";
+         break;
+      }
+      os << "\n";
+   }
+   if(Protocol == IPPROTO_DCCP) {
+      os << "      - CCID:                #" << (unsigned int)CCID << "\n";
+   }
 }
 
 
