@@ -43,6 +43,8 @@ CONFIGURE_FILE (
 #############################################################################
 
 ADD_EXECUTABLE(netperfmeter
+   assure.h
+   assure.cc
    control.cc
    control.h
    cpustatus.cc
@@ -149,8 +151,8 @@ IF (BUILD_TEST_PROGRAMS)
 ENDIF()
 
 
-# ADD_EXECUTABLE(t1 t1.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(t1 ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
+ADD_EXECUTABLE(t1 t1.cc assure.cc loglevel.cc tools.cc mutex.cc)
+TARGET_LINK_LIBRARIES(t1 ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
 
 
 #############################################################################
