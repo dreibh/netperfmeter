@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 21, 2024
+.Dd October 23, 2024
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -38,11 +38,13 @@
 .Nm netperfmeter
 Port
 .Op Fl control-over-tcp
-.Op Fl L Ar level | Fl Fl loglevel Ar level
-.Op Fl Z Ar on|off | Fl Fl logcolor Ar on|off
-.Op Fl O Ar file | Fl Fl logfile Ar file
-.Op Fl q | Fl Fl quiet
-.Op Fl v | Fl Fl verbose
+.Op Fl loglevel=level
+.Op Fl logcolor=on|off
+.Op Fl logappend=file
+.Op Fl logfile=file
+.Op Fl logstderr
+.Op Fl quiet
+.Op Fl verbose
 .Op Fl display
 .Op Fl nodisplay
 .Op Fl v6only
@@ -57,11 +59,13 @@ Destination:Port
 .Op Fl vector=Name
 .Op Fl activenodename=Description
 .Op Fl passivenodename=Description
-.Op Fl L Ar level | Fl Fl loglevel Ar level
-.Op Fl Z Ar on|off | Fl Fl logcolor Ar on|off
-.Op Fl O Ar file | Fl Fl logfile Ar file
-.Op Fl q | Fl Fl quiet
-.Op Fl v | Fl Fl verbose
+.Op Fl loglevel=level
+.Op Fl logcolor=on|off
+.Op Fl logappend=file
+.Op Fl logfile=file
+.Op Fl logstderr
+.Op Fl quiet
+.Op Fl verbose
 .Op Fl display
 .Op Fl nodisplay
 .Op Fl v6only
@@ -112,17 +116,23 @@ Default is scalar.vec.bz2, hence the name of the scalar file for flow 5, stream 
 Sets a textual description of the active node (e.g. Client).
 .It Fl passivenodename=Description
 Sets a textual description of the passive node (e.g. Server).
-.It Fl L Ar level | Fl Fl loglevel Ar level
+.It Fl loglevel Ar level
 Sets the minimum logging level to the provided value: 0=trace, 1=debug, 2=info, 3=warning, 4=error, 5=fatal.
-.It Fl Z Ar on|off | Fl Fl logcolor Ar on|off
+Default: 2 (info).
+.It Fl logcolor Ar on|off
 Enables (on) or disables (off) the usage of ANSI color escape sequences to colorise the log output according to its level.
-.It Fl O Ar file | Fl Fl logfile Ar file
+Default: on.
+.It Fl logappend Ar file
 Sets a file name for appending the log output to. If a file is set, no log output is made to the console.
 Otherwise, all log output will be written to the console.
-.It Fl q | Fl Fl quiet
-Sets the minimum logging level to 3 (warning).
-.It Fl v | Fl Fl verbose
-Sets the minimum logging level to 0 (trace).
+.It Fl logfile Ar file
+Sets a file name for write the log output to. Existing content is truncated. If a file is set, no log output is made to the console. Otherwise, all log output will be written to the console.
+.It Fl logstderr
+Write log output to stderr (default).
+.It Fl quiet
+Sets the logging level to 4 (error).
+.It Fl verbose
+Sets the logging level to 0 (trace).
 .It Fl display
 Display live I/O statistics, updated every second. This is enabled by default.
 .It Fl nodisplay
@@ -135,9 +145,9 @@ On an active node, this option applies to the following flows, i.e. it must be s
 .It Fl scheduler=name
 Set MPTCP scheduler for the passive node (MPTCP for Linux only. Requires socket options kernel patch!).
 On an active node, this option applies to the following flows, i.e. it must be set before specifying a flow!
-.It rcvbuf=bytes
+.It Fl rcvbuf=bytes
 Sets the receiver buffer size (on the listening socket) to the given number of bytes.
-.It sndbuf=bytes
+.It Fl sndbuf=bytes
 Sets the sender buffer size (on the listening socket) to the given number of bytes.
 .It Fl sctp
 Establish a new SCTP association. The streams of this association must be specified by one or more FLOWSPEC specifications as following parameters.

@@ -73,7 +73,6 @@ _netperfmeter()
       case "${cur}" in
          #  ====== Generic value ============================================
          -activenodename=*  | \
-         -config=*          | \
          -passivenodename=* | \
          -pathmgr=*         | \
          -rcvbuf=*          | \
@@ -157,6 +156,7 @@ ${base}v6only
             return
             ;;
          # ====== Scalar/vector file pattern ================================
+         -config=* | \
          -scalar=* | \
          -vector=*)
             cur="${cur#*=}"
@@ -182,31 +182,31 @@ ${base}v6only
          # NetPerfMeter simple options without parameter(s)
          opts1="
 -control-over-tcp
--dccp
+-logstderr
+-quiet
+-verbose
 -display
 -nodisplay
--quiet
--sctp
--tcp
--udp
 -v6only
--verbose
+-tcp
+-sctp
+-udp
+-dccp
 "
          # NetPerfMeter options with "=" and parameter(s)
          local opts2="
--activenodename
--config
--controllocal
+-loglevel
+-logcolor
+-logappend
+-logfile
 -local
--passivenodename
--pathmgr
--rcvbuf
+-controllocal
 -runtime
+-config
 -scalar
--scheduler
--sndbuf
 -vector
--verbosity
+-activenodename
+-passivenodename
 "
       else
          opts1="const exp pareto uniform"
@@ -218,23 +218,23 @@ ${base}v6only
       # NetPerfMeter simple options without parameter(s)
       opts1="
 -control-over-tcp
+-logstderr
+-quiet
+-verbose
 -display
 -nodisplay
--quiet
 -v6only
--verbose
 "
       # NetPerfMeter options with "=" and parameter(s)
       local opts2="
--config
--controllocal
--local
+-loglevel
+-logcolor
+-logappend
+-logfile
 -pathmgr
--rcvbuf
--runtime
 -scheduler
 -sndbuf
--verbosity
+-rcvbuf
 "
    fi
 

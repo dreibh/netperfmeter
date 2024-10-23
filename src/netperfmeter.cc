@@ -107,7 +107,10 @@ bool handleGlobalParameter(char* parameter)
       gBindV6Only = true;
    }
    else if(strcmp(parameter, "-quiet") == 0) {
-      // Already handled before!
+      gLogLevel = LOGLEVEL_ERROR;
+   }
+   else if(strcmp(parameter, "-verbose") == 0) {
+      gLogLevel = LOGLEVEL_TRACE;
    }
    else if(strcmp(parameter, "-display") == 0) {
       gDisplayEnabled = true;
