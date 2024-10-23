@@ -66,6 +66,15 @@ FlowManager::~FlowManager()
 {
    stop();
    waitForFinish();
+
+   std::map<int, UnidentifiedSocket*>::iterator iterator = UnidentifiedSockets.begin();
+   while(iterator != UnidentifiedSockets.end()) {
+      UnidentifiedSocket* ud = iterator->second;
+      iterator = UnidentifiedSockets.erase(iterator);
+      Reader.deregisterSocket(ud->SocketDescriptor);
+      ext_close(ud->SocketDescriptor);
+      delete ud;
+   }
 }
 
 
