@@ -55,13 +55,13 @@ static bool initLogFile(const unsigned int logLevel,
    finishLogging();
    if(fileName != nullptr) {
       std::ofstream* newLogFile =
-         (appendMode == true) ? new std::ofstream(fileName, std::ios_base::app) :
-                                new std::ofstream(fileName);
+         new std::ofstream(fileName, (appendMode == true) ?
+                                        std::ios_base::app : std::ios_base::trunc);
       if(newLogFile != nullptr) {
          if(newLogFile->good()) {
             gStdLog = newLogFile;
             gCloseStdLog = true;
-            gLogLevel    = std::max(logLevel, MIN_LOGLEVEL);
+            gLogLevel    = std::min(std::max(logLevel, MIN_LOGLEVEL), MAX_LOGLEVEL);
             return true;
          }
          delete newLogFile;
@@ -75,13 +75,13 @@ static bool initLogFile(const unsigned int logLevel,
 bool initLogging(const char* parameter)
 {
    if(!(strncmp(parameter, "-logfile=", 9))) {
-      return(initLogFile(gLogLevel, (char*)&parameter[9], false));
+      return initLogFile(gLogLevel, (char*)&parameter[9], false);
    }
    else if(!(strncmp(parameter, "-logappend=", 11))) {
-      return(initLogFile(gLogLevel, (char*)&parameter[11], true));
+      return initLogFile(gLogLevel, (char*)&parameter[11], true);
    }
    else if(!(strcmp(parameter, "-logstderr"))) {
-      initLogFile(0, nullptr, false);
+      return initLogFile(0, nullptr, false);
    }
    else if(!(strncmp(parameter, "-loglevel=", 10))) {
       gLogLevel = std::max((unsigned int)atoi((char*)&parameter[10]), MIN_LOGLEVEL);
@@ -126,7 +126,7 @@ void beginLogging()
                hostInfo.nodename);
    }
 
-   LOG_INFO
+   LOG_DEBUG
    *gStdLog << format("Logging started, log level is %d.", gLogLevel)
             << "\n";
    LOG_END
@@ -139,7 +139,7 @@ void beginLogging()
 void finishLogging()
 {
    if((gStdLog) && (gCloseStdLog)) {
-      LOG_INFO
+      LOG_DEBUG
       *gStdLog << "Logging finished.\n";
       LOG_END
       delete gStdLog;

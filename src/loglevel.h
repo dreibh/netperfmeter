@@ -40,6 +40,7 @@
 #define LOGLEVEL_INFO    2U
 #define LOGLEVEL_DEBUG   1U
 #define LOGLEVEL_TRACE   0U
+#define MAX_LOGLEVEL     LOGLEVEL_FATAL
 #define MIN_LOGLEVEL     LOGLEVEL_TRACE
 
 
@@ -64,6 +65,7 @@ extern Mutex         gLogMutex;
       if(gColorMode) {            \
         *gStdLog << "\e[0m";      \
       }                           \
+      gStdLog->flush();           \
       loggingMutexUnlock();       \
    }
 
@@ -73,6 +75,7 @@ extern Mutex         gLogMutex;
         *gStdLog << "\e[0m\e[2K";              \
       }                                        \
       gStdLog->flush();                        \
+      loggingMutexUnlock();                    \
    }                                           \
    exit(1);
 
@@ -99,7 +102,7 @@ inline void loggingMutexUnlock() {
 
 inline const char* getHostName()
 {
-   return((const char*)gHostName);
+   return (const char*)gHostName;
 }
 
 #endif
