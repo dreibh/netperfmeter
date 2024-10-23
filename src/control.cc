@@ -1011,12 +1011,11 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
    sockaddr_union  from;
    socklen_t       fromlen = sizeof(from);
    int             flags   = 0;
-   sctp_sndrcvinfo sinfo;
 
    // ====== Read message (or fragment) =====================================
    const ssize_t received =
       messageReader->receiveMessage(controlSocket, &inputBuffer, sizeof(inputBuffer),
-                                    &from.sa, &fromlen, &sinfo, &flags);
+                                    &from.sa, &fromlen, nullptr, &flags);
    if(received == MRRM_PARTIAL_READ) {
       return true;   // Partial read -> wait for next fragment.
    }
