@@ -115,37 +115,37 @@ void FlowBandwidthStats::print(std::ostream& os,
    const unsigned long long lostFrames            = LostFrames;
    const unsigned long long lostFrameRate         = calculateRate(lostFrames, receptionDuration);
 
-   os << "      - Transmission:\n"
-      << "         * Duration:         " << transmissionDuration << " s\n"
-      << "         * Bytes:            " << transmittedBytes << " B\t-> "
+   os << " - Transmission:\n"
+      << "  * Duration:         " << transmissionDuration << " s\n"
+      << "  * Bytes:            " << transmittedBytes << " B\t-> "
                                          << transmittedByteRate << " B/s\n"
-      << "         * Bits:             " << transmittedBits << " bit\t-> "
+      << "  * Bits:             " << transmittedBits << " bit\t-> "
                                          << transmittedBitRate << " bit/s\n"
-      << "         * Packets:          " << transmittedPackets << " packets\t-> "
+      << "  * Packets:          " << transmittedPackets << " packets\t-> "
                                          << transmittedPacketRate << " packets/s\n"
-      << "         * Frames:           " << transmittedFrames << " frames\t-> "
+      << "  * Frames:           " << transmittedFrames << " frames\t-> "
                                          << transmittedFrameRate << " frames/s\n";
 
-   os << "      - Reception:\n"
-      << "         * Duration:         " << receptionDuration << "s\n"
-      << "         * Bytes:            " << receivedBytes << " B\t-> "
+   os << " - Reception:\n"
+      << "  * Duration:         " << receptionDuration << "s\n"
+      << "  * Bytes:            " << receivedBytes << " B\t-> "
                                          << receivedByteRate << " B/s\n"
-      << "         * Bits:             " << receivedBits << " bit\t-> "
+      << "  * Bits:             " << receivedBits << " bit\t-> "
                                          << receivedBitRate << " bit/s\n"
-      << "         * Packets:          " << receivedPackets << " packets\t-> "
+      << "  * Packets:          " << receivedPackets << " packets\t-> "
                                          << receivedPacketRate << " packets/s\n"
-      << "         * Frames:           " << receivedFrames << " frames\t-> "
+      << "  * Frames:           " << receivedFrames << " frames\t-> "
                                          << receivedFrameRate << " frames/s\n";
 
-   os << "      - Loss:\n"
-      << "         * Duration:         " << receptionDuration << "s\n"
-      << "         * Bytes:            " << lostBytes << " B\t-> "
+   os << " - Loss:\n"
+      << "  * Duration:         " << receptionDuration << "s\n"
+      << "  * Bytes:            " << lostBytes << " B\t-> "
                                          << lostByteRate << " B/s\n"
-      << "         * Bits:             " << lostBits << " bit\t-> "
+      << "  * Bits:             " << lostBits << " bit\t-> "
                                          << lostBitRate << " bit/s\n"
-      << "         * Packets:          " << lostPackets << " packets\t-> "
+      << "  * Packets:          " << lostPackets << " packets\t-> "
                                          << lostPacketRate << " packets/s\n"
-      << "         * Frames:           " << lostFrames << " frames\t-> "
+      << "  * Frames:           " << lostFrames << " frames\t-> "
                                          << lostFrameRate << " frames/s\n";
 }
 
