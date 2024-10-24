@@ -12,6 +12,60 @@ Build-Depends: cmake,
 Standards-Version: 4.7.0
 Rules-Requires-Root: no
 
+Package: netperfmeter
+Architecture: any
+Depends: netperfmeter-common,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Recommends: bc,
+            hipercontracer,
+            iputils-ping,
+            iputils-tracepath,
+            netperfmeter-plotting,
+            subnetcalc,
+            traceroute
+Suggests: netperfmeter-service
+Description: Network Performance Meter (measurement program)
+ NetPerfMeter is a network performance meter for the UDP,
+ TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
+ It simultaneously transmits bidirectional flows to an endpoint
+ and measures the resulting flow bandwidths and QoS. The
+ results are written as vector and scalar files. The vector
+ files can e.g. be used to create plots of the results.
+ .
+ This package contains the measurement program.
+
+Package: netperfmeter-common
+Architecture: all
+Depends: ${misc:Depends}
+Description: Network Performance Meter (common files)
+ NetPerfMeter is a network performance meter for the UDP,
+ TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
+ It simultaneously transmits bidirectional flows to an endpoint
+ and measures the resulting flow bandwidths and QoS. The
+ results are written as vector and scalar files. The vector
+ files can e.g. be used to create plots of the results.
+ .
+ This package contains common NetPerfMeter files.
+
+Package: netperfmeter-service
+Architecture: all
+Depends: netperfmeter,
+         ${misc:Depends}
+Suggests: hipercontracer,
+          hipercontracer-trigger,
+          td-system-tools
+Description: Network Performance Meter (server service)
+ NetPerfMeter is a network performance meter for the UDP,
+ TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
+ It simultaneously transmits bidirectional flows to an endpoint
+ and measures the resulting flow bandwidths and QoS. The
+ results are written as vector and scalar files. The vector
+ files can e.g. be used to create plots of the results.
+ .
+ This package sets up a service running a NetPerfMeter
+ server instance.
+
 Package: pdfproctools
 Architecture: all
 Depends: ghostscript,
@@ -44,38 +98,3 @@ Description: Network Performance Meter (plotting program)
  files can e.g. be used to create plots of the results.
  .
  This package contains a plotting program for the results.
-
-Package: netperfmeter-common
-Architecture: all
-Depends: ${misc:Depends}
-Description: Network Performance Meter (common files)
- NetPerfMeter is a network performance meter for the UDP,
- TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
- It simultaneously transmits bidirectional flows to an endpoint
- and measures the resulting flow bandwidths and QoS. The
- results are written as vector and scalar files. The vector
- files can e.g. be used to create plots of the results.
- .
- This package contains common NetPerfMeter files.
-
-Package: netperfmeter
-Architecture: any
-Depends: netperfmeter-common,
-         ${misc:Depends},
-         ${shlibs:Depends}
-Recommends: bc,
-            hipercontracer,
-            iputils-ping,
-            iputils-tracepath,
-            netperfmeter-plotting,
-            subnetcalc,
-            traceroute
-Description: Network Performance Meter (measurement program)
- NetPerfMeter is a network performance meter for the UDP,
- TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
- It simultaneously transmits bidirectional flows to an endpoint
- and measures the resulting flow bandwidths and QoS. The
- results are written as vector and scalar files. The vector
- files can e.g. be used to create plots of the results.
- .
- This package contains the measurement program.

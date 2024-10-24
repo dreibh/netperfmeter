@@ -86,6 +86,10 @@ INSTALL(FILES   netperfmeter.xml DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR
 INSTALL(FILES       netperfmeter.bash-completion
         DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
         RENAME      netperfmeter)
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+   INSTALL(FILES netperfmeter.service DESTINATION /lib/systemd/system)
+   INSTALL(FILES netperfmeter.conf    DESTINATION /etc/netperfmeter)
+ENDIF()
 
 ADD_EXECUTABLE(createsummary
    createsummary.cc
