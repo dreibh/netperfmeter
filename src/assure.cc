@@ -29,14 +29,32 @@
 
 #include "assure.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstring>
+#include <iostream>
 
 
 // ###### Print error message and abort #####################################
-void __assure_fail(const char* expression, const char* function)
+void __assure_fail(const char*  expression,
+                   const char*  file,
+                   unsigned int line,
+                   const char*  function)
 {
-   fprintf(stderr, "assure(%s) failed in %s!\n",
-           expression, function);
+   std::cerr << "assure(" << expression << ") failed in "
+             << function << " (" << file << ":" << line << ")!"
+             << std::endl;
+   abort();
+}
+
+
+// ###### Print error message and abort with error from errno ###############
+void __assure_fail_perror(const char*  expression,
+                          const char*  file,
+                          unsigned int line,
+                          const char*  function)
+{
+   std::cerr << "assure(" << expression << ") failed in "
+             << function << " (" << file << ":" << line << "): "
+             << strerror(errno)
+             << std::endl;
    abort();
 }

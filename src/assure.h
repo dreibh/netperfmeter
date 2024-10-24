@@ -33,9 +33,22 @@
 // Assertion like assert(), but which will be checked in all build types,
 // i.e. not only for Debug builds but also in Release builds
 #define assure(expression) \
-   if(__builtin_expect(!(expression), 0)) __assure_fail(#expression, __func__);
+   if(__builtin_expect(!(expression), 0)) { \
+      __assure_fail(#expression, __FILE__, __LINE__, __func__); \
+   }
 
-void __assure_fail(const char* expression,
-                   const char* function);
+#define assure_perror(expression) \
+   if(__builtin_expect(!(expression), 0)) { \
+      __assure_fail_perror(#expression, __FILE__, __LINE__, __func__); \
+   }
+
+void __assure_fail(const char*  expression,
+                   const char*  file,
+                   unsigned int line,
+                   const char*  function) __attribute__ ((__noreturn__));
+void __assure_fail_perror(const char*  expression,
+                          const char*  file,
+                          unsigned int line,
+                          const char*  function) __attribute__ ((__noreturn__));
 
 #endif

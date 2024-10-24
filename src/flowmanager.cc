@@ -1002,7 +1002,7 @@ void FlowManager::run()
                      iterator = UnidentifiedSockets.erase(iterator);
                      const bool deregisteredFromReader =
                         Reader.deregisterSocket(ud->SocketDescriptor);
-                     if( (deregisteredFromReader) && (ud->ToBeClosed) ) {
+                     if(ud->ToBeClosed) {
                         assure(deregisteredFromReader);
                         ext_close(ud->SocketDescriptor);
                      }
