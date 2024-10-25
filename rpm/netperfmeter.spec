@@ -21,6 +21,7 @@ Recommends: bc
 Recommends: hipercontracer
 Recommends: iputils
 Recommends: subnetcalc >= 2.0.2
+Suggests: %{name}-service = %{version}-%{release}
 
 
 %description
@@ -72,6 +73,30 @@ This package contains common NetPerfMeter files.
 %{_datadir}/mime/packages/netperfmeter.xml
 %{_datadir}/netperfmeter/results-examples/*.sca*
 %{_datadir}/netperfmeter/results-examples/*.vec*
+
+
+%package service
+Summary: Network Performance Meter (common files)
+Group: Applications/Internet
+BuildArch: noarch
+Requires: %{name} = %{version}-%{release}
+Suggests: hipercontracer
+Suggests: hipercontracer-trigger
+Suggests: td-system-tools
+
+%description service
+NetPerfMeter is a network performance meter for the UDP,
+TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
+It simultaneously transmits bidirectional flows to an endpoint
+and measures the resulting flow bandwidths and QoS. The
+results are written as vector and scalar files. The vector
+files can e.g. be used to create plots of the results.
+This package sets up a service running a NetPerfMeter
+server instance.
+
+%files service
+etc/netperfmeter/netperfmeter.conf
+lib/systemd/system/netperfmeter.service
 
 
 %package pdfproctools
