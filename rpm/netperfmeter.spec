@@ -25,7 +25,12 @@ Suggests: %{name}-service = %{version}-%{release}
 
 
 %description
-NetPerfMeter is a network performance meter for the UDP, TCP, SCTP and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. The results are written as vector and scalar files. The vector files can e.g. be used to create plots of the results.
+NetPerfMeter is a network performance meter for the UDP,
+TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
+It simultaneously transmits bidirectional flows to an endpoint
+and measures the resulting flow bandwidths and QoS. The
+results are written as vector and scalar files. The vector
+files can e.g. be used to create plots of the results.
 
 %prep
 %setup -q
@@ -95,8 +100,8 @@ This package sets up a service running a NetPerfMeter
 server instance.
 
 %files service
-etc/netperfmeter/netperfmeter.conf
-lib/systemd/system/netperfmeter.service
+/etc/netperfmeter/netperfmeter.conf
+/lib/systemd/system/netperfmeter.service
 
 
 %package pdfproctools
