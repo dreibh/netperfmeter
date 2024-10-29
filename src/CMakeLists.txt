@@ -34,8 +34,9 @@ SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 CONFIGURE_FILE (
    "${CMAKE_CURRENT_SOURCE_DIR}/package-version.h.in"
-   "${CMAKE_CURRENT_SOURCE_DIR}/package-version.h"
+   "${CMAKE_CURRENT_BINARY_DIR}/package-version.h"
 )
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 
 #############################################################################
