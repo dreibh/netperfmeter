@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # ==========================================================================
 #         _   _      _   ____            __ __  __      _
 #        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
@@ -60,7 +61,7 @@ _netperfmeter()
 
    # ====== Parameters ======================================================
    local flowSpec=0
-   if [ $cword -gt 1 ] ; then
+   if [ "$cword" -gt 1 ] ; then
       if [ "${prev}" == "-sctp" ] || \
          [ "${prev}" == "-tcp" ]  || \
          [ "${prev}" == "-udp" ]  || \
@@ -87,15 +88,18 @@ _netperfmeter()
          exp*     | \
          pareto*  | \
          uniform*)
+            # shellcheck disable=SC2155,SC2001
             local base="$(echo "${cur}" | sed -e 's/:[^:]*$/:/')"
+            # shellcheck disable=SC2155,SC2001
             local blocks="$(echo "${base}" | tr -cd ":" | wc -c)"
-            local entry="$(echo "${cur}" | sed -e 's/^.*://')"
+#             # shellcheck disable=SC2155,SC2001
+#             local entry="$(echo "${cur}" | sed -e 's/^.*://')"
 
 #             echo ""
 #             echo "B=$blocks  cur=$cur b=$base e=$entry"
 #             echo ""
 
-            if [ ${blocks} -lt 4 ] ; then
+            if [ "${blocks}" -lt 4 ] ; then
                if [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)([0-9]+)$ ]] ; then
                   COMPREPLY=($(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}, ${cur}:" -- "${cur}"))
                   compopt -o nospace
@@ -151,7 +155,7 @@ ${base}v6only
             elif [ -x /sbin/ifconfig ] ; then
                addresses="$(/sbin/ifconfig | awk '/[ \t]+inet/ { print $2 }' | sed -e 's#/.*$##')"
             fi
-            COMPREPLY=($(compgen -W "${addresses}" -- "${cur}"))
+            COMPREPLY=( $(compgen -W "${addresses}" -- "${cur}") )
             return
             ;;
          # ====== Scalar/vector file pattern ================================
@@ -166,7 +170,7 @@ ${base}v6only
 
    # ====== Port (passive side) or Address:Port (active side) ===============
    else
-      COMPREPLY=($(compgen -W 'localhost:9000 9000' -- "$cur"))
+      COMPREPLY=( $(compgen -W 'localhost:9000 9000' -- "$cur") )
       return
    fi
 
@@ -176,7 +180,7 @@ ${base}v6only
    local opts2
 
    # ------ Active side -----------------------------------------------------
-   if [ ${cword} -ge 2 ] && [[ "${words[1]}" =~ [:] ]] ; then
+   if [ "${cword}" -ge 2 ] && [[ "${words[1]}" =~ [:] ]] ; then
       if [ ${flowSpec} -eq 0 ] ; then
          # NetPerfMeter simple options without parameter(s)
          opts1="
