@@ -73,6 +73,14 @@ netperfmeter (1.8.6-1ubuntu1) focal; urgency=medium
 
  -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Fri, 07 Feb 2020 13:21:53 +0100
 
+netperfmeter (1.8.6~rc2-1) unstable; urgency=medium
+
+  * New upstream release.
+  * debian/control: Updated standards version to 4.4.1.1.
+  * debian/control: Updated standards version to 4.4.1.2.
+
+ -- Thomas Dreibholz <dreibh@iem.uni-due.de>  Thu, 05 Dec 2019 14:26:58 +0100
+
 netperfmeter (1.8.5-1ubuntu1) eoan; urgency=medium
 
   * New upstream release.
