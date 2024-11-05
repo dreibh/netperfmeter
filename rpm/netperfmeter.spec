@@ -73,10 +73,12 @@ files can e.g. be used to create plots of the results.
 This package contains common NetPerfMeter files.
 
 %files common
-%{_datadir}/icons/hicolor/512x512/apps/netperfmeter.png
+%{_datadir}/icons/hicolor/*x*/apps/netperfmeter.png
 %{_datadir}/icons/hicolor/scalable/apps/netperfmeter.svg
 %{_datadir}/mime/packages/netperfmeter.xml
 %{_datadir}/netperfmeter/netperfmeter.bib
+%{_datadir}/netperfmeter/netperfmeter.bib
+%{_datadir}/netperfmeter/netperfmeter.pdf
 %{_datadir}/netperfmeter/results-examples/*.sca*
 %{_datadir}/netperfmeter/results-examples/*.vec*
 

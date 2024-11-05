@@ -26,20 +26,16 @@
 # Contact:  dreibh@simula.no
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
+INPUT="Logo-NetPerfMeter.dia"
+OUTPUT="netperfmeter"
+
 # Conversion of Dia to EPS and PDF:
-dia -n -t eps-pango -e netperfmeter.eps Logo-NetPerfMeter.dia
-epstopdf --outfile=netperfmeter.pdf.tmp netperfmeter.eps
-pdfcrop --hires netperfmeter.pdf.tmp netperfmeter.pdf
-rm -f netperfmeter.pdf.tmp
+dia -n -t eps-pango -e "${OUTPUT}.eps" "${INPUT}"
+epstopdf --outfile="${OUTPUT}.pdf.tmp" "${OUTPUT}.eps"
+pdfcrop --hires "${OUTPUT}.pdf.tmp" "${OUTPUT}.pdf"
+rm -f "${OUTPUT}.pdf.tmp"
 
-# Conversion of PDF to PNG with alpha channel:
-# * Add border of 1 pixel
-# * Make color #eeeeee transparent (the background)
-# * Crop the image, removing possibly non-transparent border lines
-gm convert netperfmeter.pdf \
-   -transparent "#eeeeee" -resize 514x -crop 512x512+1+1 -background \
-   none -gravity center -extent 512x512 \
-   netperfmeter.png
-
-# Conversion of PDF to SVG:
-pdf2svg netperfmeter.pdf netperfmeter.svg
+# Conversion of Dia to PDF:
+# dia -n -t cairo-pdf -e "${OUTPUT}.pdf.tmp" "${INPUT}"
+# pdfcrop --hires "${OUTPUT}.pdf.tmp" "${OUTPUT}.pdf"
+# rm -f "${OUTPUT}.pdf.tmp"

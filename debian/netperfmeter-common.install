@@ -1,6 +1,8 @@
-usr/share/icons/hicolor/512x512/apps/netperfmeter.png
+usr/share/icons/hicolor/*x*/apps/netperfmeter.png
 usr/share/icons/hicolor/scalable/apps/netperfmeter.svg
 usr/share/mime/packages/netperfmeter.xml
 usr/share/netperfmeter/netperfmeter.bib
+usr/share/netperfmeter/netperfmeter.pdf
+usr/share/netperfmeter/netperfmeter.png
 usr/share/netperfmeter/results-examples/*.sca*
 usr/share/netperfmeter/results-examples/*.vec*
