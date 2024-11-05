@@ -63,6 +63,21 @@ ADD_CUSTOM_TARGET(dist COMMAND ${CMAKE_MAKE_PROGRAM} clean package_source)
 
 
 #############################################################################
+#### UNINSTALL                                                           ####
+#############################################################################
+
+IF(NOT TARGET uninstall)
+   CONFIGURE_FILE(
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+      IMMEDIATE @ONLY)
+
+   ADD_CUSTOM_TARGET(uninstall
+      COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+ENDIF()
+
+
+#############################################################################
 #### OS DEPENDENT                                                        ####
 #############################################################################
 
@@ -96,9 +111,35 @@ ENDIF()
 
 
 #############################################################################
+#### OPTIONS                                                             ####
+#############################################################################
+
+OPTION(WITH_ICONS          "Build NetPerfMeter icons and logo files" 1)
+OPTION(WITH_KERNEL_SCTP    "Use Kernel SCTP"                         1)
+OPTION(WITH_PLOT_PROGRAMS  "Build plot programs"                     0)
+OPTION(WITH_TEST_PROGRAMS  "Build test programs"                     0)
+
+
+#############################################################################
+#### COMPILER FLAGS                                                      ####
+#############################################################################
+
+INCLUDE(CheckCCompilerFlag)
+
+# ------ Check for "address-of-packed-member" -------------------------------
+CHECK_C_COMPILER_FLAG("-Waddress-of-packed-member -Werror" HAS_ADDRESS_OF_PACKED_MEMBER)
+IF (HAS_ADDRESS_OF_PACKED_MEMBER)
+   # Disable "address-of-packed-member" warning:
+   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
+   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
+ENDIF()
+
+
+#############################################################################
 #### CHECK STRUCT MEMBERS                                                ####
 #############################################################################
 
+# ====== Structure members ==================================================
 INCLUDE(CheckStructHasMember)
 
 CHECK_STRUCT_HAS_MEMBER("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
@@ -126,75 +167,7 @@ IF (HAVE_SS_LEN)
 ENDIF()
 
 
-#############################################################################
-#### CHECK OPTIONS                                                       ####
-#############################################################################
-
-OPTION(BUILD_TEST_PROGRAMS "Build test programs" 0)
-OPTION(BUILD_PLOT_PROGRAMS "Build plot programs" 0)
-
-
-#############################################################################
-#### REQUIREMENTS                                                        ####
-#############################################################################
-
-# ###### Threads ############################################################
-FIND_PACKAGE(Threads REQUIRED)
-
-
-# ###### SCTP ###############################################################
-OPTION(USE_KERNEL_SCTP "Use Kernel SCTP" 1)
-IF (USE_KERNEL_SCTP)
-   # ====== Kernel SCTP =====================================================
-   CHECK_INCLUDE_FILE(netinet/sctp.h HAVE_NETINET_SCTP_H)
-   IF (HAVE_NETINET_SCTP_H)
-      SET(SCTP_INCLUDE "netinet/sctp.h")
-      ADD_DEFINITIONS(-DHAVE_KERNEL_SCTP -DHAVE_NETINET_SCTP_H)
-   ENDIF()
-
-ELSE()
-   # ====== SCTPLIB User-Space SCTP =========================================
-   CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPLIB_SCTP_H)
-   FIND_LIBRARY(SCTPLIB_LIB sctplib)
-   MESSAGE(STATUS "sctplib found: ${SCTPLIB_LIB}")
-   IF (NOT HAVE_SCTPLIB_SCTP_H OR NOT SCTPLIB_LIB)
-      MESSAGE(FATAL_ERROR "sctplib not found - libsctplib installed?")
-   ENDIF()
-
-   CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPSOCKET_SCTP_H)
-   FIND_LIBRARY(SCTPSOCKET_LIB sctpsocket)
-   MESSAGE(STATUS "sctpsocket found: ${SCTPSOCKET_LIB}")
-   IF (NOT HAVE_SCTPSOCKET_SCTP_H OR NOT SCTPSOCKET_LIB)
-      MESSAGE(FATAL_ERROR "sctpsocket not found - libsctpsocket installed?")
-   ENDIF()
-
-   FIND_PACKAGE(PkgConfig)
-   PKG_CHECK_MODULES(GLIB glib-2.0)
-   IF (NOT ${GLIB_LIBS})
-      MESSAGE(FATAL_ERROR "glib not found - glib-2.0 installed?")
-   ENDIF()
-
-   SET(SCTP_LIB ${SCTPSOCKET_LIB} ${SCTPLIB_LIB} ${GLIB_LIBRARIES})
-ENDIF()
-
-
-# ###### NEAT ###############################################################
-OPTION(WITH_NEAT "Include NEAT support" 0)
-IF (WITH_NEAT)
-   CHECK_INCLUDE_FILE(neat-socketapi.h HAVE_NEAT_SOCKETAPI_H)
-   FIND_LIBRARY(NEAT_SOCKETAPI_LIB neat-socketapi)
-   MESSAGE(STATUS "neat-socketapi found: ${NEAT_SOCKETAPI_LIB}")
-   IF (NOT HAVE_NEAT_SOCKETAPI_H OR NOT NEAT_SOCKETAPI_LIB)
-      MESSAGE(FATAL_ERROR "neat-socketapi not found - neat-socketapi installed?")
-   ENDIF()
-ENDIF()
-
-
-# ###### BZip2 ##############################################################
-find_package(BZip2 REQUIRED)
-
-
-# ###### IEEE Floating-Point ################################################
+# ====== IEEE floating-point numbers ========================================
 INCLUDE(CheckCSourceRuns)
 CHECK_C_SOURCE_RUNS("
 #include <stdio.h>
@@ -231,7 +204,7 @@ IF (USES_IEEEFP_FP)
 ENDIF()
 
 
-# ###### DCCP support #######################################################
+# ====== DCCP support =======================================================
 CHECK_C_SOURCE_RUNS("
 #include <stdio.h>
 #include <sys/socket.h>
@@ -253,17 +226,89 @@ ENDIF()
 
 
 #############################################################################
-#### COMPILER FLAGS                                                      ####
+#### REQUIREMENTS                                                        ####
 #############################################################################
 
-INCLUDE(CheckCCompilerFlag)
+# ====== Threads ============================================================
+FIND_PACKAGE(Threads REQUIRED)
 
-# ------ Check for "address-of-packed-member" -------------------------------
-CHECK_C_COMPILER_FLAG("-Waddress-of-packed-member -Werror" HAS_ADDRESS_OF_PACKED_MEMBER)
-IF (HAS_ADDRESS_OF_PACKED_MEMBER)
-   # Disable "address-of-packed-member" warning:
-   SET(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wno-address-of-packed-member")
-   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
+# ====== libbz2 =============================================================
+FIND_LIBRARY(BZ2_LIBRARY NAMES bz2)
+IF (NOT BZ2_LIBRARY)
+   MESSAGE(FATAL_ERROR
+           " Cannot find BZ2 library! Try:\n"
+           " * Ubuntu/Debian: sudo apt install -y libbz2-dev\n"
+           " * Fedora:        sudo dnf install -y bzip2-devel\n"
+           " * SuSE:          sudo zypper install -y libbz2-devel\n"
+           " * Alpine:        sudo apk add bzip2-dev\n"
+           " * FreeBSD:       sudo pkg install -y bzip2")
+ENDIF()
+
+# ====== SCTP ===============================================================
+IF (WITH_KERNEL_SCTP)
+   # ====== Kernel SCTP =====================================================
+   CHECK_INCLUDE_FILE(netinet/sctp.h HAVE_NETINET_SCTP_H)
+   IF (HAVE_NETINET_SCTP_H)
+      SET(SCTP_INCLUDE "netinet/sctp.h")
+      ADD_DEFINITIONS(-DHAVE_KERNEL_SCTP -DHAVE_NETINET_SCTP_H)
+   ENDIF()
+
+ELSE()
+   # ====== SCTPLIB User-Space SCTP =========================================
+   CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPLIB_SCTP_H)
+   FIND_LIBRARY(SCTPLIB_LIB sctplib)
+   MESSAGE(STATUS "sctplib found: ${SCTPLIB_LIB}")
+   IF (NOT HAVE_SCTPLIB_SCTP_H OR NOT SCTPLIB_LIB)
+      MESSAGE(FATAL_ERROR
+              " Cannot find libsctplib user-space SCTP library! Try -DWITH_KERNEL_SCTP=1?")
+   ENDIF()
+
+   CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPSOCKET_SCTP_H)
+   FIND_LIBRARY(SCTPSOCKET_LIB sctpsocket)
+   MESSAGE(STATUS "sctpsocket found: ${SCTPSOCKET_LIB}")
+   IF (NOT HAVE_SCTPSOCKET_SCTP_H OR NOT SCTPSOCKET_LIB)
+      MESSAGE(FATAL_ERROR
+              " Cannot find libsctpsocket sockets API for user-space SCTP library! Try -DWITH_KERNEL_SCTP=1?")
+   ENDIF()
+
+   FIND_PACKAGE(PkgConfig)
+   PKG_CHECK_MODULES(GLIB glib-2.0)
+   IF (NOT ${GLIB_LIBS})
+      MESSAGE(FATAL_ERROR
+              " Cannot find libglib-2.0!")
+   ENDIF()
+
+   SET(SCTP_LIB ${SCTPSOCKET_LIB} ${SCTPLIB_LIB} ${GLIB_LIBRARIES})
+ENDIF()
+
+# ====== Graphics tools for icons and logo ==================================
+IF (WITH_ICONS)
+   FIND_PROGRAM(GS gs PATHS /bin /usr/bin /usr/local/bin)
+   IF(NOT GS)
+      MESSAGE(FATAL_ERROR
+            " Cannot find GhostScript! Try:\n"
+            " * Ubuntu/Debian: sudo apt install -y ghostscript\n"
+            " * Fedora:        sudo dnf install -y ghostscript\n"
+            " * FreeBSD:       sudo pkg install -y ghostscript10")
+   ENDIF()
+
+   FIND_PROGRAM(PDF2SVG pdf2svg PATHS /bin /usr/bin /usr/local/bin)
+   IF(NOT PDF2SVG)
+      MESSAGE(FATAL_ERROR
+            " Cannot find PDF2SVG! Try:\n"
+            " * Ubuntu/Debian: sudo apt install -y pdf2svg\n"
+            " * Fedora:        sudo dnf install -y pdf2svg\n"
+            " * FreeBSD:       sudo pkg install -y pdf2svg")
+   ENDIF()
+
+   FIND_PROGRAM(GM gm PATHS /bin /usr/bin /usr/local/bin)
+   IF(NOT GM)
+      MESSAGE(FATAL_ERROR
+            " Cannot find GraphicsMagick! Try:\n"
+            " * Ubuntu/Debian: sudo apt install -y graphicsmagick\n"
+            " * Fedora:        sudo dnf install -y GraphicsMagick\n"
+            " * FreeBSD:       sudo pkg install -y GraphicsMagick")
+   ENDIF()
 ENDIF()
 
 

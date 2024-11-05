@@ -43,6 +43,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 #### PROGRAMS                                                            ####
 #############################################################################
 
+# ====== NetPerfMeter =======================================================
 ADD_EXECUTABLE(netperfmeter
    assure.h
    assure.cc
@@ -80,7 +81,7 @@ ADD_EXECUTABLE(netperfmeter
    transfer.cc
    transfer.h
 )
-TARGET_LINK_LIBRARIES(netperfmeter ${BZIP2_LIBRARIES} ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_LINK_LIBRARIES(netperfmeter ${BZ2_LIBRARY} ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
 INSTALL(TARGETS netperfmeter     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   netperfmeter.1   DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES   netperfmeter.xml DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)
@@ -93,6 +94,7 @@ IF (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
    INSTALL(FILES netperfmeter.conf    DESTINATION /etc/netperfmeter)
 ENDIF()
 
+# ====== Create Summary Tool ================================================
 ADD_EXECUTABLE(createsummary
    createsummary.cc
    debug.h
@@ -105,10 +107,11 @@ ADD_EXECUTABLE(createsummary
    simpleredblacktree.c
    simpleredblacktree.h
 )
-TARGET_LINK_LIBRARIES(createsummary ${BZIP2_LIBRARIES} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_LINK_LIBRARIES(createsummary ${BZ2_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
 INSTALL(TARGETS createsummary   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   createsummary.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 
+# ====== Combine Summaries Tool =============================================
 ADD_EXECUTABLE(combinesummaries
    combinesummaries.cc
    inputfile.h
@@ -116,10 +119,11 @@ ADD_EXECUTABLE(combinesummaries
    outputfile.h
    outputfile.cc
 )
-TARGET_LINK_LIBRARIES(combinesummaries ${BZIP2_LIBRARIES} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_LINK_LIBRARIES(combinesummaries ${BZ2_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
 INSTALL(TARGETS combinesummaries   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   combinesummaries.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 
+# ====== Extract Vectors Tool ===============================================
 ADD_EXECUTABLE(extractvectors
    extractvectors.cc
    inputfile.h
@@ -127,22 +131,24 @@ ADD_EXECUTABLE(extractvectors
    outputfile.h
    outputfile.cc
 )
-TARGET_LINK_LIBRARIES(extractvectors ${BZIP2_LIBRARIES} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_LINK_LIBRARIES(extractvectors ${BZ2_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
 INSTALL(TARGETS extractvectors  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   extractvectors.1 DESTINATION        ${CMAKE_INSTALL_MANDIR}/man1)
 
+# ====== Runtime Estimator Tool =============================================
 ADD_EXECUTABLE(runtimeestimator runtimeestimator.cc)
 TARGET_LINK_LIBRARIES(runtimeestimator)
 INSTALL(TARGETS runtimeestimator   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   runtimeestimator.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 
+# ====== getabstime =========================================================
 ADD_EXECUTABLE(getabstime getabstime.cc)
 TARGET_LINK_LIBRARIES(getabstime)
 INSTALL(TARGETS getabstime   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   getabstime.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 
-
-IF (BUILD_PLOT_PROGRAMS)
+# ====== Plot Programs ======================================================
+IF (WITH_PLOT_PROGRAMS)
    INSTALL(PROGRAMS plot-netperfmeter-results setpdfmetadata pdfembedfonts
            DESTINATION ${CMAKE_INSTALL_BINDIR})
    INSTALL(FILES plotter.R plot-netperfmeter-results.R
@@ -151,14 +157,15 @@ IF (BUILD_PLOT_PROGRAMS)
            DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 ENDIF()
 
-IF (BUILD_TEST_PROGRAMS)
+# ====== Test Programs ======================================================
+IF (WITH_TEST_PROGRAMS)
    ADD_EXECUTABLE(rootshell rootshell.c)
    TARGET_LINK_LIBRARIES(rootshell)
 ENDIF()
 
 
-ADD_EXECUTABLE(t1 t1.cc assure.cc loglevel.cc tools.cc mutex.cc)
-TARGET_LINK_LIBRARIES(t1 ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
+# ADD_EXECUTABLE(t1 t1.cc assure.cc loglevel.cc tools.cc mutex.cc)
+# TARGET_LINK_LIBRARIES(t1 ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
 
 
 #############################################################################
