@@ -1,0 +1,87 @@
+@InProceedings{ SoftCOM2011,
+	author = "Thomas Dreibholz and Martin Becke and Hakim Adhari and Erwin Paul Rathgeb",
+	title = "{Evaluation of A New Multipath Congestion Control Scheme using the NetPerfMeter Tool-Chain}",
+	booktitle = "{Proceedings of the 19th IEEE International Conference on Software, Telecommunications and Computer Networks~(SoftCOM)}",
+	pages = "1--6",
+	numpages = "6",
+	day = "16",
+	month = sep,
+	year = "2011",
+	address = "Hvar, Dalmacija/Croatia",
+	language = "english",
+	isbn = "978-953-290-027-9",
+	keywords = "NetPerfMeter Tool-Chain, Concurrent Multipath Transfer, Congestion Control, Dissimilar Paths, Performance Analysis",
+	abstract = "{Multi-homed Internet sites become more and more widespread, due to the rising dispersal of inexpensive Internet access technologies combined with the growing deployment of resilience-critical applications. Concurrent Multipath Transfer~(CMT) denotes the Transport Layer approach to utilise multiple network paths simultaneously, in order to improve application payload throughput. Currently, CMT is a quite hot topic in the IETF -- in form of the Multipath~TCP~(MPTCP) and CMT-SCTP protocol extensions for TCP and SCTP. However, an important issue is still not fully solved: multipath congestion control.
+In order to support the IETF activities, we have set up a distributed Internet testbed for CMT evaluation. An important tool -- which we have developed for multi-protocol Transport Layer performance analysis -- is the Open Source
+NetPerfMeter tool-chain. It supports the parametrisation and processing of measurement runs as well as results collection, post-processing and plotting. However, its key feature is to support multiple Transport Layer protocols, which makes a quantitative comparison of different protocols -- including state-of-the-art features like CMT -- possible. In this paper, we first introduce
+NetPerfMeter and then show a proof-of-concept performance evaluation of CMT congestion controls which are currently discussed in the IETF standardisation process of CMT-SCTP.}",
+	url = "https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/SoftCOM2011.pdf",
+	url.size = "367773",
+	url.md5 = "23b808c6caa72f0cfb5213d8b6cf7b31",
+	url.mime = "application/pdf",
+	url.pagesize = "595.276 x 841.89 pts (A4)",
+	url.checked = "2014-04-02 17:08:25 CEST"
+}
+
+@TechReport{ NetPerfMeterSim2012,
+	author = "Thomas Dreibholz and Hakim Adhari and Martin Becke and Erwin Paul Rathgeb",
+	title = "{NetPerfMeter -- A Versatile Tool for Multi-Protocol Network Performance Evaluations}",
+	type = "OMNeT++ Code Contribution",
+	numpages = "3",
+	day = "8",
+	month = feb,
+	year = "2012",
+	institution = "University of Duisburg-Essen, Institute for Experimental Mathematics",
+	language = "english",
+	keywords = "Application Model, NetPerfMeter, Performance Evaluation, Multipath Transfer",
+	abstract = "{Transport Layer protocols supporting multipath transfer, i.e.\ to simultaneously utilise multiple Network Layer paths, are actively discussed in the IETF -- particularly in the context of Multi-Path~TCP~(MPTCP) and Concurrent Multipath Transfer for SCTP~(CMT-SCTP). Congestion control for such protocols is an important research topic.
+In this code contribution paper, we introduce our application model NetPerfMeter. NetPerfMeter has been developed for performance evaluations of different transport protocols, like for the Linux/FreeBSD performance metering application NetPerfMeter.}",
+	url = "https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/NetPerfMeterSim2012.pdf",
+	url.size = "341735",
+	url.md5 = "dc5a70671636b3367df1a2878f6081fd",
+	url.mime = "application/pdf",
+	url.pagesize = "595.276 x 841.89 pts (A4)",
+	url.checked = "2014-04-02 17:08:25 CEST"
+}
+
+@Article{ MPTCPBlog2015,
+	author = "Thomas Dreibholz",
+	title = "{NetPerfMeter: A Network Performance Metering Tool}",
+	journal = "{Multipath TCP Blog}",
+	day = "7",
+	month = sep,
+	year = "2015",
+	language = "english",
+	keywords = "Software, NetPerfMeter, Multi-Path Transfer, Multi-Path TCP~(MPTCP)",
+	abstract = "{A common problem for evaluating multiple transport protocols in a multi-platform environment is to have a test tool that is capable to run in all these environments, and – of course – to support all necessary protocols. Using different evaluation tools is not a good solution, since each tool may introduce its own – and possibly incompatible – parametrisation scheme. In order to overcome this problem, originally for the use case of evaluating the Stream Control Transmission Protocol (SCTP) and compare it to the Transmission Control Protocol (TCP), NetPerfMeter has been designed and developed. This blog article provides an introduction to NetPerfMeter.}",
+	url = "https://web.archive.org/web/20230518084721/http://blog.multipath-tcp.org/blog/html/2015/09/07/netperfmeter.html",
+	url.size = "42947",
+	url.md5 = "84d5a41e4357d7cc69c508a44c1d8aa0",
+	url.mime = "text/html",
+	url.checked = "2023-12-18 16:01:41 CET"
+}
+
+@PhDThesis{ Dre2012,
+	author = "Thomas Dreibholz",
+	title = "{Evaluation and Optimisation of Multi-Path Transport using the Stream Control Transmission Protocol}",
+	type = "Habilitation Treatise",
+	numpages = "264",
+	day = "13",
+	month = mar,
+	year = "2012",
+	school = "University of Duisburg-Essen, Faculty of Economics, Institute for Computer Science and Business Information Systems",
+	language = "english",
+	urn = "urn:nbn:de:hbz:464-20120315-103208-1",
+	keywords = "Stream Control Transmission Protocol~(SCTP), Multi-Path Transport, Dissimilar Paths, Fairness, Evaluation, Optimisation",
+	abstract = "{The Stream Control Transmission Protocol~(SCTP) as defined in RFC~4960 is an advanced Transport Layer protocol that provides support for multi-homing. That is, SCTP endpoints may simultaneously use multiple Network Layer addresses, which allows to connect the endpoints to multiple networks for redundancy purposes. However, for the transfer of user data, only one of the possible paths is currently used at a time. All other paths remain as backup and are only used for retransmissions.
+Clearly, the existence of multiple paths has led to the idea of applying load sharing among the paths. An extension to SCTP -- denoted as Concurrent Multipath Transfer~(CMT) -- realises this load sharing functionality. While this approach works well for similar paths, i.e.\ paths having similar characteristics regarding bandwidths, bit error rates and delays, the use of dissimilar paths does not work that neatly.
+In this thesis, the issues of dissimilar paths for CMT-based load sharing will be demonstrated first. The reasons for these issues will be identified and solutions proposed. These solutions will be evaluated in simulations, as well as partially also in a real-world Internet testbed setup, in order to show their effectiveness. In particular, it will be shown that a combination of multiple mechanisms is necessary to make CMT work as expected under a wide range of network and system parameters.
+Furthermore, the fairness of CMT-based transport -- in concurrency to classic non-CMT flows -- will be analysed. The usage of plain CMT leads to an overly aggressive bandwidth occupation on so-called shared bottlenecks. As a countermeasure, the idea of Resource Pooling will be utilised. For this purpose, two new and one adapted congestion control approach -- all based on the Resource Pooling principle -- will be introduced and examined in similar as well as dissimilar path setups, in order to show how to fairly deploy CMT transport in the Internet.
+The results of this work have also been contributed to the ongoing IETF~standardisation process of SCTP and its extensions.}",
+	url = "https://duepublico2.uni-due.de/servlets/MCRFileNodeServlet/duepublico_derivate_00029737/Dre2012_final.pdf",
+	url.size = "37661345",
+	url.md5 = "add34f0b780cb35b7ee1f963ea85e59c",
+	url.mime = "application/pdf",
+	url.pagesize = "595.276 x 841.89 pts (A4)",
+	url.checked = "2015-05-06 22:13:53 CEST"
+}
