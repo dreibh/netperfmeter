@@ -36,7 +36,7 @@ files can e.g. be used to create plots of the results.
 %setup -q
 
 %build
-%cmake -DCMAKE_INSTALL_PREFIX=/usr -DWITH_NEAT=0 -DBUILD_TEST_PROGRAMS=1 -DBUILD_PLOT_PROGRAMS=1 .
+%cmake -DCMAKE_INSTALL_PREFIX=/usr . -DWITH_ICONS=ON -DWITH_PLOT_PROGRAMS=ON -DWITH_TEST_PROGRAMS=OFF
 %cmake_build
 
 %install
