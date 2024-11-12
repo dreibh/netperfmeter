@@ -51,8 +51,11 @@ _netperfmeter()
       # Manual initialization for older bash completion versions:
       COMPREPLY=()
       cur="${COMP_WORDS[COMP_CWORD]}"
+      # shellcheck disable=SC2034
       prev="${COMP_WORDS[COMP_CWORD-1]}"
-      words="${COMP_WORDS}"
+      # shellcheck disable=SC2034,SC2124
+      words="${COMP_WORDS[@]}"
+      # shellcheck disable=SC2034
       cword="${COMP_CWORD}"
    fi
 
@@ -101,19 +104,23 @@ _netperfmeter()
 
             if [ "${blocks}" -lt 4 ] ; then
                if [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)([0-9]+)$ ]] ; then
-                  COMPREPLY=($(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}, ${cur}:" -- "${cur}"))
+                  # shellcheck disable=SC2207
+                  COMPREPLY=( $(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}, ${cur}:" -- "${cur}") )
                   compopt -o nospace
                   return
                elif [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)$ ]] ; then
-                  COMPREPLY=($(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}," -- "${cur}"))
+                  # shellcheck disable=SC2207
+                  COMPREPLY=( $(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}," -- "${cur}") )
                   compopt -o nospace
                   return
                else
+                  # shellcheck disable=SC2207
                   COMPREPLY=( $( compgen -W "${base}const ${base}exp ${base}pareto ${base}uniform" -- "${cur}" ) )
                   compopt -o nospace
                   return
                fi
             else
+               # shellcheck disable=SC2207
                COMPREPLY=( $( compgen -W "
 ${base}cc=
 ${base}cmt=
@@ -149,12 +156,13 @@ ${base}v6only
             # Suggest local IP addresses:
             # NOTE: For IPv6, ":" must bave been removed from COMP_WORDBREAKS
             #       See comment above!
-            local addreses
+            local addresses
             if [ -x /usr/bin/ip ] ; then
                addresses="$(/usr/bin/ip addr show | awk '/[ ]+inet/ { print $2 }' | sed -e 's#/.*$##')"
             elif [ -x /sbin/ifconfig ] ; then
                addresses="$(/sbin/ifconfig | awk '/[ \t]+inet/ { print $2 }' | sed -e 's#/.*$##')"
             fi
+            # shellcheck disable=SC2207
             COMPREPLY=( $(compgen -W "${addresses}" -- "${cur}") )
             return
             ;;
@@ -170,6 +178,7 @@ ${base}v6only
 
    # ====== Port (passive side) or Address:Port (active side) ===============
    else
+      # shellcheck disable=SC2207
       COMPREPLY=( $(compgen -W 'localhost:9000 9000' -- "$cur") )
       return
    fi
@@ -241,6 +250,7 @@ ${base}v6only
 "
    fi
 
+   # shellcheck disable=SC2207
    COMPREPLY=( $( compgen -W "${opts1}"        -- "${cur}" )
                $( compgen -W "${opts2}" -S "=" -- "${cur}" ) )
    [[ ${COMPREPLY-} == *= ]] && compopt -o nospace
