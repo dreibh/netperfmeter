@@ -157,8 +157,8 @@ ${base}v6only
             # NOTE: For IPv6, ":" must bave been removed from COMP_WORDBREAKS
             #       See comment above!
             local addresses
-            if [ -x /usr/bin/ip ] ; then
-               addresses="$(/usr/bin/ip addr show | awk '/[ ]+inet/ { print $2 }' | sed -e 's#/.*$##')"
+            if [ -x  /usr/sbin/ip ] ; then
+               addresses="$( /usr/sbin/ip addr show | awk '/[ ]+inet/ { print $2 }' | sed -e 's#/.*$##')"
             elif [ -x /sbin/ifconfig ] ; then
                addresses="$(/sbin/ifconfig | awk '/[ \t]+inet/ { print $2 }' | sed -e 's#/.*$##')"
             fi
