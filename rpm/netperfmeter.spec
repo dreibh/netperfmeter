@@ -84,8 +84,8 @@ This package contains common NetPerfMeter files.
 %{_datadir}/icons/hicolor/scalable/apps/netperfmeter.svg
 %{_datadir}/mime/packages/netperfmeter.xml
 %{_datadir}/netperfmeter/netperfmeter.bib
-%{_datadir}/netperfmeter/netperfmeter.bib
 %{_datadir}/netperfmeter/netperfmeter.pdf
+%{_datadir}/netperfmeter/netperfmeter.png
 %{_datadir}/netperfmeter/results-examples/*.sca*
 %{_datadir}/netperfmeter/results-examples/*.vec*
 
