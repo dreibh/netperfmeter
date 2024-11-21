@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.0~alpha1
+Version: 2.0.0~alpha3
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -11,7 +11,10 @@ AutoReqProv: on
 BuildRequires: bzip2-devel
 BuildRequires: cmake
 BuildRequires: gcc-c++
+BuildRequires: ghostscript
+BuildRequires: GraphicsMagick
 BuildRequires: lksctp-tools-devel
+BuildRequires: pdf2svg
 BuildRequires: valgrind-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 
@@ -20,8 +23,12 @@ Recommends: %{name}-plotting = %{version}-%{release}
 Recommends: bc
 Recommends: hipercontracer
 Recommends: iputils
+Recommends: wireshark-cli
 Recommends: subnetcalc >= 2.0.2
 Suggests: %{name}-service = %{version}-%{release}
+Suggests: dynmhs
+Suggests: td-system-info
+Suggests: traceroute
 
 
 %description
@@ -77,8 +84,8 @@ This package contains common NetPerfMeter files.
 %{_datadir}/icons/hicolor/scalable/apps/netperfmeter.svg
 %{_datadir}/mime/packages/netperfmeter.xml
 %{_datadir}/netperfmeter/netperfmeter.bib
-%{_datadir}/netperfmeter/netperfmeter.bib
 %{_datadir}/netperfmeter/netperfmeter.pdf
+%{_datadir}/netperfmeter/netperfmeter.png
 %{_datadir}/netperfmeter/results-examples/*.sca*
 %{_datadir}/netperfmeter/results-examples/*.vec*
 

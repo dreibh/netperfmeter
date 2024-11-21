@@ -22,12 +22,17 @@ Depends: netperfmeter-common,
          ${shlibs:Depends}
 Recommends: bc,
             hipercontracer,
-            iputils-ping,
-            iputils-tracepath,
+            iproute2,
             netperfmeter-plotting,
+            rsplib-tools,
             subnetcalc,
-            traceroute
-Suggests: netperfmeter-service
+            tshark
+Suggests: dynmhs,
+          iputils-tracepath,
+          netperfmeter-service,
+          ping | iputils-ping,
+          td-system-tools,
+          traceroute | inetutils-traceroute
 Description: Network Performance Meter (measurement program)
  NetPerfMeter is a network performance meter for the UDP,
  TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
