@@ -1006,7 +1006,9 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
    gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP,
-                                           localPort + 1, 0, nullptr, true, gBindV6Only);
+                                           localPort + 1,
+                                           gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
+                                           true, gBindV6Only);
    if(gControlSocketTCP < 0) {
       LOG_FATAL
       stdlog << format("Failed to create and bind TCP socket on port %d: %s!",
@@ -1241,8 +1243,8 @@ void activeMode(int argc, char** argv)
 
    // ====== Initialize control socket ======================================
    for(int i = 2;i < argc;i++) {
-      if(strcmp(argv[i], "-control-over-tcp") == 0) {
-         gControlOverTCP = true;
+      if(handleGlobalParameter(argv[i])) {
+         argv[i] = nullptr;   // Mark as already handled!
       }
    }
    const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
@@ -1303,7 +1305,7 @@ void activeMode(int argc, char** argv)
 
    // ------ Handle other parameters ----------------------------------------
    for(int i = 2;i < argc;i++) {
-      if(handleGlobalParameter(argv[i])) {
+      if(argv[i] == nullptr) {
          // Parameter has been handled in handleGlobalParameter()!
       }
       else if(argv[i][0] == '-') {
