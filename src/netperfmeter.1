@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 23, 2024
+.Dd May 12, 2025
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -52,13 +52,13 @@ Port
 Destination:Port
 .Op Fl control-over-tcp
 .Op Fl local=Address[,Address,...]
-.Op Fl controllocal=Address[,Address,...]
+.Op Fl controllocal=\%Address[,Address,...]
 .Op Fl runtime=Seconds
 .Op Fl config=Name
 .Op Fl scalar=Name
 .Op Fl vector=Name
-.Op Fl activenodename=Description
-.Op Fl passivenodename=Description
+.Op Fl activenodename=\%Description
+.Op Fl passivenodename=\%Description
 .Op Fl loglevel=level
 .Op Fl logcolor=on|off
 .Op Fl logappend=file
@@ -158,8 +158,8 @@ Establish a new UDP connection. The flow of this connection must be specified by
 .It Fl dccp
 Establish a new DCCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter. Note, that DCCP is not available on all platforms yet. Currently, only Linux provides DCCP in its official kernel.
 .It FLOWSPEC
-Specifies a new flow. The format is: outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option:...
-The first four parameters (outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option) may be substituted by the option "default", creating a flow with some more or less useful default parameters.
+Specifies a new flow. The format is: out\%go\%ing_\%fra\%me_\%rate:\%out\%go\%ing_\%fra\%me_\%size:\%in\%com\%ing_\%fra\%me_\%rate:\%in\%com\%ing_\%fra\%me_\%size:\%opt\%ion:\%...
+The first four parameters (out\%going_\%frame_\%rate:\%out\%going_\%frame_\%size:\%in\%com\%ing_\%frame_\%rate:\%in\%com\%ing_\%frame_\%size) may be substituted by the option "default", creating a flow with some more or less useful default parameters.
 .Bl -tag -width indent
 .It outgoing_frame_rate
 The frame rate of the outgoing transfer (i.e. active node to passive node). If set to const0, the sender will be saturarted, i.e. it will try to send as much as possible.
@@ -239,7 +239,7 @@ Some netperfmeter usage examples:
 .Bl -tag -width indent
 .It netperfmeter 9000
 Start in passive mode, i.e. accepting connections, on port 9000.
-.It netperfmeter 172.16.255.254:9000 -vector=output.vec.bz2 -scalar=output.sca.bz2 -sctp const5:exp1000:const3:exp500:description="Alpha":onoff=+10 const5:exp1000:const3:exp500:description="Beta":onoff=+30 -tcp const5:exp1000:const3:exp500:description="Gamma":onoff=+60 -runtime=300
+.It netperfmeter 172.16.255.254:\%9000 -vector=\%output.vec.bz2 -scalar=\%output.sca.bz2 -sctp const5:\%exp1000:\%const3:\%exp500:\%description=\%"Alpha":\%onoff=\%+10 const5:\%exp1000:\%const3:\%exp500:\%description=\%"Beta":\%onoff=\%+30 -tcp const5:\%exp1000:\%const3:\%exp500:\%description=\%"Gamma":\%onoff=\%+60 -runtime=\%300
 Start in active mode, i.e. establish connection to 172.16.255.254, port 9000.
 Frames will be segmented into messages of up to 4096 bytes.
 Write vectors to output.vec.bz2 (BZip2-compressed).
@@ -254,7 +254,7 @@ At t=300s, stop the measurement.
 Start in active mode, i.e. establish connection to 172.16.255.254, port 9000. The control connection uses TCP instead of SCTP.
 .It netperfmeter 172.16.255.254:9000 -sctp const0:const0:uniform20,30:uniform900,1100
 SCTP traffic with some variation.
-.It netperfmeter 172.16.255.254:9000 -udp const0:const0:const25:const2500:onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
+.It netperfmeter 172.16.255.254:\%9000 -udp const0:\%const0:\%const25:\%const2500:\%onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
 Some on-off background traffic with Pareto distribution.
 .El
 .\" ###### Authors ##########################################################

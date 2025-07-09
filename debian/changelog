@@ -1,10 +1,11 @@
-netperfmeter (2.0.0~alpha4-1ubuntu1) noble; urgency=medium
+netperfmeter (2.0.0~rc0-1ubuntu1) noble; urgency=medium
 
   * New upstream release.
   * debian/control: Updated standards version to 4.7.0.
   * debian/control: Moved architecture-independent files to netperfmeter-common.
+  * debian/control: Updated standards version to 4.7.2.
 
- -- Thomas Dreibholz <dreibh@simula.no>  Fri, 13 Dec 2024 21:35:33 +0100
+ -- Thomas Dreibholz <dreibh@simula.no>  Mon, 12 May 2025 23:20:14 +0200
 
 netperfmeter (1.9.7-1ubuntu1) jammy; urgency=medium
 
