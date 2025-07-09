@@ -2,7 +2,7 @@
 #             Thomas Dreibholz's R Simulation Scripts Collection
 #                  Copyright (C) 2005-2025 Thomas Dreibholz
 #
-#               Author: Thomas Dreibholz, dreibh@simula.no
+#               Author: Thomas Dreibholz, thomas.dreibholz@gmail.com
 # ###########################################################################
 #
 # This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Contact: dreibh@simula.no
+# Contact: thomas.dreibholz@gmail.com
 
 
 # ###########################################################################
@@ -1842,13 +1842,13 @@ createPlots <- function(simulationDirectory,
 
 
       # ------ Set x/y-axis ticks -------------------------------------------
-      if((length(xAxisTicks) < 2) || (is.na(xAxisTicks))) {
+      if(length(xAxisTicks) < 2) {
          xAxisTicks <- getUsefulTicks(xSet)
       }
-      if((length(yAxisTicks) < 2) || (is.na(yAxisTicks))) {
+      if(length(yAxisTicks) < 2) {
          yAxisTicks <- getUsefulTicks(ySet)
       }
-      if((length(legendPos) < 2) || (is.na(legendPos))) {
+      if(length(legendPos) < 2) {
          legendPos <- c(1,1)
       }
 
