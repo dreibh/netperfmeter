@@ -358,7 +358,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          exit(1);
       }
 
-      // ------ Set correct "pseudo-protocol" for MPTCP ---------------------
+      // ------ Use TCP or MPTCP? -------------------------------------------
       if( (trafficSpec.Protocol == IPPROTO_TCP) ||
           (trafficSpec.Protocol == IPPROTO_MPTCP) ) {
          if(trafficSpec.CMT == NPAF_PRIMARY_PATH) {
@@ -1043,6 +1043,8 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       LOG_END
    }
    else {
+#if 0
+// FIXME: OBSOLETE!
       if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER_LEGACY, gPathMgr, strlen(gPathMgr)) < 0) {
          if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER, gPathMgr, strlen(gPathMgr)) < 0) {
             if(strcmp(gPathMgr, "default") != 0) {
@@ -1063,6 +1065,7 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
             }
          }
       }
+#endif
       if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
          stdlog << format("Failed to configure buffer sizes on MPTCP socket %d!",
@@ -1300,7 +1303,7 @@ void activeMode(int argc, char** argv)
    const char*      scalarNamePattern = "";
    OutputFileFormat scalarFileFormat  = OFF_None;
    const char*      configName        = "";
-   uint8_t          protocol          = 0;
+   int              protocol          = 0;
    Flow*            lastFlow          = nullptr;
 
    // ------ Handle other parameters ----------------------------------------
@@ -1312,6 +1315,9 @@ void activeMode(int argc, char** argv)
          lastFlow = nullptr;
          if(strcmp(argv[i], "-tcp") == 0) {
             protocol = IPPROTO_TCP;
+         }
+         else if(strcmp(argv[i], "-mptcp") == 0) {
+            protocol = IPPROTO_MPTCP;
          }
          else if(strcmp(argv[i], "-udp") == 0) {
             protocol = IPPROTO_UDP;

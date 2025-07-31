@@ -31,7 +31,7 @@
 #define TOOLS_H
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
@@ -53,33 +53,16 @@
 #include "mutex.h"
 
 
-/* MPTCP as "pseudo-protocol". Just for internal representation. */
-#ifndef IPPROTO_MPTCP
-#define IPPROTO_MPTCP IPPROTO_EGP   // 262
+// MPTCP definitions
+#ifdef HAVE_MPTCP
+#include <linux/mptcp.h>
+// #else
+// #warning MPTCP is not supported by the API of this system!
 #endif
 
-
-/* FIXME: This is ugly, but currently the only way to easily get the #defines for Linux MPTCP! */
-#define MPTCP_ENABLED               42
-#define MPTCP_SCHEDULER             43
-#define MPTCP_PATH_MANAGER          44
-#define MPTCP_INFO                  45
-#define MPTCP_DEBUG                 46
-#define MPTCP_NDIFFPORTS            47
-
-#define MPTCP_ENABLED_LEGACY        10002
-#define MPTCP_SCHEDULER_LEGACY      10009
-#define MPTCP_PATH_MANAGER_LEGACY   10008
-#define MPTCP_DEBUG_LEGACY          10001
-#define MPTCP_NDIFFPORTS_LEGACY     10007
-
-
-/* DCCP definitions */
+// DCCP definitions
 #ifdef HAVE_DCCP
 #include <linux/dccp.h>
-#ifndef SOL_DCCP
-#define SOL_DCCP 269
-#endif
 // #else
 // #warning DCCP is not supported by the API of this system!
 #endif

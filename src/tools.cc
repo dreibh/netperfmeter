@@ -508,20 +508,20 @@ const char* getProtocolName(const int protocol)
    switch(protocol) {
       case IPPROTO_SCTP:
          protocolName = "SCTP";
-         break;
+       break;
       case IPPROTO_TCP:
          protocolName = "TCP";
-         break;
+       break;
       case IPPROTO_MPTCP:
          protocolName = "MPTCP";
-         break;
+       break;
       case IPPROTO_UDP:
          protocolName = "UDP";
-         break;
+       break;
 #ifdef HAVE_DCCP
       case IPPROTO_DCCP:
          protocolName = "DCCP";
-         break;
+       break;
 #endif
    }
    return protocolName;
@@ -584,7 +584,6 @@ int createSocket(const int             family,
    int socketProtocol = protocol;
 #ifdef HAVE_MPTCP
    if(socketProtocol == IPPROTO_MPTCP) {
-      socketProtocol = IPPROTO_TCP;
       if(localAddresses > 1) {
          printf("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
       }
@@ -640,7 +639,6 @@ int bindSocket(const int             sd,
    int socketProtocol = protocol;
 #ifdef HAVE_MPTCP
    if(socketProtocol == IPPROTO_MPTCP) {
-      socketProtocol = IPPROTO_TCP;
       if(localAddresses > 1) {
          printf("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
          localAddressCount = 0;
@@ -660,21 +658,22 @@ int bindSocket(const int             sd,
 #else
 #error IPV6_V6ONLY not defined?! Please create a bug report and provide some information about your OS!
 #endif
+// FIXME! OBSOLETE!
 // FIXME! Add proper, platform-independent code here!
-#ifndef __linux__
-#warning MPTCP is currently only available on Linux!
-#else
-   if((protocol == IPPROTO_MPTCP) || (protocol == IPPROTO_TCP)) {
-      const int cmtOnOff = (protocol == IPPROTO_MPTCP);
-      if(ext_setsockopt(sd, IPPROTO_TCP, MPTCP_ENABLED_LEGACY, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-         if(ext_setsockopt(sd, IPPROTO_TCP, MPTCP_ENABLED, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-            if(protocol == IPPROTO_MPTCP) {
-               return -2;
-            }
-         }
-      }
-   }
-#endif
+// #ifndef __linux__
+// #warning MPTCP is currently only available on Linux!
+// #else
+//    if((protocol == IPPROTO_MPTCP) || (protocol == IPPROTO_TCP)) {
+//       const int cmtOnOff = (protocol == IPPROTO_MPTCP);
+//       if(ext_setsockopt(sd, IPPROTO_TCP, MPTCP_ENABLED_LEGACY, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
+//          if(ext_setsockopt(sd, IPPROTO_TCP, MPTCP_ENABLED, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
+//             if(protocol == IPPROTO_MPTCP) {
+//                return -2;
+//             }
+//          }
+//       }
+//    }
+// #endif
 
    // ====== Bind socket ====================================================
    if(localAddressCount == 0) {

@@ -464,6 +464,8 @@ bool Flow::configureSocket(const int socketDescriptor)
          return false;
       }
 
+#if 0
+// FIXME: OBSOLETE!
       if(TrafficSpec.Protocol == IPPROTO_MPTCP) {
          // FIXME! Add proper, platform-independent code here!
 #ifndef __linux__
@@ -511,6 +513,7 @@ bool Flow::configureSocket(const int socketDescriptor)
          }
 #endif
       }
+#endif
       const char* congestionControl = TrafficSpec.CongestionControl.c_str();
       if(strcmp(congestionControl, "default") != 0) {
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
