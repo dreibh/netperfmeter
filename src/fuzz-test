@@ -57,4 +57,4 @@ echo "Running fuzz-test to ${SERVER}:${dataPort} and ${SERVER}:${controlPort} wi
       echo "cat /dev/urandom | nc ${SERVER} ${dataPort}"
       echo "cat /dev/urandom | nc ${SERVER} ${controlPort}"
    done
-) | parallel -j${procs} | strings
+) | parallel -j"${procs}" | strings
