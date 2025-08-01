@@ -72,6 +72,7 @@ Destination:Port
 .Op Fl sndbuf=bytes
 .Op Fl rcvbuf=bytes
 .Op Fl tcp
+.Op Fl mptcp
 .Op Fl sctp
 .Op Fl udp
 .Op Fl dccp
@@ -144,7 +145,10 @@ Sets the sender buffer size (on the listening socket) to the given number of byt
 .It Fl sctp
 Establish a new SCTP association. The streams of this association must be specified by one or more FLOWSPEC specifications as following parameters.
 .It Fl tcp
-Establish a new TCP or MPTCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter. MPTCP support in NetPerfMeter is realized as additional "MPTCP" socket (i.e. another TCP socket, but bound to another port number and with CMT enabled). That is, for MPTCP usage, it must contain the option cmt=mptcp (see below) to usage the MPTCP socket instead of the TCP socket.
+Establish a new TCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
+For backwards compatibility, the option cmt=mptcp creates an MPTCP connection instead of a TCP connection.
+.It Fl mptcp
+Establish a new MPTCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
 .It Fl udp
 Establish a new UDP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
 .It Fl dccp
