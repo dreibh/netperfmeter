@@ -490,7 +490,7 @@ void printAddress(std::ostream&          os,
                   const bool             port,
                   const bool             hideScope)
 {
-   static char str[128];
+   static char str[160];
 
    if(address2string(address, (char*)&str, sizeof(str), port, hideScope)) {
       os << str;
