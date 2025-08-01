@@ -873,16 +873,18 @@ plotstd3 <- function(mainTitle,
          legendColors <- par("fg")
          legendBackground <- "white"
       }
-      legend(lx, ly,
-             xjust = lxjust,
-             yjust = lyjust,
-             parse(text=legendTexts),
-             bg=legendBackground,
-             col=legendColors,
-             lty=legendStyles,
-             pch=legendDots,
-             text.col=legendColors,
-             lwd=1, cex=par("cex")*legendSize)
+      if(length(legendTexts) > 1) {
+         legend(lx, ly,
+                xjust = lxjust,
+                yjust = lyjust,
+                parse(text=legendTexts),
+                bg=legendBackground,
+                col=legendColors,
+                lty=legendStyles,
+                pch=legendDots,
+                text.col=legendColors,
+                lwd=1, cex=par("cex")*legendSize)
+      }
    }
 
    par(opar)
