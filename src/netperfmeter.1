@@ -103,7 +103,7 @@ Specifies address(es) of the local *control* endpoint (SCTP or TCP). For TCP, on
 .It Fl runtime
 Specifies the measurement runtime in seconds. After the given time span, netperfmeter will finish the measurement.
 .It Fl config=Name
-Specifies the name of the configuration file to write. Default is output.config.
+Specifies a flow configuration file name. The flow configuration of the NetPerfMeter run is written into this file. It can then be used to further process the results.
 .It Fl vector=Name
 Specifies the name pattern of the vector files to write. If the suffix of this name is .bz2, the file will be BZip2-compressed on the fly. The vector name is automatically extended to name the flow vector files by adding -<active|passive>-<flow_id>-<stream_id> before the suffix.
 Default is vector.vec.bz2, hence the name of the vector file for flow 5, stream 2 on the passive node will be vector-passive-00000005-0002.vec.bz2.
