@@ -551,6 +551,7 @@ static bool handleScalarFile(const std::string& varNames,
    char         statisticBlockName[4096];
    unsigned int run      = 0;
    bool         success  = true;
+   memset((char*)&statName, 0, sizeof(statName));
    for(;;) {
       // ====== Read line from input file ===================================
       bool eof;
