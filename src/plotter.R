@@ -624,7 +624,7 @@ plotstd3 <- function(mainTitle,
 
                      if((type == "lx") || (type=="linesx")) {
                         lines(xSubset, ySubset,
-                              lwd=par("cex"), col=legendColor, lty=legendStyle, lwd=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
+                              col=legendColor, lty=legendStyle, lwd=lineWidth*par("cex"), pch=getDot(dotSet, legendDot))
                      }
                      else if((type == "sx") || (type=="stepsx")) {
                         lines(xSubset, ySubset, type="s",
