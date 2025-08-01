@@ -349,22 +349,6 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          std::cerr << "ERROR: Invalid \"cmt\" setting: " << (const char*)&parameters[4] << "!\n";
          exit(1);
       }
-
-      // ------ Use TCP or MPTCP? -------------------------------------------
-      if( (trafficSpec.Protocol == IPPROTO_TCP) ||
-          (trafficSpec.Protocol == IPPROTO_MPTCP) ) {
-         if(trafficSpec.CMT == NPAF_PRIMARY_PATH) {
-            trafficSpec.Protocol = IPPROTO_TCP;
-         }
-         else {
-            trafficSpec.Protocol = IPPROTO_MPTCP;
-            if(trafficSpec.CMT != NPAF_LikeMPTCP) {
-               std::cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
-                         << " for MPTCP! Using default instead!\n";
-            }
-         }
-      }
-      // --------------------------------------------------------------------
    }
    else if(strncmp(parameters, "ccid=", 5) == 0) {
       unsigned int ccid;
@@ -487,7 +471,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       congestionControl[i] = 0x00;
       if( (parameters[3 + i] != ':') && (parameters[3 + i] != 0x00) ) {
-         std::cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
+         std::cerr << "ERROR: Invalid \"cc\" setting: " << (const char*)&parameters[8]
                    << " - name too long!\n";
           exit(1);
       }
@@ -498,6 +482,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       std::cerr << "ERROR: Invalid option \"" << parameters << "\"!\n";
       exit(1);
    }
+
    if(parameters[n] == 0x00) {
       return nullptr;
    }
@@ -511,7 +496,7 @@ static Flow* createFlow(Flow*                  previousFlow,
                         const uint64_t         measurementID,
                         const char*            vectorNamePattern,
                         const OutputFileFormat vectorFileFormat,
-                        const uint8_t          initialProtocol,
+                        const int              initialProtocol,
                         const sockaddr_union&  remoteAddress)
 {
    // ====== Get flow ID and stream ID ======================================
@@ -521,6 +506,10 @@ static Flow* createFlow(Flow*                  previousFlow,
    // ====== Get FlowTrafficSpec ============================================
    FlowTrafficSpec trafficSpec;
    trafficSpec.Protocol = initialProtocol;
+   if(trafficSpec.Protocol == IPPROTO_MPTCP) {
+      trafficSpec.CMT = NPAF_LikeMPTCP;
+   }
+
    if(strncmp(parameters, "default", 7) == 0) {
       trafficSpec.OutboundFrameRateRng = RANDOM_CONSTANT;
       trafficSpec.OutboundFrameRate[0] = 0.0;
@@ -566,6 +555,17 @@ static Flow* createFlow(Flow*                  previousFlow,
    if(trafficSpec.Description == "") {
       trafficSpec.Description = format("Flow %u", flowID);
    }
+
+   // ------ Use TCP or MPTCP? ----------------------------------------------
+   if( (trafficSpec.Protocol == IPPROTO_TCP) && (trafficSpec.CMT == NPAF_LikeMPTCP) ) {
+      trafficSpec.Protocol = IPPROTO_MPTCP;
+   }
+   if( (trafficSpec.Protocol == IPPROTO_MPTCP) && (trafficSpec.CMT != NPAF_LikeMPTCP) ) {
+      std::cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
+                << " for MPTCP! Using default instead!\n";
+      exit(1);
+   }
+   // -----------------------------------------------------------------------
 
    // ====== Create new flow ================================================
    if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID) != nullptr) {
