@@ -54,7 +54,7 @@ rm -f vgcore.* core.* core
 
 # ====== Run NetPerfMeter ===================================================
 ./netperfmeter "${SERVER}:${PORT}" \
-   -vector=sctp.vec -scalar=sctp.sca \
+   -config=sctp.config -vector=sctp.vec -scalar=sctp.sca \
    -sctp \
      const8:const10000:const8:const10000 \
      const8:const10000:const8:const10000 \

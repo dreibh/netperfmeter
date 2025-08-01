@@ -71,9 +71,10 @@ i=0 ; while [ $i -lt $UDP_FLOWS ] ; do
    options="${options} -udp ${UDP_PARAMS}"
    i=$((i+1))
 done
-
 echo "OPTIONS=${options}"
+
 # shellcheck disable=SC2086
 ./netperfmeter "${SERVER}:${PORT}" \
+   -config=many.config -vector=many.vec -scalar=many.sca \
    ${options} \
    -runtime="${RUNTIME}"

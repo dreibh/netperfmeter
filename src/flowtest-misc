@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+đ#!/usr/bin/env bash
 # ==========================================================================
 #         _   _      _   ____            __ __  __      _
 #        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
@@ -47,13 +47,13 @@ rm -f vgcore.* core.* core
 # ====== Run NetPerfMeter ===================================================
 ./netperfmeter "${SERVER}:${PORT}" \
    -control-over-tcp \
-   -scalar=x.sca.bz2 -vector=x.vec.bz2 \
+   -config=multi1.config -scalar=multi1.sca.bz2 -vector=multi1.vec.bz2 \
    -tcp const30:const68000:const30:const68000:maxmsgsize=1300 \
    -runtime=5
 
 ./netperfmeter "${SERVER}:${PORT}" \
    -control-over-tcp \
-   -scalar=y.sca.bz2 -vector=y.vec.bz2 \
+   -config=multi1.config -scalar=multi1.sca.bz2 -vector=multi1.vec.bz2 \
    -udp const30:const68000:const30:const68000:maxmsgsize=1300 \
    -tcp const30:const68000:const30:const68000:maxmsgsize=1300 \
    -sctp const30:const68000:const30:const68000:maxmsgsize=1300 \
@@ -62,6 +62,6 @@ rm -f vgcore.* core.* core
 
 ./netperfmeter "${SERVER}:${PORT}" \
    -control-over-tcp \
-   -scalar=y.sca.bz2 -vector=y.vec.bz2 \
+   -config=multi3.config -scalar=multi3.sca.bz2 -vector=multi3.vec.bz2 \
    -sctp const30:const6800:const30:const6800:maxmsgsize=1300 const30:const6800:const30:const6800:maxmsgsize=1300 const30:const6800:const30:const6800:maxmsgsize=1300 \
    -runtime=5
