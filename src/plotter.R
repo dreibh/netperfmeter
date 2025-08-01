@@ -633,9 +633,9 @@ plotstd3 <- function(mainTitle,
 
                      pcex <- dotScaleFactor * par("cex")
                      points(xSubset, ySubset,
-                           col=legendColor, lty=legendStyle, pch=getDot(dotSet, legendDot),
-                           lwd=par("cex"),
-                           cex=pcex, bg="yellow")
+                            col=legendColor, lty=legendStyle, pch=getDot(dotSet, legendDot),
+                            lwd=par("cex"),
+                            cex=pcex, bg="yellow")
 
                      legendTexts  <- append(legendTexts,  legendText)
                      legendColors <- append(legendColors, legendColor)

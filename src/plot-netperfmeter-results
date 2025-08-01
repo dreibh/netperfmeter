@@ -1,7 +1,14 @@
-#!/bin/sh
+#!/usr/bin/env bash
+# ==========================================================================
+#         _   _      _   ____            __ __  __      _
+#        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
+#        |  \| |/ _ \ __| |_) / _ \ '__| |_| |\/| |/ _ \ __/ _ \ '__|
+#        | |\  |  __/ |_|  __/  __/ |  |  _| |  | |  __/ ||  __/ |
+#        |_| \_|\___|\__|_|   \___|_|  |_| |_|  |_|\___|\__\___|_|
 #
-# Network Performance Meter
-# Copyright (C) 2009-2025 by Thomas Dreibholz
+#                  NetPerfMeter -- Network Performance Meter
+#                 Copyright (C) 2009-2025 by Thomas Dreibholz
+# ==========================================================================
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +23,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Contact: dreibh@simula.no
-#
+# Contact:  dreibh@simula.no
+# Homepage: https://www.nntb.no/~dreibh/netperfmeter/
+
+# Bash options:
+set -eu
+
 
 if [ $# -lt 1 ] ; then
    echo >&2 "Usage: $0 [Config File] {-ownfile} {-colour|-color|-greyscale|-grayscale|-blackandwhite}"
@@ -29,32 +40,32 @@ CONFIG_FILE="$1"
 NUM_FLOWS=0
 VECTOR_ACTIVE_NODE=""
 VECTOR_PASSIVE_NODE=""
-if [ ! -e "$CONFIG_FILE" ] ; then
-   echo >&2 "ERROR: Config file $CONFIG_FILE not found!"
+if [ ! -e "${CONFIG_FILE}" ] ; then
+   echo >&2 "ERROR: Config file ${CONFIG_FILE} not found!"
    exit 1
 fi
-. $CONFIG_FILE
+. "${CONFIG_FILE}"
 shift
 
-if [ "$VECTOR_PASSIVE_NODE" = "" -o "$VECTOR_ACTIVE_NODE" = "" -o $NUM_FLOWS -lt 1 ] ; then
+if [ "${VECTOR_PASSIVE_NODE}" = "" -o "${VECTOR_ACTIVE_NODE}" = "" -o ${NUM_FLOWS} -lt 1 ] ; then
    echo >&2 "ERROR: Bad vector file configuration!"
    exit 1
 fi
-if [ ! -e "$VECTOR_ACTIVE_NODE" ] ; then
-   echo >&2 "ERROR: Vector file $VECTOR_ACTIVE_NODE of active node not found!"
+if [ ! -e "${VECTOR_ACTIVE_NODE}" ] ; then
+   echo >&2 "ERROR: Vector file ${VECTOR_ACTIVE_NODE} of active node not found!"
    exit 1
 fi
-if [ ! -e "$VECTOR_PASSIVE_NODE" ] ; then
-   echo >&2 "ERROR: Vector file $VECTOR_ACTIVE_NODE of passive node not found!"
+if [ ! -e "${VECTOR_PASSIVE_NODE}" ] ; then
+   echo >&2 "ERROR: Vector file ${VECTOR_ACTIVE_NODE} of passive node not found!"
    exit 1
 fi
 
-OUTPUT_PREFIX="`echo "$CONFIG_FILE" | sed -e "s/.config$//g"`"
+OUTPUT_PREFIX="$(echo "${CONFIG_FILE}" | sed -e "s/.config$//g")"
 
 echo "Configuration:"
-echo "   - Input of Active Node ($NAME_ACTIVE_NODE) -> $VECTOR_ACTIVE_NODE"
-echo "   - Input of Passive Node ($NAME_PASSIVE_NODE) -> $VECTOR_PASSIVE_NODE"
-echo "   - Output prefix -> $OUTPUT_PREFIX"
+echo "   - Input of Active Node (${NAME_ACTIVE_NODE}) -> ${VECTOR_ACTIVE_NODE}"
+echo "   - Input of Passive Node (${NAME_PASSIVE_NODE}) -> ${VECTOR_PASSIVE_NODE}"
+echo "   - Output prefix -> ${OUTPUT_PREFIX}"
 
 
 # ====== Get options ========================================================
@@ -80,72 +91,72 @@ done
 # ====== Create combined data files =========================================
 SEARCH_PATHS=". /usr/local/bin /usr/bin"
 COMBINESUMMARIES="combinesummaries"
-for searchPath in $SEARCH_PATHS ; do
-   if [ -e "$searchPath/$COMBINESUMMARIES" ] ; then
-      COMBINESUMMARIES="$searchPath/combinesummaries"
+for searchPath in ${SEARCH_PATHS} ; do
+   if [ -e "${searchPath}/${COMBINESUMMARIES}" ] ; then
+      COMBINESUMMARIES="${searchPath}/combinesummaries"
       break
    fi
 done
 
-SUMMARY_NAME="$OUTPUT_PREFIX-summary.data.bz2"
+SUMMARY_NAME="${OUTPUT_PREFIX}-summary.data.bz2"
 (
-   echo "--values=\"\"$NAME_ACTIVE_NODE\" 1\""
-   echo "--input=$VECTOR_ACTIVE_NODE"
-   echo "--values=\"\"$NAME_PASSIVE_NODE\" 0\""
-   echo "--input=$VECTOR_PASSIVE_NODE"
-) | $COMBINESUMMARIES $SUMMARY_NAME "NodeName IsActive" -quiet
+   echo "--values=\"\"${NAME_ACTIVE_NODE}\" 1\""
+   echo "--input=${VECTOR_ACTIVE_NODE}"
+   echo "--values=\"\"${NAME_PASSIVE_NODE}\" 0\""
+   echo "--input=${VECTOR_PASSIVE_NODE}"
+) | ${COMBINESUMMARIES} "${SUMMARY_NAME}" "NodeName IsActive" -quiet
 
-FLOW_SUMMARY_NAME="$OUTPUT_PREFIX-flows.data.bz2"
+FLOW_SUMMARY_NAME="${OUTPUT_PREFIX}-flows.data.bz2"
 (
    i=0
-   while [ $i -lt $NUM_FLOWS ] ; do
+   while [ $i -lt ${NUM_FLOWS} ] ; do
       flowDescriptionVar="\$FLOW$i""_DESCRIPTION"
       activeVectorVar="\$FLOW$i""_VECTOR_ACTIVE_NODE"
       passiveVectorVar="\$FLOW$i""_VECTOR_PASSIVE_NODE"
-      eval flowDescription=$flowDescriptionVar
-      eval activeVector=$activeVectorVar
-      eval passiveVector=$passiveVectorVar
+      eval flowDescription=${flowDescriptionVar}
+      eval activeVector=${activeVectorVar}
+      eval passiveVector=${passiveVectorVar}
 
-      echo "--values=\"\"$flowDescription\" $i \"$NAME_ACTIVE_NODE\" 1\""
+      echo "--values=\"\"$flowDescription\" $i \"${NAME_ACTIVE_NODE}\" 1\""
       echo "--input=$activeVector"
-      echo "--values=\"\"$flowDescription\" $i \"$NAME_PASSIVE_NODE\" 0\""
+      echo "--values=\"\"$flowDescription\" $i \"${NAME_PASSIVE_NODE}\" 0\""
       echo "--input=$passiveVector"
       i=$(($i+1))
    done
-) | $COMBINESUMMARIES $FLOW_SUMMARY_NAME "FlowName FlowID NodeName IsActive" -quiet
+) | ${COMBINESUMMARIES} "${FLOW_SUMMARY_NAME}" "FlowName FlowID NodeName IsActive" -quiet
 
 
 # ====== Locate plotting scripts ============================================
 SEARCH_PATHS=". /usr/share/netperfmeter /usr/local/share/netperfmeter"
 PLOT_PROGRAM_DIR=""
 PLOT_PROGRAM_SCRIPT="plot-netperfmeter-results.R"
-for searchPath in $SEARCH_PATHS ; do
-   if [ -e "$searchPath/$PLOT_PROGRAM_SCRIPT" -a -e "$searchPath/plotter.R" ] ; then
-      PLOT_PROGRAM_DIR=$searchPath
+for searchPath in ${SEARCH_PATHS} ; do
+   if [ -e "${searchPath}/${PLOT_PROGRAM_SCRIPT}" -a -e "${searchPath}/plotter.R" ] ; then
+      PLOT_PROGRAM_DIR=${searchPath}
       break
    fi
 done
-if [ "x$PLOT_PROGRAM_DIR" = "x" ] ; then
-   echo >&2 "ERROR: Cannot find $PLOT_PROGRAM_SCRIPT and plotter.R!"
+if [ "${PLOT_PROGRAM_DIR}" = "" ] ; then
+   echo >&2 "ERROR: Cannot find ${PLOT_PROGRAM_SCRIPT} and plotter.R!"
    exit 1
-elif [ "$PLOT_PROGRAM_DIR" = "." ] ; then
-   echo "   - NOTE: Using $PLOT_PROGRAM_SCRIPT and plotter.R from $searchPath!"
+elif [ "${PLOT_PROGRAM_DIR}" = "." ] ; then
+   echo "   - NOTE: Using ${PLOT_PROGRAM_SCRIPT} and plotter.R from ${searchPath}!"
 fi
 
 
 # ====== Call the R script for plotting =====================================
 R CMD BATCH --slave --vanilla \
    "--args
-      programDirectory=\"$PLOT_PROGRAM_DIR\"
-      configFile=\"$CONFIG_FILE\"
-      summaryFile=\"$SUMMARY_NAME\"
-      flowSummaryFile=\"$FLOW_SUMMARY_NAME\"
-      pdfFilePrefix=\"$OUTPUT_PREFIX\"
-      plotColorMode=$PLOT_COLOR_MODE
-      plotOwnFile=$PLOT_OWN_FILE" \
-   $PLOT_PROGRAM_DIR/$PLOT_PROGRAM_SCRIPT /dev/stdout
+      programDirectory=\"${PLOT_PROGRAM_DIR}\"
+      configFile=\"${CONFIG_FILE}\"
+      summaryFile=\"${SUMMARY_NAME}\"
+      flowSummaryFile=\"${FLOW_SUMMARY_NAME}\"
+      pdfFilePrefix=\"${OUTPUT_PREFIX}\"
+      plotColorMode=${PLOT_COLOR_MODE}
+      plotOwnFile=${PLOT_OWN_FILE}" \
+   "${PLOT_PROGRAM_DIR}/${PLOT_PROGRAM_SCRIPT}" /dev/stdout
 
 
 # ====== Remove temporary files =============================================
 echo "Cleaning up"
-# rm -f $SUMMARY_NAME $FLOW_SUMMARY_NAME
+# rm -f "${SUMMARY_NAME}" "${FLOW_SUMMARY_NAME}"

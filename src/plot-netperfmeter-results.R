@@ -1,5 +1,13 @@
-# Network Performance Meter
-# Copyright (C) 2016-2025 by Thomas Dreibholz
+# ==========================================================================
+#         _   _      _   ____            __ __  __      _
+#        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
+#        |  \| |/ _ \ __| |_) / _ \ '__| |_| |\/| |/ _ \ __/ _ \ '__|
+#        | |\  |  __/ |_|  __/  __/ |  |  _| |  | |  __/ ||  __/ |
+#        |_| \_|\___|\__|_|   \___|_|  |_| |_|  |_|\___|\__\___|_|
+#
+#                  NetPerfMeter -- Network Performance Meter
+#                 Copyright (C) 2009-2025 by Thomas Dreibholz
+# ==========================================================================
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,8 +22,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Contact: dreibh@simula.no
-#
+# Contact:  dreibh@simula.no
+# Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 
 # ###### Set global variable (given as name string) to given value ##########
@@ -133,7 +141,6 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vS
             colorMode=plotColorMode,
             hideLegend=FALSE,
             legendSize=plotLegendSize,
-            simulationName="Name der Simulation",
             pStart=0)
    par(opar)
    if(plotOwnFile) {
@@ -369,7 +376,7 @@ if(!plotOwnFile) {
    # ------ Add PDF outlines and meta data ----------------------------------
    cmd1 <- paste(sep="", "setpdfmetadata ", pdfFileName, " ", pdfFileName, ".meta ", pdfFilePrefix, "-TEMP2.pdf",
                          " || mv ", pdfFileName, " ", pdfFilePrefix, "-TEMP2.pdf")
-#    cat(cmd1,"\n")
+   # cat(cmd1,"\n")
    ret1 <- system(cmd1)
    if(ret1 != 0) {
       stop(gettextf("status %d in running command '%s'", ret1, cmd1))
@@ -378,7 +385,7 @@ if(!plotOwnFile) {
    # ------ Add PDF outlines and meta data ----------------------------------
    cmd2 <- paste(sep="", "pdfembedfonts ", pdfFilePrefix, "-TEMP2.pdf", " ", pdfFilePrefix, ".pdf -optimize",
                          " || mv ", pdfFilePrefix, "-TEMP2.pdf", " ", pdfFilePrefix, ".pdf")
-#    cat(cmd2,"\n")
+   # cat(cmd2,"\n")
    ret2 <- system(cmd2)
    if(ret2 != 0) {
       stop(gettextf("status %d in running command '%s'", ret2, cmd2))
