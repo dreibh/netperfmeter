@@ -199,7 +199,7 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
       }
    }
 
-   return fragment != nullptr;
+   return ((frame != nullptr) && (fragment != nullptr));
 }
 
 
