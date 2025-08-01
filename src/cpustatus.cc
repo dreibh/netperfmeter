@@ -204,7 +204,7 @@ void CPUStatus::update()
    }
 
 #elif defined __linux__
-   rewind(ProcStatFD);
+   fseek(ProcStatFD, 0, SEEK_SET);
    fflush(ProcStatFD);
 
    for(unsigned int i = 0; i <= CPUs; i++) {
