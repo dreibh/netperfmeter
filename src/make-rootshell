@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -eu
 #
 # Network Performance Meter
 # Copyright (C) 2009-2025 by Thomas Dreibholz
@@ -19,7 +19,7 @@
 # Contact: dreibh@simula.no
 #
 
-SYSTEM=`uname`
+SYSTEM="$(uname)"
 
 make rootshell
 if [ "$SYSTEM" = "Linux" ] ; then
