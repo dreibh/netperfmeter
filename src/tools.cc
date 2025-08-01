@@ -658,22 +658,6 @@ int bindSocket(const int             sd,
 #else
 #error IPV6_V6ONLY not defined?! Please create a bug report and provide some information about your OS!
 #endif
-// FIXME! OBSOLETE!
-// FIXME! Add proper, platform-independent code here!
-// #ifndef __linux__
-// #warning MPTCP is currently only available on Linux!
-// #else
-//    if((protocol == IPPROTO_MPTCP) || (protocol == IPPROTO_TCP)) {
-//       const int cmtOnOff = (protocol == IPPROTO_MPTCP);
-//       if(ext_setsockopt(sd, IPPROTO_TCP, MPTCP_ENABLED_LEGACY, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-//          if(ext_setsockopt(sd, IPPROTO_TCP, MPTCP_ENABLED, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
-//             if(protocol == IPPROTO_MPTCP) {
-//                return -2;
-//             }
-//          }
-//       }
-//    }
-// #endif
 
    // ====== Bind socket ====================================================
    if(localAddressCount == 0) {

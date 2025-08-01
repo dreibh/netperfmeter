@@ -464,56 +464,6 @@ bool Flow::configureSocket(const int socketDescriptor)
          return false;
       }
 
-#if 0
-// FIXME: OBSOLETE!
-      if(TrafficSpec.Protocol == IPPROTO_MPTCP) {
-         // FIXME! Add proper, platform-independent code here!
-#ifndef __linux__
-#warning MPTCP is currently only available on Linux!
-#else
-
-         const int debugOption = (TrafficSpec.Debug == true) ? 1 : 0;
-         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_DEBUG_LEGACY, (const char*)&debugOption, sizeof(debugOption)) < 0) {
-            if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_DEBUG, (const char*)&debugOption, sizeof(debugOption)) < 0) {
-               LOG_WARNING
-               stdlog << format("Failed to configure debugging level %d (MPTCP_DEBUG option) on MPTCP socket %d: %s!",
-                                debugOption, socketDescriptor, strerror(errno)) << "\n";
-               LOG_END
-            }
-         }
-
-         const int nDiffPorts = (int)TrafficSpec.NDiffPorts;
-         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_NDIFFPORTS_LEGACY, (const char*)&nDiffPorts, sizeof(nDiffPorts)) < 0) {
-            if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_NDIFFPORTS, (const char*)&nDiffPorts, sizeof(nDiffPorts)) < 0) {
-               LOG_WARNING
-               stdlog << format("Failed to configure number of different ports %d (MPTCP_NDIFFPORTS option) on MPTCP socket %d: %s!",
-                                nDiffPorts, socketDescriptor, strerror(errno)) << "\n";
-               LOG_END
-            }
-         }
-
-         const char* pathMgr = TrafficSpec.PathMgr.c_str();
-         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_PATH_MANAGER_LEGACY, pathMgr, strlen(pathMgr)) < 0) {
-            if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_PATH_MANAGER, pathMgr, strlen(pathMgr)) < 0) {
-               LOG_WARNING
-               stdlog << format("Failed to configure path manager %s (MPTCP_PATH_MANAGER option) on MPTCP socket %d: %s!",
-                                pathMgr, socketDescriptor, strerror(errno)) << "\n";
-               LOG_END
-            }
-         }
-
-         const char* scheduler = TrafficSpec.Scheduler.c_str();
-         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_SCHEDULER_LEGACY, scheduler, strlen(scheduler)) < 0) {
-            if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, MPTCP_SCHEDULER, scheduler, strlen(scheduler)) < 0) {
-               LOG_WARNING
-               stdlog << format("Failed to configure scheduler %s (MPTCP_SCHEDULER option) on MPTCP socket %d: %s!",
-                                scheduler, socketDescriptor, strerror(errno)) << "\n";
-               LOG_END
-            }
-         }
-#endif
-      }
-#endif
       const char* congestionControl = TrafficSpec.CongestionControl.c_str();
       if(strcmp(congestionControl, "default") != 0) {
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {

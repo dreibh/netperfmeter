@@ -78,10 +78,8 @@ _netperfmeter()
          #  ====== Generic value ============================================
          -activenodename=*  | \
          -passivenodename=* | \
-         -pathmgr=*         | \
          -rcvbuf=*          | \
          -runtime=*         | \
-         -scheduler=*       | \
          -sndbuf=*)
             cur="${cur#*=}"
             return
@@ -130,16 +128,13 @@ ${base}description=
 ${base}error_on_abort=
 ${base}id=
 ${base}maxmsgsize=
-${base}ndiffports=
 ${base}nodelay=
 ${base}onoff=
 ${base}ordered=
-${base}pathmgr=
 ${base}rcvbuf=
 ${base}reliable=
 ${base}rtx_timeout=
 ${base}rtx_trials=
-${base}scheduler=
 ${base}sndbuf=
 ${base}unordered=
 ${base}unreliable=
@@ -243,8 +238,6 @@ ${base}v6only
 -logcolor
 -logappend
 -logfile
--pathmgr
--scheduler
 -sndbuf
 -rcvbuf
 "

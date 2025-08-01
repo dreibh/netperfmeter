@@ -207,6 +207,8 @@ A repetition of the list is possible with the keyword "repeat" at the end of the
 By default, the active side stops with an error when a transmission tails (e.g. on connection abort). This parameter turns this behaviour on or off.
 .It nodelay=on|off
 Deactivate Nagle algorithm (TCP and SCTP only; default: off).
+.It debug=on|off
+Set debug mode for flow (default: off). Note: this is for debugging and testing NetPerfMeter only; it (usually) has no function!
 .It v6only
 Use socket with IPv6 only (by setting IPV6_V6ONLY socket option).
 .It pathmgr=name

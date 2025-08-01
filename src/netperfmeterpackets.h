@@ -118,10 +118,10 @@ struct NetPerfMeterAddFlowMessage
    uint8_t                CMT;
    uint8_t                CCID;
 
-   uint16_t               NDiffPorts;
-   char                   PathMgr[NETPERFMETER_PATHMGR_LENGTH];
+   uint16_t               NDiffPorts;                                 // obsolete!
+   char                   PathMgr[NETPERFMETER_PATHMGR_LENGTH];       // obsolete!
    char                   CongestionControl[NETPERFMETER_CC_LENGTH];
-   char                   Scheduler[NETPERFMETER_SCHEDULER_LENGTH];
+   char                   Scheduler[NETPERFMETER_SCHEDULER_LENGTH];   // obsolete!
 
    uint16_t               OnOffEvents;
    NetPerfMeterOnOffEvent OnOffEvent[];

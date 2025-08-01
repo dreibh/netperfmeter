@@ -223,15 +223,10 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    strncpy((char*)&addFlowMsg->CongestionControl, flow->getTrafficSpec().CongestionControl.c_str(),
            std::min(sizeof(addFlowMsg->CongestionControl), flow->getTrafficSpec().CongestionControl.size()));
 
-   memset((char*)&addFlowMsg->PathMgr, 0, sizeof(addFlowMsg->PathMgr));
-   strncpy((char*)&addFlowMsg->PathMgr, flow->getTrafficSpec().PathMgr.c_str(),
-           std::min(sizeof(addFlowMsg->PathMgr), flow->getTrafficSpec().PathMgr.size()));
-
+   // Obsolete fields (used for Linux MPTCP development version):
+   memset((char*)&addFlowMsg->PathMgr,   0, sizeof(addFlowMsg->PathMgr));
    memset((char*)&addFlowMsg->Scheduler, 0, sizeof(addFlowMsg->Scheduler));
-   strncpy((char*)&addFlowMsg->Scheduler, flow->getTrafficSpec().Scheduler.c_str(),
-           std::min(sizeof(addFlowMsg->Scheduler), flow->getTrafficSpec().Scheduler.size()));
-
-   addFlowMsg->NDiffPorts = htons(flow->getTrafficSpec().NDiffPorts);
+   addFlowMsg->NDiffPorts = htons(0);
 
    LOG_TRACE
    stdlog << format("<R1 sd=%d>", controlSocket) << "\n";
@@ -399,9 +394,6 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          fprintf(configFile, "FLOW%u_NODELAY=\"%s\"\n",                      flow->getFlowID(), (flow->getTrafficSpec().NoDelay == true) ? "on" : "off");
          fprintf(configFile, "FLOW%u_DEBUG=\"%s\"\n",                        flow->getFlowID(), (flow->getTrafficSpec().Debug == true) ? "on" : "off");
          fprintf(configFile, "FLOW%u_CC=\"%s\"\n",                           flow->getFlowID(), flow->getTrafficSpec().CongestionControl.c_str());
-         fprintf(configFile, "FLOW%u_PATHMGR=\"%s\"\n",                      flow->getFlowID(), flow->getTrafficSpec().PathMgr.c_str());
-         fprintf(configFile, "FLOW%u_SCHEDULER=\"%s\"\n",                    flow->getFlowID(), flow->getTrafficSpec().Scheduler.c_str());
-         fprintf(configFile, "FLOW%u_NDIFFPORTS=%u\n",                       flow->getFlowID(), flow->getTrafficSpec().NDiffPorts);
          fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(), flow->getVectorFile().getName().c_str());
          fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n",        flow->getFlowID(),
                               Flow::getNodeOutputName(vectorNamePattern, "passive",
@@ -825,18 +817,6 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       memcpy((char*)&congestionControl, (const char*)&addFlowMsg->CongestionControl, sizeof(addFlowMsg->CongestionControl));
       congestionControl[sizeof(addFlowMsg->CongestionControl)] = 0x00;
       trafficSpec.CongestionControl = std::string(congestionControl);
-
-      char pathMgr[sizeof(addFlowMsg->PathMgr) + 1];
-      memcpy((char*)&pathMgr, (const char*)&addFlowMsg->PathMgr, sizeof(addFlowMsg->PathMgr));
-      pathMgr[sizeof(addFlowMsg->PathMgr)] = 0x00;
-      trafficSpec.PathMgr = std::string(pathMgr);
-
-      char scheduler[sizeof(addFlowMsg->Scheduler) + 1];
-      memcpy((char*)&scheduler, (const char*)&addFlowMsg->Scheduler, sizeof(addFlowMsg->Scheduler));
-      scheduler[sizeof(addFlowMsg->Scheduler)] = 0x00;
-      trafficSpec.Scheduler = std::string(scheduler);
-
-      trafficSpec.NDiffPorts = ntohs(addFlowMsg->NDiffPorts);
 
       Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
                             ntohs(addFlowMsg->StreamID), trafficSpec,

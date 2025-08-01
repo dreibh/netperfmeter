@@ -135,13 +135,6 @@ void FlowTrafficSpec::print(std::ostream& os) const
    if( (Protocol == IPPROTO_TCP) || (Protocol == IPPROTO_MPTCP) ) {
       os << " - Congestion Control:  " << CongestionControl << "\n";
    }
-   if(Protocol == IPPROTO_MPTCP) {
-      os << " - N. of Diff. Ports: " << NDiffPorts        << "\n"
-         << " - Path Manager:      " << PathMgr           << "\n"
-         << " - Scheduler:         " << Scheduler         << "\n"
-         << " - Debug:             "
-         << ((Debug == true) ? "yes" : "no") << "\n";
-   }
    if(Protocol == IPPROTO_SCTP) {
       os << " - CMT:                 #" << (unsigned int)CMT << " ";
       switch(CMT) {
@@ -185,9 +178,6 @@ void FlowTrafficSpec::reset()
    NoDelay                  = false;
    BindV6Only               = false;
    RepeatOnOff              = false;
-   NDiffPorts               = 4;
-   PathMgr                  = "fullmesh";
-   Scheduler                = "default";
    CongestionControl        = "default";
    CMT                      = 0x00;
    CCID                     = 0x00;

@@ -54,8 +54,6 @@ static sockaddr_union gLocalControlAddressArray[MAX_LOCAL_ADDRESSES];
 
 static const char*    gActiveNodeName   = "Client";
 static const char*    gPassiveNodeName  = "Server";
-static const char*    gPathMgr          = "fullmesh";
-static const char*    gScheduler        = "default";
 static bool           gBindV6Only       = false;
 static int            gSndBufSize       = -1;
 static int            gRcvBufSize       = -1;
@@ -92,12 +90,6 @@ bool handleGlobalParameter(char* parameter)
    }
    else if(strncmp(parameter, "-passivenodename=", 17) == 0) {
       gPassiveNodeName = (const char*)&parameter[17];
-   }
-   else if(strncmp(parameter, "-pathmgr=", 9) == 0) {
-      gPathMgr = (const char*)&parameter[9];
-   }
-   else if(strncmp(parameter, "-scheduler=", 11) == 0) {
-      gScheduler = (const char*)&parameter[11];
    }
    else if(strncmp(parameter, "-sndbuf=", 8) == 0) {
       gSndBufSize = atol((const char*)&parameter[8]);
@@ -471,7 +463,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
    else if(strncmp(parameters, "debug=", 6) == 0) {
       if(strncmp((const char*)&parameters[6], "on", 2) == 0) {
          trafficSpec.Debug = true;
-         n = 6 + 2;
+         // n = 6 + 2;
       }
       else if(strncmp((const char*)&parameters[6], "off", 3) == 0) {
          trafficSpec.Debug = false;
@@ -481,54 +473,6 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          std::cerr << "ERROR: Invalid \"debug\" setting: " << (const char*)&parameters[6] << "!\n";
          exit(1);
       }
-   }
-   else if(strncmp(parameters, "ndiffports=", 11) == 0) {
-      unsigned int nDiffPorts;
-      int          pos;
-      if(sscanf((const char*)&parameters[11], "%u%n", &nDiffPorts, &pos) == 1) {
-         trafficSpec.NDiffPorts = (uint16_t)nDiffPorts;
-         n = 11 + pos;
-      }
-   }
-   else if(strncmp(parameters, "pathmgr=", 8) == 0) {
-      char   pathMgr[NETPERFMETER_PATHMGR_LENGTH + 1];
-      size_t i = 0;
-      while(i < NETPERFMETER_PATHMGR_LENGTH) {
-         if( (parameters[8 + i] == ':') ||
-             (parameters[8 + i] == 0x00) ) {
-            break;
-         }
-         pathMgr[i] = parameters[8 + i];
-         i++;
-      }
-      pathMgr[i] = 0x00;
-      if( (parameters[8 + i] != ':') && (parameters[8 + i] != 0x00) ) {
-         std::cerr << "ERROR: Invalid \"pathmgr\" setting: " << (const char*)&parameters[8]
-                   << " - name too long!\n";
-          exit(1);
-      }
-      trafficSpec.PathMgr = std::string((const char*)&pathMgr);
-      n = 8 + strlen((const char*)&pathMgr);
-   }
-   else if(strncmp(parameters, "scheduler=", 10) == 0) {
-      char   scheduler[NETPERFMETER_SCHEDULER_LENGTH + 1];
-      size_t i = 0;
-      while(i < NETPERFMETER_SCHEDULER_LENGTH) {
-         if( (parameters[10 + i] == ':') ||
-             (parameters[10 + i] == 0x00) ) {
-            break;
-         }
-         scheduler[i] = parameters[10 + i];
-         i++;
-      }
-      scheduler[i] = 0x00;
-      if( (parameters[10 + i] != ':') && (parameters[10 + i] != 0x00) ) {
-         std::cerr << "ERROR: Invalid \"scheduler\" setting: " << (const char*)&parameters[10]
-                   << " - name too long!\n";
-          exit(1);
-      }
-      trafficSpec.Scheduler = std::string((const char*)&scheduler);
-      n = 10 + strlen((const char*)&scheduler);
    }
    else if(strncmp(parameters, "cc=", 3) == 0) {
       char   congestionControl[NETPERFMETER_CC_LENGTH + 1];
@@ -1043,29 +987,6 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
       LOG_END
    }
    else {
-#if 0
-// FIXME: OBSOLETE!
-      if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER_LEGACY, gPathMgr, strlen(gPathMgr)) < 0) {
-         if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_PATH_MANAGER, gPathMgr, strlen(gPathMgr)) < 0) {
-            if(strcmp(gPathMgr, "default") != 0) {
-               LOG_WARNING
-               stdlog << format("Failed to configure path manager %s (MPTCP_PATH_MANAGER option) on MPTCP socket %d: %s!",
-                                gPathMgr, gMPTCPSocket, strerror(errno)) << "\n";
-               LOG_END
-            }
-         }
-      }
-      if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER_LEGACY, gScheduler, strlen(gScheduler)) < 0) {
-         if (ext_setsockopt(gMPTCPSocket, IPPROTO_TCP, MPTCP_SCHEDULER, gScheduler, strlen(gScheduler)) < 0) {
-            if(strcmp(gScheduler, "default") != 0) {
-               LOG_WARNING
-               stdlog << format("Failed to configure scheduler %s (MPTCP_SCHEDULER option) on MPTCP socket %d: %s!",
-                                gScheduler, gMPTCPSocket, strerror(errno)) << "\n";
-               LOG_END
-            }
-         }
-      }
-#endif
       if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
          stdlog << format("Failed to configure buffer sizes on MPTCP socket %d!",
