@@ -1,4 +1,33 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+# ==========================================================================
+#         _   _      _   ____            __ __  __      _
+#        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
+#        |  \| |/ _ \ __| |_) / _ \ '__| |_| |\/| |/ _ \ __/ _ \ '__|
+#        | |\  |  __/ |_|  __/  __/ |  |  _| |  | |  __/ ||  __/ |
+#        |_| \_|\___|\__|_|   \___|_|  |_| |_|  |_|\___|\__\___|_|
+#
+#                  NetPerfMeter -- Network Performance Meter
+#                 Copyright (C) 2009-2025 by Thomas Dreibholz
+# ==========================================================================
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact:  dreibh@simula.no
+# Homepage: https://www.nntb.no/~dreibh/netperfmeter/
+
+# Bash options:
+set -eu
 
 # This is a simple test to include all protocols and different features,
 # particularly to test the NetPerfMeter dissector of Wireshark/T-Shark:
@@ -12,13 +41,32 @@
 # tshark -i any -n -w netperfmeter.pcapng -f '(sctp port 9001) or ((tcp port 9000) or (tcp port 8999) or (udp port 9000) or (sctp port 9000) or (ip proto 33))'
 
 
-TARGET="$1"
-if [ "$TARGET" == "" ] ; then
-   TARGET="localhost:9000"
+# ====== Handle arguments ===================================================
+if [ $# -lt 1 ] ; then
+   echo >&2 "Usage: $0 server:port [runtime]"
+   exit 1
+fi
+SERVER="$(echo "$1" | sed -s 's/:.*$//g')"
+PORT="$(echo "$1" | sed -s 's/^.*://g')"
+if [[ ! "${PORT}" =~ ^[0-9]+$ ]] ; then
+   echo >&2 "ERROR: Invalid port ${PORT}!"
+   exit 1
+fi
+RUNTIME=10
+if [ $# -ge 2 ] ; then
+   RUNTIME="$2"
+fi
+if [[ ! "${RUNTIME}" =~ ^[0-9]+$ ]] ; then
+   echo >&2 "ERROR: Invalid runtime ${RUNTIME}!"
+   exit 1
 fi
 
+make
+rm -f vgcore.* core.* core
+
+# ====== Run NetPerfMeter ===================================================
 # make && valgrind --tool=helgrind \
-./netperfmeter $TARGET \
+./netperfmeter "${SERVER}:${PORT}" \
    -vector=f.vec.bz2 -scalar=f.sca.bz2 \
    -tcp  const4:const1024:const3:const1024 \
    -tcp  const2:const512:const3:const512 \
