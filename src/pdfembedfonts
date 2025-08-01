@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 #
 # PDF Font Embedder
 # Copyright (C) 2009-2025 by Thomas Dreibholz
@@ -19,6 +19,9 @@
 # Contact: dreibh@simula.no
 #
 
+# Bash options:
+set -eu
+
 # ====== Get arguments ======================================================
 if [ $# -lt 2 ] ; then
    echo >&2 "Usage: $0 [Input PDF] [Output PDF] {-optimize}"
@@ -33,23 +36,18 @@ if [ "$3" = "-optimize" ] ; then
    OPTIMIZE=1
 fi
 
-if [ ! -e "$INPUT_PDF" ] ; then
-   echo >&2 "ERROR: PDF file $INPUT_PDF does not exist!"
+if [ ! -e "${INPUT_PDF}" ] ; then
+   echo >&2 "ERROR: PDF file ${INPUT_PDF} does not exist!"
    exit 1
 fi
 
 
 # ====== Perform conversion =================================================
-# ------ Using PDF -> PS -> PDF ---------------------------
-# ( ps2pdf -dPDFSETTINGS=/prepress -dLanguageLevel=3 $1 - | \
-#      ps2pdf -dPDFSETTINGS=/prepress -dCompatibilityLevel=1.4 - $2-tmp.pdf && \
-#  qpdf --linearize $2-tmp.pdf $2  ) || cp $1 $2
-# rm -f $2-tmp.pdf
 
-# ------ Using PDF/X --------------------------------------
-if [ $OPTIMIZE -eq 1 ] ; then
-   ( ps2pdf -dPDFX $1 $2-tmp.pdf && qpdf --linearize $2-tmp.pdf $2 ) || cp $1 $2
-   rm -f $2-tmp.pdf
+# ------ Using PDF/X --------------------------------------------------------
+if [ ${OPTIMIZE} -eq 1 ] ; then
+   ( ps2pdf -dPDFX "${INPUT_PDF}" "${OUTPUT_PDF}"-tmp.pdf && qpdf --linearize "${OUTPUT_PDF}"-tmp.pdf "${OUTPUT_PDF}" ) || cp "${INPUT_PDF}" "${OUTPUT_PDF}"
+   rm -f "${OUTPUT_PDF}"-tmp.pdf
 else
-    ps2pdf -dPDFX $1 $2
+    ps2pdf -dPDFX "${INPUT_PDF}" "${OUTPUT_PDF}"
 fi
