@@ -1375,10 +1375,14 @@ void activeMode(int argc, char** argv)
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
-   if(argc < 2) {
+   if( (argc < 2) || (!(strcmp(argv[1], "-h"))) || (!(strcmp(argv[1], "-help"))) ) {
       std::cerr << "Usage: " << argv[0]
-                << " [Local Port|Remote Endpoint] {-control-over-tcp} {-tcp|-udp|-sctp|-dccp} {flow spec} ..."
+                << " local_port|remote_endpoint:remote_port [local=address[,address,...]] [controllocal=address[,address,...]] [runtime=seconds] [config=name] [scalar=name] [vector=name] [activenodename=description] [passivenodename=description] [loglevel=level] [logcolor=on|off] [logappend=file] [logfile=file] [logstderr] [quiet] [verbose] [display] [nodisplay] [v6only] [sndbuf=bytes] [rcvbuf=bytes] [tcp FLOWSPEC] [mptcp FLOWSPEC] [udp FLOWSPEC] [dccp FLOWSPEC] [sctp FLOWSPEC [...]]"
                 << "\n";
+      return 1;
+   }
+   else if( (!(strcmp(argv[1], "-v"))) || (!(strcmp(argv[1], "-version"))) ) {
+      std::cerr << "NetPerfMeter" << " " << NETPERFMETER_VERSION << "\n";
       return 0;
    }
 

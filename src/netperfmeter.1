@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd August 1, 2025
+.Dd August 13, 2025
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -36,7 +36,7 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm netperfmeter
-Port
+local_port
 .Op Fl control-over-tcp
 .Op Fl loglevel=level
 .Op Fl logcolor=on|off
@@ -49,7 +49,7 @@ Port
 .Op Fl nodisplay
 .Op Fl v6only
 .Nm netperfmeter
-Destination:Port
+remote_endpoint:remote_port
 .Op Fl control-over-tcp
 .Op Fl local=Address[,Address,...]
 .Op Fl controllocal=\%Address[,Address,...]
@@ -71,13 +71,15 @@ Destination:Port
 .Op Fl v6only
 .Op Fl sndbuf=bytes
 .Op Fl rcvbuf=bytes
-.Op Fl tcp
-.Op Fl mptcp
-.Op Fl sctp
-.Op Fl udp
-.Op Fl dccp
-.Op FLOWSPEC
-.Op ...
+.Op Fl tcp FLOWSPEC
+.Op Fl mptcp FLOWSPEC
+.Op Fl udp FLOWSPEC
+.Op Fl dccp FLOWSPEC
+.Op Fl sctp FLOWSPEC [...]
+.Nm netperfmeter
+.Op Fl h | Fl help
+.Nm netperfmeter
+.Op Fl v | Fl version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm netperfmeter
@@ -250,6 +252,10 @@ Start in active mode, i.e. establish connection to 172.16.255.254, port 9000. Th
 SCTP traffic with some variation.
 .It netperfmeter 172.16.255.254:\%9000 -udp const0:\%const0:\%const25:\%const2500:\%onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
 Some on-off background traffic with Pareto distribution.
+.It netperfmeter -version
+Shows the version.
+.It netperfmeter -help
+Shows usage help.
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
