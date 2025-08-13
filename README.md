@@ -7,7 +7,7 @@
 
 # What is Network Performance Meter&nbsp;(NetPerfMeter)?
 
-NetPerfMeter is a network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. The results are written as vector and scalar files. The vector files can e.g.&nbsp;be used to create plots of the results.
+NetPerfMeter is a network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. The results can be written as scalar files (summary of the run) and vector files (details per frame). These files can be processed further, e.g.&nbsp;for analysis and plotting of the results.
 
 
 # Installation
@@ -53,7 +53,7 @@ make install
 
 ## Sources Download
 
-NetPerfMeter is released under the GNU General Public Licence (GPL).
+NetPerfMeter is released under the GNU General Public Licence&nbsp;(GPL).
 
 Please use the issue tracker at [https://github.com/dreibh/netperfmeter/issues](https://github.com/dreibh/netperfmeter/issues) to report bugs and issues!
 
