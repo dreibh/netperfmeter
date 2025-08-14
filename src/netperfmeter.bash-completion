@@ -38,15 +38,12 @@ _netperfmeter()
    # This is necessary to properly handle ":" in completion words, in order
    # to properly handle IPv6 addresses!
    local COMP_WORDBREAKS="${COMP_WORDBREAKS//:}"
-#    FIXME!
-#    # Also need for removal of "=", to handle flowspec options:
-#    local COMP_WORDBREAKS="${COMP_WORDBREAKS//=}"
 
    local cur prev words cword
    if type -t _comp_initialize >/dev/null; then
-      _comp_initialize -n = || return
+      _comp_initialize || return
    elif type -t _init_completion >/dev/null; then
-      _init_completion -n = || return
+      _init_completion || return
    else
       # Manual initialization for older bash completion versions:
       COMPREPLY=()
@@ -65,10 +62,11 @@ _netperfmeter()
    # ====== Parameters ======================================================
    local flowSpec=0
    if [ "$cword" -gt 1 ] ; then
-      if [ "${prev}" == "-sctp" ] || \
-         [ "${prev}" == "-tcp" ]  || \
-         [ "${prev}" == "-udp" ]  || \
-         [ "${prev}" == "-dccp" ] ; then
+      if [ "${prev}" == "--tcp" ]   || \
+         [ "${prev}" == "--mptcp" ] || \
+         [ "${prev}" == "--udp" ]   || \
+         [ "${prev}" == "--dccp" ]  || \
+         [ "${prev}" == "--sctp" ] ; then
          flowSpec=1
       elif [[ "${cur}" =~ ^(const|exp|pareto|uniform) ]] ; then
          flowSpec=1
@@ -76,12 +74,11 @@ _netperfmeter()
 
       case "${cur}" in
          #  ====== Generic value ============================================
-         -activenodename=*  | \
-         -passivenodename=* | \
-         -rcvbuf=*          | \
-         -runtime=*         | \
-         -sndbuf=*)
-            cur="${cur#*=}"
+         -A | --activenodename  | \
+         -P | --passivenodename | \
+         -s | --sndbuf          | \
+         -i | --rcvbuf          | \
+         -T | --runtime)
             return
             ;;
          # ====== Flowspec ==================================================
@@ -93,12 +90,6 @@ _netperfmeter()
             local base="$(echo "${cur}" | sed -e 's/:[^:]*$/:/')"
             # shellcheck disable=SC2155,SC2001
             local blocks="$(echo "${base}" | tr -cd ":" | wc -c)"
-#             # shellcheck disable=SC2155,SC2001
-#             local entry="$(echo "${cur}" | sed -e 's/^.*://')"
-
-#             echo ""
-#             echo "B=$blocks  cur=$cur b=$base e=$entry"
-#             echo ""
 
             if [ "${blocks}" -lt 4 ] ; then
                if [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)([0-9]+)$ ]] ; then
@@ -145,9 +136,8 @@ ${base}v6only
             fi
             ;;
          # ====== Local address =============================================
-         -controllocal=* | \
-         -local=*)
-            cur="${cur#*=}"
+         -L | --local | \
+         -J | --controllocal)
             # Suggest local IP addresses:
             # NOTE: For IPv6, ":" must bave been removed from COMP_WORDBREAKS
             #       See comment above!
@@ -162,10 +152,9 @@ ${base}v6only
             return
             ;;
          # ====== Scalar/vector file pattern ================================
-         -config=* | \
-         -scalar=* | \
-         -vector=*)
-            cur="${cur#*=}"
+         -C | --config | \
+         -S | --scalar | \
+         -V | --vector)
             _filedir
             return
             ;;
@@ -184,68 +173,91 @@ ${base}v6only
    local opts2
 
    # ------ Active side -----------------------------------------------------
-   if [ "${cword}" -ge 2 ] && [[ "${words[1]}" =~ [:] ]] ; then
+   # echo "cword=$cword D=${words[1]}"
+   if [ "${cword}" -ge 2 ] && [[ ! "${words[1]}" =~ ^[0-9]+$ ]] ; then
       if [ ${flowSpec} -eq 0 ] ; then
-         # NetPerfMeter simple options without parameter(s)
-         opts1="
--control-over-tcp
--logstderr
--quiet
--verbose
--display
--nodisplay
--v6only
--tcp
--sctp
--udp
--dccp
-"
-         # NetPerfMeter options with "=" and parameter(s)
-         local opts2="
--loglevel
--logcolor
--logappend
--logfile
--local
--controllocal
--runtime
--config
--scalar
--vector
--activenodename
--passivenodename
+         opts="
+--control-over-sctp
+--control-over-tcp
+--control-over-mptcp
+-L
+--local
+-J
+--controllocal
+--6
+--v6only
+--display
+--nodisplay
+-o
+--sndbuf
+-i
+--rcvbuf
+-T
+--runtime
+-C
+--Ar
+-S
+--scalar
+-V
+--vector
+-A
+--activenodename
+-P
+--passivenodename
+--loglevel
+--logcolor
+--logfile
+--logappend
+-t
+--tcp
+-m
+--mptcp
+-u
+--udp
+-d
+--dccp
+-s
+--sctp
+-q
+--quiet
+-!
+--verbose
+-h
+--help
+-v
+--version
 "
       else
-         opts1="const exp pareto uniform"
-         opts2=""
+         opts="const exp pareto uniform"
       fi
 
    # ------ Passive side ----------------------------------------------------
    else
-      # NetPerfMeter simple options without parameter(s)
-      opts1="
--control-over-tcp
--logstderr
--quiet
--verbose
--display
--nodisplay
--v6only
-"
-      # NetPerfMeter options with "=" and parameter(s)
-      local opts2="
--loglevel
--logcolor
--logappend
--logfile
--sndbuf
--rcvbuf
+      opts="
+--control-over-sctp
+--control-over-tcp
+--control-over-mptcp
+-L
+--local
+-J
+--controllocal
+--6
+--v6only
+--display
+--nodisplay
+--loglevel
+--logcolor
+--logfile
+--logappend
+-q
+--quiet
+-!
+--verbose
 "
    fi
 
    # shellcheck disable=SC2207
-   COMPREPLY=( $( compgen -W "${opts1}"        -- "${cur}" )
-               $( compgen -W "${opts2}" -S "=" -- "${cur}" ) )
+   COMPREPLY=( $( compgen -W "${opts}" -- "${cur}" ) )
    [[ ${COMPREPLY-} == *= ]] && compopt -o nospace
    [ ${flowSpec} -eq 1  ] && compopt -o nospace
    return 0

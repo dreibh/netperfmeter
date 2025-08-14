@@ -1496,7 +1496,7 @@ void activeMode(const char* remoteEndpoint)
    LOG_END
    if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID)) {
       LOG_FATAL
-      stdlog << "ERROR: Failed to stop measurement and download the results!\n";
+      stdlog << "Failed to stop measurement and download the results!\n";
       LOG_END_FATAL
    }
 }
@@ -1511,6 +1511,12 @@ int main(int argc, char** argv)
    if(argc - optind != 1) {
       usage(argv[0], 1);
    }
+   const uint16_t localPort     = atol(argv[optind]);
+   const bool     inPassiveMode = (localPort >= 1) && (localPort < 65535);
+   if( (!inPassiveMode) && (gAssocSpecs.size() < 1) ) {
+      std::cerr << "ERROR: No flows specified!\n";
+      return 1;
+   }
 
    // ====== Start logging ==================================================
    beginLogging();
@@ -1519,8 +1525,7 @@ int main(int argc, char** argv)
    LOG_END
 
    // ====== Run active or passive instance =================================
-   const uint16_t localPort = atol(argv[optind]);
-   if( (localPort >= 1024) && (localPort < 65535) ) {
+   if(inPassiveMode) {
       passiveMode(localPort);
    }
    else {
