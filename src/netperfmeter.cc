@@ -1380,7 +1380,7 @@ void activeMode(const char* remoteEndpoint)
    stdlog << "\n"
           << "- Control Address = ";
    printAddress(stdlog, &controlAddress.sa, true);
-   stdlog << "- connecting ..." << "\n";
+   stdlog << " - connecting ..." << "\n";
    LOG_END
 
    // ====== Initialize control socket ======================================
