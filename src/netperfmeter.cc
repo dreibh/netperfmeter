@@ -172,10 +172,10 @@ bool handleGlobalParameters(int argc, char** argv)
       { "dccp",                          required_argument, 0, 'd'    },
       { "sctp",                          required_argument, 0, 's'    },
 
-      { "logfile",                       required_argument, 0, 0x1000 },
-      { "logappend",                     required_argument, 0, 0x1001 },
-      { "logcolor",                      required_argument, 0, 0x1002 },
-      { "loglevel",                      required_argument, 0, 0x1003 },
+      { "loglevel",                      required_argument, 0, 0x3000 },
+      { "logcolor",                      required_argument, 0, 0x3001 },
+      { "logappend",                     required_argument, 0, 0x3010 },
+      { "logfile",                       required_argument, 0, 0x3011 },
       { "quiet",                         no_argument,       0, 'q'    },
       { "verbose",                       no_argument,       0, '!'    },
 
@@ -330,18 +330,9 @@ bool handleGlobalParameters(int argc, char** argv)
             }
           break;
          case 0x3000:
-            if(!initLogFile(gLogLevel,optarg,"w")) {
-               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
-               exit(1);
-            }
+            gLogLevel = std::min((unsigned int)atoi(optarg),MAX_LOGLEVEL);
           break;
          case 0x3001:
-            if(!initLogFile(gLogLevel,optarg,"a")) {
-               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
-               exit(1);
-            }
-          break;
-         case 0x3002:
             if(!(strcmp(optarg,"off"))) {
                gColorMode = false;
             }
@@ -349,8 +340,17 @@ bool handleGlobalParameters(int argc, char** argv)
                gColorMode = true;
             }
           break;
-         case 0x3003:
-            gLogLevel = std::min((unsigned int)atoi(optarg),MAX_LOGLEVEL);
+         case 0x3010:
+            if(!initLogFile(gLogLevel,optarg,"a")) {
+               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
+               exit(1);
+            }
+          break;
+         case 0x3011:
+            if(!initLogFile(gLogLevel,optarg,"w")) {
+               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
+               exit(1);
+            }
           break;
          case 'q':
             gLogLevel = LOGLEVEL_ERROR;
