@@ -75,6 +75,13 @@ static const char*      gScalarNamePattern = "";
 static OutputFileFormat gScalarFileFormat  = OFF_None;
 static const char*      gConfigName        = "";
 
+struct FlowSpec
+{
+   int                      Protocol;
+   std::vector<const char*> Streams;
+};
+static std::vector<FlowSpec> gFlowSpecs;
+
 // This is the MessageReader for the Control messages only!
 // (The Data messages are handled by the Flow Manager)
 static MessageReader  gMessageReader;
@@ -107,10 +114,6 @@ static MessageReader  gMessageReader;
 // ###### Handle global command-line parameter ##############################
 bool handleGlobalParameters(int argc, char** argv)
 {
-   for(unsigned int i = 1;i < argc;i++) {
-      printf("a[%u]=%s\n", i, argv[i]);
-   }
-
    const static struct option long_options[] = {
       { "logfile",                       required_argument, 0, 0x1000 },
       { "logappend",                     required_argument, 0, 0x1001 },
@@ -132,30 +135,54 @@ bool handleGlobalParameters(int argc, char** argv)
       { "local",                         required_argument, 0, 'L'    },
       { "controllocal",                  required_argument, 0, 'C'    },
 
-      { "tcp",                           no_argument,       0, 't'    },
-      { "mptcp",                         no_argument,       0, 'm'    },
-      { "udp",                           no_argument,       0, 'u'    },
-      { "dccp",                          no_argument,       0, 'd'    },
-      { "sctp",                          no_argument,       0, 's'    },
+      { "tcp",                           required_argument, 0, 't'    },
+      { "mptcp",                         required_argument, 0, 'm'    },
+      { "udp",                           required_argument, 0, 'u'    },
+      { "dccp",                          required_argument, 0, 'd'    },
+      { "sctp",                          required_argument, 0, 's'    },
 
       { "help",                          no_argument,       0, 'h'    },
       { "version",                       no_argument,       0, 'v'    },
       {  nullptr,                        0,                 0, 0      }
    };
 
-   int option;
-   int longIndex;
-   while( (option = getopt_long_only(argc, argv, "q!T:A:P:o:i:6L:J:V:S:C:tmudshv", long_options, &longIndex)) != -1 ) {
-      printf("o=%x\n", option);
+   int      option;
+   int      longIndex;
+   while( (option = getopt_long_only(argc, argv, "q!T:A:P:o:i:6L:J:V:S:C:t:m:u:d:s:hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 't':
          case 'm':
          case 'u':
          case 'd':
          case 's':
-            puts("BRK-TCP");
-            // optind--;
-            // goto finish;
+            {
+               FlowSpec flow;
+               flow.Streams.push_back(optarg);
+               switch(option) {
+                  case 't':
+                     flow.Protocol = IPPROTO_TCP;
+                   break;
+                  case 'm':
+                     flow.Protocol = IPPROTO_MPTCP;
+                   break;
+                  case 'u':
+                     flow.Protocol = IPPROTO_UDP;
+                   break;
+                  case 'd':
+                     flow.Protocol = IPPROTO_DCCP;
+                   break;
+                  case 's':
+                     flow.Protocol = IPPROTO_SCTP;
+                     while( (optind < argc) && (argv[optind][0] != '-')) {
+                        flow.Streams.push_back(argv[optind]);
+                        optind++;
+                     }
+                   break;
+                  default:
+                     abort();
+               }
+               gFlowSpecs.push_back(flow);
+            }
           break;
          case 0x1000:
             if(!initLogFile(gLogLevel,optarg,"w")) {
@@ -300,6 +327,13 @@ bool handleGlobalParameters(int argc, char** argv)
  finish:
    for(unsigned int i = optind;i < argc;i++) {
       printf("A[%u]=%s\n", i, argv[i]);
+   }
+   for(auto flowSpec : gFlowSpecs) {
+      printf("%3u:", flowSpec.Protocol);
+      for(auto streamSpec : flowSpec.Streams) {
+         printf(" <%s>", streamSpec);
+      }
+      puts("");
    }
    return true;
 }
@@ -1461,16 +1495,19 @@ void activeMode(int argc, char** argv)
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
+   // ====== Handle parameters ==============================================
    handleGlobalParameters(argc, argv);
-   if(optind >= argc) {
+   if(argc < 2) {
       usage(argv[0], 1);
    }
-   beginLogging();
 
+   // ====== Start logging ==================================================
+   beginLogging();
    LOG_INFO
    stdlog << "Network Performance Meter " << NETPERFMETER_VERSION << "\n";
    LOG_END
 
+   // ====== Run active or passive instance =================================
    const uint16_t localPort = atol(argv[optind]);
    if( (localPort >= 1024) && (localPort < 65535) ) {
       passiveMode(argc, argv, localPort);
@@ -1479,6 +1516,7 @@ int main(int argc, char** argv)
       activeMode(argc, argv);
    }
 
+   // ====== Finish logging =================================================
    finishLogging();
 
    return 0;
