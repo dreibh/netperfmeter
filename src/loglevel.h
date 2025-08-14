@@ -88,7 +88,9 @@ extern Mutex         gLogMutex;
 #define LOG_TRACE   if((LOGLEVEL_TRACE   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_TRACE))   LOG_BEGIN("\e[37m")
 
 
-bool initLogging(const char* parameter);
+bool initLogFile(const unsigned int logLevel,
+                 const char*        fileName,
+                 const bool         appendMode);
 void beginLogging();
 void finishLogging();
 

@@ -48,9 +48,9 @@ Mutex         gLogMutex;
 
 
 // ###### Initialise log file ###############################################
-static bool initLogFile(const unsigned int logLevel,
-                        const char*        fileName,
-                        const bool         appendMode)
+bool initLogFile(const unsigned int logLevel,
+                 const char*        fileName,
+                 const bool         appendMode)
 {
    finishLogging();
    if(fileName != nullptr) {
@@ -68,37 +68,6 @@ static bool initLogFile(const unsigned int logLevel,
       }
    }
    return false;
-}
-
-
-// ###### Initialise logging ################################################
-bool initLogging(const char* parameter)
-{
-   if(!(strncmp(parameter, "-logfile=", 9))) {
-      return initLogFile(gLogLevel, (char*)&parameter[9], false);
-   }
-   else if(!(strncmp(parameter, "-logappend=", 11))) {
-      return initLogFile(gLogLevel, (char*)&parameter[11], true);
-   }
-   else if(!(strcmp(parameter, "-logstderr"))) {
-      return initLogFile(0, nullptr, false);
-   }
-   else if(!(strncmp(parameter, "-loglevel=", 10))) {
-      gLogLevel = std::max((unsigned int)atoi((char*)&parameter[10]), MIN_LOGLEVEL);
-   }
-   else if(!(strncmp(parameter, "-logcolor=", 10))) {
-      if(!(strcmp((char*)&parameter[10], "off"))) {
-         gColorMode = false;
-      }
-      else {
-         gColorMode = true;
-      }
-   }
-   else {
-      std::cerr << format("ERROR: Invalid logging parameter %s", parameter) << "\n";
-      return false;
-   }
-   return true;
 }
 
 

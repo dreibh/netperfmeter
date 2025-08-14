@@ -34,6 +34,7 @@
 #include "transfer.h"
 #include "package-version.h"
 
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -73,87 +74,174 @@ static bool           gStopTimeReached  = false;
 static MessageReader  gMessageReader;
 
 
-// ###### Handle global command-line parameter ##############################
-bool handleGlobalParameter(char* parameter)
+// ###### Version ###########################################################
+[[ noreturn ]] static void version()
 {
-   if(strncmp(parameter, "-log", 4) == 0) {
-      // Already handled!
-   }
-   else if(strncmp(parameter, "-runtime=", 9) == 0) {
-      gRuntime = atof((const char*)&parameter[9]);
-   }
-   else if(strcmp(parameter, "-control-over-tcp") == 0) {
-      gControlOverTCP = true;
-   }
-   else if(strncmp(parameter, "-activenodename=", 16) == 0) {
-      gActiveNodeName = (const char*)&parameter[16];
-   }
-   else if(strncmp(parameter, "-passivenodename=", 17) == 0) {
-      gPassiveNodeName = (const char*)&parameter[17];
-   }
-   else if(strncmp(parameter, "-sndbuf=", 8) == 0) {
-      gSndBufSize = atol((const char*)&parameter[8]);
-   }
-   else if(strncmp(parameter, "-rcvbuf=", 8) == 0) {
-      gRcvBufSize = atol((const char*)&parameter[8]);
-   }
-   else if(strcmp(parameter, "-v6only") == 0) {
-      gBindV6Only = true;
-   }
-   else if(strcmp(parameter, "-quiet") == 0) {
-      gLogLevel = LOGLEVEL_ERROR;
-   }
-   else if(strcmp(parameter, "-verbose") == 0) {
-      gLogLevel = LOGLEVEL_TRACE;
-   }
-   else if(strcmp(parameter, "-display") == 0) {
-      gDisplayEnabled = true;
-   }
-   else if(strcmp(parameter, "-nodisplay") == 0) {
-      gDisplayEnabled = false;
-   }
-   else if(strncmp(parameter, "-local=", 7) == 0) {
-      gLocalDataAddresses = 0;
-      char* address = (char*)&parameter[7];
-      while(gLocalDataAddresses < MAX_LOCAL_ADDRESSES) {
-         char* idx = index(address, ',');
-         if(idx) {
-            *idx = 0x00;
-         }
-         if(!string2address(address, &gLocalDataAddressArray[gLocalDataAddresses])) {
-            fprintf(stderr, "ERROR: Bad address %s for local data endpoint! Use format <address:port>.\n",address);
-            exit(1);
-         }
-         gLocalDataAddresses++;
-         if(!idx) {
-            break;
-         }
-         address = idx;
-         address++;
+   std::cerr << "NetPerfMeter" << " " << NETPERFMETER_VERSION << "\n";
+   exit(0);
+}
+
+
+// ###### Usage #############################################################
+[[ noreturn ]] static void usage(const char* program, const int exitCode)
+{
+   std::cerr << "Usage:\n"
+      << "* Passive (Server) Side:\n  " << program
+      << " local_port [-control-over-tcp] [-loglevel=level] [-logcolor=on|off] [-logappend=file] [-logfile=file] [-logstderr] [-quiet] [-verbose] [-display] [-nodisplay] [-v6only]\n"
+      << "* Active (Client) Side:\n  " << program
+      << " remote_endpoint:remote_port [-control-over-tcp]   [-local=Address[,Address,...]]   [-controllocal=Address[,Address,...]]   [-runtime=Seconds]    [-config=Name] [-scalar=Name] [-vector=Name] [-activenodename=Description] [-passivenodename=Description] [-loglevel=level] [-logcolor=on|off] [-logappend=file] [-logfile=file] [-logstderr] [-quiet] [-verbose] [-display] [-nodisplay] [-v6only] [-sndbuf=bytes] [-rcvbuf=bytes] [-tcp FLOWSPEC] [-mptcp FLOWSPEC] [-udp FLOWSPEC] [-dccpFLOWSPEC] [-sctpFLOWSPEC -[...]]\n"
+      << "* Version:\n  " << program
+      << " [-v | -version]\n"
+      << "* Help:\n  " << program
+      << " [-h | -help]\n";
+   exit(exitCode);
+}
+
+
+// ###### Handle global command-line parameter ##############################
+bool handleGlobalParameters(int argc, char** argv)
+{
+   const static struct option long_options[] = {
+      { "logfile",                       required_argument, 0, 'o' },
+      { "logappend",                     required_argument, 0, 'a' },
+      { "logcolor",                      required_argument, 0, 'c' },
+      { "loglevel",                      required_argument, 0, 'l' },
+      { "quiet",                         no_argument,       0, 'q' },
+      { "verbose",                       no_argument,       0, 'm' },
+
+      { "runtime",                       required_argument, 0, 'T' },
+      { "control-over-tcp",              no_argument,       0, 'x' },
+      { "control-over-mptcp",            no_argument,       0, 'y' },
+      { "activenodename",                required_argument, 0, 'A' },
+      { "passivenodename",               required_argument, 0, 'P' },
+      { "sndbuf",                        required_argument, 0, 'S' },
+      { "rcvbuf",                        required_argument, 0, 'R' },
+      { "v6only",                        no_argument,       0, '6' },
+      { "display",                       no_argument,       0, 'd' },
+      { "nodisplay",                     no_argument,       0, 'n' },
+      { "local",                         required_argument, 0, 'L' },
+      { "controllocal",                  required_argument, 0, 'C' },
+      { "help",                          no_argument,       0, 'h' },
+      { "version",                       no_argument,       0, 'v' },
+      {  nullptr,                        0,                 0, 0   }
+   };
+
+   int option;
+   int longIndex;
+   while( (option = getopt_long(argc, argv, "o:a:c:l:qmR:xyA:P:S:R:6dnL:C:hv", long_options, &longIndex)) != -1 ) {
+      switch(option) {
+         case 'o':
+            if(!initLogFile(gLogLevel,optarg,"w")) {
+               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
+               exit(1);
+            }
+          break;
+         case 'a':
+            if(!initLogFile(gLogLevel,optarg,"a")) {
+               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
+               exit(1);
+            }
+          break;
+         case 'c':
+            if(!(strcmp(optarg,"off"))) {
+               gColorMode = false;
+            }
+            else {
+               gColorMode = true;
+            }
+          break;
+         case 'l':
+            gLogLevel = std::min((unsigned int)atoi(optarg),MAX_LOGLEVEL);
+          break;
+         case 'q':
+            gLogLevel = LOGLEVEL_ERROR;
+          break;
+         case 'm':
+            gLogLevel = LOGLEVEL_TRACE;
+          break;
+         case 'T':
+            gRuntime = atof(optarg);
+          break;
+         case 'x':
+            gControlOverTCP = true;
+          break;
+         case 'y':
+            gControlOverTCP = true;   // FIXME!
+          break;
+         case 'A':
+            gActiveNodeName = optarg;
+          break;
+         case 'P':
+            gPassiveNodeName = optarg;
+          break;
+         case 'S':
+            gSndBufSize = atol(optarg);
+          break;
+         case 'R':
+            gRcvBufSize = atol(optarg);
+          break;
+         case '6':
+            gBindV6Only = true;
+          break;
+         case 'd':
+            gDisplayEnabled = true;
+          break;
+         case 'n':
+            gDisplayEnabled = false;
+          break;
+         case 'L':
+            {
+               gLocalDataAddresses = 0;
+               char* address = optarg;
+               while(gLocalDataAddresses < MAX_LOCAL_ADDRESSES) {
+                  char* idx = index(address, ',');
+                  if(idx) {
+                     *idx = 0x00;
+                  }
+                  if(!string2address(address, &gLocalDataAddressArray[gLocalDataAddresses])) {
+                     fprintf(stderr, "ERROR: Bad address %s for local data endpoint! Use format <address:port>.\n",address);
+                     exit(1);
+                  }
+                  gLocalDataAddresses++;
+                  if(!idx) {
+                     break;
+                  }
+                  address = idx;
+                  address++;
+               }
+            }
+          break;
+         case 'C':
+            {
+               gLocalControlAddresses = 0;
+               char* address = optarg;
+               while(gLocalControlAddresses < MAX_LOCAL_ADDRESSES) {
+                  char* idx = index(address, ',');
+                  if(idx) {
+                     *idx = 0x00;
+                  }
+                  if(!string2address(address, &gLocalControlAddressArray[gLocalControlAddresses])) {
+                     fprintf(stderr, "ERROR: Bad address %s for local control endpoint! Use format <address:port>.\n",address);
+                     exit(1);
+                  }
+                  gLocalControlAddresses++;
+                  if(!idx) {
+                     break;
+                  }
+                  address = idx;
+                  address++;
+               }
+            }
+          break;
+         case 'v':
+            version();
+          break;
+         case 'h':
+            usage(argv[0], 0);
+          break;
+         default:
+          break;
       }
-   }
-   else if(strncmp(parameter, "-controllocal=", 14) == 0) {
-      gLocalControlAddresses = 0;
-      char* address = (char*)&parameter[14];
-      while(gLocalControlAddresses < MAX_LOCAL_ADDRESSES) {
-         char* idx = index(address, ',');
-         if(idx) {
-            *idx = 0x00;
-         }
-         if(!string2address(address, &gLocalControlAddressArray[gLocalControlAddresses])) {
-            fprintf(stderr, "ERROR: Bad address %s for local control endpoint! Use format <address:port>.\n",address);
-            exit(1);
-         }
-         gLocalControlAddresses++;
-         if(!idx) {
-            break;
-         }
-         address = idx;
-         address++;
-      }
-   }
-   else {
-      return false;
    }
    return true;
 }
@@ -890,16 +978,8 @@ bool mainLoop(const bool               isActiveMode,
 // ###### Passive Mode ######################################################
 void passiveMode(int argc, char** argv, const uint16_t localPort)
 {
-   // ====== Set options ====================================================
-   for(int i = 2;i < argc;i++) {
-      if(!handleGlobalParameter(argv[i])) {
-         LOG_FATAL
-         stdlog << format("Invalid argument %s!", argv[i]) << "\n";
-         LOG_END_FATAL
-      }
-   }
+   // ====== Print global parameters ========================================
    printGlobalParameters();
-
 
    // ====== Test for problems ==============================================
    sockaddr_union testAddress;
@@ -1166,11 +1246,6 @@ void activeMode(int argc, char** argv)
    LOG_END
 
    // ====== Initialize control socket ======================================
-   for(int i = 2;i < argc;i++) {
-      if(handleGlobalParameter(argv[i])) {
-         argv[i] = nullptr;   // Mark as already handled!
-      }
-   }
    const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
    gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, SOCK_STREAM, controlSocketProtocol,
                                         0, gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
@@ -1230,7 +1305,7 @@ void activeMode(int argc, char** argv)
    // ------ Handle other parameters ----------------------------------------
    for(int i = 2;i < argc;i++) {
       if(argv[i] == nullptr) {
-         // Parameter has been handled in handleGlobalParameter()!
+         // Parameter has been handled in handleGlobalParameters()!
       }
       else if(argv[i][0] == '-') {
          lastFlow = nullptr;
@@ -1324,8 +1399,9 @@ void activeMode(int argc, char** argv)
          }
       }
    }
-   printGlobalParameters();
 
+   // ====== Print global parameters ========================================
+   printGlobalParameters();
 
    // ====== Start measurement ==============================================
    if(!performNetPerfMeterStart(&gMessageReader, gControlSocket, measurementID,
@@ -1340,7 +1416,7 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Main loop ======================================================
-   const unsigned long long stopAt  = (gRuntime > 0) ?
+   const unsigned long long stopAt = (gRuntime > 0) ?
       (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
@@ -1375,24 +1451,12 @@ void activeMode(int argc, char** argv)
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
-   if( (argc < 2) || (!(strcmp(argv[1], "-h"))) || (!(strcmp(argv[1], "-help"))) ) {
-      std::cerr << "Usage: " << argv[0]
-                << " local_port|remote_endpoint:remote_port|-v|--version|-h|--help [local=address[,address,...]] [controllocal=address[,address,...]] [runtime=seconds] [config=name] [scalar=name] [vector=name] [activenodename=description] [passivenodename=description] [loglevel=level] [logcolor=on|off] [logappend=file] [logfile=file] [logstderr] [quiet] [verbose] [display] [nodisplay] [v6only] [sndbuf=bytes] [rcvbuf=bytes] [tcp FLOWSPEC] [mptcp FLOWSPEC] [udp FLOWSPEC] [dccp FLOWSPEC] [sctp FLOWSPEC [...]]"
-                << "\n";
-      return 1;
+   handleGlobalParameters(argc, argv);
+   if(argc < 2) {
+      usage(argv[0], 1);
    }
-   else if( (!(strcmp(argv[1], "-v"))) || (!(strcmp(argv[1], "-version"))) ) {
-      std::cerr << "NetPerfMeter" << " " << NETPERFMETER_VERSION << "\n";
-      return 0;
-   }
+   beginLogging();
 
-   for(int i = 2; i < argc; i++) {
-      if(!(strncmp(argv[i], "-log" , 4))) {
-         if(!initLogging(argv[i])) {
-            return 1;
-         }
-      }
-   }
    LOG_INFO
    stdlog << "Network Performance Meter " << NETPERFMETER_VERSION << "\n";
    LOG_END
