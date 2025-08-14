@@ -75,12 +75,12 @@ static const char*      gScalarNamePattern = "";
 static OutputFileFormat gScalarFileFormat  = OFF_None;
 static const char*      gConfigName        = "";
 
-struct FlowSpec
+struct AssocSpec
 {
    int                      Protocol;
-   std::vector<const char*> Streams;
+   std::vector<const char*> Flows;
 };
-static std::vector<FlowSpec> gFlowSpecs;
+static std::vector<AssocSpec> gAssocSpecs;
 
 // This is the MessageReader for the Control messages only!
 // (The Data messages are handled by the Flow Manager)
@@ -156,8 +156,8 @@ bool handleGlobalParameters(int argc, char** argv)
          case 'd':
          case 's':
             {
-               FlowSpec flow;
-               flow.Streams.push_back(optarg);
+               AssocSpec flow;
+               flow.Flows.push_back(optarg);
                switch(option) {
                   case 't':
                      flow.Protocol = IPPROTO_TCP;
@@ -169,19 +169,24 @@ bool handleGlobalParameters(int argc, char** argv)
                      flow.Protocol = IPPROTO_UDP;
                    break;
                   case 'd':
+#ifdef HAVE_DCCP
                      flow.Protocol = IPPROTO_DCCP;
+#else
+                     std::cerr << "ERROR: DCCP support is not compiled in!" << "\n";
+                     exit(1);
+#endif
                    break;
                   case 's':
                      flow.Protocol = IPPROTO_SCTP;
                      while( (optind < argc) && (argv[optind][0] != '-')) {
-                        flow.Streams.push_back(argv[optind]);
+                        flow.Flows.push_back(argv[optind]);
                         optind++;
                      }
                    break;
                   default:
                      abort();
                }
-               gFlowSpecs.push_back(flow);
+               gAssocSpecs.push_back(flow);
             }
           break;
          case 0x1000:
@@ -319,19 +324,19 @@ bool handleGlobalParameters(int argc, char** argv)
             usage(argv[0], 0);
           break;
          default:
-            puts("BRK-def");
           break;
       }
    }
 
- finish:
+finish:
+   printf("optind=%d argc=%d\n", optind, argc);
    for(unsigned int i = optind;i < argc;i++) {
       printf("A[%u]=%s\n", i, argv[i]);
    }
-   for(auto flowSpec : gFlowSpecs) {
-      printf("%3u:", flowSpec.Protocol);
-      for(auto streamSpec : flowSpec.Streams) {
-         printf(" <%s>", streamSpec);
+   for(auto assocSpec : gAssocSpecs) {
+      printf("%3u:", assocSpec.Protocol);
+      for(auto flowSpec : assocSpec.Flows) {
+         printf(" <%s>", flowSpec);
       }
       puts("");
    }
@@ -1068,7 +1073,7 @@ bool mainLoop(const bool               isActiveMode,
 
 
 // ###### Passive Mode ######################################################
-void passiveMode(int argc, char** argv, const uint16_t localPort)
+void passiveMode(const uint16_t localPort)
 {
    // ====== Print global parameters ========================================
    printGlobalParameters();
@@ -1304,13 +1309,13 @@ void passiveMode(int argc, char** argv, const uint16_t localPort)
 
 
 // ###### Active Mode #######################################################
-void activeMode(int argc, char** argv)
+void activeMode(const char* remoteEndpoint)
 {
    // ====== Initialize remote and control addresses ========================
    sockaddr_union remoteAddress;
-   if(string2address(argv[1], &remoteAddress) == false) {
+   if(string2address(remoteEndpoint, &remoteAddress) == false) {
       LOG_FATAL
-      std::cerr << format("ERROR: Invalid remote address %s", argv[1]) << "!\n";
+      std::cerr << format("ERROR: Invalid remote address %s", remoteEndpoint) << "!\n";
       LOG_END_FATAL
    }
    if(getPort(&remoteAddress.sa) < 2) {
@@ -1385,49 +1390,19 @@ void activeMode(int argc, char** argv)
 
 
    // ====== Handle command-line parameters =================================
-   int   protocol = 0;
-   Flow* lastFlow = nullptr;
 
    // ------ Handle other parameters ----------------------------------------
-   for(int i = optind + 1;i < argc;i++) {
-      if(argv[i] == nullptr) {
-         // Parameter has been handled in handleGlobalParameters()!
-      }
-      else if(argv[i][0] == '-') {
-         lastFlow = nullptr;
-         if( (strncmp(argv[i], "-t", 2) == 0) || (strncmp(argv[i], "--t", 3) == 0) ) {
-            protocol = IPPROTO_TCP;
-         }
-         else if( (strncmp(argv[i], "-m", 2) == 0) || (strncmp(argv[i], "--m", 3) == 0) ) {
-            protocol = IPPROTO_MPTCP;
-         }
-         else if( (strncmp(argv[i], "-u", 2) == 0) || (strncmp(argv[i], "--u", 3) == 0) ) {
-            protocol = IPPROTO_UDP;
-         }
-         else if( (strncmp(argv[i], "-s", 2) == 0) || (strncmp(argv[i], "--s", 3) == 0) ) {
-            protocol = IPPROTO_SCTP;
-         }
-         else if( (strncmp(argv[i], "-d", 2) == 0) || (strncmp(argv[i], "--d", 3) == 0) ) {
-#ifdef HAVE_DCCP
-            protocol = IPPROTO_DCCP;
-#else
-            LOG_FATAL
-            stdlog << "ERROR: DCCP support is not compiled in!" << "\n";
-            LOG_END_FATAL
-#endif
-         }
-      }
-      else {
-         if(protocol == 0) {
-            LOG_FATAL
-            stdlog << format("Protocol specification needed before flow specification at argument %s!",
-                             argv[i]) << "\n";
-            LOG_END_FATAL
-         }
+   for(std::vector<AssocSpec>::const_iterator assocSpecIterator = gAssocSpecs.begin();
+       assocSpecIterator != gAssocSpecs.end(); assocSpecIterator++) {
+      const AssocSpec& assocSpec = *assocSpecIterator;
+      Flow* lastFlow = nullptr;
+      for(std::vector<const char*>::const_iterator flowIterator = assocSpec.Flows.begin();
+          flowIterator != assocSpec.Flows.end(); flowIterator++) {
+         const char* flowSpec = *flowIterator;
 
-         lastFlow = createFlow(lastFlow, argv[i], measurementID,
+         lastFlow = createFlow(lastFlow, flowSpec, measurementID,
                                gVectorNamePattern, gVectorFileFormat,
-                               protocol, remoteAddress);
+                               assocSpec.Protocol, remoteAddress);
          if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
             LOG_FATAL
             stdlog << "ERROR: Failed to add flow to remote node!\n";
@@ -1436,12 +1411,8 @@ void activeMode(int argc, char** argv)
          LOG_TRACE
          stdlog << "<okay; sd=" << gControlSocket << ">\n";
          LOG_END
-
-         if(protocol != IPPROTO_SCTP) {
-            lastFlow = nullptr;
-            protocol = 0;
-         }
       }
+      lastFlow = nullptr;
    }
 
    // ====== Print global parameters ========================================
@@ -1497,7 +1468,7 @@ int main(int argc, char** argv)
 {
    // ====== Handle parameters ==============================================
    handleGlobalParameters(argc, argv);
-   if(argc < 2) {
+   if(argc - optind != 1) {
       usage(argv[0], 1);
    }
 
@@ -1510,10 +1481,10 @@ int main(int argc, char** argv)
    // ====== Run active or passive instance =================================
    const uint16_t localPort = atol(argv[optind]);
    if( (localPort >= 1024) && (localPort < 65535) ) {
-      passiveMode(argc, argv, localPort);
+      passiveMode(localPort);
    }
    else {
-      activeMode(argc, argv);
+      activeMode(argv[optind]);
    }
 
    // ====== Finish logging =================================================
