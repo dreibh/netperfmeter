@@ -53,27 +53,27 @@ static sockaddr_union   gLocalDataAddressArray[MAX_LOCAL_ADDRESSES];
 static unsigned int     gLocalControlAddresses = 0;
 static sockaddr_union   gLocalControlAddressArray[MAX_LOCAL_ADDRESSES];
 
-static const char*      gActiveNodeName    = "Client";
-static const char*      gPassiveNodeName   = "Server";
-static bool             gBindV6Only        = false;
-static int              gSndBufSize        = -1;
-static int              gRcvBufSize        = -1;
-static bool             gControlOverTCP    = false;
-static int              gControlSocket     = -1;
-static int              gControlSocketTCP  = -1;
-static int              gTCPSocket         = -1;
-static int              gMPTCPSocket       = -1;
-static int              gUDPSocket         = -1;
-static int              gSCTPSocket        = -1;
-static int              gDCCPSocket        = -1;
-static double           gRuntime           = -1.0;
-static bool             gDisplayEnabled    = true;
-static bool             gStopTimeReached   = false;
-static const char*      gVectorNamePattern = "";
-static OutputFileFormat gVectorFileFormat  = OFF_None;
-static const char*      gScalarNamePattern = "";
-static OutputFileFormat gScalarFileFormat  = OFF_None;
-static const char*      gConfigName        = "";
+static const char*      gActiveNodeName        = "Client";
+static const char*      gPassiveNodeName       = "Server";
+static bool             gBindV6Only            = false;
+static int              gSndBufSize            = -1;
+static int              gRcvBufSize            = -1;
+static int              gControlSocket         = -1;
+static int              gControlSocketProtocol = IPPROTO_SCTP;
+static int              gControlSocketTCP      = -1;
+static int              gTCPSocket             = -1;
+static int              gMPTCPSocket           = -1;
+static int              gUDPSocket             = -1;
+static int              gSCTPSocket            = -1;
+static int              gDCCPSocket            = -1;
+static double           gRuntime               = -1.0;
+static bool             gDisplayEnabled        = true;
+static bool             gStopTimeReached       = false;
+static const char*      gVectorNamePattern     = "";
+static OutputFileFormat gVectorFileFormat      = OFF_None;
+static const char*      gScalarNamePattern     = "";
+static OutputFileFormat gScalarFileFormat      = OFF_None;
+static const char*      gConfigName            = "";
 
 struct AssocSpec
 {
@@ -100,13 +100,46 @@ static MessageReader  gMessageReader;
 {
    std::cerr << "Usage:\n"
       << "* Passive (Server) Side:\n  " << program
-      << " local_port [-control-over-tcp] [-loglevel=level] [-logcolor=on|off] [-logappend=file] [-logfile=file] [-logstderr] [-quiet] [-verbose] [-display] [-nodisplay] [-v6only]\n"
-      << "* Active (Client) Side:\n  " << program
-      << " remote_endpoint:remote_port [-control-over-tcp]   [-local=Address[,Address,...]]   [-controllocal=Address[,Address,...]]   [-runtime=Seconds]    [-config=Name] [-scalar=Name] [-vector=Name] [-activenodename=Description] [-passivenodename=Description] [-loglevel=level] [-logcolor=on|off] [-logappend=file] [-logfile=file] [-logstderr] [-quiet] [-verbose] [-display] [-nodisplay] [-v6only] [-sndbuf=bytes] [-rcvbuf=bytes] [-tcp FLOWSPEC] [-mptcp FLOWSPEC] [-udp FLOWSPEC] [-dccpFLOWSPEC] [-sctpFLOWSPEC -[...]]\n"
-      << "* Version:\n  " << program
-      << " [-v | -version]\n"
-      << "* Help:\n  " << program
-      << " [-h | -help]\n";
+      << " local_port\n"
+         "    [--control-over-sctp|-control-over-tcp|-control-over-mptcp]\n"
+         "    [-L address[,address,...]|--local address[,address,...]]\n"
+         "    [-J address[,address,...]|--controllocal address[,address,...]]\n"
+         "    [-6|--v6only]\n"
+         "    [--display|--nodisplay]\n"
+         "    [--loglevel level]\n"
+         "    [--logcolor on|off]\n"
+         "    [--logfile file]\n"
+         "    [--logappend file]\n"
+         "    [-q|--quiet]\n"
+         "    [-!|--verbose]\n"
+      << "* Active (Client) Side:\n  " << program << " remote_endpoint:remote_port\n"
+         "    [--control-over-sctp|-control-over-tcp|-control-over-mptcp]\n"
+         "    [-L address[,address,...]|--local address[,address,...]]\n"
+         "    [-J address[,address,...]|--controllocal address[,address,...]]\n"
+         "    [-6|--v6only]\n"
+         "    [--display|--nodisplay]\n"
+         "    [-o bytes|--sndbuf bytes]\n"
+         "    [-i bytes|--rcvbuf bytes]\n"
+         "    [-T seconds|--runtime seconds]\n"
+         "    [-C configuration_file_pattern|--config configuration_file_pattern]\n"
+         "    [-S scalar_file_pattern|--scalar scalar_file_pattern]\n"
+         "    [-V vector_file_pattern|--vector vector_file_pattern]\n"
+         "    [-A description|--activenodename description]\n"
+         "    [-P description|--passivenodename description]\n"
+         "    [--tcp FLOWSPEC]\n"
+         "    [--mptcp FLOWSPEC]\n"
+         "    [--udp FLOWSPEC]\n"
+         "    [--dccp FLOWSPEC]\n"
+         "    [--sctp FLOWSPEC [FLOWSPEC ...]]\n"
+         "    [--loglevel level]\n"
+         "    [--logcolor on|off]\n"
+         "    [--logfile file]\n"
+         "    [--logappend file]\n"
+         "    [-q|--quiet]\n"
+         "    [-!|--verbose]\n"
+         "  with FLOWSPEC [outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:[options[:...]]\n"
+      << "* Version:\n  " << program << " [-v|--version]\n"
+      << "* Help:\n  "    << program << " [-h|--help]\n";
    exit(exitCode);
 }
 
@@ -115,31 +148,36 @@ static MessageReader  gMessageReader;
 bool handleGlobalParameters(int argc, char** argv)
 {
    const static struct option long_options[] = {
-      { "logfile",                       required_argument, 0, 0x1000 },
-      { "logappend",                     required_argument, 0, 0x1001 },
-      { "logcolor",                      required_argument, 0, 0x1002 },
-      { "loglevel",                      required_argument, 0, 0x1003 },
-      { "quiet",                         no_argument,       0, 'q'    },
-      { "verbose",                       no_argument,       0, '!'    },
-
-      { "runtime",                       required_argument, 0, 'T'    },
-      { "control-over-tcp",              no_argument,       0, 0x2001 },
-      { "control-over-mptcp",            no_argument,       0, 0x2002 },
-      { "activenodename",                required_argument, 0, 'A'    },
-      { "passivenodename",               required_argument, 0, 'P'    },
-      { "sndbuf",                        required_argument, 0, 'i'    },
-      { "rcvbuf",                        required_argument, 0, 'o'    },
-      { "v6only",                        no_argument,       0, '6'    },
-      { "display",                       no_argument,       0, 0x3001 },
-      { "nodisplay",                     no_argument,       0, 0x3002 },
+      { "control-over-sctp",             no_argument,       0, 0x1000 },
+      { "control-over-tcp",              no_argument,       0, 0x1001 },
+      { "control-over-mptcp",            no_argument,       0, 0x1002 },
       { "local",                         required_argument, 0, 'L'    },
       { "controllocal",                  required_argument, 0, 'C'    },
+      { "display",                       no_argument,       0, 0x2001 },
+      { "nodisplay",                     no_argument,       0, 0x2002 },
+      { "v6only",                        no_argument,       0, '6'    },
+
+      { "runtime",                       required_argument, 0, 'T'    },
+      { "sndbuf",                        required_argument, 0, 'i'    },
+      { "rcvbuf",                        required_argument, 0, 'o'    },
+      { "config",                        required_argument, 0, 'S'    },
+      { "scalar",                        required_argument, 0, 'V'    },
+      { "vector",                        required_argument, 0, 'C'    },
+      { "activenodename",                required_argument, 0, 'A'    },
+      { "passivenodename",               required_argument, 0, 'P'    },
 
       { "tcp",                           required_argument, 0, 't'    },
       { "mptcp",                         required_argument, 0, 'm'    },
       { "udp",                           required_argument, 0, 'u'    },
       { "dccp",                          required_argument, 0, 'd'    },
       { "sctp",                          required_argument, 0, 's'    },
+
+      { "logfile",                       required_argument, 0, 0x1000 },
+      { "logappend",                     required_argument, 0, 0x1001 },
+      { "logcolor",                      required_argument, 0, 0x1002 },
+      { "loglevel",                      required_argument, 0, 0x1003 },
+      { "quiet",                         no_argument,       0, 'q'    },
+      { "verbose",                       no_argument,       0, '!'    },
 
       { "help",                          no_argument,       0, 'h'    },
       { "version",                       no_argument,       0, 'v'    },
@@ -150,103 +188,14 @@ bool handleGlobalParameters(int argc, char** argv)
    int      longIndex;
    while( (option = getopt_long_only(argc, argv, "q!T:A:P:o:i:6L:J:V:S:C:t:m:u:d:s:hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
-         case 't':
-         case 'm':
-         case 'u':
-         case 'd':
-         case 's':
-            {
-               AssocSpec flow;
-               flow.Flows.push_back(optarg);
-               switch(option) {
-                  case 't':
-                     flow.Protocol = IPPROTO_TCP;
-                   break;
-                  case 'm':
-                     flow.Protocol = IPPROTO_MPTCP;
-                   break;
-                  case 'u':
-                     flow.Protocol = IPPROTO_UDP;
-                   break;
-                  case 'd':
-#ifdef HAVE_DCCP
-                     flow.Protocol = IPPROTO_DCCP;
-#else
-                     std::cerr << "ERROR: DCCP support is not compiled in!" << "\n";
-                     exit(1);
-#endif
-                   break;
-                  case 's':
-                     flow.Protocol = IPPROTO_SCTP;
-                     while( (optind < argc) && (argv[optind][0] != '-')) {
-                        flow.Flows.push_back(argv[optind]);
-                        optind++;
-                     }
-                   break;
-                  default:
-                     abort();
-               }
-               gAssocSpecs.push_back(flow);
-            }
-          break;
          case 0x1000:
-            if(!initLogFile(gLogLevel,optarg,"w")) {
-               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
-               exit(1);
-            }
+            gControlSocketProtocol = IPPROTO_SCTP;
           break;
          case 0x1001:
-            if(!initLogFile(gLogLevel,optarg,"a")) {
-               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
-               exit(1);
-            }
+            gControlSocketProtocol = IPPROTO_TCP;
           break;
          case 0x1002:
-            if(!(strcmp(optarg,"off"))) {
-               gColorMode = false;
-            }
-            else {
-               gColorMode = true;
-            }
-          break;
-         case 0x1003:
-            gLogLevel = std::min((unsigned int)atoi(optarg),MAX_LOGLEVEL);
-          break;
-         case 'q':
-            gLogLevel = LOGLEVEL_ERROR;
-          break;
-         case '!':
-            gLogLevel = LOGLEVEL_TRACE;
-          break;
-         case 'T':
-            gRuntime = atof(optarg);
-          break;
-         case 0x2001:
-            gControlOverTCP = true;
-          break;
-         case 0x2002:
-            gControlOverTCP = true;   // FIXME!
-          break;
-         case 'A':
-            gActiveNodeName = optarg;
-          break;
-         case 'P':
-            gPassiveNodeName = optarg;
-          break;
-         case 'o':
-            gSndBufSize = atol(optarg);
-          break;
-         case 'i':
-            gRcvBufSize = atol(optarg);
-          break;
-         case '6':
-            gBindV6Only = true;
-          break;
-         case 0x3001:
-            gDisplayEnabled = true;
-          break;
-         case 0x3002:
-            gDisplayEnabled = false;
+            gControlSocketProtocol = IPPROTO_MPTCP;
           break;
          case 'L':
             {
@@ -292,16 +241,26 @@ bool handleGlobalParameters(int argc, char** argv)
                }
             }
           break;
-         case 'V':
-            gVectorNamePattern = optarg;
-            if(gVectorNamePattern[0] == 0x00)
-               gVectorFileFormat = OFF_None;
-            else if(hasSuffix(gVectorNamePattern, ".bz2")) {
-               gVectorFileFormat = OFF_BZip2;
-            }
-            else {
-               gVectorFileFormat = OFF_Plain;
-            }
+         case '6':
+            gBindV6Only = true;
+          break;
+         case 0x2001:
+            gDisplayEnabled = true;
+          break;
+         case 0x2002:
+            gDisplayEnabled = false;
+          break;
+         case 'o':
+            gSndBufSize = atol(optarg);
+          break;
+         case 'i':
+            gRcvBufSize = atol(optarg);
+          break;
+         case 'T':
+            gRuntime = atof(optarg);
+          break;
+         case 'C':
+            gConfigName = optarg;
           break;
          case 'S':
             gScalarNamePattern = optarg;
@@ -314,8 +273,90 @@ bool handleGlobalParameters(int argc, char** argv)
                gScalarFileFormat = OFF_Plain;
             }
           break;
-         case 'C':
-            gConfigName = optarg;
+         case 'V':
+            gVectorNamePattern = optarg;
+            if(gVectorNamePattern[0] == 0x00)
+               gVectorFileFormat = OFF_None;
+            else if(hasSuffix(gVectorNamePattern, ".bz2")) {
+               gVectorFileFormat = OFF_BZip2;
+            }
+            else {
+               gVectorFileFormat = OFF_Plain;
+            }
+          break;
+         case 'A':
+            gActiveNodeName = optarg;
+          break;
+         case 'P':
+            gPassiveNodeName = optarg;
+          break;
+         case 't':
+         case 'm':
+         case 'u':
+         case 'd':
+         case 's':
+            {
+               AssocSpec flow;
+               flow.Flows.push_back(optarg);
+               switch(option) {
+                  case 't':
+                     flow.Protocol = IPPROTO_TCP;
+                   break;
+                  case 'm':
+                     flow.Protocol = IPPROTO_MPTCP;
+                   break;
+                  case 'u':
+                     flow.Protocol = IPPROTO_UDP;
+                   break;
+                  case 'd':
+#ifdef HAVE_DCCP
+                     flow.Protocol = IPPROTO_DCCP;
+#else
+                     std::cerr << "ERROR: DCCP support is not compiled in!" << "\n";
+                     exit(1);
+#endif
+                   break;
+                  case 's':
+                     flow.Protocol = IPPROTO_SCTP;
+                     while( (optind < argc) && (argv[optind][0] != '-')) {
+                        flow.Flows.push_back(argv[optind]);
+                        optind++;
+                     }
+                   break;
+                  default:
+                     abort();
+               }
+               gAssocSpecs.push_back(flow);
+            }
+          break;
+         case 0x3000:
+            if(!initLogFile(gLogLevel,optarg,"w")) {
+               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
+               exit(1);
+            }
+          break;
+         case 0x3001:
+            if(!initLogFile(gLogLevel,optarg,"a")) {
+               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
+               exit(1);
+            }
+          break;
+         case 0x3002:
+            if(!(strcmp(optarg,"off"))) {
+               gColorMode = false;
+            }
+            else {
+               gColorMode = true;
+            }
+          break;
+         case 0x3003:
+            gLogLevel = std::min((unsigned int)atoi(optarg),MAX_LOGLEVEL);
+          break;
+         case 'q':
+            gLogLevel = LOGLEVEL_ERROR;
+          break;
+         case '!':
+            gLogLevel = LOGLEVEL_TRACE;
           break;
          case 'v':
             version();
@@ -1101,7 +1142,7 @@ void passiveMode(const uint16_t localPort)
       LOG_END_FATAL
    }
    sctp_event_subscribe events;
-   if(!gControlOverTCP) {
+   if(!gControlSocketProtocol) {
       // ------ Set default send parameters ---------------------------------
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
@@ -1126,7 +1167,7 @@ void passiveMode(const uint16_t localPort)
    }
    gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
 
-   gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP,
+   gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, gControlSocketProtocol,
                                            localPort + 1,
                                            gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                            true, gBindV6Only);
@@ -1343,8 +1384,7 @@ void activeMode(const char* remoteEndpoint)
    LOG_END
 
    // ====== Initialize control socket ======================================
-   const int controlSocketProtocol = (gControlOverTCP == false) ? IPPROTO_SCTP : IPPROTO_TCP;
-   gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, SOCK_STREAM, controlSocketProtocol,
+   gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, SOCK_STREAM, gControlSocketProtocol,
                                         0, gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                         false, gBindV6Only);
    if(gControlSocket < 0) {
@@ -1353,7 +1393,7 @@ void activeMode(const char* remoteEndpoint)
                        strerror(errno)) << "\n";
       LOG_END_FATAL
    }
-   if(gControlOverTCP == false) {
+   if(gControlSocketProtocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
@@ -1370,7 +1410,7 @@ void activeMode(const char* remoteEndpoint)
                        strerror(errno)) << "\n";
       LOG_END_FATAL
    }
-   if(gControlOverTCP == false) {
+   if(gControlSocketProtocol == IPPROTO_SCTP) {
       sctp_paddrparams paddr;
       memset(&paddr, 0, sizeof(paddr));
       memcpy(&paddr.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
@@ -1386,7 +1426,7 @@ void activeMode(const char* remoteEndpoint)
    LOG_TRACE
    stdlog << "<okay; sd=" << gControlSocket << ">\n";
    LOG_END
-   gMessageReader.registerSocket(controlSocketProtocol, gControlSocket);
+   gMessageReader.registerSocket(gControlSocketProtocol, gControlSocket);
 
 
    // ====== Handle command-line parameters =================================
