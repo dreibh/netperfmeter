@@ -56,84 +56,89 @@ _netperfmeter()
       cword="${COMP_CWORD}"
    fi
 
-   # echo "cur=$cur prev=$prev words=${words[@]} cword=$cword"
+   # echo "cur=${cur} prev=${prev} words=${words[@]} cword=${cword}"
    # echo ""
 
    # ====== Parameters ======================================================
    local flowSpec=0
-   if [ "$cword" -gt 1 ] ; then
+   if [ "${cword}" -gt 1 ] ; then
       if [ "${prev}" == "--tcp" ]   || \
          [ "${prev}" == "--mptcp" ] || \
          [ "${prev}" == "--udp" ]   || \
          [ "${prev}" == "--dccp" ]  || \
          [ "${prev}" == "--sctp" ] ; then
          flowSpec=1
-      elif [[ "${cur}" =~ ^(const|exp|pareto|uniform) ]] ; then
+      elif [[ "${prev}" =~ ^(const|exp|pareto|uniform) ]] ; then
          flowSpec=1
       fi
 
-      case "${cur}" in
-         #  ====== Generic value ============================================
-         -A | --activenodename  | \
-         -P | --passivenodename | \
-         -s | --sndbuf          | \
-         -i | --rcvbuf          | \
-         -T | --runtime)
-            return
-            ;;
-         # ====== Flowspec ==================================================
-         const*   | \
-         exp*     | \
-         pareto*  | \
-         uniform*)
-            # shellcheck disable=SC2155,SC2001
-            local base="$(echo "${cur}" | sed -e 's/:[^:]*$/:/')"
-            # shellcheck disable=SC2155,SC2001
-            local blocks="$(echo "${base}" | tr -cd ":" | wc -c)"
+      if [ "${flowSpec}" -eq 1 ] ; then
+         case "${cur}" in
+            # ====== Flowspec ==================================================
+            const*   | \
+            exp*     | \
+            pareto*  | \
+            uniform*)
+               # shellcheck disable=SC2155,SC2001
+               local base="$(echo "${cur}" | sed -e 's/:[^:]*$/:/')"
+               # shellcheck disable=SC2155,SC2001
+               local blocks="$(echo "${base}" | tr -cd ":" | wc -c)"
 
-            if [ "${blocks}" -lt 4 ] ; then
-               if [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)([0-9]+)$ ]] ; then
-                  # shellcheck disable=SC2207
-                  COMPREPLY=( $(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}, ${cur}:" -- "${cur}") )
-                  compopt -o nospace
-                  return
-               elif [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)$ ]] ; then
-                  # shellcheck disable=SC2207
-                  COMPREPLY=( $(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}," -- "${cur}") )
-                  compopt -o nospace
-                  return
+               if [ "${blocks}" -lt 4 ] ; then
+                  if [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)([0-9]+)$ ]] ; then
+                     # shellcheck disable=SC2207
+                     COMPREPLY=( $(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}, ${cur}:" -- "${cur}") )
+                     compopt -o nospace
+                     return
+                  elif [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)$ ]] ; then
+                     # shellcheck disable=SC2207
+                     COMPREPLY=( $(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}," -- "${cur}") )
+                     compopt -o nospace
+                     return
+                  else
+                     # shellcheck disable=SC2207
+                     COMPREPLY=( $( compgen -W "${base}const ${base}exp ${base}pareto ${base}uniform" -- "${cur}" ) )
+                     compopt -o nospace
+                     return
+                  fi
                else
                   # shellcheck disable=SC2207
-                  COMPREPLY=( $( compgen -W "${base}const ${base}exp ${base}pareto ${base}uniform" -- "${cur}" ) )
+                  COMPREPLY=( $( compgen -W "
+   ${base}cc=
+   ${base}cmt=
+   ${base}debug=
+   ${base}defragtimeout=
+   ${base}description=
+   ${base}error_on_abort=
+   ${base}id=
+   ${base}maxmsgsize=
+   ${base}nodelay=
+   ${base}onoff=
+   ${base}ordered=
+   ${base}rcvbuf=
+   ${base}reliable=
+   ${base}rtx_timeout=
+   ${base}rtx_trials=
+   ${base}sndbuf=
+   ${base}unordered=
+   ${base}unreliable=
+   ${base}v6only
+   " -- "${cur}" ) )
                   compopt -o nospace
                   return
                fi
-            else
-               # shellcheck disable=SC2207
-               COMPREPLY=( $( compgen -W "
-${base}cc=
-${base}cmt=
-${base}debug=
-${base}defragtimeout=
-${base}description=
-${base}error_on_abort=
-${base}id=
-${base}maxmsgsize=
-${base}nodelay=
-${base}onoff=
-${base}ordered=
-${base}rcvbuf=
-${base}reliable=
-${base}rtx_timeout=
-${base}rtx_trials=
-${base}sndbuf=
-${base}unordered=
-${base}unreliable=
-${base}v6only
-" -- "${cur}" ) )
-               compopt -o nospace
-               return
-            fi
+               ;;
+         esac
+      fi
+
+      case "${prev}" in
+         #  ====== Generic value ============================================
+         -A | --activenodename  | \
+         -P | --passivenodename | \
+         -o | --sndbuf          | \
+         -i | --rcvbuf          | \
+         -T | --runtime)
+            return
             ;;
          # ====== Local address =============================================
          -L | --local | \
@@ -158,6 +163,18 @@ ${base}v6only
             _filedir
             return
             ;;
+         # ====== Special case: log file ====================================
+         --logappend | \
+         --logfile)
+            _filedir '@(log)'
+            return
+            ;;
+         # ====== Special case: on/off ======================================
+         --logcolor)
+            # shellcheck disable=SC2207
+            COMPREPLY=( $(compgen -W "on off" -- "${cur}") )
+            return
+            ;;
       esac
 
    # ====== Port (passive side) or Address:Port (active side) ===============
@@ -169,8 +186,7 @@ ${base}v6only
 
 
    # ====== All options =====================================================
-   local opts1
-   local opts2
+   local opts
 
    # ------ Active side -----------------------------------------------------
    # echo "cword=$cword D=${words[1]}"
@@ -258,7 +274,6 @@ ${base}v6only
 
    # shellcheck disable=SC2207
    COMPREPLY=( $( compgen -W "${opts}" -- "${cur}" ) )
-   [[ ${COMPREPLY-} == *= ]] && compopt -o nospace
    [ ${flowSpec} -eq 1  ] && compopt -o nospace
    return 0
 }
