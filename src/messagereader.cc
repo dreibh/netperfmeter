@@ -224,6 +224,11 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          if(socket->Status == Socket::MRS_WaitingForHeader) {
             // ====== Handle SCTP notification header =======================
             if((socket->Protocol == IPPROTO_SCTP) && (*msgFlags & MSG_NOTIFICATION)) {
+#ifdef DEBUG_MESSAGEREADER
+                  printf("Socket %d:   notification L=%u\n",
+                         socket->SocketDescriptor,
+                         (unsigned int)sizeof(sctp_notification));
+#endif
                socket->MessageSize = sizeof(sctp_notification);   // maximum length
                socket->Status      = Socket::MRS_PartialRead;
                // SCTP notification has no TLV header, but must be handled like
@@ -235,7 +240,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                if(socket->BytesRead >= sizeof(TLVHeader)) {
                   const TLVHeader* header = (const TLVHeader*)socket->MessageBuffer;
 #ifdef DEBUG_MESSAGEREADER
-                  printf("Socket %d:   T=%u F=%02x L=%u   [Header]\n",
+                  printf("Socket %d:   header T=%u F=%02x L=%u   [Header]\n",
                           socket->SocketDescriptor,
                           (unsigned int)header->Type, (unsigned int)header->Flags,
                          ntohs(header->Length));
@@ -270,7 +275,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          // ====== Handle message payload ===================================
          if(socket->Status == Socket::MRS_PartialRead) {
 #ifdef DEBUG_MESSAGEREADER
-            printf("Socket %d:   T=%u F=%02x L=%u   [%u/%u]\n",
+            printf("Socket %d:   partial read T=%u F=%02x L=%u   [%u/%u]\n",
                    socket->SocketDescriptor,
                    ((const TLVHeader*)socket->MessageBuffer)->Type,
                    ((const TLVHeader*)socket->MessageBuffer)->Flags,
