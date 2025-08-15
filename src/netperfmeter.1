@@ -124,8 +124,10 @@ Specifying remote_endpoint:remote_port turns NetPerfMeter into active mode, i.e.
 Use SCTP for the control connection. This is the default, but may cause connection problems in restricted networks or due to NAT traversal.
 .It Fl Fl control-over-tcp
 Use TCP instead of SCTP for the control connection. This may be necessary in restricted networks and for NAT traversal.
+On the passive side, a TCP control socket is created in addition to the SCTP control socket. That is, control connections are accepted on both, SCTP and TCP.
 .It Fl Fl control-over-mptcp
 Use MPTCP instead of SCTP for the control connection.
+On the passive side, an MPTCP control socket is created in addition to the SCTP control socket. That is, control connections are accepted on both, SCTP and MPTCP.
 .It Fl L Ar address[,address,...] | Fl Fl local Ar address[,address,...]
 Specifies address(es) of the local *data* endpoint. For TCP, UDP and DCCP, only the first address is used!
 On an active node, this option applies to the following flows, i.e. it must be set before specifying a flow!
