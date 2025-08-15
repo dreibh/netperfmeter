@@ -137,7 +137,7 @@ static MessageReader  gMessageReader;
          "    [--logappend file]\n"
          "    [-q|--quiet]\n"
          "    [-!|--verbose]\n"
-         "  with FLOWSPEC [outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:[options[:...]]\n"
+         "  with FLOWSPEC := outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:[options[:...]\n"
       << "* Version:\n  " << program << " [-v|--version]\n"
       << "* Help:\n  "    << program << " [-h|--help]\n";
    exit(exitCode);
@@ -365,11 +365,13 @@ bool handleGlobalParameters(int argc, char** argv)
             usage(argv[0], 0);
           break;
          default:
-          break;
+            usage(argv[0], 1);
+          // break;
       }
    }
 
 finish:
+/*
    printf("optind=%d argc=%d\n", optind, argc);
    for(unsigned int i = optind;i < argc;i++) {
       printf("A[%u]=%s\n", i, argv[i]);
@@ -381,6 +383,7 @@ finish:
       }
       puts("");
    }
+*/
    return true;
 }
 
