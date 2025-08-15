@@ -605,7 +605,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
       LOG_END
       return false;
    }
-   if(!(pfd.revents & POLLIN)) {
+   if(!(pfd.revents & (POLLIN|POLLERR))) {
       LOG_TRACE
       stdlog << "<no answer>" << "\n";
       LOG_END

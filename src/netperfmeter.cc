@@ -1004,7 +1004,7 @@ bool mainLoop(const bool               isActiveMode,
       // ====== Incoming control message ====================================
       int controlID;
       for(controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
-         if(fds[controlID].revents & POLLIN) {
+         if(fds[controlID].revents & (POLLIN|POLLERR)) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
                const int newSD = ext_accept(gControlSocket, nullptr, 0);
@@ -1057,7 +1057,7 @@ bool mainLoop(const bool               isActiveMode,
       }
 
       // ====== Incoming data message =======================================
-      if( (tcpID >= 0) && (fds[tcpID].revents & POLLIN) ) {
+      if( (tcpID >= 0) && (fds[tcpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gTCPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
@@ -1067,7 +1067,7 @@ bool mainLoop(const bool               isActiveMode,
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
          }
       }
-      if( (mptcpID >= 0) && (fds[mptcpID].revents & POLLIN) ) {
+      if( (mptcpID >= 0) && (fds[mptcpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gMPTCPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
@@ -1077,12 +1077,12 @@ bool mainLoop(const bool               isActiveMode,
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_MPTCP, newSD);
          }
       }
-      if( (udpID >= 0) && (fds[udpID].revents & POLLIN) ) {
+      if( (udpID >= 0) && (fds[udpID].revents & (POLLIN|POLLERR)) ) {
          FlowManager::getFlowManager()->lock();
          handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDPSocket);
          FlowManager::getFlowManager()->unlock();
       }
-      if( (sctpID >= 0) && (fds[sctpID].revents & POLLIN) ) {
+      if( (sctpID >= 0) && (fds[sctpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gSCTPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
@@ -1093,7 +1093,7 @@ bool mainLoop(const bool               isActiveMode,
          }
       }
 #ifdef HAVE_DCCP
-      if( (dccpID >= 0) && (fds[dccpID].revents & POLLIN) ) {
+      if( (dccpID >= 0) && (fds[dccpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gDCCPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE

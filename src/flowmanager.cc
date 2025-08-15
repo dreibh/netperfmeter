@@ -928,7 +928,7 @@ void FlowManager::run()
             if(entry) {
 
                // ====== Handle data message ================================
-               if(entry->revents & POLLIN) {
+               if(entry->revents & (POLLIN|POLLERR)) {
                   const int protocol = FlowSet[i]->getTrafficSpec().Protocol;
 #ifdef DEBUG_POLL
                   std::cerr << "\tPOLLIN: flow " << FlowSet[i]->SocketDescriptor
@@ -974,7 +974,7 @@ void FlowManager::run()
 
                   // ====== Handle data message =============================
                   if( (ud->ToBeRemoved == false) &&
-                      (entry->revents & POLLIN) ) {
+                      (entry->revents & (POLLIN|POLLERR)) ) {
 #ifdef DEBUG_POLL
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                  << " protocol " << ud->Protocol << "\n";
