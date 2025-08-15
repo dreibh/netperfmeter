@@ -1517,8 +1517,9 @@ int main(int argc, char** argv)
    if(argc - optind != 1) {
       usage(argv[0], 1);
    }
-   const uint16_t localPort     = atol(argv[optind]);
-   const bool     inPassiveMode = (localPort >= 1) && (localPort < 65535);
+   const unsigned int localPort     = (index(argv[optind], ':') == nullptr) ?
+                                         atol(argv[optind]) : 0;
+   const bool         inPassiveMode = (localPort >= 1) && (localPort < 65535);
    if( (!inPassiveMode) && (gAssocSpecs.size() < 1) ) {
       std::cerr << "ERROR: No flows specified!\n";
       return 1;
@@ -1527,7 +1528,10 @@ int main(int argc, char** argv)
    // ====== Start logging ==================================================
    beginLogging();
    LOG_INFO
-   stdlog << "Network Performance Meter " << NETPERFMETER_VERSION << "\n";
+   stdlog << "Network Performance Meter " << NETPERFMETER_VERSION
+          << " in "
+          << ((inPassiveMode == true) ? "Passive Mode" : "Active Mode")
+          << "\n";
    LOG_END
 
    // ====== Run active or passive instance =================================
