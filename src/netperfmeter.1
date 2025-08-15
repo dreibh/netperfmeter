@@ -115,9 +115,11 @@ is a network performance meter for the TCP, MPTCP, UDP, DCCP and SCTP transport 
 The following arguments can to be provided:
 .Bl -tag -width indent
 .It local_port
-The port number for the passive side's data socket. The port number of the control socket will be port+1. Specifying a port number turns NetPerfMeter into passive mode, i.e. it will wait for incoming connections.
+The port number for the passive side's data socket for TCP, UDP, DCCP, SCTP. For MPTCP, the port number will be local_port-1, to allow for both, TCP and MPTCP connections. The port number of the control socket will be local_port+1.
+Specifying a port number turns NetPerfMeter into passive mode, i.e. it will wait for incoming connections.
 .It remote_endpoint:remote_port
-Specifies the passive endpoint to connect to. This will turn NetPerfMeter into active mode, i.e. it will connect to the specified remote endpoint.
+Specifies the passive endpoint to connect to (number as given for local_port on the passive instance).
+Specifying remote_endpoint:remote_port turns NetPerfMeter into active mode, i.e. it will connect to the specified remote endpoint.
 .It Fl Fl control-over-sctp
 Use SCTP for the control connection. This is the default, but may cause connection problems in restricted networks or due to NAT traversal.
 .It Fl Fl control-over-tcp
