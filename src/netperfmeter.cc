@@ -1133,54 +1133,57 @@ void passiveMode(const uint16_t localPort)
       ext_close(testSD);
    }
 
-   // ====== Initialize control socket ======================================
+   // ====== Initialize SCTP control socket =================================
    gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
                                         localPort + 1,
                                         gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                         true, gBindV6Only);
    if(gControlSocket < 0) {
       LOG_FATAL
-      stdlog << format("Failed to create and bind SCTP socket on port %d: %s!",
+      stdlog << format("Failed to create and bind SCTP control socket on port %d: %s!",
                        localPort + 1, strerror(errno)) << "\n";
       LOG_END_FATAL
    }
    sctp_event_subscribe events;
-   if(!gControlSocketProtocol) {
-      // ------ Set default send parameters ---------------------------------
-      sctp_sndrcvinfo sinfo;
-      memset(&sinfo, 0, sizeof(sinfo));
-      sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
-         LOG_FATAL
-         stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
 
-      // ------ Enable SCTP events ------------------------------------------
-      memset((char*)&events, 0 ,sizeof(events));
-      events.sctp_data_io_event     = 1;
-      events.sctp_association_event = 1;
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-         LOG_FATAL
-         stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
-                           gControlSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
-   }
-   gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
-
-   gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, gControlSocketProtocol,
-                                           localPort + 1,
-                                           gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
-                                           true, gBindV6Only);
-   if(gControlSocketTCP < 0) {
+   // ------ Set default send parameters ------------------------------------
+   sctp_sndrcvinfo sinfo;
+   memset(&sinfo, 0, sizeof(sinfo));
+   sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
+   if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
       LOG_FATAL
-      stdlog << format("Failed to create and bind TCP socket on port %d: %s!",
-                       localPort + 1, strerror(errno)) << "\n";
+      stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
+                        gControlSocket, strerror(errno)) << "\n";
       LOG_END_FATAL
    }
-   gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
+
+   // ------ Enable SCTP events ---------------------------------------------
+   memset((char*)&events, 0 ,sizeof(events));
+   events.sctp_data_io_event     = 1;
+   events.sctp_association_event = 1;
+   if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
+      LOG_FATAL
+      stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
+                        gControlSocket, strerror(errno)) << "\n";
+      LOG_END_FATAL
+   }
+
+   gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
+
+   // ====== Initialize TCP/MPTCP control socket ============================
+   if(gControlSocketProtocol != IPPROTO_SCTP) {
+      gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, gControlSocketProtocol,
+                                             localPort + 1,
+                                             gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
+                                             true, gBindV6Only);
+      if(gControlSocketTCP < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to create and bind TCP control socket on port %d: %s!",
+                        localPort + 1, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+      gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
+   }
 
    // ====== Initialize data socket for each protocol =======================
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
