@@ -143,12 +143,13 @@ Sets the receiver buffer size to the given number of bytes.
 Specifies the measurement runtime in seconds. After the given time span, NetPerfMeter will finish the measurement.
 .It Fl C Ar configuration_file_pattern | Fl Fl Ar config configuration_file_pattern
 Specifies the name pattern of the configuration files to write. For each, active and passive side, a configuration file is generated. The actual configuration file names are extended by -<active|passive> before the suffix.
+For example for measurement.config, the name of the configuration file on the active node will be measurement-active.config.
 .It Fl S Ar scalar_file_pattern | Fl Fl scalar Ar scalar_file_pattern
 Specifies the name pattern of the scalar files to write. If the suffix of this name is .bz2, the file will be BZip2-compressed on the fly. The scalar name is automatically extended to name the flow scalar files by adding -<active|passive>-<flow_id>-<stream_id> before the suffix.
-Default is scalar.vec.bz2, hence the name of the scalar file for flow 5, stream 2 on the passive node will be scalar-passive-00000005-0002.vec.bz2.
+For example for scalar.vec.bz2, the name of the scalar file for flow 5, stream 2 on the active node will be scalar-active-00000005-0002.vec.bz2.
 .It Fl V Ar vector_file_pattern | Fl Fl vector Ar vector_file_pattern
 Specifies the name pattern of the vector files to write. If the suffix of this name is .bz2, the file will be BZip2-compressed on the fly. The vector name is automatically extended to name the flow vector files by adding -<active|passive>-<flow_id>-<stream_id> before the suffix.
-Default is vector.vec.bz2, hence the name of the vector file for flow 5, stream 2 on the passive node will be vector-passive-00000005-0002.vec.bz2.
+For example for vector.vec.bz2, the name of the vector file for flow 5, stream 2 on the passive node will be vector-passive-00000005-0002.vec.bz2.
 .It Fl A Ar description | Fl Fl activenodename Ar description
 Sets a textual description of the active node (e.g. Client).
 .It Fl P Ar description | Fl Fl passivenodename Ar description
@@ -160,10 +161,11 @@ Default: 2 (info).
 Enables (on) or disables (off) the usage of ANSI color escape sequences to colorise the log output according to its level.
 Default: on.
 .It Fl Fl logappend Ar file
-Sets a file name for appending the log output to. If a file is set, no log output is made to the console.
-Otherwise, all log output will be written to the console.
+Sets a file name for appending the log output to.
+If a log file is set, no log output is made to the console (stderr). Otherwise, all log output will be written to the console.
 .It Fl Fl logfile Ar file
-Sets a file name for write the log output to. Existing content is truncated. If a file is set, no log output is made to the console. Otherwise, all log output will be written to the console.
+Sets a file name for writeing the log output to. Existing content is truncated.
+If a log file is set, no log output is made to the console (stderr). Otherwise, all log output will be written to the console.
 .It Fl q | Fl Fl quiet
 Sets the logging level to 4 (error).
 .It Fl ! | Fl Fl verbose
@@ -173,10 +175,12 @@ Establish a new TCP connection. The flow of this connection must be specified by
 For backwards compatibility, the option cmt=mptcp creates an MPTCP connection instead of a TCP connection.
 .It Fl m Ar FLOWSPEC | Fl Fl mptcp Ar FLOWSPEC
 Establish a new MPTCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
+Note: DCCP is not available on all platforms, yet. Currently, only Linux provides MPTCP in its official kernel.
 .It Fl u Ar FLOWSPEC | Fl Fl udp Ar FLOWSPEC
 Establish a new UDP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
 .It Fl d Ar FLOWSPEC | Fl Fl dccp Ar FLOWSPEC
-Establish a new DCCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter. Note, that DCCP is not available on all platforms yet. Currently, only Linux provides DCCP in its official kernel.
+Establish a new DCCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
+Note: DCCP is not available on all platforms, yet. Currently, only Linux provides DCCP in its official kernel.
 .It Fl s Ar FLOWSPEC | Fl Fl sctp Ar FLOWSPEC Ar [FLOWSPEC ...]
 Establish a new SCTP association. The streams of this association must be specified by one or more FLOWSPEC specifications as following parameters.
 .It FLOWSPEC
@@ -190,7 +194,7 @@ The frame size of the outgoing transfer (i.e. active node to passive node). If s
 .It incoming_frame_rate
 The frame rate of the incoming transfer (i.e. passive node to active node). See outgoing_frame_rate for details.
 .It incoming_frame_size
-The frame size of the incoming transfer (i.e. active node to passive node). See outgoing_frame_size for details.
+The frame size of the incoming transfer (i.e. passive node to active node). See outgoing_frame_size for details.
 .It Random distribution:
 Frame rate and frame size may be distributed randomly, using different random distributions. A new random value is drawn for the next frame send time or next frame size.
 The following distributions are supported:
