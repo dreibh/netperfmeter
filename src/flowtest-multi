@@ -29,6 +29,14 @@
 # Bash options:
 set -eu
 
+# This is a simple test to include all protocols and different features,
+# particularly to test the NetPerfMeter dissector of Wireshark/T-Shark:
+# - Different protocols, multiple flows of each protocol
+# - Different TCP, UDP, DCCP and SCTP message sizes
+#
+# Capture example:
+# tshark -i any -n -w netperfmeter.pcapng -f '(sctp port 9001) or ((tcp port 9000) or (tcp port 8999) or (udp port 9000) or (sctp port 9000) or (ip proto 33))'
+
 # ====== Handle arguments ===================================================
 if [ $# -lt 1 ] ; then
    echo >&2 "Usage: $0 server:port [runtime]"
@@ -54,14 +62,19 @@ rm -f vgcore.* core.* core
 
 # ====== Run NetPerfMeter ===================================================
 ./netperfmeter "${SERVER}:${PORT}" \
-   -config=multi.config -vector=multi.vec -scalar=multi.sca \
-   -tcp  const10:const1000:const10:const1000 \
-   -udp  const10:const1000:const10:const1000 \
-   -dccp const10:const1000:const10:const1000 \
+   -config=multi.config \
+   -vector=multi.vec \
+   -scalar=multi.sca \
+   -activenodename "Active Instance" \
+   -passivenodename "Passive Instance" \
+   -tcp   const10:const4096:const10:const4906:description="TCP" \
+   -mptcp const10:const4096:const10:const4906:description="MPTCP" \
+   -udp   const10:const1024:const10:const1024:description="UDP" \
+   -dccp  const10:const1024:const10:const1024:description="DCCP" \
    -sctp \
-      const2:const1000:const2:const1000 \
-      const2:const1000:const2:const1000 \
-      const2:const1000:const2:const1000 \
-      const2:const1000:const2:const1000 \
-      const2:const1000:const2:const1000 \
+      const1:const512:const5:const512:description="SCTP Stream 0" \
+      const2:const512:const4:const512:description="SCTP Stream 1" \
+      const3:const512:const3:const512:description="SCTP Stream 2" \
+      const4:const512:const2:const512:description="SCTP Stream 3" \
+      const5:const512:const1:const512:description="SCTP Stream 4" \
    -runtime="${RUNTIME}"

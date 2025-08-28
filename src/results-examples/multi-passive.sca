@@ -1,0 +1,222 @@
+scalar "netPerfMeter.passive.flow[0]" "First Transmission"      1756390114067448
+scalar "netPerfMeter.passive.flow[0]" "Last Transmission"       1756390124043804
+scalar "netPerfMeter.passive.flow[0]" "First Reception"         1756390114061407
+scalar "netPerfMeter.passive.flow[0]" "Last Reception"          1756390124006429
+scalar "netPerfMeter.passive.flow[0]" "Transmitted Bytes"       490600
+scalar "netPerfMeter.passive.flow[0]" "Transmitted Packets"     100
+scalar "netPerfMeter.passive.flow[0]" "Transmitted Frames"      100
+scalar "netPerfMeter.passive.flow[0]" "Transmitted Bit Rate"    393410.179027
+scalar "netPerfMeter.passive.flow[0]" "Transmitted Byte Rate"   49176.272378
+scalar "netPerfMeter.passive.flow[0]" "Transmitted Packet Rate" 10.023700
+scalar "netPerfMeter.passive.flow[0]" "Transmitted Frame Rate"  10.023700
+scalar "netPerfMeter.passive.flow[0]" "Received Bytes"          409600
+scalar "netPerfMeter.passive.flow[0]" "Received Packets"        100
+scalar "netPerfMeter.passive.flow[0]" "Received Frames"         50
+scalar "netPerfMeter.passive.flow[0]" "Received Bit Rate"       329491.478249
+scalar "netPerfMeter.passive.flow[0]" "Received Byte Rate"      41186.434781
+scalar "netPerfMeter.passive.flow[0]" "Received Packet Rate"    10.055282
+scalar "netPerfMeter.passive.flow[0]" "Received Frame Rate"     5.027641
+scalar "netPerfMeter.passive.flow[1]" "First Transmission"      1756390114067967
+scalar "netPerfMeter.passive.flow[1]" "Last Transmission"       1756390124025668
+scalar "netPerfMeter.passive.flow[1]" "First Reception"         1756390114061407
+scalar "netPerfMeter.passive.flow[1]" "Last Reception"          1756390124014317
+scalar "netPerfMeter.passive.flow[1]" "Transmitted Bytes"       490600
+scalar "netPerfMeter.passive.flow[1]" "Transmitted Packets"     100
+scalar "netPerfMeter.passive.flow[1]" "Transmitted Frames"      100
+scalar "netPerfMeter.passive.flow[1]" "Transmitted Bit Rate"    394147.203255
+scalar "netPerfMeter.passive.flow[1]" "Transmitted Byte Rate"   49268.400407
+scalar "netPerfMeter.passive.flow[1]" "Transmitted Packet Rate" 10.042479
+scalar "netPerfMeter.passive.flow[1]" "Transmitted Frame Rate"  10.042479
+scalar "netPerfMeter.passive.flow[1]" "Received Bytes"          409600
+scalar "netPerfMeter.passive.flow[1]" "Received Packets"        100
+scalar "netPerfMeter.passive.flow[1]" "Received Frames"         50
+scalar "netPerfMeter.passive.flow[1]" "Received Bit Rate"       329230.345698
+scalar "netPerfMeter.passive.flow[1]" "Received Byte Rate"      41153.793212
+scalar "netPerfMeter.passive.flow[1]" "Received Packet Rate"    10.047313
+scalar "netPerfMeter.passive.flow[1]" "Received Frame Rate"     5.023656
+scalar "netPerfMeter.passive.flow[2]" "First Transmission"      1756390114068298
+scalar "netPerfMeter.passive.flow[2]" "Last Transmission"       1756390124017593
+scalar "netPerfMeter.passive.flow[2]" "First Reception"         1756390114060997
+scalar "netPerfMeter.passive.flow[2]" "Last Reception"          1756390124006380
+scalar "netPerfMeter.passive.flow[2]" "Transmitted Bytes"       102400
+scalar "netPerfMeter.passive.flow[2]" "Transmitted Packets"     100
+scalar "netPerfMeter.passive.flow[2]" "Transmitted Frames"      100
+scalar "netPerfMeter.passive.flow[2]" "Transmitted Bit Rate"    82337.492254
+scalar "netPerfMeter.passive.flow[2]" "Transmitted Byte Rate"   10292.186532
+scalar "netPerfMeter.passive.flow[2]" "Transmitted Packet Rate" 10.050963
+scalar "netPerfMeter.passive.flow[2]" "Transmitted Frame Rate"  10.050963
+scalar "netPerfMeter.passive.flow[2]" "Received Bytes"          102400
+scalar "netPerfMeter.passive.flow[2]" "Received Packets"        100
+scalar "netPerfMeter.passive.flow[2]" "Received Frames"         50
+scalar "netPerfMeter.passive.flow[2]" "Received Bit Rate"       82369.879571
+scalar "netPerfMeter.passive.flow[2]" "Received Byte Rate"      10296.234946
+scalar "netPerfMeter.passive.flow[2]" "Received Packet Rate"    10.054917
+scalar "netPerfMeter.passive.flow[2]" "Received Frame Rate"     5.027458
+scalar "netPerfMeter.passive.flow[3]" "First Transmission"      1756390114069738
+scalar "netPerfMeter.passive.flow[3]" "Last Transmission"       1756390124043423
+scalar "netPerfMeter.passive.flow[3]" "First Reception"         1756390114061140
+scalar "netPerfMeter.passive.flow[3]" "Last Reception"          1756390124006292
+scalar "netPerfMeter.passive.flow[3]" "Transmitted Bytes"       102400
+scalar "netPerfMeter.passive.flow[3]" "Transmitted Packets"     100
+scalar "netPerfMeter.passive.flow[3]" "Transmitted Frames"      100
+scalar "netPerfMeter.passive.flow[3]" "Transmitted Bit Rate"    82136.141256
+scalar "netPerfMeter.passive.flow[3]" "Transmitted Byte Rate"   10267.017657
+scalar "netPerfMeter.passive.flow[3]" "Transmitted Packet Rate" 10.026384
+scalar "netPerfMeter.passive.flow[3]" "Transmitted Frame Rate"  10.026384
+scalar "netPerfMeter.passive.flow[3]" "Received Bytes"          102400
+scalar "netPerfMeter.passive.flow[3]" "Received Packets"        100
+scalar "netPerfMeter.passive.flow[3]" "Received Frames"         50
+scalar "netPerfMeter.passive.flow[3]" "Received Bit Rate"       82371.792809
+scalar "netPerfMeter.passive.flow[3]" "Received Byte Rate"      10296.474101
+scalar "netPerfMeter.passive.flow[3]" "Received Packet Rate"    10.055150
+scalar "netPerfMeter.passive.flow[3]" "Received Frame Rate"     5.027575
+scalar "netPerfMeter.passive.flow[4]" "First Transmission"      1756390114068896
+scalar "netPerfMeter.passive.flow[4]" "Last Transmission"       1756390124099786
+scalar "netPerfMeter.passive.flow[4]" "First Reception"         1756390114061539
+scalar "netPerfMeter.passive.flow[4]" "Last Reception"          1756390123074044
+scalar "netPerfMeter.passive.flow[4]" "Transmitted Bytes"       25600
+scalar "netPerfMeter.passive.flow[4]" "Transmitted Packets"     50
+scalar "netPerfMeter.passive.flow[4]" "Transmitted Frames"      51
+scalar "netPerfMeter.passive.flow[4]" "Transmitted Bit Rate"    20416.932097
+scalar "netPerfMeter.passive.flow[4]" "Transmitted Byte Rate"   2552.116512
+scalar "netPerfMeter.passive.flow[4]" "Transmitted Packet Rate" 4.984603
+scalar "netPerfMeter.passive.flow[4]" "Transmitted Frame Rate"  5.084295
+scalar "netPerfMeter.passive.flow[4]" "Received Bytes"          5120
+scalar "netPerfMeter.passive.flow[4]" "Received Packets"        10
+scalar "netPerfMeter.passive.flow[4]" "Received Frames"         5
+scalar "netPerfMeter.passive.flow[4]" "Received Bit Rate"       4544.796369
+scalar "netPerfMeter.passive.flow[4]" "Received Byte Rate"      568.099546
+scalar "netPerfMeter.passive.flow[4]" "Received Packet Rate"    1.109569
+scalar "netPerfMeter.passive.flow[4]" "Received Frame Rate"     0.554785
+scalar "netPerfMeter.passive.flow[5]" "First Transmission"      1756390114068902
+scalar "netPerfMeter.passive.flow[5]" "Last Transmission"       1756390124101124
+scalar "netPerfMeter.passive.flow[5]" "First Reception"         1756390114062251
+scalar "netPerfMeter.passive.flow[5]" "Last Reception"          1756390123578304
+scalar "netPerfMeter.passive.flow[5]" "Transmitted Bytes"       20480
+scalar "netPerfMeter.passive.flow[5]" "Transmitted Packets"     40
+scalar "netPerfMeter.passive.flow[5]" "Transmitted Frames"      41
+scalar "netPerfMeter.passive.flow[5]" "Transmitted Bit Rate"    16331.377037
+scalar "netPerfMeter.passive.flow[5]" "Transmitted Byte Rate"   2041.422130
+scalar "netPerfMeter.passive.flow[5]" "Transmitted Packet Rate" 3.987153
+scalar "netPerfMeter.passive.flow[5]" "Transmitted Frame Rate"  4.086831
+scalar "netPerfMeter.passive.flow[5]" "Received Bytes"          10240
+scalar "netPerfMeter.passive.flow[5]" "Received Packets"        20
+scalar "netPerfMeter.passive.flow[5]" "Received Frames"         10
+scalar "netPerfMeter.passive.flow[5]" "Received Bit Rate"       8608.611154
+scalar "netPerfMeter.passive.flow[5]" "Received Byte Rate"      1076.076394
+scalar "netPerfMeter.passive.flow[5]" "Received Packet Rate"    2.101712
+scalar "netPerfMeter.passive.flow[5]" "Received Frame Rate"     1.050856
+scalar "netPerfMeter.passive.flow[6]" "First Transmission"      1756390114069467
+scalar "netPerfMeter.passive.flow[6]" "Last Transmission"       1756390124110351
+scalar "netPerfMeter.passive.flow[6]" "First Reception"         1756390114062395
+scalar "netPerfMeter.passive.flow[6]" "Last Reception"          1756390123767575
+scalar "netPerfMeter.passive.flow[6]" "Transmitted Bytes"       15360
+scalar "netPerfMeter.passive.flow[6]" "Transmitted Packets"     30
+scalar "netPerfMeter.passive.flow[6]" "Transmitted Frames"      31
+scalar "netPerfMeter.passive.flow[6]" "Transmitted Bit Rate"    12237.966299
+scalar "netPerfMeter.passive.flow[6]" "Transmitted Byte Rate"   1529.745787
+scalar "netPerfMeter.passive.flow[6]" "Transmitted Packet Rate" 2.987785
+scalar "netPerfMeter.passive.flow[6]" "Transmitted Frame Rate"  3.087378
+scalar "netPerfMeter.passive.flow[6]" "Received Bytes"          15360
+scalar "netPerfMeter.passive.flow[6]" "Received Packets"        30
+scalar "netPerfMeter.passive.flow[6]" "Received Frames"         15
+scalar "netPerfMeter.passive.flow[6]" "Received Bit Rate"       12661.279853
+scalar "netPerfMeter.passive.flow[6]" "Received Byte Rate"      1582.659982
+scalar "netPerfMeter.passive.flow[6]" "Received Packet Rate"    3.091133
+scalar "netPerfMeter.passive.flow[6]" "Received Frame Rate"     1.545566
+scalar "netPerfMeter.passive.flow[7]" "First Transmission"      1756390114069733
+scalar "netPerfMeter.passive.flow[7]" "Last Transmission"       1756390124089539
+scalar "netPerfMeter.passive.flow[7]" "First Reception"         1756390114062328
+scalar "netPerfMeter.passive.flow[7]" "Last Reception"          1756390123837468
+scalar "netPerfMeter.passive.flow[7]" "Transmitted Bytes"       10240
+scalar "netPerfMeter.passive.flow[7]" "Transmitted Packets"     20
+scalar "netPerfMeter.passive.flow[7]" "Transmitted Frames"      21
+scalar "netPerfMeter.passive.flow[7]" "Transmitted Bit Rate"    8175.806997
+scalar "netPerfMeter.passive.flow[7]" "Transmitted Byte Rate"   1021.975875
+scalar "netPerfMeter.passive.flow[7]" "Transmitted Packet Rate" 1.996047
+scalar "netPerfMeter.passive.flow[7]" "Transmitted Frame Rate"  2.095849
+scalar "netPerfMeter.passive.flow[7]" "Received Bytes"          20480
+scalar "netPerfMeter.passive.flow[7]" "Received Packets"        40
+scalar "netPerfMeter.passive.flow[7]" "Received Frames"         20
+scalar "netPerfMeter.passive.flow[7]" "Received Bit Rate"       16760.885266
+scalar "netPerfMeter.passive.flow[7]" "Received Byte Rate"      2095.110658
+scalar "netPerfMeter.passive.flow[7]" "Received Packet Rate"    4.092013
+scalar "netPerfMeter.passive.flow[7]" "Received Frame Rate"     2.046007
+scalar "netPerfMeter.passive.flow[8]" "First Transmission"      1756390114070352
+scalar "netPerfMeter.passive.flow[8]" "Last Transmission"       1756390124082992
+scalar "netPerfMeter.passive.flow[8]" "First Reception"         1756390114071350
+scalar "netPerfMeter.passive.flow[8]" "Last Reception"          1756390123891447
+scalar "netPerfMeter.passive.flow[8]" "Transmitted Bytes"       5120
+scalar "netPerfMeter.passive.flow[8]" "Transmitted Packets"     10
+scalar "netPerfMeter.passive.flow[8]" "Transmitted Frames"      11
+scalar "netPerfMeter.passive.flow[8]" "Transmitted Bit Rate"    4090.829192
+scalar "netPerfMeter.passive.flow[8]" "Transmitted Byte Rate"   511.353649
+scalar "netPerfMeter.passive.flow[8]" "Transmitted Packet Rate" 0.998738
+scalar "netPerfMeter.passive.flow[8]" "Transmitted Frame Rate"  1.098611
+scalar "netPerfMeter.passive.flow[8]" "Received Bytes"          25600
+scalar "netPerfMeter.passive.flow[8]" "Received Packets"        50
+scalar "netPerfMeter.passive.flow[8]" "Received Frames"         25
+scalar "netPerfMeter.passive.flow[8]" "Received Bit Rate"       20855.191145
+scalar "netPerfMeter.passive.flow[8]" "Received Byte Rate"      2606.898893
+scalar "netPerfMeter.passive.flow[8]" "Received Packet Rate"    5.091599
+scalar "netPerfMeter.passive.flow[8]" "Received Frame Rate"     2.545800
+scalar "netPerfMeter.passive.total" "First Statistics Event"  1756390114070976
+scalar "netPerfMeter.passive.total" "Last Statistics Event"   1756390124145534
+scalar "netPerfMeter.passive.total" "Transmitted Bytes"       1262800
+scalar "netPerfMeter.passive.total" "Transmitted Packets"     550
+scalar "netPerfMeter.passive.total" "Transmitted Frames"      555
+scalar "netPerfMeter.passive.total" "Transmitted Byte Rate"   125345.449398
+scalar "netPerfMeter.passive.total" "Transmitted Packet Rate" 54.592966
+scalar "netPerfMeter.passive.total" "Transmitted Frame Rate"  55.089265
+scalar "netPerfMeter.passive.total" "Received Bytes"          1100800
+scalar "netPerfMeter.passive.total" "Received Packets"        550
+scalar "netPerfMeter.passive.total" "Received Frames"         275
+scalar "netPerfMeter.passive.total" "Received Byte Rate"      109265.339482
+scalar "netPerfMeter.passive.total" "Received Packet Rate"    54.592966
+scalar "netPerfMeter.passive.total" "Received Frame Rate"     27.296483
+scalar "netPerfMeter.passive.total" "Lost Bytes"              0
+scalar "netPerfMeter.passive.total" "Lost Packets"            0
+scalar "netPerfMeter.passive.total" "Lost Frames"             0
+scalar "netPerfMeter.passive.total" "Lost Byte Rate"          0.000000
+scalar "netPerfMeter.passive.total" "Lost Packet Rate"        0.000000
+scalar "netPerfMeter.passive.total" "Lost Frame Rate"         0.000000
+scalar "netPerfMeter.passive.CPU[1]" "User" 4.096
+scalar "netPerfMeter.passive.CPU[1]" "Nice" 0.000
+scalar "netPerfMeter.passive.CPU[1]" "System" 0.300
+scalar "netPerfMeter.passive.CPU[1]" "Idle" 95.504
+scalar "netPerfMeter.passive.CPU[1]" "IOWait" 0.000
+scalar "netPerfMeter.passive.CPU[1]" "Hardware Interrupts" 0.000
+scalar "netPerfMeter.passive.CPU[1]" "Software Interrupts" 0.100
+scalar "netPerfMeter.passive.CPU[1]" "Hypervisor" 0.000
+scalar "netPerfMeter.passive.CPU[2]" "User" 4.617
+scalar "netPerfMeter.passive.CPU[2]" "Nice" 0.000
+scalar "netPerfMeter.passive.CPU[2]" "System" 0.420
+scalar "netPerfMeter.passive.CPU[2]" "Idle" 92.235
+scalar "netPerfMeter.passive.CPU[2]" "IOWait" 0.000
+scalar "netPerfMeter.passive.CPU[2]" "Hardware Interrupts" 0.000
+scalar "netPerfMeter.passive.CPU[2]" "Software Interrupts" 2.728
+scalar "netPerfMeter.passive.CPU[2]" "Hypervisor" 0.000
+scalar "netPerfMeter.passive.CPU[3]" "User" 4.925
+scalar "netPerfMeter.passive.CPU[3]" "Nice" 0.000
+scalar "netPerfMeter.passive.CPU[3]" "System" 0.402
+scalar "netPerfMeter.passive.CPU[3]" "Idle" 94.673
+scalar "netPerfMeter.passive.CPU[3]" "IOWait" 0.000
+scalar "netPerfMeter.passive.CPU[3]" "Hardware Interrupts" 0.000
+scalar "netPerfMeter.passive.CPU[3]" "Software Interrupts" 0.000
+scalar "netPerfMeter.passive.CPU[3]" "Hypervisor" 0.000
+scalar "netPerfMeter.passive.CPU[4]" "User" 4.500
+scalar "netPerfMeter.passive.CPU[4]" "Nice" 0.000
+scalar "netPerfMeter.passive.CPU[4]" "System" 0.300
+scalar "netPerfMeter.passive.CPU[4]" "Idle" 95.200
+scalar "netPerfMeter.passive.CPU[4]" "IOWait" 0.000
+scalar "netPerfMeter.passive.CPU[4]" "Hardware Interrupts" 0.000
+scalar "netPerfMeter.passive.CPU[4]" "Software Interrupts" 0.000
+scalar "netPerfMeter.passive.CPU[4]" "Hypervisor" 0.000
+scalar "netPerfMeter.passive.totalCPU" "User" 4.533
+scalar "netPerfMeter.passive.totalCPU" "Nice" 0.000
+scalar "netPerfMeter.passive.totalCPU" "System" 0.355
+scalar "netPerfMeter.passive.totalCPU" "Idle" 94.454
+scalar "netPerfMeter.passive.totalCPU" "IOWait" 0.000
+scalar "netPerfMeter.passive.totalCPU" "Hardware Interrupts" 0.000
+scalar "netPerfMeter.passive.totalCPU" "Software Interrupts" 0.658
+scalar "netPerfMeter.passive.totalCPU" "Hypervisor" 0.000
