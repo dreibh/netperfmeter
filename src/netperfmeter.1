@@ -72,7 +72,7 @@ remote_endpoint:remote_port
 .br
 .Op Fl T Ar seconds | Fl Fl runtime Ar seconds
 .br
-.Op Fl C Ar configuration_file_pattern | Fl Fl Ar config configuration_file_pattern
+.Op Fl C Ar configuration_file | Fl Fl Ar config configuration_file
 .br
 .Op Fl S Ar scalar_file_pattern | Fl Fl scalar Ar scalar_file_pattern
 .br
@@ -145,9 +145,8 @@ Sets the sender buffer size to the given number of bytes.
 Sets the receiver buffer size to the given number of bytes.
 .It Fl T Ar seconds | Fl Fl runtime Ar seconds
 Specifies the measurement runtime in seconds. After the given time span, NetPerfMeter will finish the measurement.
-.It Fl C Ar configuration_file_pattern | Fl Fl Ar config configuration_file_pattern
-Specifies the name pattern of the configuration files to write. For each, active and passive side, a configuration file is generated. The actual configuration file names are extended by -<active|passive> before the suffix.
-For example for measurement.config, the name of the configuration file on the active node will be measurement-active.config.
+.It Fl C Ar configuration_file | Fl Fl Ar config configuration_file
+Specifies the name of the configuration file to write. The configuration file will contain the used flow parameters.
 .It Fl S Ar scalar_file_pattern | Fl Fl scalar Ar scalar_file_pattern
 Specifies the name pattern of the scalar files to write. If the suffix of this name is .bz2, the file will be BZip2-compressed on the fly. The scalar name is automatically extended to name the flow scalar files by adding -<active|passive>-<flow_id>-<stream_id> before the suffix.
 For example for scalar.vec.bz2, the name of the scalar file for flow 5, stream 2 on the active node will be scalar-active-00000005-0002.vec.bz2.

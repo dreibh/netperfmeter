@@ -160,9 +160,9 @@ bool handleGlobalParameters(int argc, char** argv)
       { "runtime",                       required_argument, 0, 'T'    },
       { "sndbuf",                        required_argument, 0, 'i'    },
       { "rcvbuf",                        required_argument, 0, 'o'    },
-      { "config",                        required_argument, 0, 'S'    },
-      { "scalar",                        required_argument, 0, 'V'    },
-      { "vector",                        required_argument, 0, 'C'    },
+      { "config",                        required_argument, 0, 'C'    },
+      { "scalar",                        required_argument, 0, 'S'    },
+      { "vector",                        required_argument, 0, 'V'    },
       { "activenodename",                required_argument, 0, 'A'    },
       { "passivenodename",               required_argument, 0, 'P'    },
 
