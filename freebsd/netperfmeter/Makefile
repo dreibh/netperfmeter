@@ -15,7 +15,7 @@ BUILD_DEPENDS=	gm:graphics/GraphicsMagick \
 		pdf2svg:graphics/pdf2svg \
 		gs:print/ghostscript10
 
-USES=		cmake compiler:c11 shebangfix tar:xz
+USES=		cmake compiler:c11 desktop-file-utils shebangfix tar:xz
 
 SHEBANG_FILES=	src/pdfembedfonts src/setpdfmetadata src/plot-netperfmeter-results
 
