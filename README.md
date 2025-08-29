@@ -8,11 +8,13 @@
 
 # What is Network Performance Meter&nbsp;(NetPerfMeter)?
 
-NetPerfMeter is a network performance meter for the TCP, MPTCP, UDP, DCCP and SCTP transport protocols over IPv4 and IPv6. It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. The results can be written as scalar files (summary of the run) and vector files (details per frame). These files can be processed further, e.g.&nbsp;for analysis and plotting of the results.
+NetPerfMeter is a network performance meter for the [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol), [MPTCP](https://en.wikipedia.org/wiki/MPTCP), [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol), [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol), and [DCCP](https://en.wikipedia.org/wiki/DCCP) transport protocols over [IPv4](https://en.wikipedia.org/wiki/IPv4) and [IPv6](https://en.wikipedia.org/wiki/Ipv6). It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. Flows can be saturated ("send as much as possible") or non-saturated with frame rate and frame sizes (like a multimedia transmission). Non-saturated flows can be configured with constant or variable frame rate/frame size, i.e.&nbsp;to realise [Constant Bit Rate&nbsp;(CBR)](https://en.wikipedia.org/wiki/Constant_bitrate) or [Variable Bit Rate&nbsp;(VBR)](https://en.wikipedia.org/wiki/Variable_bitrate) traffic. Of course, the flow parameters can be individually configured per flow as well as per flow direction.
+The results can be written as scalar files (summary of the run) and vector files (time series). These files can be processed further, e.g.&nbsp;for analysis and plotting of the results.
+The [Wireshark](https://www.wireshark.org/) network protocol analyser provides out-of-the-box support for analysing NetPerfMeter traffic.
 
-<p class="center">
- <a href="screenshot-mptcp.webp"><img alt="Screenshot of NetPerfMeter run" src="screenshot-mptcp.webp" width="75%" /></a><br />
- A NetPerfMeter Run
+<p align="center">
+ <a href="src/figures/NetPerfMeter-Active-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Active-Screenshot.webp" width="768pt" /></a><br />
+ A NetPerfMeter Run with an SCTP Flow
 </p>
 
 
@@ -47,12 +49,16 @@ Clearly, the NetPerfMeter application provides features similar to the [NetPerfM
  The Concept of a NetPerfMeter Measurement
 </p>
 
-Similar to the [NetPerfMeter simulation model in OMNeT++](https://doc.omnetpp.org/inet/api-4.4.0/neddoc/inet.applications.netperfmeter.NetPerfMeter.html), an application instance may either be in *Active Mode* (client side) or *Passive Mode* (server side). The figure above illustrates the concept of a NetPerfMeter measurement. The passive instance accepts incoming NetPerfMeter connections from the active instance. The active instance controls the passive instance, by using a control protocol denoted as NetPerfMeter Control Protocol&nbsp;(NPMP-CONTROL). That is, the passive instance may run as a daemon; no manual interaction by the user – e.g.&nbsp;to restart it before a new measurement run – is required. This feature is highly practical for a setup distributed over multiple Internet sites (e.g.&nbsp;like the [NorNet Testbed](https://www.nntb.no/)) and allows for parameter studies consisting of many measurement runs. The payload data between active and passive instances is transported using the NetPerfMeter Data Protocol&nbsp;(NPMP-DATA). The figure below shows the protocol stack of a NetPerfMeter node.
+Similar to the [NetPerfMeter simulation model in OMNeT++](https://doc.omnetpp.org/inet/api-4.4.0/neddoc/inet.applications.netperfmeter.NetPerfMeter.html), an application instance may either be in *Active Mode* (client side) or *Passive Mode* (server side). The figure above illustrates the concept of a NetPerfMeter measurement. The passive instance accepts incoming NetPerfMeter connections from the active instance. The active instance controls the passive instance, by using a control protocol denoted as NetPerfMeter Control Protocol&nbsp;(NPMP-CONTROL). That is, the passive instance may run as a daemon; no manual interaction by the user – e.g.&nbsp;to restart it before a new measurement run – is required. This feature is highly practical for a setup distributed over multiple Internet sites (e.g.&nbsp;like the [NorNet Testbed](https://www.nntb.no/)) and allows for parameter studies consisting of many measurement runs.
+
+The payload data between active and passive instances is transported using the NetPerfMeter Data Protocol&nbsp;(NPMP-DATA). The figure below shows the protocol stack of a NetPerfMeter node.
 
 <p align="center">
  <a href="src/figures/EN-NetPerfMeter-ProtocolStack.svg"><img alt="Figure of the NetPerfMeter Protocol Stack" src="src/figures/EN-NetPerfMeter-ProtocolStack.svg" width="384pt" /></a><br />
  The NetPerfMeter Protocol Stack
 </p>
+
+The NPMP-DATA protocol transmits data as frames, with a given frame rate. In case of a saturated sender, the flow tries to send as many frames as possible (i.e.&nbsp;as allowed by the underlying transport and its flow and congestion control). Otherwise, the configured frame rate is used (e.g.&nbsp;25 frames/s as for typical video transmissions). NPMP-DATA breaks down frames into messages, to make sure that large frames can be transported over the underlying transport protocol. The maximum message size can be configured. Frames larger than the message size limit are split into multiple messages before sending them. On the receiving side, the messages are combined back into frames. The underlying transport protocol handles the messages as its payload.
 
 
 ## Measurement Processing
@@ -387,7 +393,7 @@ kldstat | grep sctp
    <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> wireshark multi.pcap.gz
    </pre>
    <p align="center">
-    <a href="src/figures/NetPerfMeter-Wireshark-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Wireshark-Screenshot.webp" width="512pt" /></a><br />
+    <a href="src/figures/NetPerfMeter-Wireshark-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Wireshark-Screenshot.webp" width="768pt" /></a><br />
     A Wireshark Run with NetPerfMeter Traffic from <tt>[multi.pcap.gz](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz)</tt>
    </p>
 
