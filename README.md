@@ -8,9 +8,9 @@
 
 # What is Network Performance Meter&nbsp;(NetPerfMeter)?
 
-NetPerfMeter is a network performance meter for the [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol), [MPTCP](https://en.wikipedia.org/wiki/MPTCP), [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol), [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol), and [DCCP](https://en.wikipedia.org/wiki/DCCP) transport protocols over [IPv4](https://en.wikipedia.org/wiki/IPv4) and [IPv6](https://en.wikipedia.org/wiki/Ipv6). It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. Flows can be saturated ("send as much as possible") or non-saturated with frame rate and frame sizes (like a multimedia transmission). Non-saturated flows can be configured with constant or variable frame rate/frame size, i.e.&nbsp;to realise [Constant Bit Rate&nbsp;(CBR)](https://en.wikipedia.org/wiki/Constant_bitrate) or [Variable Bit Rate&nbsp;(VBR)](https://en.wikipedia.org/wiki/Variable_bitrate) traffic. Of course, the flow parameters can be individually configured per flow as well as per flow direction.
-The results can be written as scalar files (summary of the run) and vector files (time series). These files can be processed further, e.g.&nbsp;for analysis and plotting of the results.
-The [Wireshark](https://www.wireshark.org/) network protocol analyser provides out-of-the-box support for analysing NetPerfMeter traffic.
+NetPerfMeter is a network performance meter for the [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol), [MPTCP](https://en.wikipedia.org/wiki/MPTCP), [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol), [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol), and [DCCP](https://en.wikipedia.org/wiki/DCCP) transport protocols over [IPv4](https://en.wikipedia.org/wiki/IPv4) and [IPv6](https://en.wikipedia.org/wiki/Ipv6). It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. Flows can be saturated (i.e.&nbsp;"send as much as possible") or non-saturated with frame rate and frame sizes (like a multimedia transmission). Non-saturated flows can be configured with constant or variable frame rate/frame size, i.e.&nbsp;to realise [Constant Bit Rate&nbsp;(CBR)](https://en.wikipedia.org/wiki/Constant_bitrate) or [Variable Bit Rate&nbsp;(VBR)](https://en.wikipedia.org/wiki/Variable_bitrate) traffic. For both, frame rate and frame size, it is not only possible to set constant values but to also to use random distributions. Furthermore, flows can be set up as on/off flows. Of course, the flow parameters can be configured individually per flow and flow direction.
+The measurement results can be recorded as scalar files (summary of the run) and vector files (time series). These files can be processed further, e.g.&nbsp;for detailed analysis and plotting of the results.
+The [Wireshark](https://www.wireshark.org/) network protocol analyser provides out-of-the-box support for analysing NetPerfMeter packet traffic.
 
 <p align="center">
  <a href="src/figures/NetPerfMeter-Active-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Active-Screenshot.webp" width="768pt" /></a><br />
@@ -45,7 +45,7 @@ Clearly, the NetPerfMeter application provides features similar to the [NetPerfM
 ## Instances and Protocols
 
 <p align="center">
- <a href="src/figures/EN-NetPerfMeter-MeasurementScenario.svg"><img alt="Figure of the Concept of a NetPerfMeter Measurement" src="src/figures/EN-NetPerfMeter-MeasurementScenario.svg" width="512pt" /></a><br />
+ <a href="src/figures/EN-NetPerfMeter-MeasurementScenario.svg"><img alt="Figure of the Concept of a NetPerfMeter Measurement" src="src/figures/EN-NetPerfMeter-MeasurementScenario.svg" width="640pt" /></a><br />
  The Concept of a NetPerfMeter Measurement
 </p>
 
@@ -433,7 +433,7 @@ For ready-to-install Ubuntu Linux packages of NetPerfMeter, see [Launchpad PPA f
 sudo apt-add-repository -sy ppa:dreibh/ppa
 sudo apt-get update
 sudo apt-get install netperfmeter
-<pre>
+</pre>
 
 ### Fedora Linux
 
@@ -442,7 +442,7 @@ For ready-to-install Fedora Linux packages of NetPerfMeter, see [COPR PPA for Th
 <pre>
 sudo dnf copr enable -y dreibh/ppa
 sudo dnf install netperfmeter
-<pre>
+</pre>
 
 ### FreeBSD
 
@@ -450,7 +450,7 @@ For ready-to-install FreeBSD packages of NetPerfMeter, it is included in the por
 
 <pre>
 pkg install netperfmeter
-<pre>
+</pre>
 
 Alternatively, to compile it from the ports sources:
 
@@ -458,11 +458,11 @@ Alternatively, to compile it from the ports sources:
 cd /usr/ports/benchmarks/netperfmeter
 make
 make install
-<pre>
+</pre>
 
 ## Sources Download
 
-NetPerfMeter is released under the GNU General Public Licence&nbsp;(GPL).
+NetPerfMeter is released under the [GNU General Public Licence&nbsp;(GPL)](https://www.gnu.org/licenses/gpl-3.0.en.html#license-text).
 
 Please use the issue tracker at [https://github.com/dreibh/netperfmeter/issues](https://github.com/dreibh/netperfmeter/issues) to report bugs and issues!
 
@@ -475,7 +475,7 @@ git clone https://github.com/dreibh/netperfmeter
 cd netperfmeter
 cmake .
 make
-<pre>
+</pre>
 
 Contributions:
 
