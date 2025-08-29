@@ -1,12 +1,12 @@
 <p align="center">
  <a href="https://www.nntb.no/~dreibh/netperfmeter/">
- <img alt="NetPerfMeter Logo" src="https://www.nntb.no/~dreibh/netperfmeter/EN-Logo-NetPerfMeter.svg" width="25%" /><br />
+ <img alt="NetPerfMeter Logo" src="https://www.nntb.no/~dreibh/netperfmeter/figures/EN-Logo-NetPerfMeter.svg" width="40%" /><br />
  https://www.nntb.no/~dreibh/netperfmeter/
  </a>
 </p>
 
 
-# 💡 What is Network Performance Meter&nbsp;(NetPerfMeter)? {#Description}
+# 💡 What is Network Performance Meter&nbsp;(NetPerfMeter)?
 
 NetPerfMeter is a network performance meter for the [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol), [MPTCP](https://en.wikipedia.org/wiki/MPTCP), [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol), [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol), and [DCCP](https://en.wikipedia.org/wiki/DCCP) transport protocols over [IPv4](https://en.wikipedia.org/wiki/IPv4) and [IPv6](https://en.wikipedia.org/wiki/Ipv6). It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. Flows can be saturated (i.e.&nbsp;"send as much as possible") or non-saturated with frame rate and frame sizes (like a multimedia transmission). Non-saturated flows can be configured with constant or variable frame rate/frame size, i.e.&nbsp;to realise [Constant Bit Rate&nbsp;(CBR)](https://en.wikipedia.org/wiki/Constant_bitrate) or [Variable Bit Rate&nbsp;(VBR)](https://en.wikipedia.org/wiki/Variable_bitrate) traffic. For both, frame rate and frame size, it is not only possible to set constant values but to also to use random distributions. Furthermore, flows can be set up as on/off flows. Of course, the flow parameters can be configured individually per flow and flow direction.
 The measurement results can be recorded as scalar files (summary of the run) and vector files (time series). These files can be processed further, e.g.&nbsp;for detailed analysis and plotting of the results.
@@ -112,13 +112,13 @@ Since usually not all scalars of a measurement are required for analysis (e.g.&n
 Having all relevant scalars stored in memory, a data file – which can be processed by [GNU&nbsp;R](https://www.r-project.org/), [LibreOffice](https://www.libreoffice.org/) or other programs – is written for each scalar. The data file is simply a table in text form, containing the column names on the first line. Each following line contains the data, with line number and an entry for each column (all separated by spaces); an example is provided in Listing&nbsp;3 of "[SimProcTC – The Design and Realization of a Powerful Tool-Chain for OMNeT++ Simulations](https://www.nntb.no/~dreibh/netperfmeter/#Publications-OMNeT__Workshop2009)". That is, each line consists of the settings of all parameters and the resulting scalar value. The data files are also BZip2-compressed on the fly, in order to reduce the storage space requirements.
 
 
-# 😀 Examples {#Examples}
+# 😀 Examples
 
 ## Preparations
 
 NetPerfMeter uses the SCTP protocol. It may be necessary to allow loading the SCTP kernel module first, if not already enabled. The following code blocks show how to enable it permanently.
 
-### Linux
+### SCTP on Linux
 
 <pre>
 echo "sctp" | sudo tee /etc/modules-load.d/sctp.conf
@@ -129,7 +129,7 @@ sudo modprobe sctp
 lsmod | grep sctp
 </pre>
 
-### FreeBSD
+### SCTP on FreeBSD
 
 <pre>
 echo 'sctp_load="YES"' | sudo tee --append /boot/loader.conf
@@ -426,11 +426,11 @@ kldstat | grep sctp
   Note: NetPerfMeter &ge;2.0 is required!
 
 
-# 📦 Binary Package Installation {#Binaries}
+# 📦 Binary Package Installation
 
 Please use the issue tracker at [https://github.com/dreibh/netperfmeter/issues](https://github.com/dreibh/netperfmeter/issues) to report bugs and issues!
 
-## Ubuntu Linux {#InstallUbuntu}
+## Ubuntu Linux
 
 For ready-to-install Ubuntu Linux packages of NetPerfMeter, see [Launchpad PPA for Thomas Dreibholz](https://launchpad.net/~dreibh/+archive/ubuntu/ppa/+packages?field.name_filter=netperfmeter&field.status_filter=published&field.series_filter=)!
 
@@ -440,7 +440,7 @@ sudo apt-get update
 sudo apt-get install netperfmeter
 </pre>
 
-## Fedora Linux {#InstallFedora}
+## Fedora Linux
 
 For ready-to-install Fedora Linux packages of NetPerfMeter, see [COPR PPA for Thomas Dreibholz](https://copr.fedorainfracloud.org/coprs/dreibh/ppa/package/netperfmeter/)!
 
@@ -449,7 +449,7 @@ sudo dnf copr enable -y dreibh/ppa
 sudo dnf install netperfmeter
 </pre>
 
-## FreeBSD {#InstallFreeBSD}
+## FreeBSD
 
 For ready-to-install FreeBSD packages of NetPerfMeter, it is included in the ports collection, see [FreeBSD ports tree index of benchmarks/netperfmeter/](https://cgit.freebsd.org/ports/tree/benchmarks/netperfmeter/)!
 
@@ -466,13 +466,13 @@ make install
 </pre>
 
 
-# 💾 Build from Sources {#Sources}
+# 💾 Build from Sources
 
 NetPerfMeter is released under the [GNU General Public Licence&nbsp;(GPL)](https://www.gnu.org/licenses/gpl-3.0.en.html#license-text).
 
 Please use the issue tracker at [https://github.com/dreibh/netperfmeter/issues](https://github.com/dreibh/netperfmeter/issues) to report bugs and issues!
 
-## Development Version {#DevelopmentVersion}
+## Development Version
 
 The Git repository of the NetPerfMeter sources can be found at [https://github.com/dreibh/netperfmeter](https://github.com/dreibh/netperfmeter):
 
@@ -495,12 +495,12 @@ Contributions:
 
 - Coverity Scan analysis of NetPerfMeter: [https://scan.coverity.com/projects/dreibh-netperfmeter](https://scan.coverity.com/projects/dreibh-netperfmeter).
 
-## Current Stable Release {#StableRelease}
+## Current Stable Release
 
 See [https://www.nntb.no/~dreibh/netperfmeter/#StableRelease](https://www.nntb.no/~dreibh/netperfmeter/#StableRelease)!
 
 
-# 📖 Citing NetPerfMeter in Publications {#Citation}
+# 📖 Citing NetPerfMeter in Publications
 
 NetPerfMeter BibTeX entries can be found in [src/netperfmeter.bib](src/netperfmeter.bib)!
 
