@@ -405,18 +405,17 @@ kldstat | grep sctp
 
 #### Miscellaneous
 
+* Take a look into the manual page of NetPerfMeter for further information and options:</p>
+  <pre>
+  man netperfmeter
+  </pre>
+
 * Obtain the NetPerfMeter version:</p>
-   <pre>
-   <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter -version
-   </pre>
+  <pre>
+  netperfmeter -version
+  </pre>
+  Note: NetPerfMeter &ge;2.0 is required!
 
- Note: NetPerfMeter &ge;2.0 is required!
-
-
- * Take a look into the manual page of <em>NetPerfMeter</em> for further information:</p>
-   <pre>
-   <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> man netperfmeter
-   </pre>
 
 
 # Installation
