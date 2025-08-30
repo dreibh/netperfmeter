@@ -495,12 +495,12 @@ Contributions:
 
 - Coverity Scan analysis of NetPerfMeter: [https://scan.coverity.com/projects/dreibh-netperfmeter](https://scan.coverity.com/projects/dreibh-netperfmeter).
 
-## Stable Versions
+## Release Versions
 
-See [https://www.nntb.no/~dreibh/netperfmeter/#current-stable-release](https://www.nntb.no/~dreibh/netperfmeter/#current-stable-release) for the stable release packages!
+See [https://www.nntb.no/~dreibh/netperfmeter/#current-stable-release](https://www.nntb.no/~dreibh/netperfmeter/#current-stable-release) for release packages!
 
 
-# 📖 Citing NetPerfMeter in Publications
+# 🖋️ Citing NetPerfMeter in Publications
 
 NetPerfMeter BibTeX entries can be found in [netperfmeter.bib](https://github.com/dreibh/netperfmeter/blob/master/src/netperfmeter.bib)!
 
