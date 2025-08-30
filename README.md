@@ -495,15 +495,31 @@ Contributions:
 
 - Coverity Scan analysis of NetPerfMeter: [https://scan.coverity.com/projects/dreibh-netperfmeter](https://scan.coverity.com/projects/dreibh-netperfmeter).
 
-## Current Stable Release
+## Stable Versions
 
-See [https://www.nntb.no/~dreibh/netperfmeter/#StableRelease](https://www.nntb.no/~dreibh/netperfmeter/#StableRelease)!
+See [https://www.nntb.no/~dreibh/netperfmeter/#current-stable-release](https://www.nntb.no/~dreibh/netperfmeter/#current-stable-release) for the stable release packages!
 
 
 # 📖 Citing NetPerfMeter in Publications
 
-NetPerfMeter BibTeX entries can be found in [src/netperfmeter.bib](src/netperfmeter.bib)!
+NetPerfMeter BibTeX entries can be found in [netperfmeter.bib](https://github.com/dreibh/netperfmeter/blob/master/src/netperfmeter.bib)!
 
- 1. [Dreibholz, Thomas](https://www.nntb.no/~dreibh/); [Becke, Martin](https://www.haw-hamburg.de/hochschule/beschaeftigte/detail/person/person/show/martin-becke/); [Adhari, Hakim](https://web.archive.org/web/20240909081216/https://tdr.informatik.uni-due.de/en/team/former-staff/hakim-adhari/) and [Rathgeb, Erwin Paul](https://web.archive.org/web/20241126012608/https://tdr.informatik.uni-due.de/en/team/erwin-p-rathgeb/): «[Evaluation of A New Multipath Congestion Control Scheme using the NetPerfMeter Tool-Chain](https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/SoftCOM2011.pdf)» ([PDF](https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/SoftCOM2011.pdf), 360&nbsp;KiB, 6&nbsp;pages, 🇬🇧), in *Proceedings of the 19th IEEE International Conference on Software, Telecommunications and Computer Networks&nbsp;(SoftCOM)*, pp.&nbsp;1–6, ISBN&nbsp;978-953-290-027-9, Hvar, Dalmacija/Croatia, September&nbsp;16, 2011.
+ * [Dreibholz, Thomas](https://www.nntb.no/~dreibh/); [Becke, Martin](https://www.haw-hamburg.de/hochschule/beschaeftigte/detail/person/person/show/martin-becke/); [Adhari, Hakim](https://web.archive.org/web/20240909081216/https://tdr.informatik.uni-due.de/en/team/former-staff/hakim-adhari/) and [Rathgeb, Erwin Paul](https://web.archive.org/web/20241126012608/https://tdr.informatik.uni-due.de/en/team/erwin-p-rathgeb/): «[Evaluation of A New Multipath Congestion Control Scheme using the NetPerfMeter Tool-Chain](https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/SoftCOM2011.pdf)» ([PDF](https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/SoftCOM2011.pdf), 360&nbsp;KiB, 6&nbsp;pages, 🇬🇧), in *Proceedings of the 19th IEEE International Conference on Software, Telecommunications and Computer Networks&nbsp;(SoftCOM)*, pp.&nbsp;1–6, ISBN&nbsp;978-953-290-027-9, Hvar, Dalmacija/Croatia, September&nbsp;16, 2011.
 
- 2. [Dreibholz, Thomas](https://www.nntb.no/~dreibh/): «[Evaluation and Optimisation of Multi-Path Transport using the Stream Control Transmission Protocol](https://duepublico2.uni-due.de/servlets/MCRFileNodeServlet/duepublico_derivate_00029737/Dre2012_final.pdf)» ([PDF](https://duepublico2.uni-due.de/servlets/MCRFileNodeServlet/duepublico_derivate_00029737/Dre2012_final.pdf), 36779&nbsp;KiB, 264&nbsp;pages, 🇬🇧), Habilitation Treatise, University of Duisburg-Essen, Faculty of Economics, Institute for Computer Science and Business Information Systems, URN&nbsp;[urn:nbn:de:hbz:464-20120315-103208-1](https://www.nbn-resolving.de/urn:nbn:de:hbz:464-20120315-103208-1), March&nbsp;13, 2012.
+ * [Dreibholz, Thomas](https://www.nntb.no/~dreibh/): «[Evaluation and Optimisation of Multi-Path Transport using the Stream Control Transmission Protocol](https://duepublico2.uni-due.de/servlets/MCRFileNodeServlet/duepublico_derivate_00029737/Dre2012_final.pdf)» ([PDF](https://duepublico2.uni-due.de/servlets/MCRFileNodeServlet/duepublico_derivate_00029737/Dre2012_final.pdf), 36779&nbsp;KiB, 264&nbsp;pages, 🇬🇧), Habilitation Treatise, University of Duisburg-Essen, Faculty of Economics, Institute for Computer Science and Business Information Systems, URN&nbsp;[urn:nbn:de:hbz:464-20120315-103208-1](https://www.nbn-resolving.de/urn:nbn:de:hbz:464-20120315-103208-1), March&nbsp;13, 2012.
+
+
+# 🔗 Useful Links
+
+* [HiPerConTracer – High-Performance Connectivity Tracer](https://www.nntb.no/~dreibh/hipercontracer/index.html)
+* [Dynamic Multi-Homing Setup (DynMHS)](https://www.nntb.no/~dreibh/dynmhs/index.html)
+* [SubNetCalc – An IPv4/IPv6 Subnet Calculator](https://www.nntb.no/~dreibh/subnetcalc/index.html)
+* [TSCTP – An SCTP test tool](https://www.nntb.no/~dreibh/tsctp/index.html)
+* [System-Tools – Tools for Basic System Management](https://www.nntb.no/~dreibh/system-tools/index.html)
+* [Thomas Dreibholz's Multi-Path TCP (MPTCP) Page](https://www.nntb.no/~dreibh/mptcp/index.html)
+* [Thomas Dreibholz's SCTP Page](https://www.nntb.no/~dreibh/sctp/index.html)
+* [Michael Tüxen's SCTP page](https://www.sctp.de/)
+* [NorNet – A Real-World, Large-Scale Multi-Homing Testbed](https://www.nntb.no/)
+* [GAIA – Cyber Sovereignty](https://gaia.nntb.no/)
+* [NEAT – A New, Evolutive API and Transport-Layer Architecture for the Internet](https://neat.nntb.no/)
+* [Wireshark](https://www.wireshark.org/)
