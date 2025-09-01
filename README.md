@@ -1,9 +1,11 @@
-<p align="center">
+<h1 align="center">
+ NetPerfMeter<br />
+ <span style="font-size:75%">A TCP/MPTCP/UDP/SCTP/DCCP Network Performance Meter Tool</span><br />
  <a href="https://www.nntb.no/~dreibh/netperfmeter/">
- <img alt="NetPerfMeter Logo" src="https://www.nntb.no/~dreibh/netperfmeter/figures/EN-Logo-NetPerfMeter.svg" width="40%" /><br />
- https://www.nntb.no/~dreibh/netperfmeter/
+  <img alt="NetPerfMeter Logo" src="https://www.nntb.no/~dreibh/netperfmeter/figures/EN-Logo-NetPerfMeter.svg" width="25%" /><br />
+  https://www.nntb.no/~dreibh/netperfmeter/
  </a>
-</p>
+</h1>
 
 
 # 💡 What is Network Performance Meter&nbsp;(NetPerfMeter)?
@@ -485,15 +487,15 @@ make
 
 Contributions:
 
-- Issue tracker: [https://github.com/dreibh/netperfmeter/issues](https://github.com/dreibh/netperfmeter/issues).
+* Issue tracker: [https://github.com/dreibh/netperfmeter/issues](https://github.com/dreibh/netperfmeter/issues).
   Please submit bug reports, issues, questions, etc. in the issue tracker!
 
-- Pull Requests for NetPerfMeter: [https://github.com/dreibh/netperfmeter/pulls](https://github.com/dreibh/netperfmeter/pulls).
+* Pull Requests for NetPerfMeter: [https://github.com/dreibh/netperfmeter/pulls](https://github.com/dreibh/netperfmeter/pulls).
   Your contributions to NetPerfMeter are always welcome!
 
-- CI build tests of NetPerfMeter: [https://github.com/dreibh/netperfmeter/actions](https://github.com/dreibh/netperfmeter/actions).
+* CI build tests of NetPerfMeter: [https://github.com/dreibh/netperfmeter/actions](https://github.com/dreibh/netperfmeter/actions).
 
-- Coverity Scan analysis of NetPerfMeter: [https://scan.coverity.com/projects/dreibh-netperfmeter](https://scan.coverity.com/projects/dreibh-netperfmeter).
+* Coverity Scan analysis of NetPerfMeter: [https://scan.coverity.com/projects/dreibh-netperfmeter](https://scan.coverity.com/projects/dreibh-netperfmeter).
 
 ## Release Versions
 
