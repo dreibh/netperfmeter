@@ -18,11 +18,17 @@
 #
 # Contact: thomas.dreibholz@gmail.com
 
-FIGURES="EN-NetPerfMeter-MeasurementScenario  EN-NetPerfMeter-Measurement-SeqDiagram  EN-NetPerfMeter-ProtocolStack"
+FIGURES="
+   EN-Logo-NetPerfMeter
+   EN-NetPerfMeter-MeasurementScenario
+   EN-NetPerfMeter-Measurement-SeqDiagram
+   EN-NetPerfMeter-ProtocolStack
+"
 DENSITY="300x300"
 
 for figure in $FIGURES ; do
-   dia -n -t cairo-pdf -e tmp1.pdf $figure.dia
+   # ====== Export Dia to PDF ===============================================
+   dia -n -t cairo-pdf -e tmp1.pdf "$figure".dia
 
    # ====== Make PDF with transparent background ============================
    # OLD:
@@ -37,22 +43,22 @@ for figure in $FIGURES ; do
    # => Remove the first occurrence only
    qpdf -qdf tmp2.pdf tmp1.qdf
    sed -e '0,/^.* re\( f\|\)$/s/^\(.* re\)\( f\|\)$/%% \1/' \
-       -e '0,/^1 1 1 rg\( .*|\)$/s/^\(1 1 1 rg\)\( .*|\)$/%% \1/' \
+       -e '0,/^1 1 1 rg\( .*\|\)$/s/^\(1 1 1 rg\)\( .*\|\)$/%% \1/' \
       <tmp1.qdf >tmp2.qdf
-   fix-qdf tmp2.qdf >$figure.pdf
+   fix-qdf tmp2.qdf >"$figure".pdf
 
    # ls -l tmp1.qdf tmp2.qdf
    # colordiff tmp1.qdf tmp2.qdf || true
 
    # ====== Make SVG, with transparent background ===========================
-   pdf2svg $figure.pdf tmp1.svg
+   pdf2svg "$figure".pdf tmp1.svg
    sed \
       -e 's#\(<rect [^>]*fill-opacity="\)\([0-9\.]*\)\("/>\)#\10\3#g' \
-      <tmp1.svg >$figure.svg
+      <tmp1.svg >"$figure".svg
 
    # ====== Make PNG and WebP, with transparent background ==================
-   gm convert -density $DENSITY -transparent white $figure.pdf $figure.png
-   gm convert -density $DENSITY -transparent white $figure.pdf $figure.webp
+   gm convert -density $DENSITY "$figure".pdf "$figure".png
+   gm convert -density $DENSITY "$figure".pdf "$figure".webp
 
    rm -f tmp1.pdf tmp2.pdf tmp1.eps tmp1.qdf tmp2.qdf tmp1.svg
 done
