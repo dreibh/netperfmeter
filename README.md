@@ -1,8 +1,10 @@
 <h1 align="center">
  NetPerfMeter\
  <span style="font-size:75%">A TCP/MPTCP/UDP/SCTP/DCCP Network Performance Meter Tool</span>\
- [![](src/figures/EN-Logo-NetPerfMeter.svg){width=25% alt="NetPerfMeter Logo"}\
- <span style="font-size: 75%">https://www.nntb.no/~dreibh/netperfmeter</span>](https://www.nntb.no/~dreibh/netperfmeter/)
+ <a href="https://www.nntb.no/~dreibh/netperfmeter/">
+  <img alt="NetPerfMeter Logo" src="src/figures/EN-Logo-NetPerfMeter.svg" width="25%" /><br />
+  <span style="font-size: 75%;">https://www.nntb.no/~dreibh/netperfmeter</span>
+ </a>
 </h1>
 
 
