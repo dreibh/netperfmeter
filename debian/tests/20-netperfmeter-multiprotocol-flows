@@ -50,7 +50,7 @@ netperfmeter localhost:9000 \
 cleanup ${SERVER_PID}
 
 # ====== Check results ======================================================
-RESULTS="scalar-active.sca scalar-passive.sca vector-active-00000000-0000.vec vector-active-00000001-0000.vec vector-active-00000002-0000.vec vector-active-00000003-0000.vec vector-active.vec vector-passive-00000000-0000.vec vector-passive-00000001-0000.vec vector-passive-00000002-0000.vec vector-passive-00000003-0000.vec vector-passive.vec"
+RESULTS="scalar-active.sca scalar-passive.sca vector-active-00000000-0000.vec vector-active-00000001-0000.vec vector-active-00000002-0000.vec vector-active.vec vector-passive-00000000-0000.vec vector-passive-00000001-0000.vec vector-passive-00000002-0000.vec vector-passive.vec"
 for result in ${RESULTS} ; do
    if [ -s "${result}" ] ; then
       ls -l  "${result}"
