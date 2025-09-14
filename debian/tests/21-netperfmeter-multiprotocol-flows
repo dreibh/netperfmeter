@@ -42,6 +42,7 @@ netperfmeter localhost:9000 \
    -scalar=scalar.sca \
    -tcp  const10:const1452:const5:const1452 \
    -sctp const10:const1452:const5:const1452 \
+   -dccp const10:const1452:const5:const1452 \
    -udp  const10:const1452:const5:const1452 \
    -runtime=10 \
    -nodisplay

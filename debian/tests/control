@@ -2,7 +2,13 @@ Tests: 10-netperfmeter-tcp-flow
 Restrictions: allow-stderr
 Depends: netperfmeter
 
-# NOTE: This test needs SCTP and DCCP kernel modules loaded!
+# NOTE: This test needs the SCTP kernel module loaded!
 Tests: 20-netperfmeter-multiprotocol-flows
 Restrictions: allow-stderr
+Depends: netperfmeter
+
+# NOTE: This test needs the SCTP and DCCP kernel modules loaded!
+# Using allow-fail here, since the DCCP module may be unavailable.
+Tests: 21-netperfmeter-multiprotocol-flows
+Restrictions: allow-stderr, flaky
 Depends: netperfmeter
