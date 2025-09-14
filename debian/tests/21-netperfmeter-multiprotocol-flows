@@ -22,6 +22,9 @@
 # Bash options:
 set -e
 
+# Ensure that DCCP module is loaded:
+/usr/sbin/modprobe dccp
+
 rm -f ./*.vec ./*.sca
 
 # ====== Start the passive side =============================================
