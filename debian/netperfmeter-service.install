@@ -1,2 +1,2 @@
 etc/netperfmeter/netperfmeter.conf
-lib/systemd/system/netperfmeter.service
+usr/lib/systemd/system/netperfmeter.service
