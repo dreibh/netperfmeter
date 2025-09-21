@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.0~rc1.3
+Version: 2.0.0~rc1
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -104,6 +104,7 @@ analysing NetPerfMeter packet traffic.
 %{_datadir}/netperfmeter/netperfmeter.bib
 %{_datadir}/netperfmeter/netperfmeter.pdf
 %{_datadir}/netperfmeter/netperfmeter.png
+%{_datadir}/netperfmeter/results-examples/*.pcap*
 %{_datadir}/netperfmeter/results-examples/*.sca*
 %{_datadir}/netperfmeter/results-examples/*.vec*
 
