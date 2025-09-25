@@ -83,7 +83,6 @@ ENDIF()
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
-    ADD_DEFINITIONS("-DHAVE_MPTCP")   # Any better solution for this?
     FIND_LIBRARY(SCTP_LIB sctp)
 
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
