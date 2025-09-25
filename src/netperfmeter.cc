@@ -195,7 +195,12 @@ bool handleGlobalParameters(int argc, char** argv)
             gControlSocketProtocol = IPPROTO_TCP;
           break;
          case 0x1002:
+#ifdef HAVE_MPTCP
             gControlSocketProtocol = IPPROTO_MPTCP;
+#else
+            std::cerr << "ERROR: MPTCP support is not compiled in!" << "\n";
+            exit(1);
+#endif
           break;
          case 'L':
             {
@@ -740,9 +745,11 @@ static Flow* createFlow(Flow*                  previousFlow,
    // ====== Get FlowTrafficSpec ============================================
    FlowTrafficSpec trafficSpec;
    trafficSpec.Protocol = initialProtocol;
+#ifdef HAVE_MPTCP
    if(trafficSpec.Protocol == IPPROTO_MPTCP) {
       trafficSpec.CMT = NPAF_LikeMPTCP;
    }
+#endif
 
    if(strncmp(parameters, "default", 7) == 0) {
       trafficSpec.OutboundFrameRateRng = RANDOM_CONSTANT;
@@ -796,11 +803,13 @@ static Flow* createFlow(Flow*                  previousFlow,
    if( (trafficSpec.Protocol == IPPROTO_TCP) && (trafficSpec.CMT == NPAF_LikeMPTCP) ) {
       trafficSpec.Protocol = IPPROTO_MPTCP;
    }
+#ifdef HAVE_MPTCP
    if( (trafficSpec.Protocol == IPPROTO_MPTCP) && (trafficSpec.CMT != NPAF_LikeMPTCP) ) {
       std::cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
                 << " for MPTCP! Using default instead!\n";
       exit(1);
    }
+#endif
    // -----------------------------------------------------------------------
 
    // ====== Create new flow ================================================
@@ -820,11 +829,14 @@ static Flow* createFlow(Flow*                  previousFlow,
       exit(1);
    }
 
-   // ====== MPTCP: choose MPTCP socket instead of TCP socket ============
+   // ====== Initialise destination address =================================
    sockaddr_union destinationAddress = remoteAddress;
+#ifdef HAVE_MPTCP
    if(trafficSpec.Protocol == IPPROTO_MPTCP) {
+      // MPTCP: use MPTCP port instead of TCP port
       setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
    }
+#endif
 
    // ====== Print information ==============================================
    LOG_INFO

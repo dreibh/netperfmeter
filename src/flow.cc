@@ -454,7 +454,11 @@ bool Flow::configureSocket(const int socketDescriptor)
                      (int)TrafficSpec.RcvBufferSize) == false) {
       return false;
    }
-   if( (TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP) ) {
+   if( (TrafficSpec.Protocol == IPPROTO_TCP)
+#ifdef HAVE_MPTCP
+       || (TrafficSpec.Protocol == IPPROTO_MPTCP)
+#endif
+     ) {
       const int noDelayOption = (TrafficSpec.NoDelay == true) ? 1 : 0;
       if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
          LOG_ERROR

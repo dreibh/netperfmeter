@@ -128,11 +128,19 @@ void FlowTrafficSpec::print(std::ostream& os) const
 
    os << " - Error on Abort:      "
       << ((ErrorOnAbort == true) ? "yes" : "no") << "\n";
-   if( (Protocol == IPPROTO_SCTP) || (Protocol == IPPROTO_TCP) || (Protocol == IPPROTO_MPTCP) ) {
+   if( (Protocol == IPPROTO_SCTP) || (Protocol == IPPROTO_TCP)
+#ifdef HAVE_MPTCP
+       || (Protocol == IPPROTO_MPTCP)
+#endif
+     ) {
       os << " - No Delay:            "
          << ((NoDelay == true) ? "yes" : "no") << "\n";
    }
-   if( (Protocol == IPPROTO_TCP) || (Protocol == IPPROTO_MPTCP) ) {
+   if( (Protocol == IPPROTO_TCP)
+#ifdef HAVE_MPTCP
+       || (Protocol == IPPROTO_MPTCP)
+#endif
+     ) {
       os << " - Congestion Control:  " << CongestionControl << "\n";
    }
    if(Protocol == IPPROTO_SCTP) {

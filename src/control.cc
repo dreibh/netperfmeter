@@ -267,8 +267,11 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
    unsigned int maxTrials;
    unsigned int timeout;
    if( (flow->getTrafficSpec().Protocol != IPPROTO_SCTP) &&
-       (flow->getTrafficSpec().Protocol != IPPROTO_TCP) &&
-       (flow->getTrafficSpec().Protocol != IPPROTO_MPTCP) ) {
+       (flow->getTrafficSpec().Protocol != IPPROTO_TCP)
+#ifdef HAVE_MPTCP
+       && (flow->getTrafficSpec().Protocol != IPPROTO_MPTCP)
+#endif
+     ) {
       maxTrials = UNRELIABLE_IDENTIFY_MAX_TRIALS;
       timeout   = UNRELIABLE_IDENTIFY_TIMEOUT;
    }

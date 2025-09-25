@@ -165,8 +165,11 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       ssize_t received;
       size_t  bytesToRead;
       if( (socket->Protocol == IPPROTO_SCTP) ||
-          (socket->Protocol == IPPROTO_TCP)  ||
-          (socket->Protocol == IPPROTO_MPTCP) ) {
+          (socket->Protocol == IPPROTO_TCP)
+#ifdef HAVE_MPTCP
+          || (socket->Protocol == IPPROTO_MPTCP)
+#endif
+        ) {
          // SCTP and TCP can return partial messages upon recv() calls. TCP
          // may event return multiple messages, if the buffer size is large enough!
          if(socket->Status == Socket::MRS_WaitingForHeader) {
