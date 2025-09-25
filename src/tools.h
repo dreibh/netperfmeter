@@ -58,10 +58,8 @@
 #include <linux/mptcp.h>
 // #else
 // #warning MPTCP is not supported by the API of this system!
-#else
-#endif
-#ifndef IPPROTO_MPTCP
-#define IPPROTO_MPTCP 262
+// #ifndef IPPROTO_MPTCP
+// #define IPPROTO_MPTCP 262
 #endif
 
 // DCCP definitions

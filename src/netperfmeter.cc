@@ -299,14 +299,26 @@ bool handleGlobalParameters(int argc, char** argv)
                AssocSpec flow;
                flow.Flows.push_back(optarg);
                switch(option) {
+                  case 's':
+                     flow.Protocol = IPPROTO_SCTP;
+                     while( (optind < argc) && (argv[optind][0] != '-')) {
+                        flow.Flows.push_back(argv[optind]);
+                        optind++;
+                     }
+                   break;
                   case 't':
                      flow.Protocol = IPPROTO_TCP;
                    break;
-                  case 'm':
-                     flow.Protocol = IPPROTO_MPTCP;
-                   break;
                   case 'u':
                      flow.Protocol = IPPROTO_UDP;
+                   break;
+                  case 'm':
+#ifdef HAVE_MPTCP
+                     flow.Protocol = IPPROTO_MPTCP;
+#else
+                     std::cerr << "ERROR: MPTCP support is not compiled in!" << "\n";
+                     exit(1);
+#endif
                    break;
                   case 'd':
 #ifdef HAVE_DCCP
@@ -315,13 +327,6 @@ bool handleGlobalParameters(int argc, char** argv)
                      std::cerr << "ERROR: DCCP support is not compiled in!" << "\n";
                      exit(1);
 #endif
-                   break;
-                  case 's':
-                     flow.Protocol = IPPROTO_SCTP;
-                     while( (optind < argc) && (argv[optind][0] != '-')) {
-                        flow.Flows.push_back(argv[optind]);
-                        optind++;
-                     }
                    break;
                   default:
                      abort();
@@ -744,7 +749,9 @@ static Flow* createFlow(Flow*                  previousFlow,
       trafficSpec.OutboundFrameRate[0] = 0.0;
       switch(trafficSpec.Protocol) {
          case IPPROTO_TCP:
+#ifdef HAVE_MPTCP
          case IPPROTO_MPTCP:
+#endif
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 20;
           break;
          case IPPROTO_UDP:
@@ -864,6 +871,11 @@ static Flow* createFlow(Flow*                  previousFlow,
                                                    gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
                                                    trafficSpec.BindV6Only);
            break;
+         case IPPROTO_UDP:
+            socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_UDP, 0,
+                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
+                                                   trafficSpec.BindV6Only);
+           break;
 #ifdef HAVE_MPTCP
          case IPPROTO_MPTCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_MPTCP, 0,
@@ -871,11 +883,6 @@ static Flow* createFlow(Flow*                  previousFlow,
                                                    trafficSpec.BindV6Only);
            break;
 #endif
-         case IPPROTO_UDP:
-            socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_UDP, 0,
-                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
-                                                   trafficSpec.BindV6Only);
-           break;
 #ifdef HAVE_DCCP
          case IPPROTO_DCCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DCCP, IPPROTO_DCCP, 0,
@@ -1067,6 +1074,7 @@ bool mainLoop(const bool               isActiveMode,
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
          }
       }
+#ifdef HAVE_MPTCP
       if( (mptcpID >= 0) && (fds[mptcpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gMPTCPSocket, nullptr, 0);
          if(newSD >= 0) {
@@ -1077,6 +1085,7 @@ bool mainLoop(const bool               isActiveMode,
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_MPTCP, newSD);
          }
       }
+#endif
       if( (udpID >= 0) && (fds[udpID].revents & (POLLIN|POLLERR)) ) {
          FlowManager::getFlowManager()->lock();
          handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDPSocket);
@@ -1128,7 +1137,7 @@ void passiveMode(const uint16_t localPort)
    int testSD = createAndBindSocket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, 0, 1, &testAddress, true, false);
    if(testSD >= 0) {
       LOG_WARNING
-      stdlog << "NOTE: This machine seems to have an interface with address 172.17.0.1! This is typically used by Docker setups. If you connect from another machine having the same configuration, in an environment with only private addresses SCTP may try to use this address -> OOTB ABORT." << "\n";
+      stdlog << "WARNING: This machine seems to have an interface with address 172.17.0.1! This is typically used by Docker setups. If you connect from another machine having the same configuration, in an environment with only private addresses SCTP may try to use this address -> OOTB ABORT." << "\n";
       LOG_END
       ext_close(testSD);
    }
@@ -1299,8 +1308,8 @@ void passiveMode(const uint16_t localPort)
 
    // ====== Print status ===================================================
    LOG_INFO
-   stdlog << format("Passive Mode: Accepting TCP%s/UDP/SCTP%s connections on port %u",
-                    ((gMPTCPSocket > 0) ? "+MPTCP" : ""),
+   stdlog << format("Passive Mode: Accepting SCTP/TCP%s/UDP%s connections on port %u",
+                    ((gMPTCPSocket > 0) ? "/MPTCP" : ""),
                     ((gDCCPSocket > 0)  ? "/DCCP"  : ""),
                     localPort) << "\n";
    LOG_END
