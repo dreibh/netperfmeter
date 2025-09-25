@@ -225,6 +225,25 @@ IF (HAVE_DCCP)
 ENDIF()
 
 
+# ====== MPTCP support =======================================================
+CHECK_C_SOURCE_RUNS("
+#include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <linux/mptcp.h>
+
+int main (int argc, char** argv)
+{
+   volatile int domain = IPPROTO_MPTCP;
+   return(0);
+}"
+HAVE_MPTCP)
+
+IF (HAVE_MPTCP)
+   ADD_DEFINITIONS(-DHAVE_MPTCP)
+ENDIF()
+
+
 #############################################################################
 #### REQUIREMENTS                                                        ####
 #############################################################################
