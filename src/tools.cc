@@ -504,7 +504,7 @@ void printAddress(std::ostream&          os,
 /* ###### Get protocol name ############################################## */
 const char* getProtocolName(const int protocol)
 {
-   const char* protocolName = "unknown?!";
+   const char* protocolName;
    switch(protocol) {
       case IPPROTO_SCTP:
          protocolName = "SCTP";
@@ -525,6 +525,9 @@ const char* getProtocolName(const int protocol)
          protocolName = "DCCP";
        break;
 #endif
+      default:
+         protocolName = "unknown?!";
+       break;
    }
    return protocolName;
 }
