@@ -512,12 +512,14 @@ const char* getProtocolName(const int protocol)
       case IPPROTO_TCP:
          protocolName = "TCP";
        break;
-      case IPPROTO_MPTCP:
-         protocolName = "MPTCP";
-       break;
       case IPPROTO_UDP:
          protocolName = "UDP";
        break;
+#ifdef HAVE_MPTCP
+      case IPPROTO_MPTCP:
+         protocolName = "MPTCP";
+       break;
+#endif
 #ifdef HAVE_DCCP
       case IPPROTO_DCCP:
          protocolName = "DCCP";

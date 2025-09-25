@@ -800,10 +800,10 @@ static Flow* createFlow(Flow*                  previousFlow,
    }
 
    // ------ Use TCP or MPTCP? ----------------------------------------------
+#ifdef HAVE_MPTCP
    if( (trafficSpec.Protocol == IPPROTO_TCP) && (trafficSpec.CMT == NPAF_LikeMPTCP) ) {
       trafficSpec.Protocol = IPPROTO_MPTCP;
    }
-#ifdef HAVE_MPTCP
    if( (trafficSpec.Protocol == IPPROTO_MPTCP) && (trafficSpec.CMT != NPAF_LikeMPTCP) ) {
       std::cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
                 << " for MPTCP! Using default instead!\n";
