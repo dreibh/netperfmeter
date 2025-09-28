@@ -130,7 +130,7 @@ server instance.
 
 %files service
 /etc/netperfmeter/netperfmeter.conf
-/lib/systemd/system/netperfmeter.service
+%{_prefix}/lib/systemd/system/netperfmeter.service
 
 
 %package pdfproctools
