@@ -116,6 +116,10 @@ elif [ "$1" == "stop" ] ; then
 
    showStatus
 
+elif [ "$1" == "status" ] ; then
+
+   showStatus
+
 else
-   echo >&2 "Usage: $0 start|stop"
+   echo >&2 "Usage: $0 start|stop|status"
 fi
