@@ -64,6 +64,7 @@ support for analysing NetPerfMeter packet traffic.
 %{_bindir}/extractvectors
 %{_bindir}/getabstime
 %{_bindir}/netperfmeter
+%{_bindir}/netperfmeter-module-loader
 %{_bindir}/runtimeestimator
 %{_datadir}/bash-completion/completions/netperfmeter
 %{_mandir}/man1/combinesummaries.1.gz
@@ -71,7 +72,9 @@ support for analysing NetPerfMeter packet traffic.
 %{_mandir}/man1/extractvectors.1.gz
 %{_mandir}/man1/getabstime.1.gz
 %{_mandir}/man1/netperfmeter.1.gz
+%{_mandir}/man1/netperfmeter-module-loader.1.gz
 %{_mandir}/man1/runtimeestimator.1.gz
+%{_prefix}/lib/systemd/system/netperfmeter-module-loader.service
 
 
 %package common
