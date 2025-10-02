@@ -1,0 +1,121 @@
+#!/bin/bash
+# ==========================================================================
+#         _   _      _   ____            __ __  __      _
+#        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
+#        |  \| |/ _ \ __| |_) / _ \ '__| |_| |\/| |/ _ \ __/ _ \ '__|
+#        | |\  |  __/ |_|  __/  __/ |  |  _| |  | |  __/ ||  __/ |
+#        |_| \_|\___|\__|_|   \___|_|  |_| |_|  |_|\___|\__\___|_|
+#
+#                  NetPerfMeter -- Network Performance Meter
+#                 Copyright (C) 2009-2025 by Thomas Dreibholz
+# ==========================================================================
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact:  dreibh@simula.no
+# Homepage: https://www.nntb.no/~dreibh/netperfmeter/
+
+# Bash options:
+set -eu
+
+
+# ###### Load modules #######################################################
+tryToLoadModules()
+{
+   local component="$1"
+   local pattern="$2"
+   shift 2
+
+   echo -en "Loading ${component} modules: "
+   while [ $# -gt 0 ] ; do
+      local directory="$1"
+      shift
+      if [ -e "${directory}" ] ; then
+         modules="$(find "${directory}" -name "${pattern}" | xargs --no-run-if-empty -n1 basename | sed -e "s/\.ko.*$//g" | sort)"
+         for module in ${modules} ; do
+            echo -en "${module} "
+            modprobe "${module}" >/dev/null 2>&1
+         done
+      fi
+   done
+   echo ""
+}
+
+
+# ###### Unload modules #####################################################
+tryToUnloadModules()
+{
+   local component="$1"
+   local pattern="$2"
+   shift 2
+
+   while [ $# -gt 0 ] ; do
+      local directory="$1"
+      shift
+      if [ -e "${directory}" ] ; then
+         modules="$(find "${directory}" -name "${pattern}" | xargs --no-run-if-empty -n1 basename | sed -e "s/\.ko.*$//g" | sort)"
+         for module in ${modules} ; do
+            rmmod "${module}" >/dev/null 2>&1 || true
+         done
+      fi
+   done
+}
+
+
+# ###### Print status #######################################################
+showStatus()
+{
+   # ------ Print the relevant modules --------------------------------------
+   echo "Modules:"
+   lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp" || true ) | sort
+
+   # ------ Print the allowed TCP CCs ---------------------------------------
+   local allowedCCs="$(sysctl -n net.ipv4.tcp_allowed_congestion_control)"
+   local numberOfAllowedCCs="$(echo "${allowedCCs}" | xargs -n1 | wc -l)"
+   echo "Allowed TCP CCs (${numberOfAllowedCCs}): ${allowedCCs}"
+}
+
+
+if [ "$1" == "start" ] ; then
+   kernel="$(uname -r)"
+
+   # Load protocol modules:
+   tryToLoadModules "TCP"   "tcp_*.ko*"   "/lib/modules/${kernel}/kernel/net/ipv4/"  "/lib/modules/${kernel}/extra/net/ipv4/"
+   tryToLoadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
+   tryToLoadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
+   tryToLoadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
+
+   # Enable TCP CCs:
+   availableCCs="$(sysctl net.ipv4.tcp_available_congestion_control | sed -e "s/.*= //g")"
+   sysctl -qw net.ipv4.tcp_allowed_congestion_control="${availableCCs}"
+
+   showStatus
+
+elif [ "$1" == "stop" ] ; then
+
+   kernel="$(uname -r)"
+
+   # Unload protocol modules, in two stages to cover dependencies:
+   for stage in 1 2 ; do
+      tryToUnloadModules "TCP"   "tcp_*.ko*"   "/lib/modules/${kernel}/kernel/net/ipv4/"  "/lib/modules/${kernel}/extra/net/ipv4/"
+      tryToUnloadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
+      tryToUnloadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
+      tryToUnloadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
+   done
+
+   showStatus
+
+else
+   echo >&2 "Usage: $0 start|stop"
+fi
