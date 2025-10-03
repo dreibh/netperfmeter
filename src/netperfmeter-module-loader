@@ -89,6 +89,13 @@ showStatus()
 }
 
 
+
+# ###### Main program #######################################################
+if [ $# -lt 1 ] ; then
+  echo >&2 "Usage: $0 start|stop|status"
+  exit 1
+fi
+
 if [ "$1" == "start" ] ; then
    kernel="$(uname -r)"
 
@@ -124,5 +131,6 @@ elif [ "$1" == "status" ] ; then
    showStatus
 
 else
-   echo >&2 "Usage: $0 start|stop|status"
+   echo >&2 "ERROR: Unknown command $1!"
+   exit 1
 fi
