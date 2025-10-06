@@ -450,14 +450,20 @@ static const char* parseNextEntry(const char* parameters,
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
       valueArray[i] = 0.0;
    }
-   if(sscanf(parameters, "exp%lf%n", &valueArray[0], &n) == 1) {
-      *rng = RANDOM_EXPONENTIAL;
-   }
-   else if(sscanf(parameters, "const%lf%n", &valueArray[0], &n) == 1) {
+   if(sscanf(parameters, "const%lf%n", &valueArray[0], &n) == 1) {
       *rng = RANDOM_CONSTANT;
    }
    else if(sscanf(parameters, "uniform%lf,%lf%n", &valueArray[0], &valueArray[1], &n) == 2) {
       *rng = RANDOM_UNIFORM;
+   }
+   else if(sscanf(parameters, "exp%lf%n", &valueArray[0], &n) == 1) {
+      *rng = RANDOM_EXPONENTIAL;
+   }
+   else if(sscanf(parameters, "normal%lf,%lf%n", &valueArray[0], &valueArray[1], &n) == 2) {
+      *rng = RANDOM_NORMAL;
+   }
+   else if(sscanf(parameters, "truncnormal%lf,%lf%n", &valueArray[0], &valueArray[1], &n) == 2) {
+      *rng = RANDOM_TRUNCATED_NORMAL;
    }
    else if(sscanf(parameters, "pareto%lf,%lf%n", &valueArray[0], &valueArray[1], &n) == 2) {
       *rng = RANDOM_PARETO;

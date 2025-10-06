@@ -56,7 +56,7 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
                   valueArray[0]);
        break;
       case RANDOM_EXPONENTIAL:
-         snprintf((char*)&str, sizeof(str), "average=%1.6lf (neg. exp.)",
+         snprintf((char*)&str, sizeof(str), "mean=%1.6lf (neg. exp.)",
                   valueArray[0]);
        break;
       case RANDOM_UNIFORM:
@@ -65,6 +65,14 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
        break;
       case RANDOM_PARETO:
          snprintf((char*)&str, sizeof(str), "location=%1.6lf, shape=%1.6lf (pareto)",
+                  valueArray[0], valueArray[1]);
+       break;
+      case RANDOM_NORMAL:
+         snprintf((char*)&str, sizeof(str), "mean=%1.6lf, stddev=%1.6lf (normal)",
+                  valueArray[0], valueArray[1]);
+       break;
+      case RANDOM_TRUNCATED_NORMAL:
+         snprintf((char*)&str, sizeof(str), "mean=%1.6lf, stddev=%1.6lf (truncated normal)",
                   valueArray[0], valueArray[1]);
        break;
       default:
@@ -115,7 +123,7 @@ void FlowTrafficSpec::print(std::ostream& os) const
       bool start = true;
       for(std::vector<OnOffEvent>::const_iterator iterator = OnOffEvents.begin();
           iterator != OnOffEvents.end();iterator++) {
-         os << "\n" << "         " << ((start == true) ? "* " : "~ ");
+         os << "\n" << "         " << ((start == true) ? "🟢on:  " : "🔴off: ");
          showEntry(os, (const double*)&(*iterator).ValueArray, (*iterator).RandNumGen);
          start = !start;
       }

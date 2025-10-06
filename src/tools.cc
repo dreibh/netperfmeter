@@ -118,7 +118,7 @@ int pollTimeout(const unsigned long long now, const size_t n, ...)
 }
 
 
-/* ###### Length-checking strcpy() ###################################### */
+// ###### Length-checking strcpy() #########################################
 int safestrcpy(char* dest, const char* src, const size_t size)
 {
    assert(size > 0);
@@ -128,7 +128,7 @@ int safestrcpy(char* dest, const char* src, const size_t size)
 }
 
 
-/* ###### Length-checking strcat() ###################################### */
+// ###### Length-checking strcat() #########################################
 int safestrcat(char* dest, const char* src, const size_t size)
 {
    const size_t l1 = strlen(dest);
@@ -141,7 +141,7 @@ int safestrcat(char* dest, const char* src, const size_t size)
 }
 
 
-/* ###### Find first occurrence of character in string ################### */
+// ###### Find first occurrence of character in string ######################
 static char* strindex(char* string, const char character)
 {
    if(string != nullptr) {
@@ -158,7 +158,7 @@ static char* strindex(char* string, const char character)
 
 
 
-/* ###### Find last occurrence of character in string #################### */
+// ###### Find last occurrence of character in string #######################
 static char* strrindex(char* string, const char character)
 {
    const char* original = string;
@@ -218,7 +218,7 @@ void dissectName(const std::string& name,
 }
 
 
-/* ###### Check for support of IPv6 ###################################### */
+// ###### Check for support of IPv6 #########################################
 bool checkIPv6()
 {
    int sd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
@@ -230,7 +230,7 @@ bool checkIPv6()
 }
 
 
-/* ###### Get socklen for given address ################################## */
+// ###### Get socklen for given address #####################################
 size_t getSocklen(const struct sockaddr* address)
 {
    switch(address->sa_family) {
@@ -244,7 +244,7 @@ size_t getSocklen(const struct sockaddr* address)
 }
 
 
-/* ###### Compare addresses ############################################## */
+// ###### Compare addresses #################################################
 int addresscmp(const struct sockaddr* a1, const struct sockaddr* a2, const bool port)
 {
    uint16_t     p1, p2;
@@ -295,7 +295,7 @@ int addresscmp(const struct sockaddr* a1, const struct sockaddr* a2, const bool 
 }
 
 
-/* ###### Convert address to string ###################################### */
+// ###### Convert address to string #########################################
 bool address2string(const struct sockaddr* address,
                     char*                  buffer,
                     const size_t           length,
@@ -356,7 +356,7 @@ bool address2string(const struct sockaddr* address,
 }
 
 
-/* ###### Convert string to address ###################################### */
+// ###### Convert string to address #########################################
 bool string2address(const char*           string,
                     union sockaddr_union* address,
                     const bool            readPort)
@@ -484,7 +484,7 @@ bool string2address(const char*           string,
 }
 
 
-/* ###### Print address ################################################## */
+// ###### Print address #####################################################
 void printAddress(std::ostream&          os,
                   const struct sockaddr* address,
                   const bool             port,
@@ -501,7 +501,7 @@ void printAddress(std::ostream&          os,
 }
 
 
-/* ###### Get protocol name ############################################## */
+// ###### Get protocol name #################################################
 const char* getProtocolName(const int protocol)
 {
    const char* protocolName;
@@ -533,7 +533,7 @@ const char* getProtocolName(const int protocol)
 }
 
 
-/* ###### Get port ####################################################### */
+// ###### Get port ##########################################################
 uint16_t getPort(const struct sockaddr* address)
 {
    if(address != nullptr) {
@@ -550,7 +550,7 @@ uint16_t getPort(const struct sockaddr* address)
 }
 
 
-/* ###### Set port ####################################################### */
+// ###### Set port ##########################################################
 bool setPort(struct sockaddr* address, uint16_t port)
 {
    if(address != nullptr) {
@@ -567,7 +567,7 @@ bool setPort(struct sockaddr* address, uint16_t port)
 }
 
 
-/* ###### Create socket ################################################## */
+// ###### Create socket #####################################################
 int createSocket(const int             family,
                  const int             type,
                  const int             protocol,
@@ -604,7 +604,7 @@ int createSocket(const int             family,
 }
 
 
-/* ###### Bind socket #################################################### */
+// ###### Bind socket #######################################################
 int bindSocket(const int             sd,
                const int             family,
                const int             type,
@@ -724,7 +724,7 @@ int bindSocket(const int             sd,
 }
 
 
-/* ###### Send SCTP ABORT ################################################ */
+// ###### Send SCTP ABORT ###################################################
 bool sendAbort(int sd, sctp_assoc_t assocID)
 {
    sctp_sndrcvinfo sinfo;
@@ -736,7 +736,7 @@ bool sendAbort(int sd, sctp_assoc_t assocID)
 }
 
 
-/* ###### Convert byte order of 64 bit value ############################# */
+// ###### Convert byte order of 64 bit value ################################
 static uint64_t byteswap64(const uint64_t value)
 {
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -754,14 +754,14 @@ static uint64_t byteswap64(const uint64_t value)
 }
 
 
-/* ###### Convert byte order of 64 bit value ############################# */
+// ###### Convert byte order of 64 bit value ################################
 uint64_t hton64(const uint64_t value)
 {
    return byteswap64(value);
 }
 
 
-/* ###### Convert byte order of 64 bit value ############################# */
+// ###### Convert byte order of 64 bit value ################################
 uint64_t ntoh64(const uint64_t value)
 {
    return byteswap64(value);
@@ -798,7 +798,7 @@ struct IeeeDouble {
 };
 
 
-/* ###### Convert double to machine-independent form ##################### */
+// ###### Convert double to machine-independent form ########################
 network_double_t doubleToNetwork(const double d)
 {
    struct IeeeDouble ieee;
@@ -851,7 +851,7 @@ network_double_t doubleToNetwork(const double d)
 }
 
 
-/* ###### Convert machine-independent form to double ##################### */
+// ###### Convert machine-independent form to double ########################
 double networkToDouble(network_double_t value)
 {
    network_double_t   hValue;
@@ -900,7 +900,7 @@ union DoubleIntUnion
    unsigned long long Integer;
 };
 
-/* ###### Convert double to machine-independent form ##################### */
+// ###### Convert double to machine-independent form ########################
 network_double_t doubleToNetwork(const double d)
 {
    union DoubleIntUnion valueUnion;
@@ -908,7 +908,7 @@ network_double_t doubleToNetwork(const double d)
    return hton64(valueUnion.Integer);
 }
 
-/* ###### Convert machine-independent form to double ##################### */
+// ###### Convert machine-independent form to double ########################
 double networkToDouble(network_double_t value)
 {
    union DoubleIntUnion valueUnion;
@@ -926,7 +926,7 @@ double networkToDouble(network_double_t value)
 #define KILL_TIMEOUT 2000000
 
 
-/* ###### Global variables ############################################### */
+// ###### Global variables ##################################################
 static bool   DetectedBreak = false;
 static bool   PrintedBreak  = false;
 static bool   Quiet         = false;
@@ -937,7 +937,7 @@ static unsigned long long LastDetection = (unsigned long long)-1;
 #endif
 
 
-/* ###### Handler for SIGINT ############################################# */
+// ###### Handler for SIGINT ################################################
 void breakDetector(int signum)
 {
    DetectedBreak = true;
@@ -958,7 +958,7 @@ void breakDetector(int signum)
 }
 
 
-/* ###### Install break detector ######################################### */
+// ###### Install break detector ############################################
 void installBreakDetector()
 {
    DetectedBreak = false;
@@ -973,7 +973,7 @@ void installBreakDetector()
 }
 
 
-/* ###### Unnstall break detector ######################################## */
+// ###### Unnstall break detector ###########################################
 void uninstallBreakDetector()
 {
    signal(SIGINT,SIG_DFL);
@@ -988,7 +988,7 @@ void uninstallBreakDetector()
 }
 
 
-/* ###### Check, if break has been detected ############################## */
+// ###### Check, if break has been detected #################################
 bool breakDetected()
 {
    if((DetectedBreak) && (!PrintedBreak)) {
@@ -1001,7 +1001,7 @@ bool breakDetected()
 }
 
 
-/* ###### Send break to main thread ###################################### */
+// ###### Send break to main thread #########################################
 void sendBreak(const bool quiet)
 {
    Quiet = quiet;
@@ -1010,7 +1010,7 @@ void sendBreak(const bool quiet)
 
 
 
-/* ###### Get random value using specified random number generator ####### */
+// ###### Get random value using specified random number generator ##########
 double getRandomValue(const double* valueArray, const uint8_t rng)
 {
    double value;
@@ -1035,7 +1035,7 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
 }
 
 
-/* ###### Get name of specified random number generator ################## */
+// ###### Get name of specified random number generator #####################
 const char* getRandomGeneratorName(const uint8_t rng)
 {
    switch(rng) {
@@ -1068,28 +1068,28 @@ static int   RandomSource = RS_TRY_DEVICE;
 static FILE* RandomDevice = nullptr;
 
 
-/* ###### Get 8-bit random value ######################################### */
+// ###### Get 8-bit random value ############################################
 uint8_t random8()
 {
    return (uint8_t)random32();
 }
 
 
-/* ###### Get 16-bit random value ######################################## */
+// ###### Get 16-bit random value ###########################################
 uint16_t random16()
 {
    return (uint16_t)random32();
 }
 
 
-/* ###### Get 64-bit random value ######################################## */
+// ###### Get 64-bit random value ###########################################
 uint64_t random64()
 {
-   return  (((uint64_t)random32()) << 32) | (uint64_t)random32() ;
+   return (((uint64_t)random32()) << 32) | (uint64_t)random32();
 }
 
 
-/* ###### Get 32-bit random value ######################################## */
+// ###### Get 32-bit random value ###########################################
 uint32_t random32()
 {
 #if defined(SIM_IMPORT) || defined(OMNETPPLIBS_IMPORT)
@@ -1121,26 +1121,49 @@ uint32_t random32()
    }
    const uint16_t a = random() & 0xffff;
    const uint16_t b = random() & 0xffff;
-   return  (((uint32_t)a) << 16) | (uint32_t)b ;
+   return (((uint32_t)a) << 16) | (uint32_t)b;
 #endif
 }
 
 
-/* ###### Get double random value ######################################## */
+// ###### Get double random value ###########################################
 double randomDouble()
 {
-   return  (double)random32() / (double)4294967296.0 ;
+   // Resulting range: [0, 1)
+   return (double)random32() / (double)0x100000000;
 }
 
 
-/* ###### Get exponential-distributed double random value ################ */
-double randomExpDouble(const double p)
+// ###### Get exponential-distributed double random value ###################
+double randomExpDouble(const double mean)
 {
-   return  -p * log(randomDouble()) ;
+   // randomDouble() returns value in [0, 1), i.e. 0 is included. log(0) = -∞.
+   // => Using 1.0 - randomDouble() to prevent this issue:
+   return -mean * log(1.0 - randomDouble());
 }
 
 
-/* ###### Get pareto-distributed double random value ##################### */
+// ###### Get normal-distributed double random value ########################
+double randomNormal(const double mean, const double stddev)
+{
+    const double u = randomDouble();
+    const double v = randomDouble();
+    return mean + stddev * sqrt(-2.0*log(u)) * cos(M_PI*2.0*v);
+}
+
+
+// ###### Get truncated-normal-distributed double random value ##############
+double randomTruncNormal(const double mean, const double stddev)
+{
+   double result;
+   do {
+       result = randomNormal(mean, stddev);
+   } while(result < 0);
+   return result;
+}
+
+
+// ###### Get pareto-distributed double random value ########################
 // Parameters:
 // location = the location parameter (also: scale parameter): x_m, x_min or m
 // shape    = the shape parameter: alpha or k
@@ -1169,11 +1192,11 @@ double randomParetoDouble(const double location, const double shape)
    while ((r <= 0.0) || (r >= 1.0)) {
       r = randomDouble();
    }
-   return  location / pow(r, 1.0 / shape) ;
+   return location / pow(r, 1.0 / shape);
 }
 
 
-/* ###### poll() to select() wrapper to work around broken Apple poll() ## */
+// ###### poll() to select() wrapper to work around broken Apple poll() #####
 #ifdef __APPLE__
 #warning Using poll() to select() wrapper to work around broken Apple poll().
 int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)

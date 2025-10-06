@@ -143,10 +143,12 @@ bool breakDetected();
 void sendBreak(const bool quiet);
 
 
-#define RANDOM_CONSTANT    0
-#define RANDOM_UNIFORM     1
-#define RANDOM_EXPONENTIAL 2
-#define RANDOM_PARETO      3
+#define RANDOM_CONSTANT         0
+#define RANDOM_UNIFORM          1
+#define RANDOM_EXPONENTIAL      2
+#define RANDOM_PARETO           3
+#define RANDOM_NORMAL           4
+#define RANDOM_TRUNCATED_NORMAL 5
 
 const char* getRandomGeneratorName(const uint8_t rng);
 double getRandomValue(const double* valueArray, const uint8_t rng);
@@ -155,8 +157,10 @@ uint16_t random16();
 uint64_t random64();
 uint32_t random32();
 double randomDouble();
-double randomExpDouble(const double p);
-double randomParetoDouble(const double m, const double k);
+double randomExpDouble(const double mean);
+double randomNormal(const double mean, const double stddev);
+double randomTruncNormal(const double mean, const double stddev);
+double randomParetoDouble(const double location, const double shape);
 
 #ifdef __APPLE__
 // Apple's poll() function is broken. We need a wrapper to select() here!
