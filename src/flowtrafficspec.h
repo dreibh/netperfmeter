@@ -31,6 +31,7 @@
 #define FLOWTRAFFICSPEC_H
 
 #include "netperfmeterpackets.h"
+#include "tools.h"
 
 #include <sys/types.h>
 
@@ -56,6 +57,15 @@ class FlowTrafficSpec
    void print(std::ostream& os) const;
    void reset();
 
+   inline bool outgoingFlowIsSaturated() const {
+      return ( (OutboundFrameRateRng == RANDOM_CONSTANT) &&
+               (OutboundFrameRate[0] <= 0.000000001)     &&
+               (OutboundFrameSize[0] > 0.000000001) );
+   }
+   inline bool outgoingFlowIsNotSaturated() const {
+      return ( (OutboundFrameRate[0] > 0.000000001) &&
+               (OutboundFrameSize[0] > 0.000000001) );
+   }
 
    // ====== Public Data ====================================================
    public:

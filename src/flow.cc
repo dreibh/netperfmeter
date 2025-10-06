@@ -412,14 +412,12 @@ void Flow::run()
       unlock();
       if(outputStatus == Flow::On) {
          // ====== Outgoing data (saturated sender) =========================
-         if( (TrafficSpec.OutboundFrameSize[0] > 0.0) &&
-             (TrafficSpec.OutboundFrameRate[0] <= 0.0000001) ) {
+         if(TrafficSpec.outgoingFlowIsSaturated()) {
             result = transmitFrame(this, now);
          }
 
          // ====== Outgoing data (non-saturated sender) =====================
-         else if( (TrafficSpec.OutboundFrameSize[0] >= 1.0) &&
-                  (TrafficSpec.OutboundFrameRate[0] > 0.0000001) ) {
+         else if(TrafficSpec.outgoingFlowIsNotSaturated()) {
             const unsigned long long lastEvent = LastTransmission;
             if(nextTransmission <= now) {
                do {
