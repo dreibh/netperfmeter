@@ -64,7 +64,7 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
                   valueArray[0], valueArray[1]);
        break;
       case RANDOM_PARETO:
-         snprintf((char*)&str, sizeof(str), "location=%1.6lf, shape=%1.6lf%% (pareto)",
+         snprintf((char*)&str, sizeof(str), "location=%1.6lf, shape=%1.6lf (pareto)",
                   valueArray[0], valueArray[1]);
        break;
       default:
@@ -95,8 +95,8 @@ void FlowTrafficSpec::print(std::ostream& os) const
    if(Protocol == IPPROTO_SCTP) {
       char ordered[32];
       char reliable[32];
-      snprintf((char*)&ordered, sizeof(ordered), "%1.2f%%", 100.0 * OrderedMode);
-      snprintf((char*)&reliable, sizeof(reliable), "%1.2f%%", 100.0 * ReliableMode);
+      snprintf((char*)&ordered, sizeof(ordered), "%1.3f%%", 100.0 * OrderedMode);
+      snprintf((char*)&reliable, sizeof(reliable), "%1.3f%%", 100.0 * ReliableMode);
       os << " - Ordered Mode:        " << ordered  << "\n";
       os << " - Reliable Mode:       " << reliable << "\n";
       os << " - Retransmissions:     ";

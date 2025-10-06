@@ -1018,11 +1018,11 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
       case RANDOM_CONSTANT:
          value = valueArray[0];
        break;
-      case RANDOM_EXPONENTIAL:
-         value = randomExpDouble(valueArray[0]);
-       break;
       case RANDOM_UNIFORM:
          value = valueArray[0] + (randomDouble() * (valueArray[1] - valueArray[0]));
+       break;
+      case RANDOM_EXPONENTIAL:
+         value = randomExpDouble(valueArray[0]);
        break;
       case RANDOM_PARETO:
          value = randomParetoDouble(valueArray[0], valueArray[1]);
@@ -1041,10 +1041,10 @@ const char* getRandomGeneratorName(const uint8_t rng)
    switch(rng) {
       case RANDOM_CONSTANT:
          return "constant";
-      case RANDOM_EXPONENTIAL:
-         return "exponential";
       case RANDOM_UNIFORM:
          return "uniform";
+      case RANDOM_EXPONENTIAL:
+         return "exponential";
       case RANDOM_PARETO:
          return "pareto";
    }
