@@ -1027,6 +1027,12 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
       case RANDOM_PARETO:
          value = randomParetoDouble(valueArray[0], valueArray[1]);
        break;
+      case RANDOM_NORMAL:
+         value = randomNormal(valueArray[0], valueArray[1]);
+       break;
+      case RANDOM_TRUNCATED_NORMAL:
+         value = randomTruncNormal(valueArray[0], valueArray[1]);
+       break;
       default:
          abort();
        break;
