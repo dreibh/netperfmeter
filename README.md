@@ -415,6 +415,11 @@ Some examples:
 
 ## Wireshark
 
+<p align="center">
+ <a href="src/figures/NetPerfMeter-Wireshark-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Wireshark-Screenshot.webp" style="width: 768pt;" /></a><br />
+ A Wireshark Run with NetPerfMeter Traffic from <tt>[multi.pcap.gz](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz)</tt>
+</p>
+
 * Run T-Shark (the command-line version of the [Wireshark](https://www.wireshark.org/) network protocol analyser) to record a PCAP trace:
 
   <pre>
@@ -438,9 +443,6 @@ Some examples:
   <pre>
   <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> wireshark multi.pcap.gz
   </pre>
-
-  <span style="display: inline-block; text-align: center;"><a href="src/figures/NetPerfMeter-Wireshark-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Wireshark-Screenshot.webp" style="width: 768pt;" /></a><br />
-   A Wireshark Run with NetPerfMeter Traffic from <tt>[multi.pcap.gz](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz)</tt></span>
 
   Notes:
 
