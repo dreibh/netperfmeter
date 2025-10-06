@@ -1021,11 +1021,8 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
       case RANDOM_EXPONENTIAL:
          value = randomExpDouble(valueArray[0]);
        break;
-      case RANDOM_UNIFORM: {
-         const double lowest  = valueArray[0] - valueArray[1]*valueArray[0];
-         const double highest = valueArray[0] + valueArray[1]*valueArray[0];
-         value = lowest + (randomDouble() * (highest - lowest));
-        }
+      case RANDOM_UNIFORM:
+         value = valueArray[0] + (randomDouble() * (valueArray[1] - valueArray[0]));
        break;
       case RANDOM_PARETO:
          value = randomParetoDouble(valueArray[0], valueArray[1]);
