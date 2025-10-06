@@ -271,6 +271,28 @@ kldstat | grep sctp
   - NetPerfMeter &ge;2.0 is required! Older versions &lt;2.0 only support the expermental Linux MTCP with incompatible API!
 
 
+## Variable Bitrate Flows
+
+NetPerfMeter supports randomised frame rate and frame size, to create variable bitrate&nbsp;(VBR) flows. The following distributions are currently available:
+
+* const<value>: Constant, i.e. always the same. Example: a frame rate const1000 for means all frames have a size of 1000&nbsp;bytes.
+* uniform&lt;a&gt;,&lt;b&gt;: Uniformly distributed from the interval [a,b). Example: uniform900,1100.
+* exp&lt;p&gt;: Exponential distribution with average. Example: exp1000.
+* pareto&lt;location&gt;,&lt;shape&gt;: Pareto distribution with location &lt;location&gt; and shape &lt;shape&gt;. Example: pareto0.166667,1.5.
+
+Some examples:
+
+* A unidirectional TCP flow with constant 2&nbsp;frames;/s and uniformly distributed frame sizes between 100&nbsp;bytes and 20000&nbsp;bytes:
+  <pre>
+  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -tcp const2:uniform100,20000
+  </pre>
+
+* A bidirectional SCTP flow with constant 2&nbsp;frames;/s and uniformly distributed frame sizes between 100&nbsp;bytes and 1000&nbsp;bytes outgoing, and an uniform frame rate of [2, 10) frames/s and frame sizes with an average of 1000&nbsp;bytes using exponential distribution:
+  <pre>
+  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -sctp const2:uniform100,1000:uniform2,10:exp1000
+  </pre>
+
+
 ## Multiple Flows and Measurement Results Recording
 
 * Run an active instance (i.e.&nbsp;client side), with 7&nbsp;flows, stopping the measurement after 60&nbsp;s:
