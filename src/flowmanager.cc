@@ -569,8 +569,8 @@ void FlowManager::handleEvents(const unsigned long long now)
          fprintf(stdout,
                  "\r<-- %sDuration: %2u:%02u:%02u   "
                  "%sFlows: %u Measurements: %u   "
-                 "%sTransmitted: %1.2f MiB at %1.1f Kbit/s   "
-                 "%sReceived: %1.2f MiB at %1.1f Kbit/s   "
+                 "%sTransmitted: %1.3f MiB at %1.1f Kbit/s   "
+                 "%sReceived: %1.3f MiB at %1.1f Kbit/s   "
                  "%sCPU: %s "
                  "%s-->\x1b[0K",
                  colorDuration,
