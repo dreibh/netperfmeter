@@ -206,10 +206,15 @@ The following distributions are supported:
 Constant, i.e. always the same. Example: a frame rate const1000 for means all frames have a size of 1000 bytes.
 .It uniform<a>,<b>
 Uniformly distributed from the interval [a,b). Example: uniform900,1100.
-.It exp<p>
-Exponential distribution with average <p>. Example: exp1000.
+.It exp<mean>
+Exponential distribution with mean <mean>. Example: exp1000.
 .It pareto<location>,<shape>
 Pareto distribution with location <location> and shape <shape>. Example: pareto0.166667,1.5.
+.It normal<mean>,<stddev>
+Normal distribution with mean <mean> and standard deviation <stddev>. Example: normal1000,500.
+Note that normal distribution may result in negative values, which may be ignored (frame size) or interpreted as saturated traffic (frame rate).
+.It truncnormal<mean>,<stddev>
+Truncated normal distribution with mean <mean> and standard deviation <stddev>, i.e. normal distribution without negative values. Example: truncnormal1000,500.
 .El
 .It Possible flow options:
 .Bl -tag -width indent
