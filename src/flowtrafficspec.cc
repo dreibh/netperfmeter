@@ -56,15 +56,15 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
                   valueArray[0]);
        break;
       case RANDOM_EXPONENTIAL:
-         snprintf((char*)&str, sizeof(str), "%1.6lf (neg. exp.)",
+         snprintf((char*)&str, sizeof(str), "average=%1.6lf (neg. exp.)",
                   valueArray[0]);
        break;
       case RANDOM_UNIFORM:
-         snprintf((char*)&str, sizeof(str), "%1.6lf +/- %1.3lf%% (uniform)",
-                  valueArray[0], 100.0 * valueArray[1]);
+         snprintf((char*)&str, sizeof(str), "internal=[%1.6lf, %1.3lf) (uniform)",
+                  valueArray[0], valueArray[1]);
        break;
       case RANDOM_PARETO:
-         snprintf((char*)&str, sizeof(str), "m=%1.6lf, k=%1.6lf%% (pareto)",
+         snprintf((char*)&str, sizeof(str), "location=%1.6lf, shape=%1.6lf%% (pareto)",
                   valueArray[0], valueArray[1]);
        break;
       default:
