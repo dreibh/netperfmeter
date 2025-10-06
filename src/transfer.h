@@ -35,8 +35,8 @@
 #include <sys/types.h>
 
 
-ssize_t transmitFrame(Flow*                    flow,
-                      const unsigned long long now);
+bool transmitFrame(Flow*                    flow,
+                   const unsigned long long now);
 
 bool handleNetPerfMeterData(const bool               isActiveMode,
                             const unsigned long long now,

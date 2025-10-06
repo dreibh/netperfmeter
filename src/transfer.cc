@@ -184,46 +184,48 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
 
 
 // ###### Transmit data frame ###############################################
-ssize_t transmitFrame(Flow*                    flow,
-                      const unsigned long long now)
+bool transmitFrame(Flow*                    flow,
+                   const unsigned long long now)
 {
    // ====== Obtain length of data to send ==================================
-   size_t bytesToSend =
-      (size_t)rint(getRandomValue((const double*)&flow->getTrafficSpec().OutboundFrameSize,
-                                  flow->getTrafficSpec().OutboundFrameSizeRng));
-   if(bytesToSend == 0) {
-      // On POLLOUT, we generate a maximum-sized message. If there is still space
-      // in the buffer, POLLOUT will be set again ...
-      bytesToSend = std::min((size_t)flow->getTrafficSpec().MaxMsgSize, MAXIMUM_MESSAGE_SIZE);
-   }
+   ssize_t bytesToSend =
+      (ssize_t)rint(getRandomValue((const double*)&flow->getTrafficSpec().OutboundFrameSize,
+                                   flow->getTrafficSpec().OutboundFrameSizeRng));
    ssize_t bytesSent   = 0;
    size_t  packetsSent = 0;
+   if(bytesToSend > 0) {
+      const uint32_t frameID = flow->nextOutboundFrameID();
+      while(bytesSent < (ssize_t)bytesToSend) {
+         // ====== Send message =============================================
+         ssize_t chunkSize = std::min(bytesToSend - bytesSent,
+                                      std::min((ssize_t)flow->getTrafficSpec().MaxMsgSize,
+                                               (ssize_t)MAXIMUM_MESSAGE_SIZE));
+         const ssize_t sent =
+            sendNetPerfMeterData(flow, frameID,
+                                 (bytesSent == 0),                       // Is frame begin?
+                                 (bytesSent + chunkSize >= bytesToSend), // Is frame end?
+                                 now, chunkSize);
+         // NOTE: Due to minimum size for a NETPERFMETER_DATA chunk (48 B),
+         //       the sent size may be >= chunkSize!
 
-   const uint32_t frameID = flow->nextOutboundFrameID();
-   while(bytesSent < (ssize_t)bytesToSend) {
-      // ====== Send message ================================================
-      size_t chunkSize = std::min(bytesToSend - bytesSent,
-                                  std::min((size_t)flow->getTrafficSpec().MaxMsgSize,
-                                           MAXIMUM_MESSAGE_SIZE));
-      const ssize_t sent =
-         sendNetPerfMeterData(flow, frameID,
-                              (bytesSent == 0),                       // Is frame begin?
-                              (bytesSent + chunkSize >= bytesToSend), // Is frame end?
-                              now, chunkSize);
-
-      // ====== Update statistics ===========================================
-      if(sent > 0) {
-         bytesSent += sent;
-         packetsSent++;
-      }
-      else {
-         // Transmission error -> stop sending.
-         break;
+         // ====== Update statistics ========================================
+         if(sent > 0) {
+            bytesSent += sent;
+            packetsSent++;
+         }
+         else {
+            // Transmission error -> stop sending.
+            break;
+         }
       }
    }
+   else {
+      bytesToSend = 0;   // There is nothing to send
+   }
 
+   // ====== Update statistics ==============================================
    flow->updateTransmissionStatistics(now, 1, packetsSent, bytesSent);
-   return bytesSent;
+   return (bytesSent >= bytesToSend);
 }
 
 

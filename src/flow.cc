@@ -414,7 +414,7 @@ void Flow::run()
          // ====== Outgoing data (saturated sender) =========================
          if( (TrafficSpec.OutboundFrameSize[0] > 0.0) &&
              (TrafficSpec.OutboundFrameRate[0] <= 0.0000001) ) {
-            result = (transmitFrame(this, now) > 0);
+            result = transmitFrame(this, now);
          }
 
          // ====== Outgoing data (non-saturated sender) =====================
@@ -423,9 +423,11 @@ void Flow::run()
             const unsigned long long lastEvent = LastTransmission;
             if(nextTransmission <= now) {
                do {
-                  result = (transmitFrame(this, now) > 0);
+                  result = transmitFrame(this, now);
                   if(now - lastEvent > 1000000) {
-                     // Time gap of more than 1s -> do not try to correct
+                     // Time gap of more than 1s -> do not try to correct.
+                     // But the next transmission needs to be scheduled!
+                     scheduleNextTransmissionEvent();
                      break;
                   }
                } while(scheduleNextTransmissionEvent() <= now);
