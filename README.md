@@ -277,8 +277,11 @@ NetPerfMeter supports randomised frame rate and frame size, to create variable b
 
 * const<value>: Constant, i.e. always the same. Example: a frame rate const1000 for means all frames have a size of 1000&nbsp;bytes.
 * uniform&lt;a&gt;,&lt;b&gt;: Uniformly distributed from the interval [a,b). Example: uniform900,1100.
-* exp&lt;p&gt;: Exponential distribution with average. Example: exp1000.
+* exp&lt;p&gt;: Exponential distribution with mean &lt;mean&gt;. Example: exp1000.
 * pareto&lt;location&gt;,&lt;shape&gt;: Pareto distribution with location &lt;location&gt; and shape &lt;shape&gt;. Example: pareto0.166667,1.5.
+* normal&lt;mean&gt;,&lt;stddev&gt;: Normal distribution with mean &lt;mean&gt; and standard deviation &lt;stddev&gt;. Example: normal1000,500.
+Note that normal distribution may result in negative values, which may be ignored (frame size) or interpreted as saturated traffic (frame rate).
+* truncnormal&lt;mean&gt;,&lt;stddev&gt;: Truncated normal distribution with mean &lt;mean&gt; and standard deviation &lt;stddev&gt;, i.e. normal distribution without negative values. Example: truncnormal1000,500.
 
 A configured distribution is used to determine:
 
