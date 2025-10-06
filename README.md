@@ -275,13 +275,13 @@ kldstat | grep sctp
 
 NetPerfMeter supports randomised frame rate and frame size, to create variable bitrate&nbsp;(VBR) flows. The following distributions are currently available:
 
-* const<value>: Constant, i.e. always the same. Example: a frame rate const1000 for means all frames have a size of 1000&nbsp;bytes.
-* uniform&lt;a&gt;,&lt;b&gt;: Uniformly distributed from the interval [a,b). Example: uniform900,1100.
-* exp&lt;p&gt;: Exponential distribution with mean &lt;mean&gt;. Example: exp1000.
-* pareto&lt;location&gt;,&lt;shape&gt;: Pareto distribution with location &lt;location&gt; and shape &lt;shape&gt;. Example: pareto0.166667,1.5.
-* normal&lt;mean&gt;,&lt;stddev&gt;: Normal distribution with mean &lt;mean&gt; and standard deviation &lt;stddev&gt;. Example: normal1000,500.
+* <tt>const<em>&lt;value&gt;</em>,<em>&lt;b&gt;</em></tt>: Constant, i.e.&nbsp;always the same setting <em>&lt;value&gt;</em>. Example: a frame rate const1000 means that all frames have a size of 1000&nbsp;bytes.
+* <tt>uniform<em>&lt;a&gt;</em>,<em>&lt;b&gt;</em></tt>: Uniform distribution from the interval [a,b). Example: uniform900,1100.
+* <tt>exp<em>&lt;p&gt;</em></tt>: Exponential distribution with mean <em>&lt;mean&gt;</em>. Example: exp1000.
+* <tt>pareto<em>&lt;location&gt;</em>,<em>&lt;shape&gt;</em></tt>: Pareto distribution with location <em>&lt;location&gt;</em> and shape <em>&lt;shape&gt;</em>. Example: pareto0.166667,1.5.
+* <tt>normal<em>&lt;mean&gt;</em>,<em>&lt;stddev&gt;</em></tt>: Normal distribution with mean <em>&lt;mean&gt;</em> and standard deviation <em>&lt;stddev&gt;</em>. Example: normal1000,500.
 Note that normal distribution may result in negative values, which may be ignored (frame size) or interpreted as saturated traffic (frame rate). Use truncnormal to prevent negative values.
-* truncnormal&lt;mean&gt;,&lt;stddev&gt;: Truncated normal distribution with mean &lt;mean&gt; and standard deviation &lt;stddev&gt;, i.e. normal distribution without negative values. Example: truncnormal1000,500.
+* <tt>truncnormal<em>&lt;mean&gt;</em>,<em>&lt;stddev&gt;</em></tt>: Truncated normal distribution with mean <em>&lt;mean&gt;</em> and standard deviation <em>&lt;stddev&gt;</em>, i.e. normal distribution without negative values. Example: truncnormal1000,500.
 
 A configured distribution is used to determine:
 

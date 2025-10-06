@@ -203,9 +203,9 @@ Frame rate and frame size may be distributed randomly, using different random di
 The following distributions are supported:
 .Bl -tag -width indent
 .It const<value>
-Constant, i.e. always the same. Example: a frame rate const1000 for means all frames have a size of 1000 bytes.
+Constant, i.e. always the same. Example: a frame rate const1000 means that all frames have a size of 1000 bytes.
 .It uniform<a>,<b>
-Uniformly distributed from the interval [a,b). Example: uniform900,1100.
+Uniform distribution from the interval [a,b). Example: uniform900,1100.
 .It exp<mean>
 Exponential distribution with mean <mean>. Example: exp1000.
 .It pareto<location>,<shape>
