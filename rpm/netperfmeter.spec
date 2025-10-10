@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.0~rc1.5
+Version: 2.0.0~rc1.10
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -132,8 +132,8 @@ This package sets up a service running a NetPerfMeter
 server instance.
 
 %files service
-/etc/netperfmeter/netperfmeter.conf
 %{_prefix}/lib/systemd/system/netperfmeter.service
+%{_sysconfdir}/netperfmeter.conf
 
 
 %package pdfproctools
