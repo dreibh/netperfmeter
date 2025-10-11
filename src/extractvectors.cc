@@ -62,7 +62,6 @@ static unsigned long long extractVectors(InputFile&               inputFile,
    std::map<unsigned int, const std::string> vectorToNameMap;
    std::map<unsigned int, const std::string> vectorToSplitMap;
    std::map<unsigned int, const std::string> vectorToObjectMap;
-   bool                                      vectorSplittingMode;
    unsigned long long                        outputLine = 0;
    char                                      inBuffer[4096];
    char                                      outBuffer[sizeof(inBuffer) + 4096];
@@ -268,6 +267,9 @@ int main(int argc, char** argv)
           break;
          case 'q':
             quietMode = true;
+          break;
+         case 'v':
+            version();
           break;
          default:
             usage(argv[0], 1);

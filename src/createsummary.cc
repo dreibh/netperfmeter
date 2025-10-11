@@ -942,6 +942,9 @@ int main(int argc, char** argv)
          case 'q':
             quietMode = true;
           break;
+         case 'v':
+            version();
+          break;
          default:
             usage(argv[0], 1);
           // break;
