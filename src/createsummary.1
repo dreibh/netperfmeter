@@ -49,14 +49,14 @@
 .Op Fl r | Fl Fl ignore-scalar-file-errors
 .br
 .Op Fl q | Fl Fl quiet
-.Nm netperfmeter
+.Nm createsummary
 .Op Fl h | Fl Fl help
-.Nm netperfmeter
+.Nm createsummary
 .Op Fl v | Fl Fl version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm createsummary
-is a summarisation tool for scalar files: it creates one CSV data table file (using tabulator as column separator) for each scalar. CreateSummary supports on-the-fly BZip2 compression. After startup, the program accepts the following commands from standard input (*not* as command-line arguments!):
+is a summarisation tool for scalar files: it creates one CSV/GNU R data table file (using tabulator as column separator) for each scalar. CreateSummary supports on-the-fly BZip2 compression. After startup, the program accepts the following commands from standard input (*not* as command-line arguments!):
 .Bl -tag -width indent
 .It Fl Fl varnames=variables
 A space-separated list of output variable names to be added to the output data tables.
@@ -102,7 +102,7 @@ Sets the BZip2 compression level; 1=none, 9=highest (default).
 .It Fl r | Fl Fl ignore-scalar-file-errors
 Ignore scalar file errors (that is, missing input files) instead of aborting.
 .It Fl q | Fl Fl quiet
-Enable quiet mode (less verbose output).
+Do not print verbose status information.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLE
