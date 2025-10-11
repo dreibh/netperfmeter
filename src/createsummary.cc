@@ -215,13 +215,27 @@ static void removeBrackets(char* str)
 
 
 // ###### Separate columns by tab ###########################################
-static void separateColumnsByTab(std::string& values)
+static bool separateColumnsByTab(std::string& values)
 {
+   bool         inQuotation    = false;
+   unsigned int quotationMarks = 0;
    for(size_t i = 0; i < values.size(); i++) {
-      if(values[i] == ' ') {
-         values[i] = '\t';
+      switch(values[i]) {
+         case '\\':
+            i++;
+          break;
+         case '"':
+            inQuotation = !inQuotation;
+            quotationMarks++;
+          break;
+         case ' ':
+            if(!inQuotation) {
+               values[i] = ' ';
+            }
+          break;
       }
    }
+   return ((quotationMarks & 1) == 0);
 }
 
 
@@ -936,7 +950,10 @@ int main(int argc, char** argv)
 
    if(optind < argc) {
       varNames = argv[optind++];
-      separateColumnsByTab(varNames);
+      if(!separateColumnsByTab(varNames)) {
+         std::cerr << "ERROR: Invalid quotation in variable names string!\n";
+         exit(1);
+      }
    }
    if(optind < argc) {
       std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
@@ -983,14 +1000,20 @@ int main(int argc, char** argv)
          if(varNames[0] == '\"') {
             varNames = varNames.substr(1, varNames.size() - 2);
          }
-         separateColumnsByTab(varNames);
+         if(!separateColumnsByTab(varNames)) {
+            std::cerr << "ERROR: Invalid quotation in variable names string!\n";
+            exit(1);
+         }
       }
       else if(!(strncmp(command, "--values=", 9))) {
          varValues = (const char*)&command[9];
          if(varValues[0] == '\"') {
             varValues = varValues.substr(1, varValues.size() - 2);
          }
-         separateColumnsByTab(varValues);
+         if(!separateColumnsByTab(varValues)) {
+            std::cerr << "ERROR: Invalid quotation in variable values string!\n";
+            exit(1);
+         }
       }
       else if(!(strncmp(command, "--logfile=", 10))) {
          logFileName = (const char*)&command[10];
