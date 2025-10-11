@@ -32,67 +32,70 @@
 .\" ###### Name #############################################################
 .Sh NAME
 .Nm createsummary
-.Nd Scalar File Summarization Tool
+.Nd Scalar File Summarisation Tool
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm createsummary
-.Op Var Names
-.Fl batch
-.Fl interactive
-.Fl compress=Level
-.Fl ignore-scalar-file-errors
+.Op variable_names
+.br
+.Op Fl b | Fl Fl batch | Fl i | Fl Fl interactive
+.Op Fl l | Fl Fl line-numbers | Fl n | Fl Fl no-line-numbers
+.Op Fl c Ar level | Fl Fl compress Ar level
+.Op Fl s | Fl Fl splitall
+.Op Fl r | Fl Fl ignore-scalar-file-errors
+.Op Fl q | Fl Fl quiet
+.Nm netperfmeter
+.Op Fl h | Fl Fl help
+.Nm netperfmeter
+.Op Fl v | Fl Fl version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm createsummary
-is a summarization tool for scalar files: it creates one GNU R data table file
-for each scalar. CreateSummary supports on-the-fly BZip2 compression. After
-startup, the program accepts the following commands from standard input (*not*
-as command-line arguments!):
-.Bl -tag -width ident
-.It Fl Fl varnames=Variables
-A space-separated list of output variable names to be added to the output data
-tables.
-.It Fl Fl values=Values
-Sets the values of the output variables for the next scalar file to the
-provided space-separated values. One value for each variable has to be
-provided.
-.It Fl Fl logfile=Name
-Sets the log file for the next scalar file. On an error related to this scalar
-file, the log file's name is displayed. This option can be used to identify
-bad simulation/measurement runs by pointing to the log file being created for
+is a summarisation tool for scalar files: it creates one CSV data table file (using tabulator as column separator) for each scalar. CreateSummary supports on-the-fly BZip2 compression. After startup, the program accepts the following commands from standard input (*not* as command-line arguments!):
+.Bl -tag -width indent
+.It Fl Fl varnames=variables
+A space-separated list of output variable names to be added to the output data tables.
+.It Fl Fl values=values
+Sets the values of the output variables for the next scalar file to the provided space-separated values. One value for each variable has to be provided.
+.It Fl Fl logfile=name
+Sets the log file for the next scalar file. On an error related to this scalar file, the log file's name is displayed. This option can be used to identify bad simulation/measurement runs by pointing to the log file being created for
 the simulation/measurement.
-.It Fl Fl statusfile=Name
-Sets the status file for the next scalar file. On an error related to this
-scalar file, the status file is deleted. This option can be used to repeat
-bad simulation/measurement runs by re-running the simulation/measurement on
-missing status files.
-.It Fl Fl input=Filename
+.It Fl Fl statusfile=name
+Sets the status file for the next scalar file. On an error related to this scalar file, the status file is deleted. This option can be used to repeat bad simulation/measurement runs by re-running the simulation/measurement on missing status files.
+.It Fl Fl input=filename
 Process the given scalar file.
-.It Fl Fl skip=Prefix
-All scalars beginning with the given prefix are not written to output tables.
-This option can be used to filter out unneeded results.
+.It Fl Fl skip=prefix
+All scalars beginning with the given prefix are not written to output tables. This option can be used to filter out unnecessary results.
 .It Fl Fl simulationdirectory=Directory
 Sets the directory where to find the scalar files.
 .It Fl Fl resultsdirectory=Directory
 Sets the directory where to write the summary tables to.
 .It Fl Fl ignore-scalar-file-errors
-Ignore skalar file erros (that is, missing input files) instead of aborting.
+Ignore scalar file errors (that is, missing input files) instead of aborting.
 .El
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
 The following arguments may be provided:
 .Bl -tag -width indent
-.It Var Names
+.It variable_names
 A space-separated list of output variable names to be added to the output data tables.
-.It Fl batch
+.It Fl b | Fl Fl batch
 Run in batch mode. The program is aborted on errors.
-.It Fl interactive
-Run in interactive mode. On errors, the program is continued.
-.It Fl compress=0-9
+.It Fl i | Fl Fl interactive
+Run in interactive mode (default). On errors, the program is continued.
+.It Fl c Ar level | Fl Fl compress Ar level
 Sets the BZip2 compression level; 1=none, 9=highest (default).
-.It Fl ignore-scalar-file-errors
-Ignore skalar file erros (that is, missing input files) instead of aborting.
+.It Fl r | Fl Fl ignore-scalar-file-errors
+Ignore scalar file errors (that is, missing input files) instead of aborting.
+
+
+.Op Fl l | Fl Fl line-numbers
+.Op Fl n | Fl Fl no-line-numbers
+.Op Fl r | Fl Fl ignore-scalar-file-errors
+.Op Fl q | Fl Fl quiet
+
+
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLE
