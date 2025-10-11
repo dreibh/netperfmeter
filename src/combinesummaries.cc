@@ -27,16 +27,17 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 
 #include <iostream>
-#include <fstream>
 
 #include "inputfile.h"
 #include "outputfile.h"
+#include "package-version.h"
 
 
 // ###### Read and process data file ########################################
@@ -89,36 +90,79 @@ void addDataFile(OutputFile&         outputFile,
 }
 
 
+// ###### Version ###########################################################
+[[ noreturn ]] static void version()
+{
+   std::cerr << "CombineSummaries" << " " << COMBINESUMMARIES_VERSION << "\n";
+   exit(0);
+}
+
+
+// ###### Usage #############################################################
+[[ noreturn ]] static void usage(const char* program, const int exitCode)
+{
+   std::cerr << "Usage:\n"
+      << "* Run:\n  "
+      << program << "\n"
+         "    output_file"
+         "    variable_names"
+         "    [-c level|--compress level]\n"
+         "    [-q|--quiet]\n"
+         "* Version:\n  " << program << " [-v|--version]\n"
+         "* Help:\n  "    << program << " [-h|--help]\n";
+   exit(exitCode);
+}
+
+
 
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
-   bool         quiet            = false;
+   bool         quietMode       = false;
    unsigned int compressionLevel = 9;
 
-   // ====== Process arguments ==============================================
-   if(argc < 3) {
-      std::cerr << "Usage: " << argv[0]
-                << " [Output File] [Var Names] {-compress=0-9} {-quiet}\n";
-      exit(1);
+   // ====== Handle command-line arguments ==================================
+   const static struct option long_options[] = {
+      { "compress",                  required_argument, 0, 'c' },
+      { "quiet",                     no_argument,       0, 'q' },
+
+      { "help",                      no_argument,       0, 'h' },
+      { "version",                   no_argument,       0, 'v' },
+      {  nullptr,                    0,                 0, 0   }
+   };
+
+   int option;
+   int longIndex;
+   while( (option = getopt_long_only(argc, argv, "c:qhv", long_options, &longIndex)) != -1 ) {
+      switch(option) {
+         case 'c':
+            compressionLevel = atol(optarg);
+            if(compressionLevel < 1) {
+               compressionLevel = 1;
+            }
+            else if(compressionLevel > 9) {
+               compressionLevel = 9;
+            }
+          break;
+         case 'q':
+            quietMode = true;
+          break;
+         default:
+            usage(argv[0], 1);
+          // break;
+      }
    }
-   for(int i = 3;i < argc;i++) {
-      if(!(strcmp(argv[i], "-quiet"))) {
-         quiet = true;
-      }
-      else if(!(strncmp(argv[i], "-compress=", 10))) {
-         compressionLevel = atol((char*)&argv[i][10]);
-         if(compressionLevel > 9) {
-            compressionLevel = 9;
-         }
-      }
+   if(optind < argc) {
+      std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
+      usage(argv[0], 1);
    }
 
 
    // ====== Print information ==============================================
-   if(!quiet) {
-      std::cout << "CombineSummaries - Version 2.30\n"
-                << "===============================\n\n";
+   if(!quietMode) {
+      std::cout << "CombineSummaries " << COMBINESUMMARIES_VERSION << "\n"
+                << "* Compression Level: " << compressionLevel << "\n"
+                << "\n";
    }
 
 
@@ -130,7 +174,7 @@ int main(int argc, char** argv)
        (outputFileName.rfind(".BZ2") == outputFileName.size() - 4) ) {
       outputFileFormat = OFF_BZip2;
    }
-   if(outputFile.initialize(outputFileName.c_str(),outputFileFormat,
+   if(outputFile.initialize(outputFileName.c_str(), outputFileFormat,
                             compressionLevel)== false) {
       exit(1);
    }
@@ -144,7 +188,7 @@ int main(int argc, char** argv)
    char        commandBuffer[4097];
    char*       command;
 
-   if(!quiet) {
+   if(!quietMode) {
       std::cout << "Ready> ";
       std::cout.flush();
    }
@@ -154,7 +198,7 @@ int main(int argc, char** argv)
          std::cout << "*** End of File ***\n";
          break;
       }
-      if(!quiet) {
+      if(!quietMode) {
          std::cout << command << "\n";
       }
 
@@ -181,7 +225,7 @@ int main(int argc, char** argv)
          exit(1);
       }
 
-      if(!quiet) {
+      if(!quietMode) {
          std::cout << "Ready> ";
          std::cout.flush();
       }
@@ -193,7 +237,7 @@ int main(int argc, char** argv)
    if(!outputFile.finish(true, &in, &out)) {
       exit(1);
    }
-   if(!quiet) {
+   if(!quietMode) {
       std::cout << "\n" << "Wrote " << outputLineNumber << " lines";
       if(in > 0) {
          std::cout << " (" << in << " -> " << out << " - "
