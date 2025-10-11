@@ -834,7 +834,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
          "    [variable_names]\n"
          "    [-b|---batch|-i|--interactive]\n"
          "    [-l|--line-numbers|-n|--no-line-numbers]\n"
-         "    [-s|--scalar-splitting|-a|--no-scalar-splitting]\n"
+         "    [-s|--split|-a|--no-split]\n"
          "    [-c level|--compress level]\n"
          "    [-r|--ignore-scalar-file-errors]\n"
          "    [-q|--quiet]\n"
@@ -868,8 +868,8 @@ int main(int argc, char** argv)
       { "batch",                     no_argument,       0, 'b' },
       { "line-numbers",              no_argument,       0, 'l' },
       { "no-line-numbers",           no_argument,       0, 'n' },
-      { "scalar-splitting",          no_argument,       0, 's' },
-      { "no-scalar-splitting",       no_argument,       0, 'a' },
+      { "split",                     no_argument,       0, 's' },
+      { "no-split",                  no_argument,       0, 'a' },
       { "compress",                  required_argument, 0, 'c' },
 
       { "ignore-scalar-file-errors", no_argument,       0, 'r' },
