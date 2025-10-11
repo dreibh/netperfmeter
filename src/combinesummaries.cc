@@ -155,6 +155,11 @@ int main(int argc, char** argv)
           // break;
       }
    }
+   if(optind + 1 >= argc) {
+      usage(argv[0], 1);
+   }
+   const std::string outputFileName(argv[optind++]);
+   std::string       varNames(argv[optind++]);
    if(optind < argc) {
       std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
       usage(argv[0], 1);
@@ -170,9 +175,8 @@ int main(int argc, char** argv)
 
 
    // ====== Open output file ===============================================
-   OutputFile        outputFile;
-   const std::string outputFileName   = argv[1];
-   OutputFileFormat  outputFileFormat = OFF_Plain;
+   OutputFile       outputFile;
+   OutputFileFormat outputFileFormat = OFF_Plain;
    if( (outputFileName.rfind(".bz2") == outputFileName.size() - 4) ||
        (outputFileName.rfind(".BZ2") == outputFileName.size() - 4) ) {
       outputFileFormat = OFF_BZip2;
@@ -185,11 +189,10 @@ int main(int argc, char** argv)
 
    // ====== Process input ==================================================
    unsigned long long outputLineNumber = 0;
-   std::string varNames                = argv[2];
-   std::string varValues               = "";
-   std::string simulationsDirectory    = ".";
-   char        commandBuffer[4097];
-   char*       command;
+   std::string        varValues;
+   std::string        simulationsDirectory(".");
+   char               commandBuffer[4097];
+   char*              command;
 
    if(!quietMode) {
       std::cout << "Ready> ";
