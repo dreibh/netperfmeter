@@ -119,14 +119,14 @@ fi
 
 # ====== Linux QoS setup ====================================================
 success=1
-SYSTEM=`uname`
+SYSTEM=$(uname)
 if [ "$SYSTEM" = "Linux" ] ; then
    if [ "$INTERFACES" = "" ] ; then   # Use *all* interfaces
-      INTERFACES=`eval "ifconfig -a" 2>/dev/null | sed -ne 's|^\('$cur'[^[:space:][:punct:]]\{1,\}\).*$|\1|p'`
+      INTERFACES=$(eval "ifconfig -a" 2>/dev/null | sed -ne 's|^\('"$cur"'[^[:space:][:punct:]]\{1,\}\).*$|\1|p')
    fi
 
    for iface in $INTERFACES ; do
-      tc qdisc del dev $iface root 2>/dev/null   # Ohne ID-Angabe wird Root mit jeder ID entfernt!
+      tc qdisc del dev "$iface" root 2>/dev/null   # Ohne ID-Angabe wird Root mit jeder ID entfernt!
    done
 
    if [ $addRule -eq 1 ] ; then
@@ -143,20 +143,20 @@ if [ "$SYSTEM" = "Linux" ] ; then
          delayParameter="delay ${DELAY}ms"
       fi
       if [ "$LOSS" != "" ] ; then
-         lossParameter="loss `echo "${LOSS}*100.0" | bc`%"
+         lossParameter="loss $(echo "${LOSS}*100.0" | bc)%"
       fi
       if [ "$ERROR" != "" ] ; then
-         errorParameter="corrupt `echo "${ERROR}*100.0" | bc`%"
+         errorParameter="corrupt $(echo "${ERROR}*100.0" | bc)%"
       fi
 
       for iface in $INTERFACES ; do
-         tc qdisc add dev $iface root handle 9$ID:0 cbq bandwidth 100Mbit avpkt 1500 cell 8 || success=0
-         tc class add dev $iface parent 9$ID:0 classid 9$ID:3 cbq \
-            bandwidth 100Mbit $bandwidthParameter $weightParameter \
+         tc qdisc add dev "$iface" root handle 9"$ID":0 cbq bandwidth 100Mbit avpkt 1500 cell 8 || success=0
+         tc class add dev "$iface" parent 9"$ID":0 classid 9"$ID":3 cbq \
+            bandwidth 100Mbit "$bandwidthParameter" "$weightParameter" \
             prio 8 allot 1514 cell 8 maxburst 20 avpkt 1500 bounded || success=0
 
          if [ "$QUEUE_TYPE" = "fifo" ] ; then
-            tc qdisc add dev $iface handle 8$ID:0 parent 9$ID:3 pfifo limit $FRAME_CAPACITY
+            tc qdisc add dev "$iface" handle 8"$ID":0 parent 9"$ID":3 pfifo limit "$FRAME_CAPACITY"
          elif [ "$QUEUE_TYPE" = "red" ] ; then
 #             tc qdisc add dev $iface parent 8$ID:0 red limit $FRAME_CAPACITY avpkt 1500
             echo "RED configuration: IMPLEMENT ME!"
@@ -166,11 +166,11 @@ if [ "$SYSTEM" = "Linux" ] ; then
             exit 1
          fi
 
-         tc filter add dev $iface protocol ip parent 9$ID:0 \
-            u32 match ip src $NETWORK_SRC match ip dst $NETWORK_DST flowid 9$ID:3 || success=0
+         tc filter add dev "$iface" protocol ip parent 9"$ID":0 \
+            u32 match ip src "$NETWORK_SRC" match ip dst "$NETWORK_DST" flowid 9"$ID":3 || success=0
          if [ $bidirectionalQoS -eq 1 ] ; then
-            tc filter add dev $iface protocol ip parent 9$ID:0 \
-               u32 match ip src $NETWORK_DST match ip dst $NETWORK_SRC flowid 9$ID:3 || success=0
+            tc filter add dev "$iface" protocol ip parent 9"$ID":0 \
+               u32 match ip src "$NETWORK_DST" match ip dst "$NETWORK_SRC" flowid 9"$ID":3 || success=0
          fi
 
          # tc -s qdisc ls dev $iface || success=0
@@ -183,8 +183,8 @@ if [ "$SYSTEM" = "Linux" ] ; then
 
 # ====== FreeBSD QoS setup ==================================================
 elif [ "$SYSTEM" = "FreeBSD" ] ; then
-   ID2=$(($ID+1))
-   /sbin/ipfw $ID  delete pipe $ID  2>/dev/null   # Delete old configuration
+   ID2=$((ID+1))
+   /sbin/ipfw "$ID" delete pipe "$ID"  2>/dev/null   # Delete old configuration
    /sbin/ipfw $ID2 delete pipe $ID2 2>/dev/null   # Delete old configuration
    if [ $addRule -eq 1 ] ; then
       if [ "$BANDWIDTH" != "" ] ; then
@@ -197,7 +197,7 @@ elif [ "$SYSTEM" = "FreeBSD" ] ; then
          LOSS="plr ${LOSS}"
       fi
       if [ "$ERROR" != "" ] ; then
-         if [ ! $ERROR -eq 0 ] ; then
+         if [ ! "$ERROR" -eq 0 ] ; then
             ERROR="ber ${ERROR}"
          else
             ERROR=""
@@ -214,11 +214,11 @@ elif [ "$SYSTEM" = "FreeBSD" ] ; then
          exit 1
       fi
 
-      /sbin/ipfw add $ID pipe $ID out src-ip $NETWORK_SRC dst-ip $NETWORK_DST || success=0
-      /sbin/ipfw pipe $ID config $BANDWIDTH $DELAY $LOSS $ERROR $queueParameters || success=0
+      /sbin/ipfw add "$ID" pipe "$ID" out src-ip "$NETWORK_SRC" dst-ip "$NETWORK_DST" || success=0
+      /sbin/ipfw pipe "$ID" config "$BANDWIDTH" "$DELAY" "$LOSS" "$ERROR" "$queueParameters" || success=0
       if [ $bidirectionalQoS -eq 1 ] ; then
-        /sbin/ipfw add $ID2 pipe $ID2 out src-ip $NETWORK_DST dst-ip $NETWORK_SRC || success=0
-        /sbin/ipfw pipe $ID2 config $BANDWIDTH $DELAY $LOSS $ERROR $queueParameters || success=0
+        /sbin/ipfw add $ID2 pipe $ID2 out src-ip "$NETWORK_DST" dst-ip "$NETWORK_SRC" || success=0
+        /sbin/ipfw pipe $ID2 config "$BANDWIDTH" "$DELAY" "$LOSS" "$ERROR" "$queueParameters" || success=0
       fi
    fi
 
@@ -233,6 +233,6 @@ fi
 # ====== Check whether QoS configuration has been successful ================
 if [ $success -ne 1 ] ; then
    echo >&2 "ERROR: setqos has failed to configure QoS settings!"
-   echo >&2 "Command on `hostname`: $0 $@"
+   echo >&2 "Command on $(hostname): $0 $@"
    exit 1
 fi
