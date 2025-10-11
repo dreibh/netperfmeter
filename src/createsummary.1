@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd August 1, 2025
+.Dd October 11, 2025
 .Dt createsummary 1
 .Os CreateSummary
 .\" ###### Name #############################################################
@@ -39,10 +39,15 @@
 .Op variable_names
 .br
 .Op Fl b | Fl Fl batch | Fl i | Fl Fl interactive
+.br
 .Op Fl l | Fl Fl line-numbers | Fl n | Fl Fl no-line-numbers
+.br
+.Op Fl s | Fl Fl scalar-splitting | Fl a | Fl Fl no-scalar-splitting
+.br
 .Op Fl c Ar level | Fl Fl compress Ar level
-.Op Fl s | Fl Fl splitall
+.br
 .Op Fl r | Fl Fl ignore-scalar-file-errors
+.br
 .Op Fl q | Fl Fl quiet
 .Nm netperfmeter
 .Op Fl h | Fl Fl help
@@ -84,18 +89,20 @@ A space-separated list of output variable names to be added to the output data t
 Run in batch mode. The program is aborted on errors.
 .It Fl i | Fl Fl interactive
 Run in interactive mode (default). On errors, the program is continued.
+.It Fl l | Fl Fl line-numbers
+Add line numbers into the output table files, as usual for GNU R.
+.It Fl n | Fl Fl no-line-numbers
+Do not add line numbers into the output table files, as usual for CSV (default).
+.It Fl s | Fl Fl scalar-splitting
+Try to split the scalar name ending in a number into the name part as well as the number. A scalar output table is then generated for the name part, with the corresponding number in table column "Split". Example: Scalars "Throughput1", ..., "Throughput9" will be written into output table "Throughput", the number will be in table column "Split". Without splitall option, each scalar would get its own table.
+.It Fl a | Fl Fl no-scalar-splitting
+Turns scalar splitting off (default).
 .It Fl c Ar level | Fl Fl compress Ar level
 Sets the BZip2 compression level; 1=none, 9=highest (default).
 .It Fl r | Fl Fl ignore-scalar-file-errors
 Ignore scalar file errors (that is, missing input files) instead of aborting.
-
-
-.Op Fl l | Fl Fl line-numbers
-.Op Fl n | Fl Fl no-line-numbers
-.Op Fl r | Fl Fl ignore-scalar-file-errors
-.Op Fl q | Fl Fl quiet
-
-
+.It Fl q | Fl Fl quiet
+Enable quiet mode (less verbose output).
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLE
@@ -110,7 +117,7 @@ compression level 5:
   echo "\-\-values=One"              && \\
   echo "\-\-input=test1.sca.bz2"     && \\
   echo "\-\-values=Two"              && \\
-  echo "\-\-input=test2.sca.bz2" ) | createsummary "ParameterX" \-compress=5
+  echo "\-\-input=test2.sca.bz2" ) | createsummary "ParameterX" \-\-batch \-\-compress 5
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz

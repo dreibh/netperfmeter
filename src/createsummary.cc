@@ -463,20 +463,20 @@ static void handleScalar(const std::string& varNames,
                          const std::string& varValues,
                          const unsigned int run,
                          const bool         interactiveMode,
-                         const bool         splitMode,
+                         const bool         scalarSplittingMode,
                          char*              objectName,
                          char*              statName,
                          const double       value)
 {
 /*
-   std::cout << "Object=" << objectName << "\n";
-   std::cout << "Statistic=" << statName << "\n";
-   std::cout << "Value=" << value << "\n";
+   std::cout << "Object="    << objectName << "\n";
+   std::cout << "Statistic=" << statName   << "\n";
+   std::cout << "Value="     << value      << "\n";
 */
 
    // ====== Try to split scalar name =======================================
    const char* splitName = "";
-   if(splitMode) {
+   if(scalarSplittingMode) {
       for(int i = strlen(statName) - 1; i >= 0; i--) {
          if(statName[i] == ' ') {
             if(isdigit(statName[i + 1])) {
@@ -527,7 +527,7 @@ static bool handleScalarFile(const std::string& varNames,
                              const std::string& varValues,
                              const std::string& fileName,
                              const bool         interactiveMode,
-                             const bool         splitAll)
+                             const bool         scalarSplitting)
 {
    InputFile       inputFile;
    InputFileFormat inputFileFormat = IFF_Plain;
@@ -591,7 +591,7 @@ static bool handleScalarFile(const std::string& varNames,
             break;
          }
          removeScenarioName((char*)&objectName);
-         handleScalar(varNames, varValues, run, interactiveMode, splitAll,
+         handleScalar(varNames, varValues, run, interactiveMode, scalarSplitting,
                       (char*)&objectName, (char*)&statName, value);
       }
       else if(buffer[0] == '#') {
@@ -629,7 +629,7 @@ static bool handleScalarFile(const std::string& varNames,
                // handleScalar() will overwrite the fields object/stat => make copies first!
                snprintf((char*)&statName,   sizeof(statName),   "%s", newStatName.c_str());
                snprintf((char*)&objectName, sizeof(objectName), "%s", statisticObjectName);
-               handleScalar(varNames, varValues, run, interactiveMode, splitAll,
+               handleScalar(varNames, varValues, run, interactiveMode, scalarSplitting,
                            (char*)&objectName, (char*)&statName, value);
             }
          }
@@ -834,8 +834,8 @@ static void dumpScalars(const std::string& simulationsDirectory,
          "    [variable_names]\n"
          "    [-b|---batch|-i|--interactive]\n"
          "    [-l|--line-numbers|-n|--no-line-numbers]\n"
-         "    [-c level|--compress=level]\n"
-         "    [-s|--splitall]\n"
+         "    [-s|--scalar-splitting|-a|--no-scalar-splitting]\n"
+         "    [-c level|--compress level]\n"
          "    [-r|--ignore-scalar-file-errors]\n"
          "    [-q|--quiet]\n"
          "* Version:\n  " << program << " [-v|--version]\n"
@@ -850,7 +850,7 @@ int main(int argc, char** argv)
    unsigned int compressionLevel       = 9;
    bool         interactiveMode        = true;
    bool         addLineNumbers         = false;
-   bool         splitAll               = false;
+   bool         scalarSplittingMode    = false;
    bool         quietMode              = false;
    bool         ignoreScalarFileErrors = false;
    std::string  varNames               = "_NoVarNamesGiven_";
@@ -866,11 +866,12 @@ int main(int argc, char** argv)
    const static struct option long_options[] = {
       { "interactive",               no_argument,       0, 'i' },
       { "batch",                     no_argument,       0, 'b' },
-      { "compress",                  required_argument, 0, 'c' },
-
-      { "splitall",                  no_argument,       0, 's' },
       { "line-numbers",              no_argument,       0, 'l' },
       { "no-line-numbers",           no_argument,       0, 'n' },
+      { "scalar-splitting",          no_argument,       0, 's' },
+      { "no-scalar-splitting",       no_argument,       0, 'a' },
+      { "compress",                  required_argument, 0, 'c' },
+
       { "ignore-scalar-file-errors", no_argument,       0, 'r' },
       { "quiet",                     no_argument,       0, 'q' },
 
@@ -881,7 +882,7 @@ int main(int argc, char** argv)
 
    int option;
    int longIndex;
-   while( (option = getopt_long_only(argc, argv, "bilnc:srqhv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "bilnsac:rqhv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'b':
             interactiveMode = false;
@@ -895,14 +896,20 @@ int main(int argc, char** argv)
          case 'n':
             addLineNumbers = false;
           break;
+         case 's':
+            scalarSplittingMode = true;
+          break;
+         case 'a':
+            scalarSplittingMode = false;
+          break;
          case 'c':
             compressionLevel = atol(optarg);
-            if(compressionLevel > 9) {
+            if(compressionLevel < 1) {
+               compressionLevel = 1;
+            }
+            else if(compressionLevel > 9) {
                compressionLevel = 9;
             }
-          break;
-         case 's':
-            splitAll = true;
           break;
          case 'r':
             ignoreScalarFileErrors = true;
@@ -916,23 +923,25 @@ int main(int argc, char** argv)
       }
    }
 
-   if(argc == 2) {
-      varNames = argv[1];
+   if(optind < argc) {
+      varNames = argv[optind++];
       for(size_t i = 0; i < varNames.size(); i++) {
          if(varNames[i] == ' ') {
             varNames[i] = '\t';
          }
       }
    }
-   else if(argc > 1) {
+   if(optind < argc) {
+      std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
       usage(argv[0], 1);
    }
 
    if(!quietMode) {
       std::cout << "CreateSummary " << CREATESUMMARY_VERSION << "\n"
+                << "* Interactive Mode:  " << (interactiveMode      ? "on" : "off") << "\n"
+                << "* Line Numbers:      " << (addLineNumbers       ? "on" : "off") << "\n"
+                << "* Scalar Splitting:  " << (scalarSplittingMode  ? "on" : "off") << "\n"
                 << "* Compression Level: " << compressionLevel << "\n"
-                << "* Interactive Mode:  " << (interactiveMode ? "on" : "off") << "\n"
-                << "* Line Numbers:      " << (addLineNumbers  ? "on" : "off") << "\n"
                 << "\n";
    }
 
@@ -994,7 +1003,7 @@ int main(int argc, char** argv)
             std::cerr << "ERROR: No values given (parameter --values=...)!\n";
             exit(1);
          }
-         if(!handleScalarFile(varNames, varValues, (char*)&command[8], interactiveMode, splitAll)) {
+         if(!handleScalarFile(varNames, varValues, (char*)&command[8], interactiveMode, scalarSplittingMode)) {
             scalarFileError = true;
             if(logFileName != "") {
                std::cerr << " => see logfile " << logFileName << "\n";
@@ -1026,7 +1035,7 @@ int main(int argc, char** argv)
          resultsDirectory = (const char*)&command[19];
       }
       else if(!(strcmp(command, "--splitall"))) {
-         splitAll = true;
+         scalarSplittingMode = true;
       }
       else if(!(strcmp(command, "--ignore-scalar-file-errors"))) {
          ignoreScalarFileErrors = true;
