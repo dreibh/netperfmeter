@@ -214,6 +214,17 @@ static void removeBrackets(char* str)
 }
 
 
+// ###### Separate columns by tab ###########################################
+static void separateColumnsByTab(std::string& values)
+{
+   for(size_t i = 0; i < values.size(); i++) {
+      if(values[i] == ' ') {
+         values[i] = '\t';
+      }
+   }
+}
+
+
 // ###### Remove scenario name  #############################################
 static void removeScenarioName(char* str)
 {
@@ -925,11 +936,7 @@ int main(int argc, char** argv)
 
    if(optind < argc) {
       varNames = argv[optind++];
-      for(size_t i = 0; i < varNames.size(); i++) {
-         if(varNames[i] == ' ') {
-            varNames[i] = '\t';
-         }
-      }
+      separateColumnsByTab(varNames);
    }
    if(optind < argc) {
       std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
@@ -976,22 +983,14 @@ int main(int argc, char** argv)
          if(varNames[0] == '\"') {
             varNames = varNames.substr(1, varNames.size() - 2);
          }
-         for(size_t i = 0; i < varNames.size(); i++) {
-            if(varNames[i] == ' ') {
-               varNames[i] = '\t';
-            }
-         }
+         separateColumnsByTab(varNames);
       }
       else if(!(strncmp(command, "--values=", 9))) {
          varValues = (const char*)&command[9];
          if(varValues[0] == '\"') {
             varValues = varValues.substr(1, varValues.size() - 2);
          }
-         for(size_t i = 0; i < varValues.size(); i++) {
-            if(varValues[i] == ' ') {
-               varValues[i] = '\t';
-            }
-         }
+         separateColumnsByTab(varValues);
       }
       else if(!(strncmp(command, "--logfile=", 10))) {
          logFileName = (const char*)&command[10];
