@@ -936,6 +936,7 @@ int main(int argc, char** argv)
       usage(argv[0], 1);
    }
 
+   // ====== Print information ==============================================
    if(!quietMode) {
       std::cout << "CreateSummary " << CREATESUMMARY_VERSION << "\n"
                 << "* Interactive Mode:  " << (interactiveMode      ? "on" : "off") << "\n"
@@ -945,12 +946,12 @@ int main(int argc, char** argv)
                 << "\n";
    }
 
+
+   // ====== Handle interactiveMode commands ====================================
    simpleRedBlackTreeNew(&StatisticsStorage,
                          scalarNodePrintFunction,
                          scalarNodeComparisonFunction);
 
-
-   // ====== Handle interactiveMode commands ====================================
    if(interactiveMode) {
       std::cout << "Ready> ";
       std::cout.flush();
