@@ -230,7 +230,7 @@ static bool separateColumnsByTab(std::string& values)
           break;
          case ' ':
             if(!inQuotation) {
-               values[i] = ' ';
+               values[i] = '\t';
             }
           break;
       }
