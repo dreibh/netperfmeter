@@ -553,18 +553,21 @@ Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with
   <th>Protocol</th>
   <th>Option1</th>
   <th>Option2</th>
+  <th>Directory</th>
   <th>passive.flow-ReceivedBitRate</th>
  </tr>
- <tr> <td>10.10.10.10</td> <td>tcp</td> <td>value1</td> <td>test1</td><td>12345678</td> </tr>
- <tr> <td>10.10.10.10</td> <td>tcp</td> <td>value1</td> <td>test2</td><td>11111111</td> </tr>
- <tr><td>...</td> <td>...</td> <td>...</td> <td>...</td> <td>...</td> </tr>
- <tr> <td>fdd8:c818:a429:cafe:40</td> <td>sctp</td> <td>value3</td> <td>test3</td><td>11111111</td> </tr>
+ <tr> <td>10.10.10.10</td> <td>tcp</td> <td>value1</td> <td>test1</td> <td>run-<em>&lt;HASH1&gt;</em></td> <td>12345678</td> </tr>
+ <tr> <td>10.10.10.10</td> <td>tcp</td> <td>value1</td> <td>test2</td> <td>run-<em>&lt;HASH2&gt;</em></td> <td>11111111</td> </tr>
+ <tr><td>...</td> <td>...</td> <td>...</td> <td>...</td> <td>run-<em>&lt;HASH...&gt;</em></td> <td>...</td> </tr>
+ <tr> <td>fdd8:c818:a429:cafe:40</td> <td>sctp</td> <td>value3</td> <td>test3</td> <td>run-<em>&lt;HASH_LAST&gt;</em></td> <td>11223344</td> </tr>
 </table>
 
 The summarisation task can be realised by the tool CreateSummary. It generates the output tables (BZip2-compressed CSV format, using TAB as delimiter) from all the scalar files of the measurement. For this summarisation, it needs information about:
 
-* Variables used
-* Each combination of variable settings and their corresponding scalar files.
+* Variables used;
+* Each combination of variable settings and their corresponding scalar files;
+* For debugging convenience, the directory name of each run.
+
 
 In the example above, this information needs to be added by preparing an input file <tt>results.summary</tt>, and then process this input by CreateSummary:
 
