@@ -484,8 +484,10 @@ The corresponding measurement can be implemented as script (in arbitrary languag
 
 <pre>
 #!/bin/sh -eu
+
 NAME="experiment1"
 RUNTIME=60
+
 for destination in $DESTINATIONS; do
    for protocol in $PROTOCOLS; so
       for option1 in $OPTION1 ; do
@@ -531,7 +533,7 @@ The result of the script execution is a directory `experiment1`, with one subdir
 
 ### Applying CreateSummary
 
-Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter and the scalar's value, i.e.&nbsp;for scalar `passive.flow-ReceivedBitRate`:
+Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter setting and the resulting scalar value, i.e.&nbsp;for scalar `passive.flow-ReceivedBitRate`:
 
 <table>
  <tr>
@@ -547,14 +549,16 @@ Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with
  <tr> <td>fdd8:c818:a429:cafe:40</td> <td>sctp</td> <td>value3</td> <td>test3</td><td>11111111</td> </tr>
 </table>
 
-The summarisation task can be realised by the tool CreateSummary. It generates the output tables (BZip2-compressed CSV format, using TAB as delimited) from all the scalar files of the measurement. For this summarisation, it needs information about:
+The summarisation task can be realised by the tool CreateSummary. It generates the output tables (BZip2-compressed CSV format, using TAB as delimiter) from all the scalar files of the measurement. For this summarisation, it needs information about:
 
 * Variables used
-* Each combination of variable settings and their corresponding scalar files. In the example above, this needs to be added by creating an input file `results.summary`:
+* Each combination of variable settings and their corresponding scalar files.
 
-<pre>
+In the example above, this information needs to be added by preparing an input file `results.summary`, and then process this input by CreateSummary:
+
+```
 if [ ! -e results.summary ] ; then
-   echo "--varnames=Destination Protocol Option1 Option2" >results.summary
+   echo "--varnames=Destination Protocol Option1 Option2" &gt;results.summary
 fi
 ...
 
@@ -582,14 +586,14 @@ done
 
 # ------ Run CreateSummary --------------------------------------------------
 createsummary -batch <results.summary
-</pre>
+```
 
 Notes:
 
 * Rerunning the measurement script appends new results. That is, the whole measurement may be repeated multiple times to create more accurate data, e.g.&nbsp;to calculate averages, etc.
 * Of course, in case of change of the parameters (like adding/removing a parameter), the measurement needs to be started from scratch!
 
-The result of the script execution is a BZip2-compressed CSV table for each scalar, e.g. `active.flow-ReceivedBitRate.data.bz2` and `passive.flow-ReceivedBitRate.data.bz2` containing the received bit rates of active and passive side. These files can be loaded into arbitrary tools handling CSV files. If necessary TAB needs to be specified as delimiter. For example, in GNU&nbp;R:
+The result of the script execution is a BZip2-compressed CSV table for each scalar, e.g. `active.flow-ReceivedBitRate.data.bz2` and `passive.flow-ReceivedBitRate.data.bz2` containing the received bit rates of active and passive side. These files can be loaded into arbitrary tools handling CSV files. If necessary TAB needs to be specified as delimiter. For example, in [GNU&nbsp;R](https://www.r-project.org/):
 
 <pre>
 library("data.table")
@@ -599,6 +603,20 @@ results <- fread("experiment1/active.flow-ReceivedBitRate.data.bz2")
 summary(results)
 colnames(results)
 </pre>
+
+### Applying CombineSummaries
+
+In some cases, it may be necessary to combine summary tables written by CreateSummary. For example, measurements have been from hosts `host1.example` and `host2.example`, now having collected data from both hosts. For analysis, the results in separate files (i.e.&nbsp;tables) for each host can be combined into a single file, with a new table column "Host" containing the measurement host:
+
+<pre>
+( echo '--values="host1.example"'
+  echo "--input=host1/experiment1/active.flow-ReceivedBitRate.data.bz2'
+  echo '--values="host2.example"'
+  echo "--input=host2/experiment1/active.flow-ReceivedBitRate.data.bz2'
+) | combinesummaries combined-active.flow-ReceivedBitRate.data.bz2 "Host"
+</pre>
+
+Then, after loading the resulting combined file `combined-active.flow-ReceivedBitRate.data.bz2` into an analysis tool like [GNU&nbsp;R](https://www.r-project.org/), the information about the host is in the added table column "Host".
 
 
 # 📦 Binary Package Installation
