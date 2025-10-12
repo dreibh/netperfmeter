@@ -122,31 +122,31 @@ NetPerfMeter uses the SCTP protocol. It may be necessary to allow loading the SC
 
 ### SCTP on Linux
 
-<pre>
+```bash
 echo "sctp" | sudo tee /etc/modules-load.d/sctp.conf
 if [ -e /etc/modprobe.d/sctp-blacklist.conf ] ; then
    sudo sed -e 's/^blacklist sctp/# blacklist sctp/g' -i /etc/modprobe.d/sctp-blacklist.conf
 fi
 sudo modprobe sctp
 lsmod | grep sctp
-</pre>
+```
 
 ### SCTP on FreeBSD
 
-<pre>
+```bash
 echo 'sctp_load="YES"' | sudo tee --append /boot/loader.conf
 sudo kldload sctp
 kldstat | grep sctp
-</pre>
+```
 
 
 ## Starting the Passive Instance (Server)
 
 * Run a passive instance (i.e.&nbsp;server side), using port 9000:
 
-  <pre>
-  <span style="color:red;">user@server</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter 9000
-  </pre>
+  ```bash
+  netperfmeter 9000
+  ```
 
   ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP (or MPTCP) instead (to be shown in the next example):
 
@@ -157,9 +157,9 @@ kldstat | grep sctp
 
 * Run a passive instance (i.e.&nbsp;server side), using port 9000, and allowing NPMP-CONTROL control communication over TCP support:
 
-  <pre>
-  <span style="color:red;">user@server</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter 9000 -control-over-tcp
-  </pre>
+  ```bash
+  netperfmeter 9000 -control-over-tcp
+  ```
 
 
 ## Running the Active Instance (Client)
@@ -169,11 +169,11 @@ kldstat | grep sctp
 
 * Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional TCP flow:
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -tcp const0:const1400:const0:const1400
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -tcp const0:const1400:const0:const1400
+  ```
 
-  Replace <em>&lt;SERVER&gt;</em> by the IP&nbsp;address or hostname of the passive instance!
+  Replace $SERVER by the IP&nbsp;address or hostname of the passive instance!
 
   The flow parameter specifies a saturated flow (frame rate&nbsp;0 – send a much as possible) with a constant frame size of 1400&nbsp;B. The first block specifies the direction from active (client) to passive (server) instance, the second block specifies the direction from passive (server) to active (client) instance.
 
@@ -186,33 +186,33 @@ kldstat | grep sctp
 
 * Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional TCP flow, using NPMP-CONTROL control communication over TCP.
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -control-over-tcp -tcp const0:const1400:const0:const1400
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -control-over-tcp -tcp const0:const1400:const0:const1400
+  ```
 
   Note: The passive instance must be started with <tt>-control-over-tcp</tt> as well!
 
 
 * Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional TCP flow, using NPMP-CONTROL control communication over SCTP (this is the default):
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -tcp const0:const1400:const0:const1400
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -tcp const0:const1400:const0:const1400
+  ```
 
 
 * Run an active instance (i.e.&nbsp;client side), with a download-only TCP flow (server to client):
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -tcp const0:const0:const0:const1400
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -tcp const0:const0:const0:const1400
+  ```
   Setting both, frame rate and frame size to 0, means to send nothing in the corresponding direction.
 
 
 * Run an active instance (i.e.&nbsp;client side), with a upload-only TCP flow (client to server):
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -tcp const0:const1400:const0:const0
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -tcp const0:const1400:const0:const0
+  ```
 
 
 ## Simple Non-TCP Communication
@@ -222,9 +222,9 @@ kldstat | grep sctp
   - Active to passive instance: constant 2&nbsp;frames/s, constant 200&nbsp;B/frame;
   - Passive to active instance: constant 25&nbsp;frames/s, constant 5000&nbsp;B/frame.
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -udp const2:const200:const25:const5000
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -udp const2:const200:const25:const5000
+  ```
 
   Setting both, frame rate and frame size to constant 0, which means to send nothing in the corresponding direction.
 
@@ -236,9 +236,9 @@ kldstat | grep sctp
   - Active to passive instance: constant 10&nbsp;frames/s, constant 128&nbsp;B/frame;
   - Passive to active instance: constant 25&nbsp;frames/s, constant 1200&nbsp;B/frame.
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -dccp const10:const128:const25:const1200
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -dccp const10:const128:const25:const1200
+  ```
   Note: DCCP is only available when provided by the operating system kernel!
 
 
@@ -254,16 +254,16 @@ kldstat | grep sctp
   - Active to passive instance: constant 10&nbsp;frames/s, constant 128&nbsp;B/frame;
   - Passive to active instance: constant 25&nbsp;frames/s, constant 1200&nbsp;B/frame.
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -sctp const2:const200:const25:const5000 const10:const128:const25:const1200
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -sctp const2:const200:const25:const5000 const10:const128:const25:const1200
+  ```
 
 
 * Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional MPTCP flow:
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -mptcp const0:const1400:const0:const1400
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -mptcp const0:const1400:const0:const1400
+  ```
 
   Notes:
 
@@ -292,19 +292,19 @@ A configured distribution is used to determine:
 Some examples:
 
 * A unidirectional TCP flow with constant 2&nbsp;frames;/s and uniformly distributed frame sizes between 100&nbsp;bytes and 20000&nbsp;bytes:
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -tcp const2:uniform100,20000
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -tcp const2:uniform100,20000
+  ```
 
 * A bidirectional SCTP flow with constant 2&nbsp;frames;/s and uniformly distributed frame sizes between 100&nbsp;bytes and 1000&nbsp;bytes outgoing, and an uniform frame rate from [0.2, 10.5) frames/s and frame sizes with an average of 1000&nbsp;bytes using exponential distribution incoming:
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -sctp const2:uniform100,1000:uniform0.2,10.5:exp1000
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -sctp const2:uniform100,1000:uniform0.2,10.5:exp1000
+  ```
 
 * An incoming UDP flow, with constant 25&nbsp;frames/s of constant 1000&nbsp;bytes, on-time and off-time pareto-distributed with location&nbsp;0.166667 and shape&nbsp;1.5, repeating in a loop:
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 -udp const0:const0:const25:const1000:onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
-  </pre>
+  ```bash
+  netperfmeter $SERVER:9000 -udp const0:const0:const25:const1000:onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
+  ```
 
 
 ## Multiple Flows and Measurement Results Recording
@@ -315,8 +315,8 @@ Some examples:
   - UDP flow, constant 10&nbsp;frames/s, constant 1024&nbsp;B/frame, in both directions;
   - SCTP flows with 5&nbsp;streams, and for each stream constant 1, 2, 3, 4, or 5&nbsp;frames/s, constant 512&nbsp;B/frame, in both directions, but with reversed frame rate order in backwards direction, all over a single SCTP association.
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 \
+  ```bash
+  netperfmeter $SERVER:9000 \
      -runtime=60 \
      -tcp  const10:const4096:const10:const4906 \
      -udp  const10:const1024:const10:const1024 \
@@ -326,7 +326,7 @@ Some examples:
         const3:const512:const3:const512 \
         const4:const512:const2:const512 \
         const5:const512:const1:const512
-  </pre>
+  ```
 
 
 * Run an active instance (i.e.&nbsp;client side), with 9&nbsp;flows, stopping the measurement after 60&nbsp;s:
@@ -343,8 +343,8 @@ Some examples:
   - Vector files: <tt>multi-&lt;active|passive&gt;-&lt;<em>FLOW</em>&gt;-&lt;<em>STREAM</em>&gt;.vec</tt>;
   - Scalar files: <tt>multi-&lt;active|passive&gt;.sca</tt>.
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> netperfmeter <em>&lt;SERVER&gt;</em>:9000 \
+  ```bash
+  netperfmeter $SERVER:9000 \
     -runtime=60 \
     -config=multi.config \
     -vector=multi.vec \
@@ -361,7 +361,7 @@ Some examples:
         const3:const512:const3:const512:description="SCTP Stream 2" \
         const4:const512:const2:const512:description="SCTP Stream 3" \
         const5:const512:const1:const512:description="SCTP Stream 4"
-  </pre>
+  ```
 
   Notes:
   - Note: DCCP and MPTCP are only available when provided by the operating system kernel!
@@ -422,10 +422,10 @@ Some examples:
 
 * Run T-Shark (the command-line version of the [Wireshark](https://www.wireshark.org/) network protocol analyser) to record a PCAP trace:
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> sudo tshark -i any -n -w output.pcap \
+  ```bash
+  sudo tshark -i any -n -w output.pcap \
      -f '(sctp port 9001) or ((tcp port 9000) or (tcp port 8999) or (udp port 9000) or (sctp port 9000) or (ip proto 33))'
-  </pre>
+  ```
 
   Notes:
 
@@ -440,9 +440,9 @@ Some examples:
 
 * Run [Wireshark](https://www.wireshark.org/) network protocol analyser to display the packet flow of the <a href="#active-multi">multi-flows example</a> above in PCAP file <tt>[multi.pcap.gz](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz)</tt>:
 
-  <pre>
-  <span style="color:green;">user@client</span><span style="color:blue;">:~</span><span style="color:gray;">$</span> wireshark multi.pcap.gz
-  </pre>
+  ```bash
+  wireshark multi.pcap.gz
+  ```
 
   Notes:
 
@@ -454,15 +454,15 @@ Some examples:
 
 * Take a look into the manual page of NetPerfMeter for further information and options:
 
-  <pre>
+  ```bash
   man netperfmeter
-  </pre>
+  ```
 
 * Obtain the NetPerfMeter version:
 
-  <pre>
+  ```bash
   netperfmeter -version
-  </pre>
+  ```
   Note: NetPerfMeter &ge;2.0 is required!
 
 
@@ -537,15 +537,15 @@ done
 
 Notes:
 
-* The current date (from `date -u -Iseconds`) is used to create a unique identifier for each run.
-* The parameter combination (in `run`) may contain special characters, e.g.&nbsp;spaces and slashes, etc. To create a usable and reasonably short directory name, it is [SHA-1](https://en.wikipedia.org/wiki/SHA-1)-hashed, to assemble a directoryName in `directory`.
-* The example NetPerfMeter run could be extended by `-vector=...` to also write vector files. However, in larger-scale measurements, vectors are often unnecessary, and their output can be very large. Therefore, only apply it if necessary!
+* The current date (from <tt>date -u -Iseconds</tt>) is used to create a unique identifier for each run.
+* The parameter combination (in <tt>run</tt>) may contain special characters, e.g.&nbsp;spaces and slashes, etc. To create a usable and reasonably short directory name, it is [SHA-1](https://en.wikipedia.org/wiki/SHA-1)-hashed, to assemble a directoryName in <tt>directory</tt>.
+* The example NetPerfMeter run could be extended by <tt>-vector=...</tt> to also write vector files. However, in larger-scale measurements, vectors are often unnecessary, and their output can be very large. Therefore, only apply it if necessary!
 
-The result of the script execution is a directory `experiment1`, with one subdirectory <tt>run-<em>&lt;HASH&gt;</em></tt> for each NetPerfMeter run. Each of these subdirectories will contain the scalar files `run-active.sca.bz2` (active-side results) and `run-passive.sca.bz2` (passive-side results), with all written scalars.
+The result of the script execution is a directory <tt>experiment1</tt>, with one subdirectory <tt>run-<em>&lt;HASH&gt;</em></tt> for each NetPerfMeter run. Each of these subdirectories will contain the scalar files <tt>run-active.sca.bz2</tt> (active-side results) and <tt>run-passive.sca.bz2</tt> (passive-side results), with all written scalars.
 
 ### Applying CreateSummary
 
-Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter setting and the resulting scalar value, i.e.&nbsp;for scalar `passive.flow-ReceivedBitRate`:
+Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter setting and the resulting scalar value, i.e.&nbsp;for scalar <tt>passive.flow-ReceivedBitRate</tt>:
 
 <table summary="Summary Example">
  <tr>
@@ -566,7 +566,7 @@ The summarisation task can be realised by the tool CreateSummary. It generates t
 * Variables used
 * Each combination of variable settings and their corresponding scalar files.
 
-In the example above, this information needs to be added by preparing an input file `results.summary`, and then process this input by CreateSummary:
+In the example above, this information needs to be added by preparing an input file <tt>results.summary</tt>, and then process this input by CreateSummary:
 
 ```bash
 # ------ Prepare results directory --------------------------------------------------------
@@ -605,7 +605,7 @@ Notes:
 * Rerunning the measurement script appends new results. That is, the whole measurement may be repeated multiple times to create more accurate data, e.g.&nbsp;to calculate averages, etc.
 * Of course, in case of change of the parameters (like adding/removing a parameter), the measurement needs to be started from scratch!
 
-The result of the script execution is a BZip2-compressed CSV table for each scalar, e.g. `active.flow-ReceivedBitRate.data.bz2` and `passive.flow-ReceivedBitRate.data.bz2` containing the received bit rates of active and passive side. These files can be loaded into arbitrary tools handling CSV files. If necessary TAB needs to be specified as delimiter. For example, in [GNU&nbsp;R](https://www.r-project.org/):
+The result of the script execution is a BZip2-compressed CSV table for each scalar, e.g. <tt>active.flow-ReceivedBitRate.data.bz2</tt> and <tt>passive.flow-ReceivedBitRate.data.bz2</tt> containing the received bit rates of active and passive side. These files can be loaded into arbitrary tools handling CSV files. If necessary TAB needs to be specified as delimiter. For example, in [GNU&nbsp;R](https://www.r-project.org/):
 
 ```r
 library("data.table")
@@ -619,17 +619,18 @@ print(results$"active.flow-ReceivedBitRate" / 1000000.0)   # Received bit rate i
 
 ### Applying CombineSummaries
 
-In some cases, it may be necessary to combine summary tables written by CreateSummary. For example, measurements have been from hosts `host1.example` and `host2.example`, now having collected data from both hosts. For analysis, the results in separate files (i.e.&nbsp;tables) for each host can be combined into a single file, with a new table column "Host" containing the measurement host:
+In some cases, it may be necessary to combine summary tables written by CreateSummary. For example, measurements have been from hosts <tt>host1.example</tt> and <tt>host2.example</tt>, now having collected data from both hosts. For analysis, the results in separate files (i.e.&nbsp;tables) for each host can be combined into a single file, with a new table column "Host" containing the measurement host:
 
 ```bash
-( echo '--values="host1.example"'
-  echo "--input=host1/experiment1/active.flow-ReceivedBitRate.data.bz2'
+(
+  echo '--values="host1.example"'
+  echo '--input=host1/experiment1/active.flow-ReceivedBitRate.data.bz2'
   echo '--values="host2.example"'
-  echo "--input=host2/experiment1/active.flow-ReceivedBitRate.data.bz2'
+  echo '--input=host2/experiment1/active.flow-ReceivedBitRate.data.bz2'
 ) | combinesummaries combined-active.flow-ReceivedBitRate.data.bz2 "Host"
 ```
 
-Then, after loading the resulting combined file `combined-active.flow-ReceivedBitRate.data.bz2` into an analysis tool like [GNU&nbsp;R](https://www.r-project.org/), the information about the host is in the added table column "Host".
+Then, after loading the resulting combined file <tt>combined-active.flow-ReceivedBitRate.data.bz2</tt> into an analysis tool like [GNU&nbsp;R](https://www.r-project.org/), the information about the host is in the added table column "Host".
 
 
 # 📦 Binary Package Installation
@@ -640,36 +641,36 @@ Please use the issue tracker at [https://github.com/dreibh/netperfmeter/issues](
 
 For ready-to-install Ubuntu Linux packages of NetPerfMeter, see [Launchpad PPA for Thomas Dreibholz](https://launchpad.net/~dreibh/+archive/ubuntu/ppa/+packages?field.name_filter=netperfmeter&field.status_filter=published&field.series_filter=)!
 
-<pre>
+```bash
 sudo apt-add-repository -sy ppa:dreibh/ppa
 sudo apt-get update
 sudo apt-get install netperfmeter
-</pre>
+```
 
 ## Fedora Linux
 
 For ready-to-install Fedora Linux packages of NetPerfMeter, see [COPR PPA for Thomas Dreibholz](https://copr.fedorainfracloud.org/coprs/dreibh/ppa/package/netperfmeter/)!
 
-<pre>
+```bash
 sudo dnf copr enable -y dreibh/ppa
 sudo dnf install netperfmeter
-</pre>
+```
 
 ## FreeBSD
 
 For ready-to-install FreeBSD packages of NetPerfMeter, it is included in the ports collection, see [FreeBSD ports tree index of benchmarks/netperfmeter/](https://cgit.freebsd.org/ports/tree/benchmarks/netperfmeter/)!
 
-<pre>
+```bash
 pkg install netperfmeter
-</pre>
+```
 
 Alternatively, to compile it from the ports sources:
 
-<pre>
+```bash
 cd /usr/ports/benchmarks/netperfmeter
 make
 make install
-</pre>
+```
 
 
 # 💾 Build from Sources
@@ -682,12 +683,12 @@ Please use the issue tracker at [https://github.com/dreibh/netperfmeter/issues](
 
 The Git repository of the NetPerfMeter sources can be found at [https://github.com/dreibh/netperfmeter](https://github.com/dreibh/netperfmeter):
 
-<pre>
+```bash
 git clone https://github.com/dreibh/netperfmeter
 cd netperfmeter
 cmake .
 make
-</pre>
+```
 
 Contributions:
 
