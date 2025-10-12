@@ -598,6 +598,8 @@ done
 createsummary -batch <results.summary
 ```
 
+The full script is available in: <tt>[run-experiment1](src/examples/run-experiment1)</tt>.
+
 Notes:
 
 * Rerunning the measurement script appends new results. That is, the whole measurement may be repeated multiple times to create more accurate data, e.g.&nbsp;to calculate averages, etc.
