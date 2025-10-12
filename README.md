@@ -474,54 +474,66 @@ Goal of many NetPerfMeter measurements is likely to perform larger-scale measure
 
 Example "experiment1":
 
-* `DESTINATIONS="10.10.10.10 172.20.30.40 fd91:b3aa:b9c:beef::10 fdd8:c818:a429:cafe:40"`
-* `PROTOCOLS="tcp sctp`"
-* `OPTION1="value1 value2 value3"`
-* `OPTION2="test1 test2 test3"`
+* Destinations: 10.10.10.10, 172.20.30.40, fd91:b3aa:b9c:beef::10, fdd8:c818:a429:cafe:40
+* Flows: const0:const1024:const0:const1024 (saturated, bidirectional)
+* Protocols: TCP, SCTP
+* Option 1: value1, value2, value3
+* Option 2: test1, test2, test3
 * ...
 
 The corresponding measurement can be implemented as script (in arbitrary language, e.g.&nbsp;as a simple shell script), basically implementing something like this:
 
-<pre>
+```bash
 #!/bin/sh -eu
 
 NAME="experiment1"
 RUNTIME=60
+DESTINATIONS="10.10.10.10 172.20.30.40 fd91:b3aa:b9c:beef::10 fdd8:c818:a429:cafe:40"
+FLOWS="const0:const1024:const0:const1024"
+PROTOCOLS="tcp sctp"
+OPTION1="value1 value2 value3"
+OPTION2="test1 test2 test3"
 
-for destination in $DESTINATIONS; do
-   for protocol in $PROTOCOLS; so
-      for option1 in $OPTION1 ; do
-         for option2 in $OPTION2 ; do
+# ------ Prepare results directory --------------------------------------------------------
+mkdir -p "$NAME"
+cd "$NAME"
 
-            # ------ Prepare a unique directory for the results -------------
-            now="$(date -u -Iseconds)"   # <- Unique name by using date
-            run="$NAME/$now-$destination-$protocol-$option1-$option2"
-            directory="run-$(echo "$run" | sha1sum | cut -d' ' -f1)"
-            mkdir -p "$NAME/$directory"
+for destination in $DESTINATIONS ; do
+   for flow in $FLOWS ; do
+      for protocol in $PROTOCOLS ; do
+         for option1 in $OPTION1 ; do
+            for option2 in $OPTION2 ; do
 
-            # ------ Prepare name/patterns for results files ----------------
-            scalarPattern="$directory/run.sca.bz2"
-            vectorPattern="$directory/run.vec.bz2"
-            configName="$directory/run.config"
+               # ------ Prepare a unique directory for the results ------------------------
+               now="$(date -u -Iseconds)"   # <- Unique name by using date
+               run="$now:$destination-$flow-$protocol-$option1-$option2"
+               directory="run-$(echo "$run" | sha1sum | cut -d' ' -f1)"
+               mkdir -p "$directory"
 
-            # Do something, to configure non-NetPerfMeter options
-            something-to-configure-option1 "$option1"
-            something-to-configure-option2 "$option2"
-            ...
+               # ------ Prepare name/patterns for results files ---------------------------
+               scalarPattern="$directory/run.sca.bz2"
+               vectorPattern="$directory/run.vec.bz2"
+               configName="$directory/run.config"
 
-            # ------ Run NetPerfMeter ---------------------------------------
-            # NOTE: Add -vector="$vectorPattern", if needed
-            netperfmeter "[$destination]:9000" \
-               -scalar="$scalarPattern" \
-               -config="$configName" \
-               -runtime=$RUNTIME \
-               "-$protocol" const0:const1024:const0:const1024
+               # Do something, to configure non-NetPerfMeter options
+               something-to-configure-option1 "$option1"
+               something-to-configure-option2 "$option2"
+               ...
 
+               # ------ Run NetPerfMeter --------------------------------------------------
+               # NOTE: Add -vector="$vectorPattern", if needed
+               netperfmeter "[$destination]:9000" \
+                  -scalar="$scalarPattern" \
+                  -config="$configName" \
+                  -runtime=$RUNTIME \
+                  "-$protocol" const0:const1024:const0:const1024
+
+            done
          done
       done
    done
 done
-</pre>
+```
 
 Notes:
 
@@ -535,7 +547,7 @@ The result of the script execution is a directory `experiment1`, with one subdir
 
 Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter setting and the resulting scalar value, i.e.&nbsp;for scalar `passive.flow-ReceivedBitRate`:
 
-<table>
+<table summary="Summary Example">
  <tr>
   <th>Destination</th>
   <th>Protocol</th>
@@ -556,35 +568,33 @@ The summarisation task can be realised by the tool CreateSummary. It generates t
 
 In the example above, this information needs to be added by preparing an input file `results.summary`, and then process this input by CreateSummary:
 
-```
-if [ ! -e results.summary ] ; then
-   echo "--varnames=Destination Protocol Option1 Option2" &gt;results.summary
-fi
+```bash
+# ------ Prepare results directory --------------------------------------------------------
 ...
+if [ ! -e results.summary ] ; then
+   echo "--varnames=Destination Protocol Option1 Option2 Directory" >results.summary
+fi
 
-for destination in $DESTINATIONS; do
-   for protocol in $PROTOCOLS; so
-      for option1 in $OPTION1 ; do
-         for option2 in $OPTION2 ; do
+for destination in $DESTINATIONS ; do
+   ...
             ...
 
-            # ------ Run NetPerfMeter ---------------------------------------
+               # ------ Run NetPerfMeter --------------------------------------------------
+               ...
+
+               # ------ Append run to results.summary -------------------------------------
+               (
+                  echo "--values=$destination $flow $protocol $option1 $option2 $directory"
+                  echo "--input=$directory/run-active.sca.bz2"
+                  echo "--values=$destination $flow $protocol $option1 $option2 $directory"
+                  echo "--input=$directory/run-passive.sca.bz2"
+               ) >>results.summary
+
             ...
-
-            # ------ Append run to results.summary --------------------------
-            (
-               echo "--values=$destination $protocol $option1 $options"
-               echo "--input=$directory/run-active.sca.bz2"
-               echo "--values=$destination $protocol $option1 $options"
-               echo "--input=$directory/run-passive.sca.bz2"
-            ) >>results.summary
-
-         done
-      done
-   done
+   ...
 done
 
-# ------ Run CreateSummary --------------------------------------------------
+# ------ Run CreateSummary ----------------------------------------------------------------
 createsummary -batch <results.summary
 ```
 
@@ -595,26 +605,27 @@ Notes:
 
 The result of the script execution is a BZip2-compressed CSV table for each scalar, e.g. `active.flow-ReceivedBitRate.data.bz2` and `passive.flow-ReceivedBitRate.data.bz2` containing the received bit rates of active and passive side. These files can be loaded into arbitrary tools handling CSV files. If necessary TAB needs to be specified as delimiter. For example, in [GNU&nbsp;R](https://www.r-project.org/):
 
-<pre>
+```r
 library("data.table")
 
 results <- fread("experiment1/active.flow-ReceivedBitRate.data.bz2")
 
-summary(results)
-colnames(results)
-</pre>
+print(summary(results))                                    # Show data summary
+print(colnames(results))                                   # Show table columns
+print(results$"active.flow-ReceivedBitRate" / 1000000.0)   # Received bit rate in Mbit/s
+```
 
 ### Applying CombineSummaries
 
 In some cases, it may be necessary to combine summary tables written by CreateSummary. For example, measurements have been from hosts `host1.example` and `host2.example`, now having collected data from both hosts. For analysis, the results in separate files (i.e.&nbsp;tables) for each host can be combined into a single file, with a new table column "Host" containing the measurement host:
 
-<pre>
+```bash
 ( echo '--values="host1.example"'
   echo "--input=host1/experiment1/active.flow-ReceivedBitRate.data.bz2'
   echo '--values="host2.example"'
   echo "--input=host2/experiment1/active.flow-ReceivedBitRate.data.bz2'
 ) | combinesummaries combined-active.flow-ReceivedBitRate.data.bz2 "Host"
-</pre>
+```
 
 Then, after loading the resulting combined file `combined-active.flow-ReceivedBitRate.data.bz2` into an analysis tool like [GNU&nbsp;R](https://www.r-project.org/), the information about the host is in the added table column "Host".
 
