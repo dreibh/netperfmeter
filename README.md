@@ -721,13 +721,13 @@ NetPerfMeter BibTeX entries can be found in [netperfmeter.bib](https://github.co
 
 # 🔗 Useful Links
 
-* [HiPerConTracer – High-Performance Connectivity Tracer](https://www.nntb.no/~dreibh/hipercontracer/index.html)
-* [Dynamic Multi-Homing Setup (DynMHS)](https://www.nntb.no/~dreibh/dynmhs/index.html)
-* [SubNetCalc – An IPv4/IPv6 Subnet Calculator](https://www.nntb.no/~dreibh/subnetcalc/index.html)
-* [TSCTP – An SCTP test tool](https://www.nntb.no/~dreibh/tsctp/index.html)
-* [System-Tools – Tools for Basic System Management](https://www.nntb.no/~dreibh/system-tools/index.html)
-* [Thomas Dreibholz's Multi-Path TCP (MPTCP) Page](https://www.nntb.no/~dreibh/mptcp/index.html)
-* [Thomas Dreibholz's SCTP Page](https://www.nntb.no/~dreibh/sctp/index.html)
+* [HiPerConTracer – High-Performance Connectivity Tracer](https://www.nntb.no/~dreibh/hipercontracer/)
+* [Dynamic Multi-Homing Setup (DynMHS)](https://www.nntb.no/~dreibh/dynmhs/)
+* [SubNetCalc – An IPv4/IPv6 Subnet Calculator](https://www.nntb.no/~dreibh/subnetcalc/)
+* [TSCTP – An SCTP test tool](https://www.nntb.no/~dreibh/tsctp/)
+* [System-Tools – Tools for Basic System Management](https://www.nntb.no/~dreibh/system-tools/)
+* [Thomas Dreibholz's Multi-Path TCP (MPTCP) Page](https://www.nntb.no/~dreibh/mptcp/)
+* [Thomas Dreibholz's SCTP Page](https://www.nntb.no/~dreibh/sctp/)
 * [Michael Tüxen's SCTP page](https://www.sctp.de/)
 * [NorNet – A Real-World, Large-Scale Multi-Homing Testbed](https://www.nntb.no/)
 * [GAIA – Cyber Sovereignty](https://gaia.nntb.no/)
