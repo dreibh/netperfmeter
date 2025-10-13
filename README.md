@@ -686,12 +686,11 @@ Please use the issue tracker at [https://github.com/dreibh/netperfmeter/issues](
 
 The Git repository of the NetPerfMeter sources can be found at [https://github.com/dreibh/netperfmeter](https://github.com/dreibh/netperfmeter):
 
-```bash
-git clone https://github.com/dreibh/netperfmeter
-cd netperfmeter
-cmake .
-make
-```
+<pre><code><span class="fu">git</span> clone <a href="https://github.com/dreibh/netperfmeter">https://github.com/dreibh/netperfmeter</a>
+<span class="bu">cd</span> netperfmeter
+<span class="fu">cmake</span> .
+<span class="fu">make</span>
+</code></pre>
 
 Contributions:
 
