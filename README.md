@@ -664,7 +664,7 @@ sudo dnf install netperfmeter
 For ready-to-install FreeBSD packages of NetPerfMeter, it is included in the ports collection, see [FreeBSD ports tree index of benchmarks/netperfmeter/](https://cgit.freebsd.org/ports/tree/benchmarks/netperfmeter/)!
 
 ```bash
-pkg install netperfmeter
+sudo pkg install netperfmeter
 ```
 
 Alternatively, to compile it from the ports sources:
@@ -672,7 +672,7 @@ Alternatively, to compile it from the ports sources:
 ```bash
 cd /usr/ports/benchmarks/netperfmeter
 make
-make install
+sudo make install
 ```
 
 
