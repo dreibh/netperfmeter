@@ -107,9 +107,9 @@ By using shell scripts, it is possible to apply NetPerfMeter for parameter studi
 
 When all measurement runs have eventually been processed, the results have to be visualised for analysis and interpretation. The NetPerfMeter package provides support to visualise the scalar results, which are distributed over the scalar files written by measurement runs. Therefore, the first step necessary is to bring the data from the various scalar files into an appropriate form for further post-processing. This step is denoted as *Summarisation*; an introduction is also provided in "[SimProcTC – The Design and Realization of a Powerful Tool-Chain for OMNeT++ Simulations](https://www.nntb.no/~dreibh/netperfmeter/#Publications-OMNeT__Workshop2009)".
 
-The summarisation task is performed by the tool <tt>createsummary</tt>. An external program – instead of just using [GNU&nbsp;R](https://www.r-project.org/) itself to perform this step – is used due to the requirements on memory and CPU power. <tt>createsummary</tt> iterates over all scalar files of a measurement&nbsp;M. Each file is read – with on-the-fly BZip2-decompression – and each scalar value as well as the configuration&nbsp;m∈M having led to this value – are stored in memory. Depending on the number of scalars, the required storage space may have a size of multiple&nbsp;GiB.
+The summarisation task is performed by the tool `createsummary`. An external program – instead of just using [GNU&nbsp;R](https://www.r-project.org/) itself to perform this step – is used due to the requirements on memory and CPU power. `createsummary` iterates over all scalar files of a measurement&nbsp;M. Each file is read – with on-the-fly BZip2-decompression – and each scalar value as well as the configuration&nbsp;m∈M having led to this value – are stored in memory. Depending on the number of scalars, the required storage space may have a size of multiple&nbsp;GiB.
 
-Since usually not all scalars of a measurement are required for analysis (e.g.&nbsp;for an SCTP measurement, it may be unnecessary to include unrelated statistics), a list of scalar name prefixes to be excluded from summarisation can be provided to <tt>createsummary</tt>, in form of the so-called *Summary Skip List*. This feature may significantly reduce the memory and disk space requirements of the summarisation step. Since the skipped scalars still remain stored in the scalar files themselves, it is possible to simply re-run <tt>createsummary</tt> with updated summary skip list later, in order to also include them.
+Since usually not all scalars of a measurement are required for analysis (e.g.&nbsp;for an SCTP measurement, it may be unnecessary to include unrelated statistics), a list of scalar name prefixes to be excluded from summarisation can be provided to `createsummary`, in form of the so-called *Summary Skip List*. This feature may significantly reduce the memory and disk space requirements of the summarisation step. Since the skipped scalars still remain stored in the scalar files themselves, it is possible to simply re-run `createsummary` with updated summary skip list later, in order to also include them.
 
 Having all relevant scalars stored in memory, a data file – which can be processed by [GNU&nbsp;R](https://www.r-project.org/), [LibreOffice](https://www.libreoffice.org/) or other programs – is written for each scalar. The data file is simply a table in text form, containing the column names on the first line. Each following line contains the data, with line number and an entry for each column (all separated by spaces); an example is provided in Listing&nbsp;3 of "[SimProcTC – The Design and Realization of a Powerful Tool-Chain for OMNeT++ Simulations](https://www.nntb.no/~dreibh/netperfmeter/#Publications-OMNeT__Workshop2009)". That is, each line consists of the settings of all parameters and the resulting scalar value. The data files are also BZip2-compressed on the fly, in order to reduce the storage space requirements.
 
@@ -190,7 +190,7 @@ kldstat | grep sctp
   netperfmeter $SERVER:9000 -control-over-tcp -tcp const0:const1400:const0:const1400
   ```
 
-  Note: The passive instance must be started with <tt>-control-over-tcp</tt> as well!
+  Note: The passive instance must be started with `-control-over-tcp` as well!
 
 
 * Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional TCP flow, using NPMP-CONTROL control communication over SCTP (this is the default):
@@ -339,7 +339,7 @@ Some examples:
 
   The example above, but recording measurement data and flow information into files, including descriptions for active/passive instance and the flows:
 
-  - Configuration file: <tt>multi.config</tt>;
+  - Configuration file: `multi.config`;
   - Vector files: <tt>multi-&lt;active|passive&gt;-&lt;<em>FLOW</em>&gt;-&lt;<em>STREAM</em>&gt;.vec</tt>;
   - Scalar files: <tt>multi-&lt;active|passive&gt;.sca</tt>.
 
@@ -370,45 +370,45 @@ Some examples:
 
 * An example output of the multi-flow example above, measurered in a multi-homed testbed setup, provides the following output:
 
-  - The configuration file <tt>[multi.config](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.config)</tt>. It contains the flows and their parameters. It can be used to further process the scalar and vector output.
-  - Scalar files (i.e.&nbsp;summaries of the single measurement run) from active side (<tt>[multi-active.sca](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active.sca)</tt>) and passive side (<tt>[multi-passive.sca](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive.sca)</tt>). The scalar file format is the same as used by [OMNeT++](https://omnetpp.org/).
+  - The configuration file [`multi.config`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.config). It contains the flows and their parameters. It can be used to further process the scalar and vector output.
+  - Scalar files (i.e.&nbsp;summaries of the single measurement run) from active side ([`multi-active.sca`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active.sca)) and passive side ([`multi-passive.sca`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive.sca)). The scalar file format is the same as used by [OMNeT++](https://omnetpp.org/).
   - Vector files (i.e.&nbsp;time series) for each flow, from active and passive side:
 
     + Flow 0 (TCP flow):
-      <tt>[multi-active-00000000-0000.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000000-0000.vec)</tt>,
-      <tt>[multi-passive-00000000-0000.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000000-0000.vec)</tt>.
+      [`active-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000000-0000.vec),
+      [`passive-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000000-0000.vec).
 
     + Flow 1 (MPTCP flow):
-      <tt>[multi-active-00000001-0000.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000001-0000.vec)</tt>,
-      <tt>[multi-passive-00000001-0000.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000001-0000.vec)</tt>.
+      [`active-00000001-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000001-0000.vec),
+      [`passive-00000001-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000001-0000.vec).
 
     + Flow 2 (UDP flow):
-      <tt>[multi-active-00000002-0000.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000002-0000.vec)</tt>,
-      <tt>[multi-passive-00000002-0000.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000002-0000.vec)</tt>.
+      [`active-00000002-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000002-0000.vec),
+      [`passive-00000002-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000002-0000.vec).
 
     + Flow 3 (DCCP flow):
-      <tt>[multi-active-00000003-0000.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000003-0000.vec)</tt>,
-      <tt>[multi-passive-00000003-0000.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000003-0000.vec)</tt>.
+      [`active-00000003-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000003-0000.vec),
+      [`passive-00000003-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000003-0000.vec).
 
     + Flow 4 (SCTP flow for SCTP stream 0):
-      <tt>[multi-active-00000004-0000.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000004-0000.vec)</tt>,
-      <tt>[multi-passive-00000004-0000.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000004-0000.vec)</tt>.
+      [`active-00000004-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000004-0000.vec),
+      [`passive-00000004-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000004-0000.vec).
 
     + Flow 5 (SCTP flow for SCTP stream 1):
-      <tt>[multi-active-00000005-0001.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000005-0001.vec)</tt>,
-      <tt>[multi-passive-00000005-0001.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000005-0001.vec)</tt>.
+      [`active-00000005-0001.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000005-0001.vec),
+      [`passive-00000005-0001.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000005-0001.vec).
 
     + Flow 6 (SCTP flow for SCTP stream 2):
-      <tt>[multi-active-00000006-0002.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000006-0002.vec)</tt>,
-      <tt>[multi-passive-00000006-0002.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000006-0002.vec)</tt>.
+      [`active-00000006-0002.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000006-0002.vec),
+      [`passive-00000006-0002.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000006-0002.vec).
 
     + Flow 7 (SCTP flow for SCTP stream 3):
-      <tt>[multi-active-00000007-0003.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000007-0003.vec)</tt>,
-      <tt>[multi-passive-00000007-0003.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000007-0003.vec)</tt>.
+      [`active-00000007-0003.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000007-0003.vec),
+      [`passive-00000007-0003.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000007-0003.vec).
 
     + Flow 8 (SCTP flow for SCTP stream 4):
-      <tt>[multi-active-00000008-0004.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000008-0004.vec)</tt>,
-      <tt>[multi-passive-00000008-0004.vec](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000008-0004.vec)</tt>.
+      [`active-00000008-0004.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000008-0004.vec),
+      [`passive-00000008-0004.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000008-0004.vec).
 
    The vector file format is a table, which can be read with CSV import of tools like [GNU&nbsp;R](https://www.r-project.org/), [LibreOffice](https://www.libreoffice.org/), etc.
 
@@ -417,7 +417,7 @@ Some examples:
 
 <p align="center">
  <a href="src/figures/NetPerfMeter-Wireshark-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Wireshark-Screenshot.webp" style="width: 768pt;" /></a><br />
- A Wireshark Run with NetPerfMeter Traffic from <tt>[multi.pcap.gz](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz)</tt>
+ A Wireshark Run with NetPerfMeter Traffic from [`multi.pcap.gz`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz)
 </p>
 
 * Run T-Shark (the command-line version of the [Wireshark](https://www.wireshark.org/) network protocol analyser) to record a PCAP trace:
@@ -435,10 +435,10 @@ Some examples:
     + SCTP, port 9000 and 9001 (data and control traffic over SCTP);
     + TCP, port 8999, 9000 and 9001 (data and control traffic over TCP and MPTCP);
     + UDP, port 9000;
-    + DCCP, port 9000 (<tt>ip proto 33</tt>).
+    + DCCP, port 9000 (`ip proto 33`).
 
 
-* Run [Wireshark](https://www.wireshark.org/) network protocol analyser to display the packet flow of the <a href="#active-multi">multi-flows example</a> above in PCAP file <tt>[multi.pcap.gz](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz)</tt>:
+* Run [Wireshark](https://www.wireshark.org/) network protocol analyser to display the packet flow of the <a href="#active-multi">multi-flows example</a> above in PCAP file [`multi.pcap.gz`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz):
 
   ```bash
   wireshark multi.pcap.gz
@@ -447,8 +447,7 @@ Some examples:
   Notes:
 
   - Wireshark provides out-of-the-box support for NetPerfMeter, i.e.&nbsp;a dissector is included in all recent Wireshark packages.
-  - Color filtering rules can colorise NetPerfMeter traffic, e.g.&nbsp; to mark different packet types or flows/streams. An example configuration is provided in <tt>[colorfilters](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/colorfilters)</tt> (needs to be merged into own configuration, usually in <tt>~/.config/wireshark/colorfilters</tt>).
-
+  - Coloring rules and filters can be found in the directory [`netperfmeter/src/wireshark`](https://github.com/dreibh/netperfmeter/tree/master/src/wireshark). Simply copy [`colorfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/colorfilters), [`dfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/dfilters) and optionally [`preferences`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/preferences) to `$HOME/.wireshark`.
 
 ## Miscellaneous
 
@@ -537,15 +536,15 @@ done
 
 Notes:
 
-* The current date (from <tt>date -u -Iseconds</tt>) is used to create a unique identifier for each run.
-* The parameter combination (in <tt>run</tt>) may contain special characters, e.g.&nbsp;spaces and slashes, etc. To create a usable and reasonably short directory name, it is [SHA-1](https://en.wikipedia.org/wiki/SHA-1)-hashed, to assemble a directoryName in <tt>directory</tt>.
-* The example NetPerfMeter run could be extended by <tt>-vector=...</tt> to also write vector files. However, in larger-scale measurements, vectors are often unnecessary, and their output can be very large. Therefore, only apply it if necessary!
+* The current date (from `date -u -Iseconds`) is used to create a unique identifier for each run.
+* The parameter combination (in `run`) may contain special characters, e.g.&nbsp;spaces and slashes, etc. To create a usable and reasonably short directory name, it is [SHA-1](https://en.wikipedia.org/wiki/SHA-1)-hashed, to assemble a directoryName in `directory`.
+* The example NetPerfMeter run could be extended by `-vector=...` to also write vector files. However, in larger-scale measurements, vectors are often unnecessary, and their output can be very large. Therefore, only apply it if necessary!
 
-The result of the script execution is a directory <tt>experiment1</tt>, with one subdirectory <tt>run-<em>&lt;HASH&gt;</em></tt> for each NetPerfMeter run. Each of these subdirectories will contain the scalar files <tt>run-active.sca.bz2</tt> (active-side results) and <tt>run-passive.sca.bz2</tt> (passive-side results), with all written scalars.
+The result of the script execution is a directory `experiment1`, with one subdirectory <tt>run-<em>&lt;HASH&gt;</em></tt> for each NetPerfMeter run. Each of these subdirectories will contain the scalar files `run-active.sca.bz2` (active-side results) and `run-passive.sca.bz2` (passive-side results), with all written scalars.
 
 ### Applying CreateSummary
 
-Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter setting and the resulting scalar value, i.e.&nbsp;for scalar <tt>passive.flow-ReceivedBitRate</tt>:
+Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter setting and the resulting scalar value, i.e.&nbsp;for scalar `passive.flow-ReceivedBitRate`:
 
 <table summary="Summary Example">
  <tr>
@@ -569,7 +568,7 @@ The summarisation task can be realised by the tool CreateSummary. It generates t
 * For debugging convenience, the directory name of each run.
 
 
-In the example above, this information needs to be added by preparing an input file <tt>results.summary</tt>, and then process this input by CreateSummary:
+In the example above, this information needs to be added by preparing an input file `results.summary`, and then process this input by CreateSummary:
 
 ```bash
 # ------ Prepare results directory --------------------------------------------------------
@@ -601,14 +600,14 @@ done
 createsummary -batch <results.summary
 ```
 
-The full script is available in: <tt>[run-experiment1](src/examples/run-experiment1)</tt>.
+The full script is available in: [`run-experiment1`](src/examples/run-experiment1).
 
 Notes:
 
 * Rerunning the measurement script appends new results. That is, the whole measurement may be repeated multiple times to create more accurate data, e.g.&nbsp;to calculate averages, etc.
 * Of course, in case of change of the parameters (like adding/removing a parameter), the measurement needs to be started from scratch!
 
-The result of the script execution is a BZip2-compressed CSV table for each scalar, e.g. <tt>active.flow-ReceivedBitRate.data.bz2</tt> and <tt>passive.flow-ReceivedBitRate.data.bz2</tt> containing the received bit rates of active and passive side. These files can be loaded into arbitrary tools handling CSV files. If necessary TAB needs to be specified as delimiter. For example, in [GNU&nbsp;R](https://www.r-project.org/):
+The result of the script execution is a BZip2-compressed CSV table for each scalar, e.g. `active.flow-ReceivedBitRate.data.bz2` and `passive.flow-ReceivedBitRate.data.bz2` containing the received bit rates of active and passive side. These files can be loaded into arbitrary tools handling CSV files. If necessary TAB needs to be specified as delimiter. For example, in [GNU&nbsp;R](https://www.r-project.org/):
 
 ```r
 library("data.table")
@@ -622,7 +621,7 @@ print(results$"active.flow-ReceivedBitRate" / 1000000.0)   # Received bit rate i
 
 ### Applying CombineSummaries
 
-In some cases, it may be necessary to combine summary tables written by CreateSummary. For example, measurements have been from hosts <tt>host1.example</tt> and <tt>host2.example</tt>, now having collected data from both hosts. For analysis, the results in separate files (i.e.&nbsp;tables) for each host can be combined into a single file, with a new table column "Host" containing the measurement host:
+In some cases, it may be necessary to combine summary tables written by CreateSummary. For example, measurements have been from hosts *host1.example* and *host2.example*, now having collected data from both hosts. For analysis, the results in separate files (i.e.&nbsp;tables) for each host can be combined into a single file, with a new table column "Host" containing the measurement host:
 
 ```bash
 (
@@ -633,7 +632,7 @@ In some cases, it may be necessary to combine summary tables written by CreateSu
 ) | combinesummaries combined-active.flow-ReceivedBitRate.data.bz2 "Host"
 ```
 
-Then, after loading the resulting combined file <tt>combined-active.flow-ReceivedBitRate.data.bz2</tt> into an analysis tool like [GNU&nbsp;R](https://www.r-project.org/), the information about the host is in the added table column "Host".
+Then, after loading the resulting combined file `combined-active.flow-ReceivedBitRate.data.bz2` into an analysis tool like [GNU&nbsp;R](https://www.r-project.org/), the information about the host is in the added table column "Host".
 
 
 # 📦 Binary Package Installation
