@@ -544,7 +544,7 @@ The result of the script execution is a directory `experiment1`, with one subdir
 
 ### Applying CreateSummary
 
-Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter setting and the resulting scalar value, i.e.&nbsp;for scalar `passive.flow-ReceivedBitRate`:
+Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter setting and the resulting scalar value, i.e.&nbsp;for the scalar *passive.flow-ReceivedBitRate*:
 
 <table summary="Summary Example">
  <tr>
