@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+set -eu
+
+# ====== Check arguments ====================================================
+TEST=0
+while [ $# -gt 0 ] ; do
+   if [ "$1" == "-t" ] || [ "$1" == "--test" ] ; then
+      TEST=1
+   else
+      echo >&2 "Usage: $0 [-t|--test]"
+      exit 1
+   fi
+   shift
+done
+
+
+# ====== Clone and build Linux QUIC =========================================
+cd ~/src
+if [ ! -e quic ] ; then
+   git clone https://github.com/lxin/quic.git
+   cd quic
+else
+   cd quic
+   git pull
+fi
+
+./autogen.sh
+./configure --prefix=/usr
+make
+sudo make install
+if [ ${TEST} -ge 1 ] ; then
+   sudo make check
+fi
+
+
+# ====== Load the Linux QUIC kernel module ==================================
+sudo modprobe quic
+lsmod | grep "^quic"
