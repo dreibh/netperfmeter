@@ -22,6 +22,8 @@ Requires: %{name}-common = %{version}-%{release}
 Recommends: %{name}-plotting = %{version}-%{release}
 Recommends: bc
 Recommends: hipercontracer
+Recommends: keyutils
+Recommends: ktls-utils
 Recommends: iputils
 Recommends: wireshark-cli
 Recommends: subnetcalc >= 2.0.2
