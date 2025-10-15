@@ -39,7 +39,6 @@
 #include <math.h>
 
 #include <ctype.h>
-#include <sys/time.h>
 #include <sys/types.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
@@ -71,10 +70,12 @@ std::string format(const char* fmt, ...)
 // ###### Get current time stamp ############################################
 unsigned long long getMicroTime()
 {
-  struct timeval tv;
-  gettimeofday(&tv,nullptr);
-  return(((unsigned long long)tv.tv_sec * (unsigned long long)1000000) +
-         (unsigned long long)tv.tv_usec);
+  timespec ts;
+  if(__builtin_expect( (clock_gettime(CLOCK_REALTIME, &ts) != 0) , 0)) {
+     perror("clock_gettime():");
+     abort();
+  }
+  return ((unsigned long long)ts.tv_sec * 1000000ULL) + (ts.tv_nsec / 1000);
 }
 
 

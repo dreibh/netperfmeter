@@ -30,7 +30,7 @@ PROJECT(netperfmeter LANGUAGES C CXX)
 
 SET(BUILD_MAJOR "2")
 SET(BUILD_MINOR "0")
-SET(BUILD_PATCH "0~rc1.10")
+SET(BUILD_PATCH "0~rc1.11")
 SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
@@ -82,29 +82,37 @@ ENDIF()
 #############################################################################
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
-    FIND_LIBRARY(SCTP_LIBRARY sctp)
+   MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
+   FIND_LIBRARY(SCTP_LIBRARY sctp)
+   IF (NOT SCTP_LIBRARY)
+      MESSAGE(FATAL_ERROR
+              " Cannot find Linux Kernel SCTP library! Try:\n"
+              " * Ubuntu/Debian: sudo apt install -y libsctp-dev\n"
+              " * Fedora:        sudo dnf install -y lksctp-tools-devel\n"
+              " * SuSE:          sudo zypper install -y lksctp-tools-devel\n"
+              " * Alpine:        sudo apk add lksctp-tools-dev\n")
+   ENDIF()
 
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-    MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
-    SET(CMAKE_REQUIRED_INCLUDES "/usr/local/include" "/usr/include")
-    SET(CMAKE_LIBRARY_PATH "/usr/local/lib")
-    INCLUDE_DIRECTORIES("/usr/local/include")
+   MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
+   SET(CMAKE_REQUIRED_INCLUDES "/usr/local/include" "/usr/include")
+   SET(CMAKE_LIBRARY_PATH "/usr/local/lib")
+   INCLUDE_DIRECTORIES("/usr/local/include")
 
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
-    SET(CMAKE_REQUIRED_INCLUDES "/usr/local/include" "/usr/include" "/usr/local/opt/openssl/include")
-    SET(CMAKE_LIBRARY_PATH "/usr/local/lib")
-    INCLUDE_DIRECTORIES("/usr/local/include" "/usr/local/opt/openssl/include")
+   MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
+   SET(CMAKE_REQUIRED_INCLUDES "/usr/local/include" "/usr/include" "/usr/local/opt/openssl/include")
+   SET(CMAKE_LIBRARY_PATH "/usr/local/lib")
+   INCLUDE_DIRECTORIES("/usr/local/include" "/usr/local/opt/openssl/include")
 
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "NetBSD")
-    MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
-    SET(CMAKE_REQUIRED_INCLUDES "/usr/pkg/include" "/usr/include" "/usr/local/include")
-    SET(CMAKE_LIBRARY_PATH "/usr/local/lib")
-    INCLUDE_DIRECTORIES("/usr/pkg/include" "/usr/local/include")
+   MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
+   SET(CMAKE_REQUIRED_INCLUDES "/usr/pkg/include" "/usr/include" "/usr/local/include")
+   SET(CMAKE_LIBRARY_PATH "/usr/local/lib")
+   INCLUDE_DIRECTORIES("/usr/pkg/include" "/usr/local/include")
 
 ELSE()
-    MESSAGE(FATAL_ERROR ${CMAKE_SYSTEM_NAME} " not supported (yet?)")
+   MESSAGE(FATAL_ERROR ${CMAKE_SYSTEM_NAME} " not supported (yet?)")
 
 ENDIF()
 

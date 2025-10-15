@@ -29,6 +29,7 @@
 
 #include <string.h>
 
+#include <getopt.h>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -37,6 +38,7 @@
 #include "simpleredblacktree.h"
 #include "inputfile.h"
 #include "outputfile.h"
+#include "package-version.h"
 
 
 #define MAX_NAME_SIZE    256
@@ -209,6 +211,31 @@ static void removeBrackets(char* str)
       }
    }
    str[j] = 0x00;
+}
+
+
+// ###### Separate columns by tab ###########################################
+static bool separateColumnsByTab(std::string& values)
+{
+   bool         inQuotation    = false;
+   unsigned int quotationMarks = 0;
+   for(size_t i = 0; i < values.size(); i++) {
+      switch(values[i]) {
+         case '\\':
+            i++;
+          break;
+         case '"':
+            inQuotation = !inQuotation;
+            quotationMarks++;
+          break;
+         case ' ':
+            if(!inQuotation) {
+               values[i] = '\t';
+            }
+          break;
+      }
+   }
+   return ((quotationMarks & 1) == 0);
 }
 
 
@@ -461,20 +488,20 @@ static void handleScalar(const std::string& varNames,
                          const std::string& varValues,
                          const unsigned int run,
                          const bool         interactiveMode,
-                         const bool         splitMode,
+                         const bool         scalarSplittingMode,
                          char*              objectName,
                          char*              statName,
                          const double       value)
 {
 /*
-   std::cout << "Object=" << objectName << "\n";
-   std::cout << "Statistic=" << statName << "\n";
-   std::cout << "Value=" << value << "\n";
+   std::cout << "Object="    << objectName << "\n";
+   std::cout << "Statistic=" << statName   << "\n";
+   std::cout << "Value="     << value      << "\n";
 */
 
    // ====== Try to split scalar name =======================================
    const char* splitName = "";
-   if(splitMode) {
+   if(scalarSplittingMode) {
       for(int i = strlen(statName) - 1; i >= 0; i--) {
          if(statName[i] == ' ') {
             if(isdigit(statName[i + 1])) {
@@ -525,7 +552,7 @@ static bool handleScalarFile(const std::string& varNames,
                              const std::string& varValues,
                              const std::string& fileName,
                              const bool         interactiveMode,
-                             const bool         splitAll)
+                             const bool         scalarSplitting)
 {
    InputFile       inputFile;
    InputFileFormat inputFileFormat = IFF_Plain;
@@ -570,26 +597,26 @@ static bool handleScalarFile(const std::string& varNames,
             if(s != nullptr) {
                if(sscanf(s, "%lf", &value) != 1) {
                   std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                       << " - Value expected!\n";
+                            << " - Value expected!\n";
                   success = false;
                   break;
                }
             }
             else {
                std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                    << " - Statistics name expected for \"scalar\"!\n";
+                         << " - Statistics name expected for \"scalar\"!\n";
                success = false;
                break;
             }
          }
          else {
             std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                 << " - Object name expected for \"scalar\"!\n";
+                      << " - Object name expected for \"scalar\"!\n";
             success = false;
             break;
          }
          removeScenarioName((char*)&objectName);
-         handleScalar(varNames, varValues, run, interactiveMode, splitAll,
+         handleScalar(varNames, varValues, run, interactiveMode, scalarSplitting,
                       (char*)&objectName, (char*)&statName, value);
       }
       else if(buffer[0] == '#') {
@@ -609,7 +636,7 @@ static bool handleScalarFile(const std::string& varNames,
             if(s) {
                if(sscanf(s, "%lf", &value) != 1) {
                   std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                       << " - Value expected!\n";
+                            << " - Value expected!\n";
                   success = false;
                   break;
                }
@@ -627,13 +654,13 @@ static bool handleScalarFile(const std::string& varNames,
                // handleScalar() will overwrite the fields object/stat => make copies first!
                snprintf((char*)&statName,   sizeof(statName),   "%s", newStatName.c_str());
                snprintf((char*)&objectName, sizeof(objectName), "%s", statisticObjectName);
-               handleScalar(varNames, varValues, run, interactiveMode, splitAll,
+               handleScalar(varNames, varValues, run, interactiveMode, scalarSplitting,
                            (char*)&objectName, (char*)&statName, value);
             }
          }
          else {
             std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                 << " - \"field\" without \"statistic\"!\n";
+                      << " - \"field\" without \"statistic\"!\n";
             success = false;
             break;
          }
@@ -645,14 +672,14 @@ static bool handleScalarFile(const std::string& varNames,
             s = getWord(s, (char*)&statisticBlockName);
             if(s == nullptr) {
                std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                    << " - Statistics name expected for \"statistic\"!\n";
+                         << " - Statistics name expected for \"statistic\"!\n";
                success = false;
                break;
             }
          }
          else {
             std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
-                 << " - Object name expected for \"statistic\"!\n";
+                      << " - Object name expected for \"statistic\"!\n";
             success = false;
             break;
          }
@@ -667,7 +694,7 @@ static bool handleScalarFile(const std::string& varNames,
       }
       else {
          std::cerr << "NOTE: " << fileName << ":" << inputFile.getLine()
-              << " - Ignoring line \"" << buffer << "\"\n";
+                   << " - Ignoring line \"" << buffer << "\"\n";
          // Skip this item
       }
    }
@@ -702,7 +729,7 @@ static void closeOutputFile(OutputFile&              outputFile,
          std::cout << " (" << lineNumber << " lines";
          if(in > 0) {
             std::cout << ", " << in << " -> " << out << " - "
-                  << ((double)out * 100.0 / in) << "%";
+                      << ((double)out * 100.0 / in) << "%";
          }
          std::cout << ")\n";
       }
@@ -808,19 +835,37 @@ static void dumpScalars(const std::string& simulationsDirectory,
         << totalFiles << " files";
    if(totalIn > 0) {
       std::cout << ", "
-           << totalIn << " -> " << totalOut << " - "
-           << ((double)totalOut * 100.0 / totalIn) << "%";
+                << totalIn << " -> " << totalOut << " - "
+                << ((double)totalOut * 100.0 / totalIn) << "%";
    }
    std::cout << "\n";
 }
 
 
-// ###### Print usage and exit ##############################################
-static void usage(const char* name)
+// ###### Version ###########################################################
+[[ noreturn ]] static void version()
 {
-   std::cerr << "Usage: " << name
-             << " [Var Names] {-compress=0-9} {-interactive|-batch} {-splitall} {-line-numbers|-no-line-numbers}\n";
-   exit(1);
+   std::cerr << "CreateSummary" << " " << CREATESUMMARY_VERSION << "\n";
+   exit(0);
+}
+
+
+// ###### Usage #############################################################
+[[ noreturn ]] static void usage(const char* program, const int exitCode)
+{
+   std::cerr << "Usage:\n"
+      << "* Run:\n  "
+      << program << "\n"
+         "    [variable_names]\n"
+         "    [-b|---batch|-i|--interactive]\n"
+         "    [-l|--line-numbers|-n|--no-line-numbers]\n"
+         "    [-s|--split|-a|--no-split]\n"
+         "    [-c level|--compress level]\n"
+         "    [-r|--ignore-scalar-file-errors]\n"
+         "    [-q|--quiet]\n"
+         "* Version:\n  " << program << " [-v|--version]\n"
+         "* Help:\n  "    << program << " [-h|--help]\n";
+   exit(exitCode);
 }
 
 
@@ -830,7 +875,7 @@ int main(int argc, char** argv)
    unsigned int compressionLevel       = 9;
    bool         interactiveMode        = true;
    bool         addLineNumbers         = false;
-   bool         splitAll               = false;
+   bool         scalarSplittingMode    = false;
    bool         quietMode              = false;
    bool         ignoreScalarFileErrors = false;
    std::string  varNames               = "_NoVarNamesGiven_";
@@ -842,68 +887,98 @@ int main(int argc, char** argv)
    char         buffer[4096];
    char*        command;
 
-   simpleRedBlackTreeNew(&StatisticsStorage,
-                         scalarNodePrintFunction,
-                         scalarNodeComparisonFunction);
-
-
    // ====== Handle command-line arguments ==================================
-   if(argc > 1) {
-      varNames = argv[1];
-      for(size_t i = 0; i < varNames.size(); i++) {
-         if(varNames[i] == ' ') {
-            varNames[i] = '\t';
-         }
-      }
-      for(int i = 2;i < argc;i++) {
-         if(!(strncmp(argv[i], "-compress=", 10))) {
-            compressionLevel = atol((char*)&argv[i][10]);
-            if(compressionLevel > 9) {
+   const static struct option long_options[] = {
+      { "interactive",               no_argument,       0, 'i' },
+      { "batch",                     no_argument,       0, 'b' },
+      { "line-numbers",              no_argument,       0, 'l' },
+      { "no-line-numbers",           no_argument,       0, 'n' },
+      { "split",                     no_argument,       0, 's' },
+      { "no-split",                  no_argument,       0, 'a' },
+      { "compress",                  required_argument, 0, 'c' },
+
+      { "ignore-scalar-file-errors", no_argument,       0, 'r' },
+      { "quiet",                     no_argument,       0, 'q' },
+
+      { "help",                      no_argument,       0, 'h' },
+      { "version",                   no_argument,       0, 'v' },
+      {  nullptr,                    0,                 0, 0   }
+   };
+
+   int option;
+   int longIndex;
+   while( (option = getopt_long_only(argc, argv, "bilnsac:rqhv", long_options, &longIndex)) != -1 ) {
+      switch(option) {
+         case 'b':
+            interactiveMode = false;
+          break;
+         case 'i':
+            interactiveMode = true;
+          break;
+         case 'l':
+            addLineNumbers = true;
+          break;
+         case 'n':
+            addLineNumbers = false;
+          break;
+         case 's':
+            scalarSplittingMode = true;
+          break;
+         case 'a':
+            scalarSplittingMode = false;
+          break;
+         case 'c':
+            compressionLevel = atol(optarg);
+            if(compressionLevel < 1) {
+               compressionLevel = 1;
+            }
+            else if(compressionLevel > 9) {
                compressionLevel = 9;
             }
-         }
-         else if(!(strcmp(argv[i], "-batch"))) {
-            interactiveMode = false;
-         }
-         else if(!(strcmp(argv[i], "-interactive"))) {
-            interactiveMode = true;
-         }
-         else if(!(strcmp(argv[i], "-line-numbers"))) {
-            addLineNumbers = true;
-         }
-         else if(!(strcmp(argv[i], "-no-line-numbers"))) {
-            addLineNumbers = false;
-         }
-         else if(!(strcmp(argv[i], "-splitall"))) {
-            splitAll = true;
-         }
-         else if(!(strcmp(argv[i], "-quiet"))) {
-            quietMode = true;
-         }
-         else if(!(strcmp(argv[i], "-ignore-scalar-file-errors"))) {
+          break;
+         case 'r':
             ignoreScalarFileErrors = true;
-         }
-         else {
-            usage(argv[0]);
-         }
+          break;
+         case 'q':
+            quietMode = true;
+          break;
+         case 'v':
+            version();
+          break;
+         default:
+            usage(argv[0], 1);
+          // break;
       }
    }
-   else {
-      usage(argv[0]);
+
+   if(optind < argc) {
+      varNames = argv[optind++];
+      if(!separateColumnsByTab(varNames)) {
+         std::cerr << "ERROR: Invalid quotation in variable names string!\n";
+         exit(1);
+      }
+   }
+   if(optind < argc) {
+      std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
+      usage(argv[0], 1);
    }
 
-
+   // ====== Print information ==============================================
    if(!quietMode) {
-      std::cout << "CreateSummary - Version 5.1.0\n"
-           << "=============================\n\n"
-           << "Compression Level: " << compressionLevel << "\n"
-           << "Interactive Mode:  " << (interactiveMode ? "on" : "off") << "\n"
-           << "Line Numbers:      " << (addLineNumbers  ? "on" : "off") << "\n"
-           << "\n";
+      std::cout << "CreateSummary " << CREATESUMMARY_VERSION << "\n"
+                << "* Interactive Mode:  " << (interactiveMode      ? "on" : "off") << "\n"
+                << "* Line Numbers:      " << (addLineNumbers       ? "on" : "off") << "\n"
+                << "* Scalar Splitting:  " << (scalarSplittingMode  ? "on" : "off") << "\n"
+                << "* Compression Level: " << compressionLevel << "\n"
+                << "\n";
    }
 
 
    // ====== Handle interactiveMode commands ====================================
+   simpleRedBlackTreeNew(&StatisticsStorage,
+                         scalarNodePrintFunction,
+                         scalarNodeComparisonFunction);
+
    if(interactiveMode) {
       std::cout << "Ready> ";
       std::cout.flush();
@@ -928,10 +1003,9 @@ int main(int argc, char** argv)
          if(varNames[0] == '\"') {
             varNames = varNames.substr(1, varNames.size() - 2);
          }
-         for(size_t i = 0; i < varNames.size(); i++) {
-            if(varNames[i] == ' ') {
-               varNames[i] = '\t';
-            }
+         if(!separateColumnsByTab(varNames)) {
+            std::cerr << "ERROR: Invalid quotation in variable names string!\n";
+            exit(1);
          }
       }
       else if(!(strncmp(command, "--values=", 9))) {
@@ -939,10 +1013,9 @@ int main(int argc, char** argv)
          if(varValues[0] == '\"') {
             varValues = varValues.substr(1, varValues.size() - 2);
          }
-         for(size_t i = 0; i < varValues.size(); i++) {
-            if(varValues[i] == ' ') {
-               varValues[i] = '\t';
-            }
+         if(!separateColumnsByTab(varValues)) {
+            std::cerr << "ERROR: Invalid quotation in variable values string!\n";
+            exit(1);
          }
       }
       else if(!(strncmp(command, "--logfile=", 10))) {
@@ -956,7 +1029,7 @@ int main(int argc, char** argv)
             std::cerr << "ERROR: No values given (parameter --values=...)!\n";
             exit(1);
          }
-         if(!handleScalarFile(varNames, varValues, (char*)&command[8], interactiveMode, splitAll)) {
+         if(!handleScalarFile(varNames, varValues, (char*)&command[8], interactiveMode, scalarSplittingMode)) {
             scalarFileError = true;
             if(logFileName != "") {
                std::cerr << " => see logfile " << logFileName << "\n";
@@ -988,7 +1061,7 @@ int main(int argc, char** argv)
          resultsDirectory = (const char*)&command[19];
       }
       else if(!(strcmp(command, "--splitall"))) {
-         splitAll = true;
+         scalarSplittingMode = true;
       }
       else if(!(strcmp(command, "--ignore-scalar-file-errors"))) {
          ignoreScalarFileErrors = true;

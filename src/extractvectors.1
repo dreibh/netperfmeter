@@ -36,28 +36,45 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm extractvectors
-.Op Input File
-.Op Output File
-.Op Vector Name Prefix
+.Op input_file
+.Op output_file
+.Op [!]vector_name_prefix
 .Op ...
+.br
+.Op Fl s | Fl Fl split | Fl a | Fl Fl no-split
+.br
+.Op Fl c Ar level | Fl Fl compress Ar level
+.br
+.Op Fl q | Fl Fl quiet
 .Fl quiet
+.Nm extractvectors
+.Op Fl h | Fl Fl help
+.Nm extractvectors
+.Op Fl v | Fl Fl version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm extractvectors
-is an extraction tool for vectors written by OMNeT++ to a data table.
-ExtractVectors supports on-the-fly BZip2 decompression and compression.
+is an extraction tool for vectors written by OMNeT++ to a data table. ExtractVectors supports on-the-fly BZip2 decompression and compression.
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
 The following arguments may be provided:
 .Bl -tag -width indent
-.It Input File
+.It input_file
 The name of the input vector file.
-.It Output File
+.It output_file
 The name of the output data table to be created.
-.It Vector Name Prefix
-Name prefix of vectors to be extracted. Multiple vector name prefixes may be
-specified. If no name prefix is given, all vectors will be extracted.
+.It [!]vector_name_prefix
+Name prefix of vectors to be extracted. Multiple vector name prefixes may be specified. If no name prefix is given, all vectors will be extracted. A "!" in front of the name turns vector splitting for this prefix on (see \-\-split option below).
+.It Fl s | Fl Fl split
+Try to split the vector name ending in a number into the name part as well as the number. A vector output table is then generated for the name part, with the corresponding number in table column "Split". Example: Vectors "Throughput 1", ..., "Throughput 9" will be written into output table as vector column "Throughput", the number will be in table column "Split".
+\-\-split is a global option and applies to all vector name prefixes provided. To use vector name splitting for just a single prefix, prepend the prefix with "!".
+.It Fl a | Fl Fl no-split
+Turns vector splitting off (default).
+.It Fl c Ar level | Fl Fl compress Ar level
+Sets the BZip2 compression level; 1=none, 9=highest (default).
+.It Fl q | Fl Fl quiet
+Do not print verbose status information.
 .It Fl quiet
 Do not print verbose status information.
 .El
@@ -65,10 +82,8 @@ Do not print verbose status information.
 .Sh EXAMPLE
 Consider an OMNeT++ vector file containing the vectors
 "Slow Start Threshold <assoc>:<path>" and
-"Congestion Window <assoc>:<path>", contained with a lot of other vectors in
-the BZip2-compressed vector file results.vec.bz2.
-ExtractVectors can be used to extract all vectors beginning with
-"Slow Start Threshold" or "Congestion Window" into a BZip2-compressed data
+"Congestion Window <assoc>:<path>",
+contained with a lot of other vectors in the BZip2-compressed vector file results.vec.bz2. ExtractVectors can be used to extract all vectors beginning with "Slow Start Threshold" or "Congestion Window" into a BZip2-compressed data
 table results.data.bz2 by the following command:
 .br
 extractvectors results.vec.bz2 results.data.bz2 \\

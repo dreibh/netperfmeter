@@ -27,19 +27,20 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <map>
 #include <string>
 
 #include "inputfile.h"
 #include "outputfile.h"
+#include "package-version.h"
 
 
 class VectorInfo
@@ -55,7 +56,7 @@ class VectorInfo
 // ###### Read and process data file ########################################
 static unsigned long long extractVectors(InputFile&               inputFile,
                                          OutputFile&              outputFile,
-                                         const bool               splitAll,
+                                         const bool               defaultVectorSplittingMode,
                                          std::vector<VectorInfo>& vectorsToExtract)
 {
    std::map<unsigned int, const std::string> vectorToNameMap;
@@ -126,7 +127,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                 (sscanf(inBuffer, "vector %u %1022s %1022[^\\\"]s ETV",
                         &vectorID, (char*)&objectName, (char*)&vectorName) == 3) ) {
                bool includeVector = (vectorsToExtract.size() == 0);
-               bool splitMode     = splitAll;
+               bool splitMode     = defaultVectorSplittingMode;
                if(!includeVector) {
                   for(std::vector<VectorInfo>::iterator iterator = vectorsToExtract.begin();
                       iterator != vectorsToExtract.end(); iterator++) {
@@ -135,6 +136,9 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                                 vectorName, vectorInfo.VectorPrefix.size()) == 0) {
                         includeVector = true;
                         foundVectors++;
+                        if(vectorInfo.SplitMode) {
+                           splitMode = true;
+                        }
                      }
                   }
                }
@@ -195,49 +199,102 @@ static unsigned long long extractVectors(InputFile&               inputFile,
 
 
 
+// ###### Version ###########################################################
+[[ noreturn ]] static void version()
+{
+   std::cerr << "CombineSummaries" << " " << COMBINESUMMARIES_VERSION << "\n";
+   exit(0);
+}
+
+
+// ###### Usage #############################################################
+[[ noreturn ]] static void usage(const char* program, const int exitCode)
+{
+   std::cerr << "Usage:\n"
+      << "* Run:\n  "
+      << program << "\n"
+         "    input_file\n"
+         "    output_file\n"
+         "    [!]vector_name_prefix ...\n"
+         "    [-c level|--compress level]\n"
+         "    [-q|--quiet]\n"
+         "* Version:\n  " << program << " [-v|--version]\n"
+         "* Help:\n  "    << program << " [-h|--help]\n";
+   exit(exitCode);
+}
+
+
+
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
-   unsigned int            compressionLevel = 9;
-   bool                    quiet            = false;
+   unsigned int            compressionLevel    = 9;
+   bool                    vectorSplittingMode = false;
+   bool                    quietMode           = false;
    std::vector<VectorInfo> vectorsToExtract;
 
 
-   if(argc < 4) {
-      std::cerr << "Usage: " << argv[0]
-                << " [Input File] [Output File] {-quiet} {-splitall} {-compress=}"
-                   " {{-split}  {Vector Name Prefix} ...}\n";
-      exit(1);
-   }
-   for(int i = 3;i < argc;i++) {
-      if(argv[i][0] == '-') {
-         if( (strcmp(argv[i], "-split") == 0) ||
-             (strcmp(argv[i], "-splitall") == 0) ) {
-            // To be processed later ...
-         }
-         else if(!(strcmp(argv[i], "-quiet"))) {
-            quiet = true;
-         }
-         else if(!(strncmp(argv[i], "-compress=", 10))) {
-            compressionLevel = atol((char*)&argv[i][10]);
-            if(compressionLevel > 9) {
+   // ====== Handle command-line arguments ==================================
+   const static struct option long_options[] = {
+      { "split",    no_argument,       0, 's' },
+      { "no-split", no_argument,       0, 'a' },
+      { "compress", required_argument, 0, 'c' },
+      { "quiet",    no_argument,       0, 'q' },
+
+      { "help",     no_argument,       0, 'h' },
+      { "version",  no_argument,       0, 'v' },
+      {  nullptr,   0,                 0, 0   }
+   };
+
+   int option;
+   int longIndex;
+   while( (option = getopt_long_only(argc, argv, "sac:qhv", long_options, &longIndex)) != -1 ) {
+      switch(option) {
+         case 's':
+            vectorSplittingMode = true;
+          break;
+         case 'a':
+            vectorSplittingMode = false;
+          break;
+         case 'c':
+            compressionLevel = atol(optarg);
+            if(compressionLevel < 1) {
+               compressionLevel = 1;
+            }
+            else if(compressionLevel > 9) {
                compressionLevel = 9;
             }
-         }
+          break;
+         case 'q':
+            quietMode = true;
+          break;
+         case 'v':
+            version();
+          break;
+         default:
+            usage(argv[0], 1);
+          // break;
       }
    }
+   if(optind + 1 >= argc) {
+      usage(argv[0], 1);
+   }
+   const std::string inputFileName(argv[optind++]);
+   const std::string outputFileName(argv[optind++]);
 
 
-   if(!quiet) {
-      std::cout << "ExtractVectors - Version 1.30\n"
-                << "=============================\n\n";
+   // ====== Print information ==============================================
+   if(!quietMode) {
+      std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n"
+                << "* Vector Splitting:  " << (vectorSplittingMode  ? "on" : "off") << "\n"
+                << "* Compression Level: " << compressionLevel << "\n"
+                << "\n";
    }
 
 
    // ====== Open files =====================================================
-   InputFile         inputFile;
-   const std::string inputFileName   = argv[1];
-   InputFileFormat   inputFileFormat = IFF_Plain;
+   InputFile        inputFile;
+   InputFileFormat  inputFileFormat = IFF_Plain;
    if( (inputFileName.rfind(".bz2") == inputFileName.size() - 4) ||
        (inputFileName.rfind(".BZ2") == inputFileName.size() - 4) ) {
       inputFileFormat = IFF_BZip2;
@@ -246,9 +303,8 @@ int main(int argc, char** argv)
       exit(1);
    }
 
-   OutputFile        outputFile;
-   const std::string outputFileName   = argv[2];
-   OutputFileFormat  outputFileFormat = OFF_Plain;
+   OutputFile       outputFile;
+   OutputFileFormat outputFileFormat = OFF_Plain;
    if( (outputFileName.rfind(".bz2") == outputFileName.size() - 4) ||
        (outputFileName.rfind(".BZ2") == outputFileName.size() - 4) ) {
       outputFileFormat = OFF_BZip2;
@@ -260,31 +316,19 @@ int main(int argc, char** argv)
 
 
    // ====== Extract vectors ================================================
-   bool splitMode = false;
-   bool splitAll  = false;
-   for(int i = 3;i < argc;i++) {
-      if(argv[i][0] == '-') {
-         if(strcmp(argv[i], "-split") == 0) {
-            splitMode = true;
-         }
-         else if(strcmp(argv[i], "-splitall") == 0) {
-            splitAll = true;
-         }
-         else {
-            std::cerr << "ERROR: Bad parameter \"" << argv[i] << "\"!\n";
-            exit(1);
-         }
+   for(int i = optind; i < argc; i++) {
+      if(argv[i][0] == '!') {
+         VectorInfo vectorInfo(&argv[i][1], true);
+         vectorsToExtract.push_back(vectorInfo);
       }
       else {
-         VectorInfo vectorInfo(argv[i], splitMode);
+         VectorInfo vectorInfo(argv[i], vectorSplittingMode);
          vectorsToExtract.push_back(vectorInfo);
-         if(!splitAll) {
-            splitMode = false;
-         }
       }
    }
-   const unsigned long long lines = extractVectors(inputFile, outputFile,
-                                                   splitAll, vectorsToExtract);
+   const unsigned long long lines =
+      extractVectors(inputFile, outputFile,
+                     vectorSplittingMode, vectorsToExtract);
 
 
    // ====== Close files ====================================================
@@ -294,7 +338,7 @@ int main(int argc, char** argv)
    if(!outputFile.finish(true, &in, &out)) {
       exit(1);
    }
-   if(!quiet) {
+   if(!quietMode) {
       std::cout << "Wrote " << lines << " lines";
       if(in > 0) {
          std::cout << " (" << in << " -> " << out << " - "

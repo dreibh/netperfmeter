@@ -36,10 +36,12 @@
 // ###### Get current time stamp ############################################
 static unsigned long long getMicroTime()
 {
-  struct timeval tv;
-  gettimeofday(&tv,nullptr);
-  return(((unsigned long long)tv.tv_sec * (unsigned long long)1000000) +
-         (unsigned long long)tv.tv_usec);
+  timespec ts;
+  if(__builtin_expect( (clock_gettime(CLOCK_REALTIME, &ts) != 0) , 0)) {
+     perror("clock_gettime():");
+     abort();
+  }
+  return ((unsigned long long)ts.tv_sec * 1000000ULL) + (ts.tv_nsec / 1000);
 }
 
 
@@ -47,7 +49,7 @@ static unsigned long long getMicroTime()
 int main(int argc, char** argv)
 {
    if(argc < 4) {
-      fprintf(stderr, "Usage: %s [Start File] [Total Runs] [Current Run]\n",
+      fprintf(stderr, "Usage: %s start_file total_runs current_run\n",
               argv[0]);
    }
 

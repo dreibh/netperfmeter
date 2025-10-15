@@ -44,15 +44,15 @@ while [ "$1" != "" ] ; do
    if [ "$1" = "cmt" ] ; then
       if [ "$2" = "off" ] ; then
          CMT=0
-      elif [ "$2" = "cmt" -o "$2" = "normal" ] ; then
+      elif [ "$2" = "cmt" ] || [ "$2" = "normal" ] ; then
          CMT=1
-      elif [ "$2" = "cmtrpv1" -o "$2" = "rp" ] ; then
+      elif [ "$2" = "cmtrpv1" ] || [ "$2" = "rp" ] ; then
          CMT=2
       elif [ "$2" = "cmtrpv2" ] ; then
          CMT=3
-      elif [ "$2" = "like-mptcp" -o "$2" = "mptcp-like" -o "$2" = "mptcp" ] ; then
+      elif [ "$2" = "like-mptcp" ] || [ "$2" = "mptcp-like" ] || [ "$2" = "mptcp" ] ; then
          CMT=4
-      elif [ $2 -ge 2 -o $2 -lt 256 ] ; then
+      elif [ "$2" -ge 2 ] || [ "$2" -lt 256 ] ; then
          CMT=$2
       else
          echo >&2 "ERROR: Bad setting for cmt!"
@@ -61,9 +61,9 @@ while [ "$1" != "" ] ; do
       shift ; shift
 
    elif [ "$1" = "dac" ] ; then
-      if [ "$2" = "on" -o "$2" = "true" ] ; then
+      if [ "$2" = "on" ] || [ "$2" = "true" ] ; then
          DAC=1
-      elif [ "$2" = "off" -o "$2" = "false" ] ; then
+      elif [ "$2" = "off" ] || [ "$2" = "false" ] ; then
          DAC=0
       else
          echo >&2 "ERROR: Bad setting for dac!"
@@ -72,9 +72,9 @@ while [ "$1" != "" ] ; do
       shift ; shift
 
    elif [ "$1" = "nrsack" ] ; then
-      if [ "$2" = "on" -o "$2" = "true" ] ; then
+      if [ "$2" = "on" ] || [ "$2" = "true" ] ; then
          NRSACK=1
-      elif [ "$2" = "off" -o "$2" = "false" ] ; then
+      elif [ "$2" = "off" ] || [ "$2" = "false" ] ; then
          NRSACK=0
       else
          echo >&2 "ERROR: Bad setting for nrsack!"
@@ -83,9 +83,9 @@ while [ "$1" != "" ] ; do
       shift ; shift
 
    elif [ "$1" = "cwndMaxBurst" ] ; then
-      if [ "$2" = "on" -o "$2" = "true" ] ; then
+      if [ "$2" = "on" ] || [ "$2" = "true" ] ; then
          CWND_MAXBURST=1
-      elif [ "$2" = "off" -o "$2" = "false" ] ; then
+      elif [ "$2" = "off" ] || [ "$2" = "false" ] ; then
          CWND_MAXBURST=0
       else
          echo >&2 "ERROR: Bad setting for cwndMaxBurst!"
@@ -128,14 +128,14 @@ echo " - CWND_MAXBURST:   $CWND_MAXBURST"
 
 
 success=1
-SYSTEM=`uname`
+SYSTEM=$(uname)
 # ====== FreeBSD QoS setup ==================================================
 if [ "$SYSTEM" = "FreeBSD" ] ; then
-   /sbin/sysctl net.inet.sctp.cmt_on_off=$CMT >/dev/null || success=0
+   /sbin/sysctl net.inet.sctp.cmt_on_off="$CMT" >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.cmt_use_dac=$DAC >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.nr_sack_on_off=$NRSACK >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.buffer_splitting=$BUFFERSPLITTING >/dev/null || success=0
-   /sbin/sysctl net.inet.sctp.initial_cwnd=$INITIAL_CWND >/dev/null || success=0
+   /sbin/sysctl net.inet.sctp.initial_cwnd="$INITIAL_CWND" >/dev/null || success=0
    /sbin/sysctl net.inet.sctp.cwnd_maxburst=$CWND_MAXBURST >/dev/null || success=0
    /sbin/sysctl kern.ipc.maxsockbuf=1000050000 >/dev/null || success=0      # This is the absolute socket buffer limit!
 #   /sbin/sysctl net.inet.sctp.sendspace=10000000 >/dev/null || success=0   # SCTP limit, seems to need full pages!
@@ -160,6 +160,5 @@ fi
 # ====== Check whether SCTP configuration has been successful ===============
 if [ $success -ne 1 ] ; then
    echo >&2 "ERROR: setsctp has failed to configure sysctl settings!"
-   echo >&2 "Command on `hostname`: $0 $@"
    exit 1
 fi
