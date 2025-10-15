@@ -83,7 +83,7 @@ ENDIF()
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
-    FIND_LIBRARY(SCTP_LIB sctp)
+    FIND_LIBRARY(SCTP_LIBRARY sctp)
 
 ELSEIF (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
     MESSAGE(STATUS ${CMAKE_SYSTEM_NAME} " supported")
@@ -205,7 +205,6 @@ ENDIF()
 
 # ====== DCCP support =======================================================
 CHECK_C_SOURCE_RUNS("
-#include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <linux/dccp.h>
@@ -224,9 +223,8 @@ IF (HAVE_DCCP)
 ENDIF()
 
 
-# ====== MPTCP support =======================================================
+# ====== MPTCP support ======================================================
 CHECK_C_SOURCE_RUNS("
-#include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <linux/mptcp.h>
@@ -240,6 +238,29 @@ HAVE_MPTCP)
 
 IF (HAVE_MPTCP)
    ADD_DEFINITIONS(-DHAVE_MPTCP)
+ENDIF()
+
+
+# ====== QUIC support =======================================================
+CHECK_C_SOURCE_RUNS("
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <linux/quic.h>
+
+int main (int argc, char** argv)
+{
+   volatile int domain = IPPROTO_QUIC;
+   return(0);
+}"
+HAVE_QUIC)
+
+IF (HAVE_QUIC)
+   FIND_LIBRARY(QUIC_LIBRARY NAMES quic)
+   IF (QUIC_LIBRARY)
+      ADD_DEFINITIONS(-DHAVE_QUIC)
+   ELSE()
+      MESSAGE(WARNING "QUIC is available, but libquic is not!")
+   ENDIF()
 ENDIF()
 
 
@@ -296,7 +317,7 @@ ELSE()
               " Cannot find libglib-2.0!")
    ENDIF()
 
-   SET(SCTP_LIB ${SCTPSOCKET_LIB} ${SCTPLIB_LIB} ${GLIB_LIBRARIES})
+   SET(SCTP_LIBRARY ${SCTPSOCKET_LIB} ${SCTPLIB_LIB} ${GLIB_LIBRARIES})
 ENDIF()
 
 # ====== Graphics tools for icons and logo ==================================

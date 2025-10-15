@@ -81,7 +81,7 @@ ADD_EXECUTABLE(netperfmeter
    transfer.cc
    transfer.h
 )
-TARGET_LINK_LIBRARIES(netperfmeter ${BZ2_LIBRARY} ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_LINK_LIBRARIES(netperfmeter ${BZ2_LIBRARY} ${SCTP_LIBRARY} ${QUIC_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
 INSTALL(TARGETS netperfmeter     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   netperfmeter.1   DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES   netperfmeter.xml DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)
@@ -168,7 +168,7 @@ ENDIF()
 
 
 # ADD_EXECUTABLE(t1 t1.cc assure.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(t1 ${SCTP_LIB} "${CMAKE_THREAD_LIBS_INIT}")
+# TARGET_LINK_LIBRARIES(t1 ${SCTP_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
 
 
 #############################################################################
