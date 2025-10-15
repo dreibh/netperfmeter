@@ -1,0 +1,4 @@
+#!/bin/sh
+
+./generate-test-certificates TestCA pc1.northbound.hencsat
+./generate-test-certificates TestCA pc2.northbound.hencsat
