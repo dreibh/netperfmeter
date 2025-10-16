@@ -43,26 +43,29 @@ int main(int argc, char** argv)
    }
 
 
-   const unsigned int N = 10;
-
-   // for(unsigned int i = 0; i < N; i++) {
-   //    quic_stream_info si;
-   //    si.stream_id    = ((int64_t)(i + 1) << 16) | QUIC_STREAM_TYPE_UNI_MASK;
-   //    si.stream_flags = MSG_STREAM_UNI; // MSG_STREAM_DONTWAIT;
-   //    socklen_t silen = sizeof(si);
-   //    if(getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_STREAM_OPEN, &si, &silen) != 0) {
-   //       perror("socket(QUIC_SOCKOPT_STREAM_OPEN)");
-   //       exit(1);
-   //    }
-   //    puts("ok");
-   // }
+   const unsigned int N = 64;
+   /*
+   for(unsigned int i = 0; i < N; i++) {
+      quic_stream_info si;
+      si.stream_id    = ((i + 1) << 4);
+      si.stream_flags = 0;
+      socklen_t silen = sizeof(si);
+      if(getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_STREAM_OPEN, &si, &silen) != 0) {
+         perror("socket(QUIC_SOCKOPT_STREAM_OPEN)");
+         exit(1);
+      }
+      puts("ok");
+   }
+   */
 
    puts("Connected!");
    char buffer[65536];
    for(unsigned int i = 0; i < N; i++) {
+      printf("Iteration %d:\n", i + 1);
       snprintf(buffer, sizeof(buffer), "This is test #%u!\n", i);
-      int64_t  sid   = 0; // QUIC_STREAM_TYPE_UNI_MASK; // ((int64_t)(i + 1) << 16) | QUIC_STREAM_TYPE_UNI_MASK;
-      uint32_t flags = (i == 0) ? MSG_STREAM_NEW : 0;
+      int64_t  sid   = ((i + 1) << 4);
+      // QUIC_STREAM_TYPE_UNI_MASK;
+      uint32_t flags = MSG_STREAM_NEW;
       printf("sending: %d (sid=%llu)\n", (int)strlen(buffer), (unsigned long long)sid);
       ssize_t s = quic_sendmsg(sd, &buffer, strlen(buffer), sid, flags);
       if(s < 0) {
