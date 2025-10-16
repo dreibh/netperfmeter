@@ -62,6 +62,15 @@
 // #define IPPROTO_MPTCP 262
 #endif
 
+// QUIC definitions
+#ifdef HAVE_QUIC
+extern "C" {
+#include <netinet/quic.h>
+}
+// #else
+// #warning QUIC is not supported by the API of this system!
+#endif
+
 // DCCP definitions
 #ifdef HAVE_DCCP
 #include <linux/dccp.h>
