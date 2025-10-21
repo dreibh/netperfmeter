@@ -43,8 +43,8 @@ int main(int argc, char** argv)
 
    printf("Handshake on %d ...\n", accepted);
    if(quic_server_handshake(accepted,
-         "/home/nornetpp/src/quic/tests/keys/server-key.pem",
-         "/home/nornetpp/src/quic/tests/keys/server-cert.pem",
+         "quic-setup/TestCA/pc2.northbound.hencsat/pc2.northbound.hencsat.key",
+         "quic-setup/TestCA/pc2.northbound.hencsat/pc2.northbound.hencsat.crt",
          "sample") != 0) {
       perror("quic_server_handshake()");
       exit(1);
