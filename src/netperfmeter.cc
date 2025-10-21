@@ -36,6 +36,7 @@
 
 #include <cerrno>
 #include <getopt.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -1483,6 +1484,21 @@ void activeMode(const char* remoteEndpoint)
    // ====== Initialize IDs and print status ================================
    uint64_t measurementID = random64();
 
+   std::string controlProtocol;
+   switch(gActiveControlProtocol) {
+      case IPPROTO_SCTP:
+         controlProtocol = "SCTP";
+       break;
+      case IPPROTO_TCP:
+         controlProtocol = "TCP";
+       break;
+#ifdef HAVE_MPTCP
+      case IPPROTO_MPTCP:
+         controlProtocol = "MPTCP";
+       break;
+#endif
+   }
+
    LOG_INFO
    stdlog << "Active Mode:\n"
           << "- Measurement ID  = " << format("$%llx", measurementID) << "\n"
@@ -1491,7 +1507,7 @@ void activeMode(const char* remoteEndpoint)
    stdlog << "\n"
           << "- Control Address = ";
    printAddress(stdlog, &controlAddress.sa, true);
-   stdlog << " - connecting ..." << "\n";
+   stdlog << " - connecting via " << controlProtocol << " ...\n";
    LOG_END
 
    // ====== Initialize control socket ======================================
@@ -1502,6 +1518,9 @@ void activeMode(const char* remoteEndpoint)
       LOG_FATAL
       stdlog << format("Failed to create and bind control socket: %s!",
                        strerror(errno)) << "\n";
+      if( (gActiveControlProtocol == IPPROTO_SCTP) && (errno == EPROTONOSUPPORT) ) {
+         stdlog << "SCTP is not available => Try -y|--control-over-tcp for control over TCP!\n";
+      }
       LOG_END_FATAL
    }
    if(gActiveControlProtocol == IPPROTO_SCTP) {
@@ -1518,7 +1537,8 @@ void activeMode(const char* remoteEndpoint)
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
       LOG_FATAL
       stdlog << format("Unable to establish control association: %s!",
-                       strerror(errno)) << "\n";
+                       strerror(errno)) << "\n"
+             << "Note: Try -y|--control-over-tcp for control over TCP in case of NAT traversal or restrictive firewalls!\n";
       LOG_END_FATAL
    }
    if(gActiveControlProtocol == IPPROTO_SCTP) {
