@@ -38,7 +38,9 @@
 .Nm netperfmeter
 local_port
 .br
-.Op Fl Fl control-over-sctp | Fl Fl control-over-tcp | Fl Fl control-over-mptcp
+.Op Fl x | Fl Fl control-over-sctp | Fl X | Fl Fl no-control-over-sctp
+.br
+.Op Fl y | Fl Fl control-over-tcp | Fl Y | Fl Fl no-control-over-tcp | Fl w | Fl Fl control-over-mptcp | Fl W | Fl Fl no-control-over-tcp
 .br
 .Op Fl L Ar address[,address,...] | Fl Fl local Ar address[,address,...]
 .br
@@ -58,7 +60,7 @@ local_port
 .Nm netperfmeter
 remote_endpoint:remote_port
 .br
-.Op Fl Fl control-over-sctp | Fl Fl control-over-tcp | Fl Fl control-over-mptcp
+.Op Fl x | Fl Fl control-over-sctp | Fl y | Fl Fl control-over-tcp | Fl w | Fl Fl control-over-mptcp
 .br
 .Op Fl L Ar address[,address,...] | Fl Fl local Ar address[,address,...]
 .br
@@ -120,14 +122,21 @@ Specifying a port number turns NetPerfMeter into passive mode, i.e. it will wait
 .It remote_endpoint:remote_port
 Specifies the passive endpoint to connect to (number as given for local_port on the passive instance).
 Specifying remote_endpoint:remote_port turns NetPerfMeter into active mode, i.e. it will connect to the specified remote endpoint.
-.It Fl Fl control-over-sctp
-Use SCTP for the control connection. This is the default, but may cause connection problems in restricted networks or due to NAT traversal.
-.It Fl Fl control-over-tcp
-Use TCP instead of SCTP for the control connection. This may be necessary in restricted networks and for NAT traversal.
-On the passive side, a TCP control socket is created in addition to the SCTP control socket. That is, control connections are accepted on both, SCTP and TCP.
-.It Fl Fl control-over-mptcp
-Use MPTCP instead of SCTP for the control connection.
-On the passive side, an MPTCP control socket is created in addition to the SCTP control socket. That is, control connections are accepted on both, SCTP and MPTCP.
+.It x | Fl Fl control-over-sctp
+On the passive side, this option enables accepting control connections via SCTP (default). It enables SCTP in addition to other protocols for the control transport.
+On the active side, this option uses SCTP for the control connection to the passive side. This is the default, but may cause connection problems in restricted networks or due to NAT traversal.
+.It Fl X | Fl Fl no-control-over-sctp
+On the passive side, this option disables incoming control connections via SCTP.
+.It Fl y | Fl Fl control-over-tcp | Fl Y | Fl Fl no-control-over-tcp
+On the passive side, this option enables accepting control connections via TCP (default). It enables TCP in addition to other protocols for the control transport. Note: By default, both -- SCTP and TCP -- are enabled on the passive side.
+On the active side, this option uses TCP for the control connection to the passive side. This may be necessary for NAT traversal or due to restrictive firewalls.
+.It Fl Y | Fl Fl no-control-over-tcp
+On the passive side, this option disables incoming control connections via TCP. This implicitly also disables control connections over MPTCP.
+.It Fl w | Fl Fl control-over-mptcp
+On the passive side, this option enables accepting control connections via MPTCP. This implicitly also enables control connections over TCP!
+On the active side, this option uses MPTCP for the control connection to the passive side.
+.It Fl W | Fl Fl no-control-over-tcp
+On the passive side, this option disables incoming control connections via MPTCP. However, it does not deactivate TCP!
 .It Fl L Ar address[,address,...] | Fl Fl local Ar address[,address,...]
 Specifies address(es) of the local *data* endpoint. For TCP, UDP and DCCP, only the first address is used!
 On an active node, this option applies to the following flows, i.e. it must be set before specifying a flow!
