@@ -1194,8 +1194,6 @@ void passiveMode(const uint16_t localPort)
                                           localPort + 1,
                                           gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                           true, gBindV6Only);
-      errno = EPROTONOSUPPORT;
-      gControlSocket = -1;
       if(gControlSocket >= 0) {
          // ------ Set default send parameters ---------------------------------
          sctp_sndrcvinfo sinfo;
