@@ -1447,15 +1447,19 @@ void passiveMode(const uint16_t localPort)
    gMessageReader.deregisterSocket(gControlSocket);
    ext_close(gControlSocket);
    ext_close(gTCPSocket);
+#ifdef HAVE_MPTCP
    if(gMPTCPSocket >= 0) {
       ext_close(gMPTCPSocket);
    }
+#endif
    FlowManager::getFlowManager()->removeUnidentifiedSocket(gUDPSocket, false);
    ext_close(gUDPSocket);
    ext_close(gSCTPSocket);
+#ifdef HAVE_DCCP
    if(gDCCPSocket >= 0) {
       ext_close(gDCCPSocket);
    }
+#endif
 }
 
 
