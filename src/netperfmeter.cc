@@ -34,6 +34,7 @@
 #include "transfer.h"
 #include "package-version.h"
 
+#include <cerrno>
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,12 +67,12 @@ static int              gPassiveControlMPTCP   = false;
 #endif
 static int              gControlSocket         = -1;
 static int              gControlSocketTCP      = -1;
+static int              gSCTPSocket            = -1;
 static int              gTCPSocket             = -1;
 #ifdef HAVE_MPTCP
 static int              gMPTCPSocket           = -1;
 #endif
 static int              gUDPSocket             = -1;
-static int              gSCTPSocket            = -1;
 #ifdef HAVE_DCCP
 static int              gDCCPSocket            = -1;
 #endif
@@ -110,7 +111,7 @@ static MessageReader  gMessageReader;
    std::cerr << "Usage:\n"
       << "* Passive (Server) Side:\n  " << program
       << " local_port\n"
-         "    [--control-over-sctp|-control-over-tcp|-control-over-mptcp]\n"
+         "    [-x|--control-over-sctp|-y|--control-over-tcp|--control-over-mptcp]\n"
          "    [-L address[,address,...]|--local address[,address,...]]\n"
          "    [-J address[,address,...]|--controllocal address[,address,...]]\n"
          "    [-6|--v6only]\n"
@@ -123,7 +124,7 @@ static MessageReader  gMessageReader;
          "    [-!|--verbose]\n"
       << "* Active (Client) Side:\n  " << program << " remote_endpoint:remote_port\n"
          "    [-x|--control-over-sctp|-X|--no-control-over-sctp]\n"
-         "    [-y|--control-over-tcp|-Y|--no-control-over-tcp] [--control-over-mptcp|--no-control-over-mptcp]\n"
+         "    [-y|--control-over-tcp|-Y|--no-control-over-tcp|--control-over-mptcp|--no-control-over-mptcp]\n"
          "    [-L address[,address,...]|--local address[,address,...]]\n"
          "    [-J address[,address,...]|--controllocal address[,address,...]]\n"
          "    [-6|--v6only]\n"
@@ -162,8 +163,8 @@ bool handleGlobalParameters(int argc, char** argv)
       { "no-control-over-sctp",          no_argument,       0, 'X'    },
       { "control-over-tcp",              no_argument,       0, 'y'    },
       { "no-control-over-tcp",           no_argument,       0, 'Y'    },
-      { "control-over-mptcp",            no_argument,       0, 0x1000 },
-      { "no-control-over-mptcp",         no_argument,       0, 0x1001 },
+      { "control-over-mptcp",            no_argument,       0, 'w'    },
+      { "no-control-over-mptcp",         no_argument,       0, 'W'    },
       { "local",                         required_argument, 0, 'L'    },
       { "controllocal",                  required_argument, 0, 'C'    },
       { "display",                       no_argument,       0, 0x2001 },
@@ -199,7 +200,7 @@ bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYT:A:P:o:i:6L:J:V:S:C:t:m:u:d:s:hvq!", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "xXyYwWT:A:P:o:i:6L:J:V:S:C:t:m:u:d:s:hvq!", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
             gActiveControlProtocol = IPPROTO_SCTP;
@@ -214,16 +215,21 @@ bool handleGlobalParameters(int argc, char** argv)
           break;
          case 'Y':
             gPassiveControlTCP     = false;
+#ifdef HAVE_MPTCP
+            gPassiveControlMPTCP   = false;
+#endif
           break;
-         case 0x1000:
+         case 'w':
 #ifdef HAVE_MPTCP
             gActiveControlProtocol = IPPROTO_MPTCP;
+            gPassiveControlTCP     = true;
             gPassiveControlMPTCP   = true;
 #else
             std::cerr << "ERROR: MPTCP support is not compiled in!" << "\n";
             exit(1);
 #endif
-         case 0x1001:
+          break;
+         case 'W':
 #ifdef HAVE_MPTCP
             gPassiveControlMPTCP   = false;
 #endif
@@ -406,20 +412,11 @@ bool handleGlobalParameters(int argc, char** argv)
       }
    }
 
-finish:
-/*
-   printf("optind=%d argc=%d\n", optind, argc);
-   for(unsigned int i = optind;i < argc;i++) {
-      printf("A[%u]=%s\n", i, argv[i]);
+   if( (gPassiveControlSCTP == false) &&
+       (gPassiveControlTCP == false) ) {
+      std::cerr << "ERROR: At least one control channel protocol must be enabled!" << "\n";
+      exit(1);
    }
-   for(auto assocSpec : gAssocSpecs) {
-      printf("%3u:", assocSpec.Protocol);
-      for(auto flowSpec : assocSpec.Flows) {
-         printf(" <%s>", flowSpec);
-      }
-      puts("");
-   }
-*/
    return true;
 }
 
@@ -1197,37 +1194,46 @@ void passiveMode(const uint16_t localPort)
                                           localPort + 1,
                                           gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                           true, gBindV6Only);
-      if(gControlSocket < 0) {
-         LOG_FATAL
-         stdlog << format("Failed to create and bind SCTP control socket on port %d: %s!",
-                        localPort + 1, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
+      errno = EPROTONOSUPPORT;
+      gControlSocket = -1;
+      if(gControlSocket >= 0) {
+         // ------ Set default send parameters ---------------------------------
+         sctp_sndrcvinfo sinfo;
+         memset(&sinfo, 0, sizeof(sinfo));
+         sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
+         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
+            LOG_FATAL
+            stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
+                              gControlSocket, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
 
-      // ------ Set default send parameters ---------------------------------
-      sctp_sndrcvinfo sinfo;
-      memset(&sinfo, 0, sizeof(sinfo));
-      sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
-         LOG_FATAL
-         stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
-                           gControlSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
+         // ------ Enable SCTP events ------------------------------------------
+         sctp_event_subscribe events;
+         memset((char*)&events, 0 ,sizeof(events));
+         events.sctp_data_io_event     = 1;
+         events.sctp_association_event = 1;
+         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
+            LOG_FATAL
+            stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
+                              gControlSocket, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
 
-      // ------ Enable SCTP events ------------------------------------------
-      sctp_event_subscribe events;
-      memset((char*)&events, 0 ,sizeof(events));
-      events.sctp_data_io_event     = 1;
-      events.sctp_association_event = 1;
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-         LOG_FATAL
-         stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
-                           gControlSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
+         gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
       }
-
-      gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
+      else {
+         if( (errno != EPROTONOSUPPORT) ||
+             (gPassiveControlTCP == false) ) {
+            LOG_FATAL
+            stdlog << format("Failed to create and bind SCTP control socket on port %d: %s!",
+                           localPort + 1, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+         LOG_WARNING
+         stdlog << "WARNING: SCTP is not available => no control connections via SCTP possible!\n";
+         LOG_END
+      }
    }
 
    // ====== Initialize TCP/MPTCP control socket ============================
@@ -1381,7 +1387,7 @@ void passiveMode(const uint16_t localPort)
       }
       controlProtocols += "TCP";
 #ifdef HAVE_MPTCP
-      if(gPassiveControlMPTCP >= 0) {
+      if(gPassiveControlMPTCP) {
          controlProtocols += "/MPTCP";
       }
 #endif
