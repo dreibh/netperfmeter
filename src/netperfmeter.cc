@@ -58,14 +58,23 @@ static const char*      gPassiveNodeName       = "Server";
 static bool             gBindV6Only            = false;
 static int              gSndBufSize            = -1;
 static int              gRcvBufSize            = -1;
+static int              gActiveControlProtocol = IPPROTO_SCTP;
+static int              gPassiveControlSCTP    = true;
+static int              gPassiveControlTCP     = true;
+#ifdef HAVE_MPTCP
+static int              gPassiveControlMPTCP   = false;
+#endif
 static int              gControlSocket         = -1;
-static int              gControlSocketProtocol = IPPROTO_SCTP;
 static int              gControlSocketTCP      = -1;
 static int              gTCPSocket             = -1;
+#ifdef HAVE_MPTCP
 static int              gMPTCPSocket           = -1;
+#endif
 static int              gUDPSocket             = -1;
 static int              gSCTPSocket            = -1;
+#ifdef HAVE_DCCP
 static int              gDCCPSocket            = -1;
+#endif
 static double           gRuntime               = -1.0;
 static bool             gDisplayEnabled        = true;
 static bool             gStopTimeReached       = false;
@@ -113,7 +122,8 @@ static MessageReader  gMessageReader;
          "    [-q|--quiet]\n"
          "    [-!|--verbose]\n"
       << "* Active (Client) Side:\n  " << program << " remote_endpoint:remote_port\n"
-         "    [--control-over-sctp|-control-over-tcp|-control-over-mptcp]\n"
+         "    [-x|--control-over-sctp|-X|--no-control-over-sctp]\n"
+         "    [-y|--control-over-tcp|-Y|--no-control-over-tcp] [--control-over-mptcp|--no-control-over-mptcp]\n"
          "    [-L address[,address,...]|--local address[,address,...]]\n"
          "    [-J address[,address,...]|--controllocal address[,address,...]]\n"
          "    [-6|--v6only]\n"
@@ -126,11 +136,11 @@ static MessageReader  gMessageReader;
          "    [-V vector_file_pattern|--vector vector_file_pattern]\n"
          "    [-A description|--activenodename description]\n"
          "    [-P description|--passivenodename description]\n"
-         "    [--tcp FLOWSPEC]\n"
-         "    [--mptcp FLOWSPEC]\n"
-         "    [--udp FLOWSPEC]\n"
-         "    [--dccp FLOWSPEC]\n"
-         "    [--sctp FLOWSPEC [FLOWSPEC ...]]\n"
+         "    [-t|--tcp FLOWSPEC]\n"
+         "    [-m|--mptcp FLOWSPEC]\n"
+         "    [-u|--udp FLOWSPEC]\n"
+         "    [-d|--dccp FLOWSPEC]\n"
+         "    [-q|--sctp FLOWSPEC [FLOWSPEC ...]]\n"
          "    [--loglevel level]\n"
          "    [--logcolor on|off]\n"
          "    [--logfile file]\n"
@@ -148,9 +158,12 @@ static MessageReader  gMessageReader;
 bool handleGlobalParameters(int argc, char** argv)
 {
    const static struct option long_options[] = {
-      { "control-over-sctp",             no_argument,       0, 0x1000 },
-      { "control-over-tcp",              no_argument,       0, 0x1001 },
-      { "control-over-mptcp",            no_argument,       0, 0x1002 },
+      { "control-over-sctp",             no_argument,       0, 'x'    },
+      { "no-control-over-sctp",          no_argument,       0, 'X'    },
+      { "control-over-tcp",              no_argument,       0, 'y'    },
+      { "no-control-over-tcp",           no_argument,       0, 'Y'    },
+      { "control-over-mptcp",            no_argument,       0, 0x1000 },
+      { "no-control-over-mptcp",         no_argument,       0, 0x1001 },
       { "local",                         required_argument, 0, 'L'    },
       { "controllocal",                  required_argument, 0, 'C'    },
       { "display",                       no_argument,       0, 0x2001 },
@@ -186,20 +199,33 @@ bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "q!T:A:P:o:i:6L:J:V:S:C:t:m:u:d:s:hv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "xXyYT:A:P:o:i:6L:J:V:S:C:t:m:u:d:s:hvq!", long_options, &longIndex)) != -1 ) {
       switch(option) {
+         case 'x':
+            gActiveControlProtocol = IPPROTO_SCTP;
+            gPassiveControlSCTP    = true;
+          break;
+         case 'X':
+            gPassiveControlSCTP    = false;
+          break;
+         case 'y':
+            gActiveControlProtocol = IPPROTO_TCP;
+            gPassiveControlTCP     = true;
+          break;
+         case 'Y':
+            gPassiveControlTCP     = false;
+          break;
          case 0x1000:
-            gControlSocketProtocol = IPPROTO_SCTP;
-          break;
-         case 0x1001:
-            gControlSocketProtocol = IPPROTO_TCP;
-          break;
-         case 0x1002:
 #ifdef HAVE_MPTCP
-            gControlSocketProtocol = IPPROTO_MPTCP;
+            gActiveControlProtocol = IPPROTO_MPTCP;
+            gPassiveControlMPTCP   = true;
 #else
             std::cerr << "ERROR: MPTCP support is not compiled in!" << "\n";
             exit(1);
+#endif
+         case 0x1001:
+#ifdef HAVE_MPTCP
+            gPassiveControlMPTCP   = false;
 #endif
           break;
          case 'L':
@@ -410,7 +436,8 @@ void printGlobalParameters()
    else {
       stdlog << "until manual stop\n";
    }
-   stdlog << " - Active Node Name          = " << gActiveNodeName  << "\n"
+   stdlog << " - Minimum Logging Level     = " << gLogLevel << "\n"
+          << " - Active Node Name          = " << gActiveNodeName  << "\n"
           << " - Passive Node Name         = " << gPassiveNodeName << "\n"
           << " - Local Data Address(es)    = ";
    if(gLocalDataAddresses > 0) {
@@ -436,7 +463,7 @@ void printGlobalParameters()
    else {
       stdlog << "(any)";
    }
-   stdlog << "\n - Minimum Logging Level     = " << gLogLevel << "\n";
+   stdlog << "\n";
    LOG_END
 }
 
@@ -999,10 +1026,14 @@ bool mainLoop(const bool               isActiveMode,
 
    // ====== Get parameters for poll() ======================================
    addToPollFDs((pollfd*)&fds, gTCPSocket,     n, &tcpID);
+#ifdef HAVE_MPTCP
    addToPollFDs((pollfd*)&fds, gMPTCPSocket,   n, &mptcpID);
+#endif
    addToPollFDs((pollfd*)&fds, gUDPSocket,     n, &udpID);
    addToPollFDs((pollfd*)&fds, gSCTPSocket,    n, &sctpID);
+#ifdef HAVE_MPTCP
    addToPollFDs((pollfd*)&fds, gDCCPSocket,    n, &dccpID);
+#endif
    int    controlFDSet[gMessageReader.size()];
    size_t controlFDs = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
    const int controlIDMin = n;
@@ -1114,7 +1145,7 @@ bool mainLoop(const bool               isActiveMode,
          if(newSD >= 0) {
             LOG_TRACE
             stdlog << format("Accept on SCTP data socket %d -> new SCTP data connection %d",
-                             gMPTCPSocket, newSD) << "\n";
+                             gSCTPSocket, newSD) << "\n";
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_SCTP, newSD);
          }
@@ -1125,7 +1156,7 @@ bool mainLoop(const bool               isActiveMode,
          if(newSD >= 0) {
             LOG_TRACE
             stdlog << format("Accept on DCCP data socket %d -> new DCCP data connection %d",
-                             gMPTCPSocket, newSD) << "\n";
+                             gDCCPSocket, newSD) << "\n";
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_DCCP, newSD);
          }
@@ -1161,48 +1192,55 @@ void passiveMode(const uint16_t localPort)
    }
 
    // ====== Initialize SCTP control socket =================================
-   gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
-                                        localPort + 1,
-                                        gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
-                                        true, gBindV6Only);
-   if(gControlSocket < 0) {
-      LOG_FATAL
-      stdlog << format("Failed to create and bind SCTP control socket on port %d: %s!",
-                       localPort + 1, strerror(errno)) << "\n";
-      LOG_END_FATAL
-   }
-   sctp_event_subscribe events;
+   if(gPassiveControlSCTP) {
+      gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
+                                          localPort + 1,
+                                          gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
+                                          true, gBindV6Only);
+      if(gControlSocket < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to create and bind SCTP control socket on port %d: %s!",
+                        localPort + 1, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
 
-   // ------ Set default send parameters ------------------------------------
-   sctp_sndrcvinfo sinfo;
-   memset(&sinfo, 0, sizeof(sinfo));
-   sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
-   if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
-      LOG_FATAL
-      stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
-                        gControlSocket, strerror(errno)) << "\n";
-      LOG_END_FATAL
-   }
+      // ------ Set default send parameters ---------------------------------
+      sctp_sndrcvinfo sinfo;
+      memset(&sinfo, 0, sizeof(sinfo));
+      sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
+                           gControlSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
 
-   // ------ Enable SCTP events ---------------------------------------------
-   memset((char*)&events, 0 ,sizeof(events));
-   events.sctp_data_io_event     = 1;
-   events.sctp_association_event = 1;
-   if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-      LOG_FATAL
-      stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
-                        gControlSocket, strerror(errno)) << "\n";
-      LOG_END_FATAL
-   }
+      // ------ Enable SCTP events ------------------------------------------
+      sctp_event_subscribe events;
+      memset((char*)&events, 0 ,sizeof(events));
+      events.sctp_data_io_event     = 1;
+      events.sctp_association_event = 1;
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
+                           gControlSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
 
-   gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
+      gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
+   }
 
    // ====== Initialize TCP/MPTCP control socket ============================
-   if(gControlSocketProtocol != IPPROTO_SCTP) {
-      gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, gControlSocketProtocol,
-                                             localPort + 1,
-                                             gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
-                                             true, gBindV6Only);
+   if(gPassiveControlTCP) {
+      gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM,
+#ifdef HAVE_MPTCP
+                                              (gPassiveControlMPTCP) ? IPPROTO_MPTCP : IPPROTO_TCP,
+#else
+                                              IPPROTO_TCP,
+#endif
+                                              localPort + 1,
+                                              gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
+                                              true, gBindV6Only);
       if(gControlSocketTCP < 0) {
          LOG_FATAL
          stdlog << format("Failed to create and bind TCP control socket on port %d: %s!",
@@ -1213,6 +1251,8 @@ void passiveMode(const uint16_t localPort)
    }
 
    // ====== Initialize data socket for each protocol =======================
+
+   // ------ TCP ------------------------------------------------------------
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gTCPSocket < 0) {
@@ -1228,6 +1268,7 @@ void passiveMode(const uint16_t localPort)
       LOG_END_FATAL
    }
 
+   // ------ MPTCP ----------------------------------------------------------
 #ifdef HAVE_MPTCP
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
                                       gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
@@ -1248,6 +1289,7 @@ void passiveMode(const uint16_t localPort)
    }
 #endif
 
+   // ------ UDP ------------------------------------------------------------
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gUDPSocket < 0) {
@@ -1258,6 +1300,7 @@ void passiveMode(const uint16_t localPort)
    // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
    FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDPSocket);
 
+   // ------ DCCP -----------------------------------------------------------
 #ifdef HAVE_DCCP
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
@@ -1284,6 +1327,7 @@ void passiveMode(const uint16_t localPort)
    }
 #endif
 
+   // ------ SCTP -----------------------------------------------------------
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gSCTPSocket < 0) {
@@ -1306,6 +1350,7 @@ void passiveMode(const uint16_t localPort)
    }
 
    // ------ Enable SCTP events ---------------------------------------------
+   sctp_event_subscribe events;
    memset((char*)&events, 0 ,sizeof(events));
    events.sctp_data_io_event = 1;
    if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
@@ -1326,10 +1371,39 @@ void passiveMode(const uint16_t localPort)
 
    // ====== Print status ===================================================
    LOG_INFO
-   stdlog << format("Passive Mode: Accepting SCTP/TCP%s/UDP%s connections on port %u",
-                    ((gMPTCPSocket > 0) ? "/MPTCP" : ""),
-                    ((gDCCPSocket > 0)  ? "/DCCP"  : ""),
-                    localPort) << "\n";
+   std::string controlProtocols;
+   if(gControlSocket >= 0) {
+      controlProtocols += "SCTP";
+   }
+   if(gControlSocketTCP >= 0) {
+      if(controlProtocols.size() > 0) {
+         controlProtocols += "/";
+      }
+      controlProtocols += "TCP";
+#ifdef HAVE_MPTCP
+      if(gPassiveControlMPTCP >= 0) {
+         controlProtocols += "/MPTCP";
+      }
+#endif
+   }
+   std::string dataProtocols("SCTP/TCP/UDP");
+   std::string mptcp;
+#ifdef HAVE_DCCP
+   if(gDCCPSocket >= 0) {
+      dataProtocols += "/DCCP";
+   }
+#endif
+#ifdef HAVE_MPTCP
+   if(gMPTCPSocket > 0) {
+      mptcp = format(", and MPTCP on port %u", localPort - 1);
+   }
+#endif
+   stdlog << format("Passive Mode: Waiting for incoming connections:\n"
+                    " - Control Channel = %s on port %u\n"
+                    " - Data Channel    = %s on port %u%s\n",
+                    controlProtocols.c_str(), localPort + 1,
+                    dataProtocols.c_str(), localPort,
+                    mptcp.c_str());
    LOG_END
    LOG_TRACE
    stdlog << "Sockets:\n"
@@ -1417,7 +1491,7 @@ void activeMode(const char* remoteEndpoint)
    LOG_END
 
    // ====== Initialize control socket ======================================
-   gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, SOCK_STREAM, gControlSocketProtocol,
+   gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, SOCK_STREAM, gActiveControlProtocol,
                                         0, gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                         false, gBindV6Only);
    if(gControlSocket < 0) {
@@ -1426,7 +1500,7 @@ void activeMode(const char* remoteEndpoint)
                        strerror(errno)) << "\n";
       LOG_END_FATAL
    }
-   if(gControlSocketProtocol == IPPROTO_SCTP) {
+   if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
@@ -1443,7 +1517,7 @@ void activeMode(const char* remoteEndpoint)
                        strerror(errno)) << "\n";
       LOG_END_FATAL
    }
-   if(gControlSocketProtocol == IPPROTO_SCTP) {
+   if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_paddrparams paddr;
       memset(&paddr, 0, sizeof(paddr));
       memcpy(&paddr.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
@@ -1459,7 +1533,7 @@ void activeMode(const char* remoteEndpoint)
    LOG_TRACE
    stdlog << "<okay; sd=" << gControlSocket << ">\n";
    LOG_END
-   gMessageReader.registerSocket(gControlSocketProtocol, gControlSocket);
+   gMessageReader.registerSocket(gActiveControlProtocol, gControlSocket);
 
 
    // ====== Handle command-line parameters =================================
