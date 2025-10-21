@@ -37,7 +37,7 @@ int main(int argc, char** argv)
    printf("Connected %d\n", sd);
 
    printf("Handshake on %d ...\n", sd);
-   if(quic_client_handshake(sd, NULL, NULL, alpn) != 0) {
+   if(quic_client_handshake(sd, NULL, "pc2.northbound.hencsat", alpn) != 0) {
       perror("quic_client_handshake()");
       exit(1);
    }
