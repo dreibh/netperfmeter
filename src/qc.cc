@@ -9,6 +9,7 @@ int main(int argc, char** argv)
       puts("Usage: tc remote_endpoint");
       exit(1);
    }
+
    sockaddr_union a;
    if(!string2address(argv[1], &a, true)) {
       puts("Bad remote_endpoint!");
@@ -21,12 +22,6 @@ int main(int argc, char** argv)
       exit(1);
    }
 
-   const char* alpn = "sample";
-   // if(setsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_ALPN, alpn, strlen(alpn)) != 0) {
-   //    perror("socket(QUIC_SOCKOPT_ALPN)");
-   //    exit(1);
-   // }
-
    char address[128];
    address2string(&a.sa, address, sizeof(address), true);
    printf("Connecting to %s ...\n", address);
@@ -37,6 +32,7 @@ int main(int argc, char** argv)
    printf("Connected %d\n", sd);
 
    printf("Handshake on %d ...\n", sd);
+   const char* alpn = "sample";
    if(quic_client_handshake(sd, NULL, "pc2.northbound.hencsat", alpn) != 0) {
       perror("quic_client_handshake()");
       exit(1);
@@ -63,13 +59,13 @@ int main(int argc, char** argv)
    for(unsigned int i = 0; i < N; i++) {
       printf("Iteration %d:\n", i + 1);
       snprintf(buffer, sizeof(buffer), "This is test #%u!\n", i);
-      int64_t  sid   = ((i + 1) << 4);
+      int64_t  sid   = 0 | QUIC_STREAM_TYPE_UNI_MASK;   //  ((i + 1) << 4);
       // QUIC_STREAM_TYPE_UNI_MASK;
-      uint32_t flags = MSG_QUIC_STREAM_NEW;
-      printf("sending: %d (sid=%llu)\n", (int)strlen(buffer), (unsigned long long)sid);
+      uint32_t flags = (i == 0) ? MSG_QUIC_STREAM_NEW : 0;
+      printf("sending: %d (sid=%llu flags=%x)\n", (int)strlen(buffer), (unsigned long long)sid, (int)flags);
       ssize_t s = quic_sendmsg(sd, &buffer, strlen(buffer), sid, flags);
       if(s < 0) {
-         perror("send()");
+         perror("quic_sendmsg()");
          break;
       }
       printf("sent: %d (sid=%llu)\n", (int)s, (unsigned long long)sid);
@@ -78,7 +74,7 @@ int main(int argc, char** argv)
       flags = 0;
       ssize_t r = quic_recvmsg(sd, &buffer, sizeof(buffer), &sid, &flags);
       if(r < 0) {
-         perror("recv()");
+         perror("quic_recvmsg()");
          break;
       }
       printf("received: %d (sid=%llu)\n", (int)r, (unsigned long long)sid);
