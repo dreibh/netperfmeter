@@ -46,6 +46,13 @@
 #include <iostream>
 
 
+#ifndef HAVE_MPTCP
+#warning MPTCP is not supported by the API of this system!
+#endif
+#ifndef HAVE_DCCP
+#warning DCCP is not supported by the API of this system!
+#endif
+
 
 #define MAX_LOCAL_ADDRESSES 16
 static unsigned int     gLocalDataAddresses = 0;
