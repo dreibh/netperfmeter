@@ -124,20 +124,12 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
          const bool sendUnreliable = (randomDouble() > flow->getTrafficSpec().ReliableMode);
          if(sendUnreliable) {
             sinfo.sinfo_timetolive = flow->getTrafficSpec().RetransmissionTrials;
-#if defined __FreeBSD__ || defined __APPLE__
-            /* This is implementation specific and should be changed
-             * to use either a SCTP_PRINFO cmsg or sctp_sendv(). However,
-             * these are currently also only available in FreeBSD and Mac OS X
-             */
             if(flow->getTrafficSpec().RetransmissionTrialsInMS) {
                sinfo.sinfo_flags |= SCTP_PR_SCTP_TTL;
             }
             else {
                sinfo.sinfo_flags |= SCTP_PR_SCTP_RTX;
             }
-#else
-#warning The SCTP API does not support multiple PR-SCTP policies! Using SCTP_PR_SCTP_TTL in unreliable mode.
-#endif
          }
       }
       if(flow->getTrafficSpec().OrderedMode < 1.0) {
