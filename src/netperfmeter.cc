@@ -397,8 +397,10 @@ bool handleGlobalParameters(int argc, char** argv)
                      std::cerr << "ERROR: QUIC support is not compiled in!" << "\n";
                      exit(1);
 #endif
+                   break;
                   default:
                      abort();
+                   // break;
                }
                gAssocSpecs.push_back(flow);
             }
@@ -916,7 +918,15 @@ static Flow* createFlow(Flow*                  previousFlow,
    sockaddr_union destinationAddress = remoteAddress;
 #ifdef HAVE_MPTCP
    if(trafficSpec.Protocol == IPPROTO_MPTCP) {
-      // MPTCP: use MPTCP port instead of TCP port
+      // An MPTCP subflow is just a TCP connection on the wire. To allow for
+      // MPTCP and TCP simultaneously, MPTCP needs a different port number:
+      setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
+   }
+#endif
+#ifdef HAVE_QUIC
+   if(trafficSpec.Protocol == IPPROTO_QUIC) {
+      // A QUIC connection is just a UDP "connection" on the wire. To allow for
+      // QUIC and UDP simultaneously, QUIC needs a different port number:
       setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
    }
 #endif
