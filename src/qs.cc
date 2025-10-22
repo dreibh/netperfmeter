@@ -1,6 +1,7 @@
 #include "tools.h"
 
 #include <string.h>
+#include <poll.h>
 
 
 int main(int argc, char** argv)
@@ -51,32 +52,44 @@ int main(int argc, char** argv)
    }
 
    puts("Waiting for incoming data ...");
+   bool firstMsg = true;
    while(1) {
-      char buffer[65536];
-      int64_t  sid   = 0;
-      uint32_t flags = 0;
-      ssize_t r = quic_recvmsg(accepted, &buffer, sizeof(buffer), &sid, &flags);
-      if(r < 0) {
-         perror("recv()");
-         break;
-      }
-      printf("received: %d (sid=%llu)\n", (int)r, (unsigned long long)sid);
+      pollfd pfd[1];
+      pfd[0].fd      = accepted;
+      pfd[0].events  = POLLIN;
+      pfd[0].revents = 0;
+   
+      puts("poll ...");
+      if(poll(pfd, 1, -1) > 0) {
+         if(pfd[0].revents & POLLIN) {  
+            puts("receiving ...");
+   
+            char buffer[65536];
+            int64_t  sid   = 0;
+            uint32_t flags = 0;
+            ssize_t r = quic_recvmsg(accepted, &buffer, sizeof(buffer), &sid, &flags);
+            if(r < 0) {
+               perror("quic_recvmsg()");
+               break;
+            }
+            printf("received: %d (sid=%llu)\n", (int)r, (unsigned long long)sid);
 
-      flags = 0;
-      ssize_t s = quic_sendmsg(accepted, &buffer, r, sid, flags);
-      if(s < 0) {
-         perror("send()");
-         break;
+            sid   = 0 | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
+            flags = (firstMsg == true) ? MSG_QUIC_STREAM_NEW : 0;
+            
+            printf("sending: %d (sid=%llu flags=%x)\n", (int)r, (unsigned long long)sid, (int)flags);
+            ssize_t s = quic_sendmsg(accepted, &buffer, r, sid, flags);
+            if(s < 0) {
+               perror("quic_sendmsg()");
+               break;
+            }
+            printf("sent: %d (sid=%llu)\n", (int)s, (unsigned long long)sid);
+            
+            firstMsg = false;
+         }
       }
-      printf("sent: %d (sid=%llu)\n", (int)s, (unsigned long long)sid);
    }
 
    close(accepted);
    close(sd);
 }
-
-/*
-if(connect(sd, (const sockaddr*)&a, sizeof(a)) != 0) {
-      perror("connect();
-   }*/
-
