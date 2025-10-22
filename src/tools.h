@@ -56,17 +56,11 @@
 // MPTCP definitions
 #ifdef HAVE_MPTCP
 #include <linux/mptcp.h>
-// #else
-// #warning MPTCP is not supported by the API of this system!
-// #ifndef IPPROTO_MPTCP
-// #define IPPROTO_MPTCP 262
 #endif
 
 // DCCP definitions
 #ifdef HAVE_DCCP
 #include <linux/dccp.h>
-// #else
-// #warning DCCP is not supported by the API of this system!
 #endif
 
 
