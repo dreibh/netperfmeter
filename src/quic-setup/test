@@ -1,0 +1,8 @@
+#!/bin/sh
+
+./generate-test-certificates TestCA --client --san LOCAL  pc1.northbound.hencsat
+./generate-test-certificates TestCA --server --san LOOKUP pc2.northbound.hencsat
+
+make netperfmeter && ./netperfmeter 9000 --tls-key ./quic-setup/TestCA/pc1.northbound.hencsat/pc1.northbound.hencsat.key --tls-cert ./quic-setup/TestCA/pc1.northbound.hencsat/pc1.northbound.hencsat.crt
+
+make netperfmeter && ./netperfmeter 172.31.1.2:9000 -quic const10:const1000:const10:const1000 -H pc2.northbound.hencsat
