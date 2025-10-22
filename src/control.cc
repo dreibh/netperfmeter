@@ -316,12 +316,9 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
          //                          ((int64_t)flow->getStreamID() << 16) |
          //                          MSG_QUIC_STREAM_NEW );
          const uint32_t flags = MSG_QUIC_STREAM_NEW;
-         printf("C:sending: %d (sid=%llu)\n", (int)sizeof(identifyMsg), (unsigned long long)sid);
          if(quic_sendmsg(flow->getSocketDescriptor(), &identifyMsg, sizeof(identifyMsg), sid, flags) <= 0) {
-            perror("FAILED");
             return false;
          }
-         puts("OK!");
       }
 #endif
       else {

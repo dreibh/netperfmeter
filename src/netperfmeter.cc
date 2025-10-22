@@ -851,8 +851,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 #endif
 #ifdef HAVE_QUIC
          case IPPROTO_QUIC:
-            // FIXME!
-            trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 40;   // 1420B for IPv6 via 1500B MTU!
+            trafficSpec.OutboundFrameSize[0] = 1400;   // FIXME!
           break;
 #endif
          default:
@@ -1053,8 +1052,10 @@ static Flow* createFlow(Flow*                  previousFlow,
 
       // ====== QUIC handshake ==============================================
       if(trafficSpec.Protocol == IPPROTO_QUIC) {
-         // FIXME!
-         printf("HS: <%s>\n", gQUICHostname);
+         LOG_TRACE
+         stdlog << "client handshake <sd=" << socketDescriptor
+                << ", H=" << gQUICHostname << ">\n";
+         LOG_END
          if(quic_client_handshake(socketDescriptor, nullptr,
                                   gQUICHostname,
                                   NETPERFMETER_ALPN) != 0) {
@@ -1259,10 +1260,17 @@ bool mainLoop(const bool               isActiveMode,
             stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
                              gQUICSocket, newSD) << "\n";
             LOG_END
-            // FIXME!
-            printf("HS <%s> <%s>\n", gQUICKey, gQUICCertificate);
+            LOG_TRACE
+            stdlog << "server handshake <sd=" << gQUICSocket
+                   << ", K=" << ((gQUICKey != nullptr) ? gQUICKey : "(none)")
+                   << ", C=" << ((gQUICCertificate != nullptr) ? gQUICCertificate : "(none)")
+                   << ">\n";
+            LOG_END
             if(quic_server_handshake(newSD, gQUICKey, gQUICCertificate, NETPERFMETER_ALPN) == 0) {
-               puts("Handshake OK!");
+               LOG_TRACE
+               stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
+                                gQUICSocket, newSD) << "\n";
+               LOG_END
                FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
             }
             else {
