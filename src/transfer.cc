@@ -142,18 +142,23 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
                        (char*)&outputBuffer, bytesToSend,
                        &sinfo, 0);
    }
-#ifdef QUIC
+#ifdef HAVE_QUIC
    else if(flow->getTrafficSpec().Protocol == IPPROTO_QUIC) {
-      const int64_t sid    = 0 | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
+      int64_t  sid;
+      uint32_t flags;
+      if(flow->isAcceptedIncomingFlow()) {   // from passive side (server)
+         sid   = 0 | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
+         flags = (flow->getFirstTransmission() == 0) ? MSG_QUIC_STREAM_NEW : 0;
+      }
+      else {
+         sid   = 0 |QUIC_STREAM_TYPE_UNI_MASK;
+         flags = 0;   // already created by Identify procedure!
+      }
       // FIXME!
       // ( ((int64_t)flow->getFlowID() << 36)   |
       //                         ((int64_t)flow->getStreamID() << 16) |
       //                         MSG_QUIC_STREAM_NEW );
-      const uint32_t flags = (flow->FirstTransmission == 0) ? MSG_QUIC_STREAM_NEW : 0;
-      printf("F=%llu  F=%x\n", flow->FirstTransmission, flags);
-      printf("sending: %d (sid=%llu)\n", (int)bytesToSend, (unsigned long long)sid);
       sent = quic_sendmsg(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, sid, flags);
-      print("send: %d (sid=%llud)\n", (int)sent, (long long int)sid);
    }
 #endif
    else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
