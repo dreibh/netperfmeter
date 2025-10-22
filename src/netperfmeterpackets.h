@@ -99,8 +99,7 @@ struct NetPerfMeterAddFlowMessage
    uint32_t               FlowID;
    uint64_t               MeasurementID;
    uint16_t               StreamID;
-   uint8_t                Protocol;
-   uint8_t                pad;
+   uint16_t               Protocol;   // Little Endian, due to compatibility!
 
    char                   Description[NETPERFMETER_DESCRIPTION_SIZE];
 
