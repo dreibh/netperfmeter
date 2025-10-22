@@ -169,9 +169,13 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 #ifdef HAVE_MPTCP
           || (socket->Protocol == IPPROTO_MPTCP)
 #endif
+#ifdef HAVE_QUIC
+          || (socket->Protocol == IPPROTO_QUIC)
+#endif
         ) {
-         // SCTP and TCP can return partial messages upon recv() calls. TCP
-         // may event return multiple messages, if the buffer size is large enough!
+         // SCTP, TCP/MPTCP and QUIC can return partial messages upon recv() calls.
+         // TCP/MPTCP and QUIC may even return multiple messages, if the buffer
+         // size is large enough!
          if(socket->Status == Socket::MRS_WaitingForHeader) {
             assure(sizeof(TLVHeader) >= socket->BytesRead);
             bytesToRead = sizeof(TLVHeader) - socket->BytesRead;
@@ -180,14 +184,14 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             bytesToRead = socket->MessageSize - socket->BytesRead;
          }
          else {
-            if(socket->Protocol != IPPROTO_TCP) {
+            if(socket->Protocol == IPPROTO_SCTP) {
                // An error occurred before. Reset and try again ...
                socket->Status    = Socket::MRS_WaitingForHeader;
                socket->BytesRead = 0;
                bytesToRead       = sizeof(TLVHeader);
             }
             else {
-               // Not useful to retry when synchronization has been lost for TCP!
+               // Not useful to retry when synchronization has been lost!
                return MRRM_STREAM_ERROR;
             }
          }
