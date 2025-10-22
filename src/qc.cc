@@ -65,7 +65,7 @@ int main(int argc, char** argv)
       snprintf(buffer, sizeof(buffer), "This is test #%u!\n", i);
       int64_t  sid   = ((i + 1) << 4);
       // QUIC_STREAM_TYPE_UNI_MASK;
-      uint32_t flags = MSG_STREAM_NEW;
+      uint32_t flags = MSG_QUIC_STREAM_NEW;
       printf("sending: %d (sid=%llu)\n", (int)strlen(buffer), (unsigned long long)sid);
       ssize_t s = quic_sendmsg(sd, &buffer, strlen(buffer), sid, flags);
       if(s < 0) {

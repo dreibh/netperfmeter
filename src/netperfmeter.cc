@@ -138,6 +138,7 @@ static MessageReader  gMessageReader;
          "    [-u|--udp FLOWSPEC]\n"
          "    [-d|--dccp FLOWSPEC]\n"
          "    [-s|--sctp FLOWSPEC [FLOWSPEC ...]]\n"
+         "    [-k|--quic FLOWSPEC [FLOWSPEC ...]]\n"
          "    [--loglevel level]\n"
          "    [--logcolor on|off]\n"
          "    [--logfile file]\n"
@@ -178,6 +179,7 @@ bool handleGlobalParameters(int argc, char** argv)
       { "udp",                           required_argument, 0, 'u'    },
       { "dccp",                          required_argument, 0, 'd'    },
       { "sctp",                          required_argument, 0, 's'    },
+      { "quic",                          required_argument, 0, 'k'    },
 
       { "loglevel",                      required_argument, 0, 0x3000 },
       { "logcolor",                      required_argument, 0, 0x3001 },
@@ -193,7 +195,7 @@ bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "q!T:A:P:o:i:6L:J:V:S:C:t:m:u:d:s:hv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "q!T:A:P:o:i:6L:J:V:S:C:t:m:u:d:s:k:hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 0x1000:
             gControlSocketProtocol = IPPROTO_SCTP;
@@ -307,6 +309,7 @@ bool handleGlobalParameters(int argc, char** argv)
          case 'u':
          case 'd':
          case 's':
+         case 'k':
             {
                AssocSpec flow;
                flow.Flows.push_back(optarg);
@@ -337,6 +340,14 @@ bool handleGlobalParameters(int argc, char** argv)
                      flow.Protocol = IPPROTO_DCCP;
 #else
                      std::cerr << "ERROR: DCCP support is not compiled in!" << "\n";
+                     exit(1);
+#endif
+                   break;
+                  case 'k':
+#ifdef HAVE_QUIC
+                     flow.Protocol = IPPROTO_QUIC;
+#else
+                     std::cerr << "ERROR: QUIC support is not compiled in!" << "\n";
                      exit(1);
 #endif
                    break;
