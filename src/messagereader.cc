@@ -214,7 +214,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                                  from, fromSize, sinfo, msgFlags);
       }
 #ifdef HAVE_QUIC
-      if(socket->Protocol == IPPROTO_QUIC) {
+      else if(socket->Protocol == IPPROTO_QUIC) {
          int64_t  sid   = 0;
          uint32_t flags = 0;
          received = quic_recvmsg(socket->SocketDescriptor,
