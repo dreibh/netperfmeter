@@ -46,6 +46,9 @@ local_port
 .br
 .Op Fl J Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
 .br
+.Op Fl K Ar key_file | Fl Fl tls-key Ar key_file
+.Op Fl J Ar certificate_file | Fl Fl tls-cert Ar certificate_file
+.br
 .Op Fl -6 | Fl Fl v6only
 .br
 .Op Fl Fl display | Fl Fl nodisplay
@@ -65,6 +68,8 @@ remote_endpoint:remote_port
 .Op Fl L Ar address[,address,...] | Fl Fl local Ar address[,address,...]
 .br
 .Op Fl J Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
+.br
+.Op Fl H Ar hostname_file | Fl Fl tls-hostname Ar hostname
 .br
 .Op Fl -6 | Fl Fl v6only
 .Op Fl Fl display | Fl Fl nodisplay
@@ -144,6 +149,14 @@ Specifies address(es) of the local *data* endpoint. For TCP, UDP and DCCP, only 
 On an active node, this option applies to the following flows, i.e. it must be set before specifying a flow!
 .It Fl J Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
 Specifies address(es) of the local *control* endpoint (SCTP or TCP). For TCP, only the first address is used!
+.It Fl K Ar key_file | Fl Fl tls-key Ar key_file
+Specifies the TLS key file for QUIC authentication. This option is used by the passive side.
+.It Fl J Ar certificate_file | Fl Fl tls-cert Ar certificate_file
+Specifies the TLS certificate file for QUIC authentication. This option is used by the passive side.
+The certificate file must correspond to the key file provided by --tls-key. The certificate must be for server usage (X.509 Extended Key Usage: TLS Web Server Authentication).
+.It Fl H Ar hostname_file | Fl Fl tls-hostname Ar hostname
+Specifies the TLS certificate hostname for QUIC authentication. It is used by the active side.
+The hostname must match the remote (i.e. passive side's) hostname, as provided by the passide side's TLS certificate, to allow for hostname verification. As alternative, it is possible to add the IP addresses into the X.509 SubjectAltName of its certificate.
 .It Fl -6 | Fl Fl v6only
 Use sockets with IPv6 only (by setting IPV6_V6ONLY socket option).
 .It Fl Fl display
