@@ -1095,10 +1095,17 @@ bool mainLoop(const bool               isActiveMode,
    pollfd                 fds[5 + gMessageReader.size()];
    int                    n       = 0;
    int                    tcpID   = -1;
+#ifdef HAVE_MPTCP
    int                    mptcpID = -1;
+#endif
    int                    udpID   = -1;
    int                    sctpID  = -1;
+#ifdef HAVE_DCCP
    int                    dccpID  = -1;
+#endif
+#ifdef HAVE_QUIC
+   int                    quicID  = -1;
+#endif
    unsigned long long     now     = getMicroTime();
    std::map<int, pollfd*> pollFDIndex;
 
@@ -1110,8 +1117,11 @@ bool mainLoop(const bool               isActiveMode,
 #endif
    addToPollFDs((pollfd*)&fds, gUDPSocket,     n, &udpID);
    addToPollFDs((pollfd*)&fds, gSCTPSocket,    n, &sctpID);
-#ifdef HAVE_MPTCP
+#ifdef HAVE_DCCP
    addToPollFDs((pollfd*)&fds, gDCCPSocket,    n, &dccpID);
+#endif
+#ifdef HAVE_QUIC
+   addToPollFDs((pollfd*)&fds, gQUICSocket,    n, &dccpID);
 #endif
    int    controlFDSet[gMessageReader.size()];
    size_t controlFDs = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
@@ -1242,7 +1252,7 @@ bool mainLoop(const bool               isActiveMode,
       }
 #endif
 #ifdef HAVE_QUIC
-      if( (dccpID >= 0) && (fds[dccpID].revents & (POLLIN|POLLERR)) ) {
+      if( (quicID >= 0) && (fds[quicID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gQUICSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
