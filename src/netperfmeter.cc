@@ -1121,7 +1121,7 @@ bool mainLoop(const bool               isActiveMode,
    addToPollFDs((pollfd*)&fds, gDCCPSocket,    n, &dccpID);
 #endif
 #ifdef HAVE_QUIC
-   addToPollFDs((pollfd*)&fds, gQUICSocket,    n, &dccpID);
+   addToPollFDs((pollfd*)&fds, gQUICSocket,    n, &quicID);
 #endif
    int    controlFDSet[gMessageReader.size()];
    size_t controlFDs = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
