@@ -224,7 +224,6 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          received = quic_recvmsg(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  &sid, &flags);
-         printf("received: %d (sid=%llu)\n", (int)received, (unsigned long long)sid);
       }
 #endif
       else {
