@@ -397,26 +397,26 @@ bool handleGlobalParameters(int argc, char** argv)
                      std::cerr << "ERROR: QUIC support is not compiled in!" << "\n";
                      exit(1);
 #endif
-                  case 'K':
-#ifdef HAVE_QUIC
-                    gQUICKey = optarg;
-#endif
-                   break;
-                  case 'J':
-#ifdef HAVE_QUIC
-                    gQUICCertificate = optarg;
-#endif
-                   break;
-                  case 'H':
-#ifdef HAVE_QUIC
-                    gQUICHostname = optarg;
-#endif
-                   break;
                   default:
                      abort();
                }
                gAssocSpecs.push_back(flow);
             }
+          break;
+         case 'K':
+#ifdef HAVE_QUIC
+            gQUICKey = optarg;
+#endif
+          break;
+         case 'J':
+#ifdef HAVE_QUIC
+            gQUICCertificate = optarg;
+#endif
+          break;
+         case 'H':
+#ifdef HAVE_QUIC
+            gQUICHostname = optarg;
+#endif
           break;
          case 0x3000:
             gLogLevel = std::min((unsigned int)atoi(optarg),MAX_LOGLEVEL);
