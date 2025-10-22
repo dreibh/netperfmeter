@@ -213,6 +213,16 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  from, fromSize, sinfo, msgFlags);
       }
+#ifdef HAVE_QUIC
+      if(socket->Protocol == IPPROTO_QUIC) {
+         int64_t  sid   = 0;
+         uint32_t flags = 0;
+         received = quic_recvmsg(socket->SocketDescriptor,
+                                 (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
+                                 &sid, &flags);
+         printf("received: %d (sid=%llu)\n", (int)received, (unsigned long long)sid);
+      }
+#endif
       else {
          received = ext_recvfrom(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
