@@ -526,6 +526,11 @@ const char* getProtocolName(const int protocol)
          protocolName = "DCCP";
        break;
 #endif
+#ifdef HAVE_QUIC
+      case IPPROTO_QUIC:
+         protocolName = "QUIC";
+       break;
+#endif
       default:
          protocolName = "unknown?!";
        break;

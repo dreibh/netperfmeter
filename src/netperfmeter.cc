@@ -825,6 +825,12 @@ static Flow* createFlow(Flow*                  previousFlow,
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 40;   // 1420B for IPv6 via 1500B MTU!
           break;
 #endif
+#ifdef HAVE_QUIC
+         case IPPROTO_QUIC:
+            // FIXME!
+            trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 40;   // 1420B for IPv6 via 1500B MTU!
+          break;
+#endif
          default:
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 12 - 16;
           break;
@@ -1012,6 +1018,17 @@ static Flow* createFlow(Flow*                  previousFlow,
       LOG_TRACE
       stdlog << "okay <sd=" << socketDescriptor << ">\n";
       LOG_END
+
+      // ====== QUIC handshake ==============================================
+      if(trafficSpec.Protocol == IPPROTO_QUIC) {
+         // FIXME!
+         if(quic_client_handshake(socketDescriptor, nullptr,
+                                  "pc2.northbound.hencsat",
+                                  NETPERFMETER_ALPN) != 0) {
+            std::cerr << "ERROR: QUIC handshake failed: " << strerror(errno) << "!\n";
+            exit(1);
+         }
+      }
    }
 
    // ====== Update flow with socket descriptor =============================
@@ -1188,6 +1205,29 @@ bool mainLoop(const bool               isActiveMode,
                              gDCCPSocket, newSD) << "\n";
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_DCCP, newSD);
+         }
+      }
+#endif
+#ifdef HAVE_QUIC
+      if( (dccpID >= 0) && (fds[dccpID].revents & (POLLIN|POLLERR)) ) {
+         const int newSD = ext_accept(gQUICSocket, nullptr, 0);
+         if(newSD >= 0) {
+            LOG_TRACE
+            stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
+                             gQUICSocket, newSD) << "\n";
+            LOG_END
+            // FIXME!
+            if(quic_server_handshake(newSD,
+                  "quic-setup/TestCA/pc2.northbound.hencsat/pc2.northbound.hencsat.key",
+                  "quic-setup/TestCA/pc2.northbound.hencsat/pc2.northbound.hencsat.crt",
+                  NETPERFMETER_ALPN) == 0) {
+               puts("Handshake OK!");
+               FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
+            }
+            else {
+               perror("quic_server_handshake()");
+               ext_close(newSD);
+            }
          }
       }
 #endif
