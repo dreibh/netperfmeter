@@ -35,6 +35,8 @@
 #include <sys/types.h>
 
 
+#define NETPERFMETER_ALPN "netperfmeter"
+
 struct NetPerfMeterHeader
 {
    uint8_t  Type;

@@ -52,6 +52,9 @@
 #ifndef HAVE_DCCP
 #warning DCCP is not supported by the API of this system!
 #endif
+#ifndef HAVE_QUIC
+#warning QUIC is not supported by the API of this system!
+#endif
 
 
 #define MAX_LOCAL_ADDRESSES 16
@@ -73,6 +76,9 @@ static int              gMPTCPSocket           = -1;
 static int              gUDPSocket             = -1;
 static int              gSCTPSocket            = -1;
 static int              gDCCPSocket            = -1;
+#ifdef HAVE_QUIC
+static int              gQUICSocket            = -1;
+#endif
 static double           gRuntime               = -1.0;
 static bool             gDisplayEnabled        = true;
 static bool             gStopTimeReached       = false;
@@ -926,6 +932,13 @@ static Flow* createFlow(Flow*                  previousFlow,
                                                    trafficSpec.BindV6Only);
            break;
 #endif
+#ifdef HAVE_QUIC
+         case IPPROTO_QUIC:
+            socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_QUIC, 0,
+                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
+                                                   trafficSpec.BindV6Only);
+           break;
+#endif
          default:
             abort();
 
@@ -1248,7 +1261,7 @@ void passiveMode(const uint16_t localPort)
 
 #ifdef HAVE_MPTCP
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
-                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
+                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gMPTCPSocket < 0) {
       LOG_DEBUG
       stdlog << format("NOTE: Failed to create and bind MPTCP socket on port %d: %s!",
@@ -1262,7 +1275,6 @@ void passiveMode(const uint16_t localPort)
                           gMPTCPSocket) << "\n";
          LOG_END_FATAL
       }
-      ext_listen(gMPTCPSocket, 100);
    }
 #endif
 
@@ -1297,6 +1309,39 @@ void passiveMode(const uint16_t localPort)
          LOG_FATAL
          stdlog << format("Failed to configure buffer sizes on DCCP socket %d!",
                           gDCCPSocket) << "\n";
+         LOG_END_FATAL
+      }
+   }
+#endif
+
+#ifdef HAVE_QUIC
+   gQUICSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_QUIC, localPort - 1,
+                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
+   // NOTE: It is necessary to set the ALPN before enabling the listening mode!
+   if(gQUICSocket < 0) {
+      LOG_INFO
+      stdlog << format("NOTE: Failed to create and bind QUIC socket on port %d: %s!",
+                        localPort, strerror(errno)) << "\n";
+      LOG_END
+   }
+   else {
+      if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
+                        NETPERFMETER_ALPN, strlen(NETPERFMETER_ALPN)) < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket: %s!",
+                          gQUICSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+      if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
+         LOG_FATAL
+         stdlog << format("Failed to configure buffer sizes on QUIC socket %d!",
+                          gQUICSocket) << "\n";
+         LOG_END_FATAL
+      }
+      if(ext_listen(gQUICSocket, 100) < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to enable listening on QUIC socket %d!",
+                          gQUICSocket) << "\n";
          LOG_END_FATAL
       }
    }
@@ -1361,6 +1406,9 @@ void passiveMode(const uint16_t localPort)
           << "- SCTP Data    = " << gSCTPSocket       << "\n"
 #ifdef HAVE_DCCP
           << "- DCCP Data    = " << gDCCPSocket       << "\n"
+#endif
+#ifdef HAVE_QUIC
+          << "- QUIC Data    = " << gQUICSocket       << "\n"
 #endif
           ;
    LOG_END
