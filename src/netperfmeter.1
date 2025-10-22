@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 6, 2025
+.Dd October 22, 2025
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -96,6 +96,8 @@ remote_endpoint:remote_port
 .Op Fl d Ar FLOWSPEC | Fl Fl dccp Ar FLOWSPEC
 .br
 .Op Fl s Ar FLOWSPEC | Fl Fl sctp Ar FLOWSPEC Ar [FLOWSPEC ...]
+.br
+.Op Fl k Ar FLOWSPEC | Fl Fl quic Ar FLOWSPEC Ar [FLOWSPEC ...]
 .br
 .Op Fl q | Fl Fl quiet
 .Op Fl ! | Fl Fl verbose
@@ -186,6 +188,8 @@ Establish a new DCCP connection. The flow of this connection must be specified b
 Note: DCCP is not available on all platforms, yet. Currently, only Linux provides DCCP in its official kernel.
 .It Fl s Ar FLOWSPEC | Fl Fl sctp Ar FLOWSPEC Ar [FLOWSPEC ...]
 Establish a new SCTP association. The streams of this association must be specified by one or more FLOWSPEC specifications as following parameters.
+.It Fl k Ar FLOWSPEC | Fl Fl quic Ar FLOWSPEC Ar [FLOWSPEC ...]
+Establish a new QUIC connection. The streams of this connection must be specified by one or more FLOWSPEC specifications as following parameters.
 .It FLOWSPEC
 Specifies a new flow. The format is: out\%go\%ing_\%fra\%me_\%rate:\%out\%go\%ing_\%fra\%me_\%size:\%in\%com\%ing_\%fra\%me_\%rate:\%in\%com\%ing_\%fra\%me_\%size:\%opt\%ion:\%...
 The first four parameters (out\%going_\%frame_\%rate:\%out\%going_\%frame_\%size:\%in\%com\%ing_\%frame_\%rate:\%in\%com\%ing_\%frame_\%size) may be substituted by the option "default", creating a flow with some more or less useful default parameters.
