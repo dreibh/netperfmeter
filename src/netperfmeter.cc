@@ -89,6 +89,9 @@ static int              gDCCPSocket            = -1;
 #endif
 #ifdef HAVE_QUIC
 static int              gQUICSocket            = -1;
+static const char*      gQUICCertificate       = nullptr;
+static const char*      gQUICKey               = nullptr;
+static const char*      gQUICHostname          = nullptr;
 #endif
 static double           gRuntime               = -1.0;
 static bool             gDisplayEnabled        = true;
@@ -128,6 +131,7 @@ static MessageReader  gMessageReader;
          "    [-x|--control-over-sctp|-y|--control-over-tcp|--control-over-mptcp]\n"
          "    [-L address[,address,...]|--local address[,address,...]]\n"
          "    [-J address[,address,...]|--controllocal address[,address,...]]\n"
+         "    [-K|--tls-key key_file] [-J|--tls-cert certificate_file]\n"
          "    [-6|--v6only]\n"
          "    [--display|--nodisplay]\n"
          "    [--loglevel level]\n"
@@ -151,6 +155,7 @@ static MessageReader  gMessageReader;
          "    [-V vector_file_pattern|--vector vector_file_pattern]\n"
          "    [-A description|--activenodename description]\n"
          "    [-P description|--passivenodename description]\n"
+         "    [-H|--tls-hostname hostname]\n"
          "    [-t|--tcp FLOWSPEC]\n"
          "    [-m|--mptcp FLOWSPEC]\n"
          "    [-u|--udp FLOWSPEC]\n"
@@ -187,13 +192,16 @@ bool handleGlobalParameters(int argc, char** argv)
       { "v6only",                        no_argument,       0, '6'    },
 
       { "runtime",                       required_argument, 0, 'T'    },
-      { "sndbuf",                        required_argument, 0, 'i'    },
-      { "rcvbuf",                        required_argument, 0, 'o'    },
+      { "sndbuf",                        required_argument, 0, 'o'    },
+      { "rcvbuf",                        required_argument, 0, 'i'    },
       { "config",                        required_argument, 0, 'C'    },
       { "scalar",                        required_argument, 0, 'S'    },
       { "vector",                        required_argument, 0, 'V'    },
       { "activenodename",                required_argument, 0, 'A'    },
       { "passivenodename",               required_argument, 0, 'P'    },
+      { "tls-key",                       required_argument, 0, 'K'    },
+      { "tls-cert",                      required_argument, 0, 'J'    },
+      { "tls-hostname",                  required_argument, 0, 'H'    },
 
       { "tcp",                           required_argument, 0, 't'    },
       { "mptcp",                         required_argument, 0, 'm'    },
@@ -216,7 +224,7 @@ bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWT:A:P:o:i:6L:J:V:S:C:t:m:u:d:s:k:hvq!", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "xXyYwWL:C:6T:o:i:C:S:V:A:P:K:J:H:t:m:u:d:s:k:q!hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
             gActiveControlProtocol = IPPROTO_SCTP;
@@ -388,6 +396,20 @@ bool handleGlobalParameters(int argc, char** argv)
 #else
                      std::cerr << "ERROR: QUIC support is not compiled in!" << "\n";
                      exit(1);
+#endif
+                  case 'K':
+#ifdef HAVE_QUIC
+                    gQUICKey = optarg;
+#endif
+                   break;
+                  case 'J':
+#ifdef HAVE_QUIC
+                    gQUICCertificate = optarg;
+#endif
+                   break;
+                  case 'H':
+#ifdef HAVE_QUIC
+                    gQUICHostname = optarg;
 #endif
                    break;
                   default:
@@ -1022,8 +1044,9 @@ static Flow* createFlow(Flow*                  previousFlow,
       // ====== QUIC handshake ==============================================
       if(trafficSpec.Protocol == IPPROTO_QUIC) {
          // FIXME!
+         printf("HS: <%s>\n", gQUICHostname);
          if(quic_client_handshake(socketDescriptor, nullptr,
-                                  "pc2.northbound.hencsat",
+                                  gQUICHostname,
                                   NETPERFMETER_ALPN) != 0) {
             std::cerr << "ERROR: QUIC handshake failed: " << strerror(errno) << "!\n";
             exit(1);
@@ -1217,10 +1240,8 @@ bool mainLoop(const bool               isActiveMode,
                              gQUICSocket, newSD) << "\n";
             LOG_END
             // FIXME!
-            if(quic_server_handshake(newSD,
-                  "quic-setup/TestCA/pc2.northbound.hencsat/pc2.northbound.hencsat.key",
-                  "quic-setup/TestCA/pc2.northbound.hencsat/pc2.northbound.hencsat.crt",
-                  NETPERFMETER_ALPN) == 0) {
+            printf("HS <%s> <%s>\n", gQUICKey, gQUICCertificate);
+            if(quic_server_handshake(newSD, gQUICKey, gQUICCertificate, NETPERFMETER_ALPN) == 0) {
                puts("Handshake OK!");
                FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
             }
