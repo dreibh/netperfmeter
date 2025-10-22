@@ -311,9 +311,11 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       }
 #ifdef HAVE_QUIC
       else if(flow->getTrafficSpec().Protocol == IPPROTO_QUIC) {
-         const int64_t sid    = ( ((int64_t)flow->getFlowID() << 36)   |
-                                  ((int64_t)flow->getStreamID() << 16) |
-                                  MSG_QUIC_STREAM_NEW );
+         const int64_t sid    = 0 | QUIC_STREAM_TYPE_UNI_MASK;
+         // FIXME!
+         // ( ((int64_t)flow->getFlowID() << 36)   |
+         //                          ((int64_t)flow->getStreamID() << 16) |
+         //                          MSG_QUIC_STREAM_NEW );
          const uint32_t flags = MSG_QUIC_STREAM_NEW;
          printf("C:sending: %d (sid=%llu)\n", (int)sizeof(identifyMsg), (unsigned long long)sid);
          if(quic_sendmsg(flow->getSocketDescriptor(), &identifyMsg, sizeof(identifyMsg), sid, flags) <= 0) {
