@@ -130,7 +130,7 @@ static MessageReader  gMessageReader;
       << " local_port\n"
          "    [-x|--control-over-sctp|-y|--control-over-tcp|--control-over-mptcp]\n"
          "    [-L address[,address,...]|--local address[,address,...]]\n"
-         "    [-J address[,address,...]|--controllocal address[,address,...]]\n"
+         "    [-l address[,address,...]|--controllocal address[,address,...]]\n"
          "    [-K|--tls-key key_file] [-J|--tls-cert certificate_file]\n"
          "    [-6|--v6only]\n"
          "    [--display|--nodisplay]\n"
@@ -144,7 +144,7 @@ static MessageReader  gMessageReader;
          "    [-x|--control-over-sctp|-X|--no-control-over-sctp]\n"
          "    [-y|--control-over-tcp|-Y|--no-control-over-tcp|--control-over-mptcp|--no-control-over-mptcp]\n"
          "    [-L address[,address,...]|--local address[,address,...]]\n"
-         "    [-J address[,address,...]|--controllocal address[,address,...]]\n"
+         "    [-l address[,address,...]|--controllocal address[,address,...]]\n"
          "    [-6|--v6only]\n"
          "    [--display|--nodisplay]\n"
          "    [-o bytes|--sndbuf bytes]\n"
@@ -186,7 +186,7 @@ bool handleGlobalParameters(int argc, char** argv)
       { "control-over-mptcp",            no_argument,       0, 'w'    },
       { "no-control-over-mptcp",         no_argument,       0, 'W'    },
       { "local",                         required_argument, 0, 'L'    },
-      { "controllocal",                  required_argument, 0, 'C'    },
+      { "controllocal",                  required_argument, 0, 'l'    },
       { "display",                       no_argument,       0, 0x2001 },
       { "nodisplay",                     no_argument,       0, 0x2002 },
       { "v6only",                        no_argument,       0, '6'    },
@@ -224,7 +224,7 @@ bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWL:C:6T:o:i:C:S:V:A:P:K:J:H:t:m:u:d:s:k:q!hv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:C:S:V:A:P:K:J:H:t:m:u:d:s:k:q!hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
             gActiveControlProtocol = IPPROTO_SCTP;
@@ -280,7 +280,7 @@ bool handleGlobalParameters(int argc, char** argv)
                }
             }
           break;
-         case 'J':
+         case 'l':
             {
                gLocalControlAddresses = 0;
                char* address = optarg;
