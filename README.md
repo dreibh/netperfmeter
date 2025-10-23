@@ -276,21 +276,36 @@ kldstat | grep sctp
 
 ## QUIC Communication
 
- [QUIC](https://en.wikipedia.org/wiki/QUIC) uses built-in security based on Transport Layer Security&nbsp;(TLS). To use QUIC, it is therefore necessary to properly set up TLS first. Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
+[QUIC](https://en.wikipedia.org/wiki/QUIC) uses built-in security based on Transport Layer Security&nbsp;(TLS). To use QUIC, it is therefore necessary to properly set up TLS first. Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
 
 * Generate a key and corresponding [X.509](https://en.wikipedia.org/wiki/X.509) TLS certificate for the server. For details, see e.g.&nbsp;the various documentations and tutorials for [OpenSSL](https://www.openssl.org/), [Gnu TLS](https://www.gnutls.org/), or [NSS](https://nss-crypto.org/). Also, the directory [`src/quic-setup`](src/quic-setup) provides some example scripts. The following commands uses these scripts to generate a test cerfitication authority *TestCA*, signing a server certificate for server *server.domain.example* (with the local machine's IP addresses in SubjectAltName), and a client certificate for client *client.domain.example* (with the machine's IP addresses looked up from DNS or `/etc/hosts` in SubjectAltName):
 
 ```bash
 cd src/quic-setup
-./generate-test-certificates TestCA --client --san LOOKUP client.domain.example
 ./generate-test-certificates TestCA --server --san LOCAL  server.domain.example
+./generate-test-certificates TestCA --client --san LOOKUP client.domain.example
+```
+
+These commands generate the following files:
+
+* `TestCA/TestLevel1/certs/TestLevel1.crt`: The top-level CA certificate.
+* `TestCA/server.domain.example/server.domain.example.key`: The server key.
+* `TestCA/server.domain.example/server.domain.example.crt`: The corresponding server certificate.
+* `TestCA/client.domain.example/client.domain.example.key`: The client key.
+* `TestCA/client.domain.example/client.domain.example.crt`: The corresponding client certificate.
+
+The server and client certificates can be verified using the CA certificate:
+
+```bash
+./check-certificate TestCA/TestLevel1/certs/TestLevel1.crt TestCA/server.domain.example/server.domain.example.crt
+./check-certificate TestCA/TestLevel1/certs/TestLevel1.crt TestCA/client.domain.example/client.domain.example.crt
 ```
 
 * Run a passive instance (i.e.&nbsp;server side), using port 9000, and specifying server key and certificate:
   ```bash
-  ./netperfmeter 9000 \
-     -tls-key $YOUR_PATH/TestCA/server.domain.example/server.domain.example.key \
-     -tls-cert $YOUR_PATH/TestCA/server.domain.example/server.domain.example.crt
+  netperfmeter 9000 \
+     -tls-key $DIRECTORY/TestCA/server.domain.example/server.domain.example.key \
+     -tls-cert $DIRECTORY/TestCA/server.domain.example/server.domain.example.crt
   ```
 
 * Run an active instance (i.e.&nbsp;client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation:
@@ -458,18 +473,18 @@ Some examples:
 
   ```bash
   sudo tshark -i any -n -w output.pcap \
-     -f '(sctp port 9001) or ((tcp port 9000) or (tcp port 8999) or (udp port 9000) or (sctp port 9000) or (ip proto 33))'
+     -f '(sctp and portrange 9000-9001) or (tcp and portrange 8999-9001) or (udp and portrange 8999-9001) or (ip proto 33)'
   ```
 
   Notes:
 
   - Filter parameters for protocols and ports can ensure to record only the relevant NetPerfMeter traffic.
-  - In case of using port&nbsp;9000 for NetPerfMeter, use:
+  - In case of using port&nbsp;9000 for NetPerfMeter, record:
 
     + SCTP, port 9000 and 9001 (data and control traffic over SCTP);
     + TCP, port 8999, 9000 and 9001 (data and control traffic over TCP and MPTCP);
-    + UDP, port 9000;
-    + DCCP, port 9000 (`ip proto 33`).
+    + UDP, port 8999 and 9000 (data traffic over QUIC and UDP);
+    + DCCP, port 9000 (`ip proto 33`; PCAP filtering does not support DCCP).
 
 
 * Run [Wireshark](https://www.wireshark.org/) network protocol analyser to display the packet flow of the <a href="#active-multi">multi-flows example</a> above in PCAP file [`multi.pcap.gz`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz):
@@ -482,6 +497,30 @@ Some examples:
 
   - Wireshark provides out-of-the-box support for NetPerfMeter, i.e.&nbsp;a dissector is included in all recent Wireshark packages.
   - Coloring rules and filters can be found in the directory [`netperfmeter/src/wireshark`](https://github.com/dreibh/netperfmeter/tree/master/src/wireshark). Simply copy [`colorfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/colorfilters), [`dfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/dfilters) and optionally [`preferences`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/preferences) to `$HOME/.wireshark`.
+
+
+* To decode TLS-encrypted QUIC traffic, it is necessary to let QUIC/TLS log the session keys.
+
+  * Prepare a directory and file for key export:
+
+    ```bash
+mkdir -m700 -p /home/$USER/keylog
+touch /home/$USER/keylog/sslkeylog.log
+chmod 700 /home/$USER/keylog/sslkeylog.log
+```
+
+  * Configure Wireshark:
+
+    - Preferences -> Protocols -> TLS -> Specify Key Log File: select your file `/home/$USER/keylog/sslkeylog.log`.
+    - Preferences -> Protocols -> QUIC -> QUIC UDP port(s): `8999-9001` (or your used ports).
+
+  * When running NetPerfMeter, set the environment variable `SSLKEYLOGFILE` to your session key logfile:
+    ```bash
+SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log netperfmeter ...
+```
+
+   * When recording the NetPerfMeter QUIC communication, make sure to also include the QUIC connection setup!
+
 
 ## Miscellaneous
 
