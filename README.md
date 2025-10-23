@@ -1,6 +1,6 @@
 <h1 align="center">
  NetPerfMeter<br />
- <span style="font-size: 75%">A TCP/MPTCP/UDP/SCTP/DCCP Network Performance Meter Tool</span><br />
+ <span style="font-size: 75%">A TCP/MPTCP/UDP/SCTP/DCCP/QUIC Network Performance Meter Tool</span><br />
  <a href="https://www.nntb.no/~dreibh/netperfmeter/">
   <img alt="NetPerfMeter Logo" src="src/figures/EN-Logo-NetPerfMeter.svg" width="25%" /><br />
   <span style="font-size: 75%;">https://www.nntb.no/~dreibh/netperfmeter</span>
@@ -10,7 +10,7 @@
 
 # 💡 What is Network Performance Meter&nbsp;(NetPerfMeter)?
 
-NetPerfMeter is a network performance meter for the [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol), [MPTCP](https://en.wikipedia.org/wiki/MPTCP), [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol), [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol), and [DCCP](https://en.wikipedia.org/wiki/DCCP) transport protocols over [IPv4](https://en.wikipedia.org/wiki/IPv4) and [IPv6](https://en.wikipedia.org/wiki/Ipv6). It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. Flows can be saturated (i.e.&nbsp;"send as much as possible") or non-saturated with frame rate and frame sizes (like a multimedia transmission). Non-saturated flows can be configured with constant or variable frame rate/frame size, i.e.&nbsp;to realise [Constant Bit Rate&nbsp;(CBR)](https://en.wikipedia.org/wiki/Constant_bitrate) or [Variable Bit Rate&nbsp;(VBR)](https://en.wikipedia.org/wiki/Variable_bitrate) traffic. For both, frame rate and frame size, it is not only possible to set constant values but to also to use random distributions. Furthermore, flows can be set up as on/off flows. Of course, the flow parameters can be configured individually per flow and flow direction.
+NetPerfMeter is a network performance meter for the [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol), [MPTCP](https://en.wikipedia.org/wiki/MPTCP), [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol), [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol), [DCCP](https://en.wikipedia.org/wiki/DCCP), and [QUIC](https://en.wikipedia.org/wiki/QUIC) transport protocols over [IPv4](https://en.wikipedia.org/wiki/IPv4) and [IPv6](https://en.wikipedia.org/wiki/Ipv6). It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. Flows can be saturated (i.e.&nbsp;"send as much as possible") or non-saturated with frame rate and frame sizes (like a multimedia transmission). Non-saturated flows can be configured with constant or variable frame rate/frame size, i.e.&nbsp;to realise [Constant Bit Rate&nbsp;(CBR)](https://en.wikipedia.org/wiki/Constant_bitrate) or [Variable Bit Rate&nbsp;(VBR)](https://en.wikipedia.org/wiki/Variable_bitrate) traffic. For both, frame rate and frame size, it is not only possible to set constant values but to also to use random distributions. Furthermore, flows can be set up as on/off flows. Of course, the flow parameters can be configured individually per flow and flow direction.
 The measurement results can be recorded as scalar files (summary of the run) and vector files (time series). These files can be processed further, e.g.&nbsp;for detailed analysis and plotting of the results.
 The [Wireshark](https://www.wireshark.org/) network protocol analyser provides out-of-the-box support for analysing NetPerfMeter packet traffic.
 
@@ -28,7 +28,8 @@ The key goal of NetPerfMeter is to provide a tool for the performance comparison
    * [DCCP](https://en.wikipedia.org/wiki/DCCP) (Datagram Congestion Control Protocol; see [RFC&nbsp;4340](https://www.rfc-editor.org/rfc/rfc4340.html)),
    * [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol) (Transmission Control Protocol; see [RFC&nbsp;793](https://www.rfc-editor.org/rfc/rfc793.html)),
    * [MPTCP](https://en.wikipedia.org/wiki/MPTCP) (Multipath TCP; see [RFC&nbsp;8684](https://www.rfc-editor.org/rfc/rfc8684.html)),
-   * [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol) (Stream Control Transmission Protocol; see [RFC&nbsp;9260](https://www.rfc-editor.org/rfc/rfc9260.html)).
+   * [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol) (Stream Control Transmission Protocol; see [RFC&nbsp;9260](https://www.rfc-editor.org/rfc/rfc9260.html)),
+   * [QUIC](https://en.wikipedia.org/wiki/QUIC) (Quick UDP Internet Connections; see [RFC&nbsp;9000](https://www.rfc-editor.org/rfc/rfc9000.html)).
 
 Of course, this support includes the possibility to parametrise various protocol-specific options. Note, that the protocol support by NetPerfMeter depends on the underlying operating system. DCCP, MPTCP, as well as some SCTP extensions are not available on all platforms, yet.
 
@@ -241,8 +242,8 @@ kldstat | grep sctp
   ```bash
   netperfmeter $SERVER:9000 -dccp const10:const128:const25:const1200
   ```
-  Note: DCCP is only available when provided by the operating system kernel!
 
+  Note: DCCP is only available when provided by the operating system kernel and DCCP supports need to be compiled into NetPerfMeter.
 
 * Run an active instance (i.e.&nbsp;client side), with 2&nbsp;bidirectional SCTP flows over a single SCTP association (i.e.&nbsp;2&nbsp;streams):
 
@@ -271,6 +272,37 @@ kldstat | grep sctp
 
   - MPTCP is only available when provided by the operating system kernel!
   - NetPerfMeter &ge;2.0 is required! Older versions &lt;2.0 only support the expermental Linux MTCP with incompatible API!
+
+
+## QUIC Communication
+
+ [QUIC](https://en.wikipedia.org/wiki/QUIC) uses built-in security based on Transport Layer Security&nbsp;(TLS). To use QUIC, it is therefore necessary to properly set up TLS first. Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
+
+* Generate a key and corresponding [X.509](https://en.wikipedia.org/wiki/X.509) TLS certificate for the server. For details, see e.g.&nbsp;the various documentations and tutorials for [OpenSSL](https://www.openssl.org/), [Gnu TLS](https://www.gnutls.org/), or [NSS](https://nss-crypto.org/). Also, the directory [`src/quic-setup`](src/quic-setup) provides some example scripts. The following commands uses these scripts to generate a test cerfitication authority *TestCA*, signing a server certificate for server *server.domain.example* (with the local machine's IP addresses in SubjectAltName), and a client certificate for client *client.domain.example* (with the machine's IP addresses looked up from DNS or `/etc/hosts` in SubjectAltName):
+
+```bash
+cd src/quic-setup
+./generate-test-certificates TestCA --client --san LOOKUP client.domain.example
+./generate-test-certificates TestCA --server --san LOCAL  server.domain.example
+```
+
+* Run a passive instance (i.e.&nbsp;server side), using port 9000, and specifying server key and certificate:
+  ```bash
+  ./netperfmeter 9000 \
+     -tls-key $YOUR_PATH/TestCA/server.domain.example/server.domain.example.key \
+     -tls-cert $YOUR_PATH/TestCA/server.domain.example/server.domain.example.crt
+  ```
+
+* Run an active instance (i.e.&nbsp;client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation:
+
+  - Active to passive instance: constant 10&nbsp;frames/s, constant 128&nbsp;B/frame;
+  - Passive to active instance: constant 25&nbsp;frames/s, constant 1200&nbsp;B/frame.
+
+  ```bash
+  netperfmeter $SERVER:9000 \
+     -tls-hostname server.domain.example
+     -quic const10:const128:const25:const1200 \
+  ```
 
 
 ## Variable Bitrate Flows
