@@ -394,6 +394,10 @@ bool handleGlobalParameters(int argc, char** argv)
                   case 'k':
 #ifdef HAVE_QUIC
                      flow.Protocol = IPPROTO_QUIC;
+                     while( (optind < argc) && (argv[optind][0] != '-')) {
+                        flow.Flows.push_back(argv[optind]);
+                        optind++;
+                     }
 #else
                      std::cerr << "ERROR: QUIC support is not compiled in!" << "\n";
                      exit(1);
