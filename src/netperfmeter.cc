@@ -37,6 +37,7 @@
 #include <cerrno>
 #include <getopt.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -1058,7 +1059,7 @@ static Flow* createFlow(Flow*                  previousFlow,
          LOG_END
          if(quic_client_handshake(socketDescriptor, nullptr,
                                   gQUICHostname,
-                                  NETPERFMETER_ALPN) != 0) {
+                                  ALPN_NETPERFMETER_DATA) != 0) {
             std::cerr << "ERROR: QUIC handshake failed: " << strerror(errno) << "!\n";
             exit(1);
          }
@@ -1266,7 +1267,7 @@ bool mainLoop(const bool               isActiveMode,
                    << ", C=" << ((gQUICCertificate != nullptr) ? gQUICCertificate : "(none)")
                    << ">\n";
             LOG_END
-            if(quic_server_handshake(newSD, gQUICKey, gQUICCertificate, NETPERFMETER_ALPN) == 0) {
+            if(quic_server_handshake(newSD, gQUICKey, gQUICCertificate, ALPN_NETPERFMETER_DATA) == 0) {
                LOG_TRACE
                stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
                                 gQUICSocket, newSD) << "\n";
@@ -1327,6 +1328,15 @@ void passiveMode(const uint16_t localPort)
             LOG_END_FATAL
          }
 
+         const int noDelayOption = 1;
+         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_NODELAY,
+                           (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+            LOG_ERROR
+            stdlog << format("Failed to set SCTP_NODELAY on SCTP control socket: %s!",
+                              strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+
          // ------ Enable SCTP events ------------------------------------------
          sctp_event_subscribe events;
          memset((char*)&events, 0 ,sizeof(events));
@@ -1370,6 +1380,14 @@ void passiveMode(const uint16_t localPort)
          LOG_FATAL
          stdlog << format("Failed to create and bind TCP control socket on port %d: %s!",
                         localPort + 1, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+      const int noDelayOption = 1;
+      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_NODELAY,
+                        (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+         LOG_ERROR
+         stdlog << format("Failed to set TCP_NODELAY on TCP control socket: %s!",
+                           strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
@@ -1465,7 +1483,7 @@ void passiveMode(const uint16_t localPort)
    }
    else {
       if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
-                        NETPERFMETER_ALPN, strlen(NETPERFMETER_ALPN)) < 0) {
+                        ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
          LOG_FATAL
          stdlog << format("Failed to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket: %s!",
                           gQUICSocket, strerror(errno)) << "\n";

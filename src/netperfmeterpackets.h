@@ -35,8 +35,6 @@
 #include <sys/types.h>
 
 
-#define NETPERFMETER_ALPN "netperfmeter"
-
 struct NetPerfMeterHeader
 {
    uint8_t  Type;
@@ -47,6 +45,8 @@ struct NetPerfMeterHeader
 #define PPID_NETPERFMETER_CONTROL   36           /* Old value: 0x29097605 */
 #define PPID_NETPERFMETER_DATA      37           /* Old value: 0x29097606 */
 #define SC_NETPERFMETER_DATA        1852861808   /* Old value: 0x29097606 */
+#define ALPN_NETPERFMETER_CONTROL   "netperfmeter/control"
+#define ALPN_NETPERFMETER_DATA      "netperfmeter/data"
 
 
 #define NETPERFMETER_ACKNOWLEDGE    0x01
