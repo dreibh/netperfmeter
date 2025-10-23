@@ -1417,9 +1417,10 @@ void passiveMode(const uint16_t localPort)
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
    if(gUDPSocket < 0) {
-      std::cerr << "ERROR: Failed to create and bind UDP socket on port " << localPort << " - "
-                << strerror(errno) << "!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << "ERROR: Failed to create and bind UDP socket on port " << localPort << " - "
+             << strerror(errno) << "!\n";
+      LOG_END_FATAL
    }
    // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
    FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDPSocket);
