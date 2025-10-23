@@ -1056,6 +1056,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       LOG_END
 
       // ====== QUIC handshake ==============================================
+#ifdef HAVE_QUIC
       if(trafficSpec.Protocol == IPPROTO_QUIC) {
          LOG_TRACE
          stdlog << "client handshake <sd=" << socketDescriptor
@@ -1068,6 +1069,7 @@ static Flow* createFlow(Flow*                  previousFlow,
             exit(1);
          }
       }
+#endif
    }
 
    // ====== Update flow with socket descriptor =============================
