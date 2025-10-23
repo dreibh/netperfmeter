@@ -142,7 +142,7 @@ _netperfmeter()
             ;;
          # ====== Local address =============================================
          -L | --local | \
-         -J | --controllocal)
+         -l | --controllocal)
             # Suggest local IP addresses:
             # NOTE: For IPv6, ":" must bave been removed from COMP_WORDBREAKS
             #       See comment above!
@@ -161,6 +161,21 @@ _netperfmeter()
          -S | --scalar | \
          -V | --vector)
             _filedir
+            return
+            ;;
+         # ====== Special case: key file ====================================
+         -K | --tls-key)
+            _filedir '@(key)'
+            return
+            ;;
+         # ====== Special case: certificate file ============================
+         -J | --tls-cert)
+            _filedir '@(crt|pem)'
+            return
+            ;;
+         # ====== Special case: hostname ====================================
+         -H | --tls-hostname)
+            COMPREPLY=( "$( compgen -W "$(hostname -f)" -- "${cur}" )" )
             return
             ;;
          # ====== Special case: log file ====================================
@@ -193,13 +208,18 @@ _netperfmeter()
    if [ "${cword}" -ge 2 ] && [[ ! "${words[1]}" =~ ^[0-9]+$ ]] ; then
       if [ ${flowSpec} -eq 0 ] ; then
          opts="
+-x
 --control-over-sctp
+-y
 --control-over-tcp
+-w
 --control-over-mptcp
 -L
 --local
--J
+-l
 --controllocal
+-H
+--tls-hostname
 --6
 --v6only
 --display
@@ -234,6 +254,8 @@ _netperfmeter()
 --dccp
 -s
 --sctp
+-k
+--quic
 -q
 --quiet
 -!
@@ -250,13 +272,26 @@ _netperfmeter()
    # ------ Passive side ----------------------------------------------------
    else
       opts="
+-x
 --control-over-sctp
+-X
+--no-control-over-sctp
+-y
 --control-over-tcp
+-Y
+--no-control-over-tcp
+-w
 --control-over-mptcp
+-W
+--no-control-over-tcp
 -L
 --local
--J
+-l
 --controllocal
+-K
+--tls-key
+-J
+--tls-cert
 --6
 --v6only
 --display
