@@ -23,8 +23,8 @@ SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log netperfmeter ...
 
 3. Configure Wireshark:
 
-* Preferences 
-  * Protocols 
+* Preferences
+  * Protocols
     * TLS
       - Specify Key Log File:
         Select your `/home/$USER/keylog/sslkeylog.log` file here!

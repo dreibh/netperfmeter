@@ -58,12 +58,12 @@ int main(int argc, char** argv)
       pfd[0].fd      = accepted;
       pfd[0].events  = POLLIN;
       pfd[0].revents = 0;
-   
+
       puts("poll ...");
       if(poll(pfd, 1, -1) > 0) {
-         if(pfd[0].revents & POLLIN) {  
+         if(pfd[0].revents & POLLIN) {
             puts("receiving ...");
-   
+
             char buffer[65536];
             int64_t  sid   = 0;
             uint32_t flags = 0;
@@ -76,7 +76,7 @@ int main(int argc, char** argv)
 
             sid   = 0 | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
             flags = (firstMsg == true) ? MSG_QUIC_STREAM_NEW : 0;
-            
+
             printf("sending: %d (sid=%llu flags=%x)\n", (int)r, (unsigned long long)sid, (int)flags);
             ssize_t s = quic_sendmsg(accepted, &buffer, r, sid, flags);
             if(s < 0) {
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
                break;
             }
             printf("sent: %d (sid=%llu)\n", (int)s, (unsigned long long)sid);
-            
+
             firstMsg = false;
          }
       }
