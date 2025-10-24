@@ -147,17 +147,13 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       int64_t  sid;
       uint32_t flags;
       if(flow->isAcceptedIncomingFlow()) {   // from passive side (server)
-         sid   = 0 | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
+         sid   = ((int64_t)flow->getStreamID() << 2) | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
          flags = (flow->getFirstTransmission() == 0) ? MSG_QUIC_STREAM_NEW : 0;
       }
       else {
-         sid   = 0 |QUIC_STREAM_TYPE_UNI_MASK;
+         sid   = ((int64_t)flow->getStreamID() << 2) | QUIC_STREAM_TYPE_UNI_MASK;
          flags = 0;   // already created by Identify procedure!
       }
-      // FIXME!
-      // ( ((int64_t)flow->getFlowID() << 36)   |
-      //                         ((int64_t)flow->getStreamID() << 16) |
-      //                         MSG_QUIC_STREAM_NEW );
       sent = quic_sendmsg(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, sid, flags);
    }
 #endif
