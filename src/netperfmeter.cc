@@ -856,7 +856,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 #endif
 #ifdef HAVE_QUIC
          case IPPROTO_QUIC:
-            trafficSpec.OutboundFrameSize[0] = 1400;   // FIXME!
+            trafficSpec.OutboundFrameSize[0] = 1400;   // Some reasonable default
           break;
 #endif
          default:
