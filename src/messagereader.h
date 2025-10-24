@@ -59,7 +59,7 @@ class MessageReader
                           size_t           bufferSize,
                           sockaddr*        from     = nullptr,
                           socklen_t*       fromSize = nullptr,
-                          sctp_sndrcvinfo* sinfo    = nullptr,
+                          int64_t*         streamID = nullptr,
                           int*             msgFlags = nullptr);
    size_t getAllSDs(int* sds, const size_t maxEntries);
 

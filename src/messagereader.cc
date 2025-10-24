@@ -145,7 +145,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                                       size_t           bufferSize,
                                       sockaddr*        from,
                                       socklen_t*       fromSize,
-                                      sctp_sndrcvinfo* sinfo,
+                                      int64_t*         streamID,
                                       int*             msgFlags)
 {
    Socket* socket = getSocket(sd);
@@ -213,17 +213,20 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          memset(from, 0, *fromSize);   // Clear address (Valgrind report)
       }
       if(socket->Protocol == IPPROTO_SCTP) {
+         sctp_sndrcvinfo sinfo;
          received = sctp_recvmsg(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
-                                 from, fromSize, sinfo, msgFlags);
+                                 from, fromSize, &sinfo, msgFlags);
+         if(streamID != nullptr) {
+            *streamID = (int64_t)sinfo.sinfo_stream;
+         }
       }
 #ifdef HAVE_QUIC
       else if(socket->Protocol == IPPROTO_QUIC) {
-         int64_t  sid   = 0;
          uint32_t flags = 0;
          received = quic_recvmsg(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
-                                 &sid, &flags);
+                                 streamID, &flags);
       }
 #endif
       else {

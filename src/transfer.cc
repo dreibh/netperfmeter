@@ -244,15 +244,14 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 {
    char            inputBuffer[65536];
    sockaddr_union  from;
-   socklen_t       fromlen = sizeof(from);
-   int             flags   = 0;
-   sctp_sndrcvinfo sinfo;
+   socklen_t       fromlen  = sizeof(from);
+   int             flags    = 0;
+   int64_t         streamID = 0;
 
    // ====== Read message (or fragment) =====================================
-   sinfo.sinfo_stream = 0;
    const ssize_t received =
       FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
-         sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
+         sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &streamID, &flags);
    if(received == MRRM_PARTIAL_READ) {
       return true;   // Partial read -> wait for next fragment.
    }
@@ -287,11 +286,18 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
                   (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
             // ====== Identify flow =========================================
             Flow* flow;
-            if(( protocol == IPPROTO_UDP) && (!isActiveMode) ) {
+            if( (protocol == IPPROTO_UDP) && (!isActiveMode) ) {
                flow = FlowManager::getFlowManager()->findFlow(&from.sa);
             }
+#ifdef HAVE_QUIC
+            else if(protocol == IPPROTO_QUIC) {
+               const uint32_t streamID = (uint32_t)(streamID >> 2);
+               printf("SID=%u\n", streamID);
+               flow = FlowManager::getFlowManager()->findFlow(sd, streamID);
+            }
+#endif
             else {
-               flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
+               flow = FlowManager::getFlowManager()->findFlow(sd, (uint32_t)streamID);
             }
             if(flow) {
                // Update flow statistics by received NETPERFMETER_DATA message.
@@ -321,7 +327,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 
    // ====== Handle error ===================================================
    else {
-      Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
+      Flow* flow = FlowManager::getFlowManager()->findFlow(sd, 0);
       if(flow) {
          flow->lock();
          LOG_WARNING
