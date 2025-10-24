@@ -289,15 +289,20 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             if( (protocol == IPPROTO_UDP) && (!isActiveMode) ) {
                flow = FlowManager::getFlowManager()->findFlow(&from.sa);
             }
+            else if(protocol == IPPROTO_SCTP) {
+               // Flow ID = SCTP stream ID:
+               flow = FlowManager::getFlowManager()->findFlow(sd, (uint32_t)streamID);
+            }
 #ifdef HAVE_QUIC
             else if(protocol == IPPROTO_QUIC) {
-               const uint32_t streamID = (uint32_t)(streamID >> 2);
-               printf("SID=%u\n", streamID);
-               flow = FlowManager::getFlowManager()->findFlow(sd, streamID);
+               // Flow ID = QUIC stream ID (remove 2 last bits:
+               const uint32_t flowID = (uint32_t)(streamID >> 2);
+               flow = FlowManager::getFlowManager()->findFlow(sd, flowID);
             }
 #endif
             else {
-               flow = FlowManager::getFlowManager()->findFlow(sd, (uint32_t)streamID);
+               // Flow ID is always 0:
+               flow = FlowManager::getFlowManager()->findFlow(sd, 0);
             }
             if(flow) {
                // Update flow statistics by received NETPERFMETER_DATA message.
