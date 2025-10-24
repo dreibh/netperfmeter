@@ -946,10 +946,14 @@ void FlowManager::run()
                      LOG_END
                      const bool deregisteredFromReader =
                         Reader.deregisterSocket(FlowSet[i]->SocketDescriptor);
-                     if(protocol != IPPROTO_SCTP) {
-                        // Only SCTP has streams. For other protocols, there is
-                        // just one flow using this socket. Then, it cannot be
-                        // referenced any more.
+                     if( (protocol != IPPROTO_SCTP)
+#ifdef HAVE_QUIC
+                         && (protocol != IPPROTO_QUIC)
+#endif
+                       ) {
+                        // Only SCTP and QUIC have streams. For other protocols
+                        // there is just one flow using this socket. Then, it
+                        // cannot be referenced any more.
                         assure(deregisteredFromReader);
                      }
                      if(deregisteredFromReader) {
