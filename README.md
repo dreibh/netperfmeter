@@ -514,12 +514,12 @@ chmod 700 /home/$USER/keylog/sslkeylog.log
 
   2. Configure Wireshark:
 
-    - Preferences -> Protocols -> TLS -> Specify Key Log File: select your file `/home/$USER/keylog/sslkeylog.log`.
-    - Preferences -> Protocols -> QUIC -> QUIC UDP port(s): `8999-9001` (or your used ports).
+     - Preferences -> Protocols -> TLS -> Specify Key Log File: select your file `/home/$USER/keylog/sslkeylog.log`.
+     - Preferences -> Protocols -> QUIC -> QUIC UDP port(s): `8999-9001` (or your used ports).
 
-  * When running NetPerfMeter, set the environment variable `SSLKEYLOGFILE` to your session key logfile:
+  3. When running NetPerfMeter, set the environment variable `SSLKEYLOGFILE` to your session key logfile:
 
-    ```bash
+     ```bash
 SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log netperfmeter ...
 ```
 
