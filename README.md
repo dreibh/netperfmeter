@@ -242,8 +242,7 @@ kldstat | grep sctp
   ```bash
   netperfmeter $SERVER:9000 -dccp const10:const128:const25:const1200
   ```
-
-  Note: DCCP is only available when provided by the operating system kernel and DCCP supports need to be compiled into NetPerfMeter.
+  Note: DCCP is only available when provided by the operating system kernel, and DCCP supports need to be compiled into NetPerfMeter.
 
 * Run an active instance (i.e.&nbsp;client side), with 2&nbsp;bidirectional SCTP flows over a single SCTP association (i.e.&nbsp;2&nbsp;streams):
 
