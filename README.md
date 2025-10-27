@@ -119,7 +119,7 @@ Having all relevant scalars stored in memory, a data file – which can be proce
 
 ## Preparations
 
-NetPerfMeter by default uses the SCTP protocol for control communication (. It may be necessary to allow loading the SCTP kernel module first, if not already enabled. The following code blocks show how to enable it permanently.
+NetPerfMeter by default uses the SCTP protocol for control communication (which can be changed by the `-control-over-tcp` option, see later). It may be useful to allow loading the SCTP kernel module first, if not already enabled. The following code blocks show how to enable it permanently.
 
 ### SCTP on Linux
 
