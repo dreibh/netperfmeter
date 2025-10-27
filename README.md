@@ -506,7 +506,7 @@ Some examples:
 
   1. Prepare a directory and file for key export:
 
-  ```bash
+```bash
 mkdir -m700 -p /home/$USER/keylog
 touch /home/$USER/keylog/sslkeylog.log
 chmod 700 /home/$USER/keylog/sslkeylog.log
