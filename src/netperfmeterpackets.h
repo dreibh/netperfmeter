@@ -133,7 +133,8 @@ struct NetPerfMeterAddFlowMessage
 #define NPMAFF_REPEATONOFF   (1 << 2)
 
 // RetransmissionTrials in milliseconds (highest bit of 32-bit value set)
-#define NPMAF_RTX_TRIALS_IN_MILLISECONDS (1 << 31)
+#define NPMAF_RTX_TRIALS_IN_MILLISECONDS (1U << 31)    // Use ms instead of number of trials
+#define NPMAF_RTX_DEFAULT                0x7fffffffU   // Use protocol default
 
 #define NPAF_PRIMARY_PATH 0x00
 #define NPAF_CMT          0x01
