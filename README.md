@@ -520,8 +520,8 @@ chmod 700 /home/$USER/keylog/sslkeylog.log
   3. When running NetPerfMeter, set the environment variable `SSLKEYLOGFILE` to your session key logfile:
 
      ```bash
-SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log netperfmeter ...
-```
+     SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log netperfmeter ...
+     ```
 
    * When recording the NetPerfMeter QUIC communication, make sure to also include the QUIC connection setup!
 
