@@ -118,7 +118,7 @@ Having all relevant scalars stored in memory, a data file – which can be proce
 
 ## Preparations
 
-NetPerfMeter uses the SCTP protocol. It may be necessary to allow loading the SCTP kernel module first, if not already enabled. The following code blocks show how to enable it permanently.
+NetPerfMeter by default uses the SCTP protocol for control communication (which can be changed by the `-control-over-tcp` option, see later). It may be useful to allow loading the SCTP kernel module first, if not already enabled. The following code blocks show how to enable it permanently.
 
 ### SCTP on Linux
 
@@ -292,16 +292,19 @@ A configured distribution is used to determine:
 Some examples:
 
 * A unidirectional TCP flow with constant 2&nbsp;frames;/s and uniformly distributed frame sizes between 100&nbsp;bytes and 20000&nbsp;bytes:
+
   ```bash
   netperfmeter $SERVER:9000 -tcp const2:uniform100,20000
   ```
 
 * A bidirectional SCTP flow with constant 2&nbsp;frames;/s and uniformly distributed frame sizes between 100&nbsp;bytes and 1000&nbsp;bytes outgoing, and an uniform frame rate from [0.2, 10.5) frames/s and frame sizes with an average of 1000&nbsp;bytes using exponential distribution incoming:
+
   ```bash
   netperfmeter $SERVER:9000 -sctp const2:uniform100,1000:uniform0.2,10.5:exp1000
   ```
 
 * An incoming UDP flow, with constant 25&nbsp;frames/s of constant 1000&nbsp;bytes, on-time and off-time pareto-distributed with location&nbsp;0.166667 and shape&nbsp;1.5, repeating in a loop:
+
   ```bash
   netperfmeter $SERVER:9000 -udp const0:const0:const25:const1000:onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
   ```
