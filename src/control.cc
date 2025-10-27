@@ -799,7 +799,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       trafficSpec.RepeatOnOff              = (addFlowMsg->Header.Flags & NPMAFF_REPEATONOFF);
       trafficSpec.RetransmissionTrials     = ntohl(addFlowMsg->RetransmissionTrials) & ~NPMAF_RTX_TRIALS_IN_MILLISECONDS;
       trafficSpec.RetransmissionTrialsInMS = (ntohl(addFlowMsg->RetransmissionTrials) & NPMAF_RTX_TRIALS_IN_MILLISECONDS);
-      if( (trafficSpec.RetransmissionTrialsInMS) && (trafficSpec.RetransmissionTrials == 0x7fffffff) ) {
+      if( (trafficSpec.RetransmissionTrialsInMS) && (trafficSpec.RetransmissionTrials == NPMAF_RTX_DEFAULT) ) {
          trafficSpec.RetransmissionTrials = ~0;
       }
 
