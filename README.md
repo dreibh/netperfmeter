@@ -155,10 +155,10 @@ kldstat | grep sctp
 * Run a passive instance (i.e.&nbsp;server side), using port 9000, and allowing NPMP-CONTROL control communication only over TCP (this disables checking for SCTP, and the warning if unavailable):
 
   ```bash
-  netperfmeter 9000 -no-control-over-tcp
+  netperfmeter 9000 -no-control-over-sctp
   ```
 
-  Note that the active instance (i.e.&nbsp;client side) can only connect via TCP in this case, and it needs to be instructed (as explained below, also using the `-no-control-over-tcp` option) to do so!
+  Note that the active instance (i.e.&nbsp;client side) can only connect via TCP in this case, and it needs to be instructed (as explained below, also using the `-control-over-tcp` option) to do so!
 
 
 ## Running the Active Instance (Client)
@@ -176,7 +176,7 @@ kldstat | grep sctp
 
   The flow parameter specifies a saturated flow (frame rate&nbsp;0 – send a much as possible) with a constant frame size of 1400&nbsp;B. The first block specifies the direction from active (client) to passive (server) instance, the second block specifies the direction from passive (server) to active (client) instance.
 
-  ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP (or MPTCP) instead (to be shown in the next example, using the `-no-control-over-tcp` option):
+  ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP (or MPTCP) instead (to be shown in the next example, using the `-control-over-tcp` option):
 
   - Firewalls blocking SCTP traffic, e.g&nbsp;many public Wi-Fi networks.
   - Routing over NAT/PAT may not work well due to lack of support for SCTP.
