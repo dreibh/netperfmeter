@@ -523,7 +523,7 @@ Some examples:
      SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log netperfmeter ...
      ```
 
-   * When recording the NetPerfMeter QUIC communication, make sure to also include the QUIC connection setup!
+  4. When recording a NetPerfMeter QUIC communication, make sure to also include the QUIC connection setup!
 
 
 ## Miscellaneous
