@@ -148,18 +148,16 @@ kldstat | grep sctp
   netperfmeter 9000
   ```
 
-  ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP (or MPTCP) instead (to be shown in the next example):
-
-  - Firewalls blocking SCTP traffic, e.g&nbsp;many public Wi-Fi networks.
-  - Routing over NAT/PAT may not work well due to lack of support for SCTP.
-  - The Docker daemon, by default, creates a local interface <em>dummy0</em> with IP address&nbsp;172.17.0.1 for the default [bridge network setup](https://docs.docker.com/engine/network/drivers/bridge/). If this is enabled on active and passive side, the SCTP out-of-the blue&nbsp;(OOTB) message handling causes the SCTP association to be aborted, since both devices have an identical IP&nbsp;address.
+  NetPerfMeter supports SCTP and TCP for the NPMP-CONTROL control communication. By default, the passive side accepts incoming control connections on both protocols. In case of unavailability of SCTP, e.g.&nbsp;the SCTP kernel module is not loaded, a warning is printed. Obviously, control communication in this case will only be possible via TCP.
 
 
-* Run a passive instance (i.e.&nbsp;server side), using port 9000, and allowing NPMP-CONTROL control communication over TCP support:
+* Run a passive instance (i.e.&nbsp;server side), using port 9000, and allowing NPMP-CONTROL control communication only over TCP (this disables checking for SCTP, and the warning if unavailable):
 
   ```bash
-  netperfmeter 9000 -control-over-tcp
+  netperfmeter 9000 -no-control-over-sctp
   ```
+
+  Note that the active instance (i.e.&nbsp;client side) can only connect via TCP in this case, and it needs to be instructed (as explained below, also using the `-control-over-tcp` option) to do so!
 
 
 ## Running the Active Instance (Client)
@@ -173,16 +171,17 @@ kldstat | grep sctp
   netperfmeter $SERVER:9000 -tcp const0:const1400:const0:const1400
   ```
 
-  Replace $SERVER by the IP&nbsp;address or hostname of the passive instance!
+  Replace $SERVER by the IP&nbsp;address or hostname of the passive instance, or set an environment variable `SERVER=<address>`!
 
   The flow parameter specifies a saturated flow (frame rate&nbsp;0 – send a much as possible) with a constant frame size of 1400&nbsp;B. The first block specifies the direction from active (client) to passive (server) instance, the second block specifies the direction from passive (server) to active (client) instance.
 
-  ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP (or MPTCP) instead (to be shown in the next example):
+  ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP (or MPTCP) instead (to be shown in the next example, using the `-control-over-tcp` option):
 
   - Firewalls blocking SCTP traffic, e.g&nbsp;many public Wi-Fi networks.
   - Routing over NAT/PAT may not work well due to lack of support for SCTP.
   - The Docker daemon, by default, creates a local interface <em>dummy0</em> with IP address&nbsp;172.17.0.1 for the default [bridge network setup](https://docs.docker.com/engine/network/drivers/bridge/). If this is enabled on active and passive side, the SCTP out-of-the blue&nbsp;(OOTB) message handling causes the SCTP association to be aborted, since both devices have an identical IP&nbsp;address.
 
+  In case of connectivity problems try control over TCP as shown next.
 
 * Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional TCP flow, using NPMP-CONTROL control communication over TCP.
 
@@ -190,7 +189,10 @@ kldstat | grep sctp
   netperfmeter $SERVER:9000 -control-over-tcp -tcp const0:const1400:const0:const1400
   ```
 
-  Note: The passive instance must be started with `-control-over-tcp` as well!
+  Or, using the short option `-y`:
+  ```bash
+  netperfmeter $SERVER:9000 -y -t const0:const1400:const0:const1400
+  ```
 
 
 * Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional TCP flow, using NPMP-CONTROL control communication over SCTP (this is the default):
@@ -239,7 +241,7 @@ kldstat | grep sctp
   ```bash
   netperfmeter $SERVER:9000 -dccp const10:const128:const25:const1200
   ```
-  Note: DCCP is only available when provided by the operating system kernel!
+  Note: DCCP is only available when provided by the operating system kernel, and DCCP supports need to be compiled into NetPerfMeter.
 
 
 * Run an active instance (i.e.&nbsp;client side), with 2&nbsp;bidirectional SCTP flows over a single SCTP association (i.e.&nbsp;2&nbsp;streams):
@@ -433,12 +435,12 @@ Some examples:
   Notes:
 
   - Filter parameters for protocols and ports can ensure to record only the relevant NetPerfMeter traffic.
-  - In case of using port&nbsp;9000 for NetPerfMeter, use:
+  - In case of using port&nbsp;9000 for NetPerfMeter, record:
 
     + SCTP, port 9000 and 9001 (data and control traffic over SCTP);
     + TCP, port 8999, 9000 and 9001 (data and control traffic over TCP and MPTCP);
     + UDP, port 9000;
-    + DCCP, port 9000 (`ip proto 33`).
+    + DCCP, port 9000 (`ip proto 33`; PCAP filtering does not support DCCP).
 
 
 * Run [Wireshark](https://www.wireshark.org/) network protocol analyser to display the packet flow of the <a href="#active-multi">multi-flows example</a> above in PCAP file [`multi.pcap.gz`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz):
