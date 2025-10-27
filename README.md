@@ -504,20 +504,21 @@ Some examples:
 
 * To decode TLS-encrypted QUIC traffic, it is necessary to let QUIC/TLS log the session keys.
 
-  * Prepare a directory and file for key export:
+  1. Prepare a directory and file for key export:
 
-    ```bash
+  ```bash
 mkdir -m700 -p /home/$USER/keylog
 touch /home/$USER/keylog/sslkeylog.log
 chmod 700 /home/$USER/keylog/sslkeylog.log
 ```
 
-  * Configure Wireshark:
+  2. Configure Wireshark:
 
     - Preferences -> Protocols -> TLS -> Specify Key Log File: select your file `/home/$USER/keylog/sslkeylog.log`.
     - Preferences -> Protocols -> QUIC -> QUIC UDP port(s): `8999-9001` (or your used ports).
 
   * When running NetPerfMeter, set the environment variable `SSLKEYLOGFILE` to your session key logfile:
+
     ```bash
 SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log netperfmeter ...
 ```
