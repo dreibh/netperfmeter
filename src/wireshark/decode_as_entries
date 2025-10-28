@@ -6,4 +6,5 @@
 decode_as_entry: tcp.port,8999,(none),NetPerfMeter
 decode_as_entry: tcp.port,9000,S101,NetPerfMeter
 decode_as_entry: tcp.port,9001,(none),NetPerfMeter
+decode_as_entry: udp.port,7,ECHO,HiPerConTracer
 decode_as_entry: udp.port,9000,(none),NetPerfMeter
