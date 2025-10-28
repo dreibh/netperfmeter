@@ -502,7 +502,7 @@ Some examples:
   - Coloring rules and filters can be found in the directory [`netperfmeter/src/wireshark`](https://github.com/dreibh/netperfmeter/tree/master/src/wireshark). Simply copy [`colorfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/colorfilters), [`dfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/dfilters) and optionally [`preferences`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/preferences) to `$HOME/.wireshark`.
 
 
-* To decode TLS-encrypted QUIC traffic, it is necessary to let QUIC/TLS log the session keys.
+* To decode TLS-encrypted QUIC traffic (or other TLS-encrypted traffic), it is necessary to let QUIC/TLS log the session keys.
 
   1. Prepare a directory and file for key export:
 
