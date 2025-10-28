@@ -1,16 +1,22 @@
-"Ethernet address 00:00:5e:00:53:00" eth.addr == 00:00:5e:00:53:00
-"Ethernet type 0x0806 (ARP)" eth.type == 0x0806
-"Ethernet broadcast" eth.addr == ff:ff:ff:ff:ff:ff
-"No ARP" not arp
-"IPv4 only" ip
-"IPv4 address 192.0.2.1" ip.addr == 192.0.2.1
-"IPv4 address isn't 192.0.2.1 (don't use != for this!)" !(ip.addr == 192.0.2.1)
-"IPv6 only" ipv6
-"IPv6 address 2001:db8::1" ipv6.addr == 2001:db8::1
-"TCP only" tcp
-"UDP only" udp
-"Non-DNS" !(udp.port == 53 || tcp.port == 53)
-"TCP or UDP port is 80 (HTTP)" tcp.port == 80 || udp.port == 80
-"HTTP" http
-"No ARP and no DNS" not arp and !(udp.port == 53)
-"Non-HTTP and non-SMTP to/from 192.0.2.1" ip.addr == 192.0.2.1 and not tcp.port in {80 25}
+"NetPerfMeter Control Traffic" netperfmeter && (netperfmeter.message_type != 0x04) && (netperfmeter.message_type != 0x05)
+"NetPerfMeter Data Traffic" (netperfmeter.message_type == 0x04) || (netperfmeter.message_type == 0x05)
+"HiPerConTracer Traffic" hipercontracer
+"RSerPool Traffic" asap||enrp
+"RSerPool Traffic via SCTP + SCTP Control, without Monitoring" (sctp&&enrp&&(!((enrp.message_type==0x01)&&(!enrp.message_flags&0x01))))||(sctp&&(asap&&(((asap.message_type!=0x07)&&(asap.message_type!=0x08)&&(asap.message_type!=0x0b))||((asap.message_type==0x07)&&(asap.message_flags&0x01)))))||((!(asap||enrp))&&(sctp.chunk_type != 3)&&(sctp.chunk_type != 4)&&(sctp.chunk_type != 5))
+"RSerPool Traffic via SCTP, without Monitoring" (sctp&&enrp&&(!((enrp.message_type==0x01)&&(!enrp.message_flags&0x01))))||(sctp&&(asap&&(((asap.message_type!=0x07)&&(asap.message_type!=0x08)&&(asap.message_type!=0x0b))||((asap.message_type==0x07)&&(asap.message_flags&0x01)))))
+"RSerPool Traffic via SCTP" sctp&&(asap||enrp)
+"RSerPool Control Channel Traffic" (asap.message_type == 0x0b) || (asap.message_type == 0x0c) || (asap.message_type == 0x0d)
+"RSerPool Pool Element Traffic" (asap.message_type == 0x01) || (asap.message_type == 0x02) || (asap.message_type == 0x03) || (asap.message_type == 0x04)
+"RSerPool Pool User Traffic" (asap.message_type == 0x05) || (asap.message_type == 0x06) || (asap.message_type == 0x09)
+"RSerPool ASAP Traffic via SCTP, without Monitoring" sctp&&(asap&&(((asap.message_type!=0x07)&&(asap.message_type!=0x08)&&(asap.message_type!=0x0b))||((asap.message_type==0x07)&&(asap.message_flags&0x01))))
+"RSerPool ASAP Traffic via SCTP" sctp&&asap
+"RSerPool ENRP Traffic via SCTP, without Monitoring" sctp&&enrp&&(!((enrp.message_type==0x01)&&(!enrp.message_flags&0x01)))
+"RSerPool ENRP Traffic via SCTP" sctp&&enrp
+"RSerPool Home-Registrar Changes" sctp&&(asap&&(asap.message_type==0x07)&&(asap.message_flags&0x01))
+"RSerPool Registrar Takeovers" sctp&&((enrp&&((enrp.message_type==0x07)||(enrp.message_type==0x08)||(enrp.message_type==0x09))) || (asap&&(asap.message_type==0x07)&&(asap.message_flags&0x01)))
+"RSerPool Registrar Synchronizations" sctp&&enrp&&((enrp.message_type==0x02)||(enrp.message_type==0x03)||(enrp.message_type==0x05)||(enrp.message_type==0x06))
+"RSerPool Registrar Failure Handling" sctp&&((enrp&&((enrp.message_type==0x07)||(enrp.message_type==0x08)||(enrp.message_type==0x09)||(enrp.message_type==0x02)||(enrp.message_type==0x03))) || (asap&&(asap.message_type==0x07)&&(asap.message_flags&0x01)))
+"RSerPool Application CalcAppProtocol" calcappprotocol || (asap.message_type == 0x0b) || (asap.message_type == 0x0c)
+"RSerPool Application FractalGeneratorProtocol" fractalgeneratorprotocol || (asap.message_type == 0x0b) || (asap.message_type == 0x0c)
+"RSerPool Application PingPongProtocol" pingpongprotocol || (asap.message_type == 0x0b) || (asap.message_type == 0x0c)
+"RSerPool Application ScriptingServiceProtocol" ssp || (asap.message_type == 0x0b) || (asap.message_type == 0x0c)
