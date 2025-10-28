@@ -527,7 +527,6 @@ Some examples:
 
   4. When recording a NetPerfMeter QUIC communication, make sure to also include the QUIC connection setup!
 
-
 ## Miscellaneous
 
 * Take a look into the manual page of NetPerfMeter for further information and options:
