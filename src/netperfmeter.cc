@@ -1188,7 +1188,8 @@ void passiveMode(const uint16_t localPort)
    // ====== Test for problems ==============================================
    sockaddr_union testAddress;
    assure(string2address("172.17.0.1:0", &testAddress));
-   int testSD = createAndBindSocket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, 0, 1, &testAddress, true, false);
+   int testSD = createAndBindSocket(AF_INET, SOCK_STREAM, IPPROTO_SCTP, 0, 1,
+                                    &testAddress, true, false);
    if(testSD >= 0) {
       LOG_WARNING
       stdlog << "WARNING: This machine seems to have an interface with address 172.17.0.1! This is typically used by Docker setups. If you connect from another machine having the same configuration, in an environment with only private addresses SCTP may try to use this address -> OOTB ABORT." << "\n";
@@ -1199,18 +1200,20 @@ void passiveMode(const uint16_t localPort)
    // ====== Initialize SCTP control socket =================================
    if(gPassiveControlSCTP) {
       gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
-                                          localPort + 1,
-                                          gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
-                                          true, gBindV6Only);
+                                           localPort + 1,
+                                           gLocalControlAddresses,
+                                           (const sockaddr_union*)&gLocalControlAddressArray,
+                                           true, gBindV6Only);
       if(gControlSocket >= 0) {
          // ------ Set default send parameters ---------------------------------
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
          sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
-         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
+         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM,
+                           &sinfo, sizeof(sinfo)) < 0) {
             LOG_FATAL
             stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
-                              gControlSocket, strerror(errno)) << "\n";
+                             gControlSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
 
@@ -1222,7 +1225,7 @@ void passiveMode(const uint16_t localPort)
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
             LOG_FATAL
             stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
-                              gControlSocket, strerror(errno)) << "\n";
+                             gControlSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
 
@@ -1233,11 +1236,15 @@ void passiveMode(const uint16_t localPort)
              (gPassiveControlTCP == false) ) {
             LOG_FATAL
             stdlog << format("Failed to create and bind SCTP control socket on port %d: %s!",
-                           localPort + 1, strerror(errno)) << "\n";
+                             localPort + 1, strerror(errno)) << "\n";
+            if(errno == EPROTONOSUPPORT) {
+               stdlog << "SCTP is not available => Try -y|--control-over-tcp for control over TCP!\n";
+            }
             LOG_END_FATAL
          }
          LOG_WARNING
-         stdlog << "WARNING: SCTP is not available => no control connections via SCTP possible!\n";
+         stdlog << "WARNING: SCTP is not available => no control connections via SCTP possible!\n"
+                   "SCTP can be disabled by -X|--no-control-over-sctp.\n";
          LOG_END
       }
    }
@@ -1251,7 +1258,8 @@ void passiveMode(const uint16_t localPort)
                                               IPPROTO_TCP,
 #endif
                                               localPort + 1,
-                                              gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
+                                              gLocalControlAddresses,
+                                              (const sockaddr_union*)&gLocalControlAddressArray,
                                               true, gBindV6Only);
       if(gControlSocketTCP < 0) {
          LOG_FATAL
@@ -1266,7 +1274,9 @@ void passiveMode(const uint16_t localPort)
 
    // ------ TCP ------------------------------------------------------------
    gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
-                                    gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
+                                    gLocalDataAddresses,
+                                    (const sockaddr_union*)&gLocalDataAddressArray,
+                                    true, gBindV6Only);
    if(gTCPSocket < 0) {
       LOG_FATAL
       stdlog << format("Failed to create and bind TCP socket on port %d: %s!",
@@ -1283,7 +1293,9 @@ void passiveMode(const uint16_t localPort)
    // ------ MPTCP ----------------------------------------------------------
 #ifdef HAVE_MPTCP
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
-                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
+                                      gLocalDataAddresses,
+                                      (const sockaddr_union*)&gLocalDataAddressArray,
+                                      false, gBindV6Only);
    if(gMPTCPSocket < 0) {
       LOG_DEBUG
       stdlog << format("NOTE: Failed to create and bind MPTCP socket on port %d: %s!",
@@ -1303,7 +1315,9 @@ void passiveMode(const uint16_t localPort)
 
    // ------ UDP ------------------------------------------------------------
    gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
-                                    gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
+                                    gLocalDataAddresses,
+                                    (const sockaddr_union*)&gLocalDataAddressArray,
+                                    true, gBindV6Only);
    if(gUDPSocket < 0) {
       std::cerr << "ERROR: Failed to create and bind UDP socket on port " << localPort << " - "
                 << strerror(errno) << "!\n";
@@ -1315,7 +1329,9 @@ void passiveMode(const uint16_t localPort)
    // ------ DCCP -----------------------------------------------------------
 #ifdef HAVE_DCCP
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
-                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
+                                     gLocalDataAddresses,
+                                     (const sockaddr_union*)&gLocalDataAddressArray,
+                                     true, gBindV6Only);
    if(gDCCPSocket < 0) {
       LOG_INFO
       stdlog << format("NOTE: Failed to create and bind DCCP socket on port %d: %s!",
@@ -1341,45 +1357,52 @@ void passiveMode(const uint16_t localPort)
 
    // ------ SCTP -----------------------------------------------------------
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
-                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, true, gBindV6Only);
-   if(gSCTPSocket < 0) {
-      std::cerr << "ERROR: Failed to create and bind SCTP socket on port " << localPort << " - "
-                << strerror(errno) << "!\n";
-      exit(1);
-   }
+                                     gLocalDataAddresses,
+                                     (const sockaddr_union*)&gLocalDataAddressArray,
+                                     true, gBindV6Only);
+   if(gSCTPSocket >= 0) {
 
-   // ------ Set SCTP stream parameters--------------------------------------
-   sctp_initmsg initmsg;
-   memset((char*)&initmsg, 0 ,sizeof(initmsg));
-   initmsg.sinit_num_ostreams  = 65535;
-   initmsg.sinit_max_instreams = 65535;
-   if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG,
-                     &initmsg, sizeof(initmsg)) < 0) {
-      LOG_FATAL
-      stdlog << format("Failed to configure INIT parameters (SCTP_INITMSG option) on SCTP socket %d: %s!",
-                        gSCTPSocket, strerror(errno)) << "\n";
-      LOG_END_FATAL
-   }
+      // ------ Set SCTP stream parameters-----------------------------------
+      sctp_initmsg initmsg;
+      memset((char*)&initmsg, 0 ,sizeof(initmsg));
+      initmsg.sinit_num_ostreams  = 65535;
+      initmsg.sinit_max_instreams = 65535;
+      if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG,
+                        &initmsg, sizeof(initmsg)) < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to configure INIT parameters (SCTP_INITMSG option) on SCTP socket %d: %s!",
+                          gSCTPSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
 
-   // ------ Enable SCTP events ---------------------------------------------
-   sctp_event_subscribe events;
-   memset((char*)&events, 0 ,sizeof(events));
-   events.sctp_data_io_event = 1;
-   if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
-      LOG_FATAL
-      stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
-                        gSCTPSocket, strerror(errno)) << "\n";
-      LOG_END_FATAL
-   }
+      // ------ Enable SCTP events ------------------------------------------
+      sctp_event_subscribe events;
+      memset((char*)&events, 0 ,sizeof(events));
+      events.sctp_data_io_event = 1;
+      if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
+                          gSCTPSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
 
-   // ------ Set SCTP buffer sizes ------------------------------------------
-   if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
-      LOG_FATAL
-      stdlog << format("Failed to configure buffer sizes on SCTP socket %d!",
-                        gSCTPSocket) << "\n";
-      LOG_END_FATAL
-   }
+      // ------ Set SCTP buffer sizes ---------------------------------------
+      if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
+         LOG_FATAL
+         stdlog << format("Failed to configure buffer sizes on SCTP socket %d!",
+                          gSCTPSocket) << "\n";
+         LOG_END_FATAL
+      }
 
+   }
+   else {
+      if( (errno != EPROTONOSUPPORT) || (gPassiveControlTCP == false) ) {
+         LOG_FATAL
+         stdlog << format("Failed to create and bind SCTP socket on port %d: %s!",
+                          localPort, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+   }
 
    // ====== Print status ===================================================
    LOG_INFO
