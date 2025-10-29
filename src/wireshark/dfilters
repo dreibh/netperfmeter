@@ -1,6 +1,8 @@
 "NetPerfMeter Control Traffic" netperfmeter && (netperfmeter.message_type != 0x04) && (netperfmeter.message_type != 0x05)
 "NetPerfMeter Data Traffic" (netperfmeter.message_type == 0x04) || (netperfmeter.message_type == 0x05)
 "HiPerConTracer Traffic" hipercontracer
+"HiPerConTracer Traffic over ICMP" hipercontracer && (icmp || icmpv6)
+"HiPerConTracer Traffic over UDP" hipercontracer && udp
 "RSerPool Traffic" asap||enrp
 "RSerPool Traffic via SCTP + SCTP Control, without Monitoring" (sctp&&enrp&&(!((enrp.message_type==0x01)&&(!enrp.message_flags&0x01))))||(sctp&&(asap&&(((asap.message_type!=0x07)&&(asap.message_type!=0x08)&&(asap.message_type!=0x0b))||((asap.message_type==0x07)&&(asap.message_flags&0x01)))))||((!(asap||enrp))&&(sctp.chunk_type != 3)&&(sctp.chunk_type != 4)&&(sctp.chunk_type != 5))
 "RSerPool Traffic via SCTP, without Monitoring" (sctp&&enrp&&(!((enrp.message_type==0x01)&&(!enrp.message_flags&0x01))))||(sctp&&(asap&&(((asap.message_type!=0x07)&&(asap.message_type!=0x08)&&(asap.message_type!=0x0b))||((asap.message_type==0x07)&&(asap.message_flags&0x01)))))
