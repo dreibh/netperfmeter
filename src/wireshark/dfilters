@@ -1,3 +1,4 @@
+"NetPerfMeter Traffic" netperfmeter
 "NetPerfMeter Control Traffic" netperfmeter && (netperfmeter.message_type != 0x04) && (netperfmeter.message_type != 0x05)
 "NetPerfMeter Data Traffic" (netperfmeter.message_type == 0x04) || (netperfmeter.message_type == 0x05)
 "HiPerConTracer Traffic" hipercontracer
