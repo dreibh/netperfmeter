@@ -518,8 +518,8 @@ Some examples:
 
   2. Configure Wireshark:
 
-     - Preferences -> Protocols -> TLS -> Specify Key Log File: select your file `/home/$USER/keylog/sslkeylog.log`.
-     - Preferences -> Protocols -> QUIC -> QUIC UDP port(s): `8999-9001` (or your used ports).
+     - Preferences → Protocols/TLS → (Pre)-Master Secret log filename: `/home/$USER/keylog/sslkeylog.log`.
+     - Preferences → Protocols/QUIC → QUIC UDP port(s): `8999-9001` (or your used ports).
 
   3. When running NetPerfMeter, set the environment variable `SSLKEYLOGFILE` to your session key logfile:
 
@@ -527,7 +527,7 @@ Some examples:
      SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log netperfmeter ...
      ```
 
-  4. When recording a NetPerfMeter QUIC communication, make sure to also include the QUIC connection setup!
+  4. When recording a NetPerfMeter QUIC communication, make sure to also include the QUIC connection handshake!
 
 ## Miscellaneous
 
