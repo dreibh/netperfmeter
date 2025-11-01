@@ -565,6 +565,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
 
    // ====== Download flow results and remove the flows =====================
    FlowManager::getFlowManager()->lock();
+
    for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
       iterator != FlowManager::getFlowManager()->getFlowSet().end();
       iterator++) {
@@ -579,6 +580,18 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
          flow->print(stdlog, true);
          LOG_END
       }
+   }
+
+   iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+   while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
+      Flow* flow = *iterator;
+      if(flow->getMeasurementID() == measurementID) {
+         flow->deactivate(false);
+         delete flow;
+         iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+         continue;
+      }
+      iterator++;
    }
 
    FlowManager::getFlowManager()->finishMeasurement(controlSocket, measurementID);

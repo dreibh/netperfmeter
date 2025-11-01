@@ -290,20 +290,6 @@ void FlowManager::finishMeasurement(const int                controlSocket,
 {
    CPULoadStats.update();
 
-   lock();
-   std::vector<Flow*>::iterator iterator = FlowSet.begin();
-   while(iterator != FlowSet.end()) {
-      Flow* flow = *iterator;
-      if(flow->getMeasurementID() == measurementID) {
-         flow->deactivate(false);
-         delete flow;
-         iterator = FlowManager::getFlowManager()->getFlowSet().begin();
-         continue;
-      }
-      iterator++;
-   }
-   unlock();
-
    LOG_INFO
    stdlog << format("Stopped measurement $%llx on socket %d\n",
                      measurementID, controlSocket);
