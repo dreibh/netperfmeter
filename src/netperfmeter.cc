@@ -1485,7 +1485,9 @@ void passiveMode(const uint16_t localPort)
 #endif
    FlowManager::getFlowManager()->removeUnidentifiedSocket(gUDPSocket, false);
    ext_close(gUDPSocket);
-   ext_close(gSCTPSocket);
+   if(gSCTPSocket >= 0) {
+      ext_close(gSCTPSocket);
+   }
 #ifdef HAVE_DCCP
    if(gDCCPSocket >= 0) {
       ext_close(gDCCPSocket);
