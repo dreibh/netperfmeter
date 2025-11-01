@@ -1473,10 +1473,14 @@ void passiveMode(const uint16_t localPort)
 
 
    // ====== Clean up =======================================================
-   gMessageReader.deregisterSocket(gControlSocketTCP);
-   ext_close(gControlSocketTCP);
-   gMessageReader.deregisterSocket(gControlSocket);
-   ext_close(gControlSocket);
+   if(gControlSocketTCP >= 0) {
+      gMessageReader.deregisterSocket(gControlSocketTCP);
+      ext_close(gControlSocketTCP);
+   }
+   if(gControlSocket>= 0) {
+      gMessageReader.deregisterSocket(gControlSocket);
+      ext_close(gControlSocket);
+   }
    ext_close(gTCPSocket);
 #ifdef HAVE_MPTCP
    if(gMPTCPSocket >= 0) {
