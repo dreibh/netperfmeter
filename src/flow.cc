@@ -284,7 +284,6 @@ void Flow::deactivate(const bool asyncStop)
       OutputStatus = Off;
       PollFDEntry  = nullptr;   // Poll FD entry is now invalid!
       unlock();
-      stop();
       if(SocketDescriptor >= 0) {
          if(TrafficSpec.Protocol == IPPROTO_UDP) {
             // NOTE: There is only one UDP socket. We cannot close it here!
@@ -292,9 +291,10 @@ void Flow::deactivate(const bool asyncStop)
             // timeout.
          }
          else {
-            ext_shutdown(SocketDescriptor, SHUT_RDWR);
+            ext_shutdown(SocketDescriptor, (TrafficSpec.Protocol == IPPROTO_TCP) ? SHUT_WR : SHUT_RDWR);
          }
       }
+      stop();
       if(!asyncStop) {
          waitForFinish();
          FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
