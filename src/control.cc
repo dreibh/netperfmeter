@@ -182,8 +182,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    addFlowMsg->MeasurementID = hton64(flow->getMeasurementID());
    addFlowMsg->FlowID        = htonl(flow->getFlowID());
    addFlowMsg->StreamID      = htons(flow->getStreamID());
-   addFlowMsg->Protocol      = flow->getTrafficSpec().Protocol;
-   addFlowMsg->pad           = 0x00;
+   addFlowMsg->Protocol      = htole16(flow->getTrafficSpec().Protocol);
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
       addFlowMsg->FrameRate[i] = doubleToNetwork(flow->getTrafficSpec().InboundFrameRate[i]);
       addFlowMsg->FrameSize[i] = doubleToNetwork(flow->getTrafficSpec().InboundFrameSize[i]);
@@ -779,8 +778,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    else {
       // ====== Create new flow =============================================
       FlowTrafficSpec trafficSpec;
-      trafficSpec.Protocol    = addFlowMsg->Protocol;
-      assure(addFlowMsg->Protocol <= 255);
+      trafficSpec.Protocol    = le16toh(addFlowMsg->Protocol);
       trafficSpec.Description = std::string(description);
       for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
          trafficSpec.OutboundFrameRate[i] = networkToDouble(addFlowMsg->FrameRate[i]);
@@ -801,7 +799,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       trafficSpec.RepeatOnOff              = (addFlowMsg->Header.Flags & NPMAFF_REPEATONOFF);
       trafficSpec.RetransmissionTrials     = ntohl(addFlowMsg->RetransmissionTrials) & ~NPMAF_RTX_TRIALS_IN_MILLISECONDS;
       trafficSpec.RetransmissionTrialsInMS = (ntohl(addFlowMsg->RetransmissionTrials) & NPMAF_RTX_TRIALS_IN_MILLISECONDS);
-      if( (trafficSpec.RetransmissionTrialsInMS) && (trafficSpec.RetransmissionTrials == 0x7fffffff) ) {
+      if( (trafficSpec.RetransmissionTrialsInMS) && (trafficSpec.RetransmissionTrials == NPMAF_RTX_DEFAULT) ) {
          trafficSpec.RetransmissionTrials = ~0;
       }
 

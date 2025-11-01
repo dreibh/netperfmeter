@@ -118,7 +118,7 @@ Having all relevant scalars stored in memory, a data file – which can be proce
 
 ## Preparations
 
-NetPerfMeter uses the SCTP protocol. It may be necessary to allow loading the SCTP kernel module first, if not already enabled. The following code blocks show how to enable it permanently.
+NetPerfMeter by default uses the SCTP protocol for control communication (which can be changed by the `-control-over-tcp` option, see later). It may be useful to allow loading the SCTP kernel module first, if not already enabled. The following code blocks show how to enable it permanently.
 
 ### SCTP on Linux
 
@@ -154,10 +154,10 @@ kldstat | grep sctp
 * Run a passive instance (i.e.&nbsp;server side), using port 9000, and allowing NPMP-CONTROL control communication only over TCP (this disables checking for SCTP, and the warning if unavailable):
 
   ```bash
-  netperfmeter 9000 -no-control-over-tcp
+  netperfmeter 9000 -no-control-over-sctp
   ```
 
-  Note that the active instance (i.e.&nbsp;client side) can only connect via TCP in this case, and it needs to be instructed (as explained below, also using the `-no-control-over-tcp` option) to do so!
+  Note that the active instance (i.e.&nbsp;client side) can only connect via TCP in this case, and it needs to be instructed (as explained below, also using the `-control-over-tcp` option) to do so!
 
 
 ## Running the Active Instance (Client)
@@ -175,7 +175,7 @@ kldstat | grep sctp
 
   The flow parameter specifies a saturated flow (frame rate&nbsp;0 – send a much as possible) with a constant frame size of 1400&nbsp;B. The first block specifies the direction from active (client) to passive (server) instance, the second block specifies the direction from passive (server) to active (client) instance.
 
-  ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP (or MPTCP) instead (to be shown in the next example, using the `-no-control-over-tcp` option):
+  ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP (or MPTCP) instead (to be shown in the next example, using the `-control-over-tcp` option):
 
   - Firewalls blocking SCTP traffic, e.g&nbsp;many public Wi-Fi networks.
   - Routing over NAT/PAT may not work well due to lack of support for SCTP.
@@ -241,7 +241,7 @@ kldstat | grep sctp
   ```bash
   netperfmeter $SERVER:9000 -dccp const10:const128:const25:const1200
   ```
-  Note: DCCP is only available when provided by the operating system kernel!
+  Note: DCCP is only available when provided by the operating system kernel, and DCCP supports need to be compiled into NetPerfMeter.
 
 
 * Run an active instance (i.e.&nbsp;client side), with 2&nbsp;bidirectional SCTP flows over a single SCTP association (i.e.&nbsp;2&nbsp;streams):
@@ -294,16 +294,19 @@ A configured distribution is used to determine:
 Some examples:
 
 * A unidirectional TCP flow with constant 2&nbsp;frames;/s and uniformly distributed frame sizes between 100&nbsp;bytes and 20000&nbsp;bytes:
+
   ```bash
   netperfmeter $SERVER:9000 -tcp const2:uniform100,20000
   ```
 
 * A bidirectional SCTP flow with constant 2&nbsp;frames;/s and uniformly distributed frame sizes between 100&nbsp;bytes and 1000&nbsp;bytes outgoing, and an uniform frame rate from [0.2, 10.5) frames/s and frame sizes with an average of 1000&nbsp;bytes using exponential distribution incoming:
+
   ```bash
   netperfmeter $SERVER:9000 -sctp const2:uniform100,1000:uniform0.2,10.5:exp1000
   ```
 
 * An incoming UDP flow, with constant 25&nbsp;frames/s of constant 1000&nbsp;bytes, on-time and off-time pareto-distributed with location&nbsp;0.166667 and shape&nbsp;1.5, repeating in a loop:
+
   ```bash
   netperfmeter $SERVER:9000 -udp const0:const0:const25:const1000:onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
   ```
@@ -432,12 +435,12 @@ Some examples:
   Notes:
 
   - Filter parameters for protocols and ports can ensure to record only the relevant NetPerfMeter traffic.
-  - In case of using port&nbsp;9000 for NetPerfMeter, use:
+  - In case of using port&nbsp;9000 for NetPerfMeter, record:
 
     + SCTP, port 9000 and 9001 (data and control traffic over SCTP);
     + TCP, port 8999, 9000 and 9001 (data and control traffic over TCP and MPTCP);
     + UDP, port 9000;
-    + DCCP, port 9000 (`ip proto 33`).
+    + DCCP, port 9000 (`ip proto 33`; PCAP filtering does not support DCCP).
 
 
 * Run [Wireshark](https://www.wireshark.org/) network protocol analyser to display the packet flow of the <a href="#active-multi">multi-flows example</a> above in PCAP file [`multi.pcap.gz`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz):
@@ -449,7 +452,12 @@ Some examples:
   Notes:
 
   - Wireshark provides out-of-the-box support for NetPerfMeter, i.e.&nbsp;a dissector is included in all recent Wireshark packages.
-  - Coloring rules and filters can be found in the directory [`netperfmeter/src/wireshark`](https://github.com/dreibh/netperfmeter/tree/master/src/wireshark). Simply copy [`colorfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/colorfilters), [`dfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/dfilters) and optionally [`preferences`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/preferences) to `$HOME/.wireshark`.
+
+  - To decode NetPerfMeter packets, particularly over TCP and UDP, it may be necessary to configure ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs). While SCTP (by [Payload Protocol Identifiers](https://www.iana.org/assignments/sctp-parameters/sctp-parameters.xhtml) 36 and&nbsp;37) and DCCP (by [Service Code](https://www.iana.org/assignments/service-codes/service-codes.xhtml) "npmp") for unambiguous identification of the NetPerfMeter payload, Wireshark has to rely on heuristics for TCP and UDP. They may fail to recognise the NetPerfMeter payload. The "Decode As" rules configuration in the "Analyze" menu allows to set explicit rules for TCP ports (e.g.&nbsp;8999, 9000, and 9001) and UDP port numbers (e.g.&nbsp;8999 and 9000) for decoding matching packets as NetPerfMeter payload.
+
+  - To simply SCTP packet filtering, it is recommended to activate "Enable association indexing" in the SCTP protocol settings (Preferences → Protocols/SCTP → Enable association indexing).
+
+  - [Coloring rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustColorizationSection.html#ChCustColoringRulesDialog), [filters](https://www.wireshark.org/docs/wsug_html_chunked/ChWorkDefineFilterSection.html) and ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs) can be found in the directory [`netperfmeter/src/wireshark`](https://github.com/dreibh/netperfmeter/tree/master/src/wireshark). Simply copy [`colorfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/colorfilters), [`dfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/dfilters), [`decode_as_entries`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/decode_as_entries) and optionally [`preferences`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/preferences) to `$HOME/.wireshark`.
 
 ## Miscellaneous
 
