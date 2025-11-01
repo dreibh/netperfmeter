@@ -408,7 +408,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
    }
 
    // ====== Start flows ====================================================
-   const bool success = FlowManager::getFlowManager()->startMeasurement(
+   const bool success = FlowManager::getFlowManager()->beginMeasurement(
                            controlSocket, measurementID, getMicroTime(),
                            vectorNamePattern, vectorFileFormat,
                            scalarNamePattern, scalarFileFormat);
@@ -581,7 +581,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       }
    }
 
-   FlowManager::getFlowManager()->stopMeasurement(controlSocket, measurementID);
+   FlowManager::getFlowManager()->finishMeasurement(controlSocket, measurementID);
 
    FlowManager::getFlowManager()->unlock();
 
@@ -854,7 +854,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
    Flow* flow = FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID);
    if(flow == nullptr) {
       LOG_WARNING
-      stdlog << format("NETPERFMETER_ADD_REMOVE tried to remove not-existing flow on socket %d!",
+      stdlog << format("NETPERFMETER_REMOVE_FLOW tried to remove not-existing flow on socket %d!",
                        controlSocket) << "\n";
       LOG_END
       return(sendNetPerfMeterAcknowledge(controlSocket,
@@ -912,7 +912,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    }
 
    const unsigned long long now = getMicroTime();
-   bool success = FlowManager::getFlowManager()->startMeasurement(
+   bool success = FlowManager::getFlowManager()->beginMeasurement(
       controlSocket, measurementID, now,
       nullptr, vectorFileFormat,
       nullptr, scalarFileFormat);
@@ -967,7 +967,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
          flow->deactivate(true);
       }
    }
-   FlowManager::getFlowManager()->stopMeasurement(controlSocket, measurementID);
+   FlowManager::getFlowManager()->finishMeasurement(controlSocket, measurementID);
    FlowManager::getFlowManager()->unlock();
 
    // ====== Acknowledge result =============================================

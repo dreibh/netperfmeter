@@ -222,8 +222,8 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
 }
 
 
-// ###### Start measurement #################################################
-bool FlowManager::startMeasurement(const int                controlSocket,
+// ###### Begin measurement #################################################
+bool FlowManager::beginMeasurement(const int                controlSocket,
                                    const uint64_t           measurementID,
                                    const unsigned long long now,
                                    const char*              vectorNamePattern,
@@ -283,10 +283,10 @@ bool FlowManager::startMeasurement(const int                controlSocket,
 }
 
 
-// ###### Stop measurement ##################################################
-void FlowManager::stopMeasurement(const int                controlSocket,
-                                  const uint64_t           measurementID,
-                                  const unsigned long long now)
+// ###### Finish measurement ##################################################
+void FlowManager::finishMeasurement(const int                controlSocket,
+                                    const uint64_t           measurementID,
+                                    const unsigned long long now)
 {
    CPULoadStats.update();
 
