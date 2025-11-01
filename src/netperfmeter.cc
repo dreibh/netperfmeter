@@ -1571,8 +1571,10 @@ void activeMode(const char* remoteEndpoint)
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
       LOG_FATAL
       stdlog << format("Unable to establish control association: %s!",
-                       strerror(errno)) << "\n"
-             << "Note: Try -y|--control-over-tcp for control over TCP in case of NAT traversal or restrictive firewalls!\n";
+                       strerror(errno)) << "\n";
+      if(gActiveControlProtocol == IPPROTO_SCTP) {
+         stdlog << "Note: Try -y|--control-over-tcp for control over TCP in case of NAT traversal or restrictive firewalls!\n";
+      }
       LOG_END_FATAL
    }
    if(gActiveControlProtocol == IPPROTO_SCTP) {
