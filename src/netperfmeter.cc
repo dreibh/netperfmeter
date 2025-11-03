@@ -1295,7 +1295,7 @@ void passiveMode(const uint16_t localPort)
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
                                       gLocalDataAddresses,
                                       (const sockaddr_union*)&gLocalDataAddressArray,
-                                      false, gBindV6Only);
+                                      true, gBindV6Only);
    if(gMPTCPSocket < 0) {
       LOG_DEBUG
       stdlog << format("NOTE: Failed to create and bind MPTCP socket on port %d: %s!",
