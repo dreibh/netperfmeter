@@ -325,6 +325,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
          }
          flow->unlock();
          flow->endOfInput();
+         return flow->isAcceptedIncomingFlow();   // No error for incoming flow!
       }
       else {
          LOG_WARNING
@@ -335,7 +336,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
       if(protocol != IPPROTO_UDP) {
          ext_shutdown(sd, SHUT_RDWR);
       }
-      return flow->isAcceptedIncomingFlow();   // No error for incoming flow!
+      return false;
    }
 
    return true;
