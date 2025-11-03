@@ -222,8 +222,8 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
 }
 
 
-// ###### Start measurement #################################################
-bool FlowManager::startMeasurement(const int                controlSocket,
+// ###### Begin measurement #################################################
+bool FlowManager::beginMeasurement(const int                controlSocket,
                                    const uint64_t           measurementID,
                                    const unsigned long long now,
                                    const char*              vectorNamePattern,
@@ -274,7 +274,7 @@ bool FlowManager::startMeasurement(const int                controlSocket,
 
    if(success) {
       LOG_INFO
-      stdlog << format("Started Measurement $%llx on socket %d:",
+      stdlog << format("Prepared measurement $%llx on socket %d:",
                        measurementID, controlSocket)
              << "\n" << ss.str();
       LOG_END
@@ -283,43 +283,16 @@ bool FlowManager::startMeasurement(const int                controlSocket,
 }
 
 
-// ###### Stop measurement ##################################################
-void FlowManager::stopMeasurement(const int                controlSocket,
-                                  const uint64_t           measurementID,
-                                  const unsigned long long now)
+// ###### Finish measurement ##################################################
+void FlowManager::finishMeasurement(const int                controlSocket,
+                                    const uint64_t           measurementID,
+                                    const unsigned long long now)
 {
-   std::stringstream ss;
-
    CPULoadStats.update();
-   lock();
-
-   // We make a two-staged stopping process here:
-   // In stage 0, the flows' sender threads are told to stop.
-   //   => all threads can perform shutdown simultaneously
-   //   => much faster if there are many flows
-   // In stage 1, we wait until the threads have stopped.
-   for(unsigned int stage = 0;stage < 2;stage++) {
-      for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-         iterator != FlowSet.end();iterator++) {
-         Flow* flow = *iterator;
-         if(flow->MeasurementID == measurementID) {
-            // ====== Stop flow ================================================
-            if(stage == 0) {
-               flow->deactivate(true);
-            }
-            else {
-               flow->deactivate(false);
-               flow->print(ss);
-            }
-         }
-      }
-   }
-   unlock();
 
    LOG_INFO
-   stdlog << format("Stopped Measurement $%llx on socket %d:",
-                     measurementID, controlSocket)
-            << "\n" << ss.str();
+   stdlog << format("Stopped measurement $%llx on socket %d\n",
+                     measurementID, controlSocket);
    LOG_END
 }
 

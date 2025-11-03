@@ -89,16 +89,16 @@ class FlowManager : public Thread
    void printFlows(std::ostream& os,
                    const bool    printStatistics);
 
-   bool startMeasurement(const int                controlSocket,
+   bool beginMeasurement(const int                controlSocket,
                          const uint64_t           measurementID,
                          const unsigned long long now,
                          const char*              vectorNamePattern,
                          const OutputFileFormat   vectorFileFormat,
                          const char*              scalarNamePattern,
                          const OutputFileFormat   scalarFileFormat);
-   void stopMeasurement(const int                 controlSocket,
-                        const uint64_t            measurementID,
-                        const unsigned long long  now = getMicroTime());
+   void finishMeasurement(const int                controlSocket,
+                          const uint64_t           measurementID,
+                          const unsigned long long now = getMicroTime());
 
    void writeScalarStatistics(const uint64_t           measurementID,
                               const unsigned long long now,
