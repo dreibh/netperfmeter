@@ -309,10 +309,20 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
       Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
       if(flow) {
          flow->lock();
-         LOG_WARNING
-         stdlog << format("End of input for flow #%u on socket %d!",
-                          flow->getFlowID(), sd) << "\n";
-         LOG_END
+         if(!flow->isAcceptedIncomingFlow()) {
+            // The outgoing flow on the active side is closed:
+            LOG_WARNING
+            stdlog << format("End of input for flow #%u on socket %d!",
+                             flow->getFlowID(), sd) << "\n";
+            LOG_END
+         }
+         else {
+            // This is probably just the regular connection shutdown:
+            LOG_DEBUG
+            stdlog << format("End of input for flow #%u on socket %d!",
+                             flow->getFlowID(), sd) << "\n";
+            LOG_END
+         }
          flow->unlock();
          flow->endOfInput();
       }
@@ -325,7 +335,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
       if(protocol != IPPROTO_UDP) {
          ext_shutdown(sd, SHUT_RDWR);
       }
-      return false;
+      return flow->isAcceptedIncomingFlow();   // No error for incoming flow!
    }
 
    return true;

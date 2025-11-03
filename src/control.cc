@@ -408,7 +408,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
    }
 
    // ====== Start flows ====================================================
-   const bool success = FlowManager::getFlowManager()->startMeasurement(
+   const bool success = FlowManager::getFlowManager()->beginMeasurement(
                            controlSocket, measurementID, getMicroTime(),
                            vectorNamePattern, vectorFileFormat,
                            scalarNamePattern, scalarFileFormat);
@@ -434,7 +434,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       }
 
       LOG_INFO
-      stdlog << format("Starting Measurement $%llx on socket %d ...",
+      stdlog << format("Starting measurement $%llx on socket %d ...",
                        (unsigned long long)measurementID, controlSocket) << "\n";
       LOG_END
       if(ext_send(controlSocket, &startMsg, sizeof(startMsg), 0) < 0) {
@@ -493,7 +493,12 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
 {
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
-   FlowManager::getFlowManager()->stopMeasurement(controlSocket, measurementID);
+   std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+   while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
+      Flow* flow = *iterator;
+      flow->deactivate(true);
+      iterator++;
+   }
    Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(controlSocket,
                                                                              measurementID);
    assure(measurement != nullptr);
@@ -560,8 +565,10 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
 
    // ====== Download flow results and remove the flows =====================
    FlowManager::getFlowManager()->lock();
-   std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
-   while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
+
+   for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+      iterator != FlowManager::getFlowManager()->getFlowSet().end();
+      iterator++) {
       Flow* flow = *iterator;
       if(flow->getMeasurementID() == measurementID) {
          if(sendNetPerfMeterRemoveFlow(messageReader, controlSocket,
@@ -572,13 +579,23 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
          LOG_INFO
          flow->print(stdlog, true);
          LOG_END
+      }
+   }
+
+   iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+   while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
+      Flow* flow = *iterator;
+      if(flow->getMeasurementID() == measurementID) {
+         flow->deactivate(false);
          delete flow;
-         // Invalidated iterator. Is there a better solution?
          iterator = FlowManager::getFlowManager()->getFlowSet().begin();
          continue;
       }
       iterator++;
    }
+
+   FlowManager::getFlowManager()->finishMeasurement(controlSocket, measurementID);
+
    FlowManager::getFlowManager()->unlock();
 
    // ====== Remove the Measurement object =================================
@@ -850,7 +867,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
    Flow* flow = FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID);
    if(flow == nullptr) {
       LOG_WARNING
-      stdlog << format("NETPERFMETER_ADD_REMOVE tried to remove not-existing flow on socket %d!",
+      stdlog << format("NETPERFMETER_REMOVE_FLOW tried to remove not-existing flow on socket %d!",
                        controlSocket) << "\n";
       LOG_END
       return(sendNetPerfMeterAcknowledge(controlSocket,
@@ -888,7 +905,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    }
    const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
    LOG_INFO
-   stdlog << format("Starting Measurement $%llx on socket %d ...",
+   stdlog << format("Starting measurement $%llx on socket %d ...",
                     (unsigned long long)measurementID, controlSocket) << "\n";
    LOG_END
 
@@ -908,7 +925,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    }
 
    const unsigned long long now = getMicroTime();
-   bool success = FlowManager::getFlowManager()->startMeasurement(
+   bool success = FlowManager::getFlowManager()->beginMeasurement(
       controlSocket, measurementID, now,
       nullptr, vectorFileFormat,
       nullptr, scalarFileFormat);
@@ -936,13 +953,13 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
    }
    const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
    LOG_INFO
-   stdlog << format("Stopping Measurement $%llx on socket %d ...",
+   stdlog << format("Stopping measurement $%llx on socket %d ...",
                     (unsigned long long)measurementID, controlSocket) << "\n";
    LOG_END
 
    // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
-   FlowManager::getFlowManager()->stopMeasurement(controlSocket, measurementID);
+
    bool         success     = false;
    Measurement* measurement =
       FlowManager::getFlowManager()->findMeasurement(controlSocket, measurementID);
@@ -960,8 +977,10 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       Flow* flow = *iterator;
       if(flow->getMeasurement() == measurement) {
          flow->setMeasurement(nullptr);
+         flow->deactivate(true);
       }
    }
+   FlowManager::getFlowManager()->finishMeasurement(controlSocket, measurementID);
    FlowManager::getFlowManager()->unlock();
 
    // ====== Acknowledge result =============================================
