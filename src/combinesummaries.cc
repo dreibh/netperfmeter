@@ -105,7 +105,7 @@ void addDataFile(OutputFile&         outputFile,
       << "* Run:\n  "
       << program << "\n"
          "    output_file\n"
-         "    variable_names\n"
+         "    [variable_names]\n"
          "    [-c level|--compress level]\n"
          "    [-q|--quiet]\n"
          "* Version:\n  " << program << " [-v|--version]\n"
