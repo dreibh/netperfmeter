@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 11, 2025
+.Dd November 11, 2025
 .Dt combinesummaries 1
 .Os CombineSummaries
 .\" ###### Name #############################################################
@@ -37,7 +37,7 @@
 .Sh SYNOPSIS
 .Nm combinesummaries
 output_file
-variable_names
+.Op variable_names
 .br
 .Op Fl c Ar level | Fl Fl compress Ar level
 .br
@@ -51,11 +51,13 @@ variable_names
 .Nm combinesummaries
 is a combination tool for CSV/GNU R data files: it creates a single data table from multiple input files. CombineSummaries supports on-the-fly BZip2 compression. After startup, the program accepts the following commands from standard input (*not* as command-line arguments!):
 .Bl -tag -width ident
-.It Fl Fl values=Values
+.It Fl Fl varnames=variables
+A space-separated list of output variable names to be added to the output data tables.
+.It Fl Fl values=values
 Sets the values of the output variables for the next input file to the provided space-separated values. One value for each variable has to be provided.
-.It Fl Fl input=Filename
+.It Fl Fl input=filename
 Process the given input file.
-.It Fl Fl simulationdirectory=Directory
+.It Fl Fl simulationdirectory=directory
 Sets the directory where to find the input files.
 .El
 .Pp

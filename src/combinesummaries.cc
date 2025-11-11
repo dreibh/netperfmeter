@@ -155,11 +155,14 @@ int main(int argc, char** argv)
           // break;
       }
    }
-   if(optind + 1 >= argc) {
+   if(optind >= argc) {
       usage(argv[0], 1);
    }
    const std::string outputFileName(argv[optind++]);
-   std::string       varNames(argv[optind++]);
+   std::string       varNames;
+   if(optind < argc) {
+      varNames = argv[optind++];
+   }
    if(optind < argc) {
       std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
       usage(argv[0], 1);
@@ -222,6 +225,12 @@ int main(int argc, char** argv)
          addDataFile(outputFile, outputLineNumber,
                      varNames, varValues, std::string((const char*)&command[8]));
          varValues = "";
+      }
+      else if(!(strncmp(command, "--varnames=", 11))) {
+         varNames = (const char*)&command[11];
+         if(varNames[0] == '\"') {
+            varNames = varNames.substr(1, varNames.size() - 2);
+         }
       }
       else if(!(strncmp(command, "--simulationsdirectory=", 23))) {
          simulationsDirectory = (const char*)&simulationsDirectory[23];
