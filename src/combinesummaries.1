@@ -41,6 +41,8 @@ output_file
 .br
 .Op Fl c Ar level | Fl Fl compress Ar level
 .br
+.Op Fl n | Fl Fl line-numbers
+.br
 .Op Fl q | Fl Fl quiet
 .Nm combinesummaries
 .Op Fl h | Fl Fl help
@@ -71,6 +73,8 @@ The name of the output file to be created.
 A space-separated list of output variable names to be added to the output data tables.
 .It Fl c Ar level | Fl Fl compress Ar level
 Sets the BZip2 compression level; 1=none, 9=highest (default).
+.It Fl n | Fl Fl line-numbers
+Generate line numbers for output rows (GNU R: row names). Default: off.
 .It Fl quiet
 Do not print verbose status information.
 .El
