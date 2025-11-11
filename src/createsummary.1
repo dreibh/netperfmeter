@@ -62,13 +62,13 @@ is a summarisation tool for scalar files: it creates one CSV/GNU R data table fi
 A space-separated list of output variable names to be added to the output data tables.
 .It Fl Fl values=values
 Sets the values of the output variables for the next scalar file to the provided space-separated values. One value for each variable has to be provided.
+.It Fl Fl input=filename
+Process the given scalar file.
 .It Fl Fl logfile=name
 Sets the log file for the next scalar file. On an error related to this scalar file, the log file's name is displayed. This option can be used to identify bad simulation/measurement runs by pointing to the log file being created for
 the simulation/measurement.
 .It Fl Fl statusfile=name
 Sets the status file for the next scalar file. On an error related to this scalar file, the status file is deleted. This option can be used to repeat bad simulation/measurement runs by re-running the simulation/measurement on missing status files.
-.It Fl Fl input=filename
-Process the given scalar file.
 .It Fl Fl skip=prefix
 All scalars beginning with the given prefix are not written to output tables. This option can be used to filter out unnecessary results.
 .It Fl Fl simulationdirectory=directory
