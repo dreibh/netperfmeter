@@ -214,8 +214,8 @@ static void removeBrackets(char* str)
 }
 
 
-// ###### Separate columns by tab ###########################################
-static bool separateColumnsByTab(std::string& values)
+// ###### Check columns for proper quotation ################################
+static bool checkColumns(const std::string& values)
 {
    bool         inQuotation    = false;
    unsigned int quotationMarks = 0;
@@ -227,11 +227,6 @@ static bool separateColumnsByTab(std::string& values)
          case '"':
             inQuotation = !inQuotation;
             quotationMarks++;
-          break;
-         case ' ':
-            if(!inQuotation) {
-               values[i] = '\t';
-            }
           break;
       }
    }
@@ -330,7 +325,7 @@ static unsigned int getAggregate(char*        objectName,
    // ------ Extract aggregate and its value --------------
    if((size_t)i < length - 1) {
      if(aggNames[0] != 0x00) {
-        safestrcat(aggNames, "\t", aggNamesSize);
+        safestrcat(aggNames, " ", aggNamesSize);
      }
      if(scalarName[0] != 0x00) {
        safestrcat(aggNames, scalarName, aggNamesSize);
@@ -342,7 +337,7 @@ static unsigned int getAggregate(char*        objectName,
      char valueString[16];
      snprintf((char*)&valueString, sizeof(valueString), "%lu", value);
      if(aggValues[0] != 0x00) {
-        safestrcat(aggValues, "\t", aggValuesSize);
+        safestrcat(aggValues, " ", aggValuesSize);
      }
      safestrcat(aggValues, valueString, aggValuesSize);
    }
@@ -369,12 +364,12 @@ static unsigned int getAggregate(char*        objectName,
             identifier[0] = 0x00;   // Cut number off from statName.
 
             if(aggNames[0] != 0x00) {
-               safestrcat(aggNames, "\t", aggNamesSize);
+               safestrcat(aggNames, " ", aggNamesSize);
             }
             safestrcat(aggNames, statName, aggNamesSize);
 
             if(aggValues[0] != 0x00) {
-               safestrcat(aggValues, "\t", aggValuesSize);
+               safestrcat(aggValues, " ", aggValuesSize);
             }
             safestrcat(aggValues, (const char*)&identifier[1], aggValuesSize);
          }
@@ -789,7 +784,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
          lineNumber = 1;
 
          // ====== Write table header =======================================
-         if(outputFile.printf("RunNo\tValueNo\tSplit\t%s\t%s\t%s\n",
+         if(outputFile.printf("RunNo ValueNo Split %s %s %s\n",
                               scalarNode->AggNames,
                               varNames.c_str(),
                               scalarNode->ScalarName) == false) {
@@ -804,11 +799,11 @@ static void dumpScalars(const std::string& simulationsDirectory,
       std::vector<double>::iterator valueIterator = scalarNode->ValueSet.begin();
       while(valueIterator != scalarNode->ValueSet.end()) {
          if(addLineNumbers) {
-            if(outputFile.printf("%07llu\t", lineNumber) == false) {
+            if(outputFile.printf("%07llu ", lineNumber) == false) {
                exit(1);
             }
          }
-         if(outputFile.printf("%u\t%u\t\"%s\"\t%s\t%s\t%lf\n",
+         if(outputFile.printf("%u %u \"%s\" %s %s %lf\n",
                               (unsigned int)scalarNode->Run,
                               (unsigned int)valueNumber,
                               scalarNode->SplitName,
@@ -953,7 +948,7 @@ int main(int argc, char** argv)
 
    if(optind < argc) {
       varNames = argv[optind++];
-      if(!separateColumnsByTab(varNames)) {
+      if(!checkColumns(varNames)) {
          std::cerr << "ERROR: Invalid quotation in variable names string!\n";
          exit(1);
       }
@@ -1003,7 +998,7 @@ int main(int argc, char** argv)
          if(varValues[0] == '\"') {
             varValues = varValues.substr(1, varValues.size() - 2);
          }
-         if(!separateColumnsByTab(varValues)) {
+         if(!checkColumns(varValues)) {
             std::cerr << "ERROR: Invalid quotation in variable values string!\n";
             exit(1);
          }
@@ -1032,7 +1027,7 @@ int main(int argc, char** argv)
          if(varNames[0] == '\"') {
             varNames = varNames.substr(1, varNames.size() - 2);
          }
-         if(!separateColumnsByTab(varNames)) {
+         if(!checkColumns(varNames)) {
             std::cerr << "ERROR: Invalid quotation in variable names string!\n";
             exit(1);
          }
