@@ -998,17 +998,7 @@ int main(int argc, char** argv)
          std::cout << command << "\n";
       }
 
-      if(!(strncmp(command, "--varnames=", 11))) {
-         varNames = (const char*)&command[11];
-         if(varNames[0] == '\"') {
-            varNames = varNames.substr(1, varNames.size() - 2);
-         }
-         if(!separateColumnsByTab(varNames)) {
-            std::cerr << "ERROR: Invalid quotation in variable names string!\n";
-            exit(1);
-         }
-      }
-      else if(!(strncmp(command, "--values=", 9))) {
+      if(!(strncmp(command, "--values=", 9))) {
          varValues = (const char*)&command[9];
          if(varValues[0] == '\"') {
             varValues = varValues.substr(1, varValues.size() - 2);
@@ -1017,12 +1007,6 @@ int main(int argc, char** argv)
             std::cerr << "ERROR: Invalid quotation in variable values string!\n";
             exit(1);
          }
-      }
-      else if(!(strncmp(command, "--logfile=", 10))) {
-         logFileName = (const char*)&command[10];
-      }
-      else if(!(strncmp(command, "--statusfile=", 13))) {
-         statusFileName = (const char*)&command[13];
       }
       else if(!(strncmp(command, "--input=", 8))) {
          if(varValues == "") {
@@ -1042,6 +1026,22 @@ int main(int argc, char** argv)
          varValues      = "";
          logFileName    = "";
          statusFileName = "";
+      }
+      else if(!(strncmp(command, "--varnames=", 11))) {
+         varNames = (const char*)&command[11];
+         if(varNames[0] == '\"') {
+            varNames = varNames.substr(1, varNames.size() - 2);
+         }
+         if(!separateColumnsByTab(varNames)) {
+            std::cerr << "ERROR: Invalid quotation in variable names string!\n";
+            exit(1);
+         }
+      }
+      else if(!(strncmp(command, "--logfile=", 10))) {
+         logFileName = (const char*)&command[10];
+      }
+      else if(!(strncmp(command, "--statusfile=", 13))) {
+         statusFileName = (const char*)&command[13];
       }
       else if(!(strncmp(command, "--skip=", 7))) {
          SkipListNode* skipListNode = new SkipListNode;
