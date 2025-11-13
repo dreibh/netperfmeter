@@ -1,6 +1,4 @@
 # This file was created by Wireshark. Edit with care.
-@HiPerConTracer via ICMP@hipercontracer && (icmp || icmpv6)@[57311,53199,21074][7967,7196,6939]
-@HiPerConTracer via UDP@hipercontracer && udp@[32896,46774,32125][7967,7196,6939]
 @NetPerfMeter Acknowledge@netperfmeter.message_type==0x01@[65535,65535,8995][0,0,0]
 @NetPerfMeter Add Flow@netperfmeter.message_type==0x02@[59624,65535,32382][0,0,0]
 @NetPerfMeter Remove Flow@netperfmeter.message_type==0x03@[65535,41891,34695][0,0,0]
@@ -21,6 +19,9 @@
 @NetPerfMeter Start@netperfmeter.message_type==0x06@[0,65535,0][0,0,0]
 @NetPerfMeter Stop@netperfmeter.message_type==0x07@[65535,0,0][0,0,0]
 @NetPerfMeter Results@netperfmeter.message_type==0x08@[52428,52428,52428][0,0,0]
+@HiPerConTracer via ICMP@hipercontracer && (icmp || icmpv6)@[57311,53199,21074][7967,7196,6939]
+@HiPerConTracer via UDP@hipercontracer && udp@[32896,46774,32125][7967,7196,6939]
+@HiPerConTracer via TCP@hipercontracer && tcp@[41377,46774,17990][7967,7196,6939]
 @ScriptingServiceNotReady@ssp.message_type==0x00@[59367,17476,54998][0,0,0]
 @ScriptingServiceReady@ssp.message_type==0x01@[0,47288,9252][0,0,0]
 @ScriptingServiceUpload@ssp.message_type==0x02@[29812,65021,36751][0,0,0]

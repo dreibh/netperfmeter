@@ -1,6 +1,3 @@
 gui.ask_unsaved: FALSE
-ip.check_checksum: TRUE
 sctp.association_index: TRUE
-tcp.check_checksum: TRUE
 tcp.reassemble_out_of_order: TRUE
-udp.check_checksum: TRUE
