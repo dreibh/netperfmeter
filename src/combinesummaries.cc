@@ -40,8 +40,29 @@
 #include "package-version.h"
 
 
+// ###### Check columns for proper quotation ################################
+static bool checkColumns(const std::string& values)
+{
+   bool         inQuotation    = false;
+   unsigned int quotationMarks = 0;
+   for(size_t i = 0; i < values.size(); i++) {
+      switch(values[i]) {
+         case '\\':
+            i++;
+          break;
+         case '"':
+            inQuotation = !inQuotation;
+            quotationMarks++;
+          break;
+      }
+   }
+   return ((quotationMarks & 1) == 0);
+}
+
+
 // ###### Read and process data file ########################################
 void addDataFile(OutputFile&         outputFile,
+                 const bool          withLineNumbers,
                  unsigned long long& outputLineNumber,
                  const std::string&  varNames,
                  const std::string&  varValues,
@@ -77,8 +98,14 @@ void addDataFile(OutputFile&         outputFile,
          }
       }
       else {
-         if(outputFile.printf("%07llu\t%s\t%s\n",
-                              outputLineNumber, varValues.c_str(), buffer) == false) {
+         if(withLineNumbers) {
+            if(outputFile.printf("%07llu ", outputLineNumber) == false) {
+               outputFile.finish();
+               exit(1);
+            }
+         }
+         if(outputFile.printf("%s %llu %s\n",
+                              varValues.c_str(), inputFile.getLine(), buffer) == false) {
             outputFile.finish();
             exit(1);
          }
@@ -105,8 +132,9 @@ void addDataFile(OutputFile&         outputFile,
       << "* Run:\n  "
       << program << "\n"
          "    output_file\n"
-         "    variable_names\n"
+         "    [variable_names]\n"
          "    [-c level|--compress level]\n"
+         "    [-n|--line-numbers]\n"
          "    [-q|--quiet]\n"
          "* Version:\n  " << program << " [-v|--version]\n"
          "* Help:\n  "    << program << " [-h|--help]\n";
@@ -118,12 +146,14 @@ void addDataFile(OutputFile&         outputFile,
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
-   bool         quietMode       = false;
+   bool         quietMode        = false;
+   bool         withLineNumbers  = false;
    unsigned int compressionLevel = 9;
 
    // ====== Handle command-line arguments ==================================
    const static struct option long_options[] = {
       { "compress",                  required_argument, 0, 'c' },
+      { "line-numbers",              no_argument,       0, 'n' },
       { "quiet",                     no_argument,       0, 'q' },
 
       { "help",                      no_argument,       0, 'h' },
@@ -133,7 +163,7 @@ int main(int argc, char** argv)
 
    int option;
    int longIndex;
-   while( (option = getopt_long_only(argc, argv, "c:qhv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "c:nqhv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'c':
             compressionLevel = atol(optarg);
@@ -143,6 +173,9 @@ int main(int argc, char** argv)
             else if(compressionLevel > 9) {
                compressionLevel = 9;
             }
+          break;
+         case 'n':
+            withLineNumbers = true;
           break;
          case 'q':
             quietMode = true;
@@ -155,11 +188,18 @@ int main(int argc, char** argv)
           // break;
       }
    }
-   if(optind + 1 >= argc) {
+   if(optind >= argc) {
       usage(argv[0], 1);
    }
    const std::string outputFileName(argv[optind++]);
-   std::string       varNames(argv[optind++]);
+   std::string       varNames;
+   if(optind < argc) {
+      varNames = argv[optind++];
+      if(!checkColumns(varNames)) {
+         std::cerr << "ERROR: Invalid quotation in variable names string!\n";
+         exit(1);
+      }
+   }
    if(optind < argc) {
       std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
       usage(argv[0], 1);
@@ -169,6 +209,7 @@ int main(int argc, char** argv)
    // ====== Print information ==============================================
    if(!quietMode) {
       std::cout << "CombineSummaries " << COMBINESUMMARIES_VERSION << "\n"
+                << "* Line Numbers:      " << (withLineNumbers ? "yes" : "no") << "\n"
                 << "* Compression Level: " << compressionLevel << "\n"
                 << "\n";
    }
@@ -213,15 +254,29 @@ int main(int argc, char** argv)
          if(varValues[0] == '\"') {
             varValues = varValues.substr(1, varValues.size() - 2);
          }
+         if(!checkColumns(varValues)) {
+            std::cerr << "ERROR: Invalid quotation in variable values string!\n";
+            exit(1);
+         }
       }
       else if(!(strncmp(command, "--input=", 8))) {
          if(varValues[0] == 0x00) {
             std::cerr << "ERROR: No values given (parameter --values=...)!\n";
             exit(1);
          }
-         addDataFile(outputFile, outputLineNumber,
+         addDataFile(outputFile, withLineNumbers, outputLineNumber,
                      varNames, varValues, std::string((const char*)&command[8]));
          varValues = "";
+      }
+      else if(!(strncmp(command, "--varnames=", 11))) {
+         varNames = (const char*)&command[11];
+         if(varNames[0] == '\"') {
+            varNames = varNames.substr(1, varNames.size() - 2);
+         }
+         if(!checkColumns(varNames)) {
+            std::cerr << "ERROR: Invalid quotation in variable names string!\n";
+            exit(1);
+         }
       }
       else if(!(strncmp(command, "--simulationsdirectory=", 23))) {
          simulationsDirectory = (const char*)&simulationsDirectory[23];
