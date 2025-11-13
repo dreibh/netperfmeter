@@ -513,7 +513,7 @@ Some examples:
      ```bash
      mkdir -m700 -p /home/$USER/keylog
      touch /home/$USER/keylog/sslkeylog.log
-     chmod 700 /home/$USER/keylog/sslkeylog.log
+     chmod 600 /home/$USER/keylog/sslkeylog.log
      ```
 
   2. Configure Wireshark:
