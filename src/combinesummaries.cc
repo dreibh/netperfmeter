@@ -89,25 +89,38 @@ void addDataFile(OutputFile&         outputFile,
       }
 
       // ====== Process line ================================================
-      if(inputFile.getLine() == 1) {
-         if(outputLineNumber == 0) {
-            if(outputFile.printf("%s SubLineNo %s\n", varNames.c_str(), buffer) == false) {
+
+      if(withLineNumbers) {
+         if(inputFile.getLine() == 1) {
+            if(outputLineNumber == 0) {
+               if(outputFile.printf("%s SubLineNo %s\n", varNames.c_str(), buffer) == false) {
+                  outputFile.finish();
+                  exit(1);
+               }
+            }
+         }
+         else {
+            if(outputFile.printf("%06llu %s %s\n",
+                                 outputLineNumber, varValues.c_str(), buffer) == false) {
                outputFile.finish();
                exit(1);
             }
          }
       }
       else {
-         if(withLineNumbers) {
-            if(outputFile.printf("%07llu ", outputLineNumber) == false) {
+         if(inputFile.getLine() == 1) {
+            if(outputLineNumber == 0) {
+               if(outputFile.printf("%s %s\n", varNames.c_str(), buffer) == false) {
+                  outputFile.finish();
+                  exit(1);
+               }
+            }
+         }
+         else {
+            if(outputFile.printf("%s %s\n", varValues.c_str(), buffer) == false) {
                outputFile.finish();
                exit(1);
             }
-         }
-         if(outputFile.printf("%s %llu %s\n",
-                              varValues.c_str(), inputFile.getLine(), buffer) == false) {
-            outputFile.finish();
-            exit(1);
          }
       }
       outputLineNumber++;

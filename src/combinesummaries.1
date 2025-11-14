@@ -74,7 +74,7 @@ A space-separated list of output variable names to be added to the output data t
 .It Fl c Ar level | Fl Fl compress Ar level
 Sets the BZip2 compression level; 1=none, 9=highest (default).
 .It Fl n | Fl Fl line-numbers
-Generate line numbers for output rows (GNU R: row names). Default: off.
+Generate line numbers for output rows (GNU R: row names). In this case, the input files must contain line numbers (GNU R: row names) as well! The original line numbers are kept in column SubLineNo. Default: off.
 .It Fl quiet
 Do not print verbose status information.
 .El
