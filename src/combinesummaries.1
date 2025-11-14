@@ -41,6 +41,8 @@ output_file
 .br
 .Op Fl c Ar level | Fl Fl compress Ar level
 .br
+.Op Fl s Ar separator | Fl Fl separator Ar separator
+.br
 .Op Fl n | Fl Fl line-numbers
 .br
 .Op Fl q | Fl Fl quiet
@@ -73,6 +75,8 @@ The name of the output file to be created.
 A space-separated list of output variable names to be added to the output data tables.
 .It Fl c Ar level | Fl Fl compress Ar level
 Sets the BZip2 compression level; 1=none, 9=highest (default).
+.It Fl s Ar separator | Fl Fl separator Ar separator
+Sets the separator for the tables. Default: tabulator character (i.e. $'\t').
 .It Fl n | Fl Fl line-numbers
 Generate line numbers for output rows (GNU R: row names). In this case, the input files must contain line numbers (GNU R: row names) as well! The original line numbers are kept in column SubLineNo. Default: off.
 .It Fl quiet
@@ -85,10 +89,10 @@ v1.data.bz2 (created with ParameterY=Alpha) and
 v2.data.bz2 (created with ParameterY=Beta).
 The output data table should be written to output.data.bz2.
 .br
-( echo "\-\-values=\\"Alpha\\""   && \\
-  echo "\-\-input=v1.data.bz2"  && \\
-  echo "\-\-values=\\"Beta\\""    && \\
-  echo "\-\-input=v2.data.bz2" ) | combinesummaries output.data.bz2 "ParameterY"
+( echo -e "\-\-values=\\"Alpha\\"\\t\\"Test 1\\"" && \\
+  echo "\-\-input=v1.data.bz2"               && \\
+  echo -e "\-\-values=\\"Beta\\"\\t\\"Test 2\\""  && \\
+  echo "\-\-input=v2.data.bz2" ) | combinesummaries output.data.bz2 $'ParameterX\\tParameterY'
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz
