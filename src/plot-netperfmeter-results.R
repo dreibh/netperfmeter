@@ -347,7 +347,7 @@ cat(sep="", "Runtime=", gRuntime, "\n")
 
 
 # ====== Begin writing PDF file =============================================
-if(!plotOwnFile) { 
+if(!plotOwnFile) {
    pdfFileName <- paste(sep="", pdfFilePrefix, "-TEMP.pdf")
    pdf(pdfFileName, width=plotWidth, height=plotHeight, paper=plotPaper,
        family=plotFontFamily, pointsize=plotPointSize)
