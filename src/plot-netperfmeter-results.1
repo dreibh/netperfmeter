@@ -36,13 +36,11 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm plot-netperfmeter-results
-.Op Config Name
-.Fl ownfile
-.Fl colour
-.Fl color
-.Fl greyscale
-.Fl grayscale
-.Fl blackandwhite
+config_name
+.Op Fl w | Fl Fl ownfile
+.Op Fl c | Fl Fl colour | Fl Fl color
+.Op Fl g | Fl Fl greyscale | Fl Fl grayscale
+.Op Fl b | Fl Fl blackandwhite
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm plot-netperfmeter-results
@@ -52,19 +50,15 @@ uses GNU R to plot measurement results written by NetPerfMeter into a PDF file. 
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It Config Name
+.It config_name
 The name of the config file written by NetPerfMeter.
-.It Fl ownfile
+.It Fl w | Fl Fl ownfile
 Plot a separate PDF file for each page.
-.It Fl colour
+.It Fl c | Fl Fl colour | Fl Fl color
 Create colour plot.
-.It Fl color
-Create colour plot.
-.It Fl greyscale
+.It Fl g | Fl Fl greyscale | Fl Fl grayscale
 Create grey-scale plot.
-.It Fl grayscale
-Create grey-scale plot.
-.It Fl blackandwhite
+.It Fl b | Fl Fl blackandwhite
 Create black and white plot.
 .El
 .\" ###### Arguments ########################################################
@@ -73,7 +67,7 @@ Some plot-netperfmeter-results usage examples:
 .Bl -tag -width indent
 .It plot-netperfmeter-results output.config
 Plot the vector file output.vec.bz2. The resulting PDF file will be named output.pdf.
-.It plot-netperfmeter-results output.config -ownfile
+.It plot-netperfmeter-results output.config --ownfile
 Plot the results given by output.config. For each page, a separate PDF file is written. The resulting PDF files will be named output-<title>.pdf, where <title> corresponds to the page title.
 .El
 .\" ###### Authors ##########################################################

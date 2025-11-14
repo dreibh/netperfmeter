@@ -30,24 +30,71 @@
 set -eu
 
 
-if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [Config File] {-ownfile} {-colour|-color|-greyscale|-grayscale|-blackandwhite}"
+# ###### Usage ##############################################################
+usage () {
+   echo >&2 "Usage: $0 config_file [-w|--ownfile] [-c|--colour|--color|-g|--greyscale|--grayscale|-b|--blackandwhite]"
    exit 1
+}
+
+
+# ###### Main program #######################################################
+
+# ====== Handle arguments ===================================================
+GETOPT="$(PATH=/usr/local/bin:${PATH} which getopt)"
+options="$(${GETOPT} -o wcgbh --long ownfile,colour,color,greyscale,grayscale,blackandwhite -a -- "$@")"
+# shellcheck disable=SC2181
+if [[ $? -ne 0 ]]; then
+   usage
 fi
 
-# ====== Read configuration from config file ================================
+PLOT_COLOR_MODE="cmColor"
+PLOT_OWN_FILE="FALSE"
+eval set -- "${options}"
+while [ $# -gt 0 ] ; do
+   case "$1" in
+      -w | --ownfile)
+         PLOT_OWN_FILE="TRUE"
+         shift
+         ;;
+      -c | --colour | --color)
+         PLOT_COLOR_MODE="cmColor"
+         shift
+         ;;
+      -g | --greyscale | --grayscale)
+         PLOT_COLOR_MODE="cmGrayScale"
+         shift
+         ;;
+      -b | ---blackandwhite)
+         PLOT_COLOR_MODE="cmBlackAndWhite"
+         shift
+         ;;
+      -h | --help)
+         usage
+         # shift
+         ;;
+      --)
+         shift
+         break
+         ;;
+  esac
+done
+if [ $# -ne 1 ] ; then
+   usage
+fi
 CONFIG_FILE="$1"
-NUM_FLOWS=0
-VECTOR_ACTIVE_NODE=""
-VECTOR_PASSIVE_NODE=""
 if [ ! -e "${CONFIG_FILE}" ] ; then
    echo >&2 "ERROR: Config file ${CONFIG_FILE} not found!"
    exit 1
 fi
-. "${CONFIG_FILE}"
-shift
 
-if [ "${VECTOR_PASSIVE_NODE}" = "" -o "${VECTOR_ACTIVE_NODE}" = "" -o ${NUM_FLOWS} -lt 1 ] ; then
+
+# ====== Check vector files =================================================
+echo -e "\e[34mChecking vector files ...\e[0m"
+VECTOR_ACTIVE_NODE=""
+VECTOR_PASSIVE_NODE=""
+NUM_FLOWS=0
+. "${CONFIG_FILE}"
+if [ "${VECTOR_PASSIVE_NODE}" == "" ] || [ "${VECTOR_ACTIVE_NODE}" == "" ] || [ ${NUM_FLOWS} -lt 1 ] ; then
    echo >&2 "ERROR: Bad vector file configuration!"
    exit 1
 fi
@@ -59,36 +106,16 @@ if [ ! -e "${VECTOR_PASSIVE_NODE}" ] ; then
    echo >&2 "ERROR: Vector file ${VECTOR_ACTIVE_NODE} of passive node not found!"
    exit 1
 fi
-
 OUTPUT_PREFIX="$(echo "${CONFIG_FILE}" | sed -e "s/.config$//g")"
 
 echo "Configuration:"
-echo "   - Input of Active Node (${NAME_ACTIVE_NODE}) -> ${VECTOR_ACTIVE_NODE}"
-echo "   - Input of Passive Node (${NAME_PASSIVE_NODE}) -> ${VECTOR_PASSIVE_NODE}"
-echo "   - Output prefix -> ${OUTPUT_PREFIX}"
-
-
-# ====== Get options ========================================================
-PLOT_COLOR_MODE="cmColor"
-PLOT_OWN_FILE="FALSE"
-while [ $# -gt 0 ] ; do
-   if [ "$1" = "-ownfile" ] ; then
-      PLOT_OWN_FILE="TRUE"
-   elif [ "$1" = "-colour" -o "$1" = "-color" ] ; then
-      PLOT_COLOR_MODE="cmColor"
-   elif [ "$1" = "-greyscale" -o "$1" = "-grayscale" ] ; then
-      PLOT_COLOR_MODE="cmGrayScale"
-   elif [ "$1" = "-blackandwhite" ] ; then
-      PLOT_COLOR_MODE="cmBlackAndWhite"
-   else
-      echo >&2 "ERROR: Invalid option $1!"
-      exit 1
-   fi
-   shift
-done
+echo " * Input of Active Node \"${NAME_ACTIVE_NODE}\": ${VECTOR_ACTIVE_NODE}"
+echo " * Input of Passive Node \"${NAME_PASSIVE_NODE}\": ${VECTOR_PASSIVE_NODE}"
+echo " * Output Prefix: ${OUTPUT_PREFIX}"
 
 
 # ====== Create combined data files =========================================
+echo -e "\e[34mCombining vector files for plotting input ...\e[0m"
 SEARCH_PATHS=". /usr/local/bin /usr/bin"
 COMBINESUMMARIES="combinesummaries"
 for searchPath in ${SEARCH_PATHS} ; do
@@ -104,7 +131,7 @@ SUMMARY_NAME="${OUTPUT_PREFIX}-summary.data.bz2"
    echo "--input=${VECTOR_ACTIVE_NODE}"
    echo "--values=\"\"${NAME_PASSIVE_NODE}\" 0\""
    echo "--input=${VECTOR_PASSIVE_NODE}"
-) | ${COMBINESUMMARIES} "${SUMMARY_NAME}" "NodeName IsActive" -quiet
+) | ${COMBINESUMMARIES} "${SUMMARY_NAME}" "NodeName IsActive" --quiet --line-numbers
 
 FLOW_SUMMARY_NAME="${OUTPUT_PREFIX}-flows.data.bz2"
 (
@@ -113,25 +140,31 @@ FLOW_SUMMARY_NAME="${OUTPUT_PREFIX}-flows.data.bz2"
       flowDescriptionVar="\$FLOW$i""_DESCRIPTION"
       activeVectorVar="\$FLOW$i""_VECTOR_ACTIVE_NODE"
       passiveVectorVar="\$FLOW$i""_VECTOR_PASSIVE_NODE"
-      eval flowDescription=${flowDescriptionVar}
-      eval activeVector=${activeVectorVar}
-      eval passiveVector=${passiveVectorVar}
+      flowDescription=""
+      activeVector=""
+      passiveVector=""
+      eval flowDescription="${flowDescriptionVar}"
+      eval activeVector="${activeVectorVar}"
+      eval passiveVector="${passiveVectorVar}"
 
       echo "--values=\"\"$flowDescription\" $i \"${NAME_ACTIVE_NODE}\" 1\""
-      echo "--input=$activeVector"
+      echo "--input=${activeVector}"
       echo "--values=\"\"$flowDescription\" $i \"${NAME_PASSIVE_NODE}\" 0\""
-      echo "--input=$passiveVector"
+      echo "--input=${passiveVector}"
       i=$(($i+1))
    done
-) | ${COMBINESUMMARIES} "${FLOW_SUMMARY_NAME}" "FlowName FlowID NodeName IsActive" -quiet
+) | ${COMBINESUMMARIES} "${FLOW_SUMMARY_NAME}" "FlowName FlowID NodeName IsActive" --quiet --line-numbers
 
 
-# ====== Locate plotting scripts ============================================
+# ====== Plot the results ===================================================
+echo -e "\e[34mPlotting the vectors ...\e[0m"
+
+# ------ Locate plotting scripts --------------------------------------------
 SEARCH_PATHS=". /usr/share/netperfmeter /usr/local/share/netperfmeter"
 PLOT_PROGRAM_DIR=""
 PLOT_PROGRAM_SCRIPT="plot-netperfmeter-results.R"
 for searchPath in ${SEARCH_PATHS} ; do
-   if [ -e "${searchPath}/${PLOT_PROGRAM_SCRIPT}" -a -e "${searchPath}/plotter.R" ] ; then
+   if [ -e "${searchPath}/${PLOT_PROGRAM_SCRIPT}" ] && [ -e "${searchPath}/plotter.R" ] ; then
       PLOT_PROGRAM_DIR=${searchPath}
       break
    fi
@@ -140,11 +173,11 @@ if [ "${PLOT_PROGRAM_DIR}" = "" ] ; then
    echo >&2 "ERROR: Cannot find ${PLOT_PROGRAM_SCRIPT} and plotter.R!"
    exit 1
 elif [ "${PLOT_PROGRAM_DIR}" = "." ] ; then
-   echo "   - NOTE: Using ${PLOT_PROGRAM_SCRIPT} and plotter.R from ${searchPath}!"
+   echo "Using ${PLOT_PROGRAM_SCRIPT} and plotter.R from ${searchPath}."
 fi
 
 
-# ====== Call the R script for plotting =====================================
+# ------ Call the R script for plotting -------------------------------------
 R CMD BATCH --slave --vanilla \
    "--args
       programDirectory=\"${PLOT_PROGRAM_DIR}\"
@@ -158,5 +191,5 @@ R CMD BATCH --slave --vanilla \
 
 
 # ====== Remove temporary files =============================================
-echo "Cleaning up"
-# rm -f "${SUMMARY_NAME}" "${FLOW_SUMMARY_NAME}"
+echo -e "\e[34mCleaning up ...\e[0m"
+rm -f "${SUMMARY_NAME}" "${FLOW_SUMMARY_NAME}"
