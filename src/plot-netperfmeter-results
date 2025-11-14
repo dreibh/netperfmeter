@@ -32,7 +32,7 @@ set -eu
 
 # ###### Usage ##############################################################
 usage () {
-   echo >&2 "Usage: $0 config_file [-w|--ownfile] [-c|--colour|--color|-g|--greyscale|--grayscale|-b|--blackandwhite]"
+   echo >&2 "Usage: $0 config_file [-w|--own-file] [-k|--keep-summaries] [-c|--colour|--color|-g|--greyscale|--grayscale|-b|--blackandwhite]"
    exit 1
 }
 
@@ -41,19 +41,24 @@ usage () {
 
 # ====== Handle arguments ===================================================
 GETOPT="$(PATH=/usr/local/bin:${PATH} which getopt)"
-options="$(${GETOPT} -o wcgbh --long ownfile,colour,color,greyscale,grayscale,blackandwhite,help -a -- "$@")"
+options="$(${GETOPT} -o wkcgbh --long own-file,ownfile,keep-summaries,colour,color,greyscale,grayscale,blackandwhite,help -a -- "$@")"
 # shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
    usage
 fi
 
+KEEP_SUMMARIES=0
 PLOT_COLOR_MODE="cmColor"
 PLOT_OWN_FILE="FALSE"
 eval set -- "${options}"
 while [ $# -gt 0 ] ; do
    case "$1" in
-      -w | --ownfile)
+      -w | --own-file | --ownfile)
          PLOT_OWN_FILE="TRUE"
+         shift
+         ;;
+      -k | --keep-summaries)
+         KEEP_SUMMARIES=1
          shift
          ;;
       -c | --colour | --color)
@@ -127,11 +132,11 @@ done
 
 SUMMARY_NAME="${OUTPUT_PREFIX}-summary.data.bz2"
 (
-   echo "--values=\"\"${NAME_ACTIVE_NODE}\" 1\""
+   echo -e "--values=\"\"${NAME_ACTIVE_NODE}\"\t1\""
    echo "--input=${VECTOR_ACTIVE_NODE}"
-   echo "--values=\"\"${NAME_PASSIVE_NODE}\" 0\""
+   echo -e "--values=\"\"${NAME_PASSIVE_NODE}\"\t0\""
    echo "--input=${VECTOR_PASSIVE_NODE}"
-) | ${COMBINESUMMARIES} "${SUMMARY_NAME}" "NodeName IsActive" --quiet --line-numbers
+) | ${COMBINESUMMARIES} "${SUMMARY_NAME}" $'NodeName\tIsActive' --separator $'\t' --line-numbers --quiet
 
 FLOW_SUMMARY_NAME="${OUTPUT_PREFIX}-flows.data.bz2"
 (
@@ -147,13 +152,13 @@ FLOW_SUMMARY_NAME="${OUTPUT_PREFIX}-flows.data.bz2"
       eval activeVector="${activeVectorVar}"
       eval passiveVector="${passiveVectorVar}"
 
-      echo "--values=\"\"$flowDescription\" $i \"${NAME_ACTIVE_NODE}\" 1\""
+      echo -e "--values=\"\"${flowDescription}\"\t$i\t\"${NAME_ACTIVE_NODE}\"\t1\""
       echo "--input=${activeVector}"
-      echo "--values=\"\"$flowDescription\" $i \"${NAME_PASSIVE_NODE}\" 0\""
+      echo -e "--values=\"\"${flowDescription}\"\t$i\t\"${NAME_PASSIVE_NODE}\"\t0\""
       echo "--input=${passiveVector}"
-      i=$(($i+1))
+      i=$((i+1))
    done
-) | ${COMBINESUMMARIES} "${FLOW_SUMMARY_NAME}" "FlowName FlowID NodeName IsActive" --quiet --line-numbers
+) | ${COMBINESUMMARIES} "${FLOW_SUMMARY_NAME}" $'FlowName\tFlowID\tNodeName\tIsActive' --separator $'\t' --line-numbers --quiet
 
 
 # ====== Plot the results ===================================================
@@ -192,4 +197,6 @@ R CMD BATCH --slave --vanilla \
 
 # ====== Remove temporary files =============================================
 echo -e "\e[34mCleaning up ...\e[0m"
-rm -f "${SUMMARY_NAME}" "${FLOW_SUMMARY_NAME}"
+if [ ${KEEP_SUMMARIES} -eq 0 ] ; then
+   rm -f "${SUMMARY_NAME}" "${FLOW_SUMMARY_NAME}"
+fi
