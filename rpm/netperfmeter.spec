@@ -168,6 +168,9 @@ BuildArch: noarch
 Requires: %{name} = %{version}-%{release}
 Requires: %{name}-pdfproctools = %{version}-%{release}
 Requires: R-core
+Requires: R-data.table
+Requires: R-dplyr
+Requires: R-ggplot2
 
 %description plotting
 NetPerfMeter is a network performance meter for the UDP,

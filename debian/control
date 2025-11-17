@@ -126,6 +126,9 @@ Package: netperfmeter-plotting
 Architecture: all
 Depends: pdfproctools,
          r-base,
+         r-cran-data.table,
+         r-cran-dplyr,
+         r-cran-ggplot2,
          ${misc:Depends}
 Description: Network Performance Meter (plotting program)
  NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
