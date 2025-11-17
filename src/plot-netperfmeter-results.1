@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd November 14, 2025
+.Dd November 17, 2025
 .Dt plot-netperfmeter-results 1
 .Os plot-netperfmeter-results
 .\" ###### Name #############################################################
@@ -40,9 +40,7 @@ config_name
 .br
 .Op Fl w | Fl Fl ownfile
 .br
-.Op Fl c | Fl Fl colour | Fl Fl color
-.Op Fl g | Fl Fl greyscale | Fl Fl grayscale
-.Op Fl b | Fl Fl blackandwhite
+.Op Fl p | Fl Fl per-flow-plots
 .Nm plot-netperfmeter-results
 .Op Fl h | Fl Fl help
 .\" ###### Description ######################################################
@@ -58,12 +56,8 @@ The following arguments have to be provided:
 The name of the config file written by NetPerfMeter.
 .It Fl w | Fl Fl ownfile
 Plot a separate PDF file for each page.
-.It Fl c | Fl Fl colour | Fl Fl color
-Create colour plot.
-.It Fl g | Fl Fl greyscale | Fl Fl grayscale
-Create grey-scale plot.
-.It Fl b | Fl Fl blackandwhite
-Create black and white plot.
+.It Fl p | Fl Fl per-flow-plots
+Also generate separate plots for each flow.
 .It Fl h | Fl Fl help
 Prints command-line parameters.
 .El
@@ -72,7 +66,9 @@ Prints command-line parameters.
 Some plot-netperfmeter-results usage examples:
 .Bl -tag -width indent
 .It plot-netperfmeter-results output.config
-Plot the vector file output.vec.bz2. The resulting PDF file will be named output.pdf.
+Plot the results given by output.config. The resulting PDF file will be named output.pdf.
+.It plot-netperfmeter-results output.config --per-flow-plots
+Plot the results given by output.config, including per-flow plots. The resulting PDF file will be named output.pdf.
 .It plot-netperfmeter-results output.config --ownfile
 Plot the results given by output.config. For each page, a separate PDF file is written. The resulting PDF files will be named output-<title>.pdf, where <title> corresponds to the page title.
 .It plot-netperfmeter-results --help

@@ -349,7 +349,6 @@ plotQoSStatistics <- function(inputData, flowSummaryData, nodeName) {
 # ###########################################################################
 
 # ###### Default Settings ###################################################
-plotColorMode  <- 2   # == cmColor
 plotOwnFile    <- TRUE
 plotFontFamily <- "Helvetica"
 plotPointSize  <- 12
@@ -361,23 +360,16 @@ plotPaper      <- "A4r"   # Use "special" for manual values! Or: A4/A4r.
 # ###### Command-Line Arguments #############################################
 args <- commandArgs(TRUE)
 # print(args)
-
 for(i in 1:length(args)) {
    eval(parse(text=args[i]))
-   if(i == 2) {
-      # ------ Include plotting functions -----------------------------------
-      # The first parameter must set "programDirectory". The further
-      # parameters may use constants defined in plotter.R. Therefore, plotter.R
-      # must be included before!
-      source(paste(sep="", programDirectory, "/plotter.R"))
-   }
 }
 
-# cat(sep="", "programDirectory=", programDirectory,    "\n")
-# cat(sep="", "configFile=",       configFile,    "\n")
-# cat(sep="", "summaryFile=",      summaryFile,    "\n")
-# cat(sep="", "pdfFilePrefix=",    pdfFilePrefix, "\n")
-# cat(sep="", "plotOwnFile=",      plotOwnFile,   "\n")
+# cat(sep="", "programDirectory=", programDirectory, "\n")
+# cat(sep="", "configFile=",       configFile,       "\n")
+# cat(sep="", "summaryFile=",      summaryFile,      "\n")
+# cat(sep="", "pdfFilePrefix=",    pdfFilePrefix,    "\n")
+# cat(sep="", "perFlowPlots=",     perFlowPlots,     "\n")
+# cat(sep="", "plotOwnFile=",      plotOwnFile,      "\n")
 
 
 # ====== Load input data ====================================================
@@ -408,7 +400,9 @@ plotNodeStats(data, NAME_PASSIVE_NODE)
 
 
 # ====== Flow QoS Statistics ================================================
-# plotQoSStatistics(summaryData, flowSummaryData)
+if(perFlowPlots == 1) {
+   plotQoSStatistics(summaryData, flowSummaryData)
+}
 
 
 # ====== Finish PDF file ====================================================

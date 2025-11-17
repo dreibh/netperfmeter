@@ -32,7 +32,7 @@ set -eu
 
 # ###### Usage ##############################################################
 usage () {
-   echo >&2 "Usage: $0 config_file [-w|--own-file] [-k|--keep-summaries] [-c|--colour|--color|-g|--greyscale|--grayscale|-b|--blackandwhite]"
+   echo >&2 "Usage: $0 config_file [-w|--own-file] [-k|--keep-summaries] [-p|--per-flow-plots]"
    exit 1
 }
 
@@ -41,14 +41,14 @@ usage () {
 
 # ====== Handle arguments ===================================================
 GETOPT="$(PATH=/usr/local/bin:${PATH} which getopt)"
-options="$(${GETOPT} -o wkcgbh --long own-file,ownfile,keep-summaries,colour,color,greyscale,grayscale,blackandwhite,help -a -- "$@")"
+options="$(${GETOPT} -o wkph --long own-file,ownfile,keep-summaries,per-flow-plots,help -a -- "$@")"
 # shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
    usage
 fi
 
 KEEP_SUMMARIES=0
-PLOT_COLOR_MODE="cmColor"
+PER_FLOW_PLOTS=0
 PLOT_OWN_FILE="FALSE"
 eval set -- "${options}"
 while [ $# -gt 0 ] ; do
@@ -61,16 +61,8 @@ while [ $# -gt 0 ] ; do
          KEEP_SUMMARIES=1
          shift
          ;;
-      -c | --colour | --color)
-         PLOT_COLOR_MODE="cmColor"
-         shift
-         ;;
-      -g | --greyscale | --grayscale)
-         PLOT_COLOR_MODE="cmGrayScale"
-         shift
-         ;;
-      -b | ---blackandwhite)
-         PLOT_COLOR_MODE="cmBlackAndWhite"
+      -p | --per-flow-plots)
+         PER_FLOW_PLOTS=1
          shift
          ;;
       -h | --help)
@@ -98,6 +90,7 @@ echo -e "\e[34mChecking vector files ...\e[0m"
 VECTOR_ACTIVE_NODE=""
 VECTOR_PASSIVE_NODE=""
 NUM_FLOWS=0
+# shellcheck disable=SC1090
 . "${CONFIG_FILE}"
 if [ "${VECTOR_PASSIVE_NODE}" == "" ] || [ "${VECTOR_ACTIVE_NODE}" == "" ] || [ ${NUM_FLOWS} -lt 1 ] ; then
    echo >&2 "ERROR: Bad vector file configuration!"
@@ -111,6 +104,7 @@ if [ ! -e "${VECTOR_PASSIVE_NODE}" ] ; then
    echo >&2 "ERROR: Vector file ${VECTOR_ACTIVE_NODE} of passive node not found!"
    exit 1
 fi
+# shellcheck disable=SC2001
 OUTPUT_PREFIX="$(echo "${CONFIG_FILE}" | sed -e "s/.config$//g")"
 
 echo "Configuration:"
@@ -169,16 +163,16 @@ SEARCH_PATHS=". /usr/share/netperfmeter /usr/local/share/netperfmeter"
 PLOT_PROGRAM_DIR=""
 PLOT_PROGRAM_SCRIPT="plot-netperfmeter-results.R"
 for searchPath in ${SEARCH_PATHS} ; do
-   if [ -e "${searchPath}/${PLOT_PROGRAM_SCRIPT}" ] && [ -e "${searchPath}/plotter.R" ] ; then
+   if [ -e "${searchPath}/${PLOT_PROGRAM_SCRIPT}" ] ; then
       PLOT_PROGRAM_DIR=${searchPath}
       break
    fi
 done
 if [ "${PLOT_PROGRAM_DIR}" = "" ] ; then
-   echo >&2 "ERROR: Cannot find ${PLOT_PROGRAM_SCRIPT} and plotter.R!"
+   echo >&2 "ERROR: Cannot find ${PLOT_PROGRAM_SCRIPT}!"
    exit 1
 elif [ "${PLOT_PROGRAM_DIR}" = "." ] ; then
-   echo "Using ${PLOT_PROGRAM_SCRIPT} and plotter.R from ${searchPath}."
+   echo "Using ${PLOT_PROGRAM_SCRIPT} from ${searchPath}."
 fi
 
 
@@ -190,7 +184,7 @@ R CMD BATCH --slave --vanilla \
       summaryFile=\"${SUMMARY_NAME}\"
       flowSummaryFile=\"${FLOW_SUMMARY_NAME}\"
       pdfFilePrefix=\"${OUTPUT_PREFIX}\"
-      plotColorMode=${PLOT_COLOR_MODE}
+      perFlowPlots=${PER_FLOW_PLOTS}
       plotOwnFile=${PLOT_OWN_FILE}" \
    "${PLOT_PROGRAM_DIR}/${PLOT_PROGRAM_SCRIPT}" /dev/stdout
 
