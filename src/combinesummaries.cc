@@ -66,7 +66,8 @@ void addDataFile(OutputFile&         outputFile,
                  unsigned long long& outputLineNumber,
                  const std::string&  varNames,
                  const std::string&  varValues,
-                 const std::string&  inputFileName)
+                 const std::string&  inputFileName,
+                 const char*         separator = "\t")
 {
    // ====== Open input file ================================================
    InputFile       inputFile;
@@ -89,25 +90,40 @@ void addDataFile(OutputFile&         outputFile,
       }
 
       // ====== Process line ================================================
-      if(inputFile.getLine() == 1) {
-         if(outputLineNumber == 0) {
-            if(outputFile.printf("%s SubLineNo %s\n", varNames.c_str(), buffer) == false) {
+
+      if(withLineNumbers) {
+         if(inputFile.getLine() == 1) {
+            if(outputLineNumber == 0) {
+               if(outputFile.printf("%s%sSubLineNo%s%s\n", varNames.c_str(), separator, separator, buffer) == false) {
+                  outputFile.finish();
+                  exit(1);
+               }
+            }
+         }
+         else {
+            if(outputFile.printf("%06llu%s%s%s%s\n",
+                                 outputLineNumber, separator,
+                                 varValues.c_str(), separator,
+                                 buffer) == false) {
                outputFile.finish();
                exit(1);
             }
          }
       }
       else {
-         if(withLineNumbers) {
-            if(outputFile.printf("%07llu ", outputLineNumber) == false) {
+         if(inputFile.getLine() == 1) {
+            if(outputLineNumber == 0) {
+               if(outputFile.printf("%s%s%s\n", varNames.c_str(), separator, buffer) == false) {
+                  outputFile.finish();
+                  exit(1);
+               }
+            }
+         }
+         else {
+            if(outputFile.printf("%s%s%s\n", varValues.c_str(), separator, buffer) == false) {
                outputFile.finish();
                exit(1);
             }
-         }
-         if(outputFile.printf("%s %llu %s\n",
-                              varValues.c_str(), inputFile.getLine(), buffer) == false) {
-            outputFile.finish();
-            exit(1);
          }
       }
       outputLineNumber++;
@@ -149,10 +165,12 @@ int main(int argc, char** argv)
    bool         quietMode        = false;
    bool         withLineNumbers  = false;
    unsigned int compressionLevel = 9;
+   const char*  separator        = "\t";
 
    // ====== Handle command-line arguments ==================================
    const static struct option long_options[] = {
       { "compress",                  required_argument, 0, 'c' },
+      { "separator",                 required_argument, 0, 's' },
       { "line-numbers",              no_argument,       0, 'n' },
       { "quiet",                     no_argument,       0, 'q' },
 
@@ -163,7 +181,7 @@ int main(int argc, char** argv)
 
    int option;
    int longIndex;
-   while( (option = getopt_long_only(argc, argv, "c:nqhv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "c:s:nqhv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'c':
             compressionLevel = atol(optarg);
@@ -173,6 +191,9 @@ int main(int argc, char** argv)
             else if(compressionLevel > 9) {
                compressionLevel = 9;
             }
+          break;
+         case 's':
+            separator = optarg;
           break;
          case 'n':
             withLineNumbers = true;
@@ -265,7 +286,8 @@ int main(int argc, char** argv)
             exit(1);
          }
          addDataFile(outputFile, withLineNumbers, outputLineNumber,
-                     varNames, varValues, std::string((const char*)&command[8]));
+                     varNames, varValues, std::string((const char*)&command[8]),
+                     separator);
          varValues = "";
       }
       else if(!(strncmp(command, "--varnames=", 11))) {

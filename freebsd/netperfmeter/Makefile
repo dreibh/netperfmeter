@@ -1,6 +1,5 @@
 PORTNAME=	netperfmeter
 DISTVERSION=	2.0.0~rc1.11
-PORTREVISION=	1
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.nntb.no/~dreibh/netperfmeter/download/
 
@@ -12,10 +11,14 @@ LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
 BUILD_DEPENDS=	gm:graphics/GraphicsMagick \
-		pdf2svg:graphics/pdf2svg \
-		gs:print/ghostscript10
+		gs:print/ghostscript10 \
+		pdf2svg:graphics/pdf2svg
 
-USES=		cmake compiler:c11 desktop-file-utils shebangfix tar:xz
+RUN_DEPENDS=	R-cran-data.table>0:devel/R-cran-data.table \
+		R-cran-dplyr>0:math/R-cran-dplyr \
+		R-cran-ggplot2>0:graphics/R-cran-ggplot2
+
+USES=		cmake desktop-file-utils shebangfix tar:xz
 
 SHEBANG_FILES=	src/pdfembedfonts src/setpdfmetadata src/plot-netperfmeter-results
 

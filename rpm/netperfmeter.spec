@@ -19,14 +19,14 @@ BuildRequires: valgrind-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 
 Requires: %{name}-common = %{version}-%{release}
+Recommends: %{name}-examples = %{version}-%{release}
 Recommends: %{name}-plotting = %{version}-%{release}
-Recommends: bc
 Recommends: hipercontracer
 Recommends: keyutils
 Recommends: ktls-utils
 Recommends: iputils
 Recommends: wireshark-cli
-Recommends: subnetcalc >= 2.0.2
+Recommends: subnetcalc
 Suggests: %{name}-service = %{version}-%{release}
 Suggests: dynmhs
 Suggests: td-system-info
@@ -34,21 +34,23 @@ Suggests: traceroute
 
 
 %description
-NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP, and
-DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
+NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
+and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
 bidirectional flows to an endpoint and measures the resulting flow bandwidths
 and QoS. Flows can be saturated (i.e. “send as much as possible”) or
-non-saturated with frame rate and frame sizes (like a multimedia transmission).
-Non-saturated flows can be configured with constant or variable frame rate/frame
-size, i.e. to realise Constant Bit Rate (CBR) or Variable Bit Rate (VBR)
-traffic. For both, frame rate and frame size, it is not only possible to set
-constant values but to also to use random distributions. Furthermore, flows can
-be set up as on/off flows. Of course, the flow parameters can be configured
-individually per flow and flow direction. The measurement results can be
-recorded as scalar files (summary of the run) and vector files (time series).
-These files can be processed further, e.g. for detailed analysis and plotting of
-the results. The Wireshark network protocol analyser provides out-of-the-box
-support for analysing NetPerfMeter packet traffic.
+non-saturated with frame rate and frame sizes (like a multimedia
+transmission). Non-saturated flows can be configured with constant or
+variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
+Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
+not only possible to set constant values but to also to use random
+distributions. Furthermore, flows can be set up as on/off flows. Of course,
+the flow parameters can be configured individually per flow and flow
+direction. The measurement results can be recorded as scalar files (summary
+of the run) and vector files (time series). These files can be processed
+further, e.g. for detailed analysis and plotting of the results. The
+Wireshark network protocol analyser provides out-of-the-box support for
+analysing NetPerfMeter packet traffic.
+This package contains the measurement program.
 
 %prep
 %setup -q
@@ -102,6 +104,8 @@ further, e.g. for detailed analysis and plotting of the results. The
 Wireshark network protocol analyser provides out-of-the-box support for
 analysing NetPerfMeter packet traffic.
 
+This package contains common NetPerfMeter files.
+
 %files common
 %{_datadir}/icons/hicolor/*x*/apps/netperfmeter.png
 %{_datadir}/icons/hicolor/scalable/apps/netperfmeter.svg
@@ -109,9 +113,38 @@ analysing NetPerfMeter packet traffic.
 %{_datadir}/netperfmeter/netperfmeter.bib
 %{_datadir}/netperfmeter/netperfmeter.pdf
 %{_datadir}/netperfmeter/netperfmeter.png
+
+
+%package examples
+Summary: Network Performance Meter (example scripts and files)
+Group: Applications/Internet
+BuildArch: noarch
+
+%description examples
+NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
+and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
+bidirectional flows to an endpoint and measures the resulting flow bandwidths
+and QoS. Flows can be saturated (i.e. “send as much as possible”) or
+non-saturated with frame rate and frame sizes (like a multimedia
+transmission). Non-saturated flows can be configured with constant or
+variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
+Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
+not only possible to set constant values but to also to use random
+distributions. Furthermore, flows can be set up as on/off flows. Of course,
+the flow parameters can be configured individually per flow and flow
+direction. The measurement results can be recorded as scalar files (summary
+of the run) and vector files (time series). These files can be processed
+further, e.g. for detailed analysis and plotting of the results. The
+Wireshark network protocol analyser provides out-of-the-box support for
+analysing NetPerfMeter packet traffic.
+This package contains some NetPerfMeter example scripts and results files.
+
+%files examples
+%{_datadir}/netperfmeter/plot-experiment1
 %{_datadir}/netperfmeter/results-examples/*.pcap*
 %{_datadir}/netperfmeter/results-examples/*.sca*
 %{_datadir}/netperfmeter/results-examples/*.vec*
+%{_datadir}/netperfmeter/run-experiment1
 
 
 %package service
@@ -124,14 +157,23 @@ Suggests: hipercontracer-trigger
 Suggests: td-system-tools
 
 %description service
-NetPerfMeter is a network performance meter for the UDP,
-TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
-It simultaneously transmits bidirectional flows to an endpoint
-and measures the resulting flow bandwidths and QoS. The
-results are written as vector and scalar files. The vector
-files can e.g. be used to create plots of the results.
-This package sets up a service running a NetPerfMeter
-server instance.
+NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
+and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
+bidirectional flows to an endpoint and measures the resulting flow bandwidths
+and QoS. Flows can be saturated (i.e. “send as much as possible”) or
+non-saturated with frame rate and frame sizes (like a multimedia
+transmission). Non-saturated flows can be configured with constant or
+variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
+Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
+not only possible to set constant values but to also to use random
+distributions. Furthermore, flows can be set up as on/off flows. Of course,
+the flow parameters can be configured individually per flow and flow
+direction. The measurement results can be recorded as scalar files (summary
+of the run) and vector files (time series). These files can be processed
+further, e.g. for detailed analysis and plotting of the results. The
+Wireshark network protocol analyser provides out-of-the-box support for
+analysing NetPerfMeter packet traffic.
+This package sets up a service running a NetPerfMeter server instance.
 
 %files service
 %{_prefix}/lib/systemd/system/netperfmeter.service
@@ -170,14 +212,28 @@ BuildArch: noarch
 Requires: %{name} = %{version}-%{release}
 Requires: %{name}-pdfproctools = %{version}-%{release}
 Requires: R-core
+Requires: R-data.table
+Requires: R-dplyr
+Requires: R-ggplot2
+Recommends: %{name}-examples = %{version}-%{release}
 
 %description plotting
-NetPerfMeter is a network performance meter for the UDP,
-TCP, MPTCP, SCTP and DCCP transport protocols over IPv4 and IPv6.
-It simultaneously transmits bidirectional flows to an endpoint
-and measures the resulting flow bandwidths and QoS. The
-results are written as vector and scalar files. The vector
-files can e.g. be used to create plots of the results.
+NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
+and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
+bidirectional flows to an endpoint and measures the resulting flow bandwidths
+and QoS. Flows can be saturated (i.e. “send as much as possible”) or
+non-saturated with frame rate and frame sizes (like a multimedia
+transmission). Non-saturated flows can be configured with constant or
+variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
+Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
+not only possible to set constant values but to also to use random
+distributions. Furthermore, flows can be set up as on/off flows. Of course,
+the flow parameters can be configured individually per flow and flow
+direction. The measurement results can be recorded as scalar files (summary
+of the run) and vector files (time series). These files can be processed
+further, e.g. for detailed analysis and plotting of the results. The
+Wireshark network protocol analyser provides out-of-the-box support for
+analysing NetPerfMeter packet traffic.
 This package contains a plotting program for the results.
 
 %files plotting
@@ -185,6 +241,39 @@ This package contains a plotting program for the results.
 %{_datadir}/netperfmeter/plot-netperfmeter-results.R
 %{_datadir}/netperfmeter/plotter.R
 %{_mandir}/man1/plot-netperfmeter-results.1.gz
+
+
+%package all
+Summary: NetPerfMeter metapackage for all sub-packages
+Group: Applications/Internet
+BuildArch: noarch
+Requires: %{name} = %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
+Requires: %{name}-examples = %{version}-%{release}
+Requires: %{name}-plotting = %{version}-%{release}
+Requires: %{name}-pdfproctools = %{version}-%{release}
+Requires: %{name}-service = %{version}-%{release}
+
+%description all
+NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
+and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
+bidirectional flows to an endpoint and measures the resulting flow bandwidths
+and QoS. Flows can be saturated (i.e. “send as much as possible”) or
+non-saturated with frame rate and frame sizes (like a multimedia
+transmission). Non-saturated flows can be configured with constant or
+variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
+Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
+not only possible to set constant values but to also to use random
+distributions. Furthermore, flows can be set up as on/off flows. Of course,
+the flow parameters can be configured individually per flow and flow
+direction. The measurement results can be recorded as scalar files (summary
+of the run) and vector files (time series). These files can be processed
+further, e.g. for detailed analysis and plotting of the results. The
+Wireshark network protocol analyser provides out-of-the-box support for
+analysing NetPerfMeter packet traffic.
+This metapackage installs all sub-packages of NetPerfMeter.
+
+%files all
 
 
 %changelog

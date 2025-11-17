@@ -25,14 +25,9 @@
 # Contact:  dreibh@simula.no
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
-
-# ###### Set global variable (given as name string) to given value ##########
-setGlobalVariable <- function(variable, value)
-{
-   globalEnv <- sys.frame()
-   assign(variable, value, envir=globalEnv)
-}
-
+library("data.table", warn.conflicts = FALSE)
+library("dplyr",      warn.conflicts = FALSE)
+library("ggplot2")
 
 
 # ###########################################################################
@@ -41,6 +36,15 @@ setGlobalVariable <- function(variable, value)
 
 pdfMetadataFile <- NA
 pdfMetadataPage <- NA
+
+
+# ###### Set global variable (given as name string) to given value ##########
+setGlobalVariable <- function(variable, value)
+{
+   globalEnv <- sys.frame()
+   assign(variable, value, envir=globalEnv)
+}
+
 
 # ###### Create PDF info ####################################################
 openPDFMetadata <- function(name)
@@ -88,35 +92,70 @@ closePDFMetadata <- function()
 
 
 # ###########################################################################
+# #### Plotting Themes                                                   ####
+# ###########################################################################
+
+# ###### Plot themes ########################################################
+PLOTTHEME_PAPER <- theme(
+   legend.position      = "bottom",
+   legend.justification = "center",
+   legend.title         = element_text(size=12, face = "bold", colour="black", hjust=0.5),
+   legend.text          = element_text(size=12),
+   legend.key.size      = unit(1.00, "cm"),
+   legend.key.width     = unit(1.50, "cm"),
+   legend.background    = element_blank(),
+
+   plot.title           = element_blank(),
+   axis.title           = element_text(size=12, face="bold"),
+   axis.text.x          = element_text(size=10, colour="black"),
+   axis.text.y          = element_text(size=10, angle=90, hjust=0.5, colour="black"),
+   axis.ticks           = element_line(colour = "black"),
+
+   strip.text           = element_text(size=10, face="bold"),
+
+   panel.border         = element_rect(colour = "black", fill = NA),
+   panel.background     = element_blank(),
+   panel.grid.major     = element_line(color = "gray40", linewidth = 0.25, linetype = 1),
+   panel.grid.minor     = element_line(color = "gray20", linewidth = 0.10, linetype = 2)
+)
+
+PLOTTHEME_FANCY <- theme(
+   legend.position      = "bottom",
+   legend.justification = "center",
+   legend.title         = element_text(size=12, face = "bold", colour="black", hjust=0.5),
+   legend.text          = element_text(size=12),
+   legend.key.size      = unit(1.00, "cm"),
+   legend.key.width     = unit(1.50, "cm"),
+   # legend.background    = element_rect(colour = "black", fill = "#ffffaa55", linewidth=1),
+   # legend.background    = element_rect(colour = "black", fill = NA, linewidth=1),
+   legend.background    = element_blank(),
+
+   plot.title           = element_text(size=16, hjust = 0.5, face="bold"),
+   axis.title           = element_text(size=12, face="bold"),
+   axis.text.x          = element_text(size=10, colour="black"),
+   axis.text.y          = element_text(size=10, angle=90, hjust=0.5, colour="black"),
+   axis.ticks           = element_line(colour = "black"),
+
+   strip.text           = element_text(size=10, face="bold"),
+
+   panel.border         = element_rect(colour = "black", fill = NA),
+   # panel.background     = element_blank(),
+   panel.grid.major     = element_line(color = "gray40", linewidth = 0.25, linetype = 1),
+   panel.grid.minor     = element_line(color = "gray20", linewidth = 0.10, linetype = 2)
+)
+
+
+
+# ###########################################################################
 # #### Plotting                                                          ####
 # ###########################################################################
 
 # ###### Create a plot ######################################################
-createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vSet=c(), vTitle="",type="linesx", bookmarkLevel=3)
+createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle,
+                       vSet = c(), vTitle = "", bookmarkLevel = 3)
 {
-   cat(sep="", "Plotting ", title, " ...\n")
+   cat(sep="", pdfMetadataPage + 1, ": Plotting ", title, " ...\n")
 
-   xSet <- dataSet$RelTime
-   xTitle <- "Time{t}[s]"
-
-   wSet <- c()
-   wTitle <- ""
-
-   aSet <- c()
-   aTitle <- ""
-   bSet <- c()
-   bTitle <- ""
-   pSet <- c()
-   pTitle <- ""
-
-   if(plotColorMode != cmColor) {
-      baseColor <- par("fg")
-   }
-
-   xAxisTicks <- getIntegerTicks(c(0, gRuntime))   # Set to c() for automatic setting
-   yAxisTicks <- getIntegerTicks(ySet)   # Set to c() for automatic setting
-
-   opar <- par(fg=baseColor)
    if(plotOwnFile) {
       names   <- unlist(strsplit(title, " "))
       pdfName <- paste(sep="", pdfFilePrefix, "-")
@@ -131,18 +170,24 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vS
    else {
       addBookmarkInPDFMetadata(bookmarkLevel, title)
    }
-   plotstd6(title,
-            pTitle, aTitle, bTitle, xTitle, yTitle, zTitle,
-            pSet, aSet, bSet, xSet, ySet, zSet,
-            vSet, wSet, vTitle, wTitle,
-            xAxisTicks=xAxisTicks,
-            yAxisTicks=yAxisTicks,
-            type=type,
-            colorMode=plotColorMode,
-            hideLegend=FALSE,
-            legendSize=plotLegendSize,
-            pStart=0)
-   par(opar)
+
+   p <- ggplot(dataSet,
+               aes(x     = RelTime,
+                   y     = ySet,
+                   color = zSet,
+                   linetype = vSet)) +
+           PLOTTHEME_FANCY +
+           theme(panel.border = element_rect(colour = baseColor, fill = NA, linewidth = 2)) +
+           geom_line(linewidth = 1) +
+           labs(title = title,
+                x     = "Time t [s]",
+                y     = yTitle,
+                color = zTitle,
+                linetype = vTitle) +
+           guides(color    = guide_legend(ncol = 3),
+                  linetype = guide_legend(ncol = 1))
+   print(p)
+
    if(plotOwnFile) {
       dev.off()
       processPDFbyGhostscript(pdfName)
@@ -162,60 +207,60 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle, vS
 plotNodeStats <- function(inputData, nodeName)
 {
    addBookmarkInPDFMetadata(1, paste(sep="", "Node ''", nodeName, "''"))
+   data <- inputData %>% filter( Action != "Lost" )
 
    # ====== Input/Output Rates ==============================================
    addBookmarkInPDFMetadata(2, "Input/Output Rates")
-   data <- subset(inputData, (inputData$Action != "Lost"))
-   createPlot(data, paste(sep="", "Bit Rate Sent/Received at Node ''", nodeName, "''"),
+   createPlot(data, paste(sep="", "Bit Rate Sent/Received on Node ''", nodeName, "''"),
               (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
-              data$Description, "Flow{F}", data$Action, "Action{A}")
-   createPlot(data, paste(sep="", "Byte Rate Sent/Received at Node ''", nodeName, "''"),
+              data$Description, "Flow F", data$Action, "Action A")
+   createPlot(data, paste(sep="", "Byte Rate Sent/Received on Node ''", nodeName, "''"),
               (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
-              data$Description, "Flow{F}", data$Action, "Action{A}")
-   createPlot(data, paste(sep="", "Packet Rate Sent/Received at Node ''", nodeName, "''"),
+              data$Description, "Flow F", data$Action, "Action A")
+   createPlot(data, paste(sep="", "Packet Rate Sent/Received on Node ''", nodeName, "''"),
               data$RelPackets / data$Interval, "Packet Rate [Packets/s]", "green4",
-              data$Description, "Flow{F}", data$Action, "Action{A}")
-   createPlot(data, paste(sep="", "Frame Rate Sent/Received at Node ''", nodeName, "''"),
+              data$Description, "Flow F", data$Action, "Action A")
+   createPlot(data, paste(sep="", "Frame Rate Sent/Received on Node ''", nodeName, "''"),
               data$RelFrames / data$Interval, "Frame Rate [Frames/s]", "yellow4",
-              data$Description, "Flow{F}", data$Action, "Action{A}")
+              data$Description, "Flow F", data$Action, "Action A")
 
-   # ====== Input/Output Absolute ===========================================
-   addBookmarkInPDFMetadata(2, "Input/Output Absolute")
-   data <- subset(inputData, TRUE) # (inputData$Action != "Lost"))
-   createPlot(data, paste(sep="", "Bits Sent/Received at Node ''", nodeName, "''"),
+   # ====== Input/Output Volumes ============================================
+   addBookmarkInPDFMetadata(2, "Input/Output Volumes")
+   createPlot(data, paste(sep="", "Bits Sent/Received on Node ''", nodeName, "''"),
               (data$AbsBytes * 8 / 1000), "Bits [Kbit]", "blue4",
-              data$Description, "Flow{F}", data$Action, "Action{A}")
-   createPlot(data, paste(sep="", "Bytes Sent/Received at Node ''", nodeName, "''"),
+              data$Description, "Flow F", data$Action, "Action A")
+   createPlot(data, paste(sep="", "Bytes Sent/Received on Node ''", nodeName, "''"),
               (data$AbsBytes / 1000), "Bytes [KiB]", "blue2",
-              data$Description, "Flow{F}", data$Action, "Action{A}")
-   createPlot(data, paste(sep="", "Packets Sent/Received at Node ''", nodeName, "''"),
+              data$Description, "Flow F", data$Action, "Action A")
+   createPlot(data, paste(sep="", "Packets Sent/Received on Node ''", nodeName, "''"),
               data$AbsPackets, "Packets [1]", "green4",
-              data$Description, "Flow{F}", data$Action, "Action{A}")
-   createPlot(data, paste(sep="", "Frames Sent/Received at Node ''", nodeName, "''"),
+              data$Description, "Flow F", data$Action, "Action A")
+   createPlot(data, paste(sep="", "Frames Sent/Received on Node ''", nodeName, "''"),
               data$AbsFrames, "Frames [s]", "yellow4",
-              data$Description, "Flow{F}", data$Action, "Action{A}")
+              data$Description, "Flow F", data$Action, "Action A")
 
    # ====== Jitter ==========================================================
    addBookmarkInPDFMetadata(2, "Quality of Service")
-   data <- subset(inputData, (inputData$Action == "Received"))
-   createPlot(data, paste(sep="", "Jitter at Node ''", nodeName, "''"),
+   data <- inputData %>% filter( Action == "Received" )
+
+   createPlot(data, paste(sep="", "Jitter on Node ''", nodeName, "''"),
               data$Jitter, "Jitter [ms]", "gold4",
-              data$Description, "Flow{F}", data$Action, "Action{A}")
+              data$Description, "Flow F", data$Action, "Action A")
 
    # ====== Loss ============================================================
-   data <- subset(inputData, (inputData$Action == "Lost"))
-   createPlot(data, paste(sep="", "Bit Loss Rate at Node ''", nodeName, "''"),
+   data <- inputData %>% filter( Action == "Lost" )
+   createPlot(data, paste(sep="", "Bit Loss Rate on Node ''", nodeName, "''"),
               (data$RelBytes * 8 / 1000) / data$Interval, "Byte Loss Rate [Kbit/s]", "red4",
-              data$Description, "Flow{F}")
-   createPlot(data, paste(sep="", "Byte Loss Rate at Node ''", nodeName, "''"),
+              data$Description, "Flow F")
+   createPlot(data, paste(sep="", "Byte Loss Rate on Node ''", nodeName, "''"),
               data$RelBytes / data$Interval, "Byte Loss Rate [KiB/s]", "red2",
-              data$Description, "Flow{F}")
-   createPlot(data, paste(sep="", "Packet Loss Rate at Node ''", nodeName, "''"),
+              data$Description, "Flow F")
+   createPlot(data, paste(sep="", "Packet Loss Rate on Node ''", nodeName, "''"),
               data$RelPackets / data$Interval, "Packet Loss Rate [Packets/s]", "red3",
-              data$Description, "Flow{F}")
-   createPlot(data, paste(sep="", "Frame Loss Rate at Node ''", nodeName, "''"),
+              data$Description, "Flow F")
+   createPlot(data, paste(sep="", "Frame Loss Rate on Node ''", nodeName, "''"),
               data$RelFrames / data$Interval, "Frame Loss Rate [Frames/s]", "red1",
-              data$Description, "Flow{F}")
+              data$Description, "Flow F")
 }
 
 
@@ -246,18 +291,18 @@ plotQoSStatistics <- function(inputData, flowSummaryData, nodeName) {
                         (inputData$FlowID == flowLevels[i]) &
                            (inputData$IsActive == isActive) & (inputData$FlowID != -1) &
                            (inputData$Action != "Lost"))
-         createPlot(data, paste(sep="", "Bit Rate Sent/Received for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+         createPlot(data, paste(sep="", "Bit Rate Sent/Received for Flow ''", flowName, "'' on Node ''", nodeName, "''"),
                     (data$RelBytes * 8 / 1000) / data$Interval, "Bit Rate [Kbit/s]", "blue4",
-                    data$Action, "Action{A}", data$Description, "Flow{F}", bookmarkLevel=5)
-         createPlot(data, paste(sep="", "Byte Rate Sent/Received for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+                    data$Action, "Action A", data$Description, "Flow F", bookmarkLevel=5)
+         createPlot(data, paste(sep="", "Byte Rate Sent/Received for Flow ''", flowName, "'' on Node ''", nodeName, "''"),
                     (data$RelBytes / 1000) / data$Interval, "Byte Rate [KiB/s]", "blue2",
-                    data$Action, "Action{A}", data$Description, "Flow{F}", bookmarkLevel=5)
-         createPlot(data, paste(sep="", "Packet Rate Sent/Received for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+                    data$Action, "Action A", data$Description, "Flow F", bookmarkLevel=5)
+         createPlot(data, paste(sep="", "Packet Rate Sent/Received for Flow ''", flowName, "'' on Node ''", nodeName, "''"),
                     data$RelPackets / data$Interval, "Packet Rate [Packets/s]", "green4",
-                    data$Action, "Action{A}", data$Description, "Flow{F}", bookmarkLevel=5)
-         createPlot(data, paste(sep="", "Frame Rate Sent/Received for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+                    data$Action, "Action A", data$Description, "Flow F", bookmarkLevel=5)
+         createPlot(data, paste(sep="", "Frame Rate Sent/Received for Flow ''", flowName, "'' on Node ''", nodeName, "''"),
                     data$RelFrames / data$Interval, "Frame Rate [Frames/s]", "yellow4",
-                    data$Action, "Action{A}", data$Description, "Flow{F}", bookmarkLevel=5)
+                    data$Action, "Action A", data$Description, "Flow F", bookmarkLevel=5)
 
          # ====== Input/Output Absolute =====================================
          addBookmarkInPDFMetadata(4, "Input/Output Absolute")
@@ -265,18 +310,18 @@ plotQoSStatistics <- function(inputData, flowSummaryData, nodeName) {
                         (inputData$FlowID == flowLevels[i]) &
                            (inputData$IsActive == isActive) & (inputData$FlowID != -1) )
                            # & (inputData$Action != "Lost"))
-         createPlot(data, paste(sep="", "Bits Sent/Received for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+         createPlot(data, paste(sep="", "Bits Sent/Received for Flow ''", flowName, "'' on Node ''", nodeName, "''"),
                     (data$AbsBytes * 8 / 1000), "Bits [Kbit]", "blue4",
-                    data$Action, "Action{A}", data$Description, "Flow{F}", bookmarkLevel=5)
-         createPlot(data, paste(sep="", "Bytes Sent/Received for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+                    data$Action, "Action A", data$Description, "Flow F", bookmarkLevel=5)
+         createPlot(data, paste(sep="", "Bytes Sent/Received for Flow ''", flowName, "'' on Node ''", nodeName, "''"),
                     (data$AbsBytes / 1000), "Bytes [KiB]", "blue2",
-                    data$Action, "Action{A}", data$Description, "Flow{F}", bookmarkLevel=5)
-         createPlot(data, paste(sep="", "Packets Sent/Received for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+                    data$Action, "Action A", data$Description, "Flow F", bookmarkLevel=5)
+         createPlot(data, paste(sep="", "Packets Sent/Received for Flow ''", flowName, "'' on Node ''", nodeName, "''"),
                     data$AbsPackets, "Packets [1]", "green4",
-                    data$Action, "Action{A}", data$Description, "Flow{F}", bookmarkLevel=5)
-         createPlot(data, paste(sep="", "Frames Sent/Received for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+                    data$Action, "Action A", data$Description, "Flow F", bookmarkLevel=5)
+         createPlot(data, paste(sep="", "Frames Sent/Received for Flow ''", flowName, "'' on Node ''", nodeName, "''"),
                     data$AbsFrames, "Frames [s]", "yellow4",
-                    data$Action, "Action{A}", data$Description, "Flow{F}", bookmarkLevel=5)
+                    data$Action, "Action A", data$Description, "Flow F", bookmarkLevel=5)
 
          # ====== Quality of Service ========================================
          addBookmarkInPDFMetadata(4, "Quality of Service")
@@ -284,14 +329,14 @@ plotQoSStatistics <- function(inputData, flowSummaryData, nodeName) {
                         (flowSummaryData$FlowID == flowLevels[i]) &
                            (flowSummaryData$IsActive == isActive))
          if(length(data$FlowID) > 0) {   # May be empty, if no packets have been sent in this direction!
-            createPlot(data, paste(sep="", "Per-Message Delay for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+            createPlot(data, paste(sep="", "Per-Message Delay for Flow ''", flowName, "'' on Node ''", nodeName, "''"),
                        data$Delay, "Delay [ms]", "orange2",
                        c(), NA,   # data$NodeName, "Node{N}",
-                       type="p", bookmarkLevel=5)
-            createPlot(data, paste(sep="", "Per-Message Jitter for Flow ''", flowName, "'' at Node ''", nodeName, "''"),
+                       bookmarkLevel=5)
+            createPlot(data, paste(sep="", "Per-Message Jitter for Flow ''", flowName, "'' on Node ''", nodeName, "''"),
                        data$Jitter, "Jitter [ms]", "gold4",
                        c(), NA,   # data$NodeName, "Node{N}",
-                       type="p", bookmarkLevel=5)
+                       bookmarkLevel=5)
          }
       }
    }
@@ -304,50 +349,41 @@ plotQoSStatistics <- function(inputData, flowSummaryData, nodeName) {
 # ###########################################################################
 
 # ###### Default Settings ###################################################
-plotColorMode  <- 2   # == cmColor
 plotOwnFile    <- TRUE
 plotFontFamily <- "Helvetica"
-plotPointSize  <- 18      # Use 22 for 10x10 plots
-plotLegendSize <- 0.80
+plotPointSize  <- 12
 plotWidth      <- -1
 plotHeight     <- -1
 plotPaper      <- "A4r"   # Use "special" for manual values! Or: A4/A4r.
 
 
 # ###### Command-Line Arguments #############################################
-args=commandArgs(TRUE)
+args <- commandArgs(TRUE)
 # print(args)
-
 for(i in 1:length(args)) {
    eval(parse(text=args[i]))
-   if(i == 2) {
-      # ------ Include plotting functions -----------------------------------
-      # The first parameter must set "programDirectory". The further
-      # parameters may use constants defined in plotter.R. Therefore, plotter.R
-      # must be included before!
-      source(paste(sep="", programDirectory, "/plotter.R"))
-   }
 }
 
-# cat(sep="", "programDirectory=", programDirectory,    "\n")
-# cat(sep="", "configFile=",       configFile,    "\n")
-# cat(sep="", "summaryFile=",      summaryFile,    "\n")
-# cat(sep="", "pdfFilePrefix=",    pdfFilePrefix, "\n")
-# cat(sep="", "plotOwnFile=",      plotOwnFile,   "\n")
+# cat(sep="", "programDirectory=", programDirectory, "\n")
+# cat(sep="", "configFile=",       configFile,       "\n")
+# cat(sep="", "summaryFile=",      summaryFile,      "\n")
+# cat(sep="", "pdfFilePrefix=",    pdfFilePrefix,    "\n")
+# cat(sep="", "perFlowPlots=",     perFlowPlots,     "\n")
+# cat(sep="", "plotOwnFile=",      plotOwnFile,      "\n")
 
 
 # ====== Load input data ====================================================
 source(configFile)
-summaryData <- loadResults(summaryFile)
-summaryData <- subset(summaryData, (summaryData$Interval > 0))   # Avoids "divide by zero" on first entry
-flowSummaryData <- loadResults(flowSummaryFile)
+summaryData <- data.table(read.csv(summaryFile, sep="\t")) %>%
+                  filter(Interval > 0)   # Avoids "divide by zero" on first entry
+flowSummaryData <- data.table(read.csv(flowSummaryFile, sep="\t"))
 
 setGlobalVariable("gRuntime", round(max(summaryData$RelTime)))
 cat(sep="", "Runtime=", gRuntime, "\n")
 
 
 # ====== Begin writing PDF file =============================================
-if(!plotOwnFile) { 
+if(!plotOwnFile) {
    pdfFileName <- paste(sep="", pdfFilePrefix, "-TEMP.pdf")
    pdf(pdfFileName, width=plotWidth, height=plotHeight, paper=plotPaper,
        family=plotFontFamily, pointsize=plotPointSize)
@@ -356,15 +392,17 @@ if(!plotOwnFile) {
 
 
 # ====== Create plots for active and passive node ===========================
-data <- subset(summaryData, (summaryData$IsActive == 1) & (summaryData$FlowID != -1))
+data <- summaryData %>% filter( IsActive == 1, FlowID != -1 )
 plotNodeStats(data, NAME_ACTIVE_NODE)
 
-data <- subset(summaryData, (summaryData$IsActive == 0) & (summaryData$FlowID != -1))
+data <- summaryData %>% filter( IsActive == 0, FlowID != -1 )
 plotNodeStats(data, NAME_PASSIVE_NODE)
 
 
 # ====== Flow QoS Statistics ================================================
-plotQoSStatistics(summaryData, flowSummaryData)
+if(perFlowPlots == 1) {
+   plotQoSStatistics(summaryData, flowSummaryData)
+}
 
 
 # ====== Finish PDF file ====================================================
@@ -382,7 +420,7 @@ if(!plotOwnFile) {
       stop(gettextf("status %d in running command '%s'", ret1, cmd1))
    }
 
-   # ------ Add PDF outlines and meta data ----------------------------------
+   # ------ Add PDF outlines and metadata -----------------------------------
    cmd2 <- paste(sep="", "pdfembedfonts ", pdfFilePrefix, "-TEMP2.pdf", " ", pdfFilePrefix, ".pdf -optimize",
                          " || mv ", pdfFilePrefix, "-TEMP2.pdf", " ", pdfFilePrefix, ".pdf")
    # cat(cmd2,"\n")

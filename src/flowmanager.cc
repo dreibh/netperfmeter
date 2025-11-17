@@ -717,11 +717,11 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
 {
    // ====== Write vector statistics header =================================
    if(vectorFile.getLine() == 0) {
-      vectorFile.printf("AbsTime RelTime Interval\t"
-                        "FlowID Description Jitter\t"
+      vectorFile.printf("AbsTime\tRelTime\tInterval\t"
+                        "FlowID\tDescription\tJitter\t"
                         "Action\t"
-                           "AbsBytes AbsPackets AbsFrames\t"
-                           "RelBytes RelPackets RelFrames\n");
+                           "AbsBytes\tAbsPackets\tAbsFrames\t"
+                           "RelBytes\tRelPackets\tRelFrames\n");
    }
 
    lock();
@@ -743,12 +743,12 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
 
           const unsigned long long line = vectorFile.getLine();
           vectorFile.printf(
-            "%06llu %llu %1.6f %1.6f\t%u \"%s\" %1.3f\t"
-               "\"Sent\"     %llu %llu %llu\t%llu %llu %llu\n"
-            "%06llu %llu %1.6f %1.6f\t%u \"%s\" %1.3f\t"
-               "\"Received\" %llu %llu %llu\t%llu %llu %llu\n"
-            "%06llu %llu %1.6f %1.6f\t%u \"%s\" %1.3f\t"
-               "\"Lost\"     %llu %llu %llu\t%llu %llu %llu\n",
+            "%06llu\t%llu\t%1.6f\t%1.6f\t%u\t\"%s\"\t%1.3f\t"
+               "\"Sent\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
+            "%06llu\t%llu\t%1.6f\t%1.6f\t%u\t\"%s\"\t%1.3f\t"
+               "\"Received\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
+            "%06llu\t%llu\t%1.6f\t%1.6f\t%u\t\"%s\"\t%1.3f\t"
+               "\"Lost\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n",
 
             line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
                flow->FlowID, flow->TrafficSpec.Description.c_str(), flow->Jitter,
@@ -776,24 +776,24 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
    const unsigned long long line = vectorFile.getLine();
    const FlowBandwidthStats relTotalStats = currentTotalStats - lastTotalStats;
       vectorFile.printf(
-      "%06llu %llu %1.6f %1.6f\t-1 \"Total\" 0\t"
-         "\"Sent\"     %llu %llu %llu\t%llu %llu %llu\n"
-      "%06llu %llu %1.6f %1.6f\t-1 \"Total\" 0\t"
-         "\"Received\" %llu %llu %llu\t%llu %llu %llu\n"
-      "%06llu %llu %1.6f %1.6f\t-1 \"Total\" 0\t"
-         "\"Lost\"     %llu %llu %llu\t%llu %llu %llu\n",
+         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+            "\"Sent\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
+         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+            "\"Received\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
+         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+            "\"Lost\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n",
 
-      line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-         currentTotalStats.TransmittedBytes, currentTotalStats.TransmittedPackets, currentTotalStats.TransmittedFrames,
-         relTotalStats.TransmittedBytes, relTotalStats.TransmittedPackets, relTotalStats.TransmittedFrames,
+         line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            currentTotalStats.TransmittedBytes, currentTotalStats.TransmittedPackets, currentTotalStats.TransmittedFrames,
+            relTotalStats.TransmittedBytes, relTotalStats.TransmittedPackets, relTotalStats.TransmittedFrames,
 
-      line + 2, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-         currentTotalStats.ReceivedBytes, currentTotalStats.ReceivedPackets, currentTotalStats.ReceivedFrames,
-         relTotalStats.ReceivedBytes, relTotalStats.ReceivedPackets, relTotalStats.ReceivedFrames,
+         line + 2, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            currentTotalStats.ReceivedBytes, currentTotalStats.ReceivedPackets, currentTotalStats.ReceivedFrames,
+            relTotalStats.ReceivedBytes, relTotalStats.ReceivedPackets, relTotalStats.ReceivedFrames,
 
-      line + 3, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-         currentTotalStats.LostBytes, currentTotalStats.LostPackets, currentTotalStats.LostFrames,
-         relTotalStats.LostBytes, relTotalStats.LostPackets, relTotalStats.LostFrames);
+         line + 3, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            currentTotalStats.LostBytes, currentTotalStats.LostPackets, currentTotalStats.LostFrames,
+            relTotalStats.LostBytes, relTotalStats.LostPackets, relTotalStats.LostFrames);
 
     vectorFile.nextLine(); vectorFile.nextLine(); vectorFile.nextLine();
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# PDF Font Embedder
+# PDF Fonts Embedder
 # Copyright (C) 2009-2025 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
@@ -22,20 +22,47 @@
 # Bash options:
 set -eu
 
-# ====== Get arguments ======================================================
-if [ $# -lt 2 ] ; then
-   echo >&2 "Usage: $0 [Input PDF] [Output PDF] {-optimize}"
+
+# ###### Usage ##############################################################
+usage () {
+   echo >&2 "Usage: $0 input_pdf output_pdf [-O|--optimise|--optimize] [-h|--help]"
    exit 1
+}
+
+
+# ###### Main program #######################################################
+
+# ====== Handle arguments ===================================================
+GETOPT="$(PATH=/usr/local/bin:${PATH} which getopt)"
+options="$(${GETOPT} -o Oh --long optimise,optimize,help -a -- "$@")"
+# shellcheck disable=SC2181
+if [[ $? -ne 0 ]]; then
+   usage
 fi
 
+OPTIMISE=0
+eval set -- "${options}"
+while [ $# -gt 0 ] ; do
+   case "$1" in
+      -O | --optimise | --optimize])
+         OPTIMISE=1
+         shift
+         ;;
+      -h | --help)
+         usage
+         # shift
+         ;;
+      --)
+         shift
+         break
+         ;;
+  esac
+done
+if [ $# -ne 2 ] ; then
+   usage
+fi
 INPUT_PDF="$1"
 OUTPUT_PDF="$2"
-
-OPTIMIZE=0
-if [ "$3" = "-optimize" ] ; then
-   OPTIMIZE=1
-fi
-
 if [ ! -e "${INPUT_PDF}" ] ; then
    echo >&2 "ERROR: PDF file ${INPUT_PDF} does not exist!"
    exit 1
@@ -45,9 +72,9 @@ fi
 # ====== Perform conversion =================================================
 
 # ------ Using PDF/X --------------------------------------------------------
-if [ ${OPTIMIZE} -eq 1 ] ; then
-   ( ps2pdf -dPDFX "${INPUT_PDF}" "${OUTPUT_PDF}"-tmp.pdf && qpdf --linearize "${OUTPUT_PDF}"-tmp.pdf "${OUTPUT_PDF}" ) || cp "${INPUT_PDF}" "${OUTPUT_PDF}"
+if [ ${OPTIMISE} -eq 1 ] ; then
+   ( ps2pdf -dPDFSETTINGS=/prepress -dCompatibilityLevel=1.7 "${INPUT_PDF}" "${OUTPUT_PDF}"-tmp.pdf && qpdf --linearize "${OUTPUT_PDF}"-tmp.pdf "${OUTPUT_PDF}" ) || cp "${INPUT_PDF}" "${OUTPUT_PDF}"
    rm -f "${OUTPUT_PDF}"-tmp.pdf
 else
-    ps2pdf -dPDFX "${INPUT_PDF}" "${OUTPUT_PDF}"
+    ps2pdf -dPDFSETTINGS=/prepress -dCompatibilityLevel=1.7 "${INPUT_PDF}" "${OUTPUT_PDF}"
 fi

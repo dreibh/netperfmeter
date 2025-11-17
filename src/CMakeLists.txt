@@ -180,5 +180,6 @@ TARGET_LINK_LIBRARIES(qc ${SCTP_LIBRARY} ${QUIC_LIBRARY} "${CMAKE_THREAD_LIBS_IN
 #### SUBDIRECTORIES                                                      ####
 #############################################################################
 
+ADD_SUBDIRECTORY(examples)
 ADD_SUBDIRECTORY(logo)
 ADD_SUBDIRECTORY(results-examples)

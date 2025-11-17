@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd August 1, 2025
+.Dd November 17, 2025
 .Dt plot-netperfmeter-results 1
 .Os plot-netperfmeter-results
 .\" ###### Name #############################################################
@@ -36,13 +36,13 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm plot-netperfmeter-results
-.Op Config Name
-.Fl ownfile
-.Fl colour
-.Fl color
-.Fl greyscale
-.Fl grayscale
-.Fl blackandwhite
+config_name
+.br
+.Op Fl w | Fl Fl ownfile
+.br
+.Op Fl p | Fl Fl per-flow-plots
+.Nm plot-netperfmeter-results
+.Op Fl h | Fl Fl help
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm plot-netperfmeter-results
@@ -52,29 +52,26 @@ uses GNU R to plot measurement results written by NetPerfMeter into a PDF file. 
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It Config Name
+.It config_name
 The name of the config file written by NetPerfMeter.
-.It Fl ownfile
+.It Fl w | Fl Fl ownfile
 Plot a separate PDF file for each page.
-.It Fl colour
-Create colour plot.
-.It Fl color
-Create colour plot.
-.It Fl greyscale
-Create grey-scale plot.
-.It Fl grayscale
-Create grey-scale plot.
-.It Fl blackandwhite
-Create black and white plot.
+.It Fl p | Fl Fl per-flow-plots
+Also generate separate plots for each flow.
+.It Fl h | Fl Fl help
+Prints command-line parameters.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
 Some plot-netperfmeter-results usage examples:
 .Bl -tag -width indent
 .It plot-netperfmeter-results output.config
-Plot the vector file output.vec.bz2. The resulting PDF file will be named output.pdf.
-.It plot-netperfmeter-results output.config -ownfile
+Plot the results given by output.config. The resulting PDF file will be named output.pdf.
+.It plot-netperfmeter-results output.config --per-flow-plots
+Plot the results given by output.config, including per-flow plots. The resulting PDF file will be named output.pdf.
+.It plot-netperfmeter-results output.config --ownfile
 Plot the results given by output.config. For each page, a separate PDF file is written. The resulting PDF files will be named output-<title>.pdf, where <title> corresponds to the page title.
+.It plot-netperfmeter-results --help
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS

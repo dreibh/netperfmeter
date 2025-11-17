@@ -41,9 +41,6 @@ sub getNextCommand($) {
       next if $command =~ /^#/;
       last;
    }
-#    if($command) {
-#       printf("INPUT: %s\n",$command);
-#    }
    return $command;
 }
 
@@ -54,7 +51,7 @@ sub updatePDFMetadataRecursion($$$$) {
    my $parentOutline   = shift;   # Parent outline in PDF's outline tree
    my $command         = shift;   # Command
    my $inputFile       = shift;   # Metadata input file
-   
+
    my $currentLevel    = -12345;
    my $currentOutline;
 
@@ -76,7 +73,7 @@ sub updatePDFMetadataRecursion($$$$) {
          elsif ($newLevel < $currentLevel) {
             # Return $command in updatePDFMetadataRecursion() call above;
             # this will lead to the creation of a new item.
-            return($command); 
+            return($command);
          }
          # ====== Add item in outline hierarchy =============================
          else {
@@ -94,7 +91,7 @@ sub updatePDFMetadataRecursion($$$$) {
          Encode::from_to($title, "utf8", "iso-8859-1");
          $pdfFile->info('Title' => $title);
       }
-      
+
       # ===== Handle "subject" command ======================================
       if($command =~ /^subject/) {
          my ($dummy, $subject) = split(/ /, $command, 2);
@@ -141,7 +138,7 @@ sub updatePDFMetadata($$) {
    my $metadataFile = shift;   # Metadata input file
 
    my $command = getNextCommand(*metadataFile);
-   
+
    updatePDFMetadataRecursion($pdfFile, $pdfFile->outlines, $command, $metadataFile);
 }
 
@@ -149,7 +146,7 @@ sub updatePDFMetadata($$) {
 
 # ###### Main program #######################################################
 if ($#ARGV != 2) {
-   printf("Usage: %s input.pdf metadata.meta output.pdf\n", $0);
+   printf(STDERR "Usage: %s input.pdf metadata.meta output.pdf\n", $0);
    exit 1;
 }
 

@@ -26,25 +26,27 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd August 1, 2025
+.Dd November 14, 2025
 .Dt pdfembedfonts 1
 .Os pdfembedfonts
 .\" ###### Name #############################################################
 .Sh NAME
 .Nm pdfembedfonts
-.Nd PDF Metadata Updater
+.Nd PDF Fonts Embedder
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm pdfembedfonts
 input_pdf
 output_pdf
-.Op Fl optimize
+.Op Fl O | Fl Fl optimise | Fl Fl optimize
+.Nm pdfembedfonts
+.Op Fl h | Fl Fl help
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm pdfembedfonts
 uses GhostScript to make a copy of a given PDF file, embedding all
-required font data. Optionally, the resulting PDF can also be optimized
-("fast web view", "linearized").
+required font data. Optionally, the resulting PDF can also be optimised
+("fast web view", "linearised").
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
@@ -54,14 +56,18 @@ The following arguments have to be provided:
 The input PDF file name.
 .It output_pdf
 The output PDF file name.
-.It Fl optimize
+.It Fl O | Fl Fl optimise | Fl Fl optimize
 Optimize the resulting PDF file for fast web view.
+.It Fl h | Fl Fl help
+Prints command-line parameters.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
-A pdfembedfonts usage example:
+Some pdfembedfonts usage examples:
 .Bl -tag -width indent
 .It pdfembedfonts MyDocument.pdf MyDocument-with-Embedded-Fonts.pdf
+.It pdfembedfonts MyDocument.pdf MyDocument-with-Embedded-Fonts-and-Optimised.pdf -O
+.It pdfembedfonts --help
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS

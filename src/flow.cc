@@ -186,10 +186,10 @@ bool Flow::initializeVectorFile(const char* name, const OutputFileFormat format)
    lock();
    if(VectorFile.initialize(name, format)) {
       success = VectorFile.printf(
-                   "AbsTime RelTime SeqNumber\t"
-                   "AbsBytes AbsPackets AbsFrames\t"
-                   "RelBytes RelPackets RelFrames\t"
-                   "Delay PrevPacketDelayDiff Jitter\n");
+                   "AbsTime\tRelTime\tSeqNumber\t"
+                   "AbsBytes\tAbsPackets\tAbsFrames\t"
+                   "RelBytes\tRelPackets\tRelFrames\t"
+                   "Delay\tPrevPacketDelayDiff\tJitter\n");
       VectorFile.nextLine();
    }
    unlock();
@@ -250,10 +250,10 @@ void Flow::updateReceptionStatistics(const unsigned long long now,
    // ====== Write line to flow's vector file ===============================
    if( (MyMeasurement) && (MyMeasurement->getFirstStatisticsEvent() > 0) ) {
       VectorFile.printf(
-         "%06llu %llu %1.6f %llu\t"
-         "%llu %llu %llu\t"
-         "%u %u %u\t"
-         "%1.3f %1.3f %1.3f\n",
+         "%06llu\t%llu\t%1.6f\t%llu\t"
+         "%llu\t%llu\t%llu\t"
+         "%u\t%u\t%u\t"
+         "%1.3f\t%1.3f\t%1.3f\n",
          VectorFile.nextLine(), now,
          (double)(now - MyMeasurement->getFirstStatisticsEvent()) / 1000000.0,
          seqNumber,
