@@ -175,5 +175,6 @@ ENDIF()
 #### SUBDIRECTORIES                                                      ####
 #############################################################################
 
+ADD_SUBDIRECTORY(examples)
 ADD_SUBDIRECTORY(logo)
 ADD_SUBDIRECTORY(results-examples)
