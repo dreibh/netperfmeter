@@ -1,0 +1,5 @@
+usr/share/netperfmeter/plot-experiment1
+usr/share/netperfmeter/results-examples/*.pcap*
+usr/share/netperfmeter/results-examples/*.sca*
+usr/share/netperfmeter/results-examples/*.vec*
+usr/share/netperfmeter/run-experiment1

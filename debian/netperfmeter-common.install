@@ -4,6 +4,3 @@ usr/share/mime/packages/netperfmeter.xml
 usr/share/netperfmeter/netperfmeter.bib
 usr/share/netperfmeter/netperfmeter.pdf
 usr/share/netperfmeter/netperfmeter.png
-usr/share/netperfmeter/results-examples/*.pcap*
-usr/share/netperfmeter/results-examples/*.sca*
-usr/share/netperfmeter/results-examples/*.vec*
