@@ -271,6 +271,8 @@ Wireshark network protocol analyser provides out-of-the-box support for
 analysing NetPerfMeter packet traffic.
 This metapackage installs all sub-packages of NetPerfMeter.
 
+%files all
+
 
 %changelog
 * Sat Feb 10 2024 Thomas Dreibholz <thomas.dreibholz@gmail.com> - 1.9.7
