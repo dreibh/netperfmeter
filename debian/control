@@ -83,7 +83,7 @@ Depends: r-base-core,
          r-cran-dplyr,
          r-cran-ggplot2,
          ${misc:Depends}
-Description: Network Performance Meter (example scripts and files)
+Description: Network Performance Meter (example scripts and results files)
  NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
  and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
  bidirectional flows to an endpoint and measures the resulting flow bandwidths
