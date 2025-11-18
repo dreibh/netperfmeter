@@ -656,7 +656,7 @@ For ready-to-install Ubuntu Linux packages of NetPerfMeter, see [Launchpad PPA f
 ```bash
 sudo apt-add-repository -sy ppa:dreibh/ppa
 sudo apt-get update
-sudo apt-get install netperfmeter
+sudo apt-get install netperfmeter-all
 ```
 
 ## Fedora Linux
@@ -665,7 +665,7 @@ For ready-to-install Fedora Linux packages of NetPerfMeter, see [COPR PPA for Th
 
 ```bash
 sudo dnf copr enable -y dreibh/ppa
-sudo dnf install netperfmeter
+sudo dnf install netperfmeter-all
 ```
 
 ## FreeBSD
