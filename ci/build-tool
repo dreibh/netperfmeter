@@ -192,7 +192,7 @@ def readCMakePackagingInformation():
                   else:
                      match = re_cmake_project.match(line)
                      if match != None:
-                        packageInfo['cmake_package'] = match.group(1)
+                        packageInfo['cmake_package_name'] = match.group(1)
          cmakeFile.close()
 
          if ('cmake_version_major' in packageInfo) and \
@@ -209,7 +209,7 @@ def readCMakePackagingInformation():
          sys.exit(1)
 
       # ====== Check whether information is complete ========================
-      if ( ( not 'cmake_package' in packageInfo) or
+      if ( ( not 'cmake_package_name' in packageInfo) or
            ( not 'cmake_version_string' in packageInfo ) ):
          sys.stderr.write('ERROR: Cannot find required package versioning details in ' + packageInfo['cmake_lists_name'] + '!\n')
          print(packageInfo)
@@ -562,7 +562,7 @@ def readPackagingInformation():
       systemConfigFile = system[2]
       if hasPackagingFor(packageInfo, systemPrefix):
          sys.stdout.write('Using master versioning from ' + systemName + '.\n')
-         for entry in [ 'package', 'version_string',  'version_major',  'version_minor',  'version_patch',  'version_extra' ]:
+         for entry in [ 'package_name', 'version_string',  'version_major',  'version_minor',  'version_patch',  'version_extra' ]:
             packageInfo['master_' + entry] = packageInfo[systemPrefix + '_' + entry]
          break
    if not hasPackagingFor(packageInfo, 'master'):
@@ -601,7 +601,7 @@ def findSourceTarball(packageInfo, quiet = False):
    sourceInfo = {}
 
    # ====== Obtain package configuration ====================================
-   tarballPattern = packageInfo['master_package'] + '-' + packageInfo['master_version_string'] + '.tar.*'
+   tarballPattern = packageInfo['master_package_name'] + '-' + packageInfo['master_version_string'] + '.tar.*'
    if not quiet:
       sys.stdout.write('Looking for tarball ' + tarballPattern + ' ... ')
    tarballs = glob.glob(tarballPattern)   # NOTE: This will also find .tar.xz.asc, etc.!
