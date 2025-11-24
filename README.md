@@ -726,7 +726,7 @@ For ready-to-install Ubuntu Linux packages of NetPerfMeter, see [Launchpad PPA f
 ```bash
 sudo apt-add-repository -sy ppa:dreibh/ppa
 sudo apt-get update
-sudo apt-get install netperfmeter
+sudo apt-get install netperfmeter-all
 ```
 
 ## Fedora Linux
@@ -735,7 +735,7 @@ For ready-to-install Fedora Linux packages of NetPerfMeter, see [COPR PPA for Th
 
 ```bash
 sudo dnf copr enable -y dreibh/ppa
-sudo dnf install netperfmeter
+sudo dnf install netperfmeter-all
 ```
 
 ## FreeBSD
@@ -773,7 +773,7 @@ cmake .
 make
 ```
 
-Note: The script [`ci/get-dependencies`](https://github.com/dreibh/netperfmeter/blob/master/ci/get-dependencies) automatically  installs the build dependencies under Debian/Ubuntu Linux, Fedora Linux, and FreeBSD. For manual handling of the build dependencies, see the packaging configuration in [`debian/control`](https://github.com/dreibh/netperfmeter/blob/master/debian/control) (Debian/Ubuntu Linux), [`netperfmeter.spec`](https://github.com/dreibh/netperfmeter/blob/master/rpm/netperfmeter.spec) (Fedora Linux), and [`Makefile`](https://github.com/dreibh/netperfmeter/blob/master/freebsd/netperfmeter/Makefile) FreeBSD.
+Note: The script [`ci/get-dependencies`](https://github.com/dreibh/netperfmeter/blob/master/ci/get-dependencies) automatically installs the build dependencies under Debian/Ubuntu Linux, Fedora Linux, and FreeBSD. For manual handling of the build dependencies, see the packaging configuration in [`debian/control`](https://github.com/dreibh/netperfmeter/blob/master/debian/control) (Debian/Ubuntu Linux), [`netperfmeter.spec`](https://github.com/dreibh/netperfmeter/blob/master/rpm/netperfmeter.spec) (Fedora Linux), and [`Makefile`](https://github.com/dreibh/netperfmeter/blob/master/freebsd/netperfmeter/Makefile) FreeBSD.
 
 Contributions:
 
@@ -807,6 +807,7 @@ NetPerfMeter BibTeX entries can be found in [netperfmeter.bib](https://github.co
 * [Dynamic Multi-Homing Setup (DynMHS)](https://www.nntb.no/~dreibh/dynmhs/)
 * [SubNetCalc – An IPv4/IPv6 Subnet Calculator](https://www.nntb.no/~dreibh/subnetcalc/)
 * [TSCTP – An SCTP test tool](https://www.nntb.no/~dreibh/tsctp/)
+* [Virtual Machine Image Builder and System Installation Scripts](https://www.nntb.no/~dreibh/vmimage-builder-scripts/)
 * [System-Tools – Tools for Basic System Management](https://www.nntb.no/~dreibh/system-tools/)
 * [Thomas Dreibholz's Multi-Path TCP (MPTCP) Page](https://www.nntb.no/~dreibh/mptcp/)
 * [Thomas Dreibholz's SCTP Page](https://www.nntb.no/~dreibh/sctp/)

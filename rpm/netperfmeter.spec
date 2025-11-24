@@ -116,7 +116,7 @@ This package contains common NetPerfMeter files.
 
 
 %package examples
-Summary: Network Performance Meter (example scripts and files)
+Summary: Network Performance Meter (example scripts and results files)
 Group: Applications/Internet
 BuildArch: noarch
 
