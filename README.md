@@ -736,7 +736,7 @@ NetPerfMeter BibTeX entries can be found in [netperfmeter.bib](https://github.co
 * [HiPerConTracer – High-Performance Connectivity Tracer](https://www.nntb.no/~dreibh/hipercontracer/)
 * [Dynamic Multi-Homing Setup (DynMHS)](https://www.nntb.no/~dreibh/dynmhs/)
 * [SubNetCalc – An IPv4/IPv6 Subnet Calculator](https://www.nntb.no/~dreibh/subnetcalc/)
-* [TSCTP – An SCTP test tool](https://www.nntb.no/~dreibh/tsctp/)
+* [TSCTP – An SCTP Test Tool](https://www.nntb.no/~dreibh/tsctp/)
 * [Virtual Machine Image Builder and System Installation Scripts](https://www.nntb.no/~dreibh/vmimage-builder-scripts/)
 * [System-Tools – Tools for Basic System Management](https://www.nntb.no/~dreibh/system-tools/)
 * [Thomas Dreibholz's Multi-Path TCP (MPTCP) Page](https://www.nntb.no/~dreibh/mptcp/)
