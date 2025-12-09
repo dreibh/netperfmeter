@@ -11,7 +11,7 @@
 # ==========================================================================
 #
 # X.509 CA and Certificate Test Setup Script
-# Copyright (C) 2015-2025 by Thomas Dreibholz
+# Copyright (C) 2015-2026 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 import getopt
 import sys
 
+from typing            import Any
 from CertificateHelper import *
 
 
@@ -46,7 +47,7 @@ caKeyLength   : int = DefaultCAKeyLength
 certKeyLength : int = DefaultCertKeyLength
 
 # ====== Handle command-line parameters =====================================
-certificatesToCreate : list[dict[str,str]] = []
+certificatesToCreate : list[dict[str,Any]] = []
 subjectAltName       : str | None          = None
 certType             : CertificateType     = CertificateType.Server
 revokeIfExisting     : bool                = True

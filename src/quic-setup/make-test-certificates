@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 # # NOTE: This line must use the local hostname:
 # ./generate-test-certificates TestCA --client --san LOCAL  "$(hostname -f)"
 #
