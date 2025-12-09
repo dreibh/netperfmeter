@@ -1,6 +1,6 @@
 # ###########################################################################
 #             Thomas Dreibholz's R Simulation Scripts Collection
-#                  Copyright (C) 2005-2025 Thomas Dreibholz
+#                  Copyright (C) 2005-2026 Thomas Dreibholz
 #
 #               Author: Thomas Dreibholz, thomas.dreibholz@gmail.com
 # ###########################################################################
