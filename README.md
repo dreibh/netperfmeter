@@ -315,7 +315,7 @@ The server and client certificates can be verified using the CA certificate:
 ./check-certificate TestCA/TestLevel1/certs/TestLevel1.crt TestCA/client.domain.example/client.domain.example.crt
 ```
 
-* Run a passive instance (i.e.&nbsp;server side), using port 9000, and specifying server key and certificate:
+* Run a passive instance (i.e.&nbsp;server side), using base port 9000, and specifying server key and certificate:
 
   ```bash
   netperfmeter 9000 \
