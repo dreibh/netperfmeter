@@ -140,10 +140,25 @@ sudo kldload sctp
 kldstat | grep sctp
 ```
 
+## Protocols and Ports
+
+NetPerfMeter's usage of protocols and ports depends on the base port parameter of the passive instance (server).
+
+| Protocol   | NPMP-DATA      | NPMP-CONTROL   |
+| ---------- | -------------- | -------------- |
+| TCP        | _BASE_         | _BASE_ + 1     |
+| MPTCP      | _BASE_ - 1     | —              |
+| UDP        | _BASE_         | _BASE_ + 1     |
+| SCTP       | _BASE_         | _BASE_         |
+| DCCP       | _BASE_         | —              |
+| QUIC (UDP) | _BASE_ - 1     | —              |
+
+For the following examples, the base port is usually set to 9000.
+
 
 ## Starting the Passive Instance (Server)
 
-* Run a passive instance (i.e.&nbsp;server side), using port 9000:
+* Run a passive instance (i.e.&nbsp;server side), using base port 9000:
 
   ```bash
   netperfmeter 9000
@@ -152,7 +167,7 @@ kldstat | grep sctp
   NetPerfMeter supports SCTP and TCP for the NPMP-CONTROL control communication. By default, the passive side accepts incoming control connections on both protocols. In case of unavailability of SCTP, e.g.&nbsp;the SCTP kernel module is not loaded, a warning is printed. Obviously, control communication in this case will only be possible via TCP.
 
 
-* Run a passive instance (i.e.&nbsp;server side), using port 9000, and allowing NPMP-CONTROL control communication only over TCP (this disables checking for SCTP, and the warning if unavailable):
+* Run a passive instance (i.e.&nbsp;server side), using base port 9000, and allowing NPMP-CONTROL control communication only over TCP (this disables checking for SCTP, and the warning if unavailable):
 
   ```bash
   netperfmeter 9000 -no-control-over-sctp
@@ -300,7 +315,7 @@ The server and client certificates can be verified using the CA certificate:
 ./check-certificate TestCA/TestLevel1/certs/TestLevel1.crt TestCA/client.domain.example/client.domain.example.crt
 ```
 
-* Run a passive instance (i.e.&nbsp;server side), using port 9000, and specifying server key and certificate:
+* Run a passive instance (i.e.&nbsp;server side), using base port 9000, and specifying server key and certificate:
 
   ```bash
   netperfmeter 9000 \
