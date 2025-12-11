@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set -eu
+
+# shellcheck disable=SC2174
+mkdir -m700 -p /home/"$USER"/keylog
+touch /home/"$USER"/keylog/sslkeylog.log
+chmod 600 /home/"$USER"/keylog/sslkeylog.log
+
+cd ~/src/netperfmeter/src
+make netperfmeter
+SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log ./netperfmeter \
+   172.31.1.2:9000 \
+   -tls-hostname pc2.northbound.hencsat \
+   -quic const0:const1500:const0:const1500
