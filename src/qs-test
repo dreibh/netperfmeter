@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -eu
+
+SERVER="$(hostname -f)"
+
+# shellcheck disable=SC2174
+mkdir -p -m700 /home/"$USER"/keylog
+touch /home/"$USER"/keylog/sslkeylog.log
+chmod 600 /home/"$USER"/keylog/sslkeylog.log
+
+cd ~/src/netperfmeter/src
+
+if [ ! -d quic-setup/TestCA ] || \
+   [ ! -e "quic-setup/TestCA/${SERVER}/${SERVER}.key" ] || \
+   [ ! -e "quic-setup/TestCA/${SERVER}/${SERVER}.crt" ] ; then
+   echo >&2 "TestCA and certificates not set up!"
+   exit 1
+fi
+
+make netperfmeter
+SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log ./netperfmeter 9000 \
+   -tls-key  "quic-setup/TestCA/${SERVER}/${SERVER}.key" \
+   -tls-cert "quic-setup/TestCA/${SERVER}/${SERVER}.crt"
