@@ -1625,8 +1625,8 @@ void activeMode(const char* remoteEndpoint)
             flowIterator != assocSpec.Flows.end(); flowIterator++) {
             const char* flowSpec = *flowIterator;
             lastFlow = createFlow(lastFlow, flowSpec, measurementID,
-                                 gVectorNamePattern, gVectorFileFormat,
-                                 assocSpec.Protocol, remoteAddress);
+                                  gVectorNamePattern, gVectorFileFormat,
+                                  assocSpec.Protocol, remoteAddress);
             if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
                LOG_FATAL
                stdlog << "ERROR: Failed to add flow to remote node!\n";
