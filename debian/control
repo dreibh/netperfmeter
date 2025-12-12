@@ -153,9 +153,11 @@ Architecture: all
 Recommends: netperfmeter-examples
 Depends: pdfproctools,
          r-base,
+         r-cran-bit64,
          r-cran-data.table,
          r-cran-dplyr,
          r-cran-ggplot2,
+         r-cran-r.utils,
          ${misc:Depends}
 Description: Network Performance Meter (plotting program)
  NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,

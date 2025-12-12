@@ -29,5 +29,5 @@
 #### EXAMPLES                                                            ####
 #############################################################################
 
-INSTALL(PROGRAMS    run-experiment1 plot-experiment1
+INSTALL(PROGRAMS    run-experiment1 plot-experiment
         DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter)

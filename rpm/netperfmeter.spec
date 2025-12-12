@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.0~rc1.11
+Version: 2.0.0~rc2.1
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -138,7 +138,7 @@ analysing NetPerfMeter packet traffic.
 This package contains some NetPerfMeter example scripts and results files.
 
 %files examples
-%{_datadir}/netperfmeter/plot-experiment1
+%{_datadir}/netperfmeter/plot-experiment
 %{_datadir}/netperfmeter/results-examples/*.pcap*
 %{_datadir}/netperfmeter/results-examples/*.sca*
 %{_datadir}/netperfmeter/results-examples/*.vec*
@@ -209,10 +209,12 @@ Group: Applications/Internet
 BuildArch: noarch
 Requires: %{name} = %{version}-%{release}
 Requires: %{name}-pdfproctools = %{version}-%{release}
+Requires: R-bit64
 Requires: R-core
 Requires: R-data.table
 Requires: R-dplyr
 Requires: R-ggplot2
+Requires: R-R.utils
 Recommends: %{name}-examples = %{version}-%{release}
 
 %description plotting

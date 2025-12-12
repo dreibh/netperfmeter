@@ -27,7 +27,8 @@
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 NAME="experiment1"
-RUNTIME=3
+RUNTIME=30
+CONTROL="--control-over-tcp"   # E.g.: --control-over-tcp --local=... --controllocal=...
 DESTINATIONS="127.0.0.1"
 FLOWS="const0:const1024:const0:const1024"
 PROTOCOLS="tcp sctp"
@@ -38,7 +39,7 @@ OPTION2="test1"
 mkdir -p "$NAME"
 cd "$NAME"
 if [ ! -e results.summary ] ; then
-   echo "--varnames=Destination Protocol Option1 Option2 Directory" >results.summary
+   echo "--varnames=Timestamp Destination Protocol Flow Option1 Option2 Directory" >results.summary
 fi
 
 for destination in $DESTINATIONS ; do
@@ -52,11 +53,7 @@ for destination in $DESTINATIONS ; do
                run="$now:$destination-$flow-$protocol-$option1-$option2"
                directory="run-$(echo "$run" | sha1sum | cut -d' ' -f1)"
                mkdir -p "$directory"
-
-               # ------ Prepare name/patterns for results files ---------------------------
-               scalarPattern="$directory/run.sca.bz2"
-               vectorPattern="$directory/run.vec.bz2"
-               configName="$directory/run.config"
+               timestamp="$(getabstime)"   # Current time as Unix timestamp in microseconds
 
                # Do something, to configure non-NetPerfMeter options
                # something-to-configure-option1 "$option1"
@@ -64,18 +61,26 @@ for destination in $DESTINATIONS ; do
                # ...
 
                # ------ Run NetPerfMeter --------------------------------------------------
-               # NOTE: Add -vector="$vectorPattern", if needed
-               netperfmeter "[$destination]:9000" \
-                  -scalar="$scalarPattern" \
-                  -config="$configName" \
-                  -runtime=$RUNTIME \
-                  "-$protocol" const0:const1024:const0:const1024
+               (
+                  cd "$directory"
+                  # *******************************************************************
+                  # NOTE: Add option `--vector "run.vec.bz2"` only when necessary!
+                  # Vectors may use a lot of storage capacity for high-bandwidth flows!
+                  # *******************************************************************
+                  netperfmeter "[$destination]:9000" \
+                     --config "run.config"  \
+                     --scalar "run.sca.bz2" \
+                     --vector "run.vec.bz2" \
+                     --runtime "$RUNTIME"   \
+                     ${CONTROL}             \
+                     "--$protocol" const0:const1024:const0:const1024
+               )
 
                # ------ Append run to results.summary -------------------------------------
                (
-                  echo "--values=$destination $flow $protocol $option1 $option2 $directory"
+                  echo "--values=$timestamp $destination $protocol $flow $option1 $option2 $directory"
                   echo "--input=$directory/run-active.sca.bz2"
-                  echo "--values=$destination $flow $protocol $option1 $option2 $directory"
+                  echo "--values=$timestamp $destination $protocol $flow $option1 $option2 $directory"
                   echo "--input=$directory/run-passive.sca.bz2"
                ) >>results.summary
 
@@ -86,4 +91,4 @@ for destination in $DESTINATIONS ; do
 done
 
 # ------ Run CreateSummary ----------------------------------------------------------------
-createsummary -batch <results.summary
+createsummary --batch <results.summary

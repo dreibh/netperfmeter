@@ -175,7 +175,7 @@ bool handleGlobalParameters(int argc, char** argv)
       { "control-over-mptcp",            no_argument,       0, 'w'    },
       { "no-control-over-mptcp",         no_argument,       0, 'W'    },
       { "local",                         required_argument, 0, 'L'    },
-      { "controllocal",                  required_argument, 0, 'C'    },
+      { "controllocal",                  required_argument, 0, 'J'    },
       { "display",                       no_argument,       0, 0x2001 },
       { "nodisplay",                     no_argument,       0, 0x2002 },
       { "v6only",                        no_argument,       0, '6'    },

@@ -74,6 +74,7 @@ while [ $# -gt 0 ] ; do
          break
          ;;
   esac
+  shift
 done
 if [ $# -ne 1 ] ; then
    usage
@@ -172,7 +173,7 @@ if [ "${PLOT_PROGRAM_DIR}" = "" ] ; then
    echo >&2 "ERROR: Cannot find ${PLOT_PROGRAM_SCRIPT}!"
    exit 1
 elif [ "${PLOT_PROGRAM_DIR}" = "." ] ; then
-   echo "Using ${PLOT_PROGRAM_SCRIPT} from ${searchPath}."
+   echo "Using ${PLOT_PROGRAM_SCRIPT} from ${searchPath}"
 fi
 
 
