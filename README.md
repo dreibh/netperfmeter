@@ -567,7 +567,7 @@ Notes:
 
 * The current date (from `date -u -Iseconds`) is used to create a unique identifier for each run.
 * The parameter combination (in `run`) may contain special characters, e.g.&nbsp;spaces and slashes, etc. To create a usable and reasonably short directory name, it is [SHA-1](https://en.wikipedia.org/wiki/SHA-1)-hashed, to assemble a directoryName in `directory`.
-* The example NetPerfMeter run could be extended by `-vector=...` to also write vector files. However, in larger-scale or high-bandwidth measurements, vectors are often unnecessary, and their output can be very large. Therefore, only apply it if necessary!
+* ⚠️Important: The example NetPerfMeter run could be extended by `-vector=...` to also write vector files. However, in larger-scale or high-bandwidth measurements, vectors are often unnecessary, and their output can be very large. Therefore, only apply it if necessary!
 
 The result of the script execution is a directory `experiment1`, with one subdirectory <tt>run-<em>&lt;HASH&gt;</em></tt> for each NetPerfMeter run. Each of these subdirectories will contain the scalar files `run-active.sca.bz2` (active-side results) and `run-passive.sca.bz2` (passive-side results), with all written scalars.
 
