@@ -27,8 +27,10 @@
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 library("data.table")
+library("dplyr")
 
-results <- fread("experiment1/active.flow-ReceivedBitRate.data.bz2")
+results <- fread("experiment1/active.flow-ReceivedBitRate.data.bz2") %>%
+              mutate(Timestamp = as.POSIXct(as.numeric(Timestamp) / 1e6, tz="UTC"))
 
 print(summary(results))                                    # Show data summary
 print(colnames(results))                                   # Show table columns
