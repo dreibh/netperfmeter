@@ -153,6 +153,11 @@ NetPerfMeter's usage of protocols and ports depends on the base port parameter o
 | DCCP       | _BASE_         | —              |
 | QUIC (UDP) | _BASE_ - 1     | —              |
 
+Notes:
+
+* To allow TCP and MPTCP simultaneously, there is NPMP-DATA with TCP (port _BASE_) and MPTCP (port _BASE_ - 1).
+* To allow UDP and QUIC simultaneously, there is NPMP-DATA with UDP (port _BASE_) and QUIC (port _BASE_ - 1).
+
 For the following examples, the base port is usually set to 9000.
 
 
