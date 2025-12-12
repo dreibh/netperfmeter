@@ -545,15 +545,15 @@ for destination in $DESTINATIONS ; do
                (
                   cd "$directory"
                   # *******************************************************************
-                  # NOTE: Add option -vector="run.vec.bz2" only when necessary!
+                  # NOTE: Add option `--vector "run.vec.bz2"` only when necessary!
                   # Vectors may use a lot of storage capacity for high-bandwidth flows!
                   # *******************************************************************
                   netperfmeter "[$destination]:9000" \
-                     -config="run.config"  \
-                     -scalar="run.sca.bz2" \
-                     -vector="run.vec.bz2" \
-                     -runtime=$RUNTIME     \
-                     "-$protocol" const0:const1024:const0:const1024
+                     --config "run.config"  \
+                     --scalar "run.sca.bz2" \
+                     --vector "run.vec.bz2" \
+                     --runtime "$RUNTIME"   \
+                     "--$protocol" const0:const1024:const0:const1024
                )
 
             done
@@ -626,7 +626,7 @@ for destination in $DESTINATIONS ; do
 done
 
 # ------ Run CreateSummary ----------------------------------------------------------------
-createsummary -batch <results.summary
+createsummary --batch <results.summary
 ```
 
 The full script is available in: [`run-experiment1`](src/examples/run-experiment1).
