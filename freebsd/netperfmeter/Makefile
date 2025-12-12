@@ -14,7 +14,8 @@ BUILD_DEPENDS=	gm:graphics/GraphicsMagick \
 		gs:print/ghostscript10 \
 		pdf2svg:graphics/pdf2svg
 
-RUN_DEPENDS=	R-cran-data.table>0:devel/R-cran-data.table \
+RUN_DEPENDS=	R-cran-R.utils>0:devel/R-cran-R.utils \
+		R-cran-data.table>0:devel/R-cran-data.table \
 		R-cran-dplyr>0:math/R-cran-dplyr \
 		R-cran-ggplot2>0:graphics/R-cran-ggplot2
 
