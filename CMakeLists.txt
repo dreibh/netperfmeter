@@ -123,7 +123,7 @@ ENDIF()
 
 OPTION(WITH_ICONS          "Build NetPerfMeter icons and logo files" 1)
 OPTION(WITH_KERNEL_SCTP    "Use Kernel SCTP"                         1)
-OPTION(WITH_PLOT_PROGRAMS  "Build plot programs"                     0)
+OPTION(WITH_PLOT_PROGRAMS  "Build plot programs"                     1)
 OPTION(WITH_TEST_PROGRAMS  "Build test programs"                     0)
 
 
