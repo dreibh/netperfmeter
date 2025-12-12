@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.0~rc1.11
+Version: 2.0.0~rc2.1
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -211,10 +211,12 @@ Group: Applications/Internet
 BuildArch: noarch
 Requires: %{name} = %{version}-%{release}
 Requires: %{name}-pdfproctools = %{version}-%{release}
+Requires: R-bit64
 Requires: R-core
 Requires: R-data.table
 Requires: R-dplyr
 Requires: R-ggplot2
+Requires: R-R.utils
 Recommends: %{name}-examples = %{version}-%{release}
 
 %description plotting
