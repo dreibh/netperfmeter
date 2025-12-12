@@ -514,11 +514,12 @@ The corresponding measurement can be implemented as script (in arbitrary languag
 
 NAME="experiment1"
 RUNTIME=60
+CONTROL="--control-over-tcp"   # E.g.: --control-over-tcp --local=... --controllocal=...
 DESTINATIONS="10.10.10.10 172.20.30.40 fd91:b3aa:b9c:beef::10 fdd8:c818:a429:cafe:40"
 FLOWS="const0:const1024:const0:const1024"
 PROTOCOLS="tcp sctp"
-OPTION1="value1 value2 value3"
-OPTION2="test1 test2 test3"
+OPTION1="value1"
+OPTION2="test1"
 
 # ------ Prepare results directory --------------------------------------------------------
 mkdir -p "$NAME"
@@ -553,6 +554,7 @@ for destination in $DESTINATIONS ; do
                      --scalar "run.sca.bz2" \
                      --vector "run.vec.bz2" \
                      --runtime "$RUNTIME"   \
+                     ${CONTROL}             \
                      "--$protocol" const0:const1024:const0:const1024
                )
 

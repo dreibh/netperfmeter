@@ -27,7 +27,8 @@
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 NAME="experiment1"
-RUNTIME=3
+RUNTIME=60
+CONTROL="--control-over-tcp"   # E.g.: --control-over-tcp --local=... --controllocal=...
 DESTINATIONS="127.0.0.1"
 FLOWS="const0:const1024:const0:const1024"
 PROTOCOLS="tcp sctp"
@@ -38,7 +39,7 @@ OPTION2="test1"
 mkdir -p "$NAME"
 cd "$NAME"
 if [ ! -e results.summary ] ; then
-   echo "--varnames=Destination Protocol Option1 Option2 Directory" >results.summary
+   echo "--varnames=Destination Flow Protocol Option1 Option2 Directory" >results.summary
 fi
 
 for destination in $DESTINATIONS ; do
@@ -70,6 +71,7 @@ for destination in $DESTINATIONS ; do
                      --scalar "run.sca.bz2" \
                      --vector "run.vec.bz2" \
                      --runtime "$RUNTIME"   \
+                     ${CONTROL}             \
                      "--$protocol" const0:const1024:const0:const1024
                )
 
