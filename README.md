@@ -589,11 +589,12 @@ The corresponding measurement can be implemented as script (in arbitrary languag
 
 NAME="experiment1"
 RUNTIME=60
+CONTROL="--control-over-tcp"   # E.g.: --control-over-tcp --local=... --controllocal=...
 DESTINATIONS="10.10.10.10 172.20.30.40 fd91:b3aa:b9c:beef::10 fdd8:c818:a429:cafe:40"
 FLOWS="const0:const1024:const0:const1024"
 PROTOCOLS="tcp sctp"
-OPTION1="value1 value2 value3"
-OPTION2="test1 test2 test3"
+OPTION1="value1"
+OPTION2="test1"
 
 # ------ Prepare results directory --------------------------------------------------------
 mkdir -p "$NAME"
@@ -610,6 +611,7 @@ for destination in $DESTINATIONS ; do
                run="$now:$destination-$flow-$protocol-$option1-$option2"
                directory="run-$(echo "$run" | sha1sum | cut -d' ' -f1)"
                mkdir -p "$directory"
+               timestamp="$(getabstime)"   # Current time as Unix timestamp in microseconds
 
                # Do something, to configure non-NetPerfMeter options
                # something-to-configure-option1 "$option1"
@@ -628,6 +630,7 @@ for destination in $DESTINATIONS ; do
                      --scalar "run.sca.bz2" \
                      --vector "run.vec.bz2" \
                      --runtime "$RUNTIME"   \
+                     ${CONTROL}             \
                      "--$protocol" const0:const1024:const0:const1024
                )
 
@@ -642,7 +645,7 @@ Notes:
 
 * The current date (from `date -u -Iseconds`) is used to create a unique identifier for each run.
 * The parameter combination (in `run`) may contain special characters, e.g.&nbsp;spaces and slashes, etc. To create a usable and reasonably short directory name, it is [SHA-1](https://en.wikipedia.org/wiki/SHA-1)-hashed, to assemble a directoryName in `directory`.
-* ⚠️Important: The example NetPerfMeter run could be extended by `-vector=...` to also write vector files. However, in larger-scale or high-bandwidth measurements, vectors are often unnecessary, and their output can be very large. Therefore, only apply it if necessary!
+* ⚠️Important: The example NetPerfMeter run could be extended by `--vector ...` to also write vector files. However, in larger-scale or high-bandwidth measurements, vectors are often unnecessary, and their output can be very large. Therefore, only apply it if necessary!
 
 The result of the script execution is a directory `experiment1`, with one subdirectory <tt>run-<em>&lt;HASH&gt;</em></tt> for each NetPerfMeter run. Each of these subdirectories will contain the scalar files `run-active.sca.bz2` (active-side results) and `run-passive.sca.bz2` (passive-side results), with all written scalars.
 
@@ -652,17 +655,19 @@ Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with
 
 <table summary="Summary Example">
  <tr>
+  <th>Timestamp</th>
   <th>Destination</th>
   <th>Protocol</th>
+  <th>Flow</th>
   <th>Option1</th>
   <th>Option2</th>
   <th>Directory</th>
   <th>passive.flow-ReceivedBitRate</th>
  </tr>
- <tr> <td>10.10.10.10</td> <td>tcp</td> <td>value1</td> <td>test1</td> <td>run-<em>&lt;HASH1&gt;</em></td> <td>12345678</td> </tr>
- <tr> <td>10.10.10.10</td> <td>tcp</td> <td>value1</td> <td>test2</td> <td>run-<em>&lt;HASH2&gt;</em></td> <td>11111111</td> </tr>
- <tr><td>...</td> <td>...</td> <td>...</td> <td>...</td> <td>run-<em>&lt;HASH...&gt;</em></td> <td>...</td> </tr>
- <tr> <td>fdd8:c818:a429:cafe:40</td> <td>sctp</td> <td>value3</td> <td>test3</td> <td>run-<em>&lt;HASH_LAST&gt;</em></td> <td>11223344</td> </tr>
+ <tr> <td>1765557402276097</td> <td>10.10.10.10</td> <td>tcp</td> <td>...</td> <td>value1</td> <td>test1</td> <td>run-<em>&lt;HASH1&gt;</em></td> <td>12345678</td> </tr>
+ <tr> <td>1765557493682363</td> <td>10.10.10.10</td> <td>tcp</td> <td>...</td> <td>value1</td> <td>test2</td> <td>run-<em>&lt;HASH2&gt;</em></td> <td>11111111</td> </tr>
+ <tr> <td>1765557567874323</td> <td>...</td> <td>...</td> <td>...</td> <td>...</td> <td>...</td> <td>run-<em>&lt;HASH...&gt;</em></td> <td>...</td> </tr>
+ <tr> <td>1765557789993130</td> <td>fdd8:c818:a429:cafe:40</td> <td>sctp</td> <td>...</td> <td>value3</td> <td>test3</td> <td>run-<em>&lt;HASH_LAST&gt;</em></td> <td>11223344</td> </tr>
 </table>
 
 The summarisation task can be realised by the tool CreateSummary. It generates the output tables (BZip2-compressed CSV format, using TAB as delimiter) from all the scalar files of the measurement. For this summarisation, it needs information about:
@@ -675,10 +680,13 @@ The summarisation task can be realised by the tool CreateSummary. It generates t
 In the example above, this information needs to be added by preparing an input file `results.summary`, and then process this input by CreateSummary:
 
 ```bash
-# ------ Prepare results directory --------------------------------------------------------
 ...
+
+# ------ Prepare results directory --------------------------------------------------------
+mkdir -p "$NAME"
+cd "$NAME"
 if [ ! -e results.summary ] ; then
-   echo "--varnames=Destination Protocol Option1 Option2 Directory" >results.summary
+   echo "--varnames=Timestamp Destination Protocol Flow Option1 Option2 Directory" >results.summary
 fi
 
 for destination in $DESTINATIONS ; do
@@ -690,9 +698,9 @@ for destination in $DESTINATIONS ; do
 
                # ------ Append run to results.summary -------------------------------------
                (
-                  echo "--values=$destination $flow $protocol $option1 $option2 $directory"
+                  echo "--values=$timestamp $destination $protocol $flow $option1 $option2 $directory"
                   echo "--input=$directory/run-active.sca.bz2"
-                  echo "--values=$destination $flow $protocol $option1 $option2 $directory"
+                  echo "--values=$timestamp $destination $protocol $flow $option1 $option2 $directory"
                   echo "--input=$directory/run-passive.sca.bz2"
                ) >>results.summary
 
@@ -737,6 +745,18 @@ In some cases, it may be necessary to combine summary tables written by CreateSu
 ```
 
 Then, after loading the resulting combined file `combined-active.flow-ReceivedBitRate.data.bz2` into an analysis tool like [GNU&nbsp;R](https://www.r-project.org/), the information about the host is in the added table column "Host".
+
+## Processing Scalar Data
+
+An example for processing the generated scalar data is provided by the script [`plot-experiment`](https://github.com/dreibh/netperfmeter/blob/master/src/examples/plot-experiment):
+
+```bash
+./plot-experiment experiment1/active.flow-ReceivedBitRate.data.bz2
+./plot-experiment combined-active.flow-ReceivedBitRate.data.bz2
+...
+```
+
+Note that this script is only a very basic example.
 
 ## Plotting a Vector Overview
 

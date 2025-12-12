@@ -26,10 +26,37 @@
 # Contact:  dreibh@simula.no
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
-library("data.table")
+suppressPackageStartupMessages({
+   library("data.table")
+   library("dplyr")
+})
 
-results <- fread("experiment1/active.flow-ReceivedBitRate.data.bz2")
 
+# ###### Main program #######################################################
+
+# ====== Handle arguments ===================================================
+args <- commandArgs(trailingOnly = TRUE)
+if(sys.nframe() == 0L) {
+   # Launched directly from shell:
+   args <- commandArgs(trailingOnly = TRUE)
+   # ------ Command-line start with Rscript ---------------------------------
+   if(length(args) < 1) {
+     stop("Usage: plot-experiment scalar_data_file")
+   }
+   inputName <- args[1]
+} else {
+   # Launched via source(...) in R:
+   inputName <- "experiment1/active.flow-ReceivedBitRate.data.bz2"
+   cat(paste(sep="", "Using default name ", inputName, "\n"))
+}
+
+# ====== Read input data ====================================================
+results <-
+   fread(inputName) %>%
+      # Transform Unix timestamp into POSIXct:
+      mutate(Timestamp = as.POSIXct(as.numeric(Timestamp) / 1e6, origin = "1970-01-01", tz="UTC"))
+
+# ====== Print some information =============================================
 print(summary(results))                                    # Show data summary
 print(colnames(results))                                   # Show table columns
 print(results$"active.flow-ReceivedBitRate" / 1000000.0)   # Received bit rate in Mbit/s
