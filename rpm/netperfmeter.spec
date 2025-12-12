@@ -209,10 +209,12 @@ Group: Applications/Internet
 BuildArch: noarch
 Requires: %{name} = %{version}-%{release}
 Requires: %{name}-pdfproctools = %{version}-%{release}
+Requires: R-bit64
 Requires: R-core
 Requires: R-data.table
 Requires: R-dplyr
 Requires: R-ggplot2
+Requires: R-R.utils
 Recommends: %{name}-examples = %{version}-%{release}
 
 %description plotting
