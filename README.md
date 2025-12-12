@@ -536,6 +536,7 @@ for destination in $DESTINATIONS ; do
                run="$now:$destination-$flow-$protocol-$option1-$option2"
                directory="run-$(echo "$run" | sha1sum | cut -d' ' -f1)"
                mkdir -p "$directory"
+               timestamp="$(getabstime)"   # Current time as Unix timestamp in microseconds
 
                # Do something, to configure non-NetPerfMeter options
                # something-to-configure-option1 "$option1"
@@ -602,10 +603,13 @@ The summarisation task can be realised by the tool CreateSummary. It generates t
 In the example above, this information needs to be added by preparing an input file `results.summary`, and then process this input by CreateSummary:
 
 ```bash
-# ------ Prepare results directory --------------------------------------------------------
 ...
+
+# ------ Prepare results directory --------------------------------------------------------
+mkdir -p "$NAME"
+cd "$NAME"
 if [ ! -e results.summary ] ; then
-   echo "--varnames=Destination Protocol Option1 Option2 Directory" >results.summary
+   echo "--varnames=Timestamp Destination Flow Protocol Option1 Option2 Directory" >results.summary
 fi
 
 for destination in $DESTINATIONS ; do
@@ -617,9 +621,9 @@ for destination in $DESTINATIONS ; do
 
                # ------ Append run to results.summary -------------------------------------
                (
-                  echo "--values=$destination $flow $protocol $option1 $option2 $directory"
+                  echo "--values=$timestamp $destination $flow $protocol $option1 $option2 $directory"
                   echo "--input=$directory/run-active.sca.bz2"
-                  echo "--values=$destination $flow $protocol $option1 $option2 $directory"
+                  echo "--values=$timestamp $destination $flow $protocol $option1 $option2 $directory"
                   echo "--input=$directory/run-passive.sca.bz2"
                ) >>results.summary
 
