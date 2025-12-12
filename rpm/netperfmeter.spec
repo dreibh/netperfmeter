@@ -138,7 +138,7 @@ analysing NetPerfMeter packet traffic.
 This package contains some NetPerfMeter example scripts and results files.
 
 %files examples
-%{_datadir}/netperfmeter/plot-experiment1
+%{_datadir}/netperfmeter/plot-experiment
 %{_datadir}/netperfmeter/results-examples/*.pcap*
 %{_datadir}/netperfmeter/results-examples/*.sca*
 %{_datadir}/netperfmeter/results-examples/*.vec*
