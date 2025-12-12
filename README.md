@@ -335,7 +335,7 @@ Some examples:
   netperfmeter $SERVER:9000 \
      -runtime=60 \
      -count=10 \
-     -tcp  const10:const4096:const10:const4906 \
+     -tcp  const10:const4096:const10:const4906
  ```
 
 * Run an active instance (i.e.&nbsp;client side), with 7&nbsp;flows, stopping the measurement after 60&nbsp;s:
