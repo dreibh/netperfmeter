@@ -673,7 +673,7 @@ Then, after loading the resulting combined file `combined-active.flow-ReceivedBi
 
 ## Processing Scalar Data
 
-An example for processing the generated scalar data is provided by the script [`plot-experiment`](https://github.com/dreibh/netperfmeter/blob/master/src/examples/plot-experiment1):
+An example for processing the generated scalar data is provided by the script [`plot-experiment`](https://github.com/dreibh/netperfmeter/blob/master/src/examples/plot-experiment):
 
 ```bash
 ./plot-experiment experiment1/active.flow-ReceivedBitRate.data.bz2
