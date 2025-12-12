@@ -64,10 +64,12 @@ for destination in $DESTINATIONS ; do
                # ...
 
                # ------ Run NetPerfMeter --------------------------------------------------
-               # NOTE: Add -vector="$vectorPattern", if needed
+               # NOTE: Add -vector="$vectorPattern", if only needed.
+               #       It may use a lot of storage capacity for high-bandwidth flows!
                netperfmeter "[$destination]:9000" \
-                  -scalar="$scalarPattern" \
                   -config="$configName" \
+                  -scalar="$scalarPattern" \
+                  -vector="$vectorPattern" \
                   -runtime=$RUNTIME \
                   "-$protocol" const0:const1024:const0:const1024
 
