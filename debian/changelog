@@ -1,11 +1,11 @@
-netperfmeter (2.0.0~rc2.1-1ubuntu1) plucky; urgency=medium
+netperfmeter (2.0.0~rc2.2-1ubuntu1) plucky; urgency=medium
 
   * New upstream release.
   * debian/control: Moved architecture-independent files to netperfmeter-common.
   * debian/control: Updated standards version to 4.7.2.
   * debian/tests: Improved tests.
 
- -- Thomas Dreibholz <dreibh@simula.no>  Fri, 12 Dec 2025 12:19:42 +0100
+ -- Thomas Dreibholz <dreibh@simula.no>  Fri, 12 Dec 2025 18:47:16 +0100
 
 netperfmeter (1.9.7-1ubuntu1) jammy; urgency=medium
 
