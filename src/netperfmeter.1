@@ -71,6 +71,7 @@ remote_endpoint:remote_port
 .br
 .Op Fl o Ar bytes | Fl Fl sndbuf Ar bytes
 .Op Fl i Ar bytes | Fl Fl rcvbuf Ar bytes
+.Op Fl N Ar count | Fl Fl count Ar count
 .br
 .Op Fl T Ar seconds | Fl Fl runtime Ar seconds
 .br
@@ -152,6 +153,8 @@ No not display live I/O statistics. This is useful for running NetPerfMeter in b
 Sets the sender buffer size to the given number of bytes.
 .It Fl i Ar bytes | Fl Fl rcvbuf Ar bytes
 Sets the receiver buffer size to the given number of bytes.
+.It Fl N Ar count | Fl Fl count Ar count
+Add all specified flows the given number of times. That is, given a count of 5, each specified flow will be added 5 times. This allows to easily create multiple flows with the same parameters.
 .It Fl T Ar seconds | Fl Fl runtime Ar seconds
 Specifies the measurement runtime in seconds. After the given time span, NetPerfMeter will finish the measurement.
 .It Fl C Ar configuration_file | Fl Fl Ar config configuration_file

@@ -67,6 +67,7 @@ static const char*      gPassiveNodeName       = "Server";
 static bool             gBindV6Only            = false;
 static int              gSndBufSize            = -1;
 static int              gRcvBufSize            = -1;
+static int              gFlowCount             = 1;
 static int              gActiveControlProtocol = IPPROTO_SCTP;
 static int              gPassiveControlSCTP    = true;
 static int              gPassiveControlTCP     = true;
@@ -180,8 +181,9 @@ bool handleGlobalParameters(int argc, char** argv)
       { "v6only",                        no_argument,       0, '6'    },
 
       { "runtime",                       required_argument, 0, 'T'    },
-      { "sndbuf",                        required_argument, 0, 'i'    },
-      { "rcvbuf",                        required_argument, 0, 'o'    },
+      { "sndbuf",                        required_argument, 0, 'o'    },
+      { "rcvbuf",                        required_argument, 0, 'i'    },
+      { "count",                         required_argument, 0, 'N'    },
       { "config",                        required_argument, 0, 'C'    },
       { "scalar",                        required_argument, 0, 'S'    },
       { "vector",                        required_argument, 0, 'V'    },
@@ -208,7 +210,7 @@ bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWT:A:P:o:i:6L:J:V:S:C:t:m:u:d:s:hvq!", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "xXyYwWT:A:P:o:i:N:6L:J:V:S:C:t:m:u:d:s:hvq!", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
             gActiveControlProtocol = IPPROTO_SCTP;
@@ -252,7 +254,8 @@ bool handleGlobalParameters(int argc, char** argv)
                      *idx = 0x00;
                   }
                   if(!string2address(address, &gLocalDataAddressArray[gLocalDataAddresses])) {
-                     fprintf(stderr, "ERROR: Bad address %s for local data endpoint! Use format <address:port>.\n",address);
+                     std::cerr << "ERROR: Bad address " << address
+                               << " for local data endpoint! Use format <address:port>.\n";
                      exit(1);
                   }
                   gLocalDataAddresses++;
@@ -274,7 +277,8 @@ bool handleGlobalParameters(int argc, char** argv)
                      *idx = 0x00;
                   }
                   if(!string2address(address, &gLocalControlAddressArray[gLocalControlAddresses])) {
-                     fprintf(stderr, "ERROR: Bad address %s for local control endpoint! Use format <address:port>.\n",address);
+                     std::cerr << "ERROR: Bad address " << address
+                               << " for local control endpoint! Use format <address:port>.\n";
                      exit(1);
                   }
                   gLocalControlAddresses++;
@@ -300,6 +304,13 @@ bool handleGlobalParameters(int argc, char** argv)
           break;
          case 'i':
             gRcvBufSize = atol(optarg);
+          break;
+         case 'N':
+            gFlowCount = atol(optarg);
+            if( (gFlowCount < 1) || (gFlowCount > 256) ) {
+               std::cerr << "ERROR: Invalid flow count " << gFlowCount << "!\n";
+               exit(1);
+            }
           break;
          case 'T':
             gRuntime = atof(optarg);
@@ -1605,27 +1616,28 @@ void activeMode(const char* remoteEndpoint)
    // ====== Handle command-line parameters =================================
 
    // ------ Handle other parameters ----------------------------------------
-   for(std::vector<AssocSpec>::const_iterator assocSpecIterator = gAssocSpecs.begin();
-       assocSpecIterator != gAssocSpecs.end(); assocSpecIterator++) {
-      const AssocSpec& assocSpec = *assocSpecIterator;
-      Flow* lastFlow = nullptr;
-      for(std::vector<const char*>::const_iterator flowIterator = assocSpec.Flows.begin();
-          flowIterator != assocSpec.Flows.end(); flowIterator++) {
-         const char* flowSpec = *flowIterator;
-
-         lastFlow = createFlow(lastFlow, flowSpec, measurementID,
-                               gVectorNamePattern, gVectorFileFormat,
-                               assocSpec.Protocol, remoteAddress);
-         if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
-            LOG_FATAL
-            stdlog << "ERROR: Failed to add flow to remote node!\n";
-            LOG_END_FATAL
+   for(unsigned int f = 0; f <gFlowCount; f++) {
+      for(std::vector<AssocSpec>::const_iterator assocSpecIterator = gAssocSpecs.begin();
+         assocSpecIterator != gAssocSpecs.end(); assocSpecIterator++) {
+         const AssocSpec& assocSpec = *assocSpecIterator;
+         Flow* lastFlow = nullptr;
+         for(std::vector<const char*>::const_iterator flowIterator = assocSpec.Flows.begin();
+            flowIterator != assocSpec.Flows.end(); flowIterator++) {
+            const char* flowSpec = *flowIterator;
+            lastFlow = createFlow(lastFlow, flowSpec, measurementID,
+                                 gVectorNamePattern, gVectorFileFormat,
+                                 assocSpec.Protocol, remoteAddress);
+            if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
+               LOG_FATAL
+               stdlog << "ERROR: Failed to add flow to remote node!\n";
+               LOG_END_FATAL
+            }
+            LOG_TRACE
+            stdlog << "<okay; sd=" << gControlSocket << ">\n";
+            LOG_END
          }
-         LOG_TRACE
-         stdlog << "<okay; sd=" << gControlSocket << ">\n";
-         LOG_END
+         lastFlow = nullptr;
       }
-      lastFlow = nullptr;
    }
 
    // ====== Print global parameters ========================================

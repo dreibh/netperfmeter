@@ -329,6 +329,15 @@ Some examples:
 
 ## Multiple Flows and Measurement Results Recording
 
+* Create 10 flows with the same parameters:
+
+ ```bash
+  netperfmeter $SERVER:9000 \
+     -runtime=60 \
+     -count=10 \
+     -tcp  const10:const4096:const10:const4906 \
+ ```
+
 * Run an active instance (i.e.&nbsp;client side), with 7&nbsp;flows, stopping the measurement after 60&nbsp;s:
 
   - TCP flow, constant 10&nbsp;frames/s, constant 4096&nbsp;B/frame, in both directions;
@@ -347,7 +356,6 @@ Some examples:
         const4:const512:const2:const512 \
         const5:const512:const1:const512
   ```
-
 
 * Run an active instance (i.e.&nbsp;client side), with 9&nbsp;flows, stopping the measurement after 60&nbsp;s:
 
