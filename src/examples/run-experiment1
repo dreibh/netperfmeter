@@ -53,25 +53,25 @@ for destination in $DESTINATIONS ; do
                directory="run-$(echo "$run" | sha1sum | cut -d' ' -f1)"
                mkdir -p "$directory"
 
-               # ------ Prepare name/patterns for results files ---------------------------
-               scalarPattern="$directory/run.sca.bz2"
-               vectorPattern="$directory/run.vec.bz2"
-               configName="$directory/run.config"
-
                # Do something, to configure non-NetPerfMeter options
                # something-to-configure-option1 "$option1"
                # something-to-configure-option2 "$option2"
                # ...
 
                # ------ Run NetPerfMeter --------------------------------------------------
-               # NOTE: Add -vector="$vectorPattern", if only needed.
-               #       It may use a lot of storage capacity for high-bandwidth flows!
-               netperfmeter "[$destination]:9000" \
-                  -config="$configName" \
-                  -scalar="$scalarPattern" \
-                  -vector="$vectorPattern" \
-                  -runtime=$RUNTIME \
-                  "-$protocol" const0:const1024:const0:const1024
+               (
+                  cd "$directory"
+                  # *******************************************************************
+                  # NOTE: Add option -vector="run.vec.bz2" only when necessary!
+                  # Vectors may use a lot of storage capacity for high-bandwidth flows!
+                  # *******************************************************************
+                  netperfmeter "[$destination]:9000" \
+                     -config="run.config"  \
+                     -scalar="run.sca.bz2" \
+                     -vector="run.vec.bz2" \
+                     -runtime=$RUNTIME     \
+                     "-$protocol" const0:const1024:const0:const1024
+               )
 
                # ------ Append run to results.summary -------------------------------------
                (

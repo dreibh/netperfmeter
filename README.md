@@ -492,11 +492,11 @@ Some examples:
   Note: NetPerfMeter &ge;2.0 is required!
 
 
-## Running Larger-Scale Measurements using the CreateSummary and CombineSummaries Tools
+# 📚 Running Larger-Scale Measurements using the CreateSummary and CombineSummaries Tools
 
 Goal of many NetPerfMeter measurements is likely to perform larger-scale measurements, with multiple NetPerfMeter runs for every combination of NetPerfMeter as well as non-NetPerfMeter parameters.
 
-### Creating a Run Script
+## Creating a Run Script
 
 Example "experiment1":
 
@@ -536,25 +536,25 @@ for destination in $DESTINATIONS ; do
                directory="run-$(echo "$run" | sha1sum | cut -d' ' -f1)"
                mkdir -p "$directory"
 
-               # ------ Prepare name/patterns for results files ---------------------------
-               scalarPattern="$directory/run.sca.bz2"
-               vectorPattern="$directory/run.vec.bz2"
-               configName="$directory/run.config"
-
                # Do something, to configure non-NetPerfMeter options
-               something-to-configure-option1 "$option1"
-               something-to-configure-option2 "$option2"
-               ...
+               # something-to-configure-option1 "$option1"
+               # something-to-configure-option2 "$option2"
+               # ...
 
                # ------ Run NetPerfMeter --------------------------------------------------
-               # NOTE: Add -vector="$vectorPattern", if only needed.
-               #       It may use a lot of storage capacity for high-bandwidth flows!
-               netperfmeter "[$destination]:9000" \
-                  -config="$configName" \
-                  -scalar="$scalarPattern" \
-                  -vector="$vectorPattern" \
-                  -runtime=$RUNTIME \
-                  "-$protocol" const0:const1024:const0:const1024
+               (
+                  cd "$directory"
+                  # *******************************************************************
+                  # NOTE: Add option -vector="run.vec.bz2" only when necessary!
+                  # Vectors may use a lot of storage capacity for high-bandwidth flows!
+                  # *******************************************************************
+                  netperfmeter "[$destination]:9000" \
+                     -config="run.config"  \
+                     -scalar="run.sca.bz2" \
+                     -vector="run.vec.bz2" \
+                     -runtime=$RUNTIME     \
+                     "-$protocol" const0:const1024:const0:const1024
+               )
 
             done
          done
@@ -571,7 +571,7 @@ Notes:
 
 The result of the script execution is a directory `experiment1`, with one subdirectory <tt>run-<em>&lt;HASH&gt;</em></tt> for each NetPerfMeter run. Each of these subdirectories will contain the scalar files `run-active.sca.bz2` (active-side results) and `run-passive.sca.bz2` (passive-side results), with all written scalars.
 
-### Applying CreateSummary
+## Applying CreateSummary
 
 Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter setting and the resulting scalar value, i.e.&nbsp;for the scalar *passive.flow-ReceivedBitRate*:
 
@@ -648,7 +648,7 @@ print(colnames(results))                                   # Show table columns
 print(results$"active.flow-ReceivedBitRate" / 1000000.0)   # Received bit rate in Mbit/s
 ```
 
-### Applying CombineSummaries
+## Applying CombineSummaries
 
 In some cases, it may be necessary to combine summary tables written by CreateSummary. For example, measurements have been from hosts *host1.example* and *host2.example*, now having collected data from both hosts. For analysis, the results in separate files (i.e.&nbsp;tables) for each host can be combined into a single file, with a new table column "Host" containing the measurement host:
 
@@ -663,13 +663,13 @@ In some cases, it may be necessary to combine summary tables written by CreateSu
 
 Then, after loading the resulting combined file `combined-active.flow-ReceivedBitRate.data.bz2` into an analysis tool like [GNU&nbsp;R](https://www.r-project.org/), the information about the host is in the added table column "Host".
 
-### Plotting a Vector Overview
+## Plotting a Vector Overview
 
-[`plot-netperfmeter-results`](https://github.com/dreibh/netperfmeter/blob/master/src/plot-netperfmeter-results) (internally calling [`plot-netperfmeter-results.R`](https://github.com/dreibh/netperfmeter/blob/master/src/plot-netperfmeter-results.R) can be used to get an overview of the vector outputs for a certain run.
+[`plot-netperfmeter-results`](https://github.com/dreibh/netperfmeter/blob/master/src/plot-netperfmeter-results) (internally calling [`plot-netperfmeter-results.R`](https://github.com/dreibh/netperfmeter/blob/master/src/plot-netperfmeter-results.R) for plotting) can be used to get an overview of the vector outputs for a certain run.
 
 1. Identify the run of interest.
 
-2. In the corresponding run directory:
+2. In the corresponding <tt>run-<em>&lt;HASH&gt;</em></tt> directory:
 
    ```bash
    plot-netperfmeter-results run.config
