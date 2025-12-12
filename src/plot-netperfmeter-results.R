@@ -424,6 +424,7 @@ if(!plotOwnFile) {
    # ------ Add PDF outlines and metadata -----------------------------------
    cmd2 <- paste(sep="", "pdfembedfonts ", pdfFilePrefix, "-TEMP2.pdf", " ", pdfFilePrefix, ".pdf -optimize",
                          " || mv ", pdfFilePrefix, "-TEMP2.pdf", " ", pdfFilePrefix, ".pdf")
+   # cat(cmd2,"\n")
    ret2 <- system(cmd2)
    if(ret2 != 0) {
       stop(gettextf("status %d in running command '%s'", ret2, cmd2))
