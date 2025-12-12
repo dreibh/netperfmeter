@@ -39,7 +39,7 @@ OPTION2="test1"
 mkdir -p "$NAME"
 cd "$NAME"
 if [ ! -e results.summary ] ; then
-   echo "--varnames=Timestamp Destination Flow Protocol Option1 Option2 Directory" >results.summary
+   echo "--varnames=Timestamp Destination Protocol Flow Option1 Option2 Directory" >results.summary
 fi
 
 for destination in $DESTINATIONS ; do
@@ -78,9 +78,9 @@ for destination in $DESTINATIONS ; do
 
                # ------ Append run to results.summary -------------------------------------
                (
-                  echo "--values=$timestamp $destination $flow $protocol $option1 $option2 $directory"
+                  echo "--values=$timestamp $destination $protocol $flow $option1 $option2 $directory"
                   echo "--input=$directory/run-active.sca.bz2"
-                  echo "--values=$timestamp $destination $flow $protocol $option1 $option2 $directory"
+                  echo "--values=$timestamp $destination $protocol $flow $option1 $option2 $directory"
                   echo "--input=$directory/run-passive.sca.bz2"
                ) >>results.summary
 

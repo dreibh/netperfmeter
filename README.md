@@ -580,17 +580,19 @@ Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with
 
 <table summary="Summary Example">
  <tr>
+  <th>Timestamp</th>
   <th>Destination</th>
   <th>Protocol</th>
+  <th>Flow</th>
   <th>Option1</th>
   <th>Option2</th>
   <th>Directory</th>
   <th>passive.flow-ReceivedBitRate</th>
  </tr>
- <tr> <td>10.10.10.10</td> <td>tcp</td> <td>value1</td> <td>test1</td> <td>run-<em>&lt;HASH1&gt;</em></td> <td>12345678</td> </tr>
- <tr> <td>10.10.10.10</td> <td>tcp</td> <td>value1</td> <td>test2</td> <td>run-<em>&lt;HASH2&gt;</em></td> <td>11111111</td> </tr>
- <tr><td>...</td> <td>...</td> <td>...</td> <td>...</td> <td>run-<em>&lt;HASH...&gt;</em></td> <td>...</td> </tr>
- <tr> <td>fdd8:c818:a429:cafe:40</td> <td>sctp</td> <td>value3</td> <td>test3</td> <td>run-<em>&lt;HASH_LAST&gt;</em></td> <td>11223344</td> </tr>
+ <tr> <td>1765557402276097</td> <td>10.10.10.10</td> <td>tcp</td> <td>...</td> <td>value1</td> <td>test1</td> <td>run-<em>&lt;HASH1&gt;</em></td> <td>12345678</td> </tr>
+ <tr> <td>1765557493682363</td> <td>10.10.10.10</td> <td>tcp</td> <td>...</td> <td>value1</td> <td>test2</td> <td>run-<em>&lt;HASH2&gt;</em></td> <td>11111111</td> </tr>
+ <tr> <td>1765557567874323</td> <td>...</td> <td>...</td> <td>...</td> <td>...</td> <td>...</td> <td>run-<em>&lt;HASH...&gt;</em></td> <td>...</td> </tr>
+ <tr> <td>1765557789993130</td> <td>fdd8:c818:a429:cafe:40</td> <td>sctp</td> <td>...</td> <td>value3</td> <td>test3</td> <td>run-<em>&lt;HASH_LAST&gt;</em></td> <td>11223344</td> </tr>
 </table>
 
 The summarisation task can be realised by the tool CreateSummary. It generates the output tables (BZip2-compressed CSV format, using TAB as delimiter) from all the scalar files of the measurement. For this summarisation, it needs information about:
@@ -609,7 +611,7 @@ In the example above, this information needs to be added by preparing an input f
 mkdir -p "$NAME"
 cd "$NAME"
 if [ ! -e results.summary ] ; then
-   echo "--varnames=Timestamp Destination Flow Protocol Option1 Option2 Directory" >results.summary
+   echo "--varnames=Timestamp Destination Protocol Flow Option1 Option2 Directory" >results.summary
 fi
 
 for destination in $DESTINATIONS ; do
@@ -621,9 +623,9 @@ for destination in $DESTINATIONS ; do
 
                # ------ Append run to results.summary -------------------------------------
                (
-                  echo "--values=$timestamp $destination $flow $protocol $option1 $option2 $directory"
+                  echo "--values=$timestamp $destination $protocol $flow $option1 $option2 $directory"
                   echo "--input=$directory/run-active.sca.bz2"
-                  echo "--values=$timestamp $destination $flow $protocol $option1 $option2 $directory"
+                  echo "--values=$timestamp $destination $protocol $flow $option1 $option2 $directory"
                   echo "--input=$directory/run-passive.sca.bz2"
                ) >>results.summary
 
