@@ -671,6 +671,18 @@ In some cases, it may be necessary to combine summary tables written by CreateSu
 
 Then, after loading the resulting combined file `combined-active.flow-ReceivedBitRate.data.bz2` into an analysis tool like [GNU&nbsp;R](https://www.r-project.org/), the information about the host is in the added table column "Host".
 
+## Processing Scalar Data
+
+An example for processing the generated scalar data is provided by the script [`plot-experiment`](https://github.com/dreibh/netperfmeter/blob/master/src/examples/plot-experiment1):
+
+```bash
+./plot-experiment experiment1/active.flow-ReceivedBitRate.data.bz2
+./plot-experiment combined-active.flow-ReceivedBitRate.data.bz2
+...
+```
+
+Note that this script is only a very basic example.
+
 ## Plotting a Vector Overview
 
 [`plot-netperfmeter-results`](https://github.com/dreibh/netperfmeter/blob/master/src/plot-netperfmeter-results) (internally calling [`plot-netperfmeter-results.R`](https://github.com/dreibh/netperfmeter/blob/master/src/plot-netperfmeter-results.R) for plotting) can be used to get an overview of the vector outputs for a certain run.
