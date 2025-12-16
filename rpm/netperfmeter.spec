@@ -21,9 +21,8 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-build
 Requires: %{name}-common = %{version}-%{release}
 Recommends: %{name}-examples = %{version}-%{release}
 Recommends: %{name}-plotting = %{version}-%{release}
+Recommends: gnutls-devel
 Recommends: hipercontracer
-Recommends: keyutils
-Recommends: ktls-utils
 Recommends: iputils
 Recommends: wireshark-cli
 Recommends: subnetcalc
