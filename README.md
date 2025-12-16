@@ -347,6 +347,8 @@ For the following examples, the base port is usually set to 9000.
 
   Make sure that the server name matches the with the information in the server certificate provided by the passive instance. TLS is verifying it, and the TLS handshake will fail (as intended) if it does not match!
 
+* See [Wireshark](#wireshark) for details on how to examine the NetPerfMeter QUIC traffic with Wireshark!
+
 
 ## Variable Bitrate Flows
 

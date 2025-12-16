@@ -80,9 +80,11 @@ Description: Network Performance Meter (common files)
 Package: netperfmeter-examples
 Architecture: all
 Depends: r-base-core,
+         r-cran-bit64,
          r-cran-data.table,
          r-cran-dplyr,
          r-cran-ggplot2,
+         r-cran-r.utils,
          ${misc:Depends}
 Description: Network Performance Meter (example scripts and results files)
  NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
@@ -153,7 +155,7 @@ Package: netperfmeter-plotting
 Architecture: all
 Recommends: netperfmeter-examples
 Depends: pdfproctools,
-         r-base,
+         r-base-core,
          r-cran-bit64,
          r-cran-data.table,
          r-cran-dplyr,

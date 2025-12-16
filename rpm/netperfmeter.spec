@@ -118,6 +118,12 @@ This package contains common NetPerfMeter files.
 Summary: Network Performance Meter (example scripts and results files)
 Group: Applications/Internet
 BuildArch: noarch
+Requires: R-bit64
+Requires: R-core
+Requires: R-data.table
+Requires: R-dplyr
+Requires: R-ggplot2
+Requires: R-R.utils
 
 %description examples
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
