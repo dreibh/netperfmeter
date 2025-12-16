@@ -1,0 +1,7 @@
+#!/bin/sh -eu
+
+make netperfmeter
+netperfmeter 9000 \
+   -tls-key  "$DIRECTORY/TestCA/$(hostname -f)/$(hostname -f).key" \
+   -tls-cert "$DIRECTORY/TestCA/$(hostname -f)/$(hostname -f).crt" \
+   -tls-ca   "$DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt"

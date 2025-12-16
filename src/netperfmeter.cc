@@ -90,6 +90,7 @@ static int              gDCCPSocket            = -1;
 #endif
 #ifdef HAVE_QUIC
 static int              gQUICSocket            = -1;
+static const char*      gQUICCA                = nullptr;
 static const char*      gQUICCertificate       = nullptr;
 static const char*      gQUICKey               = nullptr;
 static const char*      gQUICHostname          = nullptr;
@@ -132,7 +133,7 @@ static MessageReader  gMessageReader;
          "    [-x|--control-over-sctp|-y|--control-over-tcp|--control-over-mptcp]\n"
          "    [-L address[,address,...]|--local address[,address,...]]\n"
          "    [-l address[,address,...]|--controllocal address[,address,...]]\n"
-         "    [-K|--tls-key key_file] [-J|--tls-cert certificate_file]\n"
+         "    [-K|--tls-key key_file] [-J|--tls-cert certificate_file] [-I|--tls-ca ca_certificate_file]\n"
          "    [-6|--v6only]\n"
          "    [--display|--nodisplay]\n"
          "    [--loglevel level]\n"
@@ -202,6 +203,7 @@ bool handleGlobalParameters(int argc, char** argv)
       { "passivenodename",               required_argument, 0, 'P'    },
       { "tls-key",                       required_argument, 0, 'K'    },
       { "tls-cert",                      required_argument, 0, 'J'    },
+      { "tls-ca",                        required_argument, 0, 'I'    },
       { "tls-hostname",                  required_argument, 0, 'H'    },
 
       { "tcp",                           required_argument, 0, 't'    },
@@ -418,6 +420,11 @@ bool handleGlobalParameters(int argc, char** argv)
          case 'J':
 #ifdef HAVE_QUIC
             gQUICCertificate = optarg;
+#endif
+          break;
+         case 'I':
+#ifdef HAVE_QUIC
+            gQUICCA = optarg;
 #endif
           break;
          case 'H':
@@ -813,6 +820,172 @@ static const char* parseTrafficSpecOption(const char*      parameters,
 }
 
 
+// ###### QUIC server handshake #############################################
+static int server_handshake(int          sd,
+                            const char*  alpns,
+                            const char*  tlsCAFile,
+                            const char*  tlsCertFile,
+                            const char*  tlsKeyFile,
+                            uint8_t*     sessionKey,
+                            unsigned int sessionKeyLength)
+{
+   gnutls_certificate_credentials_t credentials;
+   gnutls_session_t                 session;
+   gnutls_datum_t                   skey = { sessionKey, sessionKeyLength };
+   size_t                           alpnLength;
+   char                             alpn[64];
+   int                              error;
+
+puts("S-1");
+   error = gnutls_certificate_allocate_credentials(&credentials);
+   if(!error) {
+puts("S-2");
+      printf("T=%s\n", tlsCAFile);
+      int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
+      printf("loaded=%d\n", loadedCAs);
+      if(loadedCAs <= 0) {
+         LOG_ERROR
+         stdlog << "Loading CA certificate from " << tlsCAFile << " failed\n";
+         LOG_END
+         gnutls_certificate_free_credentials(credentials);
+         return -1;
+      }
+
+puts("S-3");
+      error = gnutls_certificate_set_x509_key_file2(credentials, tlsCertFile, tlsKeyFile, GNUTLS_X509_FMT_PEM, NULL, 0);
+      if(!error) {
+puts("S-4");
+         error = gnutls_init(&session,
+                             GNUTLS_SERVER|
+                             GNUTLS_NO_AUTO_SEND_TICKET|
+                             GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
+         if(!error) {
+puts("S-5");
+            error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
+            if(!error) {
+puts("S-6");
+               error = gnutls_session_ticket_enable_server(session, &skey);
+               if(!error) {
+puts("S-7");
+                  error = gnutls_record_set_max_early_data_size(session, 0xffffffffu);
+                  if(!error) {
+puts("S-8");
+                     error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
+                     if( (!error) && (alpns != NULL) ) {
+puts("S-9");
+                        error = quic_session_set_alpn(session, alpns, strlen(alpns));
+                     }
+                     if(!error) {
+puts("S-10");
+                        gnutls_transport_set_int(session, sd);
+                        error = quic_handshake(session);
+                        printf("e=%d\n",error);
+                     }
+                     if( (!error) && (alpns != NULL) ) {
+puts("S-11");
+                        // error = quic_session_get_alpn(session, alpn, &alpnLength);
+                        // printf("a=<%s>\n", alpn);
+                     }
+puts("S-12");
+                  }
+               }
+            }
+         }
+         gnutls_deinit(session);
+      }
+      gnutls_certificate_free_credentials(credentials);
+   }
+
+puts("S-13");
+   if(error) {
+      LOG_ERROR
+      stdlog << "TLS setup failed: " << gnutls_strerror(error) << "\n";
+      LOG_END
+   }
+   return error;
+}
+
+
+// ###### QUIC client handshake #############################################
+static int client_handshake(int            sd,
+                            const char*    alpns,
+                            const char*    host,
+                            const char*    tlsCAFile,
+                            const uint8_t* ticketIn,
+                            size_t         ticketInLength,
+                            uint8_t*       ticketOut,
+                            size_t*        ticketOutLength)
+{
+   gnutls_certificate_credentials_t credentials;
+   gnutls_session_t                 session;
+   size_t                           alpnLength;
+   char                             alpn[64];
+   int                              error;
+
+puts("C-1");
+   error = gnutls_certificate_allocate_credentials(&credentials);
+   if(!error) {
+printf("T=%s\n", tlsCAFile);
+      int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
+      printf("loaded=%d\n", loadedCAs);
+      if(loadedCAs <= 0) {
+         std::cerr << "Loading CA certificate from " << tlsCAFile << " failed";
+         gnutls_certificate_free_credentials(credentials);
+         return -1;
+      }
+puts("C-2");
+      error = gnutls_init(&session, GNUTLS_CLIENT|GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
+      if(!error) {
+         error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
+puts("C-3");
+         if(!error) {
+            error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
+         }
+puts("C-4");
+         if( (!error) && (alpns != NULL) ) {
+            error = quic_session_set_alpn(session, alpns, strlen(alpns));
+         }
+puts("C-5");
+         if(!error) {
+            printf("H=%s\n", host);
+            error = gnutls_server_name_set(session, GNUTLS_NAME_DNS, host, strlen(host));
+         }
+puts("C-6");
+         if(!error) {
+puts("C-7");
+            gnutls_session_set_verify_cert(session, host, 0);
+            gnutls_transport_set_int(session, sd);
+            if(ticketIn != NULL) {
+               error = quic_session_set_data(session, ticketIn, ticketInLength);
+            }
+            if(!error) {
+puts("C-8");
+               error = quic_handshake(session);
+               printf("e=%d\n",error);
+               if( (!error) && (alpns != NULL) ) {
+puts("C-9");
+                  alpnLength = sizeof(alpn);
+                  error = quic_session_get_alpn(session, alpn, &alpnLength);
+               }
+            }
+            if( (!error) && (ticketOut != NULL) ) {
+puts("C-10");
+               error =  quic_session_get_data(session, ticketOut, ticketOutLength);
+            }
+         }
+         gnutls_deinit(session);
+      }
+      gnutls_certificate_free_credentials(credentials);
+   }
+
+puts("C-11");
+   if(error) {
+      std::cerr << "TLS setup failed: " << gnutls_strerror(error) << "\n";
+   }
+   return error;
+}
+
+
 // ###### Create Flow for new flow ##########################################
 static Flow* createFlow(Flow*                  previousFlow,
                         const char*            parameters,
@@ -1060,12 +1233,12 @@ static Flow* createFlow(Flow*                  previousFlow,
       if(trafficSpec.Protocol == IPPROTO_QUIC) {
          LOG_TRACE
          stdlog << "client handshake <sd=" << socketDescriptor
-                << ", H=" << gQUICHostname << ">\n";
+                << ", CA=" << gQUICCA << " H=" << gQUICHostname << ">\n";
          LOG_END
-         if(quic_client_handshake(socketDescriptor, nullptr,
-                                  gQUICHostname,
-                                  ALPN_NETPERFMETER_DATA) != 0) {
-            std::cerr << "ERROR: QUIC handshake failed: " << strerror(errno) << "!\n";
+
+         if(client_handshake(socketDescriptor,
+                             ALPN_NETPERFMETER_DATA, gQUICHostname, gQUICCA,
+                             nullptr, 0, nullptr, nullptr) != 0) {
             exit(1);
          }
       }
@@ -1269,19 +1442,35 @@ bool mainLoop(const bool               isActiveMode,
             LOG_END
             LOG_TRACE
             stdlog << "server handshake <sd=" << gQUICSocket
-                   << ", K=" << ((gQUICKey != nullptr) ? gQUICKey : "(none)")
-                   << ", C=" << ((gQUICCertificate != nullptr) ? gQUICCertificate : "(none)")
+                   << ", K="  << ((gQUICKey != nullptr) ? gQUICKey : "(none)")
+                   << ", C="  << ((gQUICCertificate != nullptr) ? gQUICCertificate : "(none)")
+                   << ", CA=" << ((gQUICCA != nullptr) ? gQUICCA : "(none)")
                    << ">\n";
             LOG_END
-            if(quic_server_handshake(newSD, gQUICKey, gQUICCertificate, ALPN_NETPERFMETER_DATA) == 0) {
-               LOG_TRACE
-               stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
-                                gQUICSocket, newSD) << "\n";
-               LOG_END
-               FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
+
+            uint8_t      sessionKey[64];
+            unsigned int sessionKeyLength = sizeof(sessionKey);
+            if(getsockopt(gQUICSocket,   /* NOTE: accepting socket, not newSD! */
+                          SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
+                          &sessionKey, &sessionKeyLength) == 0) {
+               if(server_handshake(newSD, ALPN_NETPERFMETER_DATA,
+                                   gQUICCA, gQUICCertificate, gQUICKey,
+                                   sessionKey, sessionKeyLength) == 0) {
+                  LOG_TRACE
+                  stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
+                                 gQUICSocket, newSD) << "\n";
+                  LOG_END
+                  FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
+               }
+               else {
+                  ext_close(newSD);
+               }
             }
             else {
-               perror("quic_server_handshake()");
+               LOG_WARNING
+               stdlog << "getsockopt(QUIC_SOCKOPT_SESSION_TICKET): "
+                      << strerror(errno);
+               LOG_END
                ext_close(newSD);
             }
          }

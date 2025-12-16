@@ -265,6 +265,17 @@ HAVE_QUIC)
 IF (HAVE_QUIC)
    FIND_LIBRARY(QUIC_LIBRARY NAMES quic)
    IF (QUIC_LIBRARY)
+      FIND_LIBRARY(GNUTLS_LIBRARY NAMES gnutls)
+      IF (NOT GNUTLS_LIBRARY)
+         MESSAGE(FATAL_ERROR
+               " Cannot find GnuTLS library (which is required for QUIC)! Try:\n"
+               " * Ubuntu/Debian: sudo apt install -y libgnutls28-dev\n"
+               " * Fedora:        sudo dnf install -y  gnutls-devel\n"
+               " * SuSE:          sudo zypper install -y libgnutls-devel\n"
+               " * Alpine:        sudo apk add gnutls-dev\n"
+               " * FreeBSD:       sudo pkg install -y gnutls")
+      ENDIF()
+      LIST(APPEND QUIC_LIBRARY ${GNUTLS_LIBRARY})
       ADD_DEFINITIONS(-DHAVE_QUIC)
    ELSE()
       MESSAGE(WARNING "QUIC is available, but libquic is not!")

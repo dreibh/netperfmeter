@@ -325,7 +325,8 @@ The server and client certificates can be verified using the CA certificate:
   ```bash
   netperfmeter 9000 \
      -tls-key $DIRECTORY/TestCA/server.domain.example/server.domain.example.key \
-     -tls-cert $DIRECTORY/TestCA/server.domain.example/server.domain.example.crt
+     -tls-cert $DIRECTORY/TestCA/server.domain.example/server.domain.example.crt \
+     -tls-ca $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt
   ```
 
 * Run an active instance (i.e.&nbsp;client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation:
@@ -335,8 +336,9 @@ The server and client certificates can be verified using the CA certificate:
 
   ```bash
   netperfmeter $SERVER:9000 \
-     -tls-hostname server.domain.example
-     -quic const10:const128:const25:const1200 \
+     -tls-hostname server.domain.example \
+     -tls-ca $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt \
+     -quic const10:const128:const25:const1200
   ```
 
 
