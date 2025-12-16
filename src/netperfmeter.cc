@@ -938,10 +938,10 @@ static int client_handshake(int            sd,
             }
             if(!error) {
                error = quic_handshake(session);
-               if( (!error) && (alpns != NULL) ) {
-                  alpnLength = sizeof(alpn);
-                  error = quic_session_get_alpn(session, alpn, &alpnLength);
-               }
+               // if( (!error) && (alpns != NULL) ) {
+               //    alpnLength = sizeof(alpn);
+               //    error = quic_session_get_alpn(session, alpn, &alpnLength);
+               // }
             }
             if( (!error) && (ticketOut != NULL) ) {
                error =  quic_session_get_data(session, ticketOut, ticketOutLength);
