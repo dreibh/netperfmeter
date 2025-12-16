@@ -8,7 +8,6 @@
 // ###### QUIC server handshake #############################################
 static int server_handshake(int          sd,
                             const char*  alpns,
-                            const char*  host,
                             const char*  tlsCAFile,
                             const char*  tlsCertFile,
                             const char*  tlsKeyFile,
@@ -135,7 +134,7 @@ int main(int argc, char** argv)
    }
 
    printf("Handshake on %d ...\n", accepted);
-   if(server_handshake(accepted, "sample", "localhost",
+   if(server_handshake(accepted, "sample",
                        "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
                        "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.crt",
                        "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.key",
