@@ -4,6 +4,7 @@
 #include <string.h>
 
 
+// ###### QUIC client handshake #############################################
 static int client_handshake(int            sd,
                             const char*    alpns,
                             const char*    host,
@@ -117,8 +118,8 @@ int main(int argc, char** argv)
    uint8_t ticket[4096];
    size_t  ticketLength = sizeof(ticket);
    if(client_handshake(sd, alpn, "localhost",
-                       // "quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
-                       "/home/dreibh/src/quic/tests/server.pem",
+                       "quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
+                       // "/home/dreibh/src/quic/tests/server.pem",
                        NULL, 0, ticket, &ticketLength) != 0) {
       perror("quic_client_handshake()");
       exit(1);

@@ -5,6 +5,7 @@
 #include <poll.h>
 
 
+// ###### QUIC server handshake #############################################
 static int server_handshake(int          sd,
                             const char*  alpns,
                             const char*  host,
@@ -135,12 +136,12 @@ int main(int argc, char** argv)
 
    printf("Handshake on %d ...\n", accepted);
    if(server_handshake(accepted, "sample", "localhost",
-                       // "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
-                       // "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.crt",
-                       // "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.key",
-                       "/home/dreibh/src/quic/tests/server.pem",
-                       "/home/dreibh/src/quic/tests/server.pem",
-                       "/home/dreibh/src/quic/tests/server.key",
+                       "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
+                       "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.crt",
+                       "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.key",
+                       // "/home/dreibh/src/quic/tests/server.pem",
+                       // "/home/dreibh/src/quic/tests/server.pem",
+                       // "/home/dreibh/src/quic/tests/server.key",
                        sessionKey, sessionKeyLength) != 0) {
       puts("server_handshake() failed!");
       exit(1);
