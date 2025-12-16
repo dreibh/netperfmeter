@@ -1,6 +1,85 @@
 #include "tools.h"
 
+#include <gnutls/gnutls.h>
 #include <string.h>
+
+
+static int client_handshake(int            sd,
+                            const char*    alpns,
+                            const char*    host,
+                            const char*    tlsCAFile,
+                            const uint8_t* ticketIn,
+                            size_t         ticketInLength,
+                            uint8_t*       ticketOut,
+                            size_t*        ticketOutLength)
+{
+   gnutls_certificate_credentials_t credentials;
+   gnutls_session_t                 session;
+   size_t                           alpnLength;
+   char                             alpn[64];
+   int                              error;
+
+puts("C-1");
+   error = gnutls_certificate_allocate_credentials(&credentials);
+   if(!error) {
+      int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
+      printf("loaded=%d\n", loadedCAs);
+      if(loadedCAs <= 0) {
+         std::cerr << "Loading CA certificate from " << tlsCAFile << " failed";
+         gnutls_certificate_free_credentials(credentials);
+         return -1;
+      }
+puts("C-2");
+      error = gnutls_init(&session, GNUTLS_CLIENT|GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
+      if(!error) {
+         error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
+puts("C-3");
+         if(!error) {
+            error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
+         }
+puts("C-4");
+         if( (!error) && (alpns != NULL) ) {
+            error = quic_session_set_alpn(session, alpns, strlen(alpns));
+         }
+puts("C-5");
+         if(!error) {
+            printf("H=%s\n", host);
+            error = gnutls_server_name_set(session, GNUTLS_NAME_DNS, host, strlen(host));
+         }
+puts("C-6");
+         if(!error) {
+puts("C-7");
+            gnutls_session_set_verify_cert(session, host, 0);
+            gnutls_transport_set_int(session, sd);
+            if(ticketIn != NULL) {
+               error = quic_session_set_data(session, ticketIn, ticketInLength);
+            }
+            if(!error) {
+puts("C-8");
+               error = quic_handshake(session);
+               printf("e=%d\n",error);
+               if( (!error) && (alpns != NULL) ) {
+puts("C-9");
+                  alpnLength = sizeof(alpn);
+                  error = quic_session_get_alpn(session, alpn, &alpnLength);
+               }
+            }
+            if( (!error) && (ticketOut != NULL) ) {
+puts("C-10");
+               error =  quic_session_get_data(session, ticketOut, ticketOutLength);
+            }
+         }
+         gnutls_deinit(session);
+      }
+      gnutls_certificate_free_credentials(credentials);
+   }
+
+puts("C-11");
+   if(error) {
+      std::cerr << "TLS setup failed: " << gnutls_strerror(error) << "\n";
+   }
+   return error;
+}
 
 
 int main(int argc, char** argv)
@@ -33,7 +112,11 @@ int main(int argc, char** argv)
 
    printf("Handshake on %d ...\n", sd);
    const char* alpn = "sample";
-   if(quic_client_handshake(sd, NULL, "pc2.northbound.hencsat", alpn) != 0) {
+
+   uint8_t ticket[4096];
+   size_t  ticketLength = sizeof(ticket);
+   if(client_handshake(sd, alpn, "localhost", "quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
+                       NULL, 0, ticket, &ticketLength) != 0) {
       perror("quic_client_handshake()");
       exit(1);
    }

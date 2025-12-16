@@ -1,7 +1,86 @@
 #include "tools.h"
 
+#include <gnutls/gnutls.h>
 #include <string.h>
 #include <poll.h>
+
+
+static int server_handshake(int          sd,
+                            const char*  alpns,
+                            const char*  host,
+                            const char*  tlsCAFile,
+                            const char*  tlsCertFile,
+                            const char*  tlsKeyFile,
+                            uint8_t*     sessionKey,
+                            unsigned int sessionKeyLength)
+{
+   gnutls_certificate_credentials_t credentials;
+   gnutls_session_t                 session;
+   gnutls_datum_t                   skey = { sessionKey, sessionKeyLength };
+   size_t                           alpnLength;
+   char                             alpn[64];
+   int                              error;
+
+puts("S-1");
+   error = gnutls_certificate_allocate_credentials(&credentials);
+   if(!error) {
+puts("S-2");
+      if(gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM) <= 0) {
+         std::cerr << "Loading CA certificate from " << tlsCAFile << " failed";
+         gnutls_certificate_free_credentials(credentials);
+         return -1;
+      }
+
+puts("S-3");
+      error = gnutls_certificate_set_x509_key_file2(credentials, tlsCertFile, tlsKeyFile, GNUTLS_X509_FMT_PEM, NULL, 0);
+      if(!error) {
+puts("S-4");
+         error = gnutls_init(&session, GNUTLS_SERVER|GNUTLS_NO_AUTO_SEND_TICKET|GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
+         if(!error) {
+puts("S-5");
+            error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
+            if(!error) {
+puts("S-6");
+               error = gnutls_session_ticket_enable_server(session, &skey);
+               if(!error) {
+puts("S-7");
+                  error = gnutls_record_set_max_early_data_size(session, 0xffffffffu);
+                  if(!error) {
+puts("S-8");
+                     error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
+                     if( (!error) && (alpns != NULL) ) {
+puts("S-9");
+                        error = quic_session_set_alpn(session, alpns, strlen(alpns));
+                     }
+                     if(!error) {
+puts("S-10");
+                        error = quic_handshake(session);
+                        printf("e=%d\n",error);
+                     }
+                     if( (!error) && (alpns != NULL) ) {
+puts("S-11");
+                        error = quic_session_get_alpn(session, alpn, &alpnLength);
+                     }
+                     if(!error) {
+                        puts("SUCCESS!");
+                        return 0;
+                     }
+puts("S-12");
+                  }
+               }
+            }
+         }
+         gnutls_deinit(session);
+      }
+      gnutls_certificate_free_credentials(credentials);
+   }
+
+puts("S-13");
+   if(error) {
+      std::cerr << "TLS setup failed: " << gnutls_strerror(error) << "\n";
+   }
+   return error;
+}
 
 
 int main(int argc, char** argv)
@@ -40,14 +119,23 @@ int main(int argc, char** argv)
       perror("accept()");
       exit(1);
    }
-   printf("Accepted %d\n", sd);
+   printf("Accepted %d\n", accepted);
+
+   uint8_t      sessionKey[64];
+   unsigned int sessionKeyLength = sizeof(sessionKey);
+   if(getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
+                 &sessionKey, &sessionKeyLength)) {
+      perror("getsockopt(QUIC_SOCKOPT_SESSION_TICKET)");
+      exit(1);
+   }
 
    printf("Handshake on %d ...\n", accepted);
-   if(quic_server_handshake(accepted,
-         "quic-setup/TestCA/pc2.northbound.hencsat/pc2.northbound.hencsat.key",
-         "quic-setup/TestCA/pc2.northbound.hencsat/pc2.northbound.hencsat.crt",
-         "sample") != 0) {
-      perror("quic_server_handshake()");
+   if(server_handshake(accepted, "sample", "localhost",
+                       "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
+                       "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.crt",
+                       "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.key",
+                       sessionKey, sessionKeyLength) != 0) {
+      puts("server_handshake() failed!");
       exit(1);
    }
 
