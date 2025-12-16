@@ -314,6 +314,10 @@ Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. The c
 SCTP traffic with some variation.
 .It netperfmeter 172.31.33.2:\%9000 -udp const0:\%const0:\%const25:\%const2500:\%onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
 Some on-off background traffic with Pareto distribution.
+.It netperfmeter 9000 -tls-key my-server.key -tls-cert my-server.crt -tls-ca my-ca.crt
+Start in passive mode, with TLS setup for QUIC. See https://www.nntb.no/~dreibh/netperfmeter/#quic-communication for details about QUIC usage!
+.It netperfmeter 172.31.33.2:9000 -tls-hostname my-server.domain -tls-ca my-ca.crt -quic const10:const128:const25:const1200
+Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. Set TLS server name of 172.31.33.2 for QUIC to my-server.domain. See https://www.nntb.no/~dreibh/netperfmeter/#quic-communication for details about QUIC usage!
 .It netperfmeter -version
 Shows the version.
 .It netperfmeter -help
