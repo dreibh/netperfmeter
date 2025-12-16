@@ -25,7 +25,10 @@ puts("S-1");
    error = gnutls_certificate_allocate_credentials(&credentials);
    if(!error) {
 puts("S-2");
-      if(gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM) <= 0) {
+      printf("T=%s\n", tlsCAFile);
+      int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
+      printf("loaded=%d\n", loadedCAs);
+      if(loadedCAs <= 0) {
          std::cerr << "Loading CA certificate from " << tlsCAFile << " failed";
          gnutls_certificate_free_credentials(credentials);
          return -1;
@@ -35,7 +38,10 @@ puts("S-3");
       error = gnutls_certificate_set_x509_key_file2(credentials, tlsCertFile, tlsKeyFile, GNUTLS_X509_FMT_PEM, NULL, 0);
       if(!error) {
 puts("S-4");
-         error = gnutls_init(&session, GNUTLS_SERVER|GNUTLS_NO_AUTO_SEND_TICKET|GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
+         error = gnutls_init(&session,
+                             GNUTLS_SERVER|
+                             GNUTLS_NO_AUTO_SEND_TICKET|
+                             GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
          if(!error) {
 puts("S-5");
             error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
@@ -54,16 +60,14 @@ puts("S-9");
                      }
                      if(!error) {
 puts("S-10");
+                        gnutls_transport_set_int(session, sd);
                         error = quic_handshake(session);
                         printf("e=%d\n",error);
                      }
                      if( (!error) && (alpns != NULL) ) {
 puts("S-11");
-                        error = quic_session_get_alpn(session, alpn, &alpnLength);
-                     }
-                     if(!error) {
-                        puts("SUCCESS!");
-                        return 0;
+                        // error = quic_session_get_alpn(session, alpn, &alpnLength);
+                        // printf("a=<%s>\n", alpn);
                      }
 puts("S-12");
                   }
@@ -131,9 +135,12 @@ int main(int argc, char** argv)
 
    printf("Handshake on %d ...\n", accepted);
    if(server_handshake(accepted, "sample", "localhost",
-                       "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
-                       "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.crt",
-                       "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.key",
+                       // "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
+                       // "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.crt",
+                       // "/home/dreibh/src/netperfmeter/src/quic-setup/TestCA/localhost/localhost.key",
+                       "/home/dreibh/src/quic/tests/server.pem",
+                       "/home/dreibh/src/quic/tests/server.pem",
+                       "/home/dreibh/src/quic/tests/server.key",
                        sessionKey, sessionKeyLength) != 0) {
       puts("server_handshake() failed!");
       exit(1);

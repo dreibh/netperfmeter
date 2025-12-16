@@ -22,6 +22,7 @@ static int client_handshake(int            sd,
 puts("C-1");
    error = gnutls_certificate_allocate_credentials(&credentials);
    if(!error) {
+printf("T=%s\n", tlsCAFile);
       int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
       printf("loaded=%d\n", loadedCAs);
       if(loadedCAs <= 0) {
@@ -115,7 +116,9 @@ int main(int argc, char** argv)
 
    uint8_t ticket[4096];
    size_t  ticketLength = sizeof(ticket);
-   if(client_handshake(sd, alpn, "localhost", "quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
+   if(client_handshake(sd, alpn, "localhost",
+                       // "quic-setup/TestCA/TestLevel1/certs/TestLevel1.crt",
+                       "/home/dreibh/src/quic/tests/server.pem",
                        NULL, 0, ticket, &ticketLength) != 0) {
       perror("quic_client_handshake()");
       exit(1);
