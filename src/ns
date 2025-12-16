@@ -1,7 +1,16 @@
-#!/bin/sh -eu
+#!/bin/sh -eux
+
+DIRECTORY="quic-setup"
+FQDN="$(hostname -f)"
+if [ ! -e "$DIRECTORY/TestCA/$FQDN/$FQDN.key" ] || \
+   [ ! -e "$DIRECTORY/TestCA/$FQDN/$FQDN.crt" ] || \
+   [ ! -e "$DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt" ] ; then
+   echo >&2 "ERROR: TLS files are missing. Check quic-setup/make-test-certificates!"
+   exit 1
+fi
 
 make netperfmeter
-netperfmeter 9000 \
-   -tls-key  "$DIRECTORY/TestCA/$(hostname -f)/$(hostname -f).key" \
-   -tls-cert "$DIRECTORY/TestCA/$(hostname -f)/$(hostname -f).crt" \
+SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log ./netperfmeter 9000 \
+   -tls-key  "$DIRECTORY/TestCA/$FQDN/$FQDN.key" \
+   -tls-cert "$DIRECTORY/TestCA/$FQDN/$FQDN.crt" \
    -tls-ca   "$DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt"

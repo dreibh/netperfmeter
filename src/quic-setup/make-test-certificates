@@ -3,7 +3,7 @@
 set -eu
 
 # # NOTE: This line must use the local hostname:
-# ./generate-test-certificates TestCA --client --san LOCAL  "$(hostname -f)"
+./generate-test-certificates TestCA --client --san LOCAL  "$(hostname -f)"
 #
 # # NOTE: These lines must contain resolvable (/etc/hosts or DNS) hostnames:
 # ./generate-test-certificates TestCA --server --san LOOKUP besserud.proxmox.crnalab.net
