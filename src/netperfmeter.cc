@@ -820,6 +820,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
 }
 
 
+#ifdef HAVE_QUIC
 // ###### QUIC server handshake #############################################
 static int server_handshake(int          sd,
                             const char*  alpns,
@@ -957,6 +958,7 @@ static int client_handshake(int            sd,
    }
    return error;
 }
+#endif
 
 
 // ###### Create Flow for new flow ##########################################
