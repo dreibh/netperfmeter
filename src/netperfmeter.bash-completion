@@ -169,6 +169,7 @@ _netperfmeter()
             return
             ;;
          # ====== Special case: certificate file ============================
+         -I | --tls-ca | \
          -J | --tls-cert)
             _filedir '@(crt|pem)'
             return
@@ -290,6 +291,8 @@ _netperfmeter()
 --controllocal
 -K
 --tls-key
+-I
+--tls-ca
 -J
 --tls-cert
 --6
