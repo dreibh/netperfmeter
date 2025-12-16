@@ -20,7 +20,6 @@ static int client_handshake(int            sd,
    char                             alpn[64];
    int                              error;
 
-puts("C-1");
    error = gnutls_certificate_allocate_credentials(&credentials);
    if(!error) {
 printf("T=%s\n", tlsCAFile);
