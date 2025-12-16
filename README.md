@@ -297,36 +297,40 @@ For the following examples, the base port is usually set to 9000.
 
 [QUIC](https://en.wikipedia.org/wiki/QUIC) uses built-in security based on Transport Layer Security&nbsp;(TLS). To use QUIC, it is therefore necessary to properly set up TLS first. Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
 
-* Generate a key and corresponding [X.509](https://en.wikipedia.org/wiki/X.509) TLS certificate for the server. For details, see e.g.&nbsp;the various documentations and tutorials for [OpenSSL](https://www.openssl.org/), [Gnu TLS](https://www.gnutls.org/), or [NSS](https://nss-crypto.org/). Also, the directory [`src/quic-setup`](src/quic-setup) provides some example scripts. The following commands uses these scripts to generate a test cerfitication authority *TestCA*, signing a server certificate for server *server.domain.example* (with the local machine's IP addresses in SubjectAltName), and a client certificate for client *client.domain.example* (with the machine's IP addresses looked up from DNS or `/etc/hosts` in SubjectAltName):
+* Install [Linux Kernel QUIC](https://github.com/lxin/quic) and load the QUIC kernel module.
 
-```bash
-cd src/quic-setup
-./generate-test-certificates TestCA --server --san LOCAL  server.domain.example
-./generate-test-certificates TestCA --client --san LOOKUP client.domain.example
-```
+* Build NetPerfMeter from sources (see [Build from Sources](#build-from-sources)). Make sure that Linux Kernel QUIC is detected during the CMake configuration!
 
-These commands generate the following files:
+* Generate a key and corresponding [X.509](https://en.wikipedia.org/wiki/X.509) TLS certificate for the server. For details, see e.g.&nbsp;the various documentations and tutorials for [OpenSSL](https://www.openssl.org/), [Gnu TLS](https://www.gnutls.org/), or [NSS](https://nss-crypto.org/). Also, the directory [`src/quic-setup`](src/quic-setup) provides some example scripts. The following commands use these scripts to generate a test cerfitication authority *TestCA*, signing a server certificate for server *server.domain.example* (with the local machine's IP addresses in SubjectAltName):
 
-* `TestCA/TestLevel1/certs/TestLevel1.crt`: The top-level CA certificate.
-* `TestCA/server.domain.example/server.domain.example.key`: The server key.
-* `TestCA/server.domain.example/server.domain.example.crt`: The corresponding server certificate.
-* `TestCA/client.domain.example/client.domain.example.key`: The client key.
-* `TestCA/client.domain.example/client.domain.example.crt`: The corresponding client certificate.
+  ```bash
+  cd src/quic-setup
+  ./generate-test-certificates TestCA --server --san LOCAL server.domain.example
+  ```
 
-The server and client certificates can be verified using the CA certificate:
+  These commands generate the following files:
 
-```bash
-./check-certificate TestCA/TestLevel1/certs/TestLevel1.crt TestCA/server.domain.example/server.domain.example.crt
-./check-certificate TestCA/TestLevel1/certs/TestLevel1.crt TestCA/client.domain.example/client.domain.example.crt
-```
+  * `TestCA/TestLevel1/certs/TestLevel1.crt`: The top-level CA certificate.
+  * `TestCA/server.domain.example/server.domain.example.key`: The server key.
+  * `TestCA/server.domain.example/server.domain.example.crt`: The corresponding server certificate.
 
-* Run a passive instance (i.e.&nbsp;server side), using base port 9000, and specifying server key and certificate:
+  The server and client certificates can be verified using the CA certificate:
+
+  ```bash
+  ./check-certificate \
+     TestCA/TestLevel1/certs/TestLevel1.crt \
+     TestCA/server.domain.example/server.domain.example.crt
+  ```
+
+  The [X.509-Tools](https://www.nntb.no/~dreibh/system-tools/index.html#x.509-tools) provide further helpful utilities to handle X.509 certificates.
+
+* Run a passive instance (i.e.&nbsp;server side), using base port 9000, and specifying server key, server certificate, as well as root CA certificate:
 
   ```bash
   netperfmeter 9000 \
-     -tls-key $DIRECTORY/TestCA/server.domain.example/server.domain.example.key \
+     -tls-key  $DIRECTORY/TestCA/server.domain.example/server.domain.example.key \
      -tls-cert $DIRECTORY/TestCA/server.domain.example/server.domain.example.crt \
-     -tls-ca $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt
+     -tls-ca   $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt
   ```
 
 * Run an active instance (i.e.&nbsp;client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation:
@@ -340,6 +344,8 @@ The server and client certificates can be verified using the CA certificate:
      -tls-ca $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt \
      -quic const10:const128:const25:const1200
   ```
+
+  Make sure that the server name matches the with the information in the server certificate provided by the passive instance. TLS is verifying it, and the TLS handshake will fail (as intended) if it does not match!
 
 
 ## Variable Bitrate Flows
