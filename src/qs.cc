@@ -17,8 +17,6 @@ static int server_handshake(int          sd,
    gnutls_certificate_credentials_t credentials;
    gnutls_session_t                 session;
    gnutls_datum_t                   skey = { sessionKey, sessionKeyLength };
-   size_t                           alpnLength;
-   char                             alpn[64];
    int                              error;
 
 puts("S-1");
@@ -26,16 +24,15 @@ puts("S-1");
    if(!error) {
 puts("S-2");
       printf("T=%s\n", tlsCAFile);
-      int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
+      const int loadedCAs =
+         gnutls_certificate_set_x509_trust_file(credentials,
+                                                tlsCAFile, GNUTLS_X509_FMT_PEM);
       printf("loaded=%d\n", loadedCAs);
-      if(loadedCAs <= 0) {
-         std::cerr << "Loading CA certificate from " << tlsCAFile << " failed";
-         gnutls_certificate_free_credentials(credentials);
-         return -1;
-      }
 
 puts("S-3");
-      error = gnutls_certificate_set_x509_key_file2(credentials, tlsCertFile, tlsKeyFile, GNUTLS_X509_FMT_PEM, NULL, 0);
+      error = gnutls_certificate_set_x509_key_file(credentials,
+                                                   tlsCertFile, tlsKeyFile,
+                                                   GNUTLS_X509_FMT_PEM);
       if(!error) {
 puts("S-4");
          error = gnutls_init(&session,
@@ -66,8 +63,11 @@ puts("S-10");
                      }
                      if( (!error) && (alpns != NULL) ) {
 puts("S-11");
-                        // error = quic_session_get_alpn(session, alpn, &alpnLength);
-                        // printf("a=<%s>\n", alpn);
+                        size_t alpnLength;
+                        char   alpn[64];
+                        alpnLength = sizeof(alpn);
+                        error = quic_session_get_alpn(session, alpn, &alpnLength);
+                        printf("a=<%s>\n", alpn);
                      }
 puts("S-12");
                   }

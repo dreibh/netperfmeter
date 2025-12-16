@@ -832,17 +832,13 @@ static int server_handshake(int          sd,
    gnutls_certificate_credentials_t credentials;
    gnutls_session_t                 session;
    gnutls_datum_t                   skey = { sessionKey, sessionKeyLength };
-   size_t                           alpnLength;
-   char                             alpn[64];
    int                              error;
 
-puts("S-1");
    error = gnutls_certificate_allocate_credentials(&credentials);
    if(!error) {
-puts("S-2");
-      printf("T=%s\n", tlsCAFile);
-      int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
-      printf("loaded=%d\n", loadedCAs);
+      const int loadedCAs =
+         gnutls_certificate_set_x509_trust_file(credentials,
+                                                tlsCAFile, GNUTLS_X509_FMT_PEM);
       if(loadedCAs <= 0) {
          LOG_ERROR
          stdlog << "Loading CA certificate from " << tlsCAFile << " failed\n";
@@ -851,42 +847,35 @@ puts("S-2");
          return -1;
       }
 
-puts("S-3");
-      error = gnutls_certificate_set_x509_key_file2(credentials, tlsCertFile, tlsKeyFile, GNUTLS_X509_FMT_PEM, NULL, 0);
+      error = gnutls_certificate_set_x509_key_file(credentials,
+                                                   tlsCertFile, tlsKeyFile,
+                                                   GNUTLS_X509_FMT_PEM);
       if(!error) {
-puts("S-4");
          error = gnutls_init(&session,
                              GNUTLS_SERVER|
                              GNUTLS_NO_AUTO_SEND_TICKET|
                              GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
          if(!error) {
-puts("S-5");
             error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
             if(!error) {
-puts("S-6");
                error = gnutls_session_ticket_enable_server(session, &skey);
                if(!error) {
-puts("S-7");
                   error = gnutls_record_set_max_early_data_size(session, 0xffffffffu);
                   if(!error) {
-puts("S-8");
                      error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
                      if( (!error) && (alpns != NULL) ) {
-puts("S-9");
                         error = quic_session_set_alpn(session, alpns, strlen(alpns));
                      }
                      if(!error) {
-puts("S-10");
                         gnutls_transport_set_int(session, sd);
                         error = quic_handshake(session);
-                        printf("e=%d\n",error);
+                        if( (!error) && (alpns != NULL) ) {
+                           size_t alpnLength;
+                           char   alpn[64];
+                           alpnLength = sizeof(alpn);
+                           error = quic_session_get_alpn(session, alpn, &alpnLength);
+                        }
                      }
-                     if( (!error) && (alpns != NULL) ) {
-puts("S-11");
-                        // error = quic_session_get_alpn(session, alpn, &alpnLength);
-                        // printf("a=<%s>\n", alpn);
-                     }
-puts("S-12");
                   }
                }
             }
@@ -896,7 +885,6 @@ puts("S-12");
       gnutls_certificate_free_credentials(credentials);
    }
 
-puts("S-13");
    if(error) {
       LOG_ERROR
       stdlog << "TLS setup failed: " << gnutls_strerror(error) << "\n";
