@@ -154,7 +154,9 @@ INSTALL(FILES   getabstime.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 IF (WITH_PLOT_PROGRAMS)
    INSTALL(PROGRAMS plot-netperfmeter-results setpdfmetadata pdfembedfonts
            DESTINATION ${CMAKE_INSTALL_BINDIR})
-   INSTALL(FILES plotter.R plot-netperfmeter-results.R
+   INSTALL(PROGRAMS plot-netperfmeter-results.R
+           DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter)
+   INSTALL(FILES plotter.R
            DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter)
    INSTALL(FILES plot-netperfmeter-results.1 setpdfmetadata.1 pdfembedfonts.1
            DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
