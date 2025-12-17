@@ -842,7 +842,8 @@ static int server_handshake(int          sd,
                                                 tlsCAFile, GNUTLS_X509_FMT_PEM);
       if(loadedCAs <= 0) {
          LOG_ERROR
-         stdlog << "Loading CA certificate from " << tlsCAFile << " failed\n";
+         stdlog << "Loading CA certificate from "
+                << ((tlsCAFile != nullptr) ? tlsCAFile : "(none)") << " failed\n";
          LOG_END
          gnutls_certificate_free_credentials(credentials);
          return -1;
@@ -915,7 +916,8 @@ static int client_handshake(int            sd,
    if(!error) {
       int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
       if(loadedCAs <= 0) {
-         std::cerr << "Loading CA certificate from " << tlsCAFile << " failed";
+         std::cerr << "ERROR: Loading CA certificate from "
+                   << ((tlsCAFile != nullptr) ? tlsCAFile : "(none)") << " failed\n";
          gnutls_certificate_free_credentials(credentials);
          return -1;
       }
@@ -954,7 +956,7 @@ static int client_handshake(int            sd,
    }
 
    if(error) {
-      std::cerr << "TLS setup failed: " << gnutls_strerror(error) << "\n";
+      std::cerr << "ERROR: TLS setup failed: " << gnutls_strerror(error) << "\n";
    }
    return error;
 }
