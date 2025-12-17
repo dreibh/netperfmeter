@@ -221,6 +221,8 @@ _netperfmeter()
 --controllocal
 -H
 --tls-hostname
+-I
+--tls-ca
 --6
 --v6only
 --display
@@ -289,8 +291,6 @@ _netperfmeter()
 --local
 -l
 --controllocal
--H
---tls-hostname
 -K
 --tls-key
 -I
