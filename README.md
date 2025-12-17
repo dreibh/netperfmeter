@@ -297,7 +297,7 @@ For the following examples, the base port is usually set to 9000.
 
 [QUIC](https://en.wikipedia.org/wiki/QUIC) uses built-in security based on Transport Layer Security&nbsp;(TLS). To use QUIC, it is therefore necessary to properly set up TLS first. Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
 
-* Install [Linux Kernel QUIC](https://github.com/lxin/quic) and load the QUIC kernel module.
+* Install [Linux Kernel QUIC](https://github.com/lxin/quic) and load the QUIC kernel module. Also see the helper script [install-linux-quic](https://github.com/dreibh/netperfmeter/blob/master/src/install-linux-quic).
 
 * Build NetPerfMeter from sources (see [Build from Sources](#build-from-sources)). Make sure that Linux Kernel QUIC is detected during the CMake configuration!
 
