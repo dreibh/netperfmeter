@@ -1,7 +1,7 @@
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
 DCCP, and QUIC transport protocols over IPv4 and IPv6. It simultaneously
 transmits bidirectional flows to an endpoint and measures the resulting flow
-bandwidths and QoS. Flows can be saturated (i.e. “send as much as possible”
+bandwidths and QoS. Flows can be saturated (i.e. "send as much as possible"
 or non-saturated with frame rate and frame sizes (like a multimedia
 transmission). Non-saturated flows can be configured with constant or
 variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
