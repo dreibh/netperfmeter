@@ -27,4 +27,7 @@ SHEBANG_FILES=	src/pdfembedfonts src/plot-netperfmeter-results \
 CMAKE_OFF=	WITH_TEST_PROGRAMS
 CMAKE_ON=	WITH_ICONS WITH_PLOT_PROGRAMS
 
+# Work-around for build issue on ARM (https://bugs.freebsd.org/285706):
+MAKE_ENV=       OMP_NUM_THREADS=1
+
 .include <bsd.port.mk>
