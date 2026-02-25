@@ -12,7 +12,7 @@ Build-Depends: cmake,
                libbz2-dev,
                libsctp-dev (>= 1.0.5),
                pdf2svg
-Standards-Version: 4.7.2
+Standards-Version: 4.7.3
 Rules-Requires-Root: no
 
 Package: netperfmeter

@@ -1,3 +1,11 @@
+netperfmeter (2.0.1-1ubuntu1) plucky; urgency=medium
+
+  * New upstream release.
+  * Fix for Debian build issue (Closes: #1095771).
+  * debian/control: Updated standards version to 4.7.3.
+
+ -- Thomas Dreibholz <dreibh@simula.no>  Wed, 25 Feb 2026 14:32:07 +0100
+
 netperfmeter (2.0.0-1ubuntu1) plucky; urgency=medium
 
   * New upstream release.

@@ -1,3 +1,45 @@
+commit 1dab47c71c8c6f2f69a52d4dd419d864430b515d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Feb 25 14:14:16 2026 +0100
+
+    Improved CMakeLists.txt, also fixing Debian build issue (https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1095771).
+
+commit 1ea2ff05b76a2981f0ea4675b2caf5ac218f7128
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jan 7 10:34:30 2026 +0100
+
+    Updated port.
+
+commit 170f1a9da563f37a9c8fcec689133283daae16fe
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jan 7 21:22:34 2026 +1300
+
+    Work-around for FreeBSD ARM build bug.
+
+commit c5a2749f9cac17334c5a4a36a1f4fd5a70b4651a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Dec 26 07:44:40 2025 +0100
+
+    Improved FreeBSD port.
+
+commit 0fadb19beb6a5c7d1c05e3f7466c6c5e9f3b7693
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 25 07:20:04 2025 +0100
+
+    Updated FreeBSD port.
+
+commit 6f34ca63942381f3c8c30ac8eacc35c28b11e0f7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 18 23:40:54 2025 +1300
+
+    Configuration update.
+
+commit 9e2f775a2a3f69d4850c4e07edb6377c558237ad
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Dec 18 11:27:25 2025 +0100
+
+    New release netperfmeter-2.0.0.
+
 commit 3d0022ab9dc72485ddd6ecbe00705227f9a4d675
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Wed Dec 17 22:50:54 2025 +0100
