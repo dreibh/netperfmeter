@@ -30,7 +30,7 @@ PROJECT(netperfmeter LANGUAGES C CXX)
 
 SET(BUILD_MAJOR "2")
 SET(BUILD_MINOR "0")
-SET(BUILD_PATCH "0")
+SET(BUILD_PATCH "1~rc0")
 SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
@@ -202,7 +202,7 @@ int main (int argc, char** argv)
       return(1);
    }
 
-   return(0);
+   return 0;
 }"
 USES_IEEEFP_FP)
 
@@ -212,7 +212,7 @@ ENDIF()
 
 
 # ====== DCCP support =======================================================
-CHECK_C_SOURCE_RUNS("
+CHECK_C_SOURCE_COMPILES("
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <linux/dccp.h>
@@ -222,7 +222,7 @@ int main (int argc, char** argv)
    volatile int domain = IPPROTO_DCCP;
    volatile int type   = SOCK_DCCP;
    volatile int opt    = DCCP_SOCKOPT_SERVICE;
-   return(0);
+   return 0;
 }"
 HAVE_DCCP)
 
@@ -232,7 +232,7 @@ ENDIF()
 
 
 # ====== MPTCP support ======================================================
-CHECK_C_SOURCE_RUNS("
+CHECK_C_SOURCE_COMPILES("
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <linux/mptcp.h>
@@ -240,7 +240,7 @@ CHECK_C_SOURCE_RUNS("
 int main (int argc, char** argv)
 {
    volatile int domain = IPPROTO_MPTCP;
-   return(0);
+   return 0;
 }"
 HAVE_MPTCP)
 
@@ -250,7 +250,7 @@ ENDIF()
 
 
 # ====== QUIC support =======================================================
-CHECK_C_SOURCE_RUNS("
+CHECK_C_SOURCE_COMPILES("
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <linux/quic.h>
@@ -258,7 +258,7 @@ CHECK_C_SOURCE_RUNS("
 int main (int argc, char** argv)
 {
    volatile int domain = IPPROTO_QUIC;
-   return(0);
+   return 0;
 }"
 HAVE_QUIC)
 
