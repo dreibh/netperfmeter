@@ -497,7 +497,23 @@ Some examples:
    The vector file format is a table, which can be read with CSV import of tools like [GNU&nbsp;R](https://www.r-project.org/), [LibreOffice](https://www.libreoffice.org/), etc.
 
 
-🦈 Wireshark Dissector for NetPerfMeter Packets
+## Miscellaneous
+
+* Take a look into the manual page of NetPerfMeter for further information and options:
+
+  ```bash
+  man netperfmeter
+  ```
+
+* Obtain the NetPerfMeter version:
+
+  ```bash
+  netperfmeter -version
+  ```
+  Note: NetPerfMeter &ge;2.0 is required!
+
+
+# 🦈 Wireshark Dissector for NetPerfMeter Packets
 
 <p align="center">
  <a href="src/figures/NetPerfMeter-Wireshark-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Wireshark-Screenshot.webp" style="width: 768pt;" /></a><br />
@@ -560,21 +576,6 @@ Some examples:
      ```
 
   4. When recording a NetPerfMeter QUIC communication, make sure to also include the QUIC connection handshake!
-
-## Miscellaneous
-
-* Take a look into the manual page of NetPerfMeter for further information and options:
-
-  ```bash
-  man netperfmeter
-  ```
-
-* Obtain the NetPerfMeter version:
-
-  ```bash
-  netperfmeter -version
-  ```
-  Note: NetPerfMeter &ge;2.0 is required!
 
 
 # 📚 Running Larger-Scale Measurements using the CreateSummary and CombineSummaries Tools
