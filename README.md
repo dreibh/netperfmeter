@@ -347,7 +347,7 @@ For the following examples, the base port is usually set to 9000.
 
   Make sure that the server name matches the with the information in the server certificate provided by the passive instance. TLS is verifying it, and the TLS handshake will fail (as intended) if it does not match!
 
-* See [Wireshark](#wireshark) for details on how to examine the NetPerfMeter QUIC traffic with Wireshark!
+* See [Wireshark](#-wireshark-dissector-for-netperfmeter-packets) for details on how to examine the NetPerfMeter QUIC traffic with Wireshark!
 
 
 ## Variable Bitrate Flows
@@ -497,7 +497,7 @@ Some examples:
    The vector file format is a table, which can be read with CSV import of tools like [GNU&nbsp;R](https://www.r-project.org/), [LibreOffice](https://www.libreoffice.org/), etc.
 
 
-## Wireshark
+🦈 Wireshark Dissector for NetPerfMeter Packets
 
 <p align="center">
  <a href="src/figures/NetPerfMeter-Wireshark-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Wireshark-Screenshot.webp" style="width: 768pt;" /></a><br />
@@ -531,11 +531,11 @@ Some examples:
 
   - Wireshark provides out-of-the-box support for NetPerfMeter, i.e.&nbsp;a dissector is included in all recent Wireshark packages.
 
-  - To decode NetPerfMeter packets, particularly over TCP and UDP, it may be necessary to configure ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs). While SCTP (by [Payload Protocol Identifiers](https://www.iana.org/assignments/sctp-parameters/sctp-parameters.xhtml) 36 and&nbsp;37), DCCP (by [Service Code](https://www.iana.org/assignments/service-codes/service-codes.xhtml) "npmp") and QUIC (by [ALPNs](https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids) "netperfmeter/control" and "netperfmeter/data"; *registrations pending*) allow for unambiguous identification of the NetPerfMeter payload, Wireshark has to rely on heuristics for TCP and UDP. They may fail to recognise the NetPerfMeter payload. The "Decode As" rules configuration in the "Analyze" menu allows to set explicit rules for TCP ports (e.g.&nbsp;8999, 9000, and 9001) and UDP port numbers (e.g.&nbsp;8999 and 9000) for decoding matching packets as NetPerfMeter payload.
+  - To decode NetPerfMeter packets, particularly over TCP and UDP, it may be necessary to configure ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs). While SCTP (by [Payload Protocol Identifiers](https://www.iana.org/assignments/sctp-parameters/sctp-parameters.xhtml) 36 and&nbsp;37), DCCP (by [Service Code](https://www.iana.org/assignments/service-codes/service-codes.xhtml) "npmp") and QUIC (by [ALPNs](https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids) "netperfmeter/control" and "netperfmeter/data") allow for unambiguous identification of the NetPerfMeter payload, Wireshark has to rely on heuristics for TCP and UDP. They may fail to recognise the NetPerfMeter payload. The "Decode As" rules configuration in the "Analyze" menu allows to set explicit rules for TCP ports (e.g.&nbsp;8999, 9000, and 9001) and UDP port numbers (e.g.&nbsp;8999 and 9000) for decoding matching packets as NetPerfMeter payload.
 
-  - To simply SCTP packet filtering, it is recommended to activate "Enable association indexing" in the SCTP protocol settings (Preferences → Protocols/SCTP → Enable association indexing).
+  - To simplify SCTP packet filtering, it is recommended to activate "Enable association indexing" in the SCTP protocol settings (Preferences → Protocols/SCTP → Enable association indexing).
 
-  - [Coloring rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustColorizationSection.html#ChCustColoringRulesDialog), [filters](https://www.wireshark.org/docs/wsug_html_chunked/ChWorkDefineFilterSection.html) and ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs) can be found in the directory [`netperfmeter/src/wireshark`](https://github.com/dreibh/netperfmeter/tree/master/src/wireshark). Simply copy [`colorfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/colorfilters), [`dfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/dfilters), [`decode_as_entries`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/decode_as_entries) and optionally [`preferences`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/preferences) to `$HOME/.wireshark`.
+  - [Coloring rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustColorizationSection.html#ChCustColoringRulesDialog), [filters](https://www.wireshark.org/docs/wsug_html_chunked/ChWorkDefineFilterSection.html) and ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs) can be found in the directory [`netperfmeter/src/wireshark`](https://github.com/dreibh/netperfmeter/tree/master/src/wireshark). Simply copy [`colorfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/colorfilters), [`dfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/dfilters), [`decode_as_entries`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/decode_as_entries), and optionally [`preferences`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/preferences) to `$HOME/.wireshark`.
 
 
 * To decode TLS-encrypted QUIC traffic (or other TLS-encrypted traffic), it is necessary to let QUIC/TLS log the session keys.
