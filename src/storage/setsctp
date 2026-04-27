@@ -27,7 +27,7 @@
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 if [ $# -lt 1 ] ; then
-   echo >&2 "Usage: $0 [cmt off|normal|rp] [dac on|off] [nrsack on|off] [bufferSplitting none|senderOnly|reeiverOnly|bothSides] [initialCwnd SIZE_IN_MTU] [cwndMaxBurst on|off"
+   echo >&2 "Usage: $0 [cmt off|normal|rp] [dac on|off] [nrsack on|off] [bufferSplitting none|senderOnly|reeiverOnly|bothSides] [initialCwnd SIZE_IN_MTU] [cwndMaxBurst on|off]"
    exit 1
 fi
 
