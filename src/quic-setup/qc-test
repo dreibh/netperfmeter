@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -euo pipefail
 
 # shellcheck disable=SC2174
 mkdir -m700 -p /home/"$USER"/keylog
