@@ -314,7 +314,7 @@ For the following examples, the base port is usually set to 9000.
   * `TestCA/server.domain.example/server.domain.example.key`: The server key.
   * `TestCA/server.domain.example/server.domain.example.crt`: The corresponding server certificate.
 
-  The server and client certificates can be verified using the CA certificate:
+  The server certificate can be verified using the CA certificate:
 
   ```bash
   ./check-certificate \
