@@ -27,13 +27,14 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
-#include <string.h>
-
+#include <assert.h>
+#include <cstdlib>
 #include <getopt.h>
 #include <iostream>
-#include <vector>
 #include <string>
+#include <string.h>
 #include <unistd.h>
+#include <vector>
 
 #include "simpleredblacktree.h"
 #include "inputfile.h"
@@ -316,7 +317,8 @@ static unsigned int getAggregate(char*        objectName,
          break;
       }
    }
-   char aggregate[(size_t)i + 2];
+   char aggregate[4096];
+   assert((size_t)i + 1 < sizeof(aggregate));
    if(i >= 0) {
       strncpy((char*)&aggregate, segment, (size_t)i + 1);
    }
