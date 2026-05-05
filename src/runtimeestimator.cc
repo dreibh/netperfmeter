@@ -52,24 +52,36 @@ static unsigned long long getMicroTime()
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
+   // ====== Handle arguments ===============================================
    if(argc < 4) {
       fprintf(stderr, "Usage: %s start_file total_runs current_run\n",
               argv[0]);
       exit(1);
    }
 
-   unsigned int totalRuns  = atol(argv[2]);
-   unsigned int currentRun = atol(argv[3]);
+   char* endptr;
+   long  value;
 
-   if(totalRuns < 1) {
-      fprintf(stderr, "ERROR: Bad total runs parameter!\n");
+   value = strtol(argv[2], &endptr, 10);
+   if( (endptr == argv[2]) || (*endptr != 0x00) || (value < 1) ) {
+      fprintf(stderr, "ERROR: Invalid total runs parameter (must be >= 1)!\n");
       exit(1);
    }
+   const unsigned int totalRuns = (unsigned int)value;
+
+   value = strtol(argv[3], &endptr, 10);
+   if( (endptr == argv[3]) || (*endptr != 0x00) || (value < 0) ) {
+      fprintf(stderr, "ERROR: Invalid current run parameter (must be >= 0)!\n");
+      exit(1);
+   }
+   const unsigned int currentRun = (unsigned int)value;
+
    if(currentRun > totalRuns) {
-      fprintf(stderr, "ERROR: Bad current run parameter!\n");
+      fprintf(stderr, "ERROR: Current run must be less or equal to total runs!\n");
       exit(1);
    }
 
+   // ====== Initialise (Run 0) =============================================
    if(currentRun == 0) {
       FILE* fh = fopen(argv[1], "w");
       if(fh == nullptr) {
@@ -92,6 +104,8 @@ int main(int argc, char** argv)
       fclose(fh);
       printf("\x1b[34m##### ESTIMATION: - [0 of %u - 0.00%%]\x1b[0m\n", totalRuns);
    }
+
+   // ====== Estimate runtime (Run > 0) =====================================
    else {
       FILE* fh = fopen(argv[1], "r");
       if(fh == nullptr) {
