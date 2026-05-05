@@ -27,10 +27,13 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include <byteswap.h>
+#include <endian.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
-#include <time.h>
 #include <sys/time.h>
+#include <time.h>
 
 
 // ###### Get current time stamp ############################################
@@ -74,7 +77,14 @@ int main(int argc, char** argv)
          exit(1);
       }
       unsigned long long now = getMicroTime();
-      if(fwrite((void*)&now, sizeof(now), 1, fh) != 1) {
+#if __BYTE_ORDER == __BIG_ENDIAN
+      const uint64_t nowToWrite = now;
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+      const uint64_t nowToWrite = bswap_64(now);
+#else
+#error Byte order undefined!
+#endif
+      if(fwrite((void*)&nowToWrite, sizeof(nowToWrite), 1, fh) != 1) {
          fprintf(stderr, "ERROR: Unable to write timestamp to file <%s>!\n", argv[1]);
          fclose(fh);
          exit(1);
@@ -83,17 +93,24 @@ int main(int argc, char** argv)
       printf("\x1b[34m##### ESTIMATION: - [0 of %u - 0.00%%]\x1b[0m\n", totalRuns);
    }
    else {
-      unsigned long long startTimeStamp;
       FILE* fh = fopen(argv[1], "r");
       if(fh == nullptr) {
          fprintf(stderr, "ERROR: Unable to open file <%s>!\n", argv[1]);
          exit(1);
       }
-      if(fread((void*)&startTimeStamp, sizeof(startTimeStamp), 1, fh) != 1) {
+      uint64_t timeStampRead;
+      if(fread((void*)&timeStampRead, sizeof(timeStampRead), 1, fh) != 1) {
          fprintf(stderr, "ERROR: Unable to read timestamp from file <%s>!\n", argv[1]);
          fclose(fh);
          exit(1);
       }
+#if __BYTE_ORDER == __BIG_ENDIAN
+      const unsigned long long startTimeStamp = timeStampRead;
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+      const unsigned long long startTimeStamp = bswap_64(timeStampRead);
+#else
+#error Byte order undefined!
+#endif
       fclose(fh);
 
       const unsigned long long now  = getMicroTime();
@@ -108,10 +125,12 @@ int main(int argc, char** argv)
       const time_t     timeStamp = (time_t)(estEndTimeStamp / 1000000);
       const struct tm* timeptr   = localtime(&timeStamp);
 
-      strftime((char*)&str, sizeof(str), "ESTIMATION: %d-%b-%Y %H:%M:%S", timeptr);
+      strftime(str, sizeof(str), "ESTIMATION: %d-%b-%Y %H:%M:%S", timeptr);
       printf("\x1b[34m##### %s.%04d (in %1.2f minutes)  [%u of %u - %1.2f%%]\x1b[0m\n",
              str, (unsigned int)(estEndTimeStamp % 1000000) / 100,
              estimatedRuntime / 60000000.0,
              currentRun, totalRuns, (100.0 * currentRun) / (double)totalRuns);
    }
+
+   return 0;
 }
