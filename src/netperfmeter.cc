@@ -114,7 +114,7 @@ static std::vector<AssocSpec> gAssocSpecs;
 
 // This is the MessageReader for the Control messages only!
 // (The Data messages are handled by the Flow Manager)
-static MessageReader  gMessageReader;
+static MessageReader gMessageReader;
 
 
 // ###### Version ###########################################################
@@ -1257,9 +1257,8 @@ static void addToPollFDs(pollfd* pollFDs, const int fd, int& n, int* index = nul
 
 
 // ###### Main loop #########################################################
-bool mainLoop(const bool               isActiveMode,
-              const unsigned long long stopAt,
-              const uint64_t           measurementID)
+static bool mainLoop(const bool               isActiveMode,
+                     const unsigned long long stopAt)
 {
    pollfd                 fds[5 + gMessageReader.size()];
    int                    n       = 0;
@@ -1477,7 +1476,7 @@ bool mainLoop(const bool               isActiveMode,
 
 
 // ###### Passive Mode ######################################################
-void passiveMode(const uint16_t localPort)
+static void passiveMode(const uint16_t localPort)
 {
    // ====== Print global parameters ========================================
    printGlobalParameters();
@@ -1829,7 +1828,7 @@ void passiveMode(const uint16_t localPort)
    const unsigned long long stopAt = (gRuntime > 0) ?
       (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
    while( (!breakDetected()) && (!gStopTimeReached) ) {
-      mainLoop(false, stopAt, 0);
+      mainLoop(false, stopAt);
    }
 
    FlowManager::getFlowManager()->configureDisplay(false);
@@ -1870,7 +1869,7 @@ void passiveMode(const uint16_t localPort)
 
 
 // ###### Active Mode #######################################################
-void activeMode(const char* remoteEndpoint)
+static void activeMode(const char* remoteEndpoint)
 {
    // ====== Initialize remote and control addresses ========================
    sockaddr_union remoteAddress;
@@ -2020,7 +2019,7 @@ void activeMode(const char* remoteEndpoint)
 
    FlowManager::getFlowManager()->configureDisplay(gDisplayEnabled);
    while( (!breakDetected()) && (!gStopTimeReached) ) {
-      if(!mainLoop(true, stopAt, measurementID)) {
+      if(!mainLoop(true, stopAt)) {
          std::cout << "\n" << "*** Aborted ***\n";
          break;
       }
