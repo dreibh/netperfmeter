@@ -29,7 +29,7 @@
 # Contact: thomas.dreibholz@gmail.com
 
 # Bash options:
-set -eu
+set -euo pipefail
 
 # gettext options:
 export TEXTDOMAIN="extract-pem"
@@ -41,8 +41,16 @@ export TEXTDOMAIN="extract-pem"
 
 # ###### Usage ##############################################################
 usage () {
-   echo >&2 "$(gettext "Usage:") $0 pem_file [...] [-o|--output-prefix file_name_prefix] [-1|--only-first-entry] [-f|--skip-first-entry] [-l|--skip-last-entry] [-q|--quiet]"
-   exit 1
+   local exitCode="$1"
+   echo >&2 "$(gettext "Usage:") $0 pem_file [...] [-o|--output-prefix file_name_prefix] [-1|--only-first-entry] [-f|--skip-first-entry] [-l|--skip-last-entry] [-q|--quiet] [-h|--help] [-v|--version]"
+   exit "${exitCode}"
+}
+
+
+# ###### Version ############################################################
+version () {
+   echo "extract-pem @BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
+   exit 0
 }
 
 
@@ -50,18 +58,18 @@ usage () {
 
 # ====== Handle arguments ===================================================
 GETOPT="$(PATH=/usr/local/bin:${PATH} which getopt)"
-options="$(${GETOPT} -o o:1flqh --long output-prefix:,only-first-entry,skip-first-entry,skip-last-entry,quiet,help -a -- "$@")"
+options="$(${GETOPT} -o o:1flqhv --long output-prefix:,only-first-entry,skip-first-entry,skip-last-entry,quiet,help,version -a -- "$@")"
 # shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
-   usage
+   usage 1
 fi
+eval set -- "${options}"
 
 OUTPUT_PREFIX="output-"
 ONLY_FIRST_ENTRY=0
 SKIP_FIRST_ENTRY=0
 SKIP_LAST_ENTRY=0
 QUIET=0
-eval set -- "${options}"
 while [ $# -gt 0 ] ; do
    case "$1" in
       -o | --output-prefix)
@@ -85,7 +93,11 @@ while [ $# -gt 0 ] ; do
          shift
          ;;
       -h | --help)
-         usage
+         usage 0
+         # shift
+         ;;
+      -v | --version)
+         version
          # shift
          ;;
       --)
@@ -95,7 +107,7 @@ while [ $# -gt 0 ] ; do
   esac
 done
 if [ $# -lt 1 ] ; then
-   usage
+   usage 1
 fi
 if [ ${ONLY_FIRST_ENTRY} -eq 1 ] ; then
    if [ ${SKIP_FIRST_ENTRY} -ne 0 ] || [ ${SKIP_LAST_ENTRY} -ne 0 ] ; then

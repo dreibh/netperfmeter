@@ -1,3 +1,129 @@
+commit c0312bde97e11e5148867986fa092e931082cecc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 14:29:07 2026 +0200
+
+    Minor documentation update.
+
+commit 05362a696423bd73a16963d9fd705245d4f1aa47
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 14:29:02 2026 +0200
+
+    Fixed typo.
+
+commit 162c99f9dd414f4154806fd3a20fce5b1b2b0861
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 14:19:57 2026 +0200
+
+    Added helper script.
+
+commit 056639672abaa769e0245ad5db3f422feab197d7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 14:19:51 2026 +0200
+
+    Some clean-ups.
+
+commit f09973dda12caf1d226496ace4d229bb429a61a4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 14:07:16 2026 +0200
+
+    Updated test scripts.
+
+commit f0d67b0b5794970a55b36863201a64f8eb1ce0b9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 14:02:02 2026 +0200
+
+    Set pipefail option in scripts.
+
+commit b8d61f7f5a4c63b795dc1ef7c0d7e25277686efc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 13:50:45 2026 +0200
+
+    Improved shell completion.
+
+commit 989d3d2459245fcf8f5e037a922a55a0489a743c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 11:48:29 2026 +0200
+
+    ShellCheck clean-up for shell completions.
+
+commit 86cc5afa2b8da250ba42123ce551754dbcdf9b12
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 11:44:12 2026 +0200
+
+    Updated build script.
+
+commit e3edc9a479d6927abf28cdad6dd4f88f0d33c0cc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 11:42:04 2026 +0200
+
+    Updated CI configuration
+
+commit 503dcad4ffc1c52620e464676f0bb8b52afeacfa
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 27 11:42:03 2026 +0200
+
+    Updated CI scripts
+
+commit b187c6ac0ede3c2399050b81af2433574315d675
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Apr 20 09:22:28 2026 +0200
+
+    Updated CI scripts
+
+commit 5b8a60c45b3d04f80455f25abbf8d5ab5dee2cde
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 23 13:28:56 2026 +0100
+
+    Further documentation improvements.
+
+commit 577fe875989a4617f171fcd504aa961a69a18aaf
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 23 13:24:34 2026 +0100
+
+    Improved documentation.
+
+commit d845cff7ca6f08e5230df15a02716ed6eadcba8d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 23 13:10:43 2026 +0100
+
+    Wireshark color filter update.
+
+commit 1966ac200576837e217e83a56604854de6683493
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 23 11:06:15 2026 +0100
+
+    Minor update.
+
+commit fa6d20d6df018694af15d8a153d51630bcac4e35
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 23 10:10:03 2026 +0100
+
+    Wireshark configuration update.
+
+commit c1adb2bccbc0faea921a1cf795928497160b7e49
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Mar 23 10:07:39 2026 +0100
+
+    Wireshare color filter configuration update.
+
+commit 3bb29b0e2ee0eead4a3bfe63c430cfa015151bd4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Mar 12 11:13:14 2026 +0100
+
+    Updated URLs.
+
+commit a2a3cad264a7587bf13563171611e339481488fa
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Feb 25 14:52:30 2026 +0100
+
+    Updated FreeBSD Port.
+
+commit 34a87214f864ae32ff5bb54c19f0a4a3c5e01c29
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Feb 25 14:32:09 2026 +0100
+
+    New release netperfmeter-2.0.1.
+
 commit 1dab47c71c8c6f2f69a52d4dd419d864430b515d
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Wed Feb 25 14:14:16 2026 +0100

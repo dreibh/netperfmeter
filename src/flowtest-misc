@@ -1,4 +1,4 @@
-đ#!/usr/bin/env bash
+#!/usr/bin/env bash
 # ==========================================================================
 #         _   _      _   ____            __ __  __      _
 #        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
@@ -27,7 +27,7 @@
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 # Bash options:
-set -eu
+set -euo pipefail
 
 # ====== Handle arguments ===================================================
 if [ $# -lt 1 ] ; then

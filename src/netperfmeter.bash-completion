@@ -66,7 +66,8 @@ _netperfmeter()
          [ "${prev}" == "--mptcp" ] || \
          [ "${prev}" == "--udp" ]   || \
          [ "${prev}" == "--dccp" ]  || \
-         [ "${prev}" == "--sctp" ] ; then
+         [ "${prev}" == "--sctp" ]  || \
+         [ "${prev}" == "--quic" ] ; then
          flowSpec=1
       elif [[ "${prev}" =~ ^(const|exp|pareto|uniform) ]] ; then
          flowSpec=1
@@ -86,24 +87,20 @@ _netperfmeter()
 
                if [ "${blocks}" -lt 4 ] ; then
                   if [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)([0-9]+)$ ]] ; then
-                     # shellcheck disable=SC2207
-                     COMPREPLY=( $(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}, ${cur}:" -- "${cur}") )
+                     mapfile -t COMPREPLY < <(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}, ${cur}:" -- "${cur}")
                      compopt -o nospace
                      return
                   elif [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)$ ]] ; then
-                     # shellcheck disable=SC2207
-                     COMPREPLY=( $(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}," -- "${cur}") )
+                     mapfile -t COMPREPLY < <(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}," -- "${cur}")
                      compopt -o nospace
                      return
                   else
-                     # shellcheck disable=SC2207
-                     COMPREPLY=( $( compgen -W "${base}const ${base}exp ${base}pareto ${base}uniform" -- "${cur}" ) )
+                     mapfile -t COMPREPLY < <(compgen -W "${base}const ${base}exp ${base}pareto ${base}uniform" -- "${cur}" )
                      compopt -o nospace
                      return
                   fi
                else
-                  # shellcheck disable=SC2207
-                  COMPREPLY=( $( compgen -W "
+                  mapfile -t COMPREPLY < <(compgen -W "
    ${base}cc=
    ${base}cmt=
    ${base}debug=
@@ -123,7 +120,7 @@ _netperfmeter()
    ${base}unordered=
    ${base}unreliable=
    ${base}v6only
-   " -- "${cur}" ) )
+   " -- "${cur}")
                   compopt -o nospace
                   return
                fi
@@ -152,8 +149,7 @@ _netperfmeter()
             elif [ -x /sbin/ifconfig ] ; then
                addresses="$(/sbin/ifconfig | awk '/[ \t]+inet/ { print $2 }' | sed -e 's#/.*$##')"
             fi
-            # shellcheck disable=SC2207
-            COMPREPLY=( $(compgen -W "${addresses}" -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -W "${addresses}" -- "${cur}")
             return
             ;;
          # ====== Scalar/vector file pattern ================================
@@ -176,7 +172,7 @@ _netperfmeter()
             ;;
          # ====== Special case: hostname ====================================
          -H | --tls-hostname)
-            COMPREPLY=( "$( compgen -W "$(hostname -f)" -- "${cur}" )" )
+            mapfile -t COMPREPLY < <( compgen -W "$(hostname -f)" -- "${cur}" )
             return
             ;;
          # ====== Special case: log file ====================================
@@ -187,16 +183,14 @@ _netperfmeter()
             ;;
          # ====== Special case: on/off ======================================
          --logcolor)
-            # shellcheck disable=SC2207
-            COMPREPLY=( $(compgen -W "on off" -- "${cur}") )
+            mapfile -t COMPREPLY < <(compgen -W "on off" -- "${cur}")
             return
             ;;
       esac
 
    # ====== Port (passive side) or Address:Port (active side) ===============
    else
-      # shellcheck disable=SC2207
-      COMPREPLY=( $(compgen -W 'localhost:9000 9000' -- "$cur") )
+      mapfile -t COMPREPLY < <(compgen -W 'localhost:9000 9000' -- "$cur")
       return
    fi
 
@@ -312,8 +306,7 @@ _netperfmeter()
 "
    fi
 
-   # shellcheck disable=SC2207
-   COMPREPLY=( $( compgen -W "${opts}" -- "${cur}" ) )
+   mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}" )
    [ ${flowSpec} -eq 1  ] && compopt -o nospace
    return 0
 }
