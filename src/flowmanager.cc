@@ -380,7 +380,7 @@ void FlowManager::printMeasurements(std::ostream& os)
        iterator != MeasurementSet.end(); iterator++) {
       char str[64];
       snprintf((char*)&str, sizeof(str), "%llx -> ptr=%p",
-               (unsigned long long)iterator->first.second, iterator->second);
+               (unsigned long long)iterator->first.second, (void*)iterator->second);
       os << "   - " << str << "\n";
    }
 }

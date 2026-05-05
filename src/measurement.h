@@ -45,7 +45,7 @@ class Measurement : public Mutex
    Measurement();
    ~Measurement();
 
-   const uint64_t getMeasurementID() const {
+   uint64_t getMeasurementID() const {
       return MeasurementID;
    }
    const std::string& getVectorNamePattern() const {

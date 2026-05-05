@@ -341,7 +341,7 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
 
    if(OnOffEventPointer < TrafficSpec.OnOffEvents.size()) {
       const OnOffEvent&        event        = TrafficSpec.OnOffEvents[OnOffEventPointer];
-      const unsigned long long relNextEvent = (const unsigned long long)rint(1000000.0 * getRandomValue((const double*)&event.ValueArray, event.RandNumGen));
+      const unsigned long long relNextEvent = (unsigned long long)rint(1000000.0 * getRandomValue((const double*)&event.ValueArray, event.RandNumGen));
       const unsigned long long absNextEvent = TimeBase + TimeOffset + relNextEvent;
 
       TimeOffset            = TimeOffset + relNextEvent;
