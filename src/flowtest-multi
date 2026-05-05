@@ -70,7 +70,6 @@ rm -f vgcore.* core.* core
    -tcp   const10:const4096:const10:const4906:description="TCP" \
    -mptcp const10:const4096:const10:const4906:description="MPTCP" \
    -udp   const10:const1024:const10:const1024:description="UDP" \
-   -dccp  const10:const1024:const10:const1024:description="DCCP" \
    -sctp \
       const1:const512:const5:const512:description="SCTP Stream 0" \
       const2:const512:const4:const512:description="SCTP Stream 1" \
@@ -78,3 +77,5 @@ rm -f vgcore.* core.* core
       const4:const512:const2:const512:description="SCTP Stream 3" \
       const5:const512:const1:const512:description="SCTP Stream 4" \
    -runtime="${RUNTIME}"
+
+   # -dccp  const10:const1024:const10:const1024:description="DCCP"
