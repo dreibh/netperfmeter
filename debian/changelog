@@ -1,11 +1,26 @@
-netperfmeter (2.0.0~rc2.1-1ubuntu1) plucky; urgency=medium
+netperfmeter (2.0.2-1ubuntu1) plucky; urgency=medium
+
+  * New upstream release.
+  * debian/control: Updated standards version to 4.7.4.
+
+ -- Thomas Dreibholz <dreibh@simula.no>  Wed, 29 Apr 2026 08:57:12 +0200
+
+netperfmeter (2.0.1-1ubuntu1) plucky; urgency=medium
+
+  * New upstream release.
+  * Fix for Debian build issue (Closes: #1095771).
+  * debian/control: Updated standards version to 4.7.3.
+
+ -- Thomas Dreibholz <dreibh@simula.no>  Wed, 25 Feb 2026 14:32:07 +0100
+
+netperfmeter (2.0.0-1ubuntu1) plucky; urgency=medium
 
   * New upstream release.
   * debian/control: Moved architecture-independent files to netperfmeter-common.
   * debian/control: Updated standards version to 4.7.2.
   * debian/tests: Improved tests.
 
- -- Thomas Dreibholz <dreibh@simula.no>  Fri, 12 Dec 2025 12:19:42 +0100
+ -- Thomas Dreibholz <dreibh@simula.no>  Thu, 18 Dec 2025 11:27:21 +0100
 
 netperfmeter (1.9.7-1ubuntu1) jammy; urgency=medium
 

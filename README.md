@@ -1,6 +1,6 @@
 <h1 align="center">
  NetPerfMeter<br />
- <span style="font-size: 75%">A TCP/MPTCP/UDP/SCTP/DCCP Network Performance Meter Tool</span><br />
+ <span style="font-size: 75%">A TCP/MPTCP/UDP/SCTP/DCCP/QUIC Network Performance Meter Tool</span><br />
  <a href="https://www.nntb.no/~dreibh/netperfmeter/">
   <img alt="NetPerfMeter Logo" src="src/figures/EN-Logo-NetPerfMeter.svg" width="25%" /><br />
   <span style="font-size: 75%;">https://www.nntb.no/~dreibh/netperfmeter</span>
@@ -10,7 +10,7 @@
 
 # 💡 What is Network Performance Meter&nbsp;(NetPerfMeter)?
 
-NetPerfMeter is a network performance meter for the [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol), [MPTCP](https://en.wikipedia.org/wiki/MPTCP), [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol), [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol), and [DCCP](https://en.wikipedia.org/wiki/DCCP) transport protocols over [IPv4](https://en.wikipedia.org/wiki/IPv4) and [IPv6](https://en.wikipedia.org/wiki/Ipv6). It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. Flows can be saturated (i.e.&nbsp;"send as much as possible") or non-saturated with frame rate and frame sizes (like a multimedia transmission). Non-saturated flows can be configured with constant or variable frame rate/frame size, i.e.&nbsp;to realise [Constant Bit Rate&nbsp;(CBR)](https://en.wikipedia.org/wiki/Constant_bitrate) or [Variable Bit Rate&nbsp;(VBR)](https://en.wikipedia.org/wiki/Variable_bitrate) traffic. For both, frame rate and frame size, it is not only possible to set constant values but to also to use random distributions. Furthermore, flows can be set up as on/off flows. Of course, the flow parameters can be configured individually per flow and flow direction.
+NetPerfMeter is a network performance meter for the [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol), [MPTCP](https://en.wikipedia.org/wiki/MPTCP), [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol), [UDP](https://en.wikipedia.org/wiki/User_Datagram_Protocol), [DCCP](https://en.wikipedia.org/wiki/DCCP), and [QUIC](https://en.wikipedia.org/wiki/QUIC) transport protocols over [IPv4](https://en.wikipedia.org/wiki/IPv4) and [IPv6](https://en.wikipedia.org/wiki/Ipv6). It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. Flows can be saturated (i.e.&nbsp;"send as much as possible") or non-saturated with frame rate and frame sizes (like a multimedia transmission). Non-saturated flows can be configured with constant or variable frame rate/frame size, i.e.&nbsp;to realise [Constant Bit Rate&nbsp;(CBR)](https://en.wikipedia.org/wiki/Constant_bitrate) or [Variable Bit Rate&nbsp;(VBR)](https://en.wikipedia.org/wiki/Variable_bitrate) traffic. For both, frame rate and frame size, it is not only possible to set constant values but to also to use random distributions. Furthermore, flows can be set up as on/off flows. Of course, the flow parameters can be configured individually per flow and flow direction.
 The measurement results can be recorded as scalar files (summary of the run) and vector files (time series). These files can be processed further, e.g.&nbsp;for detailed analysis and plotting of the results.
 The [Wireshark](https://www.wireshark.org/) network protocol analyser provides out-of-the-box support for analysing NetPerfMeter packet traffic.
 
@@ -28,7 +28,8 @@ The key goal of NetPerfMeter is to provide a tool for the performance comparison
    * [DCCP](https://en.wikipedia.org/wiki/DCCP) (Datagram Congestion Control Protocol; see [RFC&nbsp;4340](https://www.rfc-editor.org/rfc/rfc4340.html)),
    * [TCP](https://en.wikipedia.org/wiki/Transmission_Control_Protocol) (Transmission Control Protocol; see [RFC&nbsp;793](https://www.rfc-editor.org/rfc/rfc793.html)),
    * [MPTCP](https://en.wikipedia.org/wiki/MPTCP) (Multipath TCP; see [RFC&nbsp;8684](https://www.rfc-editor.org/rfc/rfc8684.html)),
-   * [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol) (Stream Control Transmission Protocol; see [RFC&nbsp;9260](https://www.rfc-editor.org/rfc/rfc9260.html)).
+   * [SCTP](https://en.wikipedia.org/wiki/Stream_Control_Transmission_Protocol) (Stream Control Transmission Protocol; see [RFC&nbsp;9260](https://www.rfc-editor.org/rfc/rfc9260.html)),
+   * [QUIC](https://en.wikipedia.org/wiki/QUIC) (Quick UDP Internet Connections; see [RFC&nbsp;9000](https://www.rfc-editor.org/rfc/rfc9000.html)).
 
 Of course, this support includes the possibility to parametrise various protocol-specific options. Note, that the protocol support by NetPerfMeter depends on the underlying operating system. DCCP, MPTCP, as well as some SCTP extensions are not available on all platforms, yet.
 
@@ -152,6 +153,11 @@ NetPerfMeter's usage of protocols and ports depends on the base port parameter o
 | DCCP       | _BASE_         | —              |
 | QUIC (UDP) | _BASE_ - 1     | —              |
 
+Notes:
+
+* To allow TCP and MPTCP simultaneously, there is NPMP-DATA with TCP (port _BASE_) and MPTCP (port _BASE_ - 1).
+* To allow UDP and QUIC simultaneously, there is NPMP-DATA with UDP (port _BASE_) and QUIC (port _BASE_ - 1).
+
 For the following examples, the base port is usually set to 9000.
 
 
@@ -258,7 +264,6 @@ For the following examples, the base port is usually set to 9000.
   ```
   Note: DCCP is only available when provided by the operating system kernel, and DCCP supports need to be compiled into NetPerfMeter.
 
-
 * Run an active instance (i.e.&nbsp;client side), with 2&nbsp;bidirectional SCTP flows over a single SCTP association (i.e.&nbsp;2&nbsp;streams):
 
   Stream 0:
@@ -286,6 +291,63 @@ For the following examples, the base port is usually set to 9000.
 
   - MPTCP is only available when provided by the operating system kernel!
   - NetPerfMeter &ge;2.0 is required! Older versions &lt;2.0 only support the expermental Linux MTCP with incompatible API!
+
+
+## QUIC Communication
+
+[QUIC](https://en.wikipedia.org/wiki/QUIC) uses built-in security based on [Transport Layer Security&nbsp;(TLS)](https://en.wikipedia.org/wiki/Transport_Layer_Security). To use QUIC, it is therefore necessary to properly set up TLS first. Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
+
+* Install [Linux Kernel QUIC](https://github.com/lxin/quic) and load the QUIC kernel module. Also see the helper script [install-linux-quic](https://github.com/dreibh/netperfmeter/blob/master/src/install-linux-quic).
+
+* Build NetPerfMeter from sources (see [Build from Sources](#build-from-sources)). Make sure that Linux Kernel QUIC is detected during the CMake configuration!
+
+* Generate a key and corresponding [X.509](https://en.wikipedia.org/wiki/X.509) TLS certificate for the server. For details, see e.g.&nbsp;the various documentations and tutorials for [OpenSSL](https://www.openssl.org/), [Gnu TLS](https://www.gnutls.org/), or [NSS](https://nss-crypto.org/). Also, the directory [`src/quic-setup`](src/quic-setup) provides some example scripts. The following commands use these scripts to generate a test cerfitication authority *TestCA*, signing a server certificate for server *server.domain.example* (with the local machine's IP addresses in SubjectAltName):
+
+  ```bash
+  cd src/quic-setup
+  ./generate-test-certificates TestCA --server --san LOCAL server.domain.example
+  ```
+
+  These commands generate the following files:
+
+  * `TestCA/TestLevel1/certs/TestLevel1.crt`: The top-level CA certificate.
+  * `TestCA/server.domain.example/server.domain.example.key`: The server key.
+  * `TestCA/server.domain.example/server.domain.example.crt`: The corresponding server certificate.
+
+  The server certificate can be verified using the CA certificate:
+
+  ```bash
+  ./check-certificate \
+     TestCA/TestLevel1/certs/TestLevel1.crt \
+     TestCA/server.domain.example/server.domain.example.crt
+  ```
+
+  The [X.509-Tools](https://www.nntb.no/~dreibh/system-tools/index.html#x.509-tools) provide further helpful utilities to handle X.509 certificates.
+
+* Run a passive instance (i.e.&nbsp;server side), using base port 9000, and specifying server key, server certificate, as well as root CA certificate:
+
+  ```bash
+  netperfmeter 9000 \
+     -tls-key  $DIRECTORY/TestCA/server.domain.example/server.domain.example.key \
+     -tls-cert $DIRECTORY/TestCA/server.domain.example/server.domain.example.crt \
+     -tls-ca   $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt
+  ```
+
+* Run an active instance (i.e.&nbsp;client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation:
+
+  - Active to passive instance: constant 10&nbsp;frames/s, constant 128&nbsp;B/frame;
+  - Passive to active instance: constant 25&nbsp;frames/s, constant 1200&nbsp;B/frame.
+
+  ```bash
+  netperfmeter $SERVER:9000 \
+     -tls-hostname server.domain.example \
+     -tls-ca $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt \
+     -quic const10:const128:const25:const1200
+  ```
+
+  Make sure that the server name matches the with the information in the server certificate provided by the passive instance. TLS is verifying it, and the TLS handshake will fail (as intended) if it does not match!
+
+* See [Wireshark](#-wireshark-dissector-for-netperfmeter-packets) for details on how to examine the NetPerfMeter QUIC traffic with Wireshark!
 
 
 ## Variable Bitrate Flows
@@ -443,47 +505,6 @@ Some examples:
    The vector file format is a table, which can be read with CSV import of tools like [GNU&nbsp;R](https://www.r-project.org/), [LibreOffice](https://www.libreoffice.org/), etc.
 
 
-## Wireshark
-
-<p align="center">
- <a href="src/figures/NetPerfMeter-Wireshark-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Wireshark-Screenshot.webp" style="width: 768pt;" /></a><br />
- A Wireshark Run with NetPerfMeter Traffic from [`multi.pcap.gz`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz)
-</p>
-
-* Run T-Shark (the command-line version of the [Wireshark](https://www.wireshark.org/) network protocol analyser) to record a PCAP trace:
-
-  ```bash
-  sudo tshark -i any -n -w output.pcap \
-     -f '(sctp port 9001) or ((tcp port 9000) or (tcp port 8999) or (udp port 9000) or (sctp port 9000) or (ip proto 33))'
-  ```
-
-  Notes:
-
-  - Filter parameters for protocols and ports can ensure to record only the relevant NetPerfMeter traffic.
-  - In case of using port&nbsp;9000 for NetPerfMeter, record:
-
-    + SCTP, port 9000 and 9001 (data and control traffic over SCTP);
-    + TCP, port 8999, 9000 and 9001 (data and control traffic over TCP and MPTCP);
-    + UDP, port 9000;
-    + DCCP, port 9000 (`ip proto 33`; PCAP filtering does not support DCCP).
-
-
-* Run [Wireshark](https://www.wireshark.org/) network protocol analyser to display the packet flow of the <a href="#active-multi">multi-flows example</a> above in PCAP file [`multi.pcap.gz`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz):
-
-  ```bash
-  wireshark multi.pcap.gz
-  ```
-
-  Notes:
-
-  - Wireshark provides out-of-the-box support for NetPerfMeter, i.e.&nbsp;a dissector is included in all recent Wireshark packages.
-
-  - To decode NetPerfMeter packets, particularly over TCP and UDP, it may be necessary to configure ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs). While SCTP (by [Payload Protocol Identifiers](https://www.iana.org/assignments/sctp-parameters/sctp-parameters.xhtml) 36 and&nbsp;37) and DCCP (by [Service Code](https://www.iana.org/assignments/service-codes/service-codes.xhtml) "npmp") for unambiguous identification of the NetPerfMeter payload, Wireshark has to rely on heuristics for TCP and UDP. They may fail to recognise the NetPerfMeter payload. The "Decode As" rules configuration in the "Analyze" menu allows to set explicit rules for TCP ports (e.g.&nbsp;8999, 9000, and 9001) and UDP port numbers (e.g.&nbsp;8999 and 9000) for decoding matching packets as NetPerfMeter payload.
-
-  - To simply SCTP packet filtering, it is recommended to activate "Enable association indexing" in the SCTP protocol settings (Preferences → Protocols/SCTP → Enable association indexing).
-
-  - [Coloring rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustColorizationSection.html#ChCustColoringRulesDialog), [filters](https://www.wireshark.org/docs/wsug_html_chunked/ChWorkDefineFilterSection.html) and ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs) can be found in the directory [`netperfmeter/src/wireshark`](https://github.com/dreibh/netperfmeter/tree/master/src/wireshark). Simply copy [`colorfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/colorfilters), [`dfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/dfilters), [`decode_as_entries`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/decode_as_entries) and optionally [`preferences`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/preferences) to `$HOME/.wireshark`.
-
 ## Miscellaneous
 
 * Take a look into the manual page of NetPerfMeter for further information and options:
@@ -498,6 +519,71 @@ Some examples:
   netperfmeter -version
   ```
   Note: NetPerfMeter &ge;2.0 is required!
+
+
+# 🦈 Wireshark Dissector for NetPerfMeter Packets
+
+<p align="center">
+ <a href="src/figures/NetPerfMeter-Wireshark-Screenshot.webp"><img alt="Screenshot of NetPerfMeter run" src="src/figures/NetPerfMeter-Wireshark-Screenshot.webp" style="width: 768pt;" /></a><br />
+ A Wireshark Run with NetPerfMeter Traffic from [`multi.pcap.gz`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz)
+</p>
+
+* Run T-Shark (the command-line version of the [Wireshark](https://www.wireshark.org/) network protocol analyser) to record a PCAP trace:
+
+  ```bash
+  sudo tshark -i any -n -w output.pcap \
+     -f '(sctp and portrange 9000-9001) or (tcp and portrange 8999-9001) or (udp and portrange 8999-9001) or (ip proto 33)'
+  ```
+
+  Notes:
+
+  - Filter parameters for protocols and ports can ensure to record only the relevant NetPerfMeter traffic.
+  - In case of using port&nbsp;9000 for NetPerfMeter, record:
+
+    + SCTP, port 9000 and 9001 (data and control traffic over SCTP);
+    + TCP, port 8999, 9000 and 9001 (data and control traffic over TCP and MPTCP);
+    + UDP, port 8999 and 9000 (data traffic over QUIC and UDP);
+    + DCCP, port 9000 (`ip proto 33`; PCAP filtering does not support DCCP).
+
+* Run [Wireshark](https://www.wireshark.org/) network protocol analyser to display the packet flow of the <a href="#active-multi">multi-flows example</a> above in PCAP file [`multi.pcap.gz`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz):
+
+  ```bash
+  wireshark multi.pcap.gz
+  ```
+
+  Notes:
+
+  - Wireshark provides out-of-the-box support for NetPerfMeter, i.e.&nbsp;a dissector is included in all recent Wireshark packages.
+
+  - To decode NetPerfMeter packets, particularly over TCP and UDP, it may be necessary to configure ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs). While SCTP (by [Payload Protocol Identifiers](https://www.iana.org/assignments/sctp-parameters/sctp-parameters.xhtml) 36 and&nbsp;37), DCCP (by [Service Code](https://www.iana.org/assignments/service-codes/service-codes.xhtml) "npmp") and QUIC (by [ALPNs](https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids) "netperfmeter/control" and "netperfmeter/data") allow for unambiguous identification of the NetPerfMeter payload, Wireshark has to rely on heuristics for TCP and UDP. They may fail to recognise the NetPerfMeter payload. The "Decode As" rules configuration in the "Analyze" menu allows to set explicit rules for TCP ports (e.g.&nbsp;8999, 9000, and 9001) and UDP port numbers (e.g.&nbsp;8999 and 9000) for decoding matching packets as NetPerfMeter payload.
+
+  - To simplify SCTP packet filtering, it is recommended to activate "Enable association indexing" in the SCTP protocol settings (Preferences → Protocols/SCTP → Enable association indexing).
+
+  - [Coloring rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustColorizationSection.html#ChCustColoringRulesDialog), [filters](https://www.wireshark.org/docs/wsug_html_chunked/ChWorkDefineFilterSection.html) and ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs) can be found in the directory [`netperfmeter/src/wireshark`](https://github.com/dreibh/netperfmeter/tree/master/src/wireshark). Simply copy [`colorfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/colorfilters), [`dfilters`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/dfilters), [`decode_as_entries`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/decode_as_entries), and optionally [`preferences`](https://github.com/dreibh/netperfmeter/blob/master/src/wireshark/preferences) to `$HOME/.wireshark`.
+
+
+* To decode TLS-encrypted QUIC traffic (or other TLS-encrypted traffic), it is necessary to let QUIC/TLS log the session keys.
+
+  1. Prepare a directory and file for key export:
+
+     ```bash
+     mkdir -m700 -p /home/$USER/keylog
+     touch /home/$USER/keylog/sslkeylog.log
+     chmod 600 /home/$USER/keylog/sslkeylog.log
+     ```
+
+  2. Configure Wireshark:
+
+     - Preferences → Protocols/TLS → (Pre)-Master Secret log filename: `/home/$USER/keylog/sslkeylog.log`.
+     - Preferences → Protocols/QUIC → QUIC UDP port(s): `8999-9001` (or your used ports).
+
+  3. When running NetPerfMeter, set the environment variable `SSLKEYLOGFILE` to your session key logfile:
+
+     ```bash
+     SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log netperfmeter ...
+     ```
+
+  4. When recording a NetPerfMeter QUIC communication, make sure to also include the QUIC connection handshake!
 
 
 # 📚 Running Larger-Scale Measurements using the CreateSummary and CombineSummaries Tools
@@ -762,6 +848,12 @@ cd netperfmeter
 sudo ci/get-dependencies --install
 cmake .
 make
+```
+
+Optionally, for installation to the standard paths (usually under `/usr/local`):
+
+```bash
+sudo make install
 ```
 
 Note: The script [`ci/get-dependencies`](https://github.com/dreibh/netperfmeter/blob/master/ci/get-dependencies) automatically installs the build dependencies under Debian/Ubuntu Linux, Fedora Linux, and FreeBSD. For manual handling of the build dependencies, see the packaging configuration in [`debian/control`](https://github.com/dreibh/netperfmeter/blob/master/debian/control) (Debian/Ubuntu Linux), [`netperfmeter.spec`](https://github.com/dreibh/netperfmeter/blob/master/rpm/netperfmeter.spec) (Fedora Linux), and [`Makefile`](https://github.com/dreibh/netperfmeter/blob/master/freebsd/netperfmeter/Makefile) FreeBSD.

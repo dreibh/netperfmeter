@@ -142,6 +142,21 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
                        (char*)&outputBuffer, bytesToSend,
                        &sinfo, 0);
    }
+#ifdef HAVE_QUIC
+   else if(flow->getTrafficSpec().Protocol == IPPROTO_QUIC) {
+      int64_t  sid;
+      uint32_t flags;
+      if(flow->isAcceptedIncomingFlow()) {   // from passive side (server)
+         sid   = ((int64_t)flow->getStreamID() << 2) | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
+         flags = (flow->getFirstTransmission() == 0) ? MSG_QUIC_STREAM_NEW : 0;
+      }
+      else {
+         sid   = ((int64_t)flow->getStreamID() << 2) | QUIC_STREAM_TYPE_UNI_MASK;
+         flags = 0;   // already created by Identify procedure!
+      }
+      sent = quic_sendmsg(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, sid, flags);
+   }
+#endif
    else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
       if(flow->isRemoteAddressValid()) {
          sent = ext_sendto(flow->getSocketDescriptor(),
@@ -229,15 +244,14 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 {
    char            inputBuffer[65536];
    sockaddr_union  from;
-   socklen_t       fromlen = sizeof(from);
-   int             flags   = 0;
-   sctp_sndrcvinfo sinfo;
+   socklen_t       fromlen  = sizeof(from);
+   int             flags    = 0;
+   int64_t         streamID = 0;
 
    // ====== Read message (or fragment) =====================================
-   sinfo.sinfo_stream = 0;
    const ssize_t received =
       FlowManager::getFlowManager()->getMessageReader()->receiveMessage(
-         sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &sinfo, &flags);
+         sd, &inputBuffer, sizeof(inputBuffer), &from.sa, &fromlen, &streamID, &flags);
    if(received == MRRM_PARTIAL_READ) {
       return true;   // Partial read -> wait for next fragment.
    }
@@ -272,11 +286,23 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
                   (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
             // ====== Identify flow =========================================
             Flow* flow;
-            if(( protocol == IPPROTO_UDP) && (!isActiveMode) ) {
+            if( (protocol == IPPROTO_UDP) && (!isActiveMode) ) {
                flow = FlowManager::getFlowManager()->findFlow(&from.sa);
             }
+            else if(protocol == IPPROTO_SCTP) {
+               // Flow ID = SCTP stream ID:
+               flow = FlowManager::getFlowManager()->findFlow(sd, (uint32_t)streamID);
+            }
+#ifdef HAVE_QUIC
+            else if(protocol == IPPROTO_QUIC) {
+               // Flow ID = QUIC stream ID (remove 2 last bits:
+               const uint32_t flowID = (uint32_t)(streamID >> 2);
+               flow = FlowManager::getFlowManager()->findFlow(sd, flowID);
+            }
+#endif
             else {
-               flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
+               // Flow ID is always 0:
+               flow = FlowManager::getFlowManager()->findFlow(sd, 0);
             }
             if(flow) {
                // Update flow statistics by received NETPERFMETER_DATA message.
@@ -306,7 +332,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 
    // ====== Handle error ===================================================
    else {
-      Flow* flow = FlowManager::getFlowManager()->findFlow(sd, sinfo.sinfo_stream);
+      Flow* flow = FlowManager::getFlowManager()->findFlow(sd, 0);
       if(flow) {
          flow->lock();
          if(!flow->isAcceptedIncomingFlow()) {

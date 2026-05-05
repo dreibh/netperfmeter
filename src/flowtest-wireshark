@@ -27,7 +27,7 @@
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 # Bash options:
-set -eu
+set -euo pipefail
 
 # This is a simple test to include all protocols and different features,
 # particularly to test the NetPerfMeter dissector of Wireshark/T-Shark:

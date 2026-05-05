@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.0~rc2.1
+Version: 2.0.2
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -21,6 +21,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-build
 Requires: %{name}-common = %{version}-%{release}
 Recommends: %{name}-examples = %{version}-%{release}
 Recommends: %{name}-plotting = %{version}-%{release}
+Recommends: gnutls-devel
 Recommends: hipercontracer
 Recommends: iputils
 Recommends: wireshark-cli
@@ -33,10 +34,10 @@ Suggests: traceroute
 
 %description
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
-and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
-bidirectional flows to an endpoint and measures the resulting flow bandwidths
-and QoS. Flows can be saturated (i.e. “send as much as possible”) or
-non-saturated with frame rate and frame sizes (like a multimedia
+DCCP, and QUIC transport protocols over IPv4 and IPv6. It simultaneously
+transmits bidirectional flows to an endpoint and measures the resulting flow
+bandwidths and QoS. Flows can be saturated (i.e. “send as much as possible”
+or non-saturated with frame rate and frame sizes (like a multimedia
 transmission). Non-saturated flows can be configured with constant or
 variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
 Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
@@ -86,10 +87,10 @@ BuildArch: noarch
 
 %description common
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
-and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
-bidirectional flows to an endpoint and measures the resulting flow bandwidths
-and QoS. Flows can be saturated (i.e. “send as much as possible”) or
-non-saturated with frame rate and frame sizes (like a multimedia
+DCCP, and QUIC transport protocols over IPv4 and IPv6. It simultaneously
+transmits bidirectional flows to an endpoint and measures the resulting flow
+bandwidths and QoS. Flows can be saturated (i.e. “send as much as possible”
+or non-saturated with frame rate and frame sizes (like a multimedia
 transmission). Non-saturated flows can be configured with constant or
 variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
 Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
@@ -101,7 +102,6 @@ of the run) and vector files (time series). These files can be processed
 further, e.g. for detailed analysis and plotting of the results. The
 Wireshark network protocol analyser provides out-of-the-box support for
 analysing NetPerfMeter packet traffic.
-
 This package contains common NetPerfMeter files.
 
 %files common
@@ -117,13 +117,19 @@ This package contains common NetPerfMeter files.
 Summary: Network Performance Meter (example scripts and results files)
 Group: Applications/Internet
 BuildArch: noarch
+Requires: R-bit64
+Requires: R-core
+Requires: R-data.table
+Requires: R-dplyr
+Requires: R-ggplot2
+Requires: R-R.utils
 
 %description examples
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
-and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
-bidirectional flows to an endpoint and measures the resulting flow bandwidths
-and QoS. Flows can be saturated (i.e. “send as much as possible”) or
-non-saturated with frame rate and frame sizes (like a multimedia
+DCCP, and QUIC transport protocols over IPv4 and IPv6. It simultaneously
+transmits bidirectional flows to an endpoint and measures the resulting flow
+bandwidths and QoS. Flows can be saturated (i.e. “send as much as possible”
+or non-saturated with frame rate and frame sizes (like a multimedia
 transmission). Non-saturated flows can be configured with constant or
 variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
 Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
@@ -156,10 +162,10 @@ Suggests: td-system-tools
 
 %description service
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
-and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
-bidirectional flows to an endpoint and measures the resulting flow bandwidths
-and QoS. Flows can be saturated (i.e. “send as much as possible”) or
-non-saturated with frame rate and frame sizes (like a multimedia
+DCCP, and QUIC transport protocols over IPv4 and IPv6. It simultaneously
+transmits bidirectional flows to an endpoint and measures the resulting flow
+bandwidths and QoS. Flows can be saturated (i.e. “send as much as possible”
+or non-saturated with frame rate and frame sizes (like a multimedia
 transmission). Non-saturated flows can be configured with constant or
 variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
 Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
@@ -219,10 +225,10 @@ Recommends: %{name}-examples = %{version}-%{release}
 
 %description plotting
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
-and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
-bidirectional flows to an endpoint and measures the resulting flow bandwidths
-and QoS. Flows can be saturated (i.e. “send as much as possible”) or
-non-saturated with frame rate and frame sizes (like a multimedia
+DCCP, and QUIC transport protocols over IPv4 and IPv6. It simultaneously
+transmits bidirectional flows to an endpoint and measures the resulting flow
+bandwidths and QoS. Flows can be saturated (i.e. “send as much as possible”
+or non-saturated with frame rate and frame sizes (like a multimedia
 transmission). Non-saturated flows can be configured with constant or
 variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
 Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
@@ -256,10 +262,10 @@ Requires: %{name}-service = %{version}-%{release}
 
 %description all
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
-and DCCP transport protocols over IPv4 and IPv6. It simultaneously transmits
-bidirectional flows to an endpoint and measures the resulting flow bandwidths
-and QoS. Flows can be saturated (i.e. “send as much as possible”) or
-non-saturated with frame rate and frame sizes (like a multimedia
+DCCP, and QUIC transport protocols over IPv4 and IPv6. It simultaneously
+transmits bidirectional flows to an endpoint and measures the resulting flow
+bandwidths and QoS. Flows can be saturated (i.e. “send as much as possible”
+or non-saturated with frame rate and frame sizes (like a multimedia
 transmission). Non-saturated flows can be configured with constant or
 variable frame rate/frame size, i.e. to realise Constant Bit Rate (CBR) or
 Variable Bit Rate (VBR) traffic. For both, frame rate and frame size, it is
@@ -277,6 +283,12 @@ This metapackage installs all sub-packages of NetPerfMeter.
 
 
 %changelog
+* Wed Apr 29 2026 Thomas Dreibholz <dreibh@simula.no> - 2.0.2-1
+- New upstream release.
+* Wed Feb 25 2026 Thomas Dreibholz <dreibh@simula.no> - 2.0.1-1
+- New upstream release.
+* Thu Dec 18 2025 Thomas Dreibholz <dreibh@simula.no> - 2.0.0-1
+- New upstream release.
 * Sat Feb 10 2024 Thomas Dreibholz <thomas.dreibholz@gmail.com> - 1.9.7
 - New upstream release.
 * Mon Dec 18 2023 Thomas Dreibholz <thomas.dreibholz@gmail.com> - 1.9.6

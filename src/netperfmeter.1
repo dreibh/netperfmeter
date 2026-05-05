@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd November 18, 2025
+.Dd December 16, 2025
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -46,6 +46,10 @@ local_port
 .br
 .Op Fl l Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
 .br
+.Op Fl K Ar key_file | Fl Fl tls-key Ar key_file
+.Op Fl J Ar certificate_file | Fl Fl tls-cert Ar certificate_file
+.Op Fl I Ar ca_certificate_file | Fl Fl tls-ca Ar ca_certificate_file
+.br
 .Op Fl -6 | Fl Fl v6only
 .br
 .Op Fl Fl display | Fl Fl nodisplay
@@ -64,7 +68,9 @@ remote_endpoint:remote_port
 .br
 .Op Fl L Ar address[,address,...] | Fl Fl local Ar address[,address,...]
 .br
-.Op Fl J Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
+.Op Fl l Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
+.br
+.Op Fl H Ar hostname_file | Fl Fl tls-hostname Ar hostname
 .br
 .Op Fl -6 | Fl Fl v6only
 .Op Fl Fl display | Fl Fl nodisplay
@@ -99,6 +105,8 @@ remote_endpoint:remote_port
 .Op Fl d Ar FLOWSPEC | Fl Fl dccp Ar FLOWSPEC
 .br
 .Op Fl s Ar FLOWSPEC | Fl Fl sctp Ar FLOWSPEC Ar [FLOWSPEC ...]
+.br
+.Op Fl k Ar FLOWSPEC | Fl Fl quic Ar FLOWSPEC Ar [FLOWSPEC ...]
 .br
 .Op Fl q | Fl Fl quiet
 .Op Fl ! | Fl Fl verbose
@@ -141,8 +149,18 @@ On the passive side, this option disables incoming control connections via MPTCP
 .It Fl L Ar address[,address,...] | Fl Fl local Ar address[,address,...]
 Specifies address(es) of the local *data* endpoint. For TCP, UDP and DCCP, only the first address is used!
 On an active node, this option applies to the following flows, i.e. it must be set before specifying a flow!
-.It Fl J Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
+.It Fl l Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
 Specifies address(es) of the local *control* endpoint (SCTP or TCP). For TCP, only the first address is used!
+.It Fl K Ar key_file | Fl Fl tls-key Ar key_file
+Specifies the TLS key file for QUIC authentication. This option is used by the passive side.
+.It Fl J Ar certificate_file | Fl Fl tls-cert Ar certificate_file
+Specifies the TLS certificate file for QUIC authentication. This option is used by the passive side.
+The certificate file must correspond to the key file provided by --tls-key. The certificate must be for server usage (X.509 Extended Key Usage: TLS Web Server Authentication).
+.It Fl I Ar ca_certificate_file | Fl Fl tls-ca Ar ca_certificate_file
+Specifies the TLS root CA certificate file for QUIC authentication.
+.It Fl H Ar hostname_file | Fl Fl tls-hostname Ar hostname
+Specifies the TLS certificate hostname for QUIC authentication. It is used by the active side.
+The hostname must match the remote (i.e. passive side's) hostname, as provided by the passide side's TLS certificate, to allow for hostname verification. As alternative, it is possible to add the IP addresses into the X.509 SubjectAltName of its certificate.
 .It Fl -6 | Fl Fl v6only
 Use sockets with IPv6 only (by setting IPV6_V6ONLY socket option).
 .It Fl Fl display
@@ -198,6 +216,8 @@ Establish a new DCCP connection. The flow of this connection must be specified b
 Note: DCCP is not available on all platforms, yet. Currently, only Linux provides DCCP in its official kernel.
 .It Fl s Ar FLOWSPEC | Fl Fl sctp Ar FLOWSPEC Ar [FLOWSPEC ...]
 Establish a new SCTP association. The streams of this association must be specified by one or more FLOWSPEC specifications as following parameters.
+.It Fl k Ar FLOWSPEC | Fl Fl quic Ar FLOWSPEC Ar [FLOWSPEC ...]
+Establish a new QUIC connection. The streams of this connection must be specified by one or more FLOWSPEC specifications as following parameters.
 .It FLOWSPEC
 Specifies a new flow. The format is: out\%go\%ing_\%fra\%me_\%rate:\%out\%go\%ing_\%fra\%me_\%size:\%in\%com\%ing_\%fra\%me_\%rate:\%in\%com\%ing_\%fra\%me_\%size:\%opt\%ion:\%...
 The first four parameters (out\%going_\%frame_\%rate:\%out\%going_\%frame_\%size:\%in\%com\%ing_\%frame_\%rate:\%in\%com\%ing_\%frame_\%size) may be substituted by the option "default", creating a flow with some more or less useful default parameters.
@@ -297,6 +317,10 @@ Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. The c
 SCTP traffic with some variation.
 .It netperfmeter 172.31.33.2:\%9000 -udp const0:\%const0:\%const25:\%const2500:\%onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
 Some on-off background traffic with Pareto distribution.
+.It netperfmeter 9000 -tls-key my-server.key -tls-cert my-server.crt -tls-ca my-ca.crt
+Start in passive mode, with TLS setup for QUIC. See https://www.nntb.no/~dreibh/netperfmeter/#quic-communication for details about QUIC usage!
+.It netperfmeter 172.31.33.2:9000 -tls-hostname my-server.domain -tls-ca my-ca.crt -quic const10:const128:const25:const1200
+Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. Set TLS server name of 172.31.33.2 for QUIC to my-server.domain. See https://www.nntb.no/~dreibh/netperfmeter/#quic-communication for details about QUIC usage!
 .It netperfmeter -version
 Shows the version.
 .It netperfmeter -help

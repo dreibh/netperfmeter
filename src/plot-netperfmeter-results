@@ -27,7 +27,7 @@
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 # Bash options:
-set -eu
+set -euo pipefail
 
 
 # ###### Usage ##############################################################

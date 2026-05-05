@@ -81,7 +81,7 @@ ADD_EXECUTABLE(netperfmeter
    transfer.cc
    transfer.h
 )
-TARGET_LINK_LIBRARIES(netperfmeter ${BZ2_LIBRARY} ${SCTP_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_LINK_LIBRARIES(netperfmeter ${BZ2_LIBRARY} ${SCTP_LIBRARY} ${QUIC_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
 INSTALL(TARGETS netperfmeter     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   netperfmeter.1   DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES   netperfmeter.xml DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)
@@ -154,7 +154,9 @@ INSTALL(FILES   getabstime.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 IF (WITH_PLOT_PROGRAMS)
    INSTALL(PROGRAMS plot-netperfmeter-results setpdfmetadata pdfembedfonts
            DESTINATION ${CMAKE_INSTALL_BINDIR})
-   INSTALL(FILES plotter.R plot-netperfmeter-results.R
+   INSTALL(PROGRAMS plot-netperfmeter-results.R
+           DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter)
+   INSTALL(FILES plotter.R
            DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter)
    INSTALL(FILES plot-netperfmeter-results.1 setpdfmetadata.1 pdfembedfonts.1
            DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
@@ -169,6 +171,10 @@ ENDIF()
 
 # ADD_EXECUTABLE(t1 t1.cc assure.cc loglevel.cc tools.cc mutex.cc)
 # TARGET_LINK_LIBRARIES(t1 ${SCTP_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
+# ADD_EXECUTABLE(qs qs.cc assure.cc loglevel.cc tools.cc mutex.cc)
+# TARGET_LINK_LIBRARIES(qs ${SCTP_LIBRARY} ${QUIC_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
+# ADD_EXECUTABLE(qc qc.cc assure.cc loglevel.cc tools.cc mutex.cc)
+# TARGET_LINK_LIBRARIES(qc ${SCTP_LIBRARY} ${QUIC_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
 
 
 #############################################################################

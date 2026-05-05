@@ -26,53 +26,41 @@
 # Contact:  dreibh@simula.no
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
-# Bash options:
 set -euo pipefail
 
-# ====== Handle arguments ===================================================
-if [ $# -lt 2 ] ; then
-   echo >&2 "Usage: $0 server:port [processes]"
-   exit 1
-fi
-SERVER="$(echo "$1" | sed -s 's/:.*$//g')"
-PORT="$(echo "$1" | sed -s 's/^.*://g')"
-if [[ ! "${PORT}" =~ ^[0-9]+$ ]] ; then
-   echo >&2 "ERROR: Invalid port ${PORT}!"
-   exit 1
-fi
 
-if [ "$2" != "" ] ; then
-   procs="$2"
-else
-   procs=16
-fi
-
-RUNTIME=5
-SLEEP=3
-
-mkdir -p stresstest-output
-rm -f stresstest-output/*
-(
-n=0
-while true ; do
-
-   # ====== Test #1 =========================================================
-   n=$((n+1))
-   label="$(printf "S%08u" "${n}")"
-   echo "\
-random-sleep 0 ${SLEEP} && ./netperfmeter ${SERVER}:${PORT} \
--control-over-tcp \
--config=stresstest-output/${label}.config \
--vector=stresstest-output/${label}.vec.bz2 \
--scalar=stresstest-output/${label}.sca.bz2 \
--logfile=stresstest-output/${label}.log \
--loglevel=0 \
--udp const10:const1400:const10:const1400 \
--runtime=${RUNTIME}"
-
-# -tcp const80:const10000:const80:const10000 \
-# -sctp const20:const10000:const20:const10000 const20:const10000:const20:const10000 \
-# -dccp const80:const1400:const80:const1400 \
-
+# ====== Check arguments ====================================================
+TEST=0
+while [ $# -gt 0 ] ; do
+   if [ "$1" == "-t" ] || [ "$1" == "--test" ] ; then
+      TEST=1
+   else
+      echo >&2 "Usage: $0 [-t|--test]"
+      exit 1
+   fi
+   shift
 done
-) | parallel -j"${procs}"
+
+
+# ====== Clone and build Linux QUIC =========================================
+cd ~/src
+if [ ! -e quic ] ; then
+   git clone https://github.com/lxin/quic.git
+   cd quic
+else
+   cd quic
+   git pull
+fi
+
+./autogen.sh
+./configure --prefix=/usr
+make
+sudo make install
+if [ ${TEST} -ge 1 ] ; then
+   sudo make check
+fi
+
+
+# ====== Load the Linux QUIC kernel module ==================================
+sudo modprobe quic
+lsmod | grep "^quic"

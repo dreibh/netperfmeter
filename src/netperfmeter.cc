@@ -37,6 +37,7 @@
 #include <cerrno>
 #include <getopt.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -53,6 +54,9 @@
 #endif
 #ifndef HAVE_DCCP
 #warning DCCP is not supported by the API of this system!
+#endif
+#ifndef HAVE_QUIC
+#warning QUIC is not supported by the API of this system!
 #endif
 
 
@@ -84,6 +88,13 @@ static int              gMPTCPSocket           = -1;
 static int              gUDPSocket             = -1;
 #ifdef HAVE_DCCP
 static int              gDCCPSocket            = -1;
+#endif
+#ifdef HAVE_QUIC
+static int              gQUICSocket            = -1;
+static const char*      gQUICCA                = nullptr;
+static const char*      gQUICCertificate       = nullptr;
+static const char*      gQUICKey               = nullptr;
+static const char*      gQUICHostname          = nullptr;
 #endif
 static double           gRuntime               = -1.0;
 static bool             gDisplayEnabled        = true;
@@ -122,7 +133,8 @@ static MessageReader  gMessageReader;
       << " local_port\n"
          "    [-x|--control-over-sctp|-y|--control-over-tcp|--control-over-mptcp]\n"
          "    [-L address[,address,...]|--local address[,address,...]]\n"
-         "    [-J address[,address,...]|--controllocal address[,address,...]]\n"
+         "    [-l address[,address,...]|--controllocal address[,address,...]]\n"
+         "    [-K|--tls-key key_file] [-J|--tls-cert certificate_file] [-I|--tls-ca ca_certificate_file]\n"
          "    [-6|--v6only]\n"
          "    [--display|--nodisplay]\n"
          "    [--loglevel level]\n"
@@ -135,7 +147,7 @@ static MessageReader  gMessageReader;
          "    [-x|--control-over-sctp|-X|--no-control-over-sctp]\n"
          "    [-y|--control-over-tcp|-Y|--no-control-over-tcp|--control-over-mptcp|--no-control-over-mptcp]\n"
          "    [-L address[,address,...]|--local address[,address,...]]\n"
-         "    [-J address[,address,...]|--controllocal address[,address,...]]\n"
+         "    [-l address[,address,...]|--controllocal address[,address,...]]\n"
          "    [-6|--v6only]\n"
          "    [--display|--nodisplay]\n"
          "    [-o bytes|--sndbuf bytes]\n"
@@ -146,11 +158,13 @@ static MessageReader  gMessageReader;
          "    [-V vector_file_pattern|--vector vector_file_pattern]\n"
          "    [-A description|--activenodename description]\n"
          "    [-P description|--passivenodename description]\n"
+         "    [-H|--tls-hostname hostname]\n"
          "    [-t|--tcp FLOWSPEC]\n"
          "    [-m|--mptcp FLOWSPEC]\n"
          "    [-u|--udp FLOWSPEC]\n"
          "    [-d|--dccp FLOWSPEC]\n"
          "    [-s|--sctp FLOWSPEC [FLOWSPEC ...]]\n"
+         "    [-k|--quic FLOWSPEC [FLOWSPEC ...]]\n"
          "    [--loglevel level]\n"
          "    [--logcolor on|off]\n"
          "    [--logfile file]\n"
@@ -189,12 +203,17 @@ bool handleGlobalParameters(int argc, char** argv)
       { "vector",                        required_argument, 0, 'V'    },
       { "activenodename",                required_argument, 0, 'A'    },
       { "passivenodename",               required_argument, 0, 'P'    },
+      { "tls-key",                       required_argument, 0, 'K'    },
+      { "tls-cert",                      required_argument, 0, 'J'    },
+      { "tls-ca",                        required_argument, 0, 'I'    },
+      { "tls-hostname",                  required_argument, 0, 'H'    },
 
       { "tcp",                           required_argument, 0, 't'    },
       { "mptcp",                         required_argument, 0, 'm'    },
       { "udp",                           required_argument, 0, 'u'    },
       { "dccp",                          required_argument, 0, 'd'    },
       { "sctp",                          required_argument, 0, 's'    },
+      { "quic",                          required_argument, 0, 'k'    },
 
       { "loglevel",                      required_argument, 0, 0x3000 },
       { "logcolor",                      required_argument, 0, 0x3001 },
@@ -210,7 +229,7 @@ bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWT:A:P:o:i:N:6L:J:V:S:C:t:m:u:d:s:hvq!", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:q!hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
             gActiveControlProtocol = IPPROTO_SCTP;
@@ -351,6 +370,7 @@ bool handleGlobalParameters(int argc, char** argv)
          case 'u':
          case 'd':
          case 's':
+         case 'k':
             {
                AssocSpec flow;
                flow.Flows.push_back(optarg);
@@ -384,11 +404,44 @@ bool handleGlobalParameters(int argc, char** argv)
                      exit(1);
 #endif
                    break;
+                  case 'k':
+#ifdef HAVE_QUIC
+                     flow.Protocol = IPPROTO_QUIC;
+                     while( (optind < argc) && (argv[optind][0] != '-')) {
+                        flow.Flows.push_back(argv[optind]);
+                        optind++;
+                     }
+#else
+                     std::cerr << "ERROR: QUIC support is not compiled in!" << "\n";
+                     exit(1);
+#endif
+                   break;
                   default:
                      abort();
+                   // break;
                }
                gAssocSpecs.push_back(flow);
             }
+          break;
+         case 'K':
+#ifdef HAVE_QUIC
+            gQUICKey = optarg;
+#endif
+          break;
+         case 'J':
+#ifdef HAVE_QUIC
+            gQUICCertificate = optarg;
+#endif
+          break;
+         case 'I':
+#ifdef HAVE_QUIC
+            gQUICCA = optarg;
+#endif
+          break;
+         case 'H':
+#ifdef HAVE_QUIC
+            gQUICHostname = optarg;
+#endif
           break;
          case 0x3000:
             gLogLevel = std::min((unsigned int)atoi(optarg),MAX_LOGLEVEL);
@@ -778,6 +831,149 @@ static const char* parseTrafficSpecOption(const char*      parameters,
 }
 
 
+#ifdef HAVE_QUIC
+// ###### QUIC server handshake #############################################
+static int server_handshake(int          sd,
+                            const char*  alpns,
+                            const char*  tlsCAFile,
+                            const char*  tlsCertFile,
+                            const char*  tlsKeyFile,
+                            uint8_t*     sessionKey,
+                            unsigned int sessionKeyLength)
+{
+   gnutls_certificate_credentials_t credentials;
+   gnutls_session_t                 session;
+   gnutls_datum_t                   skey = { sessionKey, sessionKeyLength };
+   int                              error;
+
+   error = gnutls_certificate_allocate_credentials(&credentials);
+   if(!error) {
+      const int loadedCAs =
+         gnutls_certificate_set_x509_trust_file(credentials,
+                                                tlsCAFile, GNUTLS_X509_FMT_PEM);
+      if(loadedCAs <= 0) {
+         LOG_ERROR
+         stdlog << "Loading CA certificate from "
+                << ((tlsCAFile != nullptr) ? tlsCAFile : "(none)") << " failed\n";
+         LOG_END
+         gnutls_certificate_free_credentials(credentials);
+         return -1;
+      }
+
+      error = gnutls_certificate_set_x509_key_file(credentials,
+                                                   tlsCertFile, tlsKeyFile,
+                                                   GNUTLS_X509_FMT_PEM);
+      if(!error) {
+         error = gnutls_init(&session,
+                             GNUTLS_SERVER|
+                             GNUTLS_NO_AUTO_SEND_TICKET|
+                             GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
+         if(!error) {
+            error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
+            if(!error) {
+               error = gnutls_session_ticket_enable_server(session, &skey);
+               if(!error) {
+                  error = gnutls_record_set_max_early_data_size(session, 0xffffffffu);
+                  if(!error) {
+                     error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
+                     if( (!error) && (alpns != NULL) ) {
+                        error = quic_session_set_alpn(session, alpns, strlen(alpns));
+                     }
+                     if(!error) {
+                        gnutls_transport_set_int(session, sd);
+                        error = quic_handshake(session);
+                        if( (!error) && (alpns != NULL) ) {
+                           size_t alpnLength;
+                           char   alpn[64];
+                           alpnLength = sizeof(alpn);
+                           error = quic_session_get_alpn(session, alpn, &alpnLength);
+                        }
+                     }
+                  }
+               }
+            }
+         }
+         gnutls_deinit(session);
+      }
+      gnutls_certificate_free_credentials(credentials);
+   }
+
+   if(error) {
+      LOG_ERROR
+      stdlog << "TLS setup failed: " << gnutls_strerror(error) << "\n";
+      LOG_END
+   }
+   return error;
+}
+
+
+// ###### QUIC client handshake #############################################
+static int client_handshake(int            sd,
+                            const char*    alpns,
+                            const char*    host,
+                            const char*    tlsCAFile,
+                            const uint8_t* ticketIn,
+                            size_t         ticketInLength,
+                            uint8_t*       ticketOut,
+                            size_t*        ticketOutLength)
+{
+   gnutls_certificate_credentials_t credentials;
+   gnutls_session_t                 session;
+   size_t                           alpnLength;
+   char                             alpn[64];
+   int                              error;
+
+   error = gnutls_certificate_allocate_credentials(&credentials);
+   if(!error) {
+      int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
+      if(loadedCAs <= 0) {
+         std::cerr << "ERROR: Loading CA certificate from "
+                   << ((tlsCAFile != nullptr) ? tlsCAFile : "(none)") << " failed\n";
+         gnutls_certificate_free_credentials(credentials);
+         return -1;
+      }
+      error = gnutls_init(&session, GNUTLS_CLIENT|GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
+      if(!error) {
+         error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
+         if(!error) {
+            error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
+         }
+         if( (!error) && (alpns != NULL) ) {
+            error = quic_session_set_alpn(session, alpns, strlen(alpns));
+         }
+         if(!error) {
+            error = gnutls_server_name_set(session, GNUTLS_NAME_DNS, host, strlen(host));
+         }
+         if(!error) {
+            gnutls_session_set_verify_cert(session, host, 0);
+            gnutls_transport_set_int(session, sd);
+            if(ticketIn != NULL) {
+               error = quic_session_set_data(session, ticketIn, ticketInLength);
+            }
+            if(!error) {
+               error = quic_handshake(session);
+               // if( (!error) && (alpns != NULL) ) {
+               //    alpnLength = sizeof(alpn);
+               //    error = quic_session_get_alpn(session, alpn, &alpnLength);
+               // }
+            }
+            if( (!error) && (ticketOut != NULL) ) {
+               error =  quic_session_get_data(session, ticketOut, ticketOutLength);
+            }
+         }
+         gnutls_deinit(session);
+      }
+      gnutls_certificate_free_credentials(credentials);
+   }
+
+   if(error) {
+      std::cerr << "ERROR: TLS setup failed: " << gnutls_strerror(error) << "\n";
+   }
+   return error;
+}
+#endif
+
+
 // ###### Create Flow for new flow ##########################################
 static Flow* createFlow(Flow*                  previousFlow,
                         const char*            parameters,
@@ -817,6 +1013,11 @@ static Flow* createFlow(Flow*                  previousFlow,
 #ifdef HAVE_DCCP
          case IPPROTO_DCCP:
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 40;   // 1420B for IPv6 via 1500B MTU!
+          break;
+#endif
+#ifdef HAVE_QUIC
+         case IPPROTO_QUIC:
+            trafficSpec.OutboundFrameSize[0] = 1400;   // Some reasonable default
           break;
 #endif
          default:
@@ -882,7 +1083,15 @@ static Flow* createFlow(Flow*                  previousFlow,
    sockaddr_union destinationAddress = remoteAddress;
 #ifdef HAVE_MPTCP
    if(trafficSpec.Protocol == IPPROTO_MPTCP) {
-      // MPTCP: use MPTCP port instead of TCP port
+      // An MPTCP subflow is just a TCP connection on the wire. To allow for
+      // MPTCP and TCP simultaneously, MPTCP needs a different port number:
+      setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
+   }
+#endif
+#ifdef HAVE_QUIC
+   if(trafficSpec.Protocol == IPPROTO_QUIC) {
+      // A QUIC connection is just a UDP "connection" on the wire. To allow for
+      // QUIC and UDP simultaneously, QUIC needs a different port number:
       setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
    }
 #endif
@@ -951,6 +1160,13 @@ static Flow* createFlow(Flow*                  previousFlow,
                                                    trafficSpec.BindV6Only);
            break;
 #endif
+#ifdef HAVE_QUIC
+         case IPPROTO_QUIC:
+            socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_QUIC, 0,
+                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
+                                                   trafficSpec.BindV6Only);
+           break;
+#endif
          default:
             abort();
 
@@ -999,6 +1215,22 @@ static Flow* createFlow(Flow*                  previousFlow,
       LOG_TRACE
       stdlog << "okay <sd=" << socketDescriptor << ">\n";
       LOG_END
+
+      // ====== QUIC handshake ==============================================
+#ifdef HAVE_QUIC
+      if(trafficSpec.Protocol == IPPROTO_QUIC) {
+         LOG_TRACE
+         stdlog << "client handshake <sd=" << socketDescriptor
+                << ", CA=" << gQUICCA << " H=" << gQUICHostname << ">\n";
+         LOG_END
+
+         if(client_handshake(socketDescriptor,
+                             ALPN_NETPERFMETER_DATA, gQUICHostname, gQUICCA,
+                             nullptr, 0, nullptr, nullptr) != 0) {
+            exit(1);
+         }
+      }
+#endif
    }
 
    // ====== Update flow with socket descriptor =============================
@@ -1032,10 +1264,17 @@ bool mainLoop(const bool               isActiveMode,
    pollfd                 fds[5 + gMessageReader.size()];
    int                    n       = 0;
    int                    tcpID   = -1;
+#ifdef HAVE_MPTCP
    int                    mptcpID = -1;
+#endif
    int                    udpID   = -1;
    int                    sctpID  = -1;
+#ifdef HAVE_DCCP
    int                    dccpID  = -1;
+#endif
+#ifdef HAVE_QUIC
+   int                    quicID  = -1;
+#endif
    unsigned long long     now     = getMicroTime();
    std::map<int, pollfd*> pollFDIndex;
 
@@ -1047,8 +1286,11 @@ bool mainLoop(const bool               isActiveMode,
 #endif
    addToPollFDs((pollfd*)&fds, gUDPSocket,     n, &udpID);
    addToPollFDs((pollfd*)&fds, gSCTPSocket,    n, &sctpID);
-#ifdef HAVE_MPTCP
+#ifdef HAVE_DCCP
    addToPollFDs((pollfd*)&fds, gDCCPSocket,    n, &dccpID);
+#endif
+#ifdef HAVE_QUIC
+   addToPollFDs((pollfd*)&fds, gQUICSocket,    n, &quicID);
 #endif
    int    controlFDSet[gMessageReader.size()];
    size_t controlFDs = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
@@ -1178,6 +1420,50 @@ bool mainLoop(const bool               isActiveMode,
          }
       }
 #endif
+#ifdef HAVE_QUIC
+      if( (quicID >= 0) && (fds[quicID].revents & (POLLIN|POLLERR)) ) {
+         const int newSD = ext_accept(gQUICSocket, nullptr, 0);
+         if(newSD >= 0) {
+            LOG_TRACE
+            stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
+                             gQUICSocket, newSD) << "\n";
+            LOG_END
+            LOG_TRACE
+            stdlog << "server handshake <sd=" << gQUICSocket
+                   << ", K="  << ((gQUICKey != nullptr) ? gQUICKey : "(none)")
+                   << ", C="  << ((gQUICCertificate != nullptr) ? gQUICCertificate : "(none)")
+                   << ", CA=" << ((gQUICCA != nullptr) ? gQUICCA : "(none)")
+                   << ">\n";
+            LOG_END
+
+            uint8_t      sessionKey[64];
+            unsigned int sessionKeyLength = sizeof(sessionKey);
+            if(getsockopt(gQUICSocket,   /* NOTE: accepting socket, not newSD! */
+                          SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
+                          &sessionKey, &sessionKeyLength) == 0) {
+               if(server_handshake(newSD, ALPN_NETPERFMETER_DATA,
+                                   gQUICCA, gQUICCertificate, gQUICKey,
+                                   sessionKey, sessionKeyLength) == 0) {
+                  LOG_TRACE
+                  stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
+                                 gQUICSocket, newSD) << "\n";
+                  LOG_END
+                  FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
+               }
+               else {
+                  ext_close(newSD);
+               }
+            }
+            else {
+               LOG_WARNING
+               stdlog << "getsockopt(QUIC_SOCKOPT_SESSION_TICKET): "
+                      << strerror(errno);
+               LOG_END
+               ext_close(newSD);
+            }
+         }
+      }
+#endif
 
    }
 
@@ -1225,6 +1511,15 @@ void passiveMode(const uint16_t localPort)
             LOG_FATAL
             stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
                              gControlSocket, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+
+         const int noDelayOption = 1;
+         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_NODELAY,
+                           (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+            LOG_ERROR
+            stdlog << format("Failed to set SCTP_NODELAY on SCTP control socket: %s!",
+                              strerror(errno)) << "\n";
             LOG_END_FATAL
          }
 
@@ -1278,6 +1573,14 @@ void passiveMode(const uint16_t localPort)
                         localPort + 1, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
+      const int noDelayOption = 1;
+      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_NODELAY,
+                        (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+         LOG_ERROR
+         stdlog << format("Failed to set TCP_NODELAY on TCP control socket: %s!",
+                           strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
       gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
    }
 
@@ -1320,7 +1623,6 @@ void passiveMode(const uint16_t localPort)
                           gMPTCPSocket) << "\n";
          LOG_END_FATAL
       }
-      ext_listen(gMPTCPSocket, 100);
    }
 #endif
 
@@ -1330,9 +1632,10 @@ void passiveMode(const uint16_t localPort)
                                     (const sockaddr_union*)&gLocalDataAddressArray,
                                     true, gBindV6Only);
    if(gUDPSocket < 0) {
-      std::cerr << "ERROR: Failed to create and bind UDP socket on port " << localPort << " - "
-                << strerror(errno) << "!\n";
-      exit(1);
+      LOG_FATAL
+      stdlog << "ERROR: Failed to create and bind UDP socket on port " << localPort << " - "
+             << strerror(errno) << "!\n";
+      LOG_END_FATAL
    }
    // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
    FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDPSocket);
@@ -1361,6 +1664,40 @@ void passiveMode(const uint16_t localPort)
          LOG_FATAL
          stdlog << format("Failed to configure buffer sizes on DCCP socket %d!",
                           gDCCPSocket) << "\n";
+         LOG_END_FATAL
+      }
+   }
+#endif
+
+   // ------ QUIC -----------------------------------------------------------
+#ifdef HAVE_QUIC
+   gQUICSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_QUIC, localPort - 1,
+                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
+   // NOTE: It is necessary to set the ALPN before enabling the listening mode!
+   if(gQUICSocket < 0) {
+      LOG_INFO
+      stdlog << format("NOTE: Failed to create and bind QUIC socket on port %d: %s!",
+                        localPort, strerror(errno)) << "\n";
+      LOG_END
+   }
+   else {
+      if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
+                        ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket: %s!",
+                          gQUICSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+      if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
+         LOG_FATAL
+         stdlog << format("Failed to configure buffer sizes on QUIC socket %d!",
+                          gQUICSocket) << "\n";
+         LOG_END_FATAL
+      }
+      if(ext_listen(gQUICSocket, 100) < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to enable listening on QUIC socket %d!",
+                          gQUICSocket) << "\n";
          LOG_END_FATAL
       }
    }
@@ -1432,24 +1769,36 @@ void passiveMode(const uint16_t localPort)
       }
 #endif
    }
-   std::string dataProtocols("SCTP/TCP/UDP");
-   std::string mptcp;
+   std::string dataProtocols1("SCTP/TCP/UDP");
+   std::string dataProtocols2;
 #ifdef HAVE_DCCP
    if(gDCCPSocket >= 0) {
-      dataProtocols += "/DCCP";
+      dataProtocols1 += "/DCCP";
    }
 #endif
 #ifdef HAVE_MPTCP
    if(gMPTCPSocket > 0) {
-      mptcp = format(", and MPTCP on port %u", localPort - 1);
+      dataProtocols2 += "MPTCP";
    }
 #endif
+#ifdef HAVE_QUIC
+   if(gQUICSocket > 0) {
+      if(dataProtocols2.size() > 0) {
+         dataProtocols2 += "/";
+      }
+      dataProtocols2 += "QUIC";
+   }
+#endif
+   if(dataProtocols2.size() > 0) {
+      dataProtocols2 = format(", and %s on port %u",
+                              dataProtocols2.c_str(), localPort - 1);
+   }
    stdlog << format("Passive Mode: Waiting for incoming connections:\n"
                     " - Control Channel = %s on port %u\n"
                     " - Data Channel    = %s on port %u%s\n",
                     controlProtocols.c_str(), localPort + 1,
-                    dataProtocols.c_str(), localPort,
-                    mptcp.c_str());
+                    dataProtocols1.c_str(), localPort,
+                    dataProtocols2.c_str());
    LOG_END
    LOG_TRACE
    stdlog << "Sockets:\n"
@@ -1463,6 +1812,9 @@ void passiveMode(const uint16_t localPort)
           << "- SCTP Data    = " << gSCTPSocket       << "\n"
 #ifdef HAVE_DCCP
           << "- DCCP Data    = " << gDCCPSocket       << "\n"
+#endif
+#ifdef HAVE_QUIC
+          << "- QUIC Data    = " << gQUICSocket       << "\n"
 #endif
           ;
    LOG_END
@@ -1506,6 +1858,11 @@ void passiveMode(const uint16_t localPort)
 #ifdef HAVE_DCCP
    if(gDCCPSocket >= 0) {
       ext_close(gDCCPSocket);
+   }
+#endif
+#ifdef HAVE_QUIC
+   if(gQUICSocket >= 0) {
+      ext_close(gQUICSocket);
    }
 #endif
 }

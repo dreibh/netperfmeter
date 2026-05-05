@@ -30,7 +30,7 @@ PROJECT(netperfmeter LANGUAGES C CXX)
 
 SET(BUILD_MAJOR "2")
 SET(BUILD_MINOR "0")
-SET(BUILD_PATCH "0~rc2.1")
+SET(BUILD_PATCH "2")
 SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
@@ -202,7 +202,7 @@ int main (int argc, char** argv)
       return(1);
    }
 
-   return(0);
+   return 0;
 }"
 USES_IEEEFP_FP)
 
@@ -212,8 +212,7 @@ ENDIF()
 
 
 # ====== DCCP support =======================================================
-CHECK_C_SOURCE_RUNS("
-#include <stdio.h>
+CHECK_C_SOURCE_COMPILES("
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <linux/dccp.h>
@@ -223,7 +222,7 @@ int main (int argc, char** argv)
    volatile int domain = IPPROTO_DCCP;
    volatile int type   = SOCK_DCCP;
    volatile int opt    = DCCP_SOCKOPT_SERVICE;
-   return(0);
+   return 0;
 }"
 HAVE_DCCP)
 
@@ -232,9 +231,8 @@ IF (HAVE_DCCP)
 ENDIF()
 
 
-# ====== MPTCP support =======================================================
-CHECK_C_SOURCE_RUNS("
-#include <stdio.h>
+# ====== MPTCP support ======================================================
+CHECK_C_SOURCE_COMPILES("
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <linux/mptcp.h>
@@ -242,12 +240,46 @@ CHECK_C_SOURCE_RUNS("
 int main (int argc, char** argv)
 {
    volatile int domain = IPPROTO_MPTCP;
-   return(0);
+   return 0;
 }"
 HAVE_MPTCP)
 
 IF (HAVE_MPTCP)
    ADD_DEFINITIONS(-DHAVE_MPTCP)
+ENDIF()
+
+
+# ====== QUIC support =======================================================
+CHECK_C_SOURCE_COMPILES("
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <linux/quic.h>
+
+int main (int argc, char** argv)
+{
+   volatile int domain = IPPROTO_QUIC;
+   return 0;
+}"
+HAVE_QUIC)
+
+IF (HAVE_QUIC)
+   FIND_LIBRARY(QUIC_LIBRARY NAMES quic)
+   IF (QUIC_LIBRARY)
+      FIND_LIBRARY(GNUTLS_LIBRARY NAMES gnutls)
+      IF (NOT GNUTLS_LIBRARY)
+         MESSAGE(FATAL_ERROR
+               " Cannot find GnuTLS library (which is required for QUIC)! Try:\n"
+               " * Ubuntu/Debian: sudo apt install -y libgnutls28-dev\n"
+               " * Fedora:        sudo dnf install -y  gnutls-devel\n"
+               " * SuSE:          sudo zypper install -y libgnutls-devel\n"
+               " * Alpine:        sudo apk add gnutls-dev\n"
+               " * FreeBSD:       sudo pkg install -y gnutls")
+      ENDIF()
+      LIST(APPEND QUIC_LIBRARY ${GNUTLS_LIBRARY})
+      ADD_DEFINITIONS(-DHAVE_QUIC)
+   ELSE()
+      MESSAGE(WARNING "QUIC is available, but libquic is not!")
+   ENDIF()
 ENDIF()
 
 
