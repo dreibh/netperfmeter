@@ -139,6 +139,7 @@ Depends: ghostscript,
          libpdf-api2-perl,
          perl (>= 5.8.0),
          qpdf,
+         ${perl:Depends},
          ${misc:Depends}
 Description: PDF Processing Tools
  This package contains tools for PDF file processing.
