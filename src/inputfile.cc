@@ -142,8 +142,8 @@ ssize_t InputFile::readLine(char* buffer, size_t bufferSize, bool& eof)
                                 std::min(sizeof(Storage), bufferSize) - StoragePos);
       }
       else if(Format == IFF_Plain) {
-         bytesRead = fread((char*)&buffer[StoragePos], 1,
-                           std::min(sizeof(Storage), bufferSize) - StoragePos, File);
+         bytesRead = (ssize_t)fread((char*)&buffer[StoragePos], 1,
+                                    std::min(sizeof(Storage), bufferSize) - StoragePos, File);
       }
       else {
          bytesRead = -1;
@@ -153,7 +153,7 @@ ssize_t InputFile::readLine(char* buffer, size_t bufferSize, bool& eof)
          return bytesRead;   // Error.
       }
       else {
-         bytesRead += StoragePos;
+         bytesRead += (ssize_t)StoragePos;
          buffer[bytesRead] = 0x00;
          if(bytesRead == 0) {
             eof = true;
@@ -163,7 +163,7 @@ ssize_t InputFile::readLine(char* buffer, size_t bufferSize, bool& eof)
          StoragePos = 0;
          for(ssize_t i = 0;i < bytesRead;i++) {
             if(buffer[i] == '\n') {
-               StoragePos = bytesRead - i - 1;
+               StoragePos = (size_t)(bytesRead - i - 1);
                memcpy((char*)&Storage, &buffer[i + 1], StoragePos);
                buffer[i] = 0x00;
                Line++;

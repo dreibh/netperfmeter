@@ -230,11 +230,11 @@ void Defragmenter::purge(const unsigned long long now,
                NextFrameID = frame->FrameID + 1;
             }
             if(fragment->ByteSeqNumber >= NextByteSeqNumber) {
-               lostBytes += ((long long)fragment->ByteSeqNumber - (long long)NextByteSeqNumber);
+               lostBytes += ((unsigned long long)fragment->ByteSeqNumber - (unsigned long long)NextByteSeqNumber);
                NextByteSeqNumber = fragment->ByteSeqNumber + fragment->Length;
             }
             if(fragment->PacketSeqNumber >= NextPacketSeqNumber) {
-               lostPackets += ((long long)fragment->PacketSeqNumber - (long long)NextPacketSeqNumber);
+               lostPackets += ((unsigned long long)fragment->PacketSeqNumber - (unsigned long long)NextPacketSeqNumber);
                NextPacketSeqNumber = fragment->PacketSeqNumber + 1;
             }
          }

@@ -187,7 +187,7 @@ void FlowTrafficSpec::reset()
    RcvBufferSize            = 233016;   // Upper limit for FreeBSD
    OrderedMode              = 1.0;
    ReliableMode             = 1.0;
-   RetransmissionTrials     = ~0;
+   RetransmissionTrials     = ~0U;
    RetransmissionTrialsInMS = true;
    ErrorOnAbort             = true;
    Debug                    = false;

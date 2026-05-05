@@ -81,7 +81,7 @@ bool OutputFile::initialize(const char*            name,
       // ====== Initialize BZip2 compressor ====================================
       if(format == OFF_BZip2) {
          int bzerror;
-         BZFile = BZ2_bzWriteOpen(&bzerror, File, compressionLevel, 0, 30);
+         BZFile = BZ2_bzWriteOpen(&bzerror, File, (int)compressionLevel, 0, 30);
          if(bzerror != BZ_OK) {
             std::cerr << "ERROR: Unable to initialize BZip2 compression on file <" << Name << ">!\n"
                       << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
@@ -165,7 +165,7 @@ bool OutputFile::printf(const char* str, ...)
       buffer[sizeof(buffer) - 1] = 0x00;   // Just to be really sure ...
       va_end(va);
 
-      return write((const char*)&buffer, bufferLength);
+      return write((const char*)&buffer, (size_t)bufferLength);
    }
    return true;
 }

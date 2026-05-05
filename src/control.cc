@@ -264,7 +264,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
 {
    // ====== Sent NETPERFMETER_IDENTIFY_FLOW to remote node =================
    unsigned int maxTrials;
-   unsigned int timeout;
+   int          timeout;
    if( (flow->getTrafficSpec().Protocol != IPPROTO_SCTP) &&
        (flow->getTrafficSpec().Protocol != IPPROTO_TCP)
 #ifdef HAVE_MPTCP
@@ -826,7 +826,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       trafficSpec.RetransmissionTrials     = ntohl(addFlowMsg->RetransmissionTrials) & ~NPMAF_RTX_TRIALS_IN_MILLISECONDS;
       trafficSpec.RetransmissionTrialsInMS = (ntohl(addFlowMsg->RetransmissionTrials) & NPMAF_RTX_TRIALS_IN_MILLISECONDS);
       if( (trafficSpec.RetransmissionTrialsInMS) && (trafficSpec.RetransmissionTrials == NPMAF_RTX_DEFAULT) ) {
-         trafficSpec.RetransmissionTrials = ~0;
+         trafficSpec.RetransmissionTrials = ~0U;
       }
 
       const NetPerfMeterOnOffEvent* event = (const NetPerfMeterOnOffEvent*)&addFlowMsg->OnOffEvent;
@@ -1074,19 +1074,19 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
          case NETPERFMETER_ADD_FLOW:
             return handleNetPerfMeterAddFlow(
                       messageReader, controlSocket,
-                      (const NetPerfMeterAddFlowMessage*)&inputBuffer, received);
+                      (const NetPerfMeterAddFlowMessage*)&inputBuffer, (size_t)received);
          case NETPERFMETER_REMOVE_FLOW:
             return handleNetPerfMeterRemoveFlow(
                       messageReader, controlSocket,
-                      (const NetPerfMeterRemoveFlowMessage*)&inputBuffer, received);
+                      (const NetPerfMeterRemoveFlowMessage*)&inputBuffer, (size_t)received);
          case NETPERFMETER_START:
             return handleNetPerfMeterStart(
                       messageReader, controlSocket,
-                      (const NetPerfMeterStartMessage*)&inputBuffer, received);
+                      (const NetPerfMeterStartMessage*)&inputBuffer, (size_t)received);
          case NETPERFMETER_STOP:
             return handleNetPerfMeterStop(
                       messageReader, controlSocket,
-                      (const NetPerfMeterStopMessage*)&inputBuffer, received);
+                      (const NetPerfMeterStopMessage*)&inputBuffer, (size_t)received);
          default:
             LOG_WARNING
             stdlog << format("Received invalid control message of type $%02x on socket %d!",

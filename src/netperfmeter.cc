@@ -726,7 +726,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       n = 12 + strlen(description);
    }
    else if(strncmp(parameters,"onoff=", 6) == 0) {
-      size_t m = 5;
+      unsigned long m = 5;
       trafficSpec.RepeatOnOff = false;
       while( (parameters[m] != 0x00) && (parameters[m] != ':') ) {
          m++;
@@ -748,7 +748,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          }
          const char* p = parseNextEntry((const char*)&parameters[m], (double*)&event.ValueArray, (uint8_t*)&event.RandNumGen);
          if(p != nullptr) {
-            m += (long)p - (long)&parameters[m + 1];
+            m += (unsigned long)p - (unsigned long)&parameters[m + 1];
          }
          else {
             m += strlen((const char*)&parameters[m]);
@@ -919,8 +919,6 @@ static int client_handshake(int            sd,
 {
    gnutls_certificate_credentials_t credentials;
    gnutls_session_t                 session;
-   size_t                           alpnLength;
-   char                             alpn[64];
    int                              error;
 
    error = gnutls_certificate_allocate_credentials(&credentials);
@@ -953,6 +951,8 @@ static int client_handshake(int            sd,
             if(!error) {
                error = quic_handshake(session);
                // if( (!error) && (alpns != NULL) ) {
+               //    size_t alpnLength;
+               //    char   alpn[64];
                //    alpnLength = sizeof(alpn);
                //    error = quic_session_get_alpn(session, alpn, &alpnLength);
                // }
@@ -1242,7 +1242,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 
 
 // ###### Initialize pollFD entry in main loop ##############################
-static void addToPollFDs(pollfd* pollFDs, const int fd, int& n, int* index = nullptr)
+static void addToPollFDs(pollfd* pollFDs, const int fd, nfds_t& n, int* index = nullptr)
 {
    if(fd >= 0) {
       pollFDs[n].fd      = fd;
@@ -1261,7 +1261,7 @@ static bool mainLoop(const bool               isActiveMode,
                      const unsigned long long stopAt)
 {
    pollfd                 fds[5 + gMessageReader.size()];
-   int                    n       = 0;
+   nfds_t                 n       = 0;
    int                    tcpID   = -1;
 #ifdef HAVE_MPTCP
    int                    mptcpID = -1;

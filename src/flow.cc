@@ -68,8 +68,8 @@ Flow::Flow(const uint64_t         measurementID,
    FirstReception           = 0;
    LastReception            = 0;
    resetStatistics();
-   LastOutboundSeqNumber    = ~0;
-   LastOutboundFrameID      = ~0;
+   LastOutboundSeqNumber    = ~0ULL;
+   LastOutboundFrameID      = ~0U;
    NextStatusChangeEvent    = ~0ULL;
    OnOffEventPointer        = 0;
 

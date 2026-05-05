@@ -311,14 +311,14 @@ static unsigned int getAggregate(char*        objectName,
 
    // ------ Get object number (if it has one) ------------
    ssize_t i;
-   for(i = length - 1;i >= 0;i--) {
+   for(i = (ssize_t)length - 1;i >= 0;i--) {
       if(!isdigit(segment[i])) {
          break;
       }
    }
-   char aggregate[i + 2];
+   char aggregate[(size_t)i + 2];
    if(i >= 0) {
-      strncpy((char*)&aggregate, segment, i + 1);
+      strncpy((char*)&aggregate, segment, (size_t)i + 1);
    }
    aggregate[i + 1] = 0x00;
 
@@ -333,7 +333,7 @@ static unsigned int getAggregate(char*        objectName,
      }
      safestrcat(aggNames, aggregate, aggNamesSize);
 
-     unsigned long value = atol((const char*)&segment[i + 1]);
+     unsigned long value = (unsigned long)atol((const char*)&segment[i + 1]);
      char valueString[16];
      snprintf((char*)&valueString, sizeof(valueString), "%lu", value);
      if(aggValues[0] != 0x00) {

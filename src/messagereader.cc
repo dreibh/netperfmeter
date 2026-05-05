@@ -348,7 +348,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                socket->Status = Socket::MRS_StreamError;
                return MRRM_STREAM_ERROR;
             }
-            received = socket->MessageSize;
+            received = (ssize_t)socket->MessageSize;
             memcpy(buffer, socket->MessageBuffer, socket->MessageSize);
             socket->Status      = Socket::MRS_WaitingForHeader;
             socket->MessageSize = 0;

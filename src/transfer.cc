@@ -211,7 +211,7 @@ bool transmitFrame(Flow*                    flow,
             sendNetPerfMeterData(flow, frameID,
                                  (bytesSent == 0),                       // Is frame begin?
                                  (bytesSent + chunkSize >= bytesToSend), // Is frame end?
-                                 now, chunkSize);
+                                 now, (size_t)chunkSize);
          // NOTE: Due to minimum size for a NETPERFMETER_DATA chunk (48 B),
          //       the sent size may be >= chunkSize!
 
@@ -231,7 +231,7 @@ bool transmitFrame(Flow*                    flow,
    }
 
    // ====== Update statistics ==============================================
-   flow->updateTransmissionStatistics(now, 1, packetsSent, bytesSent);
+   flow->updateTransmissionStatistics(now, 1, (size_t)packetsSent, (size_t)bytesSent);
    return (bytesSent >= bytesToSend);
 }
 
@@ -306,7 +306,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             }
             if(flow) {
                // Update flow statistics by received NETPERFMETER_DATA message.
-               updateStatistics(flow, now, dataMsg, received);
+               updateStatistics(flow, now, dataMsg, (size_t)received);
             }
             else {
                LOG_WARNING

@@ -75,7 +75,8 @@ unsigned long long getMicroTime()
      perror("clock_gettime():");
      abort();
   }
-  return ((unsigned long long)ts.tv_sec * 1000000ULL) + (ts.tv_nsec / 1000);
+  return ((unsigned long long)ts.tv_sec * 1000000ULL) +
+            ((unsigned long long)ts.tv_nsec / 1000ULL);
 }
 
 
@@ -84,7 +85,7 @@ void printTimeStamp(std::ostream& os)
 {
    char str[128];
    const unsigned long long microTime = getMicroTime();
-   const time_t timeStamp = microTime / 1000000;
+   const time_t timeStamp = (time_t)(microTime / 1000000);
    const struct tm *timeptr = localtime(&timeStamp);
    strftime((char*)&str,sizeof(str),"%d-%b-%Y %H:%M:%S",timeptr);
    os << str;
@@ -99,7 +100,7 @@ int pollTimeout(const unsigned long long now, const size_t n, ...)
 {
    va_list va;
    va_start(va, n);
-   unsigned long long timeout = ~0;
+   unsigned long long timeout = ~0ULL;
    for(size_t i = 0;i < n;i++) {
       const unsigned long long t = va_arg(va, unsigned long long);
       timeout = std::min(timeout, t);
@@ -389,8 +390,8 @@ bool string2address(const char*           string,
          if((p1[1] == ':') || (p1[1] == '!')) {
             strcpy((char*)&port, &p1[2]);
          }
-         memmove((char*)&host, (char*)&host[1], (long)p1 - (long)host - 1);
-         host[(long)p1 - (long)host - 1] = 0x00;
+         memmove((char*)&host, (char*)&host[1], (unsigned long)p1 - (unsigned long)host - 1);
+         host[(unsigned long)p1 - (unsigned long)host - 1] = 0x00;
       }
    }
 
@@ -696,7 +697,7 @@ int bindSocket(const int             sd,
                assert(false);
             }
          }
-         if(sctp_bindx(sd, (sockaddr*)&buffer, localAddressCount,
+         if(sctp_bindx(sd, (sockaddr*)&buffer, (int)localAddressCount,
                        SCTP_BINDX_ADD_ADDR) != 0) {
             return -3;
          }
@@ -1117,6 +1118,7 @@ uint32_t random32()
             return number;
          }
          RandomSource = RS_CLIB;
+       break;
       case RS_TRY_DEVICE:
          RandomDevice = fopen("/dev/urandom", "r");
          if(RandomDevice != nullptr) {

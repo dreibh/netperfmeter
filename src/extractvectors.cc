@@ -103,7 +103,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
          unsigned int event;
          double       simTime;
          double       value;
-         unsigned int n;
+         int          n;
          if(sscanf(inBuffer, "%u %u %lf %lf%n",
                    &vectorID, &event, &simTime, &value, &n) == 4) {
             std::map<unsigned int, const std::string>::iterator found =
