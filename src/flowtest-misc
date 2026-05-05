@@ -57,8 +57,9 @@ rm -f vgcore.* core.* core
    -udp const30:const68000:const30:const68000:maxmsgsize=1300 \
    -tcp const30:const68000:const30:const68000:maxmsgsize=1300 \
    -sctp const30:const68000:const30:const68000:maxmsgsize=1300 \
-   -dccp const30:const68000:const30:const68000:maxmsgsize=1300 \
    -runtime=5
+
+   # -dccp const30:const68000:const30:const68000:maxmsgsize=1300
 
 ./netperfmeter "${SERVER}:${PORT}" \
    -control-over-tcp \
