@@ -88,7 +88,7 @@ struct NetPerfMeterOnOffEvent
    uint8_t          Flags;
    uint16_t         pad;
    network_double_t ValueArray[NETPERFMETER_RNG_INPUT_PARAMETERS];
-};
+} __attribute__((packed));
 
 #define NPOOEF_RELTIME (1 << 0)
 
@@ -125,7 +125,7 @@ struct NetPerfMeterAddFlowMessage
    char                   Scheduler[NETPERFMETER_SCHEDULER_LENGTH];   // obsolete!
 
    uint16_t               OnOffEvents;
-   NetPerfMeterOnOffEvent OnOffEvent[];
+   NetPerfMeterOnOffEvent OnOffEvent[0];
 } __attribute__((packed));
 
 #define NPMAFF_DEBUG         (1 << 0)
