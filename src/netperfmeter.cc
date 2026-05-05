@@ -1249,7 +1249,7 @@ static void addToPollFDs(pollfd* pollFDs, const int fd, nfds_t& n, int* index = 
       pollFDs[n].events  = POLLIN;
       pollFDs[n].revents = 0;
       if(index) {
-         *index = n;
+         *index = (int)n;
       }
       n++;
    }
@@ -1293,11 +1293,11 @@ static bool mainLoop(const bool               isActiveMode,
 #endif
    int    controlFDSet[gMessageReader.size()];
    size_t controlFDs = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
-   const int controlIDMin = n;
+   const int controlIDMin = (int)n;
    for(size_t i = 0; i < controlFDs; i++) {
       addToPollFDs((pollfd*)&fds, controlFDSet[i], n, nullptr);
    }
-   const int controlIDMax = n - 1;
+   const int controlIDMax = (int)n - 1;
 
 
    // ====== Use poll() to wait for events ==================================

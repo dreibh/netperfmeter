@@ -34,21 +34,16 @@
 #include "config.h"
 #endif
 
+#include <byteswap.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
+#include <sys/poll.h>
 #include <unistd.h>
-#include <poll.h>
-#include <errno.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
-#include <ext_socket.h>
 
 #include <iostream>
+
+#include <ext_socket.h>
 
 #include "mutex.h"
 

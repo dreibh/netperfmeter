@@ -29,30 +29,22 @@
 
 #include "tools.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <assert.h>
-#include <signal.h>
-#include <poll.h>
-#include <math.h>
-
-#include <ctype.h>
-#include <sys/types.h>
-#include <netinet/tcp.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <sys/uio.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <net/if.h>
+#include <assert.h>
+#include <ctype.h>
 #include <ext_socket.h>
-#include <stdio.h>
+#include <math.h>
 #include <netdb.h>
-#include <time.h>
-
-#include <iostream>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <signal.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/uio.h>
 
 
 // ###### Create formatted string (printf-like) #############################
@@ -749,10 +741,10 @@ static uint64_t byteswap64(const uint64_t value)
 #if BYTE_ORDER == LITTLE_ENDIAN
    const uint32_t a = (uint32_t)(value >> 32);
    const uint32_t b = (uint32_t)(value & 0xffffffff);
-   return( (int64_t)((a << 24) | ((a & 0x0000ff00) << 8) |
-           ((a & 0x00ff0000) >> 8) | (a >> 24)) |
-           ((int64_t)((b << 24) | ((b & 0x0000ff00) << 8) |
-           ((b & 0x00ff0000) >> 8) | (b >> 24)) << 32) );
+   return ( (uint64_t)((a << 24) | ((a & 0x0000ff00) << 8) |
+                     ((a & 0x00ff0000) >> 8) | (a >> 24)) |
+            ((uint64_t)((b << 24) | ((b & 0x0000ff00) << 8) |
+                        ((b & 0x00ff0000) >> 8) | (b >> 24)) << 32) );
 #elif BYTE_ORDER == BIG_ENDIAN
    return value;
 #else

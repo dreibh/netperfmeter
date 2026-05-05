@@ -226,7 +226,7 @@ void Defragmenter::purge(const unsigned long long now,
 
             if(frame->FrameID >= NextFrameID) {
                receivedFrames++;
-               lostFrames += ((long long)frame->FrameID - (long long)NextFrameID);
+               lostFrames += ((unsigned long long)frame->FrameID - (unsigned long long)NextFrameID);
                NextFrameID = frame->FrameID + 1;
             }
             if(fragment->ByteSeqNumber >= NextByteSeqNumber) {
