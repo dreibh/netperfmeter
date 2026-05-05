@@ -40,12 +40,13 @@ static unsigned long long getMicroTime()
      perror("clock_gettime():");
      abort();
   }
-  return ((unsigned long long)ts.tv_sec * 1000000ULL) + (ts.tv_nsec / 1000);
+  return ((unsigned long long)ts.tv_sec * 1000000ULL) +
+            ((unsigned long long)ts.tv_nsec / 1000ULL);
 }
 
 
 // ###### Main program ######################################################
-int main(int argc, char** argv)
+int main(int, char**)
 {
    printf("%llu\n", getMicroTime());
    return 0;

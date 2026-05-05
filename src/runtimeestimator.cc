@@ -41,7 +41,8 @@ static unsigned long long getMicroTime()
      perror("clock_gettime():");
      abort();
   }
-  return ((unsigned long long)ts.tv_sec * 1000000ULL) + (ts.tv_nsec / 1000);
+  return ((unsigned long long)ts.tv_sec * 1000000ULL) +
+            ((unsigned long long)ts.tv_nsec / 1000ULL);
 }
 
 
@@ -103,7 +104,7 @@ int main(int argc, char** argv)
       const unsigned long long estEndTimeStamp = now + (unsigned long long)((estimatedRuntime > 0) ? estimatedRuntime : 0.0);
 
       char             str[64];
-      const time_t     timeStamp = estEndTimeStamp / 1000000;
+      const time_t     timeStamp = (time_t)(estEndTimeStamp / 1000000);
       const struct tm* timeptr   = localtime(&timeStamp);
 
       strftime((char*)&str, sizeof(str), "ESTIMATION: %d-%b-%Y %H:%M:%S", timeptr);
