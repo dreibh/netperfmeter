@@ -141,7 +141,7 @@ IF (HAS_ADDRESS_OF_PACKED_MEMBER)
    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-address-of-packed-member")
 ENDIF()
 
-ADD_COMPILE_OPTIONS(-Wall -Wextra -Wpedantic -Wsign-conversion)
+ADD_COMPILE_OPTIONS(-Wall -Wextra -Wsign-conversion -Wno-vla -Wno-unused-parameter)
 ADD_COMPILE_DEFINITIONS(_FILE_OFFSET_BITS=64 _TIME_BITS=64)
 
 
