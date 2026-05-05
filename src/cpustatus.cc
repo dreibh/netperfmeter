@@ -138,19 +138,18 @@ CPUStatus::CPUStatus()
 #endif
 
    // ====== Allocate current times array ===================================
-   size_t cpuTimesSize = sizeof(tick_t) * (CPUs + 1) * CpuStates;
-   CpuTimes = (tick_t*)calloc(1, cpuTimesSize);
+   const size_t cpuTimeElements = (CPUs + 1) * CpuStates;
+   CpuTimes = new tick_t[cpuTimeElements]();   // () initialises the elements!
    assert(CpuTimes != nullptr);
 
    // ====== Allocate old times array =======================================
-   cpuTimesSize = sizeof(tick_t) * (CPUs + 1) * CpuStates;
-   OldCpuTimes = (tick_t*)malloc(cpuTimesSize);
+   OldCpuTimes = new tick_t[cpuTimeElements];
    assert(OldCpuTimes != nullptr);
+   const size_t cpuTimesSize = sizeof(tick_t) * cpuTimeElements;
    memcpy(OldCpuTimes, CpuTimes, cpuTimesSize);
 
    // ====== Allocate percentages array =====================================
-   const size_t percentagesSize = sizeof(float) * (CPUs + 1) * CpuStates;
-   Percentages = (float*)malloc(percentagesSize);
+   Percentages = new float[cpuTimeElements];
    assert(Percentages != nullptr);
    for(unsigned int i = 0; i < (CPUs + 1) * CpuStates; i++) {
       Percentages[i] = 100.0 / CpuStates;
@@ -164,11 +163,11 @@ CPUStatus::CPUStatus()
 // ###### Destructor ########################################################
 CPUStatus::~CPUStatus()
 {
-   free(CpuTimes);
+   delete[] CpuTimes;
    CpuTimes = nullptr;
-   free(OldCpuTimes);
+   delete[] OldCpuTimes;
    OldCpuTimes = nullptr;
-   free(Percentages);
+   delete[] Percentages;
    Percentages = nullptr;
 #ifdef __linux__
    fclose(ProcStatFD);
@@ -241,7 +240,7 @@ void CPUStatus::update()
       }
       if( ((i == 0) && (result < 8)) || ((i > 0) && (result < 9)) ) {
          LOG_FATAL
-         stdlog << "Bad input fromat in /proc/stat!" << "\n";
+         stdlog << "Bad input format in /proc/stat!" << "\n";
          LOG_END_FATAL
       }
    }
