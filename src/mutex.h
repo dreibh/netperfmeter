@@ -30,7 +30,7 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 
-#include <assert.h>
+#include <cassert>
 #include <pthread.h>
 
 

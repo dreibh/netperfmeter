@@ -30,13 +30,15 @@
 #include "cpustatus.h"
 #include "loglevel.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <assert.h>
-#include <unistd.h>
+#include <cassert>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 #include <sys/types.h>
+#include <unistd.h>
+
 #ifdef __linux__
 #include <linux/sysctl.h>
 #endif
@@ -47,7 +49,6 @@
 #ifdef __APPLE__
 #include <mach/mach.h>
 #endif
-#include <iostream>
 
 
 #ifdef __FreeBSD__

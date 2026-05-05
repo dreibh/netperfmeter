@@ -27,12 +27,12 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
-#include <assert.h>
+#include <cassert>
 #include <cstdlib>
+#include <cstring>
 #include <getopt.h>
 #include <iostream>
 #include <string>
-#include <string.h>
 #include <unistd.h>
 #include <vector>
 

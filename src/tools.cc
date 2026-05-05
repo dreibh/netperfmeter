@@ -30,18 +30,18 @@
 #include "tools.h"
 
 #include <arpa/inet.h>
-#include <assert.h>
+#include <cassert>
+#include <cmath>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
 #include <ctype.h>
 #include <ext_socket.h>
-#include <math.h>
 #include <netdb.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <signal.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>

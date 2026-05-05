@@ -30,9 +30,9 @@
 #ifndef FLOWBANDWIDTHSTATS_H
 #define FLOWBANDWIDTHSTATS_H
 
-#include <math.h>
-#include <string>
 #include <iostream>
+#include <cmath>
+#include <string>
 
 
 class FlowBandwidthStats

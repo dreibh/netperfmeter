@@ -33,10 +33,9 @@
 #include "loglevel.h"
 #include "transfer.h"
 
-#include <signal.h>
-#include <netinet/tcp.h>
-
 #include <cstring>
+#include <netinet/tcp.h>
+#include <signal.h>
 #include <sstream>
 
 

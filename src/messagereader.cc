@@ -32,9 +32,8 @@
 #include "loglevel.h"
 #include "tools.h"
 
-#include <stdlib.h>
-#include <assure.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 

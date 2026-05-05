@@ -30,8 +30,9 @@
 #ifndef CPUSTATUS_H
 #define CPUSTATUS_H
 
-#include <stdio.h>
-#include <assert.h>
+#include <cassert>
+#include <cstdio>
+
 #ifdef __APPLE__
 #include <mach/mach.h>
 #endif

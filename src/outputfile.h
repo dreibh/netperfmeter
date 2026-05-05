@@ -30,10 +30,10 @@
 #ifndef OUTPUTFILE_H
 #define OUTPUTFILE_H
 
-#include <stdio.h>
 #include <bzlib.h>
-#include <string>
+#include <cstdio>
 #include <iostream>
+#include <string>
 
 
 // Output File Formats

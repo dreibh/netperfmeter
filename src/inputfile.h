@@ -30,10 +30,10 @@
 #ifndef INPUTFILE_H
 #define INPUTFILE_H
 
-#include <stdio.h>
 #include <bzlib.h>
-#include <string>
 #include <iostream>
+#include <cstdio>
+#include <string>
 
 
 // Input File Formats

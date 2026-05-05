@@ -35,14 +35,13 @@
 #endif
 
 #include <byteswap.h>
+#include <cstdio>
+#include <cstdlib>
 #include <endian.h>
+#include <iostream>
 #include <netinet/in.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/poll.h>
 #include <unistd.h>
-
-#include <iostream>
 
 #include <ext_socket.h>
 

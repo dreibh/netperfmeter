@@ -30,13 +30,12 @@
 #include "loglevel.h"
 #include "tools.h"
 
-#include <limits.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/utsname.h>
-
+#include <cstring>
 #include <fstream>
 #include <iostream>
+#include <limits.h>
+#include <sys/utsname.h>
+#include <unistd.h>
 
 
 std::ostream* gStdLog        = &std::cerr;

@@ -33,11 +33,9 @@
 #include "netperfmeterpackets.h"
 #include "tools.h"
 
-#include <sys/types.h>
-
-#include <vector>
-#include <string>
 #include <iostream>
+#include <string>
+#include <vector>
 
 
 struct OnOffEvent

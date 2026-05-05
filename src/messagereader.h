@@ -30,10 +30,10 @@
 #ifndef MESSAGEREADER_H
 #define MESSAGEREADER_H
 
-#include <ext_socket.h>
-#include <sys/types.h>
 #include <cstddef>
+#include <ext_socket.h>
 #include <map>
+#include <sys/types.h>
 
 
 #define MRRM_SOCKET_ERROR (ssize_t)-1

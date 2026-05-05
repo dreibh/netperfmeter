@@ -29,8 +29,8 @@
 
 #include "outputfile.h"
 
+#include <cstdarg>
 #include <unistd.h>
-#include <stdarg.h>
 
 
 // ###### Constructor #######################################################

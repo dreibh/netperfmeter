@@ -29,7 +29,7 @@
 
 #include "inputfile.h"
 
-#include <string.h>
+#include <cstring>
 
 
 // ###### Constructor #######################################################

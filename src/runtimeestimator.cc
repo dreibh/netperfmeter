@@ -28,12 +28,12 @@
  */
 
 #include <byteswap.h>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 #include <endian.h>
-#include <stdio.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <sys/time.h>
-#include <time.h>
 
 
 // ###### Get current time stamp ############################################

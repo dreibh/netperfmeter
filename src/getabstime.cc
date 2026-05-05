@@ -27,9 +27,9 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 
 
 // ###### Get current time stamp ############################################

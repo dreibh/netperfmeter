@@ -35,18 +35,17 @@
 #include "package-version.h"
 
 #include <cerrno>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <getopt.h>
+#include <iostream>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
 #include <poll.h>
 #include <signal.h>
-#include <math.h>
-
-#include <iostream>
+#include <unistd.h>
 
 
 #ifndef HAVE_MPTCP
