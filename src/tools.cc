@@ -735,39 +735,6 @@ bool sendAbort(int sd, sctp_assoc_t assocID)
 }
 
 
-// ###### Convert byte order of 64 bit value ################################
-static uint64_t byteswap64(const uint64_t value)
-{
-#if BYTE_ORDER == LITTLE_ENDIAN
-   const uint32_t a = (uint32_t)(value >> 32);
-   const uint32_t b = (uint32_t)(value & 0xffffffff);
-   return ( (uint64_t)((a << 24) | ((a & 0x0000ff00) << 8) |
-                     ((a & 0x00ff0000) >> 8) | (a >> 24)) |
-            ((uint64_t)((b << 24) | ((b & 0x0000ff00) << 8) |
-                        ((b & 0x00ff0000) >> 8) | (b >> 24)) << 32) );
-#elif BYTE_ORDER == BIG_ENDIAN
-   return value;
-#else
-#error Byte order undefined!
-#endif
-}
-
-
-// ###### Convert byte order of 64 bit value ################################
-uint64_t hton64(const uint64_t value)
-{
-   return byteswap64(value);
-}
-
-
-// ###### Convert byte order of 64 bit value ################################
-uint64_t ntoh64(const uint64_t value)
-{
-   return byteswap64(value);
-}
-
-
-
 #ifndef HAVE_IEEE_FP
 #warning Is this code really working correctly?
 
