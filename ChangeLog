@@ -1,3 +1,211 @@
+commit 3ee0511e03d1e0ebf4f642c984ceb802f4345e9d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 15:04:13 2026 +0200
+
+    Another portability improvement.
+
+commit ae4fc20b2ab2caec15c235b6d3f0a9348dffb6e5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 15:03:18 2026 +0200
+
+    Portability improvements.
+
+commit 78f2b7ddc69f2a4385b8e9cfcde7dcf9f26471ae
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 14:56:40 2026 +0200
+
+    Clean-up of the includes.
+
+commit 1d415efe3466e5eb4dd1d7019031c34555c577ce
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 14:38:43 2026 +0200
+
+    Using C++ memory allocation, instead of malloc() and calloc().
+
+commit 662ff078b35604957ded1f3bcf88902b42c4ae80
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 14:20:15 2026 +0200
+
+    Some clean-ups.
+
+commit ff5e79ff72ef469176d969a6b66facaf5ca4057c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 14:09:00 2026 +0200
+
+    CreateSummary: improved options handling and updated manpage.
+
+commit 7931cefc50292fb5a486e952bd80bf382dbdac1e
+Merge: ea0f1e0 5f348b5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:55:08 2026 +0200
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit ea0f1e01ba2446c8d8e55a04648661a7a6ff939d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:53:40 2026 +0200
+
+    Further improvements of runtimeestimator.
+
+commit 5f348b509d17b3e318aea0a17156d077dc1b62cb
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:41:26 2026 +0200
+
+    Fedora include fix.
+
+commit 4223aeabb33d45dbb4e6c42b650b98e6723f5b69
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:36:13 2026 +0200
+
+    Portability improvements.
+
+commit b51e90e5acafde0b51a24c3a337a3cc9d8a835f8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:35:02 2026 +0200
+
+    Improved byteswap handling.
+
+commit 809b570476a3f01a0843646cd6c144bf062918fd
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:19:19 2026 +0200
+
+    Updated manpages.
+
+commit b59bbc1c181bab249c63e79aa39d80ee81f2878e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:19:13 2026 +0200
+
+    Minor clean-ups.
+
+commit 4a5204c19419277fe17f5fc571c2b48fbf10ecc8
+Merge: 6ed7d49 56c22c2
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:18:57 2026 +0200
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 56c22c2baa5af88d075a155be711ae715933b774
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:17:47 2026 +0200
+
+    Simplified byteswap64 code.
+
+commit 6ed7d49c0b11991236b7e974d07c61b3210dea0a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:11:43 2026 +0200
+
+    Fixed missing exit() call after usage message.
+
+commit 847e9abdef36837f1103264b116450b04059d824
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 13:00:30 2026 +0200
+
+    Updated test script.
+
+commit 83f9bf571e8c5ffd8de9661015e2f4e00bcbb892
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 12:58:34 2026 +0200
+
+    Further clean-ups.
+
+commit d7cf3236851d53bbffcbbae687612e27957df30e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 12:27:33 2026 +0200
+
+    Added strict compiler options.
+
+commit 4a5e07bf97575bec34a020bbda2c9a06d92d25ee
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 12:27:10 2026 +0200
+
+    A set of small clean-ups.
+
+commit d516652062bced2f49d0b727429493ed1fb4e47d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 12:26:57 2026 +0200
+
+    Updated test script.
+
+commit ee4cf8c2c3f4dbfb0266f519ca1be629530b7cc4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 11:35:11 2026 +0200
+
+    Removed unused parameter measurementID from mainLoop(), and some other clean-ups.
+
+commit ededdcffae27553740dafa80ce647e8d7d52d8ff
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 11:31:34 2026 +0200
+
+    Fixed signed/unsigned usage.
+
+commit 3acc1832628ce4e92525641fe1df5e41a7753869
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 11:26:22 2026 +0200
+
+    Removed unused parameter "now" from FlowManager::finishMeasurement().
+
+commit 726f0d612574f50ee1665ac2443850b4d6fe2929
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 11:24:53 2026 +0200
+
+    Another set of minor code clean-ups.
+
+commit ec6f05334db8a8edbbc05a30e249d1fdee721974
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 11:22:37 2026 +0200
+
+    Minor code clean-ups.
+
+commit 94ad1c23f2fd723c5200eb09b8c5431f26cdebab
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 11:14:05 2026 +0200
+
+    Using \x1b instead of \e, to improve portability.
+
+commit d90eb5eaf87d3d0d415ffb05271deb06e6a8f763
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 11:05:36 2026 +0200
+
+    Packaging updates.
+
+commit 972cab3c919f3e593a54454db212064b7915598d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 10:55:01 2026 +0200
+
+    debian/control: added missing ${perl:Depends} to pdfproctools.
+
+commit b37197f6d58958462f0a2ffa481cbde1d453a43b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 10:54:40 2026 +0200
+
+    Updated manpage.
+
+commit 8e72119d5099a7f04410bd1807a7c577dc07340b
+Merge: 768df75 84058df
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 10:45:17 2026 +0200
+
+    Merge branch 'master' of https://github.com/dreibh/netperfmeter
+
+commit 768df75c5df82bfdc48a5c6750b8bad643d4540e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 10:44:12 2026 +0200
+
+    Updated FreeBSD port.
+
+commit 84058df284db67891c1cfd7594bc906ce5df7e2c
+Merge: 85bf0d2 b7216c7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 10:38:05 2026 +0200
+
+    Merge branch 'master' into dreibh/flow-count
+
+commit b7216c717346474aad0eead58a624d05dae7686a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Apr 29 08:57:14 2026 +0200
+
+    New release netperfmeter-2.0.2.
+
 commit c0312bde97e11e5148867986fa092e931082cecc
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Mon Apr 27 14:29:07 2026 +0200
@@ -329,6 +537,13 @@ Date:   Fri Dec 12 18:36:38 2025 +0100
 
     Minor documentation update.
 
+commit 85bf0d2a5b0fb47b8887c9ac5048ed0345f7f47c
+Merge: 9b8f6ae 524bb2f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Dec 12 18:20:30 2025 +0100
+
+    Merge branch 'master' into dreibh/flow-count
+
 commit 27569479f805149d6365b86c2cb7145befe99fc4
 Merge: f15f8af 524bb2f
 Author: Thomas Dreibholz <dreibh@simula.no>
@@ -341,6 +556,13 @@ Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Fri Dec 12 18:19:28 2025 +0100
 
     Option fix.
+
+commit 9b8f6ae9954c727ddaff441ea1b70e2e88970cbc
+Merge: e9e16fb e537d6d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Dec 12 18:16:42 2025 +0100
+
+    Merge branch 'master' into dreibh/flow-count
 
 commit e537d6d5573402c8ee3cdc5435d293dd71063510
 Author: Thomas Dreibholz <dreibh@simula.no>
@@ -481,6 +703,24 @@ Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Fri Dec 12 11:19:41 2025 +0100
 
     Improved scripts.
+
+commit e9e16fba7ebbea6af3fff67837bf1c957353913a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Dec 12 10:48:37 2025 +0100
+
+    Updated documentation.
+
+commit 2a34c46ebb3b1c1daf360bbf2ab450d7fb540899
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Dec 12 10:40:40 2025 +0100
+
+    Minor clean-up.
+
+commit a036c2e7e0c5167d43163b8d11ecc11a00d062dc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Dec 12 10:28:03 2025 +0100
+
+    Added option to create multiple flows with the same parameters.
 
 commit a958cd36348cc93b6b71eb08630b8c2ad24deb52
 Merge: f9ecbac d395363

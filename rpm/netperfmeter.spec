@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.3~rc0
+Version: 2.0.3
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -283,6 +283,8 @@ This metapackage installs all sub-packages of NetPerfMeter.
 
 
 %changelog
+* Tue May 05 2026 Thomas Dreibholz <dreibh@simula.no> - 2.0.3-1
+- New upstream release.
 * Wed Apr 29 2026 Thomas Dreibholz <dreibh@simula.no> - 2.0.2-1
 - New upstream release.
 * Wed Feb 25 2026 Thomas Dreibholz <dreibh@simula.no> - 2.0.1-1

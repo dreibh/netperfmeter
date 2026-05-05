@@ -1,10 +1,10 @@
-netperfmeter (2.0.3~rc0-1ubuntu1) plucky; urgency=medium
+netperfmeter (2.0.3-1ubuntu1) plucky; urgency=medium
 
   * New upstream release.
   * debian/control: added missing ${perl:Depends} to pdfproctools.
   * debian/tests: improved tests.
 
- -- Thomas Dreibholz <dreibh@simula.no>  Tue, 05 May 2026 10:51:49 +0200
+ -- Thomas Dreibholz <dreibh@simula.no>  Tue, 05 May 2026 15:20:46 +0200
 
 netperfmeter (2.0.2-1ubuntu1) plucky; urgency=medium
 
