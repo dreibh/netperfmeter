@@ -284,9 +284,8 @@ bool FlowManager::beginMeasurement(const int                controlSocket,
 
 
 // ###### Finish measurement ##################################################
-void FlowManager::finishMeasurement(const int                controlSocket,
-                                    const uint64_t           measurementID,
-                                    const unsigned long long now)
+void FlowManager::finishMeasurement(const int      controlSocket,
+                                    const uint64_t measurementID)
 {
    CPULoadStats.update();
 

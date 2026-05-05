@@ -96,9 +96,8 @@ class FlowManager : public Thread
                          const OutputFileFormat   vectorFileFormat,
                          const char*              scalarNamePattern,
                          const OutputFileFormat   scalarFileFormat);
-   void finishMeasurement(const int                controlSocket,
-                          const uint64_t           measurementID,
-                          const unsigned long long now = getMicroTime());
+   void finishMeasurement(const int      controlSocket,
+                          const uint64_t measurementID);
 
    void writeScalarStatistics(const uint64_t           measurementID,
                               const unsigned long long now,
