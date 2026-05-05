@@ -182,7 +182,7 @@ struct NetPerfMeterDataMessage
    uint64_t           ByteSeqNumber;
    uint64_t           TimeStamp;
 
-   unsigned char      Payload[];
+   unsigned char      Payload[0];
 } __attribute__((packed));
 
 #define NPMDF_FRAME_BEGIN (1 << 0)
@@ -215,7 +215,7 @@ struct NetPerfMeterStopMessage
 struct NetPerfMeterResults
 {
    NetPerfMeterHeader Header;
-   char               Data[];
+   char               Data[0];
 } __attribute__((packed));
 
 #define NPMRF_EOF                            (1 << 0)
