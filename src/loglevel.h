@@ -63,7 +63,7 @@ extern Mutex         gLogMutex;
 
 #define LOG_END                   \
       if(gColorMode) {            \
-        *gStdLog << "\e[0m";      \
+        *gStdLog << "\x1b[0m";    \
       }                           \
       gStdLog->flush();           \
       loggingMutexUnlock();       \
@@ -72,7 +72,7 @@ extern Mutex         gLogMutex;
 #define LOG_END_FATAL                          \
       *gStdLog << "FATAL ERROR - ABORTING!\n"; \
       if(gColorMode) {                         \
-        *gStdLog << "\e[0m\e[2K";              \
+        *gStdLog << "\x1b[0m\x1b[2K";          \
       }                                        \
       gStdLog->flush();                        \
       loggingMutexUnlock();                    \
@@ -80,12 +80,12 @@ extern Mutex         gLogMutex;
    exit(1);
 
 
-#define LOG_FATAL   if((LOGLEVEL_FATAL   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_FATAL))   LOG_BEGIN("\e[37;41;1m")
-#define LOG_ERROR   if((LOGLEVEL_ERROR   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_ERROR))   LOG_BEGIN("\e[31;1m")
-#define LOG_WARNING if((LOGLEVEL_WARNING >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_WARNING)) LOG_BEGIN("\e[33m")
-#define LOG_INFO    if((LOGLEVEL_INFO    >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_INFO))    LOG_BEGIN("\e[34m")
-#define LOG_DEBUG   if((LOGLEVEL_DEBUG   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_DEBUG))   LOG_BEGIN("\e[36m")
-#define LOG_TRACE   if((LOGLEVEL_TRACE   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_TRACE))   LOG_BEGIN("\e[37m")
+#define LOG_FATAL   if((LOGLEVEL_FATAL   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_FATAL))   LOG_BEGIN("\x1b[37;41;1m")
+#define LOG_ERROR   if((LOGLEVEL_ERROR   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_ERROR))   LOG_BEGIN("\x1b[31;1m")
+#define LOG_WARNING if((LOGLEVEL_WARNING >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_WARNING)) LOG_BEGIN("\x1b[33m")
+#define LOG_INFO    if((LOGLEVEL_INFO    >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_INFO))    LOG_BEGIN("\x1b[34m")
+#define LOG_DEBUG   if((LOGLEVEL_DEBUG   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_DEBUG))   LOG_BEGIN("\x1b[36m")
+#define LOG_TRACE   if((LOGLEVEL_TRACE   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_TRACE))   LOG_BEGIN("\x1b[37m")
 
 
 bool initLogFile(const unsigned int logLevel,
