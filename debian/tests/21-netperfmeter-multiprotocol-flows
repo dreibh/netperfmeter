@@ -20,7 +20,7 @@
 #
 
 # Bash options:
-set -e
+set -euo pipefail
 
 # Ensure that DCCP module is loaded:
 /usr/sbin/modprobe dccp

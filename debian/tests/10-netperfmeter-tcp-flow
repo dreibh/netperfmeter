@@ -20,7 +20,7 @@
 #
 
 # Bash options:
-set -e
+set -euo pipefail
 
 rm -f ./*.vec ./*.sca
 
