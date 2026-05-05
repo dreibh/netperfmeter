@@ -584,10 +584,10 @@ static const char* parseTrafficSpecOption(const char*      parameters,
                                           FlowTrafficSpec& trafficSpec,
                                           uint32_t&        flowID)
 {
-   char   description[256];
-   int    n        = 0;
-   double dblValue = 0.0;
-   int    intValue = 0;
+   char         description[256];
+   int          n        = 0;
+   double       dblValue = 0.0;
+   unsigned int intValue = 0;
 
    if(sscanf(parameters, "id=%u%n", &intValue, &n) == 1) {
       flowID = (uint32_t)intValue;
@@ -1973,7 +1973,7 @@ void activeMode(const char* remoteEndpoint)
    // ====== Handle command-line parameters =================================
 
    // ------ Handle other parameters ----------------------------------------
-   for(unsigned int f = 0; f <gFlowCount; f++) {
+   for(int f = 0; f <gFlowCount; f++) {
       for(std::vector<AssocSpec>::const_iterator assocSpecIterator = gAssocSpecs.begin();
          assocSpecIterator != gAssocSpecs.end(); assocSpecIterator++) {
          const AssocSpec& assocSpec = *assocSpecIterator;
