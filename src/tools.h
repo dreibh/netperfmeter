@@ -125,9 +125,16 @@ int bindSocket(const int             sd,
                const sockaddr_union* localAddressArray,
                const bool            listenMode,
                const bool            bindV6Only);
-uint64_t hton64(const uint64_t value);
-uint64_t ntoh64(const uint64_t value);
 
+#if BYTE_ORDER == LITTLE_ENDIAN
+inline uint64_t hton64(const uint64_t value) { return bswap_64(value); }
+inline uint64_t ntoh64(const uint64_t value) { return bswap_64(value); }
+#elif BYTE_ORDER == BIG_ENDIAN
+inline uint64_t hton64(const uint64_t value) { return value; }
+inline uint64_t ntoh64(const uint64_t value) { return value }
+#else
+#error Byte order undefined!
+#endif
 
 typedef unsigned long long network_double_t;
 
