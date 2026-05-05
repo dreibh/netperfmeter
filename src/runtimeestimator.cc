@@ -96,13 +96,13 @@ int main(int argc, char** argv)
       }
       fclose(fh);
 
-
       const unsigned long long now  = getMicroTime();
       const double tstart           = (double)startTimeStamp;
       const double tend             = (double)now;
       const double usecPerRun       = (tend - tstart) / currentRun;
       const double estimatedRuntime = (totalRuns - currentRun) * usecPerRun;
-      const unsigned long long estEndTimeStamp = now + (unsigned long long)((estimatedRuntime > 0) ? estimatedRuntime : 0.0);
+      const unsigned long long estEndTimeStamp =
+         now + (unsigned long long)((estimatedRuntime > 0) ? estimatedRuntime : 0.0);
 
       char             str[64];
       const time_t     timeStamp = (time_t)(estEndTimeStamp / 1000000);
