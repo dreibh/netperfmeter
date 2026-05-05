@@ -52,6 +52,7 @@ int main(int argc, char** argv)
    if(argc < 4) {
       fprintf(stderr, "Usage: %s start_file total_runs current_run\n",
               argv[0]);
+      exit(1);
    }
 
    unsigned int totalRuns  = atol(argv[2]);
