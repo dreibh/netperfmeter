@@ -923,12 +923,17 @@ int main(int argc, char** argv)
             scalarSplittingMode = false;
           break;
          case 'c':
-            compressionLevel = atol(optarg);
-            if(compressionLevel < 1) {
-               compressionLevel = 1;
-            }
-            else if(compressionLevel > 9) {
-               compressionLevel = 9;
+            {
+               const int parsedCompressionLevel = atoi(optarg);
+               if(parsedCompressionLevel < 0) {
+                  compressionLevel = 0;
+               }
+               else if(parsedCompressionLevel > 9) {
+                  compressionLevel = 9;
+               }
+               else {
+                  compressionLevel = (unsigned int)parsedCompressionLevel;
+               }
             }
           break;
          case 'r':
@@ -1117,5 +1122,14 @@ int main(int argc, char** argv)
       scalarNode = (ScalarNode*)simpleRedBlackTreeGetFirst(&StatisticsStorage);
    }
    simpleRedBlackTreeDelete(&StatisticsStorage);
+
+   SkipListNode* currentSkipNode = SkipList;
+   while(currentSkipNode != nullptr) {
+      SkipListNode* nextSkipNode = currentSkipNode->Next;
+      delete currentSkipNode;
+      currentSkipNode = nextSkipNode;
+   }
+   SkipList = nullptr;
+
    return 0;
 }
