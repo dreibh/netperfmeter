@@ -190,7 +190,7 @@ _netperfmeter()
 
    # ====== Port (passive side) or Address:Port (active side) ===============
    else
-      mapfile -t COMPREPLY < <(compgen -W 'localhost:9000 9000' -- "$cur")
+      mapfile -t COMPREPLY < <(compgen -W 'localhost:9000 9000' -- "${cur}")
       return
    fi
 
