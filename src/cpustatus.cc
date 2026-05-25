@@ -115,7 +115,7 @@ CPUStatus::CPUStatus()
 #endif
 
    CpuStates = CPU_STATE_MAX;
-   if ((host = mach_host_self()) == MACH_PORT_nullptr) {
+   if((host = mach_host_self()) == MACH_PORT_NULL) {
       LOG_FATAL
       stdlog << "Couldn't receive send rights!" << "\n";
       LOG_END_FATAL

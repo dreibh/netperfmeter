@@ -172,9 +172,11 @@ void FlowTrafficSpec::print(std::ostream& os) const
       }
       os << "\n";
    }
+#ifdef HAVE_DCCP
    if(Protocol == IPPROTO_DCCP) {
       os << " - CCID:                #" << (unsigned int)CCID << "\n";
    }
+#endif
 }
 
 

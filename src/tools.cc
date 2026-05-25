@@ -1178,7 +1178,6 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
    // ====== Prepare timeout setting ========================================
    struct       timeval  timeout;
    struct       timeval* to;
-   int          fdcount = 0;
    int          n;
    int          result;
    unsigned int i;
@@ -1211,7 +1210,6 @@ int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
       }
       FD_SET(fdlist[i].fd, &exceptfdset);
       n = std::max(n, fdlist[i].fd);
-      fdcount++;
    }
    for(i = 0;i < count;i++) {
       fdlist[i].revents = 0;

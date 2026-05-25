@@ -302,7 +302,8 @@ IF (NOT BZ2_LIBRARY)
            " * Fedora:        sudo dnf install -y bzip2-devel\n"
            " * SuSE:          sudo zypper install -y libbz2-devel\n"
            " * Alpine:        sudo apk add bzip2-dev\n"
-           " * FreeBSD:       sudo pkg install -y bzip2")
+           " * FreeBSD:       sudo pkg install -y bzip2\n"
+           " * Apple:         brew install bzip2")
 ENDIF()
 
 # ====== SCTP ===============================================================
@@ -350,7 +351,8 @@ IF (WITH_ICONS)
             " Cannot find GhostScript! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y ghostscript\n"
             " * Fedora:        sudo dnf install -y ghostscript\n"
-            " * FreeBSD:       sudo pkg install -y ghostscript10")
+            " * FreeBSD:       sudo pkg install -y ghostscript10\n"
+            " * Apple:         brew install ghostscript")
    ENDIF()
 
    FIND_PROGRAM(PDF2SVG pdf2svg PATHS /bin /usr/bin /usr/local/bin)
@@ -359,7 +361,8 @@ IF (WITH_ICONS)
             " Cannot find PDF2SVG! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y pdf2svg\n"
             " * Fedora:        sudo dnf install -y pdf2svg\n"
-            " * FreeBSD:       sudo pkg install -y pdf2svg")
+            " * FreeBSD:       sudo pkg install -y pdf2svg\n"
+            " * Apple:         brew install pdf2svg")
    ENDIF()
 
    FIND_PROGRAM(GM gm PATHS /bin /usr/bin /usr/local/bin)
@@ -368,7 +371,8 @@ IF (WITH_ICONS)
             " Cannot find GraphicsMagick! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y graphicsmagick\n"
             " * Fedora:        sudo dnf install -y GraphicsMagick\n"
-            " * FreeBSD:       sudo pkg install -y GraphicsMagick")
+            " * FreeBSD:       sudo pkg install -y GraphicsMagick\n"
+            " * Apple:         brew install graphicsmagick")
    ENDIF()
 ENDIF()
 
