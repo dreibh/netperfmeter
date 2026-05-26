@@ -26,20 +26,20 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 5, 2026
-.Dt netperfmeter-module-loader 1
-.Os netperfmeter-module-loader
+.Dd May 26, 2026
+.Dt netperfmeter\-module\-loader 1
+.Os netperfmeter\-module\-loader
 .\" ###### Name #############################################################
 .Sh NAME
-.Nm netperfmeter-module-loader
+.Nm netperfmeter\-module\-loader
 .Nd Network Performance Meter Kernel Module Loader
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm netperfmeter-module-loader
+.Nm netperfmeter\-module\-loader
 start | stop
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
-.Nm netperfmeter-module-loader
+.Nm netperfmeter\-module\-loader
 loads the network protocol and congestion control kernel modules for
 NetPerfMeter, to support the TCP, MPTCP, UDP, DCCP and SCTP transport
 protocols (if available) and corresponding congestion controls (if available).
@@ -58,11 +58,11 @@ Prints the loaded modules and allowed TCP congestion controls.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
-Some netperfmeter-module-loader usage examples:
+Some netperfmeter\-module\-loader usage examples:
 .Bl -tag -width indent
-.It sudo netperfmeter-module-loader start
-.It sudo netperfmeter-module-loader stop
-.It netperfmeter-module-loader status
+.It sudo netperfmeter\-module\-loader start
+.It sudo netperfmeter\-module\-loader stop
+.It netperfmeter\-module\-loader status
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS

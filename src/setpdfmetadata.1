@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 5, 2026
+.Dd May 26, 2026
 .Dt setpdfmetadata 1
 .Os setpdfmetadata
 .\" ###### Name #############################################################
@@ -36,9 +36,9 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm setpdfmetadata
-input_pdf
-metadata_file
-output_pdf
+input\_pdf
+metadata\_file
+output\_pdf
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm setpdfmetadata
@@ -46,8 +46,8 @@ is tool to add and update the metadata of a PDF file. In particular, it can
 be used to add outlines (bookmarks) to a document. Furthermore, it can set
 the document properties (e.g. author, title,  keywords, creator, producer).
 .br
-Note, that all metadata content will be encoded in ISO-8859-1 encoding. It
-is not (yet) possible to use non-ISO-8859-1 text in the PDF metadata.
+Note, that all metadata content will be encoded in ISO\-8859\-1 encoding. It
+is not (yet) possible to use non\-ISO\-8859\-1 text in the PDF metadata.
 .br
 The metadata may contain the following commands:
 .Bl -tag -width ident
@@ -73,18 +73,18 @@ Sets the document producer to the given value.
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It input_pdf
+.It input\_pdf
 The input PDF file name.
-.It metadata_file
+.It metadata\_file
 The metadata file name.
-.It output_pdf
+.It output\_pdf
 The output PDF file name.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
 A setpdfmetadata usage example:
 .Bl -tag -width indent
-.It setpdfmetadata MyDocument.pdf MyMetadata.meta MyDocument-Updated.pdf
+.It setpdfmetadata MyDocument.pdf MyMetadata.meta MyDocument\-Updated.pdf
 .El
 .br
 A metadata example:

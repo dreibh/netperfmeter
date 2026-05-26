@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 5, 2026
+.Dd May 26, 2026
 .Dt extractvectors 1
 .Os ExtractVectors
 .\" ###### Name #############################################################
@@ -36,44 +36,44 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm extractvectors
-.Op input_file
-.Op output_file
-.Op [!]vector_name_prefix
+.Op input\_file
+.Op output\_file
+.Op [!]vector\_name\_prefix
 .Op ...
 .br
-.Op Fl s | Fl Fl split | Fl a | Fl Fl no-split
+.Op Fl s | Fl \-split | Fl a | Fl \-no\-split
 .br
-.Op Fl c Ar level | Fl Fl compress Ar level
+.Op Fl c Ar level | Fl \-compress Ar level
 .br
-.Op Fl q | Fl Fl quiet
+.Op Fl q | Fl \-quiet
 .Fl quiet
 .Nm extractvectors
-.Op Fl h | Fl Fl help
+.Op Fl h | Fl \-help
 .Nm extractvectors
-.Op Fl v | Fl Fl version
+.Op Fl v | Fl \-version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm extractvectors
-is an extraction tool for vectors written by OMNeT++ to a data table. ExtractVectors supports on-the-fly BZip2 decompression and compression.
+is an extraction tool for vectors written by OMNeT++ to a data table. ExtractVectors supports on\-the\-fly BZip2 decompression and compression.
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
 The following arguments may be provided:
 .Bl -tag -width indent
-.It input_file
+.It input\_file
 The name of the input vector file.
-.It output_file
+.It output\_file
 The name of the output data table to be created.
-.It [!]vector_name_prefix
+.It [!]vector\_name\_prefix
 Name prefix of vectors to be extracted. Multiple vector name prefixes may be specified. If no name prefix is given, all vectors will be extracted. A "!" in front of the name turns vector splitting for this prefix on (see \-\-split option below).
-.It Fl s | Fl Fl split
+.It Fl s | Fl \-split
 Try to split the vector name ending in a number into the name part as well as the number. A vector output table is then generated for the name part, with the corresponding number in table column "Split". Example: Vectors "Throughput 1", ..., "Throughput 9" will be written into output table as vector column "Throughput", the number will be in table column "Split".
 \-\-split is a global option and applies to all vector name prefixes provided. To use vector name splitting for just a single prefix, prepend the prefix with "!".
-.It Fl a | Fl Fl no-split
+.It Fl a | Fl \-no\-split
 Turns vector splitting off (default).
-.It Fl c Ar level | Fl Fl compress Ar level
+.It Fl c Ar level | Fl \-compress Ar level
 Sets the BZip2 compression level; 1=none, 9=highest (default).
-.It Fl q | Fl Fl quiet
+.It Fl q | Fl \-quiet
 Do not print verbose status information.
 .It Fl quiet
 Do not print verbose status information.
@@ -83,7 +83,7 @@ Do not print verbose status information.
 Consider an OMNeT++ vector file containing the vectors
 "Slow Start Threshold <assoc>:<path>" and
 "Congestion Window <assoc>:<path>",
-contained with a lot of other vectors in the BZip2-compressed vector file results.vec.bz2. ExtractVectors can be used to extract all vectors beginning with "Slow Start Threshold" or "Congestion Window" into a BZip2-compressed data
+contained with a lot of other vectors in the BZip2\-compressed vector file results.vec.bz2. ExtractVectors can be used to extract all vectors beginning with "Slow Start Threshold" or "Congestion Window" into a BZip2\-compressed data
 table results.data.bz2 by the following command:
 .br
 extractvectors results.vec.bz2 results.data.bz2 \\

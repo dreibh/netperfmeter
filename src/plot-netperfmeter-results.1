@@ -26,52 +26,52 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 5, 2026
-.Dt plot-netperfmeter-results 1
-.Os plot-netperfmeter-results
+.Dd May 26, 2026
+.Dt plot\-netperfmeter\-results 1
+.Os plot\-netperfmeter\-results
 .\" ###### Name #############################################################
 .Sh NAME
-.Nm plot-netperfmeter-results
+.Nm plot\-netperfmeter\-results
 .Nd Network Performance Meter
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm plot-netperfmeter-results
-config_name
+.Nm plot\-netperfmeter\-results
+config\_name
 .br
-.Op Fl w | Fl Fl ownfile
+.Op Fl w | Fl \-ownfile
 .br
-.Op Fl p | Fl Fl per-flow-plots
-.Nm plot-netperfmeter-results
-.Op Fl h | Fl Fl help
+.Op Fl p | Fl \-per\-flow\-plots
+.Nm plot\-netperfmeter\-results
+.Op Fl h | Fl \-help
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
-.Nm plot-netperfmeter-results
+.Nm plot\-netperfmeter\-results
 uses GNU R to plot measurement results written by NetPerfMeter into a PDF file. Optionally, a separate PDF file can be written for each page.
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It config_name
+.It config\_name
 The name of the config file written by NetPerfMeter.
-.It Fl w | Fl Fl ownfile
+.It Fl w | Fl \-ownfile
 Plot a separate PDF file for each page.
-.It Fl p | Fl Fl per-flow-plots
+.It Fl p | Fl \-per\-flow\-plots
 Also generate separate plots for each flow.
-.It Fl h | Fl Fl help
-Prints command-line parameters.
+.It Fl h | Fl \-help
+Prints command\-line parameters.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
-Some plot-netperfmeter-results usage examples:
+Some plot\-netperfmeter\-results usage examples:
 .Bl -tag -width indent
-.It plot-netperfmeter-results output.config
+.It plot\-netperfmeter\-results output.config
 Plot the results given by output.config. The resulting PDF file will be named output.pdf.
-.It plot-netperfmeter-results output.config --per-flow-plots
-Plot the results given by output.config, including per-flow plots. The resulting PDF file will be named output.pdf.
-.It plot-netperfmeter-results output.config --ownfile
-Plot the results given by output.config. For each page, a separate PDF file is written. The resulting PDF files will be named output-<title>.pdf, where <title> corresponds to the page title.
-.It plot-netperfmeter-results --help
+.It plot\-netperfmeter\-results output.config \--per\-flow\-plots
+Plot the results given by output.config, including per\-flow plots. The resulting PDF file will be named output.pdf.
+.It plot\-netperfmeter\-results output.config \--ownfile
+Plot the results given by output.config. For each page, a separate PDF file is written. The resulting PDF files will be named output\-<title>.pdf, where <title> corresponds to the page title.
+.It plot\-netperfmeter\-results \--help
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
