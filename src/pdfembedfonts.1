@@ -61,7 +61,12 @@ Optimize the resulting PDF file for fast web view.
 .It Fl h | Fl \-help
 Prints command\-line parameters.
 .El
-.\" ###### Arguments ########################################################
+.\" ###### Exit status ######################################################
+.Sh EXIT STATUS
+The
+.Nm
+tool exits with 0 on success, and >0 in case of an error.
+.\" ###### Examples #########################################################
 .Sh EXAMPLES
 Some pdfembedfonts usage examples:
 .Bl -tag -width indent
@@ -69,11 +74,11 @@ Some pdfembedfonts usage examples:
 .It pdfembedfonts MyDocument.pdf MyDocument\-with\-Embedded\-Fonts\-and\-Optimised.pdf \-O
 .It pdfembedfonts \--help
 .El
+.\" ###### Notes ############################################################
+.Sh NOTES
+This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
+.Lk https://www.nntb.no/\(tidreibh/netperfmeter/ "NetPerfMeter Homepage" .
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
-Thomas Dreibholz
-.br
-https://www.nntb.no/~dreibh/netperfmeter
-.br
-mailto:dreibh@simula.no
-.br
+Thomas Dreibholz,
+.Lk https://www.nntb.no/\(tidreibh "Homepage"

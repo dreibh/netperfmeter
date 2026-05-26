@@ -82,7 +82,12 @@ Generate line numbers for output rows (GNU R: row names). In this case, the inpu
 .It Fl quiet
 Do not print verbose status information.
 .El
-.\" ###### Arguments ########################################################
+.\" ###### Exit status ######################################################
+.Sh EXIT STATUS
+The
+.Nm
+tool exits with 0 on success, and >0 in case of an error.
+.\" ###### Examples #########################################################
 .Sh EXAMPLE
 Consider two data tables:
 v1.data.bz2 (created with ParameterY=Alpha) and
@@ -93,11 +98,11 @@ The output data table should be written to output.data.bz2.
   echo "\-\-input=v1.data.bz2"               && \\
   echo \-e "\-\-values=\\"Beta\\"\\t\\"Test 2\\""  && \\
   echo "\-\-input=v2.data.bz2" ) | combinesummaries output.data.bz2 $'ParameterX\\tParameterY'
+.\" ###### Notes ############################################################
+.Sh NOTES
+This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
+.Lk https://www.nntb.no/\(tidreibh/netperfmeter/ "NetPerfMeter Homepage" .
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
-Thomas Dreibholz
-.br
-https://www.nntb.no/~dreibh/netperfmeter
-.br
-mailto:dreibh@simula.no
-.br
+Thomas Dreibholz,
+.Lk https://www.nntb.no/\(tidreibh "Homepage"

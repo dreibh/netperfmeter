@@ -56,7 +56,12 @@ use, i.e. they will remain loaded.
 .It status
 Prints the loaded modules and allowed TCP congestion controls.
 .El
-.\" ###### Arguments ########################################################
+.\" ###### Exit status ######################################################
+.Sh EXIT STATUS
+The
+.Nm
+tool exits with 0 on success, and >0 in case of an error.
+.\" ###### Examples #########################################################
 .Sh EXAMPLES
 Some netperfmeter\-module\-loader usage examples:
 .Bl -tag -width indent
@@ -64,11 +69,11 @@ Some netperfmeter\-module\-loader usage examples:
 .It sudo netperfmeter\-module\-loader stop
 .It netperfmeter\-module\-loader status
 .El
+.\" ###### Notes ############################################################
+.Sh NOTES
+This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
+.Lk https://www.nntb.no/\(tidreibh/netperfmeter/ "NetPerfMeter Homepage" .
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
-Thomas Dreibholz
-.br
-https://www.nntb.no/~dreibh/netperfmeter
-.br
-mailto:dreibh@simula.no
-.br
+Thomas Dreibholz,
+.Lk https://www.nntb.no/\(tidreibh "Homepage"

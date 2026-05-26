@@ -104,7 +104,12 @@ Ignore scalar file errors (that is, missing input files) instead of aborting.
 .It Fl q | Fl \-quiet
 Do not print verbose status information.
 .El
-.\" ###### Arguments ########################################################
+.\" ###### Exit status ######################################################
+.Sh EXIT STATUS
+The
+.Nm
+tool exits with 0 on success, and >0 in case of an error.
+.\" ###### Examples #########################################################
 .Sh EXAMPLE
 Consider two simulation results
 test1.sca.bz2 (created with ParameterX=One) and
@@ -118,11 +123,11 @@ compression level 5:
   echo "\-\-input=test1.sca.bz2"     && \\
   echo "\-\-values=Two"              && \\
   echo "\-\-input=test2.sca.bz2" ) | createsummary "ParameterX" \-\-batch \-\-compress 5
+.\" ###### Notes ############################################################
+.Sh NOTES
+This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
+.Lk https://www.nntb.no/\(tidreibh/netperfmeter/ "NetPerfMeter Homepage" .
 .\" ###### Authors ##########################################################
 .Sh AUTHORS
-Thomas Dreibholz
-.br
-https://www.nntb.no/~dreibh/netperfmeter
-.br
-mailto:dreibh@simula.no
-.br
+Thomas Dreibholz,
+.Lk https://www.nntb.no/\(tidreibh "Homepage"
