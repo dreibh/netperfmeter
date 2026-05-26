@@ -276,7 +276,8 @@ IF (HAVE_QUIC)
                " * Fedora:        sudo dnf install -y  gnutls-devel\n"
                " * SuSE:          sudo zypper install -y libgnutls-devel\n"
                " * Alpine:        sudo apk add gnutls-dev\n"
-               " * FreeBSD:       sudo pkg install -y gnutls")
+               " * FreeBSD:       sudo pkg install -y gnutls\n"
+               " * Apple:         brew install gnutls")
       ENDIF()
       LIST(APPEND QUIC_LIBRARY ${GNUTLS_LIBRARY})
       ADD_DEFINITIONS(-DHAVE_QUIC)
@@ -345,12 +346,16 @@ ENDIF()
 
 # ====== Graphics tools for icons and logo ==================================
 IF (WITH_ICONS)
+   MESSAGE("Building with icons (WITH_ICONS=${WITH_ICONS})")
+
    FIND_PROGRAM(GS gs PATHS /bin /usr/bin /usr/local/bin)
    IF(NOT GS)
       MESSAGE(FATAL_ERROR
             " Cannot find GhostScript! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y ghostscript\n"
             " * Fedora:        sudo dnf install -y ghostscript\n"
+            " * SuSE:          sudo zypper install -y ghostscript\n"
+            " * Alpine:        sudo apk add ghostscript\n"
             " * FreeBSD:       sudo pkg install -y ghostscript10\n"
             " * Apple:         brew install ghostscript")
    ENDIF()
@@ -361,6 +366,8 @@ IF (WITH_ICONS)
             " Cannot find PDF2SVG! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y pdf2svg\n"
             " * Fedora:        sudo dnf install -y pdf2svg\n"
+            " * SuSE:          sudo zypper install -y pdf2svg\n"
+            " * Alpine:        (needs PPA or installation from sources!)\n"
             " * FreeBSD:       sudo pkg install -y pdf2svg\n"
             " * Apple:         brew install pdf2svg")
    ENDIF()
@@ -371,6 +378,8 @@ IF (WITH_ICONS)
             " Cannot find GraphicsMagick! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y graphicsmagick\n"
             " * Fedora:        sudo dnf install -y GraphicsMagick\n"
+            " * SuSE:          sudo zypper install -y GraphicsMagick\n"
+            " * Alpine:        sudo apk add graphicsmagick\n"
             " * FreeBSD:       sudo pkg install -y GraphicsMagick\n"
             " * Apple:         brew install graphicsmagick")
    ENDIF()
