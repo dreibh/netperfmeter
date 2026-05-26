@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 5, 2026
+.Dd May 26, 2026
 .Dt pdfembedfonts 1
 .Os pdfembedfonts
 .\" ###### Name #############################################################
@@ -36,11 +36,11 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm pdfembedfonts
-input_pdf
-output_pdf
-.Op Fl O | Fl Fl optimise | Fl Fl optimize
+input\_pdf
+output\_pdf
+.Op Fl O | Fl \-optimise | Fl \-optimize
 .Nm pdfembedfonts
-.Op Fl h | Fl Fl help
+.Op Fl h | Fl \-help
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm pdfembedfonts
@@ -52,22 +52,22 @@ required font data. Optionally, the resulting PDF can also be optimised
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It input_pdf
+.It input\_pdf
 The input PDF file name.
-.It output_pdf
+.It output\_pdf
 The output PDF file name.
-.It Fl O | Fl Fl optimise | Fl Fl optimize
+.It Fl O | Fl \-optimise | Fl \-optimize
 Optimize the resulting PDF file for fast web view.
-.It Fl h | Fl Fl help
-Prints command-line parameters.
+.It Fl h | Fl \-help
+Prints command\-line parameters.
 .El
 .\" ###### Arguments ########################################################
 .Sh EXAMPLES
 Some pdfembedfonts usage examples:
 .Bl -tag -width indent
-.It pdfembedfonts MyDocument.pdf MyDocument-with-Embedded-Fonts.pdf
-.It pdfembedfonts MyDocument.pdf MyDocument-with-Embedded-Fonts-and-Optimised.pdf -O
-.It pdfembedfonts --help
+.It pdfembedfonts MyDocument.pdf MyDocument\-with\-Embedded\-Fonts.pdf
+.It pdfembedfonts MyDocument.pdf MyDocument\-with\-Embedded\-Fonts\-and\-Optimised.pdf \-O
+.It pdfembedfonts \--help
 .El
 .\" ###### Authors ##########################################################
 .Sh AUTHORS

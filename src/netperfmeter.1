@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 5, 2026
+.Dd May 26, 2026
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -36,86 +36,86 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm netperfmeter
-local_port
+local\_port
 .br
-.Op Fl x | Fl Fl control-over-sctp | Fl X | Fl Fl no-control-over-sctp
+.Op Fl x | Fl \-control\-over\-sctp | Fl X | Fl \-no\-control\-over\-sctp
 .br
-.Op Fl y | Fl Fl control-over-tcp | Fl Y | Fl Fl no-control-over-tcp | Fl w | Fl Fl con\%trol-\%over-\%mp\%tcp | Fl W | Fl Fl no-\%con\%trol-over-mp\%tcp
+.Op Fl y | Fl \-control\-over\-tcp | Fl Y | Fl \-no\-control\-over\-tcp | Fl w | Fl \-con\%trol\-\%over\-\%mp\%tcp | Fl W | Fl \-no\-\%con\%trol\-over\-mp\%tcp
 .br
-.Op Fl L Ar address[,address,...] | Fl Fl local Ar address[,address,...]
+.Op Fl L Ar address[,address,...] | Fl \-local Ar address[,address,...]
 .br
-.Op Fl l Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
+.Op Fl l Ar address[,address,...] | Fl \-controllocal Ar address[,address,...]
 .br
-.Op Fl K Ar key_file | Fl Fl tls-key Ar key_file
-.Op Fl J Ar certificate_file | Fl Fl tls-cert Ar certificate_file
-.Op Fl I Ar ca_certificate_file | Fl Fl tls-ca Ar ca_certificate_file
+.Op Fl K Ar key\_file | Fl \-tls\-key Ar key\_file
+.Op Fl J Ar certificate\_file | Fl \-tls\-cert Ar certificate\_file
+.Op Fl I Ar ca\_certificate\_file | Fl \-tls\-ca Ar ca\_certificate\_file
 .br
-.Op Fl -6 | Fl Fl v6only
+.Op Fl \-6 | Fl \-v6only
 .br
-.Op Fl Fl display | Fl Fl nodisplay
+.Op Fl \-display | Fl \-nodisplay
 .br
-.Op Fl Fl loglevel Ar level
-.Op Fl Fl logcolor Ar on|off
-.Op Fl Fl logfile Ar file
-.Op Fl Fl logappend Ar file
+.Op Fl \-loglevel Ar level
+.Op Fl \-logcolor Ar on|off
+.Op Fl \-logfile Ar file
+.Op Fl \-logappend Ar file
 .br
-.Op Fl q | Fl Fl quiet
-.Op Fl ! | Fl Fl verbose
+.Op Fl q | Fl \-quiet
+.Op Fl ! | Fl \-verbose
 .Nm netperfmeter
-remote_endpoint:remote_port
+remote\_endpoint:remote\_port
 .br
-.Op Fl x | Fl Fl control-over-sctp | Fl y | Fl Fl control-over-tcp | Fl w | Fl Fl control-over-mptcp
+.Op Fl x | Fl \-control\-over\-sctp | Fl y | Fl \-control\-over\-tcp | Fl w | Fl \-control\-over\-mptcp
 .br
-.Op Fl L Ar address[,address,...] | Fl Fl local Ar address[,address,...]
+.Op Fl L Ar address[,address,...] | Fl \-local Ar address[,address,...]
 .br
-.Op Fl l Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
+.Op Fl l Ar address[,address,...] | Fl \-controllocal Ar address[,address,...]
 .br
-.Op Fl H Ar hostname_file | Fl Fl tls-hostname Ar hostname
+.Op Fl H Ar hostname\_file | Fl \-tls\-hostname Ar hostname
 .br
-.Op Fl -6 | Fl Fl v6only
-.Op Fl Fl display | Fl Fl nodisplay
+.Op Fl \-6 | Fl \-v6only
+.Op Fl \-display | Fl \-nodisplay
 .br
-.Op Fl o Ar bytes | Fl Fl sndbuf Ar bytes
-.Op Fl i Ar bytes | Fl Fl rcvbuf Ar bytes
-.Op Fl N Ar count | Fl Fl count Ar count
+.Op Fl o Ar bytes | Fl \-sndbuf Ar bytes
+.Op Fl i Ar bytes | Fl \-rcvbuf Ar bytes
+.Op Fl N Ar count | Fl \-count Ar count
 .br
-.Op Fl T Ar seconds | Fl Fl runtime Ar seconds
+.Op Fl T Ar seconds | Fl \-runtime Ar seconds
 .br
-.Op Fl C Ar configuration_file | Fl Fl Ar config configuration_file
+.Op Fl C Ar configuration\_file | Fl \-Ar config configuration\_file
 .br
-.Op Fl S Ar scalar_file_pattern | Fl Fl scalar Ar scalar_file_pattern
+.Op Fl S Ar scalar\_file\_pattern | Fl \-scalar Ar scalar\_file\_pattern
 .br
-.Op Fl V Ar vector_file_pattern | Fl Fl vector Ar vector_file_pattern
+.Op Fl V Ar vector\_file\_pattern | Fl \-vector Ar vector\_file\_pattern
 .br
-.Op Fl A Ar description | Fl Fl activenodename Ar description
+.Op Fl A Ar description | Fl \-activenodename Ar description
 .br
-.Op Fl P Ar description | Fl Fl passivenodename Ar description
+.Op Fl P Ar description | Fl \-passivenodename Ar description
 .br
-.Op Fl Fl loglevel Ar level
-.Op Fl Fl logcolor Ar on|off
-.Op Fl Fl logfile Ar file
-.Op Fl Fl logappend Ar file
+.Op Fl \-loglevel Ar level
+.Op Fl \-logcolor Ar on|off
+.Op Fl \-logfile Ar file
+.Op Fl \-logappend Ar file
 .br
-.Op Fl t Ar FLOWSPEC | Fl Fl tcp Ar FLOWSPEC
+.Op Fl t Ar FLOWSPEC | Fl \-tcp Ar FLOWSPEC
 .br
-.Op Fl m Ar FLOWSPEC | Fl Fl mptcp Ar FLOWSPEC
+.Op Fl m Ar FLOWSPEC | Fl \-mptcp Ar FLOWSPEC
 .br
-.Op Fl u Ar FLOWSPEC | Fl Fl udp Ar FLOWSPEC
+.Op Fl u Ar FLOWSPEC | Fl \-udp Ar FLOWSPEC
 .br
-.Op Fl d Ar FLOWSPEC | Fl Fl dccp Ar FLOWSPEC
+.Op Fl d Ar FLOWSPEC | Fl \-dccp Ar FLOWSPEC
 .br
-.Op Fl s Ar FLOWSPEC | Fl Fl sctp Ar FLOWSPEC Ar [FLOWSPEC ...]
+.Op Fl s Ar FLOWSPEC | Fl \-sctp Ar FLOWSPEC Ar [FLOWSPEC ...]
 .br
-.Op Fl k Ar FLOWSPEC | Fl Fl quic Ar FLOWSPEC Ar [FLOWSPEC ...]
+.Op Fl k Ar FLOWSPEC | Fl \-quic Ar FLOWSPEC Ar [FLOWSPEC ...]
 .br
-.Op Fl q | Fl Fl quiet
-.Op Fl ! | Fl Fl verbose
+.Op Fl q | Fl \-quiet
+.Op Fl ! | Fl \-verbose
 .br
-FLOWSPEC := out\%go\%ing_\%fra\%me_\%rate:\%out\%go\%ing_\%fra\%me_\%size:\%in\%com\%ing_\%fra\%me_\%rate:\%in\%com\%ing_\%fra\%me_\%size:\%opt\%ion:\%...
+FLOWSPEC := out\%go\%ing\_\%fra\%me\_\%rate:\%out\%go\%ing\_\%fra\%me\_\%size:\%in\%com\%ing\_\%fra\%me\_\%rate:\%in\%com\%ing\_\%fra\%me\_\%size:\%opt\%ion:\%...
 .Nm netperfmeter
-.Op Fl h | Fl Fl help
+.Op Fl h | Fl \-help
 .Nm netperfmeter
-.Op Fl v | Fl Fl version
+.Op Fl v | Fl \-version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm netperfmeter
@@ -125,111 +125,111 @@ is a network performance meter for the TCP, MPTCP, UDP, DCCP and SCTP transport 
 .Sh ARGUMENTS
 The following arguments can to be provided:
 .Bl -tag -width indent
-.It local_port
-The port number for the passive side's data socket for TCP, UDP, DCCP, SCTP. For MPTCP, the port number will be local_port-1, to allow for both, TCP and MPTCP connections. The port number of the control socket will be local_port+1.
+.It local\_port
+The port number for the passive side's data socket for TCP, UDP, DCCP, SCTP. For MPTCP, the port number will be local\_port\-1, to allow for both, TCP and MPTCP connections. The port number of the control socket will be local\_port+1.
 Specifying a port number turns NetPerfMeter into passive mode, i.e. it will wait for incoming connections.
-.It remote_endpoint:remote_port
-Specifies the passive endpoint to connect to (number as given for local_port on the passive instance).
-Specifying remote_endpoint:remote_port turns NetPerfMeter into active mode, i.e. it will connect to the specified remote endpoint.
-.It x | Fl Fl control-over-sctp
+.It remote\_endpoint:remote\_port
+Specifies the passive endpoint to connect to (number as given for local\_port on the passive instance).
+Specifying remote\_endpoint:remote\_port turns NetPerfMeter into active mode, i.e. it will connect to the specified remote endpoint.
+.It x | Fl \-control\-over\-sctp
 On the passive side, this option enables accepting control connections via SCTP (default). It enables SCTP in addition to other protocols for the control transport.
 On the active side, this option uses SCTP for the control connection to the passive side. This is the default, but may cause connection problems in restricted networks or due to NAT traversal.
-.It Fl X | Fl Fl no-control-over-sctp
+.It Fl X | Fl \-no\-control\-over\-sctp
 On the passive side, this option disables incoming control connections via SCTP.
-.It Fl y | Fl Fl control-over-tcp | Fl Y | Fl Fl no-control-over-tcp
-On the passive side, this option enables accepting control connections via TCP (default). It enables TCP in addition to other protocols for the control transport. Note: By default, both -- SCTP and TCP -- are enabled on the passive side.
+.It Fl y | Fl \-control\-over\-tcp | Fl Y | Fl \-no\-control\-over\-tcp
+On the passive side, this option enables accepting control connections via TCP (default). It enables TCP in addition to other protocols for the control transport. Note: By default, both \-- SCTP and TCP \-- are enabled on the passive side.
 On the active side, this option uses TCP for the control connection to the passive side. This may be necessary for NAT traversal or due to restrictive firewalls.
-.It Fl Y | Fl Fl no-control-over-tcp
+.It Fl Y | Fl \-no\-control\-over\-tcp
 On the passive side, this option disables incoming control connections via TCP. This implicitly also disables control connections over MPTCP.
-.It Fl w | Fl Fl control-over-mptcp
+.It Fl w | Fl \-control\-over\-mptcp
 On the passive side, this option enables accepting control connections via MPTCP. This implicitly also enables control connections over TCP!
 On the active side, this option uses MPTCP for the control connection to the passive side.
-.It Fl W | Fl Fl no-control-over-tcp
+.It Fl W | Fl \-no\-control\-over\-tcp
 On the passive side, this option disables incoming control connections via MPTCP. However, it does not deactivate TCP!
-.It Fl L Ar address[,address,...] | Fl Fl local Ar address[,address,...]
+.It Fl L Ar address[,address,...] | Fl \-local Ar address[,address,...]
 Specifies address(es) of the local *data* endpoint. For TCP, UDP and DCCP, only the first address is used!
 On an active node, this option applies to the following flows, i.e. it must be set before specifying a flow!
-.It Fl l Ar address[,address,...] | Fl Fl controllocal Ar address[,address,...]
+.It Fl l Ar address[,address,...] | Fl \-controllocal Ar address[,address,...]
 Specifies address(es) of the local *control* endpoint (SCTP or TCP). For TCP, only the first address is used!
-.It Fl K Ar key_file | Fl Fl tls-key Ar key_file
+.It Fl K Ar key\_file | Fl \-tls\-key Ar key\_file
 Specifies the TLS key file for QUIC authentication. This option is used by the passive side.
-.It Fl J Ar certificate_file | Fl Fl tls-cert Ar certificate_file
+.It Fl J Ar certificate\_file | Fl \-tls\-cert Ar certificate\_file
 Specifies the TLS certificate file for QUIC authentication. This option is used by the passive side.
-The certificate file must correspond to the key file provided by --tls-key. The certificate must be for server usage (X.509 Extended Key Usage: TLS Web Server Authentication).
-.It Fl I Ar ca_certificate_file | Fl Fl tls-ca Ar ca_certificate_file
+The certificate file must correspond to the key file provided by \--tls\-key. The certificate must be for server usage (X.509 Extended Key Usage: TLS Web Server Authentication).
+.It Fl I Ar ca\_certificate\_file | Fl \-tls\-ca Ar ca\_certificate\_file
 Specifies the TLS root CA certificate file for QUIC authentication.
-.It Fl H Ar hostname_file | Fl Fl tls-hostname Ar hostname
+.It Fl H Ar hostname\_file | Fl \-tls\-hostname Ar hostname
 Specifies the TLS certificate hostname for QUIC authentication. It is used by the active side.
 The hostname must match the remote (i.e. passive side's) hostname, as provided by the passide side's TLS certificate, to allow for hostname verification. As alternative, it is possible to add the IP addresses into the X.509 SubjectAltName of its certificate.
-.It Fl -6 | Fl Fl v6only
-Use sockets with IPv6 only (by setting IPV6_V6ONLY socket option).
-.It Fl Fl display
+.It Fl \-6 | Fl \-v6only
+Use sockets with IPv6 only (by setting IPV6\_V6ONLY socket option).
+.It Fl \-display
 Display live I/O statistics, updated every second. This is enabled by default.
-.It Fl Fl nodisplay
+.It Fl \-nodisplay
 No not display live I/O statistics. This is useful for running NetPerfMeter in background as a service.
-.It Fl o Ar bytes | Fl Fl sndbuf Ar bytes
+.It Fl o Ar bytes | Fl \-sndbuf Ar bytes
 Sets the sender buffer size to the given number of bytes.
-.It Fl i Ar bytes | Fl Fl rcvbuf Ar bytes
+.It Fl i Ar bytes | Fl \-rcvbuf Ar bytes
 Sets the receiver buffer size to the given number of bytes.
-.It Fl N Ar count | Fl Fl count Ar count
+.It Fl N Ar count | Fl \-count Ar count
 Add all specified flows the given number of times. That is, given a count of 5, each specified flow will be added 5 times. This allows one to easily create multiple flows with the same parameters.
-.It Fl T Ar seconds | Fl Fl runtime Ar seconds
+.It Fl T Ar seconds | Fl \-runtime Ar seconds
 Specifies the measurement runtime in seconds. After the given time span, NetPerfMeter will finish the measurement.
-.It Fl C Ar configuration_file | Fl Fl Ar config configuration_file
+.It Fl C Ar configuration\_file | Fl \-Ar config configuration\_file
 Specifies the name of the configuration file to write. The configuration file will contain the used flow parameters.
-.It Fl S Ar scalar_file_pattern | Fl Fl scalar Ar scalar_file_pattern
-Specifies the name pattern of the scalar files to write. If the suffix of this name is .bz2, the file will be BZip2-compressed on the fly. The scalar name is automatically extended to name the flow scalar files by adding -<active|passive>-<flow_id>-<stream_id> before the suffix.
-For example for scalar.vec.bz2, the name of the scalar file for flow 5, stream 2 on the active node will be scalar-active-00000005-0002.vec.bz2.
-.It Fl V Ar vector_file_pattern | Fl Fl vector Ar vector_file_pattern
-Specifies the name pattern of the vector files to write. If the suffix of this name is .bz2, the file will be BZip2-compressed on the fly. The vector name is automatically extended to name the flow vector files by adding -<active|passive>-<flow_id>-<stream_id> before the suffix.
-For example for vector.vec.bz2, the name of the vector file for flow 5, stream 2 on the passive node will be vector-passive-00000005-0002.vec.bz2.
-.It Fl A Ar description | Fl Fl activenodename Ar description
+.It Fl S Ar scalar\_file\_pattern | Fl \-scalar Ar scalar\_file\_pattern
+Specifies the name pattern of the scalar files to write. If the suffix of this name is .bz2, the file will be BZip2\-compressed on the fly. The scalar name is automatically extended to name the flow scalar files by adding \-<active|passive>\-<flow\_id>\-<stream\_id> before the suffix.
+For example for scalar.vec.bz2, the name of the scalar file for flow 5, stream 2 on the active node will be scalar\-active\-00000005\-0002.vec.bz2.
+.It Fl V Ar vector\_file\_pattern | Fl \-vector Ar vector\_file\_pattern
+Specifies the name pattern of the vector files to write. If the suffix of this name is .bz2, the file will be BZip2\-compressed on the fly. The vector name is automatically extended to name the flow vector files by adding \-<active|passive>\-<flow\_id>\-<stream\_id> before the suffix.
+For example for vector.vec.bz2, the name of the vector file for flow 5, stream 2 on the passive node will be vector\-passive\-00000005\-0002.vec.bz2.
+.It Fl A Ar description | Fl \-activenodename Ar description
 Sets a textual description of the active node (e.g. Client).
-.It Fl P Ar description | Fl Fl passivenodename Ar description
+.It Fl P Ar description | Fl \-passivenodename Ar description
 Sets a textual description of the passive node (e.g. Server).
-.It Fl Fl loglevel Ar level
+.It Fl \-loglevel Ar level
 Sets the minimum logging level to the provided value: 0=trace, 1=debug, 2=info, 3=warning, 4=error, 5=fatal.
 Default: 2 (info).
-.It Fl Fl logcolor Ar on|off
+.It Fl \-logcolor Ar on|off
 Enables (on) or disables (off) the usage of ANSI color escape sequences to colorise the log output according to its level.
 Default: on.
-.It Fl Fl logappend Ar file
+.It Fl \-logappend Ar file
 Sets a file name for appending the log output to.
 If a log file is set, no log output is made to the console (stderr). Otherwise, all log output will be written to the console.
-.It Fl Fl logfile Ar file
+.It Fl \-logfile Ar file
 Sets a file name for writing the log output to. Existing content is truncated.
 If a log file is set, no log output is made to the console (stderr). Otherwise, all log output will be written to the console.
-.It Fl q | Fl Fl quiet
+.It Fl q | Fl \-quiet
 Sets the logging level to 4 (error).
-.It Fl ! | Fl Fl verbose
+.It Fl ! | Fl \-verbose
 Sets the logging level to 0 (trace).
-.It Fl t Ar FLOWSPEC | Fl Fl tcp Ar FLOWSPEC
+.It Fl t Ar FLOWSPEC | Fl \-tcp Ar FLOWSPEC
 Establish a new TCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
 For backwards compatibility, the option cmt=mptcp creates an MPTCP connection instead of a TCP connection.
-.It Fl m Ar FLOWSPEC | Fl Fl mptcp Ar FLOWSPEC
+.It Fl m Ar FLOWSPEC | Fl \-mptcp Ar FLOWSPEC
 Establish a new MPTCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
 Note: DCCP is not available on all platforms, yet. Currently, only Linux provides MPTCP in its official kernel.
-.It Fl u Ar FLOWSPEC | Fl Fl udp Ar FLOWSPEC
+.It Fl u Ar FLOWSPEC | Fl \-udp Ar FLOWSPEC
 Establish a new UDP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
-.It Fl d Ar FLOWSPEC | Fl Fl dccp Ar FLOWSPEC
+.It Fl d Ar FLOWSPEC | Fl \-dccp Ar FLOWSPEC
 Establish a new DCCP connection. The flow of this connection must be specified by a FLOWSPEC specification as following parameter.
 Note: DCCP is not available on all platforms, yet. Currently, only Linux provides DCCP in its official kernel.
-.It Fl s Ar FLOWSPEC | Fl Fl sctp Ar FLOWSPEC Ar [FLOWSPEC ...]
+.It Fl s Ar FLOWSPEC | Fl \-sctp Ar FLOWSPEC Ar [FLOWSPEC ...]
 Establish a new SCTP association. The streams of this association must be specified by one or more FLOWSPEC specifications as following parameters.
-.It Fl k Ar FLOWSPEC | Fl Fl quic Ar FLOWSPEC Ar [FLOWSPEC ...]
+.It Fl k Ar FLOWSPEC | Fl \-quic Ar FLOWSPEC Ar [FLOWSPEC ...]
 Establish a new QUIC connection. The streams of this connection must be specified by one or more FLOWSPEC specifications as following parameters.
 .It FLOWSPEC
-Specifies a new flow. The format is: out\%go\%ing_\%fra\%me_\%rate:\%out\%go\%ing_\%fra\%me_\%size:\%in\%com\%ing_\%fra\%me_\%rate:\%in\%com\%ing_\%fra\%me_\%size:\%opt\%ion:\%...
-The first four parameters (out\%going_\%frame_\%rate:\%out\%going_\%frame_\%size:\%in\%com\%ing_\%frame_\%rate:\%in\%com\%ing_\%frame_\%size) may be substituted by the option "default", creating a flow with some more or less useful default parameters.
+Specifies a new flow. The format is: out\%go\%ing\_\%fra\%me\_\%rate:\%out\%go\%ing\_\%fra\%me\_\%size:\%in\%com\%ing\_\%fra\%me\_\%rate:\%in\%com\%ing\_\%fra\%me\_\%size:\%opt\%ion:\%...
+The first four parameters (out\%going\_\%frame\_\%rate:\%out\%going\_\%frame\_\%size:\%in\%com\%ing\_\%frame\_\%rate:\%in\%com\%ing\_\%frame\_\%size) may be substituted by the option "default", creating a flow with some more or less useful default parameters.
 .Bl -tag -width indent
-.It outgoing_frame_rate
+.It outgoing\_frame\_rate
 The frame rate of the outgoing transfer (i.e. active node to passive node). If set to const0, the sender will be saturarted, i.e. it will try to send as much as possible.
-.It outgoing_frame_size
+.It outgoing\_frame\_size
 The frame size of the outgoing transfer (i.e. active node to passive node). If set to const0, there will be *no* data transmission in this direction.
-.It incoming_frame_rate
-The frame rate of the incoming transfer (i.e. passive node to active node). See outgoing_frame_rate for details.
-.It incoming_frame_size
-The frame size of the incoming transfer (i.e. passive node to active node). See outgoing_frame_size for details.
+.It incoming\_frame\_rate
+The frame rate of the incoming transfer (i.e. passive node to active node). See outgoing\_frame\_rate for details.
+.It incoming\_frame\_size
+The frame size of the incoming transfer (i.e. passive node to active node). See outgoing\_frame\_size for details.
 .It Random distribution:
 Frame rate and frame size may be distributed randomly, using different random distributions. A new random value is drawn for the next frame send time or next frame size.
 The following distributions are supported:
@@ -253,7 +253,7 @@ Truncated normal distribution with mean <mean> and standard deviation <stddev>, 
 .It id=Flow Identifier
 Sets an ID number for the flow. The IDs within a measurement must be unique!
 .It description=Description
-Sets a textual description of the flow (e.g. HTTP-Flow). Do not use spaces in the description!
+Sets a textual description of the flow (e.g. HTTP\-Flow). Do not use spaces in the description!
 .It maxmsgsize=Bytes
 Splits frames into messages of at most the given number of bytes. Messages may not exceed 65535 bytes.
 .It defragtimeout=Milliseconds
@@ -266,31 +266,31 @@ Specifies the fraction of the messages that will be sent in ordered mode (SCTP o
 Specifies the fraction of the messages that will be sent in reliable mode (SCTP only).
 .It unreliable=Fraction
 Specifies the fraction of the messages that will be sent in unreliable mode (SCTP only).
-.It rtx_timeout=Milliseconds
+.It rtx\_timeout=Milliseconds
 Sets the retransmission timeout for unreliable messages (SCTP only).
-.It rtx_trials=Trials
+.It rtx\_trials=Trials
 Sets the retransmission trials for unreliable messages (SCTP only).
 .It onoff=t1,t2,...[,repeat]
-A list of time stamps when the flow should be activated or deactivated. If onoff is given, the flow is off at startup. At t1, it will be turned on; at t2, it will be turned off, etc.. Time stamps can be given as absolute values (e.g. onoff=0,10,30 - to turn on at t=0, turn off at t=10 and turn on again at t=30 until end of measurement) or relative values (e.g. on=10,+30,+60 - to turn on at t=10, turn off at t=40 and turn on again at t=100 until end of measurement).
+A list of time stamps when the flow should be activated or deactivated. If onoff is given, the flow is off at startup. At t1, it will be turned on; at t2, it will be turned off, etc.. Time stamps can be given as absolute values (e.g. onoff=0,10,30 \- to turn on at t=0, turn off at t=10 and turn on again at t=30 until end of measurement) or relative values (e.g. on=10,+30,+60 \- to turn on at t=10, turn off at t=40 and turn on again at t=100 until end of measurement).
 A repetition of the list is possible with the keyword "repeat" at the end of the list. Then, all values need to be relative values and the number of items must be even.
-.It error_on_abort=on|off
+.It error\_on\_abort=on|off
 By default, the active side stops with an error when a transmission tails (e.g. on connection abort). This parameter turns this behaviour on or off.
 .It nodelay=on|off
 Deactivate Nagle algorithm (TCP and SCTP only; default: off).
 .It debug=on|off
 Set debug mode for flow (default: off). Note: this is for debugging and testing NetPerfMeter only; it (usually) has no function!
 .It v6only
-Use socket with IPv6 only (by setting IPV6_V6ONLY socket option).
+Use socket with IPv6 only (by setting IPV6\_V6ONLY socket option).
 .It cc=name
 Set congestion control name (TCP and MPTCP for Linux only).
-.It cmt=off|cmt|cmtrpv1|cmtrpv2|like-mptcp|mptcp-like|mptcp
-Configures usage of Concurrent Multipath Transfer (CMT): off (turned off; default), cmt (independent paths), cmtrpv1 (CMT/RPv1), cmtrpv1 (CMT/RPv2), mptcp/like-mptcp/mptcp-like (MPTCP), 0-255 (custom value).
-Currently only supported by CMT-SCTP on FreeBSD systems and MPTCP on Linux systems. Note: CMT for MPTCP always uses MPTCP congestion control.
+.It cmt=off|cmt|cmtrpv1|cmtrpv2|like\-mptcp|mptcp\-like|mptcp
+Configures usage of Concurrent Multipath Transfer (CMT): off (turned off; default), cmt (independent paths), cmtrpv1 (CMT/RPv1), cmtrpv1 (CMT/RPv2), mptcp/like\-mptcp/mptcp\-like (MPTCP), 0\-255 (custom value).
+Currently only supported by CMT\-SCTP on FreeBSD systems and MPTCP on Linux systems. Note: CMT for MPTCP always uses MPTCP congestion control.
 .El
 .El
-.It Fl h | Fl Fl help
+.It Fl h | Fl \-help
 Prints command help.
-.It Fl Fl version
+.It Fl \-version
 Prints program version.
 .El
 .\" ###### Arguments ########################################################
@@ -299,31 +299,31 @@ Some netperfmeter usage examples:
 .Bl -tag -width indent
 .It netperfmeter 9000
 Start in passive mode, i.e. accepting connections, on port 9000.
-.It netperfmeter 172.31.33.2:\%9000 -config=output.config -vector=\%output.vec.bz2 -scalar=\%output.sca.bz2 -sctp const5:\%exp1000:\%const3:\%exp500:\%description=\%"Alpha":\%onoff=\%+10 const5:\%exp1000:\%const3:\%exp500:\%description=\%"Beta":\%onoff=\%+30 -tcp const5:\%exp1000:\%const3:\%exp500:\%description=\%"Gamma":\%onoff=\%+60 -runtime=\%300
+.It netperfmeter 172.31.33.2:\%9000 \-config=output.config \-vector=\%output.vec.bz2 \-scalar=\%output.sca.bz2 \-sctp const5:\%exp1000:\%const3:\%exp500:\%description=\%"Alpha":\%onoff=\%+10 const5:\%exp1000:\%const3:\%exp500:\%description=\%"Beta":\%onoff=\%+30 \-tcp const5:\%exp1000:\%const3:\%exp500:\%description=\%"Gamma":\%onoff=\%+60 \-runtime=\%300
 Start in active mode, i.e. establish connection to 172.31.33.2, port 9000.
 Frames will be segmented into messages of up to 4096 bytes.
-Write configuration to output-*.config.
-Write vectors to output-*.vec.bz2 (BZip2-compressed).
-Write scalars to output-*.sca.bz2 (BZip2-compressed).
+Write configuration to output\-*.config.
+Write vectors to output\-*.vec.bz2 (BZip2\-compressed).
+Write scalars to output\-*.sca.bz2 (BZip2\-compressed).
 Establish SCTP association.
 At t=10s, start flow "Alpha" as first stream of this association, using a frame rate of 5 (constant) and average frame size of 1000 bytes (negative exponential distribution) for the outgoing data and a frame rate of 3 (constant) and average frame size of 500 bytes (negative exponential distribution) for the incoming data.
 At t=30s, start flow "Beta" as second stream on the SCTP association (same parameters as flow "Alpha").
 Start TCP connection.
 At t=60s, start flow "Gamma" over the TCP connection (same parameters as flow "Alpha").
 At t=300s, stop the measurement.
-.It netperfmeter 172.31.33.2:9000 -control-over-tcp -tcp const2:const1000
+.It netperfmeter 172.31.33.2:9000 \-control\-over\-tcp \-tcp const2:const1000
 Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. The control connection uses TCP instead of SCTP.
-.It netperfmeter 172.31.33.2:9000 -sctp const0:const0:uniform20,30:uniform900,1100
+.It netperfmeter 172.31.33.2:9000 \-sctp const0:const0:uniform20,30:uniform900,1100
 SCTP traffic with some variation.
-.It netperfmeter 172.31.33.2:\%9000 -udp const0:\%const0:\%const25:\%const2500:\%onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
-Some on-off background traffic with Pareto distribution.
-.It netperfmeter 9000 -tls-key my-server.key -tls-cert my-server.crt -tls-ca my-ca.crt
-Start in passive mode, with TLS setup for QUIC. See https://www.nntb.no/~dreibh/netperfmeter/#quic-communication for details about QUIC usage!
-.It netperfmeter 172.31.33.2:9000 -tls-hostname my-server.domain -tls-ca my-ca.crt -quic const10:const128:const25:const1200
-Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. Set TLS server name of 172.31.33.2 for QUIC to my-server.domain. See https://www.nntb.no/~dreibh/netperfmeter/#quic-communication for details about QUIC usage!
-.It netperfmeter -version
+.It netperfmeter 172.31.33.2:\%9000 \-udp const0:\%const0:\%const25:\%const2500:\%onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
+Some on\-off background traffic with Pareto distribution.
+.It netperfmeter 9000 \-tls\-key my\-server.key \-tls\-cert my\-server.crt \-tls\-ca my\-ca.crt
+Start in passive mode, with TLS setup for QUIC. See https://www.nntb.no/~dreibh/netperfmeter/#quic\-communication for details about QUIC usage!
+.It netperfmeter 172.31.33.2:9000 \-tls\-hostname my\-server.domain \-tls\-ca my\-ca.crt \-quic const10:const128:const25:const1200
+Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. Set TLS server name of 172.31.33.2 for QUIC to my\-server.domain. See https://www.nntb.no/~dreibh/netperfmeter/#quic\-communication for details about QUIC usage!
+.It netperfmeter \-version
 Shows the version.
-.It netperfmeter -help
+.It netperfmeter \-help
 Shows usage help.
 .El
 .\" ###### Authors ##########################################################
