@@ -111,8 +111,11 @@ ADD_EXECUTABLE(createsummary
    simpleredblacktree.h
 )
 TARGET_LINK_LIBRARIES(createsummary ${BZ2_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
-INSTALL(TARGETS createsummary   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-INSTALL(FILES   createsummary.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
+INSTALL(TARGETS     createsummary   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+INSTALL(FILES       createsummary.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
+INSTALL(FILES       createsummary.bash-completion
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+        RENAME      createsummary)
 
 # ====== Combine Summaries Tool =============================================
 ADD_EXECUTABLE(combinesummaries
@@ -123,8 +126,11 @@ ADD_EXECUTABLE(combinesummaries
    outputfile.cc
 )
 TARGET_LINK_LIBRARIES(combinesummaries ${BZ2_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
-INSTALL(TARGETS combinesummaries   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-INSTALL(FILES   combinesummaries.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
+INSTALL(TARGETS     combinesummaries   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+INSTALL(FILES       combinesummaries.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
+INSTALL(FILES       combinesummaries.bash-completion
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+        RENAME      combinesummaries)
 
 # ====== Extract Vectors Tool ===============================================
 ADD_EXECUTABLE(extractvectors
@@ -135,8 +141,11 @@ ADD_EXECUTABLE(extractvectors
    outputfile.cc
 )
 TARGET_LINK_LIBRARIES(extractvectors ${BZ2_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
-INSTALL(TARGETS extractvectors  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-INSTALL(FILES   extractvectors.1 DESTINATION        ${CMAKE_INSTALL_MANDIR}/man1)
+INSTALL(TARGETS     extractvectors  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+INSTALL(FILES       extractvectors.1 DESTINATION        ${CMAKE_INSTALL_MANDIR}/man1)
+INSTALL(FILES       extractvectors.bash-completion
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+        RENAME      extractvectors)
 
 # ====== Runtime Estimator Tool =============================================
 ADD_EXECUTABLE(runtimeestimator runtimeestimator.cc)
@@ -157,21 +166,22 @@ IF (WITH_PLOT_PROGRAMS)
    INSTALL(PROGRAMS    ${CMAKE_CURRENT_BINARY_DIR}/plot-netperfmeter-results.versioned
            DESTINATION ${CMAKE_INSTALL_BINDIR}
            RENAME      plot-netperfmeter-results)
+   INSTALL(FILES plot-netperfmeter-results.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
    CONFIGURE_FILE(pdfembedfonts pdfembedfonts.versioned @ONLY)
    SET_PROPERTY(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES pdfembedfonts.versioned)
    INSTALL(PROGRAMS    ${CMAKE_CURRENT_BINARY_DIR}/pdfembedfonts.versioned
            DESTINATION ${CMAKE_INSTALL_BINDIR}
            RENAME      pdfembedfonts.versioned)
+   INSTALL(FILES pdfembedfonts.versioned.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
-   INSTALL(PROGRAMS setpdfmetadata
-           DESTINATION ${CMAKE_INSTALL_BINDIR})
+   INSTALL(PROGRAMS setpdfmetadata   DESTINATION ${CMAKE_INSTALL_BINDIR})
+   INSTALL(FILES    setpdfmetadata.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+
    INSTALL(PROGRAMS plot-netperfmeter-results.R
            DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter)
    INSTALL(FILES plotter.R
            DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter)
-   INSTALL(FILES plot-netperfmeter-results.1 setpdfmetadata.1 pdfembedfonts.1
-           DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 ENDIF()
 
 # ====== Test Programs ======================================================
