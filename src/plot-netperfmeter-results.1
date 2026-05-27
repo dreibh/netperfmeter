@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 26, 2026
+.Dd May 27, 2026
 .Dt plot\-netperfmeter\-results 1
 .Os plot\-netperfmeter\-results
 .\" ###### Name #############################################################
@@ -35,14 +35,15 @@
 .Nd Network Performance Meter
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm plot\-netperfmeter\-results
-config\_name
+.Nm plot\-netperfmeter\-results Ar config\_name
 .br
 .Op Fl w | Fl \-ownfile
 .br
 .Op Fl p | Fl \-per\-flow\-plots
 .Nm plot\-netperfmeter\-results
 .Op Fl h | Fl \-help
+.Nm plot\-netperfmeter\-results
+.Op Fl v | Fl \-version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm plot\-netperfmeter\-results
@@ -52,7 +53,7 @@ uses GNU R to plot measurement results written by NetPerfMeter into a PDF file. 
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It config\_name
+.It Ar config\_name
 The name of the config file written by NetPerfMeter.
 .It Fl w | Fl \-ownfile
 Plot a separate PDF file for each page.
@@ -76,8 +77,14 @@ Plot the results given by output.config. The resulting PDF file will be named ou
 Plot the results given by output.config, including per\-flow plots. The resulting PDF file will be named output.pdf.
 .It plot\-netperfmeter\-results output.config \--ownfile
 Plot the results given by output.config. For each page, a separate PDF file is written. The resulting PDF files will be named output\-<title>.pdf, where <title> corresponds to the page title.
+.It plot\-netperfmeter\-results \--version
 .It plot\-netperfmeter\-results \--help
 .El
+.\" ###### See also #########################################################
+.Sh SEE ALSO
+.Xr netperfmeter 1 ,
+.Xr pdfembedfonts 1 ,
+.Xr setpdfmetadata 1
 .\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
