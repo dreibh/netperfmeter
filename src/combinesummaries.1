@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 26, 2026
+.Dd May 27, 2026
 .Dt combinesummaries 1
 .Os CombineSummaries
 .\" ###### Name #############################################################
@@ -35,9 +35,8 @@
 .Nd Scalar Summary Combination Tool
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm combinesummaries
-output\_file
-.Op variable\_names
+.Nm combinesummaries Ar output\_file
+.Op Ar variable\_names
 .br
 .Op Fl c Ar level | Fl \-compress Ar level
 .br
@@ -69,9 +68,9 @@ Sets the directory where to find the input files.
 .Sh ARGUMENTS
 The following arguments may be provided:
 .Bl -tag -width indent
-.It output\_file
+.It Ar output\_file
 The name of the output file to be created.
-.It variable\_names
+.It Op Ar variable\_names
 A space\-separated list of output variable names to be added to the output data tables.
 .It Fl c Ar level | Fl \-compress Ar level
 Sets the BZip2 compression level; 1=none, 9=highest (default).
@@ -90,14 +89,21 @@ tool exits with 0 on success, and >0 in case of an error.
 .\" ###### Examples #########################################################
 .Sh EXAMPLE
 Consider two data tables:
-v1.data.bz2 (created with ParameterY=Alpha) and
-v2.data.bz2 (created with ParameterY=Beta).
-The output data table should be written to output.data.bz2.
+.Pa v1.data.bz2
+(created with ParameterY=Alpha) and
+.Pa v2.data.bz2
+(created with ParameterY=Beta).
+The output data table should be written to
+.Pa output.data.bz2 .
 .br
 ( echo \-e "\-\-values=\\"Alpha\\"\\t\\"Test 1\\"" && \\
   echo "\-\-input=v1.data.bz2"               && \\
   echo \-e "\-\-values=\\"Beta\\"\\t\\"Test 2\\""  && \\
   echo "\-\-input=v2.data.bz2" ) | combinesummaries output.data.bz2 $'ParameterX\\tParameterY'
+.\" ###### See also #########################################################
+.Sh SEE ALSO
+.Xr createsummary 1 ,
+.Xr extractvectors 1
 .\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at

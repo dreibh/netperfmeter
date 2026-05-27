@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 26, 2026
+.Dd May 27, 2026
 .Dt setpdfmetadata 1
 .Os setpdfmetadata
 .\" ###### Name #############################################################
@@ -35,10 +35,7 @@
 .Nd PDF Metadata Updater
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm setpdfmetadata
-input\_pdf
-metadata\_file
-output\_pdf
+.Nm setpdfmetadata Ar input\_pdf Ar metadata\_file Ar output\_pdf
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm setpdfmetadata
@@ -73,11 +70,11 @@ Sets the document producer to the given value.
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It input\_pdf
+.It Ar input\_pdf
 The input PDF file name.
-.It metadata\_file
+.It Ar metadata\_file
 The metadata file name.
-.It output\_pdf
+.It Ar output\_pdf
 The output PDF file name.
 .El
 .\" ###### Exit status ######################################################
@@ -108,6 +105,9 @@ title An Example Document
 .br
 keywords Example, PDF, setpdfmetadata
 .El
+.\" ###### See also #########################################################
+.Sh SEE ALSO
+.Xr pdfembedfonts 1
 .\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at

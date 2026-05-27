@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 26, 2026
+.Dd May 27, 2026
 .Dt netperfmeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -35,8 +35,7 @@
 .Nd Network Performance Meter
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm netperfmeter
-local\_port
+.Nm netperfmeter Ar local\_port
 .br
 .Op Fl x | Fl \-control\-over\-sctp | Fl X | Fl \-no\-control\-over\-sctp
 .br
@@ -61,8 +60,7 @@ local\_port
 .br
 .Op Fl q | Fl \-quiet
 .Op Fl ! | Fl \-verbose
-.Nm netperfmeter
-remote\_endpoint:remote\_port
+.Nm netperfmeter Ar remote\_endpoint:remote\_port
 .br
 .Op Fl x | Fl \-control\-over\-sctp | Fl y | Fl \-control\-over\-tcp | Fl w | Fl \-control\-over\-mptcp
 .br
@@ -125,10 +123,10 @@ is a network performance meter for the TCP, MPTCP, UDP, DCCP and SCTP transport 
 .Sh ARGUMENTS
 The following arguments can to be provided:
 .Bl -tag -width indent
-.It local\_port
+.It Ar local\_port
 The port number for the passive side's data socket for TCP, UDP, DCCP, SCTP. For MPTCP, the port number will be local\_port\-1, to allow for both, TCP and MPTCP connections. The port number of the control socket will be local\_port+1.
 Specifying a port number turns NetPerfMeter into passive mode, i.e. it will wait for incoming connections.
-.It remote\_endpoint:remote\_port
+.It Ar remote\_endpoint:remote\_port
 Specifies the passive endpoint to connect to (number as given for local\_port on the passive instance).
 Specifying remote\_endpoint:remote\_port turns NetPerfMeter into active mode, i.e. it will connect to the specified remote endpoint.
 .It x | Fl \-control\-over\-sctp
@@ -331,6 +329,14 @@ Shows the version.
 .It netperfmeter \-help
 Shows usage help.
 .El
+.\" ###### See also #########################################################
+.Sh SEE ALSO
+.Xr combinesummaries 1 ,
+.Xr createsummary 1 ,
+.Xr netperfmeter 1 ,
+.Xr netperfmeter\-module\-loader 1 ,
+.Xr plot\-netperfmeter\-results 1 ,
+.Xr runtimeestimator 1
 .\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at

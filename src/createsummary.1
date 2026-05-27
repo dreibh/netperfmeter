@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 26, 2026
+.Dd May 27, 2026
 .Dt createsummary 1
 .Os CreateSummary
 .\" ###### Name #############################################################
@@ -36,7 +36,7 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm createsummary
-.Op variable\_names
+.Op Ar variable\_names
 .br
 .Op Fl b | Fl \-batch | Fl i | Fl \-interactive
 .br
@@ -83,7 +83,7 @@ Ignore scalar file errors (that is, missing input files) instead of aborting.
 .Sh ARGUMENTS
 The following arguments may be provided:
 .Bl -tag -width indent
-.It variable\_names
+.It Op Ar variable\_names
 A space\-separated list of output variable names to be added to the output data tables.
 .It Fl b | Fl \-batch
 Run in batch mode. The program is aborted on errors.
@@ -112,10 +112,13 @@ tool exits with 0 on success, and >0 in case of an error.
 .\" ###### Examples #########################################################
 .Sh EXAMPLE
 Consider two simulation results
-test1.sca.bz2 (created with ParameterX=One) and
-test2.sca.bz2 (created with ParameterX=Two). The scalar files are located in
-the current directory, the output tables should be written to /tmp with
-compression level 5:
+.Pa test1.sca.bz2
+(created with ParameterX=One) and
+.Pa test2.sca.bz2
+(created with ParameterX=Two). The scalar files are located in
+the current directory, the output tables should be written to
+.Pa /tmp
+with compression level 5:
 .br
 ( echo "\-\-simulationsdirectory=."  && \\
   echo "\-\-resultsdirectory=/tmp"   && \\
@@ -123,6 +126,10 @@ compression level 5:
   echo "\-\-input=test1.sca.bz2"     && \\
   echo "\-\-values=Two"              && \\
   echo "\-\-input=test2.sca.bz2" ) | createsummary "ParameterX" \-\-batch \-\-compress 5
+.\" ###### See also #########################################################
+.Sh SEE ALSO
+.Xr combinesummaries 1 ,
+.Xr extractvectors 1
 .\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at

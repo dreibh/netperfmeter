@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 26, 2026
+.Dd May 27, 2026
 .Dt runtimeestimator 1
 .Os runtimeestimator
 .\" ###### Name #############################################################
@@ -35,10 +35,7 @@
 .Nd Batch Job Runtime Estimator
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm runtimeestimator
-start\_file
-total\_runs
-current\_run
+.Nm runtimeestimator Ar start\_file Ar total\_runs Ar current\_run
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm runtimeestimator
@@ -49,11 +46,11 @@ runtime.
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It start\_file
+.It Ar start\_file
 The name of the start file.
-.It total\_runs
+.It Ar total\_runs
 The total number of runs.
-.It current\_run
+.It Ar current\_run
 The current run number that has just been completed.
 .El
 .\" ###### Exit status ######################################################
@@ -63,7 +60,7 @@ The
 tool exits with 0 on success, and >0 in case of an error.
 .\" ###### Examples #########################################################
 .Sh EXAMPLES
-Some netperfmeter usage examples:
+Some runtimeestimator usage examples:
 .Bl -tag -width indent
 .It runtimeestimator runtime.dat 100 0
 Initialize runtime estimation (i.e. before the first run). The start file
@@ -75,6 +72,10 @@ Completed run 5 of 100.
 .It runtimeestimator runtime.dat 100 100
 Completed run 100 of 100 (i.e. all runs are complete).
 .El
+.\" ###### See also #########################################################
+.Sh SEE ALSO
+.Xr getabstime 1 ,
+.Xr netperfmeter 1
 .\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
