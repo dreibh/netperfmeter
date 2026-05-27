@@ -25,32 +25,44 @@ set -euo pipefail
 
 # ###### Usage ##############################################################
 usage () {
-   echo >&2 "Usage: $0 input_pdf output_pdf [-O|--optimise|--optimize] [-h|--help]"
-   exit 1
+   local exitCode="$1"
+   echo >&2 "Usage: $0 input_pdf output_pdf [-O|--optimise|--optimize] [-h|--help] [-v|--version]"
+   exit "${exitCode}"
 }
+
+
+# ###### Version ############################################################
+version () {
+   echo "System-Info @BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
+   exit 0
+}
+
 
 
 # ###### Main program #######################################################
 
 # ====== Handle arguments ===================================================
 GETOPT="$(PATH=/usr/local/bin:${PATH} which getopt)"
-options="$(${GETOPT} -o Oh --long optimise,optimize,help -a -- "$@")"
+options="$(${GETOPT} -o Ohv --long optimise,optimize,help,version -a -- "$@")"
 # shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
-   usage
+   usage 1
 fi
 
 OPTIMISE=0
 eval set -- "${options}"
 while [ $# -gt 0 ] ; do
    case "$1" in
-      -O | --optimise | --optimize])
+      -O | --optimise | --optimize)
          OPTIMISE=1
          shift
          ;;
       -h | --help)
-         usage
+         usage 0
          # shift
+         ;;
+      -v | --version)
+         version
          ;;
       --)
          shift
@@ -60,7 +72,7 @@ while [ $# -gt 0 ] ; do
   shift
 done
 if [ $# -ne 2 ] ; then
-   usage
+   usage 1
 fi
 INPUT_PDF="$1"
 OUTPUT_PDF="$2"

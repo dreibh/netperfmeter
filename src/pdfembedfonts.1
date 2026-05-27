@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 26, 2026
+.Dd May 27, 2026
 .Dt pdfembedfonts 1
 .Os pdfembedfonts
 .\" ###### Name #############################################################
@@ -35,9 +35,7 @@
 .Nd PDF Fonts Embedder
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm pdfembedfonts
-input\_pdf
-output\_pdf
+.Nm pdfembedfonts Ar input\_pdf Ar output\_pdf
 .Op Fl O | Fl \-optimise | Fl \-optimize
 .Nm pdfembedfonts
 .Op Fl h | Fl \-help
@@ -52,9 +50,9 @@ required font data. Optionally, the resulting PDF can also be optimised
 .Sh ARGUMENTS
 The following arguments have to be provided:
 .Bl -tag -width indent
-.It input\_pdf
+.It Ar input\_pdf
 The input PDF file name.
-.It output\_pdf
+.It Ar output\_pdf
 The output PDF file name.
 .It Fl O | Fl \-optimise | Fl \-optimize
 Optimize the resulting PDF file for fast web view.
@@ -74,6 +72,9 @@ Some pdfembedfonts usage examples:
 .It pdfembedfonts MyDocument.pdf MyDocument\-with\-Embedded\-Fonts\-and\-Optimised.pdf \-O
 .It pdfembedfonts \--help
 .El
+.\" ###### See also #########################################################
+.Sh SEE ALSO
+.Xr setpdfmetadata 1
 .\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
