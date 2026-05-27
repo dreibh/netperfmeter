@@ -175,7 +175,7 @@ IF (WITH_PLOT_PROGRAMS)
    SET_PROPERTY(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES pdfembedfonts.versioned)
    INSTALL(PROGRAMS    ${CMAKE_CURRENT_BINARY_DIR}/pdfembedfonts.versioned
            DESTINATION ${CMAKE_INSTALL_BINDIR}
-           RENAME      pdfembedfonts.versioned)
+           RENAME      pdfembedfonts)
    INSTALL(FILES       pdfembedfonts.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
    INSTALL(FILES       pdfembedfonts.bash-completion
            DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
