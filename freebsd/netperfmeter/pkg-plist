@@ -11,6 +11,8 @@ share/bash-completion/completions/combinesummaries
 share/bash-completion/completions/createsummary
 share/bash-completion/completions/extractvectors
 share/bash-completion/completions/netperfmeter
+share/bash-completion/completions/setpdfmetadata
+share/bash-completion/completions/pdfembedfonts
 share/icons/hicolor/128x128/apps/netperfmeter.png
 share/icons/hicolor/150x150/apps/netperfmeter.png
 share/icons/hicolor/16x16/apps/netperfmeter.png

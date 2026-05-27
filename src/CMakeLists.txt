@@ -166,17 +166,26 @@ IF (WITH_PLOT_PROGRAMS)
    INSTALL(PROGRAMS    ${CMAKE_CURRENT_BINARY_DIR}/plot-netperfmeter-results.versioned
            DESTINATION ${CMAKE_INSTALL_BINDIR}
            RENAME      plot-netperfmeter-results)
-   INSTALL(FILES plot-netperfmeter-results.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+   INSTALL(FILES       plot-netperfmeter-results.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+   INSTALL(FILES       plot-netperfmeter-results.bash-completion
+           DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+           RENAME      plot-netperfmeter-results)
 
    CONFIGURE_FILE(pdfembedfonts pdfembedfonts.versioned @ONLY)
    SET_PROPERTY(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES pdfembedfonts.versioned)
    INSTALL(PROGRAMS    ${CMAKE_CURRENT_BINARY_DIR}/pdfembedfonts.versioned
            DESTINATION ${CMAKE_INSTALL_BINDIR}
            RENAME      pdfembedfonts.versioned)
-   INSTALL(FILES pdfembedfonts.versioned.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+   INSTALL(FILES       pdfembedfonts.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+   INSTALL(FILES       pdfembedfonts.bash-completion
+           DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+           RENAME      pdfembedfonts)
 
-   INSTALL(PROGRAMS setpdfmetadata   DESTINATION ${CMAKE_INSTALL_BINDIR})
-   INSTALL(FILES    setpdfmetadata.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+   INSTALL(PROGRAMS    setpdfmetadata   DESTINATION ${CMAKE_INSTALL_BINDIR})
+   INSTALL(FILES       setpdfmetadata.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+   INSTALL(FILES       setpdfmetadata.bash-completion
+           DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+           RENAME      setpdfmetadata)
 
    INSTALL(PROGRAMS plot-netperfmeter-results.R
            DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter)

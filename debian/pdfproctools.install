@@ -1,2 +1,4 @@
 usr/bin/pdfembedfonts
 usr/bin/setpdfmetadata
+usr/share/bash-completion/completions/pdfembedfonts
+usr/share/bash-completion/completions/setpdfmetadata

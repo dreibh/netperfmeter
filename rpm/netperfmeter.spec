@@ -208,6 +208,8 @@ can also linearize the PDF file for online publication
 %files pdfproctools
 %{_bindir}/pdfembedfonts
 %{_bindir}/setpdfmetadata
+%{_datadir}/bash-completion/completions/pdfembedfonts
+%{_datadir}/bash-completion/completions/setpdfmetadata
 %{_mandir}/man1/pdfembedfonts.1.gz
 %{_mandir}/man1/setpdfmetadata.1.gz
 
