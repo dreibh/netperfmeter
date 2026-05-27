@@ -69,6 +69,9 @@ This package contains the measurement program.
 %{_bindir}/netperfmeter
 %{_bindir}/netperfmeter-module-loader
 %{_bindir}/runtimeestimator
+%{_datadir}/bash-completion/completions/combinesummaries
+%{_datadir}/bash-completion/completions/createsummary
+%{_datadir}/bash-completion/completions/extractvectors
 %{_datadir}/bash-completion/completions/netperfmeter
 %{_mandir}/man1/combinesummaries.1.gz
 %{_mandir}/man1/createsummary.1.gz

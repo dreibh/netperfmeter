@@ -6,4 +6,7 @@ usr/bin/netperfmeter
 usr/bin/netperfmeter-module-loader
 usr/bin/runtimeestimator
 usr/lib/systemd/system/netperfmeter-module-loader.service
+usr/share/bash-completion/completions/combinesummaries
+usr/share/bash-completion/completions/createsummary
+usr/share/bash-completion/completions/extractvectors
 usr/share/bash-completion/completions/netperfmeter
