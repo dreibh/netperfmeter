@@ -70,8 +70,10 @@ _combinesummaries()
 --compress
 -s
 --separator
--n
+-l
 --line-numbers
+-n
+--no-line-numbers
 -q
 --quiet
 -h
