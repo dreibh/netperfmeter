@@ -61,17 +61,26 @@ _extractvectors()
             mapfile -t COMPREPLY < <(compgen -W "{1..9}" -- "${cur}")
             return
             ;;
+         -s | --separator)
+            return
+            ;;
       esac
    fi
 
    # ====== All options =====================================================
    local opts="
+-c
+--compress
 -s
+--separator
+-l
+--line-numbers
+-n
+--no-line-numbers
+-p
 --split
 -a
 --no-split
--c
---compress
 -q
 --quiet
 -h

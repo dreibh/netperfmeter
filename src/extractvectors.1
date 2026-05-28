@@ -41,12 +41,15 @@
 .Op Ar [!]vector\_name\_prefix
 .Op ...
 .br
-.Op Fl s | Fl \-split | Fl a | Fl \-no\-split
-.br
 .Op Fl c Ar level | Fl \-compress Ar level
 .br
+.Op Fl s Ar separator | Fl \-separator Ar separator
+.br
+.Op Fl l | Fl \-line\-numbers | Fl n | Fl \-no\-line\-numbers
+.br
+.Op Fl p | Fl \-split | Fl a | Fl \-no\-split
+.br
 .Op Fl q | Fl \-quiet
-.Fl quiet
 .Nm extractvectors
 .Op Fl h | Fl \-help
 .Nm extractvectors
@@ -66,17 +69,25 @@ The name of the input vector file.
 The name of the output data table to be created.
 .It Op Ar [!]vector\_name\_prefix
 Name prefix of vectors to be extracted. Multiple vector name prefixes may be specified. If no name prefix is given, all vectors will be extracted. A "!" in front of the name turns vector splitting for this prefix on (see \-\-split option below).
-.It Fl s | Fl \-split
+.It Fl c Ar level | Fl \-compress Ar level
+Sets the BZip2 compression level; 1=none, 9=highest (default).
+.It Fl s Ar separator | Fl \-separator Ar separator
+Sets the separator for the tables. Default: tabulator character (i.e. $'\t').
+.It Fl l | Fl \-line\-numbers
+Add line numbers into the output table files, as usual for GNU R.
+.It Fl n | Fl \-no\-line\-numbers
+Do not add line numbers into the output table files, as usual for CSV (default).
+.It Fl p | Fl \-split
 Try to split the vector name ending in a number into the name part as well as the number. A vector output table is then generated for the name part, with the corresponding number in table column "Split". Example: Vectors "Throughput 1", ..., "Throughput 9" will be written into output table as vector column "Throughput", the number will be in table column "Split".
 \-\-split is a global option and applies to all vector name prefixes provided. To use vector name splitting for just a single prefix, prepend the prefix with "!".
 .It Fl a | Fl \-no\-split
 Turns vector splitting off (default).
-.It Fl c Ar level | Fl \-compress Ar level
-Sets the BZip2 compression level; 1=none, 9=highest (default).
 .It Fl q | Fl \-quiet
 Do not print verbose status information.
-.It Fl quiet
-Do not print verbose status information.
+.It Fl h | Fl \-help
+Prints command help.
+.It Fl v | Fl \-version
+Prints program version.
 .El
 .\" ###### Exit status ######################################################
 .Sh EXIT STATUS
@@ -102,28 +113,29 @@ extractvectors results.vec.bz2 results.data.bz2 \\
 For each vector entry, an output line containing
 time (Time), event number (Event),
 object name (Object),
-vector name (Vector) and
+vector name (Vector),
+name split parameter (Split), and
 the vector value (Value) will be created.
 .br
 Example:
 .br
-Time     Event               Object Vector                          Value
+Time     Event               Object Vector                          Split Value
 .br
-0.003672   174 "net.client[0].sctp" "Slow Start Threshold 2:Total"  10000000
+0.003672   174 "net.client[0].sctp" "Slow Start Threshold 2:Total"  ""    10000000
 .br
-0.003672   174 "net.client[0].sctp" "Slow Start Threshold 2:Total"  10000000
+0.003672   174 "net.client[0].sctp" "Slow Start Threshold 2:Total"  ""    10000000
 .br
-0.003672   174 "net.client[0].sctp" "Congestion Window 2:Total"     4380
+0.003672   174 "net.client[0].sctp" "Congestion Window 2:Total"     ""    4380
 .br
-0.003672   174 "net.client[0].sctp" "Congestion Window 2:Total"     8760
+0.003672   174 "net.client[0].sctp" "Congestion Window 2:Total"     ""    8760
 .br
-0.003913   238 "net.server[0].sctp" "Slow Start Threshold 4:Total"  10000000
+0.003913   238 "net.server[0].sctp" "Slow Start Threshold 4:Total"  ""    10000000
 .br
-0.003913   238 "net.server[0].sctp" "Slow Start Threshold 4:Total"  10000000
+0.003913   238 "net.server[0].sctp" "Slow Start Threshold 4:Total"  ""    10000000
 .br
-0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     3000
+0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     ""    3000
 .br
-0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     6000
+0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     ""    6000
 .\" ###### See also #########################################################
 .Sh SEE ALSO
 .Xr extractvectors 1

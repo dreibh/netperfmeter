@@ -57,7 +57,9 @@ class VectorInfo
 static unsigned long long extractVectors(InputFile&               inputFile,
                                          OutputFile&              outputFile,
                                          const bool               defaultVectorSplittingMode,
-                                         std::vector<VectorInfo>& vectorsToExtract)
+                                         std::vector<VectorInfo>& vectorsToExtract,
+                                         const bool               addLineNumbers,
+                                         const char*              separator)
 {
    std::map<unsigned int, const std::string> vectorToNameMap;
    std::map<unsigned int, const std::string> vectorToSplitMap;
@@ -65,7 +67,6 @@ static unsigned long long extractVectors(InputFile&               inputFile,
    unsigned long long                        outputLine = 0;
    char                                      inBuffer[4096];
    char                                      outBuffer[sizeof(inBuffer) + 4096];
-   unsigned int                              foundVectors = 0;
    bool                                      versionOkay  = false;
 
    for(;;) {
@@ -90,7 +91,8 @@ static unsigned long long extractVectors(InputFile&               inputFile,
             }
             versionOkay = true;
             snprintf(outBuffer, sizeof(outBuffer),
-                     "Time Event Object Vector Split Value\n");
+                     "Time%sEvent%sObject%sVector%sSplit%sValue\n",
+                     separator, separator, separator, separator, separator);
          }
          else {
             std::cerr << "ERROR: Missing \"version\" entry in input file!\n";
@@ -109,12 +111,27 @@ static unsigned long long extractVectors(InputFile&               inputFile,
             std::map<unsigned int, const std::string>::iterator found =
                vectorToNameMap.find(vectorID);
             if(found != vectorToNameMap.end()) {
-               snprintf(outBuffer, sizeof(outBuffer),
-                        "%u\t%lf\t%u\t\"%s\"\t\"%s\" \"%s\"\t%lf\n",
-                        (unsigned int)outputLine, simTime, event,
-                        vectorToObjectMap[vectorID].c_str(),
-                        found->second.c_str(),
-                        vectorToSplitMap[vectorID].c_str(), value);
+               if(addLineNumbers) {
+                  snprintf(outBuffer, sizeof(outBuffer),
+                           "%u%s%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
+                           (unsigned int)outputLine,            separator,
+                           simTime,                             separator,
+                           event,                               separator,
+                           vectorToObjectMap[vectorID].c_str(), separator,
+                           found->second.c_str(),               separator,
+                           vectorToSplitMap[vectorID].c_str(),  separator,
+                           value);
+               }
+               else {
+                  snprintf(outBuffer, sizeof(outBuffer),
+                           "%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
+                           simTime,                             separator,
+                           event,                               separator,
+                           vectorToObjectMap[vectorID].c_str(), separator,
+                           found->second.c_str(),               separator,
+                           vectorToSplitMap[vectorID].c_str(),  separator,
+                           value);
+               }
             }
          }
 
@@ -136,7 +153,6 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                                 vectorName, vectorInfo.VectorPrefix.size()) == 0) {
                         includeVector = true;
                         vectorInfo.Found = true;
-                        foundVectors++;
                         if(vectorInfo.SplitMode) {
                            splitMode = true;
                         }
@@ -198,7 +214,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
    }
    if( (uniqueFoundPrefixes < vectorsToExtract.size()) &&
        (vectorsToExtract.size() != 0) ) {
-      std::cerr << "WARNING: Found only " << foundVectors << " of "
+      std::cerr << "WARNING: Found only " << uniqueFoundPrefixes << " of "
                 << vectorsToExtract.size() << " specified!\n";
    }
 
@@ -225,6 +241,9 @@ static unsigned long long extractVectors(InputFile&               inputFile,
          "    output_file\n"
          "    [!]vector_name_prefix ...\n"
          "    [-c level|--compress level]\n"
+         "    [-s separator|--separator separator]\n"
+         "    [-l|--line-numbers|-n|--no-line-numbers]\n"
+         "    [-p|--split|-a|--no-split]\n"
          "    [-q|--quiet]\n"
          "* Version:\n  " << program << " [-v|--version]\n"
          "* Help:\n  "    << program << " [-h|--help]\n";
@@ -236,7 +255,9 @@ static unsigned long long extractVectors(InputFile&               inputFile,
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
+   bool                    addLineNumbers      = false;
    unsigned int            compressionLevel    = 9;
+   const char*             separator           = "\t";
    bool                    vectorSplittingMode = false;
    bool                    quietMode           = false;
    std::vector<VectorInfo> vectorsToExtract;
@@ -244,26 +265,23 @@ int main(int argc, char** argv)
 
    // ====== Handle command-line arguments ==================================
    const static struct option long_options[] = {
-      { "split",    no_argument,       0, 's' },
-      { "no-split", no_argument,       0, 'a' },
-      { "compress", required_argument, 0, 'c' },
-      { "quiet",    no_argument,       0, 'q' },
+      { "compress",        required_argument, 0, 'c' },
+      { "separator",       required_argument, 0, 's' },
+      { "line-numbers",    no_argument,       0, 'l' },
+      { "no-line-numbers", no_argument,       0, 'n' },
+      { "split",           no_argument,       0, 'p' },
+      { "no-split",        no_argument,       0, 'a' },
+      { "quiet",           no_argument,       0, 'q' },
 
-      { "help",     no_argument,       0, 'h' },
-      { "version",  no_argument,       0, 'v' },
-      {  nullptr,   0,                 0, 0   }
+      { "help",            no_argument,       0, 'h' },
+      { "version",         no_argument,       0, 'v' },
+      {  nullptr,          0,                 0, 0   }
    };
 
    int option;
    int longIndex;
-   while( (option = getopt_long_only(argc, argv, "sac:qhv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "c:s:lnpaqhv", long_options, &longIndex)) != -1 ) {
       switch(option) {
-         case 's':
-            vectorSplittingMode = true;
-          break;
-         case 'a':
-            vectorSplittingMode = false;
-          break;
          case 'c':
             compressionLevel = atol(optarg);
             if(compressionLevel < 1) {
@@ -272,6 +290,21 @@ int main(int argc, char** argv)
             else if(compressionLevel > 9) {
                compressionLevel = 9;
             }
+          break;
+         case 's':
+            separator = optarg;
+          break;
+         case 'l':
+            addLineNumbers = true;
+          break;
+         case 'n':
+            addLineNumbers = false;
+          break;
+         case 'p':
+            vectorSplittingMode = true;
+          break;
+         case 'a':
+            vectorSplittingMode = false;
           break;
          case 'q':
             quietMode = true;
@@ -348,7 +381,8 @@ int main(int argc, char** argv)
    }
    const unsigned long long lines =
       extractVectors(inputFile, outputFile,
-                     vectorSplittingMode, vectorsToExtract);
+                     vectorSplittingMode, vectorsToExtract,
+                     addLineNumbers, separator);
 
 
    // ====== Close files ====================================================
