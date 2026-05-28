@@ -40,11 +40,13 @@
 .br
 .Op Fl b | Fl \-batch | Fl i | Fl \-interactive
 .br
+.Op Fl c Ar level | Fl \-compress Ar level
+.br
+.Op Fl s Ar separator | Fl \-separator Ar separator
+.br
 .Op Fl l | Fl \-line\-numbers | Fl n | Fl \-no\-line\-numbers
 .br
-.Op Fl s | Fl \-split | Fl a | Fl \-no\-split
-.br
-.Op Fl c Ar level | Fl \-compress Ar level
+.Op Fl p | Fl \-split | Fl a | Fl \-no\-split
 .br
 .Op Fl r | Fl \-ignore\-scalar\-file\-errors
 .br
@@ -71,7 +73,7 @@ the simulation/measurement.
 Sets the status file for the next scalar file. On an error related to this scalar file, the status file is deleted. This option can be used to repeat bad simulation/measurement runs by re\-running the simulation/measurement on missing status files.
 .It Fl \-skip=prefix
 All scalars beginning with the given prefix are not written to output tables. This option can be used to filter out unnecessary results.
-.It Fl \-simulationdirectory=directory
+.It Fl \-simulationsdirectory=directory
 Sets the directory where to find the scalar files.
 .It Fl \-resultsdirectory=directory
 Sets the directory where to write the summary tables to.
@@ -89,20 +91,26 @@ A space\-separated list of output variable names to be added to the output data 
 Run in batch mode. The program is aborted on errors.
 .It Fl i | Fl \-interactive
 Run in interactive mode (default). On errors, the program is continued.
+.It Fl c Ar level | Fl \-compress Ar level
+Sets the BZip2 compression level; 1=none, 9=highest (default).
+.It Fl s Ar separator | Fl \-separator Ar separator
+Sets the separator for the tables. Default: tabulator character (i.e. $'\t').
 .It Fl l | Fl \-line\-numbers
 Add line numbers into the output table files, as usual for GNU R.
 .It Fl n | Fl \-no\-line\-numbers
 Do not add line numbers into the output table files, as usual for CSV (default).
-.It Fl s | Fl \-split
+.It Fl p | Fl \-split
 Try to split the scalar name ending in a number into the name part as well as the number. A scalar output table is then generated for the name part, with the corresponding number in table column "Split". Example: Scalars "Throughput1", ..., "Throughput9" will be written into output table "Throughput", the number will be in table column "Split". Without the \-\-split option, each scalar would get its own table.
 .It Fl a | Fl \-no\-split
 Turns scalar splitting off (default).
-.It Fl c Ar level | Fl \-compress Ar level
-Sets the BZip2 compression level: 0=none, 1=lowest, 9=highest (default).
 .It Fl r | Fl \-ignore\-scalar\-file\-errors
 Ignore scalar file errors (that is, missing input files) instead of aborting.
 .It Fl q | Fl \-quiet
 Do not print verbose status information.
+.It Fl h | Fl \-help
+Prints command help.
+.It Fl v | Fl \-version
+Prints program version.
 .El
 .\" ###### Exit status ######################################################
 .Sh EXIT STATUS

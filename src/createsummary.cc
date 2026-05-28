@@ -571,15 +571,15 @@ static bool handleScalarFile(const std::string& varNames,
 
    // ====== Process input file =============================================
    double       value;
-   bool         hasStatistic = false;
    char         buffer[4096];
    char         objectName[4096];
    char         statName[4096];
    char         fieldName[4096];
    char         statisticObjectName[4096];
    char         statisticBlockName[4096];
-   unsigned int run      = 0;
-   bool         success  = true;
+   bool         hasStatistic = false;
+   unsigned int run          = 0;
+   bool         success      = true;
    memset(statName, 0, sizeof(statName));
    for(;;) {
       // ====== Read line from input file ===================================
@@ -598,7 +598,8 @@ static bool handleScalarFile(const std::string& varNames,
             s = getWord(s, statName);
             if(s != nullptr) {
                if(sscanf(s, "%lf", &value) != 1) {
-                  std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
+                  std::cerr << "ERROR: File \"" << fileName << "\", line "
+                            << inputFile.getLine()
                             << " - Value expected!\n";
                   success = false;
                   break;
@@ -745,6 +746,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
                         const std::string& varNames,
                         const unsigned int compressionLevel,
                         const bool         interactiveMode,
+                        const char*        separator,
                         const bool         addLineNumbers)
 {
    std::string        fileName           = "";
@@ -791,9 +793,10 @@ static void dumpScalars(const std::string& simulationsDirectory,
          lineNumber = 1;
 
          // ====== Write table header =======================================
-         if(outputFile.printf("RunNo ValueNo Split %s %s %s\n",
-                              scalarNode->AggNames,
-                              varNames.c_str(),
+         if(outputFile.printf("RunNo%sValueNo%sSplit%s%s%s%s%s%s\n",
+                              separator, separator, separator,
+                              scalarNode->AggNames, separator,
+                              varNames.c_str(),     separator,
                               scalarNode->ScalarName) == false) {
             exit(1);
          }
@@ -806,17 +809,17 @@ static void dumpScalars(const std::string& simulationsDirectory,
       std::vector<double>::iterator valueIterator = scalarNode->ValueSet.begin();
       while(valueIterator != scalarNode->ValueSet.end()) {
          if(addLineNumbers) {
-            if(outputFile.printf("%07llu ", lineNumber) == false) {
+            if(outputFile.printf("%llu%s", lineNumber, separator) == false) {
                exit(1);
             }
          }
-         if(outputFile.printf("%u %u \"%s\" %s %s %lf\n",
-                              (unsigned int)scalarNode->Run,
-                              (unsigned int)valueNumber,
-                              scalarNode->SplitName,
-                              scalarNode->AggValues,
-                              scalarNode->VarValues,
-                              *valueIterator) == false) {
+         if(outputFile.printf("%u%s%u%s\"%s\"%s%s%s%s%s%lf\n",
+                              (unsigned int)scalarNode->Run, separator,
+                              (unsigned int)valueNumber,     separator,
+                              scalarNode->SplitName,         separator,
+                              scalarNode->AggValues,         separator,
+                              scalarNode->VarValues,         separator,
+                              *valueIterator,                separator) == false) {
             exit(1);
          }
          valueNumber++;
@@ -859,10 +862,11 @@ static void dumpScalars(const std::string& simulationsDirectory,
       << "* Run:\n  "
       << program << "\n"
          "    [variable_names]\n"
-         "    [-b|---batch|-i|--interactive]\n"
-         "    [-l|--line-numbers|-n|--no-line-numbers]\n"
-         "    [-s|--split|-a|--no-split]\n"
+         "    [-b|--batch|-i|--interactive]\n"
          "    [-c level|--compress level]\n"
+         "    [-s separator|--separator separator]\n"
+         "    [-l|--line-numbers|-n|--no-line-numbers]\n"
+         "    [-p|--split|-a|--no-split]\n"
          "    [-r|--ignore-scalar-file-errors]\n"
          "    [-q|--quiet]\n"
          "* Version:\n  " << program << " [-v|--version]\n"
@@ -875,6 +879,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
 int main(int argc, char** argv)
 {
    unsigned int compressionLevel       = 9;
+   const char*  separator              = "\t";
    bool         interactiveMode        = true;
    bool         addLineNumbers         = false;
    bool         scalarSplittingMode    = false;
@@ -893,12 +898,13 @@ int main(int argc, char** argv)
    const static struct option long_options[] = {
       { "interactive",               no_argument,       0, 'i' },
       { "batch",                     no_argument,       0, 'b' },
+
+      { "compress",                  required_argument, 0, 'c' },
+      { "separator",                 required_argument, 0, 's' },
       { "line-numbers",              no_argument,       0, 'l' },
       { "no-line-numbers",           no_argument,       0, 'n' },
-      { "split",                     no_argument,       0, 's' },
+      { "split",                     no_argument,       0, 'p' },
       { "no-split",                  no_argument,       0, 'a' },
-      { "compress",                  required_argument, 0, 'c' },
-
       { "ignore-scalar-file-errors", no_argument,       0, 'r' },
       { "quiet",                     no_argument,       0, 'q' },
 
@@ -909,25 +915,13 @@ int main(int argc, char** argv)
 
    int option;
    int longIndex;
-   while( (option = getopt_long_only(argc, argv, "bilnsac:rqhv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "ibcs:lnpt:rqhv", long_options, &longIndex)) != -1 ) {
       switch(option) {
-         case 'b':
-            interactiveMode = false;
-          break;
          case 'i':
             interactiveMode = true;
           break;
-         case 'l':
-            addLineNumbers = true;
-          break;
-         case 'n':
-            addLineNumbers = false;
-          break;
-         case 's':
-            scalarSplittingMode = true;
-          break;
-         case 'a':
-            scalarSplittingMode = false;
+         case 'b':
+            interactiveMode = false;
           break;
          case 'c':
             {
@@ -942,6 +936,21 @@ int main(int argc, char** argv)
                   compressionLevel = (unsigned int)parsedCompressionLevel;
                }
             }
+          break;
+         case 's':
+            separator = optarg;
+          break;
+         case 'l':
+            addLineNumbers = true;
+          break;
+         case 'n':
+            addLineNumbers = false;
+          break;
+         case 'p':
+            scalarSplittingMode = true;
+          break;
+         case 'a':
+            scalarSplittingMode = false;
           break;
          case 'r':
             ignoreScalarFileErrors = true;
@@ -984,9 +993,10 @@ int main(int argc, char** argv)
    if(!quietMode) {
       std::cout << "CreateSummary " << CREATESUMMARY_VERSION << "\n"
                 << "* Interactive Mode:  " << (interactiveMode      ? "on" : "off") << "\n"
+                << "* Separator:         \"" << separator << "\"\n"
+                << "* Compression Level: " << compressionLevel << "\n"
                 << "* Line Numbers:      " << (addLineNumbers       ? "on" : "off") << "\n"
                 << "* Scalar Splitting:  " << (scalarSplittingMode  ? "on" : "off") << "\n"
-                << "* Compression Level: " << compressionLevel << "\n"
                 << "\n";
    }
 
@@ -1036,7 +1046,8 @@ int main(int argc, char** argv)
             std::cerr << "ERROR: No values given (parameter --values=...)!\n";
             exit(1);
          }
-         if(!handleScalarFile(varNames, varValues, &command[8], interactiveMode, scalarSplittingMode)) {
+         if(!handleScalarFile(varNames, varValues, &command[8],
+                              interactiveMode, scalarSplittingMode)) {
             scalarFileError = true;
             if(logFileName != "") {
                std::cerr << " => see logfile " << logFileName << "\n";
@@ -1132,7 +1143,7 @@ int main(int argc, char** argv)
    }
    std::cout << "Writing scalar files...\n";
    dumpScalars(simulationsDirectory, resultsDirectory, varNames,
-               compressionLevel, interactiveMode, addLineNumbers);
+               compressionLevel, interactiveMode, separator, addLineNumbers);
 
 
    // ====== Clean up =======================================================
