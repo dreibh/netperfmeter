@@ -46,9 +46,10 @@ class VectorInfo
 {
    public:
    VectorInfo(const std::string& vectorPrefix, const bool splitMode) :
-   VectorPrefix(vectorPrefix), SplitMode(splitMode) { }
+   VectorPrefix(vectorPrefix), SplitMode(splitMode), Found(false) { }
    std::string VectorPrefix;
    bool        SplitMode;
+   bool        Found;
 };
 
 
@@ -130,10 +131,11 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                if(!includeVector) {
                   for(std::vector<VectorInfo>::iterator iterator = vectorsToExtract.begin();
                       iterator != vectorsToExtract.end(); iterator++) {
-                     const VectorInfo& vectorInfo = *iterator;
+                     VectorInfo& vectorInfo = *iterator;
                      if(strncmp(vectorInfo.VectorPrefix.c_str(),
                                 vectorName, vectorInfo.VectorPrefix.size()) == 0) {
                         includeVector = true;
+                        vectorInfo.Found = true;
                         foundVectors++;
                         if(vectorInfo.SplitMode) {
                            splitMode = true;
@@ -187,7 +189,14 @@ static unsigned long long extractVectors(InputFile&               inputFile,
    }
 
    // ====== Warn, if no vector had been extracted ==========================
-   if( (foundVectors < vectorsToExtract.size()) &&
+   unsigned int uniqueFoundPrefixes = 0;
+   for(std::vector<VectorInfo>::iterator iterator = vectorsToExtract.begin();
+       iterator != vectorsToExtract.end(); iterator++) {
+      if(iterator->Found) {
+         uniqueFoundPrefixes++;
+      }
+   }
+   if( (uniqueFoundPrefixes < vectorsToExtract.size()) &&
        (vectorsToExtract.size() != 0) ) {
       std::cerr << "WARNING: Found only " << foundVectors << " of "
                 << vectorsToExtract.size() << " specified!\n";
