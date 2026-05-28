@@ -103,7 +103,7 @@ void addDataFile(OutputFile&         outputFile,
             }
          }
          else {
-            if(outputFile.printf("%06llu%s%s%s%s\n",
+            if(outputFile.printf("%llu%s%s%s%s\n",
                                  outputLineNumber, separator,
                                  varValues.c_str(), separator,
                                  buffer) == false) {
@@ -154,7 +154,8 @@ void addDataFile(OutputFile&         outputFile,
          "    output_file\n"
          "    [variable_names]\n"
          "    [-c level|--compress level]\n"
-         "    [-n|--line-numbers]\n"
+         "    [-s separator|--separator separator]\n"
+         "    [-l|--line-numbers|-n|--no-line-numbers]\n"
          "    [-q|--quiet]\n"
          "* Version:\n  " << program << " [-v|--version]\n"
          "* Help:\n  "    << program << " [-h|--help]\n";
@@ -175,7 +176,8 @@ int main(int argc, char** argv)
    const static struct option long_options[] = {
       { "compress",                  required_argument, 0, 'c' },
       { "separator",                 required_argument, 0, 's' },
-      { "line-numbers",              no_argument,       0, 'n' },
+      { "line-numbers",              no_argument,       0, 'l' },
+      { "no-line-numbers",           no_argument,       0, 'n' },
       { "quiet",                     no_argument,       0, 'q' },
 
       { "help",                      no_argument,       0, 'h' },
@@ -185,7 +187,7 @@ int main(int argc, char** argv)
 
    int option;
    int longIndex;
-   while( (option = getopt_long_only(argc, argv, "c:s:nqhv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "c:s:lnqhv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'c':
             compressionLevel = atol(optarg);
@@ -199,8 +201,11 @@ int main(int argc, char** argv)
          case 's':
             separator = optarg;
           break;
-         case 'n':
+         case 'l':
             withLineNumbers = true;
+          break;
+         case 'n':
+            withLineNumbers = false;
           break;
          case 'q':
             quietMode = true;
@@ -244,8 +249,9 @@ int main(int argc, char** argv)
    // ====== Print information ==============================================
    if(!quietMode) {
       std::cout << "CombineSummaries " << COMBINESUMMARIES_VERSION << "\n"
-                << "* Line Numbers:      " << (withLineNumbers ? "yes" : "no") << "\n"
                 << "* Compression Level: " << compressionLevel << "\n"
+                << "* Separator:         \"" << separator << "\"\n"
+                << "* Line Numbers:      " << (withLineNumbers ? "yes" : "no") << "\n"
                 << "\n";
    }
 

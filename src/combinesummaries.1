@@ -42,7 +42,7 @@
 .br
 .Op Fl s Ar separator | Fl \-separator Ar separator
 .br
-.Op Fl n | Fl \-line\-numbers
+.Op Fl l | Fl \-line\-numbers | Fl n | Fl \-no\-line\-numbers
 .br
 .Op Fl q | Fl \-quiet
 .Nm combinesummaries
@@ -60,7 +60,7 @@ A space\-separated list of output variable names to be added to the output data 
 Sets the values of the output variables for the next input file to the provided space\-separated values. One value for each variable has to be provided.
 .It Fl \-input=filename
 Process the given input file.
-.It Fl \-simulationdirectory=directory
+.It Fl \-simulationsdirectory=directory
 Sets the directory where to find the input files.
 .El
 .Pp
@@ -78,8 +78,14 @@ Sets the BZip2 compression level; 1=none, 9=highest (default).
 Sets the separator for the tables. Default: tabulator character (i.e. $'\t').
 .It Fl n | Fl \-line\-numbers
 Generate line numbers for output rows (GNU R: row names). In this case, the input files must contain line numbers (GNU R: row names) as well! The original line numbers are kept in column SubLineNo. Default: off.
-.It Fl quiet
+.It Fl n | Fl \-no\-line\-numbers
+Do not add line numbers into the output table files, as usual for CSV (default).
+.It Fl q | Fl \-quiet
 Do not print verbose status information.
+.It Fl h | Fl \-help
+Prints command help.
+.It Fl v | Fl \-version
+Prints program version.
 .El
 .\" ###### Exit status ######################################################
 .Sh EXIT STATUS
