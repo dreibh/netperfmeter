@@ -61,7 +61,7 @@ _combinesummaries()
          -s | --separator)
             return
             ;;
-         esac
+      esac
    fi
 
    # ====== All options =====================================================
