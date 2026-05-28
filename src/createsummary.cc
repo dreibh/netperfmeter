@@ -819,7 +819,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
                               scalarNode->SplitName,         separator,
                               scalarNode->AggValues,         separator,
                               scalarNode->VarValues,         separator,
-                              *valueIterator,                separator) == false) {
+                              *valueIterator) == false) {
             exit(1);
          }
          valueNumber++;
@@ -1046,7 +1046,8 @@ int main(int argc, char** argv)
             std::cerr << "ERROR: No values given (parameter --values=...)!\n";
             exit(1);
          }
-         if(!handleScalarFile(varNames, varValues, &command[8],
+         if(!handleScalarFile(varNames, varValues,
+                              simulationsDirectory + "/" + &command[8],
                               interactiveMode, scalarSplittingMode)) {
             scalarFileError = true;
             if(logFileName != "") {

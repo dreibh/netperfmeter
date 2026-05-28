@@ -54,6 +54,9 @@ _createsummary()
          mapfile -t COMPREPLY < <(compgen -W "{1..9}" -- "${cur}")
          return
          ;;
+      -s | --separator)
+         return
+         ;;
    esac
 
    # ====== All options =====================================================
