@@ -30,6 +30,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <cctype>
 #include <getopt.h>
 #include <iostream>
 #include <string>
@@ -238,7 +239,7 @@ static bool checkColumns(const std::string& values)
 // ###### Remove scenario name  #############################################
 static void removeScenarioName(char* str)
 {
-   char* s1 = index(str, '.');
+   char* s1 = strchr(str, '.');
    if(s1 != nullptr) {
       s1++;
       while(*s1 != 0x00) {
@@ -254,7 +255,9 @@ static int safestrcat(char* dest, const char* src, const size_t size)
 {
    const size_t l1 = strlen(dest);
    const size_t l2 = strlen(src);
-
+   if (l1 >= size - 1) {
+      return 0;
+   }
    strncat(dest, src, size - l1 - 1);
    dest[size - 1] = 0x00;
    return l1 + l2 < size;
@@ -289,7 +292,7 @@ static unsigned int getAggregate(char*        objectName,
 
    // ====== Get segment ====================================================
    unsigned int levels;
-   char*        segment = rindex(objectName, '.');
+   char*        segment = strrchr(objectName, '.');
    if(segment == nullptr) {
       segment       = objectName;
       scalarName[0] = 0x00;
@@ -325,7 +328,7 @@ static unsigned int getAggregate(char*        objectName,
    aggregate[i + 1] = 0x00;
 
    // ------ Extract aggregate and its value --------------
-   if((size_t)i < length - 1) {
+   if (i < (ssize_t)length - 1) {
      if(aggNames[0] != 0x00) {
         safestrcat(aggNames, " ", aggNamesSize);
      }
@@ -336,7 +339,7 @@ static unsigned int getAggregate(char*        objectName,
      safestrcat(aggNames, aggregate, aggNamesSize);
 
      unsigned long value = (unsigned long)atol((const char*)&segment[i + 1]);
-     char valueString[16];
+     char valueString[32];
      snprintf((char*)&valueString, sizeof(valueString), "%lu", value);
      if(aggValues[0] != 0x00) {
         safestrcat(aggValues, " ", aggValuesSize);
@@ -352,7 +355,7 @@ static unsigned int getAggregate(char*        objectName,
 
    // ------ Add scalar name to scalarName-----------------
    if(topLevel) {
-      char* identifier = index(statName, '#');
+      char* identifier = strchr(statName, '#');
       if(identifier) {
          const size_t identifierLength = strlen(identifier);
          for(size_t i = 1;i < identifierLength;i++) {
@@ -407,15 +410,16 @@ static char* getWord(char* str, char* word)
 
    size_t i = 0;
    while( ((quoted) && (str[n] != '\"')) ||
-          ((!quoted) && (str[n] != ' ') && (str[n] != '\t')) ) {
+          ((!quoted) && (str[n] != ' ') && (str[n] != '\t') && (str[n] != 0x00)) ) {
       if( (quoted == true) && (str[n] == 0x00) ) {
          return nullptr;
       }
       word[i++] = str[n++];
    }
    word[i] = 0x00;
-   n++;
-
+   if (str[n] != 0x00) {
+      n++;
+   }
    return (char*)&str[n];
 }
 
@@ -555,8 +559,9 @@ static bool handleScalarFile(const std::string& varNames,
    InputFileFormat inputFileFormat = IFF_Plain;
 
    // ====== Open input file ================================================
-   if( (fileName.rfind(".bz2") == fileName.size() - 4) ||
-       (fileName.rfind(".BZ2") == fileName.size() - 4) ) {
+   if( (fileName.size() >= 4) &&
+       ( (fileName.substr(fileName.size() - 4) == ".bz2") ||
+         (fileName.substr(fileName.size() - 4) == ".BZ2")) ) {
        inputFileFormat = IFF_BZip2;
    }
    if(inputFile.initialize(fileName.c_str(), inputFileFormat) == false) {
@@ -567,7 +572,7 @@ static bool handleScalarFile(const std::string& varNames,
    // ====== Process input file =============================================
    double       value;
    bool         hasStatistic = false;
-   char         buffer[4097];
+   char         buffer[4096];
    char         objectName[4096];
    char         statName[4096];
    char         fieldName[4096];
@@ -1000,14 +1005,18 @@ int main(int argc, char** argv)
    }
    bool scalarFileError = false;
    while((command = fgets((char*)&buffer, sizeof(buffer), stdin))) {
-      command[strlen(command) - 1] = 0x00;
-      if(command[0] == 0x00) {
-         std::cout << "*** End of File ***\n";
-         break;
+      size_t length = strlen(command);
+      if( (length > 0) && (command[length - 1] == '\n') ) {
+         command[length - 1] = 0x00;
+         length--;
       }
 
-      if(interactiveMode) {
-         std::cout << command << "\n";
+      if(length == 0) {
+         if(interactiveMode) {
+            std::cout << "Ready> ";
+            std::cout.flush();
+         }
+         continue;
       }
 
       if(!(strncmp(command, "--values=", 9))) {

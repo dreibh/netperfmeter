@@ -30,6 +30,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cctype>
 #include <getopt.h>
 #include <iostream>
 #include <unistd.h>
@@ -71,8 +72,9 @@ void addDataFile(OutputFile&         outputFile,
    // ====== Open input file ================================================
    InputFile       inputFile;
    InputFileFormat inputFileFormat = IFF_Plain;
-   if( (inputFileName.rfind(".bz2") == inputFileName.size() - 4) ||
-       (inputFileName.rfind(".BZ2") == inputFileName.size() - 4) ) {
+   if( (inputFileName.size() >= 4) &&
+       ( (inputFileName.substr(inputFileName.size() - 4) == ".bz2") ||
+         (inputFileName.substr(inputFileName.size() - 4) == ".BZ2")) ) {
        inputFileFormat = IFF_BZip2;
    }
    if(inputFile.initialize(inputFileName.c_str(), inputFileFormat) == false) {
