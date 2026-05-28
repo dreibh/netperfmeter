@@ -49,16 +49,19 @@ _combinesummaries()
    fi
 
    if [ "${cword}" -eq 1 ] ; then
-      _filedir '@(data.bz2)'
+      _filedir
       return
    else
       case "${prev}" in
          -c | --compress)
             compopt -o nosort 2>/dev/null || true   # No sorting (Bash >= 4.4)
-            mapfile -t COMPREPLY < <(compgen -W "{0..9}" -- "${cur}")
+            mapfile -t COMPREPLY < <(compgen -W "{1..9}" -- "${cur}")
             return
-         ;;
-      esac
+            ;;
+         -s | --separator)
+            return
+            ;;
+         esac
    fi
 
    # ====== All options =====================================================
