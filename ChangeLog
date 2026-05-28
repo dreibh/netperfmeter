@@ -1,3 +1,166 @@
+commit 02576769d8562e11e6b0cb7d15200fe7d40e86cf
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 16:12:54 2026 +0200
+
+    Minor manpage update.
+
+commit bf272b25bfa5094a78b4657f4bd9912dcb23edb2
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 16:03:05 2026 +0200
+
+    Minor clean-up.
+
+commit b732393412bd54a0e4d0f1347ede6747b7a7a870
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 16:01:02 2026 +0200
+
+    Added option to configure the separator.
+
+commit 977df2a565b3cf11fba2e83e8ad00f11c8c570ec
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 15:53:07 2026 +0200
+
+    Small clean-ups.
+
+commit 862fb32f3d7abcac2fff6537fba36b34981d9ffa
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 15:35:21 2026 +0200
+
+    Further clean-ups.
+
+commit 1d6d37a6dfac84a1858845f33fd9df66ff1d4806
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 15:31:15 2026 +0200
+
+    Further clean-ups.
+
+commit 793d87f6b1d0746c09488178c0e84424ce544115
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 15:30:39 2026 +0200
+
+    Added option to configure the separator.
+
+commit 2148af89133efdc3beeffc3f0c4a090e9cb75468
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 14:28:24 2026 +0200
+
+    Improved shell completions.
+
+commit 336be30bc58436d386d92183522a263cc30d1fd7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 14:22:41 2026 +0200
+
+    Improved vector counting.
+
+commit 8a5797d64ac46d71c275374869167aa5170cec12
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 14:19:01 2026 +0200
+
+    Further improvements.
+
+commit eb7c8be6269e2ca1790a0ec099201b3575516cc9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 13:33:00 2026 +0200
+
+    Code improvements.
+
+commit 05228c17745801c8910c7d06570f9ab804a20215
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 00:13:34 2026 +0200
+
+    CMakeLists.txt update.
+
+commit 1b427da57b4c7563f2418755c0439f4b8b7b076f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 00:08:58 2026 +0200
+
+    Added more shell completions.
+
+commit b799cc0179b7f960c9ef4d1fb28c5a9b34794e43
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed May 27 23:51:22 2026 +0200
+
+    Options handling improvements.
+
+commit 69b965905364e4306d1a8ef6149aa879136fca84
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed May 27 23:45:50 2026 +0200
+
+    Packaging updates.
+
+commit 82e1980494ab0fc8731b52671794c3c52a736c6b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed May 27 23:44:06 2026 +0200
+
+    Added shell completions.
+
+commit 8181abb986847144955c1e0b6e8da2c6dc863125
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed May 27 23:17:37 2026 +0200
+
+    Further manpage improvements.
+
+commit 3037cb9b5c9417375a288df233949c2e2ce9431a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed May 27 23:06:07 2026 +0200
+
+    Improved manpages.
+
+commit 428bdbaa9bccd79ed23d82f2a02157974ff70c51
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed May 27 23:05:57 2026 +0200
+
+    Added version option.
+
+commit 5eb240346cab65c110a07b63b0a2e4d748898b97
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed May 27 23:05:40 2026 +0200
+
+    Added version option.
+
+commit ef9d7f39317e1017354170936b4d5a359dce0f0e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 26 22:31:03 2026 +0200
+
+    Improved CMakeLists.txt.
+
+commit 58524abe9716d4f1a4f092f5aa64faec49fce966
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 26 21:03:35 2026 +0200
+
+    Further manpage improvements.
+
+commit 8c2c8ef1307836b855719897b2bcdb4775c11abc
+Merge: 68c78ee b2d981b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 26 20:54:04 2026 +0200
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit b2d981b677bc1bce0f2a9772a7905dff05375d3e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 26 16:46:28 2026 +0200
+
+    Improved manpages.
+
+commit dadcd3763d363a0a401d64439996f24eefe8780a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon May 25 22:37:19 2026 +0200
+
+    A quick compile test under MacOS. Some more work would be needed to work around missing SCTP.
+
+commit 68c78ee1c78dd0dc42e1131bae4064f039b1d7c3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat May 9 10:36:06 2026 +0200
+
+    Minor shell completion clean-up.
+
+commit dcde13391c1f5dd16ce7f6db0da401713a3f310a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue May 5 15:20:48 2026 +0200
+
+    New release netperfmeter-2.0.3.
+
 commit 3ee0511e03d1e0ebf4f642c984ceb802f4345e9d
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Tue May 5 15:04:13 2026 +0200
