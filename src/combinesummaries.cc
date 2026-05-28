@@ -85,7 +85,7 @@ void addDataFile(OutputFile&         outputFile,
       // ====== Read line from input file ===================================
       bool          eof;
       char          buffer[4097];
-      const ssize_t bytesRead = inputFile.readLine((char*)&buffer, sizeof(buffer), eof);
+      const ssize_t bytesRead = inputFile.readLine(buffer, sizeof(buffer), eof);
       if((bytesRead < 0) || (eof)) {
          break;
       }
@@ -99,6 +99,7 @@ void addDataFile(OutputFile&         outputFile,
                   outputFile.finish();
                   exit(1);
                }
+               outputLineNumber++;
             }
          }
          else {
@@ -109,6 +110,7 @@ void addDataFile(OutputFile&         outputFile,
                outputFile.finish();
                exit(1);
             }
+            outputLineNumber++;
          }
       }
       else {
@@ -118,6 +120,7 @@ void addDataFile(OutputFile&         outputFile,
                   outputFile.finish();
                   exit(1);
                }
+               outputLineNumber++;
             }
          }
          else {
@@ -125,9 +128,9 @@ void addDataFile(OutputFile&         outputFile,
                outputFile.finish();
                exit(1);
             }
+            outputLineNumber++;
          }
       }
-      outputLineNumber++;
    }
 
    inputFile.finish();
@@ -250,9 +253,10 @@ int main(int argc, char** argv)
    // ====== Open output file ===============================================
    OutputFile       outputFile;
    OutputFileFormat outputFileFormat = OFF_Plain;
-   if( (outputFileName.rfind(".bz2") == outputFileName.size() - 4) ||
-       (outputFileName.rfind(".BZ2") == outputFileName.size() - 4) ) {
-      outputFileFormat = OFF_BZip2;
+   if( (outputFileName.size() >= 4) &&
+       ( (outputFileName.substr(outputFileName.size() - 4) == ".bz2") ||
+         (outputFileName.substr(outputFileName.size() - 4) == ".BZ2")) ) {
+       outputFileFormat = OFF_BZip2;
    }
    if(outputFile.initialize(outputFileName.c_str(), outputFileFormat,
                             compressionLevel)== false) {
@@ -271,19 +275,26 @@ int main(int argc, char** argv)
       std::cout << "Ready> ";
       std::cout.flush();
    }
-   while((command = fgets((char*)&commandBuffer, sizeof(commandBuffer), stdin))) {
-      command[strlen(command) - 1] = 0x00;
-      if(command[0] == 0x00) {
-         std::cout << "*** End of File ***\n";
-         break;
+   while((command = fgets(commandBuffer, sizeof(commandBuffer), stdin))) {
+      size_t length = strlen(command);
+      if( (length > 0) && (command[length - 1] == '\n') ) {
+         command[length - 1] = 0x00;
+         length--;
       }
-      if(!quietMode) {
-         std::cout << command << "\n";
+
+      if(length == 0) {
+         if(!quietMode) {
+            std::cout << "Ready> ";
+            std::cout.flush();
+         }
+         continue;
       }
 
       if(!(strncmp(command, "--values=", 9))) {
-         varValues = (const char*)&command[9];
-         if(varValues[0] == '\"') {
+         varValues = &command[9];
+         if( (varValues.size() >= 2)    &&
+             (varValues.front() == '"') &&
+             (varValues.back() == '"') ) {
             varValues = varValues.substr(1, varValues.size() - 2);
          }
          if(!checkColumns(varValues)) {
@@ -292,18 +303,21 @@ int main(int argc, char** argv)
          }
       }
       else if(!(strncmp(command, "--input=", 8))) {
-         if(varValues[0] == 0x00) {
+         if(varValues.empty()) {
             std::cerr << "ERROR: No values given (parameter --values=...)!\n";
             exit(1);
          }
          addDataFile(outputFile, withLineNumbers, outputLineNumber,
-                     varNames, varValues, std::string((const char*)&command[8]),
+                     varNames, varValues,
+                     simulationsDirectory + "/" + &command[8],
                      separator);
          varValues = "";
       }
       else if(!(strncmp(command, "--varnames=", 11))) {
-         varNames = (const char*)&command[11];
-         if(varNames[0] == '\"') {
+         varNames = &command[11];
+         if( (varNames.size() >= 2)    &&
+             (varNames.front() == '"') &&
+             (varNames.back() == '"') ) {
             varNames = varNames.substr(1, varNames.size() - 2);
          }
          if(!checkColumns(varNames)) {
@@ -312,7 +326,7 @@ int main(int argc, char** argv)
          }
       }
       else if(!(strncmp(command, "--simulationsdirectory=", 23))) {
-         simulationsDirectory = (const char*)&simulationsDirectory[23];
+         simulationsDirectory = &command[23];
       }
       else {
          std::cerr << "ERROR: Invalid command!\n";

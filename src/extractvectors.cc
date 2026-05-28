@@ -70,7 +70,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
    for(;;) {
       // ====== Read line from input file ===================================
       bool          eof;
-      const ssize_t bytesRead = inputFile.readLine((char*)&inBuffer, sizeof(inBuffer), eof);
+      const ssize_t bytesRead = inputFile.readLine(inBuffer, sizeof(inBuffer), eof);
       if((bytesRead < 0) || (eof)) {
          break;
       }
@@ -88,7 +88,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                exit(1);
             }
             versionOkay = true;
-            snprintf((char*)&outBuffer, sizeof(outBuffer),
+            snprintf(outBuffer, sizeof(outBuffer),
                      "Time Event Object Vector Split Value\n");
          }
          else {
@@ -108,7 +108,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
             std::map<unsigned int, const std::string>::iterator found =
                vectorToNameMap.find(vectorID);
             if(found != vectorToNameMap.end()) {
-               snprintf((char*)&outBuffer, sizeof(outBuffer),
+               snprintf(outBuffer, sizeof(outBuffer),
                         "%u\t%lf\t%u\t\"%s\"\t\"%s\" \"%s\"\t%lf\n",
                         (unsigned int)outputLine, simTime, event,
                         vectorToObjectMap[vectorID].c_str(),
@@ -121,10 +121,10 @@ static unsigned long long extractVectors(InputFile&               inputFile,
          else if(strncmp(inBuffer, "vector ", 7) == 0) {
             char objectName[1024];
             char vectorName[1024];
-            if( (sscanf(inBuffer, "vector %u %1022s \"%1022[^\\\"]s\" ETV",
-                        &vectorID, (char*)&objectName, (char*)&vectorName) == 3) ||
-                (sscanf(inBuffer, "vector %u %1022s %1022[^\\\"]s ETV",
-                        &vectorID, (char*)&objectName, (char*)&vectorName) == 3) ) {
+            if( (sscanf(inBuffer, "vector %u %1022s \"%1022[^\\\"]\" ETV",
+                        &vectorID, objectName, vectorName) == 3) ||
+                (sscanf(inBuffer, "vector %u %1022s %1022[^\\\"] ETV",
+                        &vectorID, objectName, vectorName) == 3) ) {
                bool includeVector = (vectorsToExtract.size() == 0);
                bool splitMode     = defaultVectorSplittingMode;
                if(!includeVector) {
@@ -147,7 +147,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                   if(splitMode) {
                      for(int i = strlen(vectorName); i >= 0; i--) {
                         if(vectorName[i] == ' ') {
-                           splitName     = (const char*)&vectorName[i + 1];
+                           splitName     = &vectorName[i + 1];
                            vectorName[i] = 0x00;
                            break;
                         }
@@ -201,7 +201,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cerr << "CombineSummaries" << " " << COMBINESUMMARIES_VERSION << "\n";
+   std::cerr << "ExtractVectors" << " " << EXTRACTVECTORS_VERSION << "\n";
    exit(0);
 }
 
@@ -304,9 +304,10 @@ int main(int argc, char** argv)
    // ====== Open files =====================================================
    InputFile        inputFile;
    InputFileFormat  inputFileFormat = IFF_Plain;
-   if( (inputFileName.rfind(".bz2") == inputFileName.size() - 4) ||
-       (inputFileName.rfind(".BZ2") == inputFileName.size() - 4) ) {
-      inputFileFormat = IFF_BZip2;
+   if( (inputFileName.size() >= 4) &&
+       ( (inputFileName.substr(inputFileName.size() - 4) == ".bz2") ||
+         (inputFileName.substr(inputFileName.size() - 4) == ".BZ2")) ) {
+       inputFileFormat = IFF_BZip2;
    }
    if(inputFile.initialize(inputFileName.c_str(), inputFileFormat) == false) {
       exit(1);
@@ -314,9 +315,10 @@ int main(int argc, char** argv)
 
    OutputFile       outputFile;
    OutputFileFormat outputFileFormat = OFF_Plain;
-   if( (outputFileName.rfind(".bz2") == outputFileName.size() - 4) ||
-       (outputFileName.rfind(".BZ2") == outputFileName.size() - 4) ) {
-      outputFileFormat = OFF_BZip2;
+   if( (outputFileName.size() >= 4) &&
+       ( (outputFileName.substr(outputFileName.size() - 4) == ".bz2") ||
+         (outputFileName.substr(outputFileName.size() - 4) == ".BZ2")) ) {
+       outputFileFormat = OFF_BZip2;
    }
    if(outputFile.initialize(outputFileName.c_str(), outputFileFormat,
                             compressionLevel)== false) {

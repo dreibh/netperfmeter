@@ -302,7 +302,7 @@ static unsigned int getAggregate(char*        objectName,
    }
    else {
       segment[0] = 0x00;
-      segment = (char*)&segment[1];
+      segment = &segment[1];
       // ====== Recursively process top segments ============================
       levels = getAggregate(objectName, statName, scalarName, scalarNameSize,
                             aggNames, aggNamesSize, aggValues, aggValuesSize,
@@ -323,7 +323,7 @@ static unsigned int getAggregate(char*        objectName,
    char aggregate[4096];
    assert((size_t)i + 1 < sizeof(aggregate));
    if(i >= 0) {
-      strncpy((char*)&aggregate, segment, (size_t)i + 1);
+      strncpy(aggregate, segment, (size_t)i + 1);
    }
    aggregate[i + 1] = 0x00;
 
@@ -338,9 +338,9 @@ static unsigned int getAggregate(char*        objectName,
      }
      safestrcat(aggNames, aggregate, aggNamesSize);
 
-     unsigned long value = (unsigned long)atol((const char*)&segment[i + 1]);
+     unsigned long value = (unsigned long)atol(&segment[i + 1]);
      char valueString[32];
-     snprintf((char*)&valueString, sizeof(valueString), "%lu", value);
+     snprintf(valueString, sizeof(valueString), "%lu", value);
      if(aggValues[0] != 0x00) {
         safestrcat(aggValues, " ", aggValuesSize);
      }
@@ -376,7 +376,7 @@ static unsigned int getAggregate(char*        objectName,
             if(aggValues[0] != 0x00) {
                safestrcat(aggValues, " ", aggValuesSize);
             }
-            safestrcat(aggValues, (const char*)&identifier[1], aggValuesSize);
+            safestrcat(aggValues, &identifier[1], aggValuesSize);
          }
       }
 
@@ -420,7 +420,7 @@ static char* getWord(char* str, char* word)
    if (str[n] != 0x00) {
       n++;
    }
-   return (char*)&str[n];
+   return &str[n];
 }
 
 
@@ -506,7 +506,7 @@ static void handleScalar(const std::string& varNames,
       for(int i = strlen(statName) - 1; i >= 0; i--) {
          if(statName[i] == ' ') {
             if(isdigit(statName[i + 1])) {
-               splitName     = (const char*)&statName[i + 1];
+               splitName   = &statName[i + 1];
                statName[i] = 0x00;
             }
             break;
@@ -523,9 +523,9 @@ static void handleScalar(const std::string& varNames,
    char aggNames[MAX_NAME_SIZE];
    char aggValues[MAX_VALUES_SIZE];
    getAggregate(objectName, statName,
-                (char*)&scalarName, sizeof(scalarName),
-                (char*)&aggNames, sizeof(aggNames),
-                (char*)&aggValues, sizeof(aggValues));
+                scalarName, sizeof(scalarName),
+                aggNames, sizeof(aggNames),
+                aggValues, sizeof(aggValues));
 
    // ====== Reconciliate with skip list ====================================
    SkipListNode* skipListNode = SkipList;
@@ -580,11 +580,11 @@ static bool handleScalarFile(const std::string& varNames,
    char         statisticBlockName[4096];
    unsigned int run      = 0;
    bool         success  = true;
-   memset((char*)&statName, 0, sizeof(statName));
+   memset(statName, 0, sizeof(statName));
    for(;;) {
       // ====== Read line from input file ===================================
       bool eof;
-      const ssize_t bytesRead = inputFile.readLine((char*)&buffer, sizeof(buffer), eof);
+      const ssize_t bytesRead = inputFile.readLine(buffer, sizeof(buffer), eof);
       if((bytesRead < 0) || (eof)) {
          break;
       }
@@ -593,9 +593,9 @@ static bool handleScalarFile(const std::string& varNames,
       if( (!(strncmp(buffer, "scalar ",  7))) ||
           (!(strncmp(buffer, "scalar\t", 7))) ) {
          // ====== Parse scalar line ========================================
-         char* s = getWord((char*)&buffer[7], (char*)&objectName);
+         char* s = getWord(&buffer[7], objectName);
          if(s != nullptr) {
-            s = getWord(s, (char*)&statName);
+            s = getWord(s, statName);
             if(s != nullptr) {
                if(sscanf(s, "%lf", &value) != 1) {
                   std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
@@ -617,9 +617,9 @@ static bool handleScalarFile(const std::string& varNames,
             success = false;
             break;
          }
-         removeScenarioName((char*)&objectName);
+         removeScenarioName(objectName);
          handleScalar(varNames, varValues, run, interactiveMode, scalarSplitting,
-                      (char*)&objectName, (char*)&statName, value);
+                      objectName, statName, value);
       }
       else if(buffer[0] == '#') {
       }
@@ -634,7 +634,7 @@ static bool handleScalarFile(const std::string& varNames,
       }
       else if(!(strncmp(buffer, "field ", 6))) {
          if(hasStatistic) {
-            char* s = getWord((char*)&buffer[6], (char*)&fieldName);
+            char* s = getWord(&buffer[6], fieldName);
             if(s) {
                if(sscanf(s, "%lf", &value) != 1) {
                   std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
@@ -654,10 +654,10 @@ static bool handleScalarFile(const std::string& varNames,
                }
                newStatName = newStatName + statisticBlockName;
                // handleScalar() will overwrite the fields object/stat => make copies first!
-               snprintf((char*)&statName,   sizeof(statName),   "%s", newStatName.c_str());
-               snprintf((char*)&objectName, sizeof(objectName), "%s", statisticObjectName);
+               snprintf(statName,   sizeof(statName),   "%s", newStatName.c_str());
+               snprintf(objectName, sizeof(objectName), "%s", statisticObjectName);
                handleScalar(varNames, varValues, run, interactiveMode, scalarSplitting,
-                           (char*)&objectName, (char*)&statName, value);
+                           objectName, statName, value);
             }
          }
          else {
@@ -669,9 +669,9 @@ static bool handleScalarFile(const std::string& varNames,
       }
       else if(!(strncmp(buffer, "statistic ", 10))) {
          // ====== Parse scalar line ========================================
-         char* s = getWord((char*)&buffer[10], (char*)&statisticObjectName);
+         char* s = getWord(&buffer[10], statisticObjectName);
          if(s) {
-            s = getWord(s, (char*)&statisticBlockName);
+            s = getWord(s, statisticBlockName);
             if(s == nullptr) {
                std::cerr << "ERROR: File \"" << fileName << "\", line " << inputFile.getLine()
                          << " - Statistics name expected for \"statistic\"!\n";
@@ -685,7 +685,7 @@ static bool handleScalarFile(const std::string& varNames,
             success = false;
             break;
          }
-         removeScenarioName((char*)&statisticObjectName);
+         removeScenarioName(statisticObjectName);
          hasStatistic = true;
       }
       else if(buffer[0] == 0x00) {
@@ -1004,7 +1004,7 @@ int main(int argc, char** argv)
       std::cout << "Processing input ...\n";
    }
    bool scalarFileError = false;
-   while((command = fgets((char*)&buffer, sizeof(buffer), stdin))) {
+   while((command = fgets(buffer, sizeof(buffer), stdin))) {
       size_t length = strlen(command);
       if( (length > 0) && (command[length - 1] == '\n') ) {
          command[length - 1] = 0x00;
@@ -1020,8 +1020,10 @@ int main(int argc, char** argv)
       }
 
       if(!(strncmp(command, "--values=", 9))) {
-         varValues = (const char*)&command[9];
-         if(varValues[0] == '\"') {
+         varValues = &command[9];
+         if( (varValues.size() >= 2)    &&
+             (varValues.front() == '"') &&
+             (varValues.back() == '"') ) {
             varValues = varValues.substr(1, varValues.size() - 2);
          }
          if(!checkColumns(varValues)) {
@@ -1034,7 +1036,7 @@ int main(int argc, char** argv)
             std::cerr << "ERROR: No values given (parameter --values=...)!\n";
             exit(1);
          }
-         if(!handleScalarFile(varNames, varValues, (char*)&command[8], interactiveMode, scalarSplittingMode)) {
+         if(!handleScalarFile(varNames, varValues, &command[8], interactiveMode, scalarSplittingMode)) {
             scalarFileError = true;
             if(logFileName != "") {
                std::cerr << " => see logfile " << logFileName << "\n";
@@ -1049,8 +1051,10 @@ int main(int argc, char** argv)
          statusFileName = "";
       }
       else if(!(strncmp(command, "--varnames=", 11))) {
-         varNames = (const char*)&command[11];
-         if(varNames[0] == '\"') {
+         varNames = &command[11];
+         if( (varNames.size() >= 2)    &&
+             (varNames.front() == '"') &&
+             (varNames.back() == '"') ) {
             varNames = varNames.substr(1, varNames.size() - 2);
          }
          if(!checkColumns(varNames)) {
@@ -1059,10 +1063,10 @@ int main(int argc, char** argv)
          }
       }
       else if(!(strncmp(command, "--logfile=", 10))) {
-         logFileName = (const char*)&command[10];
+         logFileName = &command[10];
       }
       else if(!(strncmp(command, "--statusfile=", 13))) {
-         statusFileName = (const char*)&command[13];
+         statusFileName = &command[13];
       }
       else if(!(strncmp(command, "--skip=", 7))) {
          SkipListNode* skipListNode = new SkipListNode;
@@ -1071,15 +1075,15 @@ int main(int argc, char** argv)
             exit(1);
          }
          skipListNode->Next = SkipList;
-         snprintf((char*)&skipListNode->Prefix, sizeof(skipListNode->Prefix), "%s",
-                  (const char*)&command[7]);
+         snprintf(skipListNode->Prefix, sizeof(skipListNode->Prefix), "%s",
+                  &command[7]);
          SkipList = skipListNode;
       }
       else if(!(strncmp(command, "--simulationsdirectory=", 23))) {
-         simulationsDirectory = (const char*)&command[23];
+         simulationsDirectory = &command[23];
       }
       else if(!(strncmp(command, "--resultsdirectory=", 19))) {
-         resultsDirectory = (const char*)&command[19];
+         resultsDirectory = &command[19];
       }
       else if(!(strcmp(command, "--splitall"))) {
          scalarSplittingMode = true;
