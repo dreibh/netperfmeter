@@ -26,10 +26,10 @@
  * Contact: dreibh@simula.no
  */
 
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <cstring>
 
 
 int main(int argc, char** argv)
