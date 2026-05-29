@@ -29,7 +29,9 @@
 #### EXAMPLES                                                            ####
 #############################################################################
 
-FILE(GLOB_RECURSE EXAMPLE_RESULTS "*.sca*" "*.vec*" "*.pcap*")
+IF (WITH_EXAMPLE_RESULTS)
+   FILE(GLOB_RECURSE EXAMPLE_RESULTS "*.sca*" "*.vec*" "*.pcap*")
 
-INSTALL(FILES       ${EXAMPLE_RESULTS}
-        DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter/results-examples)
+   INSTALL(FILES       ${EXAMPLE_RESULTS}
+           DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter/results-examples)
+ENDIF()

@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.4
+Version: 2.0.5~rc0
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -55,7 +55,7 @@ This package contains the measurement program.
 %setup -q
 
 %build
-%cmake -DCMAKE_INSTALL_PREFIX=/usr . -DWITH_ICONS=ON -DWITH_PLOT_PROGRAMS=ON -DWITH_TEST_PROGRAMS=OFF
+%cmake -DCMAKE_INSTALL_PREFIX=/usr . -DWITH_ICONS=ON -DWITH_PLOT_PROGRAMS=ON -DWITH_EXAMPLE_SCRIPTS=ON -DWITH_EXAMPLE_RESULTS=ON
 %cmake_build
 
 %install

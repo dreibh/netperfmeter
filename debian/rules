@@ -7,7 +7,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 	dh $@ --buildsystem=cmake
 
 override_dh_auto_configure:
-	dh_auto_configure -- -DWITH_ICONS=ON -DWITH_PLOT_PROGRAMS=ON -DWITH_TEST_PROGRAMS=OFF
+	dh_auto_configure -- -DWITH_ICONS=ON -DWITH_PLOT_PROGRAMS=ON -DWITH_EXAMPLE_SCRIPTS=ON -DWITH_EXAMPLE_RESULTS=ON
 
 # Use upstream ChangeLog for installation
 override_dh_installchangelogs:

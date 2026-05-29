@@ -1,3 +1,11 @@
+netperfmeter (2.0.5~rc0-1ubuntu1) plucky; urgency=medium
+
+  * New upstream release:
+    Added new CMake options for including or excluding example files.
+  * debian/rules: Added new CMake options for the build.
+
+ -- Thomas Dreibholz <dreibh@simula.no>  Fri, 29 May 2026 11:27:10 +0200
+
 netperfmeter (2.0.4-1ubuntu1) plucky; urgency=medium
 
   * New upstream release.
