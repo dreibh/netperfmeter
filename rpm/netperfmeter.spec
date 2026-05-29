@@ -249,6 +249,7 @@ This package contains a plotting program for the results.
 
 %files plotting
 %{_bindir}/plot-netperfmeter-results
+%{_datadir}/bash-completion/completions/plot-netperfmeter-results
 %{_datadir}/netperfmeter/plot-netperfmeter-results.R
 %{_datadir}/netperfmeter/plotter.R
 %{_mandir}/man1/plot-netperfmeter-results.1.gz
