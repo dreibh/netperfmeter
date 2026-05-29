@@ -30,7 +30,7 @@ PROJECT(netperfmeter LANGUAGES C CXX)
 
 SET(BUILD_MAJOR "2")
 SET(BUILD_MINOR "0")
-SET(BUILD_PATCH "4")
+SET(BUILD_PATCH "5")
 SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
@@ -121,10 +121,11 @@ ENDIF()
 #### OPTIONS                                                             ####
 #############################################################################
 
-OPTION(WITH_ICONS          "Build NetPerfMeter icons and logo files" 1)
-OPTION(WITH_KERNEL_SCTP    "Use Kernel SCTP"                         1)
-OPTION(WITH_PLOT_PROGRAMS  "Build plot programs"                     1)
-OPTION(WITH_TEST_PROGRAMS  "Build test programs"                     0)
+OPTION(WITH_KERNEL_SCTP       "Use Kernel SCTP"                           1)
+OPTION(WITH_ICONS             "Build NetPerfMeter icons and logo files"   1)
+OPTION(WITH_PLOT_PROGRAMS     "Include plot programs"                     1)
+OPTION(WITH_EXAMPLE_SCRIPTS   "Include example scripts"                   1)
+OPTION(WITH_EXAMPLE_RESULTS   "Include example results"                   1)
 
 
 #############################################################################

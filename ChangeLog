@@ -1,3 +1,34 @@
+commit 1f383a60d2d770535581e46f78444bcf9c4f4ebf
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri May 29 11:29:02 2026 +0200
+
+    * Make inclusion of examples (scripts, results) optional in CMakeLists.txt.
+    * Moved obsolete test program.
+
+commit d26562086455bbf41d21f6c3cae99b6cae1bf2a4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri May 29 10:43:28 2026 +0200
+
+    Improved FreeBSD port.
+
+commit 946bfafbadddcea276a7aa360c8ee697695c69db
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri May 29 10:42:01 2026 +0200
+
+    Fixed includes.
+
+commit 9d186d0746f498d32427611d54b5a927e5baa773
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri May 29 09:58:58 2026 +0200
+
+    RPM spec fix.
+
+commit 26e1ca4d015ec9403a22df90b8600605839e44e7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu May 28 16:13:55 2026 +0200
+
+    New release netperfmeter-2.0.4.
+
 commit 02576769d8562e11e6b0cb7d15200fe7d40e86cf
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Thu May 28 16:12:54 2026 +0200

@@ -29,35 +29,35 @@
 #### LOGO                                                                ####
 #############################################################################
 
-SET(LOGO "netperfmeter")
-
-# To check the system's icon sizes available:
-# find /usr/share/icons/hicolor/ -maxdepth 1 -type d -printf "%f\n" | grep -E "^[0-9]+" | sort | cut -dx -f1 | sort -n
-SET(ICON_LENGTHS
-   8
-   16
-   20
-   22
-   24
-   32
-   36
-   40
-   42
-   44
-   48
-   64
-   72
-   96
-   128
-   150
-   192
-   256
-   310
-   512
-)
-SET(LOGO_LENGTH 1920)
-
 IF (WITH_ICONS)
+   SET(LOGO "netperfmeter")
+
+   # To check the system's icon sizes available:
+   # find /usr/share/icons/hicolor/ -maxdepth 1 -type d -printf "%f\n" | grep -E "^[0-9]+" | sort | cut -dx -f1 | sort -n
+   SET(ICON_LENGTHS
+      8
+      16
+      20
+      22
+      24
+      32
+      36
+      40
+      42
+      44
+      48
+      64
+      72
+      96
+      128
+      150
+      192
+      256
+      310
+      512
+   )
+   SET(LOGO_LENGTH 1920)
+
    FOREACH(iconLength IN ITEMS ${ICON_LENGTHS};${LOGO_LENGTH})
    # PNG with fixed width, height as necessary:
    ADD_CUSTOM_COMMAND(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png
