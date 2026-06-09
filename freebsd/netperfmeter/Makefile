@@ -1,5 +1,5 @@
 PORTNAME=	netperfmeter
-DISTVERSION=	2.0.5
+DISTVERSION=	2.0.6~rc0
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.nntb.no/~dreibh/netperfmeter/download/
 
@@ -30,7 +30,7 @@ EXAMPLE_RESULTS_DESC=		Include example results
 
 ICONS_CMAKE_BOOL=		WITH_ICONS
 ICONS_BUILD_DEPENDS=		gm:graphics/GraphicsMagick \
-				pdf2svg:graphics/pdf2svg
+				pdftocairo:graphics/poppler-utils
 ICONS_USES=			ghostscript shared-mime-info
 
 PLOT_PROGRAMS_CMAKE_BOOL=	WITH_PLOT_PROGRAMS

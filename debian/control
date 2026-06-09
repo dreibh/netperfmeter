@@ -11,7 +11,7 @@ Build-Depends: cmake,
                graphicsmagick,
                libbz2-dev,
                libsctp-dev (>= 1.0.5),
-               pdf2svg
+               poppler-utils
 Standards-Version: 4.7.4
 Rules-Requires-Root: no
 
