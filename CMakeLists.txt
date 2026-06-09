@@ -194,25 +194,88 @@ IF (USES_IEEEFP_FP)
 ENDIF()
 
 
-# ====== SCTP support =======================================================
-IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
-   MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
-   FIND_LIBRARY(SCTP_LIBRARY sctp)
-   FIND_PATH(SCTP_INCLUDE_DIR NAMES sctp.h)
-   IF (SCTP_LIBRARY AND SCTP_INCLUDE_DIR)
-      MESSAGE(STATUS "LK-SCTP library found:")
-      MESSAGE(STATUS " SCTP_LIBRARY:     ${SCTP_LIBRARY}")
-      MESSAGE(STATUS " SCTP_INCLUDE_DIR: ${SCTP_INCLUDE_DIR}")
-   ELSE()
-      MESSAGE(FATAL_ERROR
-              " Cannot find Linux Kernel SCTP library! Try:\n"
-              " * Ubuntu/Debian: sudo apt install -y libsctp-dev\n"
-              " * Fedora:        sudo dnf install -y lksctp-tools-devel\n"
-              " * SuSE:          sudo zypper install -y lksctp-tools-devel\n"
-              " * Alpine:        sudo apk add lksctp-tools-dev\n")
-   ENDIF()
+#############################################################################
+#### REQUIREMENTS                                                        ####
+#############################################################################
+
+# ====== Threads ============================================================
+FIND_PACKAGE(Threads REQUIRED)
+
+# ====== libbz2 =============================================================
+FIND_LIBRARY(BZ2_LIBRARY NAMES bz2)
+FIND_PATH(BZ2_INCLUDE_DIR NAMES bzlib.h)
+IF (BZ2_LIBRARY AND BZ2_INCLUDE_DIR)
+   MESSAGE(STATUS "BZip2 library found:")
+   MESSAGE(STATUS " BZ2_LIBRARY:     ${BZ2_LIBRARY}")
+   MESSAGE(STATUS " BZ2_INCLUDE_DIR: ${BZ2_INCLUDE_DIR}")
+ELSE()
+   MESSAGE(FATAL_ERROR
+           " Cannot find BZip2 library! Try:\n"
+           " * Ubuntu/Debian: sudo apt install -y libbz2-dev\n"
+           " * Fedora:        sudo dnf install -y bzip2-devel\n"
+           " * SuSE:          sudo zypper install -y libbz2-devel\n"
+           " * Alpine:        sudo apk add bzip2-dev\n"
+           " * FreeBSD:       sudo pkg install -y bzip2\n"
+           " * NetBSD:        (should be installed by default)\n"
+           " * OpenBSD:       (should be installed by default)\n"
+           " * Apple:         brew install bzip2")
 ENDIF()
 
+# ====== SCTP support =======================================================
+IF (WITH_KERNEL_SCTP)
+   # ------ Kernel SCTP -----------------------------------------------------
+   CHECK_INCLUDE_FILE(netinet/sctp.h HAVE_NETINET_SCTP_H)
+   IF (HAVE_NETINET_SCTP_H)
+      SET(SCTP_INCLUDE "netinet/sctp.h")
+      ADD_DEFINITIONS(-DHAVE_KERNEL_SCTP -DHAVE_NETINET_SCTP_H)
+   ENDIF()
+
+   # ------ Linux LK-SCTP library -------------------------------------------
+   IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+      MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
+      FIND_LIBRARY(SCTP_LIBRARY sctp)
+      FIND_PATH(SCTP_INCLUDE_DIR NAMES netinet/sctp.h)
+      IF (SCTP_LIBRARY AND SCTP_INCLUDE_DIR)
+         MESSAGE(STATUS "LK-SCTP library found:")
+         MESSAGE(STATUS " SCTP_LIBRARY:     ${SCTP_LIBRARY}")
+         MESSAGE(STATUS " SCTP_INCLUDE_DIR: ${SCTP_INCLUDE_DIR}")
+      ELSE()
+         MESSAGE(FATAL_ERROR
+               " Cannot find Linux Kernel SCTP library! Try:\n"
+               " * Ubuntu/Debian: sudo apt install -y libsctp-dev\n"
+               " * Fedora:        sudo dnf install -y lksctp-tools-devel\n"
+               " * SuSE:          sudo zypper install -y lksctp-tools-devel\n"
+               " * Alpine:        sudo apk add lksctp-tools-dev\n")
+      ENDIF()
+   ENDIF()
+
+ELSE()
+   # ====== SCTPLIB User-Space SCTP =========================================
+   CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPLIB_SCTP_H)
+   FIND_LIBRARY(SCTPLIB_LIB sctplib)
+   MESSAGE(STATUS "sctplib found: ${SCTPLIB_LIB}")
+   IF (NOT HAVE_SCTPLIB_SCTP_H OR NOT SCTPLIB_LIB)
+      MESSAGE(FATAL_ERROR
+              " Cannot find libsctplib user-space SCTP library! Try -DWITH_KERNEL_SCTP=1?")
+   ENDIF()
+
+   CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPSOCKET_SCTP_H)
+   FIND_LIBRARY(SCTPSOCKET_LIB sctpsocket)
+   MESSAGE(STATUS "sctpsocket found: ${SCTPSOCKET_LIB}")
+   IF (NOT HAVE_SCTPSOCKET_SCTP_H OR NOT SCTPSOCKET_LIB)
+      MESSAGE(FATAL_ERROR
+              " Cannot find libsctpsocket sockets API for user-space SCTP library! Try -DWITH_KERNEL_SCTP=1?")
+   ENDIF()
+
+   FIND_PACKAGE(PkgConfig)
+   PKG_CHECK_MODULES(GLIB glib-2.0)
+   IF (NOT ${GLIB_LIBS})
+      MESSAGE(FATAL_ERROR
+              " Cannot find libglib-2.0!")
+   ENDIF()
+
+   SET(SCTP_LIBRARY ${SCTPSOCKET_LIB} ${SCTPLIB_LIB} ${GLIB_LIBRARIES})
+ENDIF()
 
 # ====== DCCP support =======================================================
 CHECK_C_SOURCE_COMPILES("
@@ -232,7 +295,6 @@ HAVE_DCCP)
 IF (HAVE_DCCP)
    ADD_DEFINITIONS(-DHAVE_DCCP)
 ENDIF()
-
 
 # ====== MPTCP support ======================================================
 CHECK_C_SOURCE_COMPILES("
@@ -284,69 +346,6 @@ IF (HAVE_QUIC)
    ELSE()
       MESSAGE(WARNING "QUIC is available, but libquic is not!")
    ENDIF()
-ENDIF()
-
-
-#############################################################################
-#### REQUIREMENTS                                                        ####
-#############################################################################
-
-# ====== Threads ============================================================
-FIND_PACKAGE(Threads REQUIRED)
-
-# ====== libbz2 =============================================================
-FIND_LIBRARY(BZ2_LIBRARY NAMES bz2)
-FIND_PATH(BZ2_INCLUDE_DIR NAMES bzlib.h)
-IF (BZ2_LIBRARY AND BZ2_INCLUDE_DIR)
-   MESSAGE(STATUS "BZip2 library found:")
-   MESSAGE(STATUS " BZ2_LIBRARY:     ${BZ2_LIBRARY}")
-   MESSAGE(STATUS " BZ2_INCLUDE_DIR: ${BZ2_INCLUDE_DIR}")
-ELSE()
-   MESSAGE(FATAL_ERROR
-           " Cannot find BZip2 library! Try:\n"
-           " * Ubuntu/Debian: sudo apt install -y libbz2-dev\n"
-           " * Fedora:        sudo dnf install -y bzip2-devel\n"
-           " * SuSE:          sudo zypper install -y libbz2-devel\n"
-           " * Alpine:        sudo apk add bzip2-dev\n"
-           " * FreeBSD:       sudo pkg install -y bzip2\n"
-           " * Apple:         brew install bzip2")
-ENDIF()
-
-# ====== SCTP ===============================================================
-IF (WITH_KERNEL_SCTP)
-   # ====== Kernel SCTP =====================================================
-   CHECK_INCLUDE_FILE(netinet/sctp.h HAVE_NETINET_SCTP_H)
-   IF (HAVE_NETINET_SCTP_H)
-      SET(SCTP_INCLUDE "netinet/sctp.h")
-      ADD_DEFINITIONS(-DHAVE_KERNEL_SCTP -DHAVE_NETINET_SCTP_H)
-   ENDIF()
-
-ELSE()
-   # ====== SCTPLIB User-Space SCTP =========================================
-   CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPLIB_SCTP_H)
-   FIND_LIBRARY(SCTPLIB_LIB sctplib)
-   MESSAGE(STATUS "sctplib found: ${SCTPLIB_LIB}")
-   IF (NOT HAVE_SCTPLIB_SCTP_H OR NOT SCTPLIB_LIB)
-      MESSAGE(FATAL_ERROR
-              " Cannot find libsctplib user-space SCTP library! Try -DWITH_KERNEL_SCTP=1?")
-   ENDIF()
-
-   CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPSOCKET_SCTP_H)
-   FIND_LIBRARY(SCTPSOCKET_LIB sctpsocket)
-   MESSAGE(STATUS "sctpsocket found: ${SCTPSOCKET_LIB}")
-   IF (NOT HAVE_SCTPSOCKET_SCTP_H OR NOT SCTPSOCKET_LIB)
-      MESSAGE(FATAL_ERROR
-              " Cannot find libsctpsocket sockets API for user-space SCTP library! Try -DWITH_KERNEL_SCTP=1?")
-   ENDIF()
-
-   FIND_PACKAGE(PkgConfig)
-   PKG_CHECK_MODULES(GLIB glib-2.0)
-   IF (NOT ${GLIB_LIBS})
-      MESSAGE(FATAL_ERROR
-              " Cannot find libglib-2.0!")
-   ENDIF()
-
-   SET(SCTP_LIBRARY ${SCTPSOCKET_LIB} ${SCTPLIB_LIB} ${GLIB_LIBRARIES})
 ENDIF()
 
 # ====== Liberty ============================================================
