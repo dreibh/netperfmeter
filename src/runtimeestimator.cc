@@ -33,12 +33,23 @@
 #include <stdint.h>
 #include <sys/time.h>
 
+// Endianess conversions: htobe*(), be*toh():
 #if defined(__linux__)
 #include <endian.h>
-#elif defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/endian.h>
+#elif defined(__OpenBSD__)
+#include <endian.h>
 #elif defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
+#define htobe16(x) OSSwapHostToBigInt16(x)
+#define be16toh(x) OSSwapBigToHostInt16(x)
+#define htobe32(x) OSSwapHostToBigInt32(x)
+#define be32toh(x) OSSwapBigToHostInt32(x)
+#define htobe64(x) OSSwapHostToBigInt64(x)
+#define be64toh(x) OSSwapBigToHostInt64(x)
+#else
+#error Unsupported system: add endianess conversion function definitions!
 #endif
 
 
@@ -94,14 +105,8 @@ int main(int argc, char** argv)
          fprintf(stderr, "ERROR: Unable to create file <%s>!\n", argv[1]);
          exit(1);
       }
-      unsigned long long now = getMicroTime();
-#if __BYTE_ORDER == __BIG_ENDIAN
-      const uint64_t nowToWrite = now;
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-      const uint64_t nowToWrite = bswap_64(now);
-#else
-#error Byte order undefined!
-#endif
+      unsigned long long now        = getMicroTime();
+      const uint64_t     nowToWrite = htobe64(now);
       if(fwrite((void*)&nowToWrite, sizeof(nowToWrite), 1, fh) != 1) {
          fprintf(stderr, "ERROR: Unable to write timestamp to file <%s>!\n", argv[1]);
          fclose(fh);
@@ -124,13 +129,7 @@ int main(int argc, char** argv)
          fclose(fh);
          exit(1);
       }
-#if __BYTE_ORDER == __BIG_ENDIAN
-      const unsigned long long startTimeStamp = timeStampRead;
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-      const unsigned long long startTimeStamp = bswap_64(timeStampRead);
-#else
-#error Byte order undefined!
-#endif
+      const unsigned long long startTimeStamp = be64toh(timeStampRead);
       fclose(fh);
 
       const unsigned long long now  = getMicroTime();
