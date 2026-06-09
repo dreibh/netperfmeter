@@ -478,7 +478,7 @@ bool Flow::configureSocket(const int socketDescriptor)
             return false;
          }
 #else
-#warning TCP_CONGESTION is not supported on this platform!
+#warning TCP option TCP_CONGESTION is not supported by the API of this system!
          LOG_ERROR
          stdlog << format("Congestion control configuration to %s is not supported by TCP socket %d: %s!",
                           congestionControl, socketDescriptor) << "\n";

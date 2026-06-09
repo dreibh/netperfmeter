@@ -1171,7 +1171,7 @@ double randomParetoDouble(const double location, const double shape)
 
 
 // ###### poll() to select() wrapper to work around broken Apple poll() #####
-#ifdef __APPLE__
+#if defined(__APPLE__)
 #warning Using poll() to select() wrapper to work around broken Apple poll().
 int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
 {

@@ -128,7 +128,11 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
                sinfo.sinfo_flags |= SCTP_PR_SCTP_TTL;
             }
             else {
+#if defined(SCTP_PR_SCTP_RTX)
                sinfo.sinfo_flags |= SCTP_PR_SCTP_RTX;
+#else
+#warning SCTP option SCTP_PR_SCTP_RTX is not supported by the API of this system!
+#endif
             }
          }
       }
