@@ -27,13 +27,19 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
-#include <byteswap.h>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <endian.h>
 #include <stdint.h>
 #include <sys/time.h>
+
+#if defined(__linux__)
+#include <endian.h>
+#elif defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#include <sys/endian.h>
+#elif defined(__APPLE__)
+#include <libkern/OSByteOrder.h>
+#endif
 
 
 // ###### Get current time stamp ############################################
