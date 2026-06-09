@@ -344,19 +344,29 @@ IF (WITH_ICONS)
    MESSAGE("Building with icons (WITH_ICONS=${WITH_ICONS})")
 
    FIND_PROGRAM(GS gs PATHS /bin /usr/bin /usr/local/bin)
-   IF(NOT GS)
+   IF(GS)
+      EXECUTE_PROCESS(COMMAND ${GS} --version
+                      OUTPUT_VARIABLE GS_OUTPUT
+                      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+      STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" GS_VERSION "${GS_OUTPUT}")
+      MESSAGE(STATUS "Ghostscript found: ${GS} (version ${GS_VERSION})")
+   ELSE()
       MESSAGE(FATAL_ERROR
-            " Cannot find GhostScript! Try:\n"
+            " Cannot find Ghostscript! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y ghostscript\n"
             " * Fedora:        sudo dnf install -y ghostscript\n"
             " * SuSE:          sudo zypper install -y ghostscript\n"
             " * Alpine:        sudo apk add ghostscript\n"
             " * FreeBSD:       sudo pkg install -y ghostscript10\n"
+            " * NetBSD:        sudo -y pkgin install -y ghostscript\n"
+            " * OpenBSD:       sudo pkg_add ghostscript\n"
             " * Apple:         brew install ghostscript")
    ENDIF()
 
    FIND_PROGRAM(PDF2SVG pdf2svg PATHS /bin /usr/bin /usr/local/bin)
-   IF(NOT PDF2SVG)
+   IF(PDF2SVG)
+      MESSAGE(STATUS "PDF2SVG found: ${PDF2SVG}")
+   ELSE()
       MESSAGE(FATAL_ERROR
             " Cannot find PDF2SVG! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y pdf2svg\n"
@@ -364,11 +374,19 @@ IF (WITH_ICONS)
             " * SuSE:          sudo zypper install -y pdf2svg\n"
             " * Alpine:        (needs PPA or installation from sources!)\n"
             " * FreeBSD:       sudo pkg install -y pdf2svg\n"
+            " * NetBSD:        sudo -y pkgin install -y pdf2svg\n"
+            " * OpenBSD:       (needs installation from sources!)\n"
             " * Apple:         brew install pdf2svg")
    ENDIF()
 
    FIND_PROGRAM(GM gm PATHS /bin /usr/bin /usr/local/bin)
-   IF(NOT GM)
+   IF(GM)
+      EXECUTE_PROCESS(COMMAND ${GM} version | head -n1
+                      OUTPUT_VARIABLE GM_OUTPUT
+                      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+      STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" GM_VERSION "${GM_OUTPUT}")
+      MESSAGE(STATUS "GraphicsMagick found: ${GM} (version ${GM_VERSION})")
+   ELSE()
       MESSAGE(FATAL_ERROR
             " Cannot find GraphicsMagick! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y graphicsmagick\n"
@@ -376,6 +394,8 @@ IF (WITH_ICONS)
             " * SuSE:          sudo zypper install -y GraphicsMagick\n"
             " * Alpine:        sudo apk add graphicsmagick\n"
             " * FreeBSD:       sudo pkg install -y GraphicsMagick\n"
+            " * NetBSD:        sudo -y pkgin install -y GraphicsMagick\n"
+            " * OpenBSD:       sudo pkg_add GraphicsMagick\n"
             " * Apple:         brew install graphicsmagick")
    ENDIF()
 ENDIF()
