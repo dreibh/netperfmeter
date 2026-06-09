@@ -43,6 +43,7 @@
 #include <linux/sysctl.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/proc.h>
+#include <sys/sched.h>
 #include <sys/sysctl.h>
 #elif defined(__APPLE__)
 #include <mach/mach.h>
@@ -112,7 +113,7 @@ CPUStatus::CPUStatus()
 
 #elif defined(__APPLE__)
 #if defined(USE_PER_CPU_STATISTICS
-   kern_return_t kr;
+   kern_return_t          kr;
    mach_msg_type_number_t count;
    host_basic_info_data_t hinfo;
 #endif
