@@ -198,7 +198,12 @@ ENDIF()
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
    MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
    FIND_LIBRARY(SCTP_LIBRARY sctp)
-   IF (NOT SCTP_LIBRARY)
+   FIND_PATH(SCTP_INCLUDE_DIR NAMES sctp.h)
+   IF (SCTP_LIBRARY AND SCTP_INCLUDE_DIR)
+      MESSAGE(STATUS "LK-SCTP library found:")
+      MESSAGE(STATUS " SCTP_LIBRARY:     ${SCTP_LIBRARY}")
+      MESSAGE(STATUS " SCTP_INCLUDE_DIR: ${SCTP_INCLUDE_DIR}")
+   ELSE()
       MESSAGE(FATAL_ERROR
               " Cannot find Linux Kernel SCTP library! Try:\n"
               " * Ubuntu/Debian: sudo apt install -y libsctp-dev\n"
@@ -291,9 +296,14 @@ FIND_PACKAGE(Threads REQUIRED)
 
 # ====== libbz2 =============================================================
 FIND_LIBRARY(BZ2_LIBRARY NAMES bz2)
-IF (NOT BZ2_LIBRARY)
+FIND_PATH(BZ2_INCLUDE_DIR NAMES bzlib.h)
+IF (BZ2_LIBRARY AND BZ2_INCLUDE_DIR)
+   MESSAGE(STATUS "BZip2 library found:")
+   MESSAGE(STATUS " BZ2_LIBRARY:     ${BZ2_LIBRARY}")
+   MESSAGE(STATUS " BZ2_INCLUDE_DIR: ${BZ2_INCLUDE_DIR}")
+ELSE()
    MESSAGE(FATAL_ERROR
-           " Cannot find BZ2 library! Try:\n"
+           " Cannot find BZip2 library! Try:\n"
            " * Ubuntu/Debian: sudo apt install -y libbz2-dev\n"
            " * Fedora:        sudo dnf install -y bzip2-devel\n"
            " * SuSE:          sudo zypper install -y libbz2-devel\n"
@@ -337,6 +347,22 @@ ELSE()
    ENDIF()
 
    SET(SCTP_LIBRARY ${SCTPSOCKET_LIB} ${SCTPLIB_LIB} ${GLIB_LIBRARIES})
+ENDIF()
+
+# ====== Liberty ============================================================
+IF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
+   FIND_LIBRARY(LIBIBERTY_LIBRARY NAMES iberty PATHS /usr/pkg/lib)
+   FIND_PATH(LIBIBERTY_INCLUDE_DIR NAMES libiberty.h PATHS /usr/pkg/include)
+   IF ((LIBIBERTY_LIBRARY) AND (LIBIBERTY_INCLUDE_DIR))
+      ADD_DEFINITIONS(-DHAVE_LIBIBERTY)
+      MESSAGE(STATUS "Libiberty library found:")
+      MESSAGE(STATUS " LIBIBERTY_LIBRARY:     ${LIBIBERTY_LIBRARY}")
+      MESSAGE(STATUS " LIBIBERTY_INCLUDE_DIR: ${LIBIBERTY_INCLUDE_DIR}")
+   ELSE()
+      MESSAGE(FATAL_ERROR
+              " Cannot find Libiberty library! Try:\n"
+              " * NetBSD: sudo pkgin -y install liberty")
+   ENDIF()
 ENDIF()
 
 # ====== Graphics tools for icons and logo ==================================

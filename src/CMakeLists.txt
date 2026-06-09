@@ -81,7 +81,8 @@ ADD_EXECUTABLE(netperfmeter
    transfer.cc
    transfer.h
 )
-TARGET_LINK_LIBRARIES(netperfmeter ${BZ2_LIBRARY} ${SCTP_LIBRARY} ${QUIC_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_INCLUDE_DIRECTORIES(netperfmeter PRIVATE ${BZ2_INCLUDE_DIR} ${SCTP_INCLUDE_DIR} ${QUIC_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(netperfmeter ${BZ2_LIBRARY} ${SCTP_LIBRARY} ${QUIC_LIBRARY} ${LIBIBERTY_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 INSTALL(TARGETS netperfmeter     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   netperfmeter.1   DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES   netperfmeter.xml DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)
@@ -110,7 +111,8 @@ ADD_EXECUTABLE(createsummary
    simpleredblacktree.c
    simpleredblacktree.h
 )
-TARGET_LINK_LIBRARIES(createsummary ${BZ2_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_INCLUDE_DIRECTORIES(createsummary PRIVATE ${BZ2_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(createsummary ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     createsummary   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       createsummary.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       createsummary.bash-completion
@@ -125,7 +127,8 @@ ADD_EXECUTABLE(combinesummaries
    outputfile.h
    outputfile.cc
 )
-TARGET_LINK_LIBRARIES(combinesummaries ${BZ2_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_INCLUDE_DIRECTORIES(combinesummaries PRIVATE ${BZ2_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(combinesummaries ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY} ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     combinesummaries   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       combinesummaries.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       combinesummaries.bash-completion
@@ -140,7 +143,8 @@ ADD_EXECUTABLE(extractvectors
    outputfile.h
    outputfile.cc
 )
-TARGET_LINK_LIBRARIES(extractvectors ${BZ2_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
+TARGET_INCLUDE_DIRECTORIES(extractvectors PRIVATE ${BZ2_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(extractvectors ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     extractvectors  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       extractvectors.1 DESTINATION        ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       extractvectors.bash-completion
@@ -195,11 +199,11 @@ ENDIF()
 
 # ====== Test Programs ======================================================
 # ADD_EXECUTABLE(t1 t1.cc assure.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(t1 ${SCTP_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
+# TARGET_LINK_LIBRARIES(t1 ${SCTP_LIBRARY})
 # ADD_EXECUTABLE(qs qs.cc assure.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(qs ${SCTP_LIBRARY} ${QUIC_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
+# TARGET_LINK_LIBRARIES(qs ${SCTP_LIBRARY} ${QUIC_LIBRARY})
 # ADD_EXECUTABLE(qc qc.cc assure.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(qc ${SCTP_LIBRARY} ${QUIC_LIBRARY} "${CMAKE_THREAD_LIBS_INIT}")
+# TARGET_LINK_LIBRARIES(qc ${SCTP_LIBRARY} ${QUIC_LIBRARY})
 
 
 #############################################################################
