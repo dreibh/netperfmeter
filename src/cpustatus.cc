@@ -39,12 +39,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#if defined (__linux__)
+#if defined(__linux__)
 #include <linux/sysctl.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/proc.h>
 #include <sys/sysctl.h>
-#elif defined (__APPLE__)
+#elif defined(__APPLE__)
 #include <mach/mach.h>
 #endif
 
@@ -111,7 +111,7 @@ CPUStatus::CPUStatus()
    getSysCtl("hw.ncpu", &CPUs, sizeof(CPUs));
 
 #elif defined(__APPLE__)
-#if defined (USE_PER_CPU_STATISTICS
+#if defined(USE_PER_CPU_STATISTICS
    kern_return_t kr;
    mach_msg_type_number_t count;
    host_basic_info_data_t hinfo;
@@ -123,7 +123,7 @@ CPUStatus::CPUStatus()
       stdlog << "Couldn't receive send rights!" << "\n";
       LOG_END_FATAL
    }
-#if defined (USE_PER_CPU_STATISTICS)
+#if defined(USE_PER_CPU_STATISTICS)
    if((kr = host_get_host_priv_port(host, &host_priv)) != KERN_SUCCESS) {
       LOG_FATAL
       mach_error("host_get_host_priv_port():", kr);
@@ -177,11 +177,11 @@ CPUStatus::~CPUStatus()
    OldCpuTimes = nullptr;
    delete[] Percentages;
    Percentages = nullptr;
-#if defined (__linux__)
+#if defined(__linux__)
    fclose(ProcStatFD);
    ProcStatFD = nullptr;
 #elif defined(__APPLE__)
-#if defined (USE_PER_CPU_STATISTICS)
+#if defined(USE_PER_CPU_STATISTICS)
    mach_port_deallocate(mach_task_self(), host_priv);
 #endif
    mach_port_deallocate(mach_task_self(), host);
@@ -198,7 +198,7 @@ void CPUStatus::update()
 
 
    // ====== Get counters ===================================================
-#if defined __linux__
+#if defined(__linux__)
    fseek(ProcStatFD, 0, SEEK_SET);
    fflush(ProcStatFD);
 
