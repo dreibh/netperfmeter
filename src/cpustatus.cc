@@ -41,7 +41,7 @@
 
 #if defined (__linux__)
 #include <linux/sysctl.h>
-#elif defined(__FreeBSD__) || || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/proc.h>
 #include <sys/sysctl.h>
 #elif defined (__APPLE__)
@@ -56,7 +56,7 @@ const char* CPUStatus::CpuStateNames[] = {
    "Hardware Interrupts", "Software Interrupts", "Hypervisor"
 };
 
-#elif defined(__FreeBSD__) || || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #define IDLE_INDEX 4
 const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Interrupt", "Idle"
@@ -241,7 +241,7 @@ void CPUStatus::update()
       }
    }
 
-#elif defined(__FreeBSD__) || || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
    cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
    getSysCtl("kern.cp_times", &CpuTimes[CpuStates], cpuTimesSize);
    // ------ Compute total values -------------------------

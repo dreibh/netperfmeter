@@ -72,7 +72,7 @@ class CPUStatus
    typedef unsigned long long tick_t;
    FILE*               ProcStatFD;
 
-#elif defined(__FreeBSD__) || || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
    typedef unsigned long long tick_t;
    static bool getSysCtl(const char* name, void* ptr, size_t len);
 
