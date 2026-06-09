@@ -83,20 +83,13 @@ ENDIF()
 
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
    MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
-   FIND_LIBRARY(SCTP_LIBRARY sctp)
-   IF (NOT SCTP_LIBRARY)
-      MESSAGE(FATAL_ERROR
-              " Cannot find Linux Kernel SCTP library! Try:\n"
-              " * Ubuntu/Debian: sudo apt install -y libsctp-dev\n"
-              " * Fedora:        sudo dnf install -y lksctp-tools-devel\n"
-              " * SuSE:          sudo zypper install -y lksctp-tools-devel\n"
-              " * Alpine:        sudo apk add lksctp-tools-dev\n")
-   ENDIF()
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
    MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
-ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
-   MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
+   MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
+ELSEIF (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
+   MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
+ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
    MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
 ELSE()
    MESSAGE(FATAL_ERROR "${CMAKE_SYSTEM_NAME} not supported (yet?)")
@@ -198,6 +191,21 @@ USES_IEEEFP_FP)
 
 IF (USES_IEEEFP_FP)
    ADD_DEFINITIONS(-DHAVE_IEEE_FP)
+ENDIF()
+
+
+# ====== SCTP support =======================================================
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+   MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
+   FIND_LIBRARY(SCTP_LIBRARY sctp)
+   IF (NOT SCTP_LIBRARY)
+      MESSAGE(FATAL_ERROR
+              " Cannot find Linux Kernel SCTP library! Try:\n"
+              " * Ubuntu/Debian: sudo apt install -y libsctp-dev\n"
+              " * Fedora:        sudo dnf install -y lksctp-tools-devel\n"
+              " * SuSE:          sudo zypper install -y lksctp-tools-devel\n"
+              " * Alpine:        sudo apk add lksctp-tools-dev\n")
+   ENDIF()
 ENDIF()
 
 
