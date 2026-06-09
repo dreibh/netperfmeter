@@ -47,7 +47,6 @@
 #include <signal.h>
 #include <unistd.h>
 
-
 #ifndef HAVE_MPTCP
 #warning MPTCP is not supported by the API of this system!
 #endif
@@ -56,6 +55,14 @@
 #endif
 #ifndef HAVE_QUIC
 #warning QUIC is not supported by the API of this system!
+#endif
+
+#if defined(HAVE_LIBIBERTY)
+#include <libiberty.h>
+extern "C" {
+int getopt_long_only(int argc, char* const* argv, const char* optstring,
+                     const struct option* longopts, int* longindex);
+}
 #endif
 
 
