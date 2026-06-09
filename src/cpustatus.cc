@@ -39,37 +39,29 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#ifdef __linux__
+#if defined (__linux__)
 #include <linux/sysctl.h>
-#endif
-#ifdef __FreeBSD__
+#elif defined(__FreeBSD__) || || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/proc.h>
 #include <sys/sysctl.h>
-#endif
-#ifdef __APPLE__
+#elif defined (__APPLE__)
 #include <mach/mach.h>
 #endif
 
 
-#ifdef __FreeBSD__
-#define IDLE_INDEX 4
-const char* CPUStatus::CpuStateNames[] = {
-   "User", "Nice", "System", "Interrupt", "Idle"
-};
-#elif defined __linux__
+#if defined(__linux__)
 #define IDLE_INDEX 3
 const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Idle", "IOWait",
    "Hardware Interrupts", "Software Interrupts", "Hypervisor"
 };
-#elif defined __APPLE__
-#define IDLE_INDEX 2
-const char* CPUStatus::CpuStateNames[] = {
-   "User", "System", "Idle", "Nice"
-};
-#endif
 
-#ifdef __FreeBSD__
+#elif defined(__FreeBSD__) || || defined(__NetBSD__) || defined(__OpenBSD__)
+#define IDLE_INDEX 4
+const char* CPUStatus::CpuStateNames[] = {
+   "User", "Nice", "System", "Interrupt", "Idle"
+};
+
 bool CPUStatus::getSysCtl(const char* name, void* ptr, size_t len)
 {
    size_t nlen = len;
@@ -84,6 +76,15 @@ bool CPUStatus::getSysCtl(const char* name, void* ptr, size_t len)
    }
    return true;
 }
+
+#elif defined(__APPLE__)
+#define IDLE_INDEX 2
+const char* CPUStatus::CpuStateNames[] = {
+   "User", "System", "Idle", "Nice"
+};
+
+#else
+#error Missing case!
 #endif
 
 
@@ -91,10 +92,7 @@ bool CPUStatus::getSysCtl(const char* name, void* ptr, size_t len)
 CPUStatus::CPUStatus()
 {
    // ====== Initialize =====================================================
-#ifdef __FreeBSD__
-   CpuStates = CPUSTATES;
-   getSysCtl("hw.ncpu", &CPUs, sizeof(CPUs));
-#elif defined __linux__
+#if defined(__linux__)
    CpuStates = 8;
    CPUs = sysconf(_SC_NPROCESSORS_CONF);
    if(CPUs < 1) {
@@ -107,8 +105,13 @@ CPUStatus::CPUStatus()
       stdlog << "Unable to open /proc/stat!" << "\n";
       LOG_END_FATAL
    }
-#elif defined __APPLE__
-#ifdef USE_PER_CPU_STATISTICS
+
+#elif defined(__FreeBSD__)
+   CpuStates = CPUSTATES;
+   getSysCtl("hw.ncpu", &CPUs, sizeof(CPUs));
+
+#elif defined(__APPLE__)
+#if defined (USE_PER_CPU_STATISTICS
    kern_return_t kr;
    mach_msg_type_number_t count;
    host_basic_info_data_t hinfo;
@@ -120,7 +123,7 @@ CPUStatus::CPUStatus()
       stdlog << "Couldn't receive send rights!" << "\n";
       LOG_END_FATAL
    }
-#ifdef USE_PER_CPU_STATISTICS
+#if defined (USE_PER_CPU_STATISTICS)
    if((kr = host_get_host_priv_port(host, &host_priv)) != KERN_SUCCESS) {
       LOG_FATAL
       mach_error("host_get_host_priv_port():", kr);
@@ -136,6 +139,9 @@ CPUStatus::CPUStatus()
 #else
    CPUs = 1;
 #endif
+
+#else
+#error Missing case!
 #endif
 
    // ====== Allocate current times array ===================================
@@ -155,7 +161,8 @@ CPUStatus::CPUStatus()
    for(unsigned int i = 0; i < (CPUs + 1) * CpuStates; i++) {
       Percentages[i] = 100.0 / CpuStates;
    }
-#ifdef __linux__
+
+#if defined(__linux__)
    update();
 #endif
 }
@@ -170,12 +177,11 @@ CPUStatus::~CPUStatus()
    OldCpuTimes = nullptr;
    delete[] Percentages;
    Percentages = nullptr;
-#ifdef __linux__
+#if defined (__linux__)
    fclose(ProcStatFD);
    ProcStatFD = nullptr;
-#endif
-#ifdef __APPLE__
-#ifdef USE_PER_CPU_STATISTICS
+#elif defined(__APPLE__)
+#if defined (USE_PER_CPU_STATISTICS)
    mach_port_deallocate(mach_task_self(), host_priv);
 #endif
    mach_port_deallocate(mach_task_self(), host);
@@ -192,18 +198,7 @@ void CPUStatus::update()
 
 
    // ====== Get counters ===================================================
-#ifdef __FreeBSD__
-   cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
-   getSysCtl("kern.cp_times", &CpuTimes[CpuStates], cpuTimesSize);
-   // ------ Compute total values -------------------------
-   for(unsigned int j = 0; j < CpuStates; j++) {
-      CpuTimes[j] = 0;
-      for(unsigned int i = 0; i < CPUs; i++) {
-         CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
-      }
-   }
-
-#elif defined __linux__
+#if defined __linux__
    fseek(ProcStatFD, 0, SEEK_SET);
    fflush(ProcStatFD);
 
@@ -246,9 +241,21 @@ void CPUStatus::update()
       }
    }
 
-#elif __APPLE__
+#elif defined(__FreeBSD__) || || defined(__NetBSD__) || defined(__OpenBSD__)
+   cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
+   getSysCtl("kern.cp_times", &CpuTimes[CpuStates], cpuTimesSize);
+   // ------ Compute total values -------------------------
+   for(unsigned int j = 0; j < CpuStates; j++) {
+      CpuTimes[j] = 0;
+      for(unsigned int i = 0; i < CPUs; i++) {
+         CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
+      }
+   }
+
+
+#elif defined(__APPLE__)
    kern_return_t kr;
-#ifdef USE_PER_CPU_STATISTICS
+#if defined(USE_PER_CPU_STATISTICS)
    processor_port_array_t processor_list;
    natural_t processor_count, info_count;
    processor_cpu_load_info_data_t cpu_load_info;
@@ -288,6 +295,9 @@ void CPUStatus::update()
       CpuTimes[j] = CpuTimes[CpuStates + j] = cpu_load_info.cpu_ticks[j];
    }
 #endif
+
+#else
+#error Missing case!
 #endif
 
 
