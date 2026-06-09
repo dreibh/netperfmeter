@@ -469,13 +469,22 @@ bool Flow::configureSocket(const int socketDescriptor)
 
       const char* congestionControl = TrafficSpec.CongestionControl.c_str();
       if(strcmp(congestionControl, "default") != 0) {
+#if defined(TCP_CONGESTION)
          if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
             LOG_ERROR
-            stdlog << format("Failed to configure congestion control %s (TCP_CONGESTION option) on SCTP socket %d: %s!",
+            stdlog << format("Failed to configure congestion control %s (TCP_CONGESTION option) on TCP socket %d: %s!",
                              congestionControl, socketDescriptor, strerror(errno)) << "\n";
             LOG_END
             return false;
          }
+#else
+#warning TCP_CONGESTION is not supported on this platform!
+         LOG_ERROR
+         stdlog << format("Congestion control configuration to %s is not supported by TCP socket %d: %s!",
+                          congestionControl, socketDescriptor) << "\n";
+         LOG_END
+         return false;
+#endif
       }
    }
    else if(TrafficSpec.Protocol == IPPROTO_SCTP) {
