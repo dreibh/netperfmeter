@@ -428,7 +428,7 @@ IF (WITH_ICONS)
             " * FreeBSD:       sudo pkg install -y poppler-utils\n"
             " * NetBSD:        sudo -y pkgin install -y poppler-utils\n"
             " * OpenBSD:       (needs installation from sources!)\n"
-            " * Apple:         brew install poppler-utils")
+            " * Apple:         brew install poppler")
    ENDIF()
 ENDIF()
 
