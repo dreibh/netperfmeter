@@ -255,7 +255,7 @@ int addresscmp(const struct sockaddr* a1, const struct sockaddr* a2, const bool 
       else {
          x1[0] = 0;
          x1[1] = 0;
-         x1[2] = htonl(0xffff);
+         x1[2] = htobe32(0xffff);
          x1[3] = *((uint32_t*)&((struct sockaddr_in*)a1)->sin_addr);
       }
 
@@ -265,7 +265,7 @@ int addresscmp(const struct sockaddr* a1, const struct sockaddr* a2, const bool 
       else {
          x2[0] = 0;
          x2[1] = 0;
-         x2[2] = htonl(0xffff);
+         x2[2] = htobe32(0xffff);
          x2[3] = *((uint32_t*)&((struct sockaddr_in*)a2)->sin_addr);
       }
 
@@ -309,7 +309,7 @@ bool address2string(const struct sockaddr* address,
          ipv4address = (const struct sockaddr_in*)address;
          if(port) {
             snprintf(buffer, length,
-                     "%s:%d", inet_ntoa(ipv4address->sin_addr), ntohs(ipv4address->sin_port));
+                     "%s:%d", inet_ntoa(ipv4address->sin_addr), be16toh(ipv4address->sin_port));
          }
          else {
             snprintf(buffer, length, "%s", inet_ntoa(ipv4address->sin_addr));
@@ -334,7 +334,7 @@ bool address2string(const struct sockaddr* address,
          if(inet_ntop(AF_INET6, &ipv6address->sin6_addr, str, sizeof(str)) != nullptr) {
             if(port) {
                snprintf(buffer, length,
-                        "[%s%s]:%d", str, scope, ntohs(ipv6address->sin6_port));
+                        "[%s%s]:%d", str, scope, be16toh(ipv6address->sin6_port));
             }
             else {
                snprintf(buffer, length, "%s%s", str, scope);
@@ -458,13 +458,13 @@ bool string2address(const char*           string,
 
    switch(ipv4address->sin_family) {
       case AF_INET:
-         ipv4address->sin_port = htons(portNumber);
+         ipv4address->sin_port = htobe16(portNumber);
 #ifdef HAVE_SIN_LEN
          ipv4address->sin_len  = sizeof(struct sockaddr_in);
 #endif
        break;
       case AF_INET6:
-         ipv6address->sin6_port = htons(portNumber);
+         ipv6address->sin6_port = htobe16(portNumber);
 #ifdef HAVE_SIN6_LEN
          ipv6address->sin6_len  = sizeof(struct sockaddr_in6);
 #endif
@@ -539,9 +539,9 @@ uint16_t getPort(const struct sockaddr* address)
    if(address != nullptr) {
       switch(address->sa_family) {
          case AF_INET:
-            return ntohs(((struct sockaddr_in*)address)->sin_port);
+            return be16toh(((struct sockaddr_in*)address)->sin_port);
          case AF_INET6:
-            return ntohs(((struct sockaddr_in6*)address)->sin6_port);
+            return be16toh(((struct sockaddr_in6*)address)->sin6_port);
          default:
             return 0;
       }
@@ -556,10 +556,10 @@ bool setPort(struct sockaddr* address, uint16_t port)
    if(address != nullptr) {
       switch(address->sa_family) {
          case AF_INET:
-            ((struct sockaddr_in*)address)->sin_port = htons(port);
+            ((struct sockaddr_in*)address)->sin_port = htobe16(port);
             return true;
          case AF_INET6:
-            ((struct sockaddr_in6*)address)->sin6_port = htons(port);
+            ((struct sockaddr_in6*)address)->sin6_port = htobe16(port);
             return true;
       }
    }
@@ -633,11 +633,11 @@ int bindSocket(const int             sd,
    memset(&anyAddress, 0, sizeof(anyAddress));
    if(socketFamily == AF_INET6) {
       anyAddress.in6.sin6_family = AF_INET6;
-      anyAddress.in6.sin6_port   = htons(localPort);
+      anyAddress.in6.sin6_port   = htobe16(localPort);
    }
    else {
       anyAddress.in.sin_family = AF_INET;
-      anyAddress.in.sin_port   = htons(localPort);
+      anyAddress.in.sin_port   = htobe16(localPort);
    }
 
    // ====== Get protocol ===================================================
@@ -678,12 +678,12 @@ int bindSocket(const int             sd,
          for(unsigned int i = 0;i < localAddressCount;i++) {
             if(localAddressArray[i].sa.sa_family == AF_INET) {
                memcpy(ptr, (void*)&localAddressArray[i].in, sizeof(sockaddr_in));
-               ((sockaddr_in*)ptr)->sin_port = htons(localPort);
+               ((sockaddr_in*)ptr)->sin_port = htobe16(localPort);
                ptr += sizeof(sockaddr_in);
             }
             else if(localAddressArray[i].sa.sa_family == AF_INET6) {
                memcpy(ptr, (void*)&localAddressArray[i].in6, sizeof(sockaddr_in6));
-               ((sockaddr_in6*)ptr)->sin6_port = htons(localPort);
+               ((sockaddr_in6*)ptr)->sin6_port = htobe16(localPort);
                ptr += sizeof(sockaddr_in6);
             }
             else {
@@ -700,11 +700,11 @@ int bindSocket(const int             sd,
          sockaddr_union localAddress;
          if(localAddressArray[0].sa.sa_family == AF_INET) {
             memcpy(&localAddress, (void*)&localAddressArray[0].in, sizeof(sockaddr_in));
-            ((sockaddr_in*)&localAddress)->sin_port = htons(localPort);
+            ((sockaddr_in*)&localAddress)->sin_port = htobe16(localPort);
          }
          else if(localAddressArray[0].sa.sa_family == AF_INET6) {
             memcpy(&localAddress, (void*)&localAddressArray[0].in6, sizeof(sockaddr_in6));
-            ((sockaddr_in6*)&localAddress)->sin6_port = htons(localPort);
+            ((sockaddr_in6*)&localAddress)->sin6_port = htobe16(localPort);
          }
          else {
             assert(false);
@@ -814,7 +814,7 @@ network_double_t doubleToNetwork(const double d)
       ieee.f1 = (unsigned long)ldexp (frac, DBL_FRC1_BITS);
       ieee.f2 = (unsigned long)ldexp (frac, DBL_FRC_BITS);
    }
-   return hton64(*((network_double_t*)&ieee));
+   return htobe64(*((network_double_t*)&ieee));
 }
 
 
@@ -825,7 +825,7 @@ double networkToDouble(network_double_t value)
    struct IeeeDouble* ieee;
    double             d;
 
-   hValue = ntoh64(value);
+   hValue = be64toh(value);
    ieee = (struct IeeeDouble*)&hValue;
    if(ieee->e == 0) {
       if((ieee->f1 == 0) && (ieee->f2 == 0)) {
@@ -872,14 +872,14 @@ network_double_t doubleToNetwork(const double d)
 {
    union DoubleIntUnion valueUnion;
    valueUnion.Double = d;
-   return hton64(valueUnion.Integer);
+   return htobe64(valueUnion.Integer);
 }
 
 // ###### Convert machine-independent form to double ########################
 double networkToDouble(network_double_t value)
 {
    union DoubleIntUnion valueUnion;
-   valueUnion.Integer = ntoh64(value);
+   valueUnion.Integer = be64toh(value);
    return valueUnion.Double;
 }
 

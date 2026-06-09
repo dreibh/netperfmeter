@@ -99,7 +99,7 @@ void Defragmenter::print(std::ostream& os)
 void Defragmenter::addFragment(const unsigned long long       now,
                                const NetPerfMeterDataMessage* dataMsg)
 {
-   const uint32_t frameID = ntohl(dataMsg->FrameID);
+   const uint32_t frameID = be32toh(dataMsg->FrameID);
 
    // ====== Find frame =====================================================
    Frame*                               frame;
@@ -119,15 +119,15 @@ void Defragmenter::addFragment(const unsigned long long       now,
    }
 
    // ====== Add fragment ===================================================
-   const uint64_t packetSeqNumber = ntoh64(dataMsg->SeqNumber);
+   const uint64_t packetSeqNumber = be64toh(dataMsg->SeqNumber);
    std::map<uint64_t, Fragment*>::iterator foundFragment =
       frame->FragmentSet.find(packetSeqNumber);
    if(foundFragment == frame->FragmentSet.end()) {
       Fragment* fragment = new Fragment;
       if(fragment) {
          fragment->PacketSeqNumber = packetSeqNumber;
-         fragment->ByteSeqNumber   = ntoh64(dataMsg->ByteSeqNumber);
-         fragment->Length          = ntohs(dataMsg->Header.Length);
+         fragment->ByteSeqNumber   = be64toh(dataMsg->ByteSeqNumber);
+         fragment->Length          = be16toh(dataMsg->Header.Length);
          fragment->Flags           = dataMsg->Header.Flags;
          frame->FragmentSet.insert(std::pair<uint64_t, Fragment*>(fragment->PacketSeqNumber, fragment));
       }

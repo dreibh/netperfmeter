@@ -98,15 +98,15 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    if(isFrameEnd) {
       dataMsg->Header.Flags |= NPMDF_FRAME_END;
    }
-   dataMsg->Header.Length = htons(bytesToSend);
-   dataMsg->MeasurementID = hton64(flow->getMeasurementID());
-   dataMsg->FlowID        = htonl(flow->getFlowID());
-   dataMsg->StreamID      = htons(flow->getStreamID());
+   dataMsg->Header.Length = htobe16(bytesToSend);
+   dataMsg->MeasurementID = htobe64(flow->getMeasurementID());
+   dataMsg->FlowID        = htobe32(flow->getFlowID());
+   dataMsg->StreamID      = htobe16(flow->getStreamID());
    dataMsg->Padding       = 0x0000;
-   dataMsg->FrameID       = htonl(frameID);
-   dataMsg->SeqNumber     = hton64(flow->nextOutboundSeqNumber());
-   dataMsg->ByteSeqNumber = hton64(flow->getCurrentBandwidthStats().TransmittedBytes);
-   dataMsg->TimeStamp     = hton64(now);
+   dataMsg->FrameID       = htobe32(frameID);
+   dataMsg->SeqNumber     = htobe64(flow->nextOutboundSeqNumber());
+   dataMsg->ByteSeqNumber = htobe64(flow->getCurrentBandwidthStats().TransmittedBytes);
+   dataMsg->TimeStamp     = htobe64(now);
 
    // ------ Create payload data pattern ------------------
    fillPayload((unsigned char*)&dataMsg->Payload,
@@ -119,7 +119,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_stream   = flow->getStreamID();
-      sinfo.sinfo_ppid     = htonl(PPID_NETPERFMETER_DATA);
+      sinfo.sinfo_ppid     = htobe32(PPID_NETPERFMETER_DATA);
       if(flow->getTrafficSpec().ReliableMode < 1.0) {
          const bool sendUnreliable = (randomDouble() > flow->getTrafficSpec().ReliableMode);
          if(sendUnreliable) {
@@ -267,7 +267,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
          // ====== Handle NETPERFMETER_IDENTIFY_FLOW message ================
          if( (received >= (ssize_t)sizeof(NetPerfMeterIdentifyMessage)) &&
             (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
-            (ntoh64(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
+            (be64toh(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
             const bool identifyOkay =
                handleNetPerfMeterIdentify(identifyMsg, sd, &from);
             if(!identifyOkay) {
@@ -376,8 +376,8 @@ static void updateStatistics(Flow*                          flow,
                              const size_t                   receivedBytes)
 {
    // ====== Update QoS statistics ==========================================
-   const uint64_t seqNumber   = ntoh64(dataMsg->SeqNumber);
-   const uint64_t timeStamp   = ntoh64(dataMsg->TimeStamp);
+   const uint64_t seqNumber   = be64toh(dataMsg->SeqNumber);
+   const uint64_t timeStamp   = be64toh(dataMsg->TimeStamp);
    const double   transitTime = ((double)now - (double)timeStamp) / 1000.0;
 
    // ------ Jitter calculation according to RFC 3550 -----------------------

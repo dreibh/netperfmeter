@@ -261,9 +261,9 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                   printf("Socket %d:   header T=%u F=%02x L=%u   [Header]\n",
                           socket->SocketDescriptor,
                           (unsigned int)header->Type, (unsigned int)header->Flags,
-                         ntohs(header->Length));
+                         be16toh(header->Length));
 #endif
-                  socket->MessageSize = ntohs(header->Length);
+                  socket->MessageSize = be16toh(header->Length);
                   if(socket->MessageSize < sizeof(TLVHeader)) {
                      LOG_WARNING
                      stdlog << format("Message size < TLV size in message from socket %d!",
@@ -297,7 +297,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                    socket->SocketDescriptor,
                    ((const TLVHeader*)socket->MessageBuffer)->Type,
                    ((const TLVHeader*)socket->MessageBuffer)->Flags,
-                   ntohs(((const TLVHeader*)socket->MessageBuffer)->Length),
+                   be16toh(((const TLVHeader*)socket->MessageBuffer)->Length),
                    (unsigned int)socket->BytesRead,
                    (unsigned int)socket->MessageSize);
 #endif

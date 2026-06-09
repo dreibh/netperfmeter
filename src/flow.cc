@@ -522,11 +522,11 @@ bool Flow::configureSocket(const int socketDescriptor)
             LOG_END
          }
       }
-      const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };
+      const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_ERROR
          stdlog << format("Failed to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket: %s!",
-                           (unsigned int)ntohl(service[0]), socketDescriptor, strerror(errno)) << "\n";
+                           (unsigned int)be32toh(service[0]), socketDescriptor, strerror(errno)) << "\n";
          LOG_END
          return false;
       }

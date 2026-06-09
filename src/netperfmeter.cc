@@ -1510,7 +1510,7 @@ static void passiveMode(const uint16_t localPort)
          // ------ Set default send parameters ---------------------------------
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
-         sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
+         sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM,
                            &sinfo, sizeof(sinfo)) < 0) {
             LOG_FATAL
@@ -1658,11 +1658,11 @@ static void passiveMode(const uint16_t localPort)
       LOG_END
    }
    else {
-      const uint32_t service[1] = { htonl(SC_NETPERFMETER_DATA) };
+      const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_FATAL
          stdlog << format("Failed to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket: %s!",
-                           (unsigned int)ntohl(service[0]), gDCCPSocket, strerror(errno)) << "\n";
+                           (unsigned int)be32toh(service[0]), gDCCPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize) == false) {
@@ -1939,7 +1939,7 @@ static void activeMode(const char* remoteEndpoint)
    if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
-      sinfo.sinfo_ppid = htonl(PPID_NETPERFMETER_CONTROL);
+      sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
          LOG_FATAL
          stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket: %s!",

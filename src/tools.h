@@ -43,36 +43,23 @@
 
 #include <ext_socket.h>
 
-#if !defined(__APPLE__)
-#include <byteswap.h>
+// Endianess conversions: htobe*(), be*toh():
+#if defined(__linux__)
 #include <endian.h>
-#else
-
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+#include <sys/endian.h>
+#elif defined(__OpenBSD__)
+#include <endian.h>
+#elif defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
-#define bswap_16 OSSwapInt16
-#define bswap_32 OSSwapInt32
-#define bswap_64 OSSwapInt64
-
-#define __BYTE_ORDER    BYTE_ORDER
-#define __LITTLE_ENDIAN LITTLE_ENDIAN
-#define __BIG_ENDIAN    BIG_ENDIAN
-
-#include <libkern/OSByteOrder.h>
-#define htole16(x) OSSwapHostToLittleInt16(x)
-#define le16toh(x) OSSwapLittleToHostInt16(x)
 #define htobe16(x) OSSwapHostToBigInt16(x)
 #define be16toh(x) OSSwapBigToHostInt16(x)
-+
-#define htole32(x) OSSwapHostToLittleInt32(x)
-#define le32toh(x) OSSwapLittleToHostInt32(x)
 #define htobe32(x) OSSwapHostToBigInt32(x)
 #define be32toh(x) OSSwapBigToHostInt32(x)
-+
-#define htole64(x) OSSwapHostToLittleInt64(x)
-#define le64toh(x) OSSwapLittleToHostInt64(x)
 #define htobe64(x) OSSwapHostToBigInt64(x)
 #define be64toh(x) OSSwapBigToHostInt64(x)
-
+#else
+#error Unsupported system: add endianess conversion function definitions!
 #endif
 
 #include "mutex.h"
@@ -156,15 +143,6 @@ int bindSocket(const int             sd,
                const bool            listenMode,
                const bool            bindV6Only);
 
-#if __BYTE_ORDER == __BIG_ENDIAN
-inline uint64_t hton64(const uint64_t value) { return value; }
-inline uint64_t ntoh64(const uint64_t value) { return value; }
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-inline uint64_t hton64(const uint64_t value) { return bswap_64(value); }
-inline uint64_t ntoh64(const uint64_t value) { return bswap_64(value); }
-#else
-#error Byte order undefined!
-#endif
 
 typedef unsigned long long network_double_t;
 

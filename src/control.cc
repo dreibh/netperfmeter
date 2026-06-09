@@ -68,7 +68,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
    ssize_t received = messageReader->receiveMessage(controlSocket, resultsMsg, sizeof(messageBuffer));
    while( (received == MRRM_PARTIAL_READ) || (received >= (ssize_t)sizeof(NetPerfMeterResults)) ) {
       if(received > 0) {
-         const size_t bytes = ntohs(resultsMsg->Header.Length);
+         const size_t bytes = be16toh(resultsMsg->Header.Length);
          if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
             LOG_ERROR
             stdlog << format("Received unexpected message type $%02x on socket %d!",
@@ -178,10 +178,10 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
       addFlowMsg->Header.Flags |= NPMAFF_REPEATONOFF;
    }
 
-   addFlowMsg->Header.Length = htons(addFlowMsgSize);
-   addFlowMsg->MeasurementID = hton64(flow->getMeasurementID());
-   addFlowMsg->FlowID        = htonl(flow->getFlowID());
-   addFlowMsg->StreamID      = htons(flow->getStreamID());
+   addFlowMsg->Header.Length = htobe16(addFlowMsgSize);
+   addFlowMsg->MeasurementID = htobe64(flow->getMeasurementID());
+   addFlowMsg->FlowID        = htobe32(flow->getFlowID());
+   addFlowMsg->StreamID      = htobe16(flow->getStreamID());
    addFlowMsg->Protocol      = htole16(flow->getTrafficSpec().Protocol);
    for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
       addFlowMsg->FrameRate[i] = doubleToNetwork(flow->getTrafficSpec().InboundFrameRate[i]);
@@ -189,18 +189,18 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    }
    addFlowMsg->FrameRateRng  = flow->getTrafficSpec().InboundFrameRateRng;
    addFlowMsg->FrameSizeRng  = flow->getTrafficSpec().InboundFrameSizeRng;
-   addFlowMsg->RcvBufferSize = htonl(flow->getTrafficSpec().RcvBufferSize);
-   addFlowMsg->SndBufferSize = htonl(flow->getTrafficSpec().SndBufferSize);
-   addFlowMsg->MaxMsgSize    = htons(flow->getTrafficSpec().MaxMsgSize);
-   addFlowMsg->OrderedMode   = htonl((uint32_t)((long long)rint(flow->getTrafficSpec().OrderedMode * (double)0xffffffff)));
-   addFlowMsg->ReliableMode  = htonl((uint32_t)((long long)rint(flow->getTrafficSpec().ReliableMode * (double)0xffffffff)));
+   addFlowMsg->RcvBufferSize = htobe32(flow->getTrafficSpec().RcvBufferSize);
+   addFlowMsg->SndBufferSize = htobe32(flow->getTrafficSpec().SndBufferSize);
+   addFlowMsg->MaxMsgSize    = htobe16(flow->getTrafficSpec().MaxMsgSize);
+   addFlowMsg->OrderedMode   = htobe32((uint32_t)((long long)rint(flow->getTrafficSpec().OrderedMode * (double)0xffffffff)));
+   addFlowMsg->ReliableMode  = htobe32((uint32_t)((long long)rint(flow->getTrafficSpec().ReliableMode * (double)0xffffffff)));
    addFlowMsg->RetransmissionTrials =
-      htonl((uint32_t)flow->getTrafficSpec().RetransmissionTrials |
+      htobe32((uint32_t)flow->getTrafficSpec().RetransmissionTrials |
             (uint32_t)(flow->getTrafficSpec().RetransmissionTrialsInMS ? NPMAF_RTX_TRIALS_IN_MILLISECONDS : 0));
    addFlowMsg->CCID          = flow->getTrafficSpec().CCID;
    addFlowMsg->CMT           = flow->getTrafficSpec().CMT;
 
-   addFlowMsg->OnOffEvents   = htons(flow->getTrafficSpec().OnOffEvents.size());
+   addFlowMsg->OnOffEvents   = htobe16(flow->getTrafficSpec().OnOffEvents.size());
    size_t i = 0;
    for(std::vector<OnOffEvent>::const_iterator iterator = flow->getTrafficSpec().OnOffEvents.begin();
        iterator != flow->getTrafficSpec().OnOffEvents.end();iterator++, i++) {
@@ -225,7 +225,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    // Obsolete fields (used for Linux MPTCP development version):
    memset((char*)&addFlowMsg->PathMgr,   0, sizeof(addFlowMsg->PathMgr));
    memset((char*)&addFlowMsg->Scheduler, 0, sizeof(addFlowMsg->Scheduler));
-   addFlowMsg->NDiffPorts = htons(0);
+   addFlowMsg->NDiffPorts = htobe16(0);
 
    LOG_TRACE
    stdlog << format("<R1 sd=%d>", controlSocket) << "\n";
@@ -290,11 +290,11 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       else if(flow->getVectorFile().getFormat() == OFF_BZip2) {
          identifyMsg.Header.Flags |= NPMIF_COMPRESS_VECTORS;
       }
-      identifyMsg.Header.Length = htons(sizeof(identifyMsg));
-      identifyMsg.MagicNumber   = hton64(NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER);
-      identifyMsg.MeasurementID = hton64(flow->getMeasurementID());
-      identifyMsg.FlowID        = htonl(flow->getFlowID());
-      identifyMsg.StreamID      = htons(flow->getStreamID());
+      identifyMsg.Header.Length = htobe16(sizeof(identifyMsg));
+      identifyMsg.MagicNumber   = htobe64(NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER);
+      identifyMsg.MeasurementID = htobe64(flow->getMeasurementID());
+      identifyMsg.FlowID        = htobe32(flow->getFlowID());
+      identifyMsg.StreamID      = htobe16(flow->getStreamID());
 
       LOG_TRACE
       stdlog << format("<R3 sd=%d trial=%u/%u>", controlSocket, trial, maxTrials) << "\n";
@@ -303,7 +303,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
          sinfo.sinfo_stream = flow->getStreamID();
-         sinfo.sinfo_ppid   = htonl(PPID_NETPERFMETER_CONTROL);
+         sinfo.sinfo_ppid   = htobe32(PPID_NETPERFMETER_CONTROL);
          if(sctp_send(flow->getSocketDescriptor(), &identifyMsg, sizeof(identifyMsg), &sinfo, 0) <= 0) {
             return false;
          }
@@ -425,9 +425,9 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       // ====== Tell passive node to start measurement ======================
       NetPerfMeterStartMessage startMsg;
       startMsg.Header.Type   = NETPERFMETER_START;
-      startMsg.Header.Length = htons(sizeof(startMsg));
+      startMsg.Header.Length = htobe16(sizeof(startMsg));
       startMsg.Padding       = 0x00000000;
-      startMsg.MeasurementID = hton64(measurementID);
+      startMsg.MeasurementID = htobe64(measurementID);
       startMsg.Header.Flags  = 0x00;
       if(scalarNamePattern[0] == 0x00) {
          startMsg.Header.Flags |= NPMSF_NO_SCALARS;
@@ -476,10 +476,10 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
    NetPerfMeterRemoveFlowMessage removeFlowMsg;
    removeFlowMsg.Header.Type   = NETPERFMETER_REMOVE_FLOW;
    removeFlowMsg.Header.Flags  = 0x00;
-   removeFlowMsg.Header.Length = htons(sizeof(removeFlowMsg));
-   removeFlowMsg.MeasurementID = hton64(flow->getMeasurementID());
-   removeFlowMsg.FlowID        = htonl(flow->getFlowID());
-   removeFlowMsg.StreamID      = htons(flow->getStreamID());
+   removeFlowMsg.Header.Length = htobe16(sizeof(removeFlowMsg));
+   removeFlowMsg.MeasurementID = htobe64(flow->getMeasurementID());
+   removeFlowMsg.FlowID        = htobe32(flow->getFlowID());
+   removeFlowMsg.StreamID      = htobe16(flow->getStreamID());
 
    LOG_TRACE
    stdlog << format("<flow %u>", flow->getFlowID()) << "\n";
@@ -518,9 +518,9 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    NetPerfMeterStopMessage stopMsg;
    stopMsg.Header.Type   = NETPERFMETER_STOP;
    stopMsg.Header.Flags  = 0x00;
-   stopMsg.Header.Length = htons(sizeof(stopMsg));
+   stopMsg.Header.Length = htobe16(sizeof(stopMsg));
    stopMsg.Padding       = 0x00000000;
-   stopMsg.MeasurementID = hton64(measurementID);
+   stopMsg.MeasurementID = htobe64(measurementID);
 
    LOG_INFO
    stdlog << format("Stopping measurement on socket %d ...",
@@ -658,9 +658,9 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    }
 
    // ====== Check whether NETPERFMETER_ACKNOWLEDGE is okay =================
-   if( (ntoh64(ackMsg.MeasurementID) != measurementID) ||
-       (ntohl(ackMsg.FlowID) != flowID) ||
-       (ntohs(ackMsg.StreamID) != streamID) ) {
+   if( (be64toh(ackMsg.MeasurementID) != measurementID) ||
+       (be32toh(ackMsg.FlowID) != flowID) ||
+       (be16toh(ackMsg.StreamID) != streamID) ) {
       LOG_WARNING
       stdlog << format("Received NETPERFMETER_ACKNOWLEDGE for wrong measurement/flow/stream on socket %d!",
                        controlSocket) << "\n";
@@ -668,7 +668,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
       return false;
    }
 
-   const uint32_t status = ntohl(ackMsg.Status);
+   const uint32_t status = be32toh(ackMsg.Status);
    LOG_TRACE
    stdlog << format("<status=%u sd=%d>", status, controlSocket) << "\n";
    LOG_END
@@ -705,7 +705,7 @@ static bool uploadOutputFile(const int         controlSocket,
                                  NETPERFMETER_RESULTS_MAX_DATA_LENGTH,
                                  outputFile.getFile());
       resultsMsg->Header.Flags  = feof(outputFile.getFile()) ? NPMRF_EOF : 0x00;
-      resultsMsg->Header.Length = htons(sizeof(NetPerfMeterResults) + bytes);
+      resultsMsg->Header.Length = htobe16(sizeof(NetPerfMeterResults) + bytes);
       if(ferror(outputFile.getFile())) {
          LOG_ERROR
          stdlog << format("Failed to read results from %s: %s!",
@@ -777,10 +777,10 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
    }
-   const uint64_t measurementID   = ntoh64(addFlowMsg->MeasurementID);
-   const uint32_t flowID          = ntohl(addFlowMsg->FlowID);
-   const uint16_t streamID        = ntohs(addFlowMsg->StreamID);
-   const size_t   startStopEvents = ntohs(addFlowMsg->OnOffEvents);
+   const uint64_t measurementID   = be64toh(addFlowMsg->MeasurementID);
+   const uint32_t flowID          = be32toh(addFlowMsg->FlowID);
+   const uint16_t streamID        = be16toh(addFlowMsg->StreamID);
+   const size_t   startStopEvents = be16toh(addFlowMsg->OnOffEvents);
    if(received < sizeof(NetPerfMeterAddFlowMessage) + (startStopEvents * sizeof(NetPerfMeterOnOffEvent))) {
       LOG_WARNING
       stdlog << format("Too few start/stop entries in NETPERFMETER_ADD_FLOW control message on socket %d!",
@@ -813,18 +813,18 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       trafficSpec.ErrorOnAbort             = false;
       trafficSpec.OutboundFrameRateRng     = addFlowMsg->FrameRateRng;
       trafficSpec.OutboundFrameSizeRng     = addFlowMsg->FrameSizeRng;
-      trafficSpec.MaxMsgSize               = ntohs(addFlowMsg->MaxMsgSize);
-      trafficSpec.RcvBufferSize            = ntohl(addFlowMsg->RcvBufferSize);
-      trafficSpec.SndBufferSize            = ntohl(addFlowMsg->SndBufferSize);
-      trafficSpec.OrderedMode              = ntohl(addFlowMsg->OrderedMode)  / (double)0xffffffff;
-      trafficSpec.ReliableMode             = ntohl(addFlowMsg->ReliableMode) / (double)0xffffffff;
+      trafficSpec.MaxMsgSize               = be16toh(addFlowMsg->MaxMsgSize);
+      trafficSpec.RcvBufferSize            = be32toh(addFlowMsg->RcvBufferSize);
+      trafficSpec.SndBufferSize            = be32toh(addFlowMsg->SndBufferSize);
+      trafficSpec.OrderedMode              = be32toh(addFlowMsg->OrderedMode)  / (double)0xffffffff;
+      trafficSpec.ReliableMode             = be32toh(addFlowMsg->ReliableMode) / (double)0xffffffff;
       trafficSpec.CMT                      = addFlowMsg->CMT;
       trafficSpec.CCID                     = addFlowMsg->CCID;
       trafficSpec.NoDelay                  = (addFlowMsg->Header.Flags & NPMAFF_NODELAY);
       trafficSpec.Debug                    = (addFlowMsg->Header.Flags & NPMAFF_DEBUG);
       trafficSpec.RepeatOnOff              = (addFlowMsg->Header.Flags & NPMAFF_REPEATONOFF);
-      trafficSpec.RetransmissionTrials     = ntohl(addFlowMsg->RetransmissionTrials) & ~NPMAF_RTX_TRIALS_IN_MILLISECONDS;
-      trafficSpec.RetransmissionTrialsInMS = (ntohl(addFlowMsg->RetransmissionTrials) & NPMAF_RTX_TRIALS_IN_MILLISECONDS);
+      trafficSpec.RetransmissionTrials     = be32toh(addFlowMsg->RetransmissionTrials) & ~NPMAF_RTX_TRIALS_IN_MILLISECONDS;
+      trafficSpec.RetransmissionTrialsInMS = (be32toh(addFlowMsg->RetransmissionTrials) & NPMAF_RTX_TRIALS_IN_MILLISECONDS);
       if( (trafficSpec.RetransmissionTrialsInMS) && (trafficSpec.RetransmissionTrials == NPMAF_RTX_DEFAULT) ) {
          trafficSpec.RetransmissionTrials = ~0U;
       }
@@ -845,8 +845,8 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       congestionControl[sizeof(addFlowMsg->CongestionControl)] = 0x00;
       trafficSpec.CongestionControl = std::string(congestionControl);
 
-      Flow* flow = new Flow(ntoh64(addFlowMsg->MeasurementID), ntohl(addFlowMsg->FlowID),
-                            ntohs(addFlowMsg->StreamID), trafficSpec,
+      Flow* flow = new Flow(be64toh(addFlowMsg->MeasurementID), be32toh(addFlowMsg->FlowID),
+                            be16toh(addFlowMsg->StreamID), trafficSpec,
                             controlSocket);
       return(sendNetPerfMeterAcknowledge(controlSocket,
                                          measurementID, flowID, streamID,
@@ -870,9 +870,9 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
    }
-   const uint64_t measurementID = ntoh64(removeFlowMsg->MeasurementID);
-   const uint32_t flowID        = ntohl(removeFlowMsg->FlowID);
-   const uint16_t streamID      = ntohs(removeFlowMsg->StreamID);
+   const uint64_t measurementID = be64toh(removeFlowMsg->MeasurementID);
+   const uint32_t flowID        = be32toh(removeFlowMsg->FlowID);
+   const uint16_t streamID      = be16toh(removeFlowMsg->StreamID);
    Flow* flow = FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID);
    if(flow == nullptr) {
       LOG_WARNING
@@ -912,7 +912,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
    }
-   const uint64_t measurementID = ntoh64(startMsg->MeasurementID);
+   const uint64_t measurementID = be64toh(startMsg->MeasurementID);
    LOG_INFO
    stdlog << format("Starting measurement $%llx on socket %d ...",
                     (unsigned long long)measurementID, controlSocket) << "\n";
@@ -960,7 +960,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
    }
-   const uint64_t measurementID = ntoh64(stopMsg->MeasurementID);
+   const uint64_t measurementID = be64toh(stopMsg->MeasurementID);
    LOG_INFO
    stdlog << format("Stopping measurement $%llx on socket %d ...",
                     (unsigned long long)measurementID, controlSocket) << "\n";
@@ -1061,10 +1061,10 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
    // ====== Received a real control message ================================
    else {
       const NetPerfMeterHeader* header = (const NetPerfMeterHeader*)&inputBuffer;
-      if(ntohs(header->Length) != received) {
+      if(be16toh(header->Length) != received) {
          LOG_WARNING
          stdlog << format("Received malformed control message on socket %d: expected length %u, but received length %u!",
-                          controlSocket, (unsigned int)ntohs(header->Length), (unsigned int)received) << "\n";
+                          controlSocket, (unsigned int)be16toh(header->Length), (unsigned int)received) << "\n";
          LOG_END
          ext_shutdown(controlSocket, SHUT_RDWR);
          return false;
@@ -1107,8 +1107,8 @@ bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
 {
    bool  isAlreadyInitialised;
    Flow* flow = FlowManager::getFlowManager()->identifySocket(
-                   ntoh64(identifyMsg->MeasurementID),
-                   ntohl(identifyMsg->FlowID), ntohs(identifyMsg->StreamID),
+                   be64toh(identifyMsg->MeasurementID),
+                   be32toh(identifyMsg->FlowID), be16toh(identifyMsg->StreamID),
                    sd, from, isAlreadyInitialised);
    if(flow != nullptr) {
       if(!isAlreadyInitialised) {
@@ -1126,9 +1126,9 @@ bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
          const bool success                 = (vectorFileOkay && socketConfigured);
          flow->unlock();
          sendNetPerfMeterAcknowledge(controlSocketDescriptor,
-                                     ntoh64(identifyMsg->MeasurementID),
-                                     ntohl(identifyMsg->FlowID),
-                                     ntohs(identifyMsg->StreamID),
+                                     be64toh(identifyMsg->MeasurementID),
+                                     be32toh(identifyMsg->FlowID),
+                                     be16toh(identifyMsg->StreamID),
                                      (success == true) ? NETPERFMETER_STATUS_OKAY :
                                                          NETPERFMETER_STATUS_ERROR);
       }
@@ -1155,12 +1155,12 @@ bool sendNetPerfMeterAcknowledge(int            controlSocket,
    NetPerfMeterAcknowledgeMessage ackMsg;
    ackMsg.Header.Type   = NETPERFMETER_ACKNOWLEDGE;
    ackMsg.Header.Flags  = 0x00;
-   ackMsg.Header.Length = htons(sizeof(ackMsg));
-   ackMsg.MeasurementID = hton64(measurementID);
-   ackMsg.FlowID        = htonl(flowID);
-   ackMsg.StreamID      = htons(streamID);
+   ackMsg.Header.Length = htobe16(sizeof(ackMsg));
+   ackMsg.MeasurementID = htobe64(measurementID);
+   ackMsg.FlowID        = htobe32(flowID);
+   ackMsg.StreamID      = htobe16(streamID);
    ackMsg.Padding       = 0x0000;
-   ackMsg.Status        = htonl(status);
+   ackMsg.Status        = htobe32(status);
 
    return ext_send(controlSocket, &ackMsg, sizeof(ackMsg), 0) > 0;
 }
