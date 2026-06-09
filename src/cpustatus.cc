@@ -106,7 +106,7 @@ CPUStatus::CPUStatus()
       LOG_END_FATAL
    }
 
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
    CpuStates = CPUSTATES;
    getSysCtl("hw.ncpu", &CPUs, sizeof(CPUs));
 
