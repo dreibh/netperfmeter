@@ -47,6 +47,9 @@
 #include <signal.h>
 #include <unistd.h>
 
+#ifndef HAVE_SCTP
+#warning SCTP is not supported by the API of this system!
+#endif
 #ifndef HAVE_MPTCP
 #warning MPTCP is not supported by the API of this system!
 #endif
@@ -78,15 +81,21 @@ static bool             gBindV6Only            = false;
 static int              gSndBufSize            = -1;
 static int              gRcvBufSize            = -1;
 static int              gFlowCount             = 1;
+#ifdef HAVE_SCTP
 static int              gActiveControlProtocol = IPPROTO_SCTP;
 static int              gPassiveControlSCTP    = true;
+#else
+static int              gActiveControlProtocol = IPPROTO_TCP;
+#endif
 static int              gPassiveControlTCP     = true;
 #ifdef HAVE_MPTCP
 static int              gPassiveControlMPTCP   = false;
 #endif
 static int              gControlSocket         = -1;
 static int              gControlSocketTCP      = -1;
+#ifdef HAVE_SCTP
 static int              gSCTPSocket            = -1;
+#endif
 static int              gTCPSocket             = -1;
 #ifdef HAVE_MPTCP
 static int              gMPTCPSocket           = -1;
@@ -238,11 +247,21 @@ bool handleGlobalParameters(int argc, char** argv)
    while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:q!hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
+#ifdef HAVE_SCTP
             gActiveControlProtocol = IPPROTO_SCTP;
             gPassiveControlSCTP    = true;
+#else
+            std::cerr << "ERROR: SCTP support is not compiled in!" << "\n";
+            exit(1);
+#endif
           break;
          case 'X':
+#ifdef HAVE_SCTP
             gPassiveControlSCTP    = false;
+#else
+            std::cerr << "ERROR: SCTP support is not compiled in!" << "\n";
+            exit(1);
+#endif
           break;
          case 'y':
             gActiveControlProtocol = IPPROTO_TCP;
@@ -497,7 +516,11 @@ bool handleGlobalParameters(int argc, char** argv)
       }
    }
 
-   if( (gPassiveControlSCTP == false) &&
+   if(
+#ifdef HAVE_SCTP
+       (gPassiveControlSCTP == false) &&
+#endif
+
        (gPassiveControlTCP == false) ) {
       std::cerr << "ERROR: At least one control channel protocol must be enabled!" << "\n";
       exit(1);
@@ -1191,6 +1214,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       }
 
       // ====== Establish connection ========================================
+#ifdef HAVE_SCTP
       if(trafficSpec.Protocol == IPPROTO_SCTP) {
          // ------ Set SCTP stream parameters--------------------------------
          sctp_initmsg initmsg;
@@ -1215,6 +1239,7 @@ static Flow* createFlow(Flow*                  previousFlow,
             exit(1);
          }
       }
+#endif
 
       if(flow->configureSocket(socketDescriptor) == false) {
          exit(1);
@@ -1273,21 +1298,23 @@ static void addToPollFDs(pollfd* pollFDs, const int fd, nfds_t& n, int* index = 
 static bool mainLoop(const bool               isActiveMode,
                      const unsigned long long stopAt)
 {
-   pollfd                 fds[5 + gMessageReader.size()];
-   nfds_t                 n       = 0;
-   int                    tcpID   = -1;
+   pollfd             fds[5 + gMessageReader.size()];
+   nfds_t             n       = 0;
+   int                tcpID   = -1;
 #ifdef HAVE_MPTCP
-   int                    mptcpID = -1;
+   int                mptcpID = -1;
 #endif
-   int                    udpID   = -1;
-   int                    sctpID  = -1;
+   int                udpID   = -1;
+#ifdef HAVE_SCTP
+   int                sctpID  = -1;
+#endif
 #ifdef HAVE_DCCP
-   int                    dccpID  = -1;
+   int                dccpID  = -1;
 #endif
 #ifdef HAVE_QUIC
-   int                    quicID  = -1;
+   int                quicID  = -1;
 #endif
-   unsigned long long     now     = getMicroTime();
+   unsigned long long now     = getMicroTime();
    std::map<int, pollfd*> pollFDIndex;
 
 
@@ -1297,7 +1324,9 @@ static bool mainLoop(const bool               isActiveMode,
    addToPollFDs((pollfd*)&fds, gMPTCPSocket,   n, &mptcpID);
 #endif
    addToPollFDs((pollfd*)&fds, gUDPSocket,     n, &udpID);
+#ifdef HAVE_SCTP
    addToPollFDs((pollfd*)&fds, gSCTPSocket,    n, &sctpID);
+#endif
 #ifdef HAVE_DCCP
    addToPollFDs((pollfd*)&fds, gDCCPSocket,    n, &dccpID);
 #endif
@@ -1410,6 +1439,7 @@ static bool mainLoop(const bool               isActiveMode,
          handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDPSocket);
          FlowManager::getFlowManager()->unlock();
       }
+#ifdef HAVE_SCTP
       if( (sctpID >= 0) && (fds[sctpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gSCTPSocket, nullptr, 0);
          if(newSD >= 0) {
@@ -1420,6 +1450,7 @@ static bool mainLoop(const bool               isActiveMode,
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_SCTP, newSD);
          }
       }
+#endif
 #ifdef HAVE_DCCP
       if( (dccpID >= 0) && (fds[dccpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gDCCPSocket, nullptr, 0);
@@ -1507,6 +1538,7 @@ static void passiveMode(const uint16_t localPort)
    }
 
    // ====== Initialize SCTP control socket =================================
+#ifdef HAVE_SCTP
    if(gPassiveControlSCTP) {
       gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
                                            localPort + 1,
@@ -1566,6 +1598,7 @@ static void passiveMode(const uint16_t localPort)
          LOG_END
       }
    }
+#endif
 
    // ====== Initialize TCP/MPTCP control socket ============================
    if(gPassiveControlTCP) {
@@ -1612,7 +1645,7 @@ static void passiveMode(const uint16_t localPort)
    if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
       LOG_FATAL
       stdlog << format("Failed to configure buffer sizes on TCP socket %d!",
-                        gSCTPSocket) << "\n";
+                        gTCPSocket) << "\n";
       LOG_END_FATAL
    }
 
@@ -1716,6 +1749,7 @@ static void passiveMode(const uint16_t localPort)
 #endif
 
    // ------ SCTP -----------------------------------------------------------
+#ifdef HAVE_SCTP
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
                                      gLocalDataAddresses,
                                      (const sockaddr_union*)&gLocalDataAddressArray,
@@ -1763,13 +1797,16 @@ static void passiveMode(const uint16_t localPort)
          LOG_END_FATAL
       }
    }
+#endif
 
    // ====== Print status ===================================================
    LOG_INFO
    std::string controlProtocols;
+#ifdef HAVE_SCTP
    if(gControlSocket >= 0) {
       controlProtocols += "SCTP";
    }
+#endif
    if(gControlSocketTCP >= 0) {
       if(controlProtocols.size() > 0) {
          controlProtocols += "/";
@@ -1781,7 +1818,11 @@ static void passiveMode(const uint16_t localPort)
       }
 #endif
    }
+#ifdef HAVE_SCTP
    std::string dataProtocols1("SCTP/TCP/UDP");
+#else
+   std::string dataProtocols1("TCP/UDP");
+#endif
    std::string dataProtocols2;
 #ifdef HAVE_DCCP
    if(gDCCPSocket >= 0) {
@@ -1821,7 +1862,9 @@ static void passiveMode(const uint16_t localPort)
           << "- MPTCP Data   = " << gMPTCPSocket      << "\n"
 #endif
           << "- UDP Data     = " << gUDPSocket        << "\n"
+#ifdef HAVE_SCTP
           << "- SCTP Data    = " << gSCTPSocket       << "\n"
+#endif
 #ifdef HAVE_DCCP
           << "- DCCP Data    = " << gDCCPSocket       << "\n"
 #endif
@@ -1864,9 +1907,11 @@ static void passiveMode(const uint16_t localPort)
 #endif
    FlowManager::getFlowManager()->removeUnidentifiedSocket(gUDPSocket, false);
    ext_close(gUDPSocket);
+#ifdef HAVE_SCTP
    if(gSCTPSocket >= 0) {
       ext_close(gSCTPSocket);
    }
+#endif
 #ifdef HAVE_DCCP
    if(gDCCPSocket >= 0) {
       ext_close(gDCCPSocket);
@@ -1943,6 +1988,7 @@ static void activeMode(const char* remoteEndpoint)
       }
       LOG_END_FATAL
    }
+#ifdef HAVE_SCTP
    if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
@@ -1954,6 +2000,7 @@ static void activeMode(const char* remoteEndpoint)
          LOG_END_FATAL
       }
    }
+#endif
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
       LOG_FATAL
       stdlog << format("Unable to establish control association: %s!",
@@ -1963,6 +2010,7 @@ static void activeMode(const char* remoteEndpoint)
       }
       LOG_END_FATAL
    }
+#ifdef HAVE_SCTP
    if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_paddrparams paddr;
       memset(&paddr, 0, sizeof(paddr));
@@ -1976,6 +2024,7 @@ static void activeMode(const char* remoteEndpoint)
          LOG_END
       }
    }
+#endif
    LOG_TRACE
    stdlog << "<okay; sd=" << gControlSocket << ">\n";
    LOG_END

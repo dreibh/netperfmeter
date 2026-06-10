@@ -671,6 +671,7 @@ int bindSocket(const int             sd,
       }
    }
    else {
+#ifdef HAVE_SCTP
       if(socketProtocol == IPPROTO_SCTP) {
          // ====== SCTP bind: bind to specified addresses ===================
          char   buffer[localAddressCount * sizeof(sockaddr_union)];
@@ -696,6 +697,7 @@ int bindSocket(const int             sd,
          }
       }
       else {
+#endif
          // ====== Non-SCTP bind: bind to ANY address =======================
          sockaddr_union localAddress;
          if(localAddressArray[0].sa.sa_family == AF_INET) {
@@ -713,7 +715,9 @@ int bindSocket(const int             sd,
          if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
             return -3;
          }
+#ifdef HAVE_SCTP
       }
+#endif
    }
 
    // ====== Put socket into listening mode =================================
@@ -724,6 +728,7 @@ int bindSocket(const int             sd,
 }
 
 
+#ifdef HAVE_SCTP
 // ###### Send SCTP ABORT ###################################################
 bool sendAbort(int sd, sctp_assoc_t assocID)
 {
@@ -734,6 +739,7 @@ bool sendAbort(int sd, sctp_assoc_t assocID)
 
    return sctp_send(sd, nullptr, 0, &sinfo, 0) >= 0;
 }
+#endif
 
 
 #ifndef HAVE_IEEE_FP

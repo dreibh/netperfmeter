@@ -211,6 +211,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       if(from) {
          memset(from, 0, *fromSize);   // Clear address (Valgrind report)
       }
+#ifdef HAVE_SCTP
       if(socket->Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
          received = sctp_recvmsg(socket->SocketDescriptor,
@@ -220,6 +221,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             *streamID = (int64_t)sinfo.sinfo_stream;
          }
       }
+#endif
 #ifdef HAVE_QUIC
       else if(socket->Protocol == IPPROTO_QUIC) {
          uint32_t flags = 0;
@@ -240,6 +242,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          socket->BytesRead += (size_t)received;
          // ====== Handle message header ====================================
          if(socket->Status == Socket::MRS_WaitingForHeader) {
+#ifdef HAVE_SCTP
             // ====== Handle SCTP notification header =======================
             if((socket->Protocol == IPPROTO_SCTP) && (*msgFlags & MSG_NOTIFICATION)) {
 #ifdef DEBUG_MESSAGEREADER
@@ -255,6 +258,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             }
             // ====== Handle TLV header =====================================
             else {
+#endif
                if(socket->BytesRead >= sizeof(TLVHeader)) {
                   const TLVHeader* header = (const TLVHeader*)socket->MessageBuffer;
 #ifdef DEBUG_MESSAGEREADER
@@ -285,7 +289,9 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                else {
                   return MRRM_PARTIAL_READ;
                }
+#ifdef HAVE_SCTP
             }
+#endif
             // Continue here with MRS_PartialRead status!
             // (will return MRRM_PARTIAL_READ, or message on header-only message)
          }
@@ -304,6 +310,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 
             // ====== Partially read message ================================
             if(socket->BytesRead < socket->MessageSize) {
+#ifdef HAVE_SCTP
                if(socket->Protocol == IPPROTO_SCTP) {
                   if(*msgFlags & MSG_EOR) {   // end of SCTP message
                      if(!(*msgFlags & MSG_NOTIFICATION)) {   // data message
@@ -325,8 +332,11 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                   }
                }
                else {
+#endif
                   return MRRM_PARTIAL_READ;
+#ifdef HAVE_SCTP
                }
+#endif
             }
 
             // ====== Completed reading =====================================

@@ -487,6 +487,7 @@ bool Flow::configureSocket(const int socketDescriptor)
 #endif
       }
    }
+#ifdef HAVE_SCTP
    else if(TrafficSpec.Protocol == IPPROTO_SCTP) {
       if (TrafficSpec.NoDelay) {
          const int noDelayOption = 1;
@@ -520,6 +521,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       }
 #endif
    }
+#endif
 #ifdef HAVE_DCCP
    else if(TrafficSpec.Protocol == IPPROTO_DCCP) {
       const uint8_t value = TrafficSpec.CCID;

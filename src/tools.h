@@ -133,7 +133,9 @@ void printAddress(std::ostream&          os,
 const char* getProtocolName(const int protocol);
 uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
+#ifdef HAVE_SCTP
 bool sendAbort(int sd, sctp_assoc_t assocID = 0);
+#endif
 int createSocket(const int             family,
                  const int             type,
                  const int             protocol,

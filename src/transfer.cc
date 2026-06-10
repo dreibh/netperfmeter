@@ -115,6 +115,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
 
    // ====== Send NETPERFMETER_DATA message =================================
    ssize_t sent;
+#ifdef HAVE_SCTP
    if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
@@ -146,6 +147,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
                        (char*)&outputBuffer, bytesToSend,
                        &sinfo, 0);
    }
+#endif
 #ifdef HAVE_QUIC
    else if(flow->getTrafficSpec().Protocol == IPPROTO_QUIC) {
       int64_t  sid;
@@ -161,7 +163,10 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       sent = quic_sendmsg(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, sid, flags);
    }
 #endif
-   else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
+#if defined(HAVE_SCTP) || defined(HAVE_QUIC)
+   else
+#endif
+   if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
       if(flow->isRemoteAddressValid()) {
          sent = ext_sendto(flow->getSocketDescriptor(),
                            (char*)&outputBuffer, bytesToSend, 0,
@@ -262,7 +267,9 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 
    // ====== Handle data ====================================================
    if(received > 0) {
+#ifdef HAVE_SCTP
       if(!(flags & MSG_NOTIFICATION)) {
+#endif
          const NetPerfMeterDataMessage*     dataMsg     =
             (const NetPerfMeterDataMessage*)&inputBuffer;
          const NetPerfMeterIdentifyMessage* identifyMsg =
@@ -332,10 +339,12 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             return false;
          }
       }
+#ifdef HAVE_SCTP
    }
 
    // ====== Handle error ===================================================
    else {
+#endif
       Flow* flow = FlowManager::getFlowManager()->findFlow(sd, 0);
       if(flow) {
          flow->lock();
@@ -367,7 +376,9 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
          ext_shutdown(sd, SHUT_RDWR);
       }
       return false;
+#ifdef HAVE_SCTP
    }
+#endif
 
    return true;
 }

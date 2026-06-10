@@ -299,6 +299,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       LOG_TRACE
       stdlog << format("<R3 sd=%d trial=%u/%u>", controlSocket, trial, maxTrials) << "\n";
       LOG_END
+#ifdef HAVE_SCTP
       if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
@@ -308,6 +309,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
             return false;
          }
       }
+#endif
 #ifdef HAVE_QUIC
       else if(flow->getTrafficSpec().Protocol == IPPROTO_QUIC) {
          const int64_t sid    = ((int64_t)flow->getStreamID() << 2) | QUIC_STREAM_TYPE_UNI_MASK;
@@ -1049,6 +1051,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
    }
 
    // ====== Received a SCTP notification ===================================
+#ifdef HAVE_SCTP
    if(flags & MSG_NOTIFICATION) {
       const sctp_notification* notification = (const sctp_notification*)&inputBuffer;
       if( (notification->sn_header.sn_type == SCTP_ASSOC_CHANGE) &&
@@ -1057,6 +1060,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
         handleControlAssocShutdown(controlSocket);
       }
    }
+#endif
 
    // ====== Received a real control message ================================
    else {

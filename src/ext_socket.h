@@ -576,7 +576,9 @@ int sctp_enableCRC32(const unsigned int enable);
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/uio.h>
+#ifdef HAVE_NETINET_SCTP_H
 #include <netinet/sctp.h>
+#endif
 
 #ifndef SCTP_DELAYED_SACK
 #define SCTP_DELAYED_SACK SCTP_DELAYED_ACK_TIME
