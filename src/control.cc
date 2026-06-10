@@ -1057,13 +1057,13 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       if( (notification->sn_header.sn_type == SCTP_ASSOC_CHANGE) &&
           ((notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) ||
            (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP)) ) {
-        handleControlAssocShutdown(controlSocket);
+         handleControlAssocShutdown(controlSocket);
       }
    }
-#endif
 
    // ====== Received a real control message ================================
    else {
+#endif
       const NetPerfMeterHeader* header = (const NetPerfMeterHeader*)&inputBuffer;
       if(be16toh(header->Length) != received) {
          LOG_WARNING
@@ -1099,7 +1099,9 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
             ext_shutdown(controlSocket, SHUT_RDWR);
             return false;
       }
+#ifdef HAVE_SCTP
    }
+#endif
    return true;
 }
 

@@ -163,8 +163,10 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       // ====== Find out the number of bytes to read ========================
       ssize_t received;
       size_t  bytesToRead;
-      if( (socket->Protocol == IPPROTO_SCTP) ||
-          (socket->Protocol == IPPROTO_TCP)
+      if( (socket->Protocol == IPPROTO_TCP)
+#ifdef HAVE_SCTP
+          || (socket->Protocol == IPPROTO_SCTP)
+#endif
 #ifdef HAVE_MPTCP
           || (socket->Protocol == IPPROTO_MPTCP)
 #endif
@@ -183,6 +185,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             bytesToRead = socket->MessageSize - socket->BytesRead;
          }
          else {
+#ifdef HAVE_SCTP
             if(socket->Protocol == IPPROTO_SCTP) {
                // An error occurred before. Reset and try again ...
                socket->Status    = Socket::MRS_WaitingForHeader;
@@ -190,9 +193,12 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                bytesToRead       = sizeof(TLVHeader);
             }
             else {
+#endif
                // Not useful to retry when synchronization has been lost!
                return MRRM_STREAM_ERROR;
+#ifdef HAVE_SCTP
             }
+#endif
          }
          assure(bytesToRead + socket->BytesRead <= socket->MessageBufferSize);
       }
@@ -211,8 +217,9 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       if(from) {
          memset(from, 0, *fromSize);   // Clear address (Valgrind report)
       }
+      if(0) { /* Dummy for following "else if" in #if ... #endif block */ }
 #ifdef HAVE_SCTP
-      if(socket->Protocol == IPPROTO_SCTP) {
+      else if(socket->Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
          received = sctp_recvmsg(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,

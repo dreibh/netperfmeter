@@ -115,8 +115,9 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
 
    // ====== Send NETPERFMETER_DATA message =================================
    ssize_t sent;
+   if(0) { /* Dummy for following "else if" in #if ... #endif block */ }
 #ifdef HAVE_SCTP
-   if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
+   else if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_stream   = flow->getStreamID();
@@ -163,10 +164,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       sent = quic_sendmsg(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, sid, flags);
    }
 #endif
-#if defined(HAVE_SCTP) || defined(HAVE_QUIC)
-   else
-#endif
-   if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
+   else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
       if(flow->isRemoteAddressValid()) {
          sent = ext_sendto(flow->getSocketDescriptor(),
                            (char*)&outputBuffer, bytesToSend, 0,
@@ -183,11 +181,11 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    }
 
    // ====== Check, whether flow has been aborted unintentionally ===========
-   if((sent < 0) &&
-      (errno != EAGAIN) &&
-      (!flow->isAcceptedIncomingFlow()) &&
-      (flow->getTrafficSpec().ErrorOnAbort) &&
-      (flow->getOutputStatus() == Flow::On)) {
+   if( (sent < 0) &&
+       (errno != EAGAIN) &&
+       (!flow->isAcceptedIncomingFlow()) &&
+       (flow->getTrafficSpec().ErrorOnAbort) &&
+       (flow->getOutputStatus() == Flow::On) ) {
       LOG_FATAL
       stdlog << format("Flow #%u on socket %d has been aborted: %s!",
                        flow->getFlowID(), flow->getSocketDescriptor(),
@@ -338,13 +336,13 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             }
             return false;
          }
-      }
 #ifdef HAVE_SCTP
+      }
+#endif
    }
 
    // ====== Handle error ===================================================
    else {
-#endif
       Flow* flow = FlowManager::getFlowManager()->findFlow(sd, 0);
       if(flow) {
          flow->lock();
@@ -376,9 +374,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
          ext_shutdown(sd, SHUT_RDWR);
       }
       return false;
-#ifdef HAVE_SCTP
    }
-#endif
 
    return true;
 }
