@@ -430,6 +430,9 @@ IF (WITH_ICONS)
             " * OpenBSD:       (needs installation from sources!)\n"
             " * Apple:         brew install poppler")
    ENDIF()
+
+ELSE()
+   MESSAGE("Building without icons (WITH_ICONS=${WITH_ICONS})")
 ENDIF()
 
 
