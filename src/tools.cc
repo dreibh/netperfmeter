@@ -640,17 +640,16 @@ int bindSocket(const int             sd,
       anyAddress.in.sin_port   = htobe16(localPort);
    }
 
-   // ====== Get protocol ===================================================
-   int socketProtocol = protocol;
 #ifdef HAVE_MPTCP
-   if(socketProtocol == IPPROTO_MPTCP) {
+   if(protocol == IPPROTO_MPTCP) {
       if(localAddresses > 1) {
-         printf("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
+         fprintf(stderr, "WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
          localAddressCount = 0;
       }
    }
 #endif
 
+   // ====== IPV6_V6ONLY option =============================================
 #ifdef IPV6_V6ONLY
    if(socketFamily == AF_INET6) {
       // Accept IPv4 and IPv6 connections.
@@ -672,7 +671,7 @@ int bindSocket(const int             sd,
    }
    else {
 #ifdef HAVE_SCTP
-      if(socketProtocol == IPPROTO_SCTP) {
+      if(protocol == IPPROTO_SCTP) {
          // ====== SCTP bind: bind to specified addresses ===================
          char   buffer[localAddressCount * sizeof(sockaddr_union)];
          char*  ptr = (char*)&buffer[0];
