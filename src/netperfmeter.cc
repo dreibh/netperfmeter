@@ -518,10 +518,10 @@ bool handleGlobalParameters(int argc, char** argv)
 
    if(
 #ifdef HAVE_SCTP
-       (gPassiveControlSCTP == false) &&
+       (!gPassiveControlSCTP) &&
 #endif
-
-       (gPassiveControlTCP == false) ) {
+       (!gPassiveControlTCP)
+     ) {
       std::cerr << "ERROR: At least one control channel protocol must be enabled!" << "\n";
       exit(1);
    }
