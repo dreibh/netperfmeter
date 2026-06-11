@@ -31,6 +31,7 @@
 #define CPUSTATUS_H
 
 #include <cassert>
+#include <cstdint>
 #include <cstdio>
 
 #if defined(__APPLE__)

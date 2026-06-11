@@ -237,7 +237,13 @@ void CPUStatus::update()
 #if defined(__FreeBSD__) || defined(__NetBSD__)
    cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
    size_t length = cpuTimesSize;
-   if( (sysctlbyname("kern.cp_times", &CpuTimes[CpuStates], &length, nullptr, 0) < 0) ||
+   if( (sysctlbyname(
+#if defined(__FreeBSD__)
+           "kern.cp_times",
+#else
+           "kern.cp_time",
+#endif
+           &CpuTimes[CpuStates], &length, nullptr, 0) < 0) ||
        (length != cpuTimesSize) ) {
       LOG_FATAL
       stdlog << "Failed to obtain kern.cp_times!" << "\n";
