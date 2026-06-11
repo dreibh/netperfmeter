@@ -384,7 +384,7 @@ IF (WITH_ICONS)
             " * SuSE:          sudo zypper install -y ghostscript\n"
             " * Alpine:        sudo apk add ghostscript\n"
             " * FreeBSD:       sudo pkg install -y ghostscript10\n"
-            " * NetBSD:        sudo -y pkgin install -y ghostscript\n"
+            " * NetBSD:        sudo pkgin -y install ghostscript\n"
             " * OpenBSD:       sudo pkg_add ghostscript\n"
             " * Apple:         brew install ghostscript")
    ENDIF()
@@ -405,7 +405,7 @@ IF (WITH_ICONS)
             " * SuSE:          sudo zypper install -y GraphicsMagick\n"
             " * Alpine:        sudo apk add graphicsmagick\n"
             " * FreeBSD:       sudo pkg install -y GraphicsMagick\n"
-            " * NetBSD:        sudo -y pkgin install -y GraphicsMagick\n"
+            " * NetBSD:        sudo pkgin -y install GraphicsMagick\n"
             " * OpenBSD:       sudo pkg_add GraphicsMagick\n"
             " * Apple:         brew install graphicsmagick")
    ENDIF()
@@ -426,7 +426,7 @@ IF (WITH_ICONS)
             " * SuSE:          sudo zypper install -y poppler-utils\n"
             " * Alpine:        sudo apk add ghostscript\n"
             " * FreeBSD:       sudo pkg install -y poppler-utils\n"
-            " * NetBSD:        sudo -y pkgin install -y poppler-utils\n"
+            " * NetBSD:        sudo pkgin -y install poppler-utils\n"
             " * OpenBSD:       (needs installation from sources!)\n"
             " * Apple:         brew install poppler")
    ENDIF()
