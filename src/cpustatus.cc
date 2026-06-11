@@ -163,9 +163,7 @@ CPUStatus::CPUStatus()
       Percentages[i] = 100.0 / CpuStates;
    }
 
-#if defined(__linux__)
    update();
-#endif
 }
 
 
