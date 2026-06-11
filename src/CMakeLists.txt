@@ -198,8 +198,8 @@ IF (WITH_PLOT_PROGRAMS)
 ENDIF()
 
 # ====== Test Programs ======================================================
-ADD_EXECUTABLE(t1 t1.cc assure.cc cpustatus.cc loglevel.cc tools.cc mutex.cc)
-TARGET_LINK_LIBRARIES(t1 ${SCTP_LIBRARY})
+# ADD_EXECUTABLE(t1 t1.cc assure.cc cpustatus.cc loglevel.cc tools.cc mutex.cc)
+# TARGET_LINK_LIBRARIES(t1 ${SCTP_LIBRARY})
 # ADD_EXECUTABLE(qs qs.cc assure.cc loglevel.cc tools.cc mutex.cc)
 # TARGET_LINK_LIBRARIES(qs ${SCTP_LIBRARY} ${QUIC_LIBRARY})
 # ADD_EXECUTABLE(qc qc.cc assure.cc loglevel.cc tools.cc mutex.cc)
