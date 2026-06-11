@@ -47,16 +47,16 @@
 #include <signal.h>
 #include <unistd.h>
 
-#ifndef HAVE_SCTP
+#if !defined(HAVE_SCTP)
 #warning SCTP is not supported by the API of this system!
 #endif
-#ifndef HAVE_MPTCP
+#if !defined(HAVE_MPTCP)
 #warning MPTCP is not supported by the API of this system!
 #endif
-#ifndef HAVE_DCCP
+#if !defined(HAVE_DCCP)
 #warning DCCP is not supported by the API of this system!
 #endif
-#ifndef HAVE_QUIC
+#if !defined(HAVE_QUIC)
 #warning QUIC is not supported by the API of this system!
 #endif
 
@@ -81,30 +81,30 @@ static bool             gBindV6Only            = false;
 static int              gSndBufSize            = -1;
 static int              gRcvBufSize            = -1;
 static int              gFlowCount             = 1;
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
 static int              gActiveControlProtocol = IPPROTO_SCTP;
 static int              gPassiveControlSCTP    = true;
 #else
 static int              gActiveControlProtocol = IPPROTO_TCP;
 #endif
 static int              gPassiveControlTCP     = true;
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
 static int              gPassiveControlMPTCP   = false;
 #endif
 static int              gControlSocket         = -1;
 static int              gControlSocketTCP      = -1;
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
 static int              gSCTPSocket            = -1;
 #endif
 static int              gTCPSocket             = -1;
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
 static int              gMPTCPSocket           = -1;
 #endif
 static int              gUDPSocket             = -1;
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
 static int              gDCCPSocket            = -1;
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
 static int              gQUICSocket            = -1;
 static const char*      gQUICCA                = nullptr;
 static const char*      gQUICCertificate       = nullptr;
@@ -247,7 +247,7 @@ bool handleGlobalParameters(int argc, char** argv)
    while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:q!hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
             gActiveControlProtocol = IPPROTO_SCTP;
             gPassiveControlSCTP    = true;
 #else
@@ -256,7 +256,7 @@ bool handleGlobalParameters(int argc, char** argv)
 #endif
           break;
          case 'X':
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
             gPassiveControlSCTP    = false;
 #else
             std::cerr << "ERROR: SCTP support is not compiled in!" << "\n";
@@ -269,12 +269,12 @@ bool handleGlobalParameters(int argc, char** argv)
           break;
          case 'Y':
             gPassiveControlTCP     = false;
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
             gPassiveControlMPTCP   = false;
 #endif
           break;
          case 'w':
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
             gActiveControlProtocol = IPPROTO_MPTCP;
             gPassiveControlTCP     = true;
             gPassiveControlMPTCP   = true;
@@ -284,7 +284,7 @@ bool handleGlobalParameters(int argc, char** argv)
 #endif
           break;
          case 'W':
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
             gPassiveControlMPTCP   = false;
 #endif
           break;
@@ -414,7 +414,7 @@ bool handleGlobalParameters(int argc, char** argv)
                      flow.Protocol = IPPROTO_UDP;
                    break;
                   case 'm':
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
                      flow.Protocol = IPPROTO_MPTCP;
 #else
                      std::cerr << "ERROR: MPTCP support is not compiled in!" << "\n";
@@ -422,7 +422,7 @@ bool handleGlobalParameters(int argc, char** argv)
 #endif
                    break;
                   case 'd':
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
                      flow.Protocol = IPPROTO_DCCP;
 #else
                      std::cerr << "ERROR: DCCP support is not compiled in!" << "\n";
@@ -430,7 +430,7 @@ bool handleGlobalParameters(int argc, char** argv)
 #endif
                    break;
                   case 'k':
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
                      flow.Protocol = IPPROTO_QUIC;
                      while( (optind < argc) && (argv[optind][0] != '-')) {
                         flow.Flows.push_back(argv[optind]);
@@ -449,22 +449,22 @@ bool handleGlobalParameters(int argc, char** argv)
             }
           break;
          case 'K':
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
             gQUICKey = optarg;
 #endif
           break;
          case 'J':
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
             gQUICCertificate = optarg;
 #endif
           break;
          case 'I':
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
             gQUICCA = optarg;
 #endif
           break;
          case 'H':
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
             gQUICHostname = optarg;
 #endif
           break;
@@ -517,7 +517,7 @@ bool handleGlobalParameters(int argc, char** argv)
    }
 
    if(
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
        (!gPassiveControlSCTP) &&
 #endif
        (!gPassiveControlTCP)
@@ -867,7 +867,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
 }
 
 
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
 // ###### QUIC server handshake #############################################
 static int server_handshake(int          sd,
                             const char*  alpns,
@@ -1026,7 +1026,7 @@ static Flow* createFlow(Flow*                  previousFlow,
    // ====== Get FlowTrafficSpec ============================================
    FlowTrafficSpec trafficSpec;
    trafficSpec.Protocol = initialProtocol;
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    if(trafficSpec.Protocol == IPPROTO_MPTCP) {
       trafficSpec.CMT = NPAF_LikeMPTCP;
    }
@@ -1037,7 +1037,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       trafficSpec.OutboundFrameRate[0] = 0.0;
       switch(trafficSpec.Protocol) {
          case IPPROTO_TCP:
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
          case IPPROTO_MPTCP:
 #endif
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 20;
@@ -1046,12 +1046,12 @@ static Flow* createFlow(Flow*                  previousFlow,
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 8;
             trafficSpec.OutboundFrameRate[0] = 25;
           break;
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
          case IPPROTO_DCCP:
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 40;   // 1420B for IPv6 via 1500B MTU!
           break;
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
          case IPPROTO_QUIC:
             trafficSpec.OutboundFrameSize[0] = 1400;   // Some reasonable default
           break;
@@ -1086,7 +1086,7 @@ static Flow* createFlow(Flow*                  previousFlow,
    }
 
    // ------ Use TCP or MPTCP? ----------------------------------------------
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    if( (trafficSpec.Protocol == IPPROTO_TCP) && (trafficSpec.CMT == NPAF_LikeMPTCP) ) {
       trafficSpec.Protocol = IPPROTO_MPTCP;
    }
@@ -1117,14 +1117,14 @@ static Flow* createFlow(Flow*                  previousFlow,
 
    // ====== Initialise destination address =================================
    sockaddr_union destinationAddress = remoteAddress;
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    if(trafficSpec.Protocol == IPPROTO_MPTCP) {
       // An MPTCP subflow is just a TCP connection on the wire. To allow for
       // MPTCP and TCP simultaneously, MPTCP needs a different port number:
       setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
    }
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
    if(trafficSpec.Protocol == IPPROTO_QUIC) {
       // A QUIC connection is just a UDP "connection" on the wire. To allow for
       // QUIC and UDP simultaneously, QUIC needs a different port number:
@@ -1182,21 +1182,21 @@ static Flow* createFlow(Flow*                  previousFlow,
                                                    gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
                                                    trafficSpec.BindV6Only);
            break;
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
          case IPPROTO_MPTCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_MPTCP, 0,
                                                    gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
                                                    trafficSpec.BindV6Only);
            break;
 #endif
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
          case IPPROTO_DCCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DCCP, IPPROTO_DCCP, 0,
                                                    gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
                                                    trafficSpec.BindV6Only);
            break;
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
          case IPPROTO_QUIC:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_QUIC, 0,
                                                    gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
@@ -1214,7 +1214,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       }
 
       // ====== Establish connection ========================================
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
       if(trafficSpec.Protocol == IPPROTO_SCTP) {
          // ------ Set SCTP stream parameters--------------------------------
          sctp_initmsg initmsg;
@@ -1255,7 +1255,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       LOG_END
 
       // ====== QUIC handshake ==============================================
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
       if(trafficSpec.Protocol == IPPROTO_QUIC) {
          LOG_TRACE
          stdlog << "client handshake <sd=" << socketDescriptor
@@ -1301,17 +1301,17 @@ static bool mainLoop(const bool               isActiveMode,
    pollfd             fds[5 + gMessageReader.size()];
    nfds_t             n       = 0;
    int                tcpID   = -1;
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    int                mptcpID = -1;
 #endif
    int                udpID   = -1;
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    int                sctpID  = -1;
 #endif
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
    int                dccpID  = -1;
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
    int                quicID  = -1;
 #endif
    unsigned long long now     = getMicroTime();
@@ -1320,17 +1320,17 @@ static bool mainLoop(const bool               isActiveMode,
 
    // ====== Get parameters for poll() ======================================
    addToPollFDs((pollfd*)&fds, gTCPSocket,     n, &tcpID);
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    addToPollFDs((pollfd*)&fds, gMPTCPSocket,   n, &mptcpID);
 #endif
    addToPollFDs((pollfd*)&fds, gUDPSocket,     n, &udpID);
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    addToPollFDs((pollfd*)&fds, gSCTPSocket,    n, &sctpID);
 #endif
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
    addToPollFDs((pollfd*)&fds, gDCCPSocket,    n, &dccpID);
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
    addToPollFDs((pollfd*)&fds, gQUICSocket,    n, &quicID);
 #endif
    int    controlFDSet[gMessageReader.size()];
@@ -1422,7 +1422,7 @@ static bool mainLoop(const bool               isActiveMode,
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
          }
       }
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
       if( (mptcpID >= 0) && (fds[mptcpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gMPTCPSocket, nullptr, 0);
          if(newSD >= 0) {
@@ -1439,7 +1439,7 @@ static bool mainLoop(const bool               isActiveMode,
          handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDPSocket);
          FlowManager::getFlowManager()->unlock();
       }
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
       if( (sctpID >= 0) && (fds[sctpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gSCTPSocket, nullptr, 0);
          if(newSD >= 0) {
@@ -1451,7 +1451,7 @@ static bool mainLoop(const bool               isActiveMode,
          }
       }
 #endif
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
       if( (dccpID >= 0) && (fds[dccpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gDCCPSocket, nullptr, 0);
          if(newSD >= 0) {
@@ -1463,7 +1463,7 @@ static bool mainLoop(const bool               isActiveMode,
          }
       }
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
       if( (quicID >= 0) && (fds[quicID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gQUICSocket, nullptr, 0);
          if(newSD >= 0) {
@@ -1538,7 +1538,7 @@ static void passiveMode(const uint16_t localPort)
    }
 
    // ====== Initialize SCTP control socket =================================
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    if(gPassiveControlSCTP) {
       gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
                                            localPort + 1,
@@ -1603,7 +1603,7 @@ static void passiveMode(const uint16_t localPort)
    // ====== Initialize TCP/MPTCP control socket ============================
    if(gPassiveControlTCP) {
       gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM,
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
                                               (gPassiveControlMPTCP) ? IPPROTO_MPTCP : IPPROTO_TCP,
 #else
                                               IPPROTO_TCP,
@@ -1650,7 +1650,7 @@ static void passiveMode(const uint16_t localPort)
    }
 
    // ------ MPTCP ----------------------------------------------------------
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
                                       gLocalDataAddresses,
                                       (const sockaddr_union*)&gLocalDataAddressArray,
@@ -1686,7 +1686,7 @@ static void passiveMode(const uint16_t localPort)
    FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDPSocket);
 
    // ------ DCCP -----------------------------------------------------------
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
                                      gLocalDataAddresses,
                                      (const sockaddr_union*)&gLocalDataAddressArray,
@@ -1715,7 +1715,7 @@ static void passiveMode(const uint16_t localPort)
 #endif
 
    // ------ QUIC -----------------------------------------------------------
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
    gQUICSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_QUIC, localPort - 1,
                                      gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
    // NOTE: It is necessary to set the ALPN before enabling the listening mode!
@@ -1749,7 +1749,7 @@ static void passiveMode(const uint16_t localPort)
 #endif
 
    // ------ SCTP -----------------------------------------------------------
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
                                      gLocalDataAddresses,
                                      (const sockaddr_union*)&gLocalDataAddressArray,
@@ -1802,7 +1802,7 @@ static void passiveMode(const uint16_t localPort)
    // ====== Print status ===================================================
    LOG_INFO
    std::string controlProtocols;
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    if(gControlSocket >= 0) {
       controlProtocols += "SCTP";
    }
@@ -1812,29 +1812,29 @@ static void passiveMode(const uint16_t localPort)
          controlProtocols += "/";
       }
       controlProtocols += "TCP";
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
       if(gPassiveControlMPTCP) {
          controlProtocols += "/MPTCP";
       }
 #endif
    }
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    std::string dataProtocols1("SCTP/TCP/UDP");
 #else
    std::string dataProtocols1("TCP/UDP");
 #endif
    std::string dataProtocols2;
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
    if(gDCCPSocket >= 0) {
       dataProtocols1 += "/DCCP";
    }
 #endif
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    if(gMPTCPSocket > 0) {
       dataProtocols2 += "MPTCP";
    }
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
    if(gQUICSocket > 0) {
       if(dataProtocols2.size() > 0) {
          dataProtocols2 += "/";
@@ -1858,17 +1858,17 @@ static void passiveMode(const uint16_t localPort)
           << "- SCTP Control = " << gControlSocket    << "\n"
           << "- TCP Control  = " << gControlSocketTCP << "\n"
           << "- TCP Data     = " << gTCPSocket        << "\n"
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
           << "- MPTCP Data   = " << gMPTCPSocket      << "\n"
 #endif
           << "- UDP Data     = " << gUDPSocket        << "\n"
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
           << "- SCTP Data    = " << gSCTPSocket       << "\n"
 #endif
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
           << "- DCCP Data    = " << gDCCPSocket       << "\n"
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
           << "- QUIC Data    = " << gQUICSocket       << "\n"
 #endif
           ;
@@ -1900,24 +1900,24 @@ static void passiveMode(const uint16_t localPort)
       ext_close(gControlSocket);
    }
    ext_close(gTCPSocket);
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    if(gMPTCPSocket >= 0) {
       ext_close(gMPTCPSocket);
    }
 #endif
    FlowManager::getFlowManager()->removeUnidentifiedSocket(gUDPSocket, false);
    ext_close(gUDPSocket);
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    if(gSCTPSocket >= 0) {
       ext_close(gSCTPSocket);
    }
 #endif
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
    if(gDCCPSocket >= 0) {
       ext_close(gDCCPSocket);
    }
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
    if(gQUICSocket >= 0) {
       ext_close(gQUICSocket);
    }
@@ -1957,7 +1957,7 @@ static void activeMode(const char* remoteEndpoint)
       case IPPROTO_TCP:
          controlProtocol = "TCP";
        break;
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
       case IPPROTO_MPTCP:
          controlProtocol = "MPTCP";
        break;
@@ -1988,7 +1988,7 @@ static void activeMode(const char* remoteEndpoint)
       }
       LOG_END_FATAL
    }
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
@@ -2010,7 +2010,7 @@ static void activeMode(const char* remoteEndpoint)
       }
       LOG_END_FATAL
    }
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_paddrparams paddr;
       memset(&paddr, 0, sizeof(paddr));

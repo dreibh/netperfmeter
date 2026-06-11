@@ -116,7 +116,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    // ====== Send NETPERFMETER_DATA message =================================
    ssize_t sent;
    if(0) { /* Dummy for following "else if" in #if ... #endif block */ }
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    else if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
@@ -149,7 +149,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
                        &sinfo, 0);
    }
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
    else if(flow->getTrafficSpec().Protocol == IPPROTO_QUIC) {
       int64_t  sid;
       uint32_t flags;
@@ -265,7 +265,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 
    // ====== Handle data ====================================================
    if(received > 0) {
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
       if(!(flags & MSG_NOTIFICATION)) {
 #endif
          const NetPerfMeterDataMessage*     dataMsg     =
@@ -302,7 +302,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
                // Flow ID = SCTP stream ID:
                flow = FlowManager::getFlowManager()->findFlow(sd, (uint32_t)streamID);
             }
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
             else if(protocol == IPPROTO_QUIC) {
                // Flow ID = QUIC stream ID (remove 2 last bits:
                const uint32_t flowID = (uint32_t)(streamID >> 2);
@@ -336,7 +336,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             }
             return false;
          }
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
       }
 #endif
    }

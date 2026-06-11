@@ -43,7 +43,7 @@
 */
 
 
-#ifndef CHECK
+#if !defined(CHECK)
 #define CHECK(cond) if(!(cond)) { fprintf(stderr, "INTERNAL ERROR in %s, line %u: condition %s is not satisfied!\n", __FILE__, __LINE__, #cond); abort(); }
 #endif
 

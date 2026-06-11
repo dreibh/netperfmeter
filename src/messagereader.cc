@@ -95,7 +95,7 @@ bool MessageReader::registerSocket(const int    protocol,
       socket = found->second;
       socket->UseCount++;
    }
-#ifdef DEBUG_SOCKETS
+#if defined(DEBUG_SOCKETS)
    printf("RegisterSocket: UseCount[sd=%d,proto=%d]=%u\n",
           socket->SocketDescriptor, socket->Protocol, (unsigned int)socket->UseCount);
 #endif
@@ -110,7 +110,7 @@ bool MessageReader::deregisterSocket(const int sd)
    if(found != SocketMap.end()) {
       Socket* socket = found->second;
       socket->UseCount--;
-#ifdef DEBUG_SOCKETS
+#if defined(DEBUG_SOCKETS)
       printf("DeregisterSocket: UseCount[sd=%d,proto=%d]=%u\n",
              socket->SocketDescriptor, socket->Protocol, (unsigned int)socket->UseCount);
 #endif
@@ -164,13 +164,13 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       ssize_t received;
       size_t  bytesToRead;
       if( (socket->Protocol == IPPROTO_TCP)
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
           || (socket->Protocol == IPPROTO_SCTP)
 #endif
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
           || (socket->Protocol == IPPROTO_MPTCP)
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
           || (socket->Protocol == IPPROTO_QUIC)
 #endif
         ) {
@@ -185,7 +185,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             bytesToRead = socket->MessageSize - socket->BytesRead;
          }
          else {
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
             if(socket->Protocol == IPPROTO_SCTP) {
                // An error occurred before. Reset and try again ...
                socket->Status    = Socket::MRS_WaitingForHeader;
@@ -196,7 +196,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 #endif
                // Not useful to retry when synchronization has been lost!
                return MRRM_STREAM_ERROR;
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
             }
 #endif
          }
@@ -218,7 +218,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          memset(from, 0, *fromSize);   // Clear address (Valgrind report)
       }
       if(0) { /* Dummy for following "else if" in #if ... #endif block */ }
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
       else if(socket->Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
          received = sctp_recvmsg(socket->SocketDescriptor,
@@ -229,7 +229,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          }
       }
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
       else if(socket->Protocol == IPPROTO_QUIC) {
          uint32_t flags = 0;
          received = quic_recvmsg(socket->SocketDescriptor,
@@ -249,10 +249,10 @@ ssize_t MessageReader::receiveMessage(const int        sd,
          socket->BytesRead += (size_t)received;
          // ====== Handle message header ====================================
          if(socket->Status == Socket::MRS_WaitingForHeader) {
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
             // ====== Handle SCTP notification header =======================
             if((socket->Protocol == IPPROTO_SCTP) && (*msgFlags & MSG_NOTIFICATION)) {
-#ifdef DEBUG_MESSAGEREADER
+#if defined(DEBUG_MESSAGEREADER)
                   printf("Socket %d:   notification L=%u\n",
                          socket->SocketDescriptor,
                          (unsigned int)sizeof(sctp_notification));
@@ -268,7 +268,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 #endif
                if(socket->BytesRead >= sizeof(TLVHeader)) {
                   const TLVHeader* header = (const TLVHeader*)socket->MessageBuffer;
-#ifdef DEBUG_MESSAGEREADER
+#if defined(DEBUG_MESSAGEREADER)
                   printf("Socket %d:   header T=%u F=%02x L=%u   [Header]\n",
                           socket->SocketDescriptor,
                           (unsigned int)header->Type, (unsigned int)header->Flags,
@@ -296,7 +296,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                else {
                   return MRRM_PARTIAL_READ;
                }
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
             }
 #endif
             // Continue here with MRS_PartialRead status!
@@ -305,7 +305,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 
          // ====== Handle message payload ===================================
          if(socket->Status == Socket::MRS_PartialRead) {
-#ifdef DEBUG_MESSAGEREADER
+#if defined(DEBUG_MESSAGEREADER)
             printf("Socket %d:   partial read T=%u F=%02x L=%u   [%u/%u]\n",
                    socket->SocketDescriptor,
                    ((const TLVHeader*)socket->MessageBuffer)->Type,
@@ -317,7 +317,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 
             // ====== Partially read message ================================
             if(socket->BytesRead < socket->MessageSize) {
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
                if(socket->Protocol == IPPROTO_SCTP) {
                   if(*msgFlags & MSG_EOR) {   // end of SCTP message
                      if(!(*msgFlags & MSG_NOTIFICATION)) {   // data message
@@ -341,7 +341,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                else {
 #endif
                   return MRRM_PARTIAL_READ;
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
                }
 #endif
             }

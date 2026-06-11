@@ -137,7 +137,7 @@ void FlowTrafficSpec::print(std::ostream& os) const
    os << " - Error on Abort:      "
       << ((ErrorOnAbort == true) ? "yes" : "no") << "\n";
    if( (Protocol == IPPROTO_SCTP) || (Protocol == IPPROTO_TCP)
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
        || (Protocol == IPPROTO_MPTCP)
 #endif
      ) {
@@ -145,7 +145,7 @@ void FlowTrafficSpec::print(std::ostream& os) const
          << ((NoDelay == true) ? "yes" : "no") << "\n";
    }
    if( (Protocol == IPPROTO_TCP)
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
        || (Protocol == IPPROTO_MPTCP)
 #endif
      ) {
@@ -172,7 +172,7 @@ void FlowTrafficSpec::print(std::ostream& os) const
       }
       os << "\n";
    }
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
    if(Protocol == IPPROTO_DCCP) {
       os << " - CCID:                #" << (unsigned int)CCID << "\n";
    }

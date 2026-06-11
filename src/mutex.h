@@ -41,7 +41,7 @@ class Mutex
    virtual ~Mutex();
 
    inline void lock() {
-#ifndef __APPLE__
+#if !defined(__APPLE__)
       pthread_mutex_lock(&MyMutex);
 #else
       if(!pthread_equal(MutexOwner, pthread_self())) {
@@ -53,7 +53,7 @@ class Mutex
    }
 
    inline void unlock() {
-#ifndef __APPLE__
+#if !defined(__APPLE__)
       pthread_mutex_unlock(&MyMutex);
 #else
       assert(MutexRecursionLevel != 0);
@@ -69,7 +69,7 @@ class Mutex
 
    private:
    pthread_mutex_t MyMutex;
-#ifdef __APPLE__
+#if defined(__APPLE__)
    pthread_t       MutexOwner;
    unsigned int    MutexRecursionLevel;
 #endif

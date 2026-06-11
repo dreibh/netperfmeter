@@ -459,13 +459,13 @@ bool string2address(const char*           string,
    switch(ipv4address->sin_family) {
       case AF_INET:
          ipv4address->sin_port = htobe16(portNumber);
-#ifdef HAVE_SIN_LEN
+#if defined(HAVE_SIN_LEN)
          ipv4address->sin_len  = sizeof(struct sockaddr_in);
 #endif
        break;
       case AF_INET6:
          ipv6address->sin6_port = htobe16(portNumber);
-#ifdef HAVE_SIN6_LEN
+#if defined(HAVE_SIN6_LEN)
          ipv6address->sin6_len  = sizeof(struct sockaddr_in6);
 #endif
        break;
@@ -510,17 +510,17 @@ const char* getProtocolName(const int protocol)
       case IPPROTO_UDP:
          protocolName = "UDP";
        break;
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
       case IPPROTO_MPTCP:
          protocolName = "MPTCP";
        break;
 #endif
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
       case IPPROTO_DCCP:
          protocolName = "DCCP";
        break;
 #endif
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
       case IPPROTO_QUIC:
          protocolName = "QUIC";
        break;
@@ -587,7 +587,7 @@ int createSocket(const int             family,
 
    // ====== Get protocol ===================================================
    int socketProtocol = protocol;
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    if(socketProtocol == IPPROTO_MPTCP) {
       if(localAddresses > 1) {
          printf("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
@@ -640,7 +640,7 @@ int bindSocket(const int             sd,
       anyAddress.in.sin_port   = htobe16(localPort);
    }
 
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    if(protocol == IPPROTO_MPTCP) {
       if(localAddresses > 1) {
          fprintf(stderr, "WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
@@ -650,7 +650,7 @@ int bindSocket(const int             sd,
 #endif
 
    // ====== IPV6_V6ONLY option =============================================
-#ifdef IPV6_V6ONLY
+#if defined(IPV6_V6ONLY)
    if(socketFamily == AF_INET6) {
       // Accept IPv4 and IPv6 connections.
       const int on = (bindV6Only == true) ? 1 : 0;
@@ -670,7 +670,7 @@ int bindSocket(const int             sd,
       }
    }
    else {
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
       if(protocol == IPPROTO_SCTP) {
          // ====== SCTP bind: bind to specified addresses ===================
          char   buffer[localAddressCount * sizeof(sockaddr_union)];
@@ -714,7 +714,7 @@ int bindSocket(const int             sd,
          if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
             return -3;
          }
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
       }
 #endif
    }
@@ -727,7 +727,7 @@ int bindSocket(const int             sd,
 }
 
 
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
 // ###### Send SCTP ABORT ###################################################
 bool sendAbort(int sd, sctp_assoc_t assocID)
 {
@@ -741,7 +741,7 @@ bool sendAbort(int sd, sctp_assoc_t assocID)
 #endif
 
 
-#ifndef HAVE_IEEE_FP
+#if !defined(HAVE_IEEE_FP)
 #warning Is this code really working correctly?
 
 #define DBL_EXP_BITS  11
@@ -903,7 +903,7 @@ static bool   DetectedBreak = false;
 static bool   PrintedBreak  = false;
 static bool   Quiet         = false;
 static pid_t  MainThreadPID = 0;
-#ifdef KILL_AFTER_TIMEOUT
+#if defined(KILL_AFTER_TIMEOUT)
 static bool               PrintedKill   = false;
 static unsigned long long LastDetection = (unsigned long long)-1;
 #endif
@@ -914,7 +914,7 @@ void breakDetector(int signum)
 {
    DetectedBreak = true;
 
-#ifdef KILL_AFTER_TIMEOUT
+#if defined(KILL_AFTER_TIMEOUT)
    if(!PrintedKill) {
       const unsigned long long now = getMicroTime();
       if(LastDetection == (unsigned long long)-1) {
@@ -937,7 +937,7 @@ void installBreakDetector()
    PrintedBreak  = false;
    Quiet         = false;
    MainThreadPID = getpid();
-#ifdef KILL_AFTER_TIMEOUT
+#if defined(KILL_AFTER_TIMEOUT)
    PrintedKill   = false;
    LastDetection = (unsigned long long)-1;
 #endif
@@ -949,7 +949,7 @@ void installBreakDetector()
 void uninstallBreakDetector()
 {
    signal(SIGINT,SIG_DFL);
-#ifdef KILL_AFTER_TIMEOUT
+#if defined(KILL_AFTER_TIMEOUT)
    PrintedKill   = false;
    LastDetection = (unsigned long long)-1;
 #endif

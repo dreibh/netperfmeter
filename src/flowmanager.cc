@@ -824,7 +824,7 @@ void FlowManager::run()
       std::set<int> socketSet;
       pollfd        pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
       unsigned int  n = 0;
-#ifdef DEBUG_POLL
+#if defined(DEBUG_POLL)
       std::cerr << "poll-init:\n";
 #endif
       for(unsigned int i = 0;i  < FlowSet.size(); i++) {
@@ -841,7 +841,7 @@ void FlowManager::run()
                   FlowSet[i]->PollFDEntry = &pollFDs[n];
                   n++;
                   socketSet.insert(FlowSet[i]->SocketDescriptor);
-#ifdef DEBUG_POLL
+#if defined(DEBUG_POLL)
                   std::cerr << "\t" << n << ": flow socket " << FlowSet[i]->SocketDescriptor
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
 #endif
@@ -862,7 +862,7 @@ void FlowManager::run()
             pollFDs[n].events  = POLLIN;
             pollFDs[n].revents = 0;
             ud->PollFDEntry = &pollFDs[n];
-#ifdef DEBUG_POLL
+#if defined(DEBUG_POLL)
             std::cerr << "\t" << n << ": unidentified socket "
                       << ud->SocketDescriptor
                       << " protocol " << ud->Protocol << "\n";
@@ -879,11 +879,11 @@ void FlowManager::run()
       const int timeout = pollTimeout(getMicroTime(), 2,
                                       now + 2500000,
                                       nextEvent);
-#ifdef DEBUG_POLL
+#if defined(DEBUG_POLL)
       std::cerr << "poll with timeout=" << timeout << " ms\n";
 #endif
       const int result = ext_poll_wrapper((pollfd*)&pollFDs, n, timeout);
-#ifdef DEBUG_POLL
+#if defined(DEBUG_POLL)
       std::cerr << "poll result=" << result << "\n";
 #endif
 
@@ -902,7 +902,7 @@ void FlowManager::run()
                // ====== Handle data message ================================
                if(entry->revents & (POLLIN|POLLERR)) {
                   const int protocol = FlowSet[i]->getTrafficSpec().Protocol;
-#ifdef DEBUG_POLL
+#if defined(DEBUG_POLL)
                   std::cerr << "\tPOLLIN: flow " << FlowSet[i]->SocketDescriptor
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
 #endif
@@ -919,7 +919,7 @@ void FlowManager::run()
                      const bool deregisteredFromReader =
                         Reader.deregisterSocket(FlowSet[i]->SocketDescriptor);
                      if( (protocol != IPPROTO_SCTP)
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
                          && (protocol != IPPROTO_QUIC)
 #endif
                        ) {
@@ -951,7 +951,7 @@ void FlowManager::run()
                   // ====== Handle data message =============================
                   if( (ud->ToBeRemoved == false) &&
                       (entry->revents & (POLLIN|POLLERR)) ) {
-#ifdef DEBUG_POLL
+#if defined(DEBUG_POLL)
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                  << " protocol " << ud->Protocol << "\n";
 #endif

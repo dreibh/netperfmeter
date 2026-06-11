@@ -33,7 +33,7 @@
 #include <cassert>
 #include <cstdio>
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
 #include <mach/mach.h>
 #endif
 
@@ -77,7 +77,7 @@ class CPUStatus
    static bool getSysCtl(const char* name, void* ptr, size_t len);
 
 #elif defined(__APPLE__)
-#ifdef USE_PER_CPU_STATISTICS
+#if defined(USE_PER_CPU_STATISTICS)
    typedef unsigned int tick_t;
    host_priv_t          host_priv;
 #else

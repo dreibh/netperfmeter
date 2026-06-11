@@ -453,7 +453,7 @@ bool Flow::configureSocket(const int socketDescriptor)
                      (int)TrafficSpec.RcvBufferSize) == false) {
       return false;
    }
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
    if( (TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP) ) {
 #else
    if(TrafficSpec.Protocol == IPPROTO_TCP) {
@@ -487,7 +487,7 @@ bool Flow::configureSocket(const int socketDescriptor)
 #endif
       }
    }
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
    else if(TrafficSpec.Protocol == IPPROTO_SCTP) {
       if (TrafficSpec.NoDelay) {
          const int noDelayOption = 1;
@@ -499,7 +499,7 @@ bool Flow::configureSocket(const int socketDescriptor)
             return false;
          }
       }
-#ifdef SCTP_CMT_ON_OFF
+#if defined(SCTP_CMT_ON_OFF)
       struct sctp_assoc_value cmtOnOff;
       cmtOnOff.assoc_id    = 0;
       cmtOnOff.assoc_value = TrafficSpec.CMT;
@@ -522,7 +522,7 @@ bool Flow::configureSocket(const int socketDescriptor)
 #endif
    }
 #endif
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
    else if(TrafficSpec.Protocol == IPPROTO_DCCP) {
       const uint8_t value = TrafficSpec.CCID;
       if(value != 0) {

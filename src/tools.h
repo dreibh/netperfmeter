@@ -72,12 +72,12 @@
 
 
 // MPTCP definitions
-#ifdef HAVE_MPTCP
+#if defined(HAVE_MPTCP)
 #include <linux/mptcp.h>
 #endif
 
 // QUIC definitions
-#ifdef HAVE_QUIC
+#if defined(HAVE_QUIC)
 extern "C" {
 #include <netinet/quic.h>
 }
@@ -86,7 +86,7 @@ extern "C" {
 #endif
 
 // DCCP definitions
-#ifdef HAVE_DCCP
+#if defined(HAVE_DCCP)
 #include <linux/dccp.h>
 #endif
 
@@ -133,7 +133,7 @@ void printAddress(std::ostream&          os,
 const char* getProtocolName(const int protocol);
 uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
-#ifdef HAVE_SCTP
+#if defined(HAVE_SCTP)
 bool sendAbort(int sd, sctp_assoc_t assocID = 0);
 #endif
 int createSocket(const int             family,
@@ -183,7 +183,7 @@ double randomNormal(const double mean, const double stddev);
 double randomTruncNormal(const double mean, const double stddev);
 double randomParetoDouble(const double location, const double shape);
 
-#ifdef __APPLE__
+#if defined(__APPLE__)
 // Apple's poll() function is broken. We need a wrapper to select() here!
 int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time);
 #else
