@@ -90,7 +90,7 @@ INSTALL(FILES   netperfmeter.bib DESTINATION         ${CMAKE_INSTALL_DATADIR}/ne
 INSTALL(FILES       netperfmeter.bash-completion
         DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
         RENAME      netperfmeter)
-IF (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
    INSTALL(FILES    netperfmeter.service               DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
    INSTALL(FILES    netperfmeter.conf                  DESTINATION /etc)
    INSTALL(FILES    netperfmeter-module-loader.service DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
