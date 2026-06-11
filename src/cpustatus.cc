@@ -121,7 +121,7 @@ CPUStatus::CPUStatus()
       mach_error("host_info():", kr);
       LOG_END_FATAL
    };
-   CPUs = hinfo.max_cpus;
+   CPUs = (unsigned int)hinfo.max_cpus;
 
 #else
 #error Missing case!
@@ -258,8 +258,8 @@ void CPUStatus::update()
       mach_error("host_processor_info():", kr);
       exit(1);
    }
-   const processor_cpuLoadInfo_t cpuLoadInfo =
-      (processor_cpuLoadInfo_t)processor_info_array;
+   const processor_cpu_load_info_t cpuLoadInfo =
+      (processor_cpu_load_info_t)processor_info_array;
 
    for(unsigned int i = 0; i < processor_count; i++) {
       for(unsigned int j = 0; j < CpuStates; j++) {
