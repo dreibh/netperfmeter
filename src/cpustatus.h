@@ -68,25 +68,23 @@ class CPUStatus
 
    // ====== Private data ===================================================
    private:
-#if defined(__linux__)
-   typedef unsigned long long tick_t;
-
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__NetBSD__)
+   typedef uint64_t tick_t;
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
    typedef unsigned long tick_t;
-   static bool getSysCtl(const char* name, void* ptr, size_t len);
-
 #elif defined(__APPLE__)
-#if defined(USE_PER_CPU_STATISTICS)
    typedef unsigned int tick_t;
-   host_priv_t          host_priv;
-#else
-   typedef natural_t    tick_t;
-#endif
-   host_name_port_t     host;
 #endif
 
 #if defined(__linux__)
    FILE*               ProcStatFD;
+#elif defined(__APPLE__)
+#if defined(USE_PER_CPU_STATISTICS)
+   host_priv_t         host_priv;
+#else
+   typedef natural_t    tick_t;
+#endif
+   host_name_port_t    host;
 #endif
    unsigned int        CPUs;
    tick_t*             CpuTimes;

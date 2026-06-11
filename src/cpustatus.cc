@@ -55,26 +55,17 @@ const char* CPUStatus::CpuStateNames[] = {
    "Hardware Interrupts", "Software Interrupts", "Hypervisor"
 };
 
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
 #define IDLE_INDEX 4
 const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Interrupt", "Idle"
 };
 
-bool CPUStatus::getSysCtl(const char* name, void* ptr, size_t len)
-{
-   size_t nlen = len;
-   if(sysctlbyname(name, ptr, &nlen, nullptr, 0) < 0) {
-      LOG_FATAL
-      stdlog << format("sysctlbyname(%s) failed: %s!",
-                       name, strerror(errno)) << "\n";
-      LOG_END_FATAL
-   }
-   if(nlen != len) {
-      return false;
-   }
-   return true;
-}
+#elif defined(__OpenBSD__)
+#define IDLE_INDEX 5
+const char* CPUStatus::CpuStateNames[] = {
+   "User", "Nice", "System", "Spinning", "Interrupt", "Idle"
+};
 
 #elif defined(__APPLE__)
 #define IDLE_INDEX 2
@@ -107,7 +98,9 @@ CPUStatus::CPUStatus()
 
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
    CpuStates = CPUSTATES;
-   if(!getSysCtl("hw.ncpu", &CPUs, sizeof(CPUs))) {
+   const int  mibHwNCpu[2] = { CTL_HW, HW_NCPU };
+   size_t     cpusLength = sizeof(CPUs);
+   if(sysctl(mibHwNCpu, 2, &CPUs, &cpusLength, nullptr, 0) < 0) {
       CPUs = 1;
    }
 
@@ -240,20 +233,36 @@ void CPUStatus::update()
    }
 
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+   // ------ Get the per-core values ----------------------------------------
+#if defined(__FreeBSD__) || defined(__NetBSD__)
    cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
-   if(getSysCtl("kern.cp_times", &CpuTimes[CpuStates], cpuTimesSize)) {
-      // ------ Compute total values ----------------------------------------
-      for(unsigned int j = 0; j < CpuStates; j++) {
-         CpuTimes[j] = 0;
-         for(unsigned int i = 0; i < CPUs; i++) {
-            CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
-         }
-      }
-   }
-   else {
+   size_t length = cpuTimesSize;
+   if( (sysctlbyname("kern.cp_times", &CpuTimes[CpuStates], &length, nullptr, 0) < 0) ||
+       (length != cpuTimesSize) ) {
       LOG_FATAL
       stdlog << "Failed to obtain kern.cp_times!" << "\n";
       LOG_END_FATAL
+   }
+#else
+   int mibKernCpTime[3] = { CTL_KERN, KERN_CPTIME2, 0 };
+   for(unsigned int i = 0; i < CPUs; i++) {
+      mibKernCpTime[2] = (int)i;
+      size_t length = sizeof(tick_t) * CpuStates;
+      if(sysctl(mibKernCpTime, sizeof(mibKernCpTime) / sizeof(mibKernCpTime[0]),
+                &CpuTimes[(i + 1) * CpuStates], &length, nullptr, 0) < 0) {
+         LOG_FATAL
+         stdlog << "Failed to obtain per-core KERN_CPTIME2 for core " << i << "!\n";
+         LOG_END_FATAL
+      }
+   }
+#endif
+
+   // ------ Compute total values -------------------------------------------
+   for(unsigned int j = 0; j < CpuStates; j++) {
+      CpuTimes[j] = 0;
+      for(unsigned int i = 0; i < CPUs; i++) {
+         CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
+      }
    }
 
 #elif defined(__APPLE__)
