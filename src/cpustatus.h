@@ -82,11 +82,7 @@ class CPUStatus
 #if defined(__linux__)
    FILE*               ProcStatFD;
 #elif defined(__APPLE__)
-#if defined(USE_PER_CPU_STATISTICS)
    host_priv_t         host_priv;
-#else
-   typedef natural_t    tick_t;
-#endif
    host_name_port_t    host;
 #endif
    unsigned int        CPUs;

@@ -105,11 +105,9 @@ CPUStatus::CPUStatus()
    }
 
 #elif defined(__APPLE__)
-#if defined(USE_PER_CPU_STATISTICS)
    kern_return_t          kr;
    mach_msg_type_number_t count;
    host_basic_info_data_t hinfo;
-#endif
 
    CpuStates = CPU_STATE_MAX;
    if((host = mach_host_self()) == MACH_PORT_NULL) {
@@ -117,7 +115,6 @@ CPUStatus::CPUStatus()
       stdlog << "Couldn't receive send rights!" << "\n";
       LOG_END_FATAL
    }
-#if defined(USE_PER_CPU_STATISTICS)
    if((kr = host_get_host_priv_port(host, &host_priv)) != KERN_SUCCESS) {
       LOG_FATAL
       mach_error("host_get_host_priv_port():", kr);
@@ -130,9 +127,6 @@ CPUStatus::CPUStatus()
       LOG_END_FATAL
    };
    CPUs = hinfo.max_cpus;
-#else
-   CPUs = 1;
-#endif
 
 #else
 #error Missing case!
@@ -174,9 +168,7 @@ CPUStatus::~CPUStatus()
    fclose(ProcStatFD);
    ProcStatFD = nullptr;
 #elif defined(__APPLE__)
-#if defined(USE_PER_CPU_STATISTICS)
    mach_port_deallocate(mach_task_self(), host_priv);
-#endif
    mach_port_deallocate(mach_task_self(), host);
 #endif
 }
@@ -232,7 +224,7 @@ void CPUStatus::update()
       }
    }
 
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#else
    // ------ Get the per-core values ----------------------------------------
 #if defined(__FreeBSD__) || defined(__NetBSD__)
    cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
@@ -249,7 +241,7 @@ void CPUStatus::update()
       stdlog << "Failed to obtain kern.cp_times!" << "\n";
       LOG_END_FATAL
    }
-#else
+#elif defined(__NetBSD__)
    int mibKernCpTime[3] = { CTL_KERN, KERN_CPTIME2, 0 };
    for(unsigned int i = 0; i < CPUs; i++) {
       mibKernCpTime[2] = (int)i;
@@ -261,22 +253,12 @@ void CPUStatus::update()
          LOG_END_FATAL
       }
    }
-#endif
-
-   // ------ Compute total values -------------------------------------------
-   for(unsigned int j = 0; j < CpuStates; j++) {
-      CpuTimes[j] = 0;
-      for(unsigned int i = 0; i < CPUs; i++) {
-         CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
-      }
-   }
-
 #elif defined(__APPLE__)
-   kern_return_t kr;
-#if defined(USE_PER_CPU_STATISTICS)
+   kern_return_t                    kr;
    processor_port_array_t processor_list;
-   natural_t processor_count, info_count;
-   processor_cpu_load_info_data_t cpu_load_info;
+   natural_t                        processor_count;
+   natural_t                        info_count;
+   processor_cpu_load_info_data_t   cpu_load_info;
 
    if((kr = host_processors(host_priv, &processor_list, &processor_count)) != KERN_SUCCESS) {
       mach_error("host_processors():", kr);
@@ -292,32 +274,18 @@ void CPUStatus::update()
          CpuTimes[((i + 1) * CpuStates) + j] = cpu_load_info.cpu_ticks[j];
       }
    }
-   vm_deallocate(mach_task_self(), (vm_address_t)processor_list, processor_count * sizeof(processor_t *));
-   // ------ Compute total values -------------------------
+   vm_deallocate(mach_task_self(), (vm_address_t)processor_list,
+                 processor_count * sizeof(processor_t *));
+#endif
+
+   // ------ Compute total values -------------------------------------------
    for(unsigned int j = 0; j < CpuStates; j++) {
       CpuTimes[j] = 0;
       for(unsigned int i = 0; i < CPUs; i++) {
          CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
       }
    }
-#else
-   mach_msg_type_number_t count;
-   host_cpu_load_info_data_t cpu_load_info;
-
-   count = HOST_CPU_LOAD_INFO_COUNT;
-   if((kr = host_statistics(host, HOST_CPU_LOAD_INFO, (host_info_t)&cpu_load_info, &count)) != KERN_SUCCESS) {
-      mach_error("host_statistics():", kr);
-      exit(1);
-   }
-   for(unsigned int j = 0; j < CpuStates; j++) {
-      CpuTimes[j] = CpuTimes[CpuStates + j] = cpu_load_info.cpu_ticks[j];
-   }
 #endif
-
-#else
-#error Missing case!
-#endif
-
 
    // ====== Calculate percentages ==========================================
    for(unsigned int i = 0; i < CPUs + 1; i++) {
