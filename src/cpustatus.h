@@ -82,7 +82,6 @@ class CPUStatus
 #if defined(__linux__)
    FILE*               ProcStatFD;
 #elif defined(__APPLE__)
-   host_priv_t         host_priv;
    host_name_port_t    host;
 #endif
    unsigned int        CPUs;

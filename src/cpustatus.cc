@@ -115,11 +115,6 @@ CPUStatus::CPUStatus()
       stdlog << "Couldn't receive send rights!" << "\n";
       LOG_END_FATAL
    }
-   if((kr = host_get_host_priv_port(host, &host_priv)) != KERN_SUCCESS) {
-      LOG_FATAL
-      mach_error("host_get_host_priv_port():", kr);
-      LOG_END_FATAL
-   }
    count = HOST_BASIC_INFO_COUNT;
    if((kr = host_info(host, HOST_BASIC_INFO, (host_info_t)&hinfo, &count)) != KERN_SUCCESS) {
       LOG_FATAL
@@ -168,7 +163,6 @@ CPUStatus::~CPUStatus()
    fclose(ProcStatFD);
    ProcStatFD = nullptr;
 #elif defined(__APPLE__)
-   mach_port_deallocate(mach_task_self(), host_priv);
    mach_port_deallocate(mach_task_self(), host);
 #endif
 }
@@ -254,28 +248,26 @@ void CPUStatus::update()
       }
    }
 #elif defined(__APPLE__)
-   kern_return_t                    kr;
-   processor_port_array_t processor_list;
-   natural_t                        processor_count;
-   natural_t                        info_count;
-   processor_cpu_load_info_data_t   cpu_load_info;
+   kern_return_t          kr;
+   processor_info_array_t processor_info_array;
+   natural_t              processor_count;
+   mach_msg_type_number_t info_count;
 
-   if((kr = host_processors(host_priv, &processor_list, &processor_count)) != KERN_SUCCESS) {
-      mach_error("host_processors():", kr);
+   if((kr = host_processor_info(host, PROCESSOR_CPU_LOAD_INFO, &processor_count,
+                                &processor_info_array, &info_count)) != KERN_SUCCESS) {
+      mach_error("host_processor_info():", kr);
       exit(1);
    }
+   const processor_cpuLoadInfo_t cpuLoadInfo =
+      (processor_cpuLoadInfo_t)processor_info_array;
+
    for(unsigned int i = 0; i < processor_count; i++) {
-      info_count = PROCESSOR_CPU_LOAD_INFO_COUNT;
-      if ((kr = processor_info(processor_list[i], PROCESSOR_CPU_LOAD_INFO, &host, (processor_info_t)&cpu_load_info, &info_count)) != KERN_SUCCESS) {
-         mach_error("processor_info():", kr);
-         exit(1);
-      }
       for(unsigned int j = 0; j < CpuStates; j++) {
-         CpuTimes[((i + 1) * CpuStates) + j] = cpu_load_info.cpu_ticks[j];
+         CpuTimes[((i + 1) * CpuStates) + j] = cpuLoadInfo[i].cpu_ticks[j];
       }
    }
-   vm_deallocate(mach_task_self(), (vm_address_t)processor_list,
-                 processor_count * sizeof(processor_t *));
+   vm_deallocate(mach_task_self(), (vm_address_t)processor_info_array,
+                 info_count * sizeof(integer_t));
 #endif
 
    // ------ Compute total values -------------------------------------------
