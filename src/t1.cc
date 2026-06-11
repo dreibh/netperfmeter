@@ -8,13 +8,16 @@ int main(int argc, char** argv)
 {
    CPUStatus cpuStatus;
 
+   // ====== Initialise =====================================================
    const unsigned int ncpus   = cpuStatus.getNumberOfCPUs();
    const unsigned int nstates = cpuStatus.getCpuStates();
 
+   // ====== Measure ========================================================
    puts("Measuring ...");
    usleep(1000000);
    cpuStatus.update();
 
+   // ====== Print per-core CPU status ======================================
    printf("\x1b[34m%6s\t\x1b[33m", "CPU");
    for(unsigned int s = 0; s <nstates; s++) {
       printf("%12s\t", cpuStatus.getCpuStateName(s));
@@ -22,8 +25,13 @@ int main(int argc, char** argv)
    puts("\x1b[37mUtilisation\x1b[0m");
 
    char buffer[128];
-   for(unsigned int c = 0; c < ncpus; c++) {
-      printf("\x1b[34m%6u\t\x1b[33m", c);
+   for(unsigned int c = 0; c <= ncpus; c++) {
+      if(c > 0) {
+         printf("\x1b[34m%6u\t\x1b[33m", c);
+      }
+      else {
+         printf("\x1b[34m%6s\t\x1b[33m", "TOTAL");
+      }
 
       for(unsigned int s = 0; s <nstates; s++) {
          float statePercentage = cpuStatus.getCpuStatePercentage(c, s);

@@ -39,9 +39,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#if defined(__linux__)
-#include <linux/sysctl.h>
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/proc.h>
 #include <sys/sched.h>
 #include <sys/sysctl.h>
@@ -109,7 +107,9 @@ CPUStatus::CPUStatus()
 
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
    CpuStates = CPUSTATES;
-   getSysCtl("hw.ncpu", &CPUs, sizeof(CPUs));
+   if(!getSysCtl("hw.ncpu", &CPUs, sizeof(CPUs))) {
+      CPUs = 1;
+   }
 
 #elif defined(__APPLE__)
 #if defined(USE_PER_CPU_STATISTICS)
@@ -159,10 +159,11 @@ CPUStatus::CPUStatus()
    // ====== Allocate percentages array =====================================
    Percentages = new float[cpuTimeElements];
    assert(Percentages != nullptr);
-   for(unsigned int i = 0; i < (CPUs + 1) * CpuStates; i++) {
+   for(unsigned int i = 0; i < cpuTimeElements; i++) {
       Percentages[i] = 100.0 / CpuStates;
    }
 
+   // ====== Initialise =====================================================
    update();
 }
 
@@ -199,8 +200,6 @@ void CPUStatus::update()
    // ====== Get counters ===================================================
 #if defined(__linux__)
    fseek(ProcStatFD, 0, SEEK_SET);
-   fflush(ProcStatFD);
-
    for(unsigned int i = 0; i <= CPUs; i++) {
       char buffer[1024];
       if(fgets(buffer, sizeof(buffer), ProcStatFD) == 0) {
@@ -242,15 +241,15 @@ void CPUStatus::update()
 
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
    cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
-   getSysCtl("kern.cp_times", &CpuTimes[CpuStates], cpuTimesSize);
-   // ------ Compute total values -------------------------
-   for(unsigned int j = 0; j < CpuStates; j++) {
-      CpuTimes[j] = 0;
-      for(unsigned int i = 0; i < CPUs; i++) {
-         CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
+   if(getSysCtl("kern.cp_times", &CpuTimes[CpuStates], cpuTimesSize)) {
+      // ------ Compute total values ----------------------------------------
+      for(unsigned int j = 0; j < CpuStates; j++) {
+         CpuTimes[j] = 0;
+         for(unsigned int i = 0; i < CPUs; i++) {
+            CpuTimes[j] += CpuTimes[((i + 1) * CpuStates) + j];
+         }
       }
    }
-
 
 #elif defined(__APPLE__)
    kern_return_t kr;
@@ -306,18 +305,16 @@ void CPUStatus::update()
       tick_t diff[CpuStates];
       for(unsigned int j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
-         if(CpuTimes[index] >= OldCpuTimes[index]) {
-            diff[j] = CpuTimes[index] - OldCpuTimes[index];
-         }
-         else {   // Counter wrap!
-            diff[j] = OldCpuTimes[index] - CpuTimes[index];
-         }
+         diff[j] = CpuTimes[index] - OldCpuTimes[index];
          diffTotal += diff[j];
       }
       for(unsigned int j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
          if(diffTotal != 0) {   // Avoid division by zero!
             Percentages[index] = 100.0 * (float)diff[j] / (float)diffTotal;
+         } else {
+            // No ticks passed => 100% idle
+            Percentages[index] = (j == IDLE_INDEX) ? 100.0 : 0.0;
          }
          assert( (Percentages[index] >= 0.0) && (Percentages[index] <= 100.0) );
       }
