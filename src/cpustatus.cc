@@ -112,7 +112,7 @@ CPUStatus::CPUStatus()
    getSysCtl("hw.ncpu", &CPUs, sizeof(CPUs));
 
 #elif defined(__APPLE__)
-#if defined(USE_PER_CPU_STATISTICS
+#if defined(USE_PER_CPU_STATISTICS)
    kern_return_t          kr;
    mach_msg_type_number_t count;
    host_basic_info_data_t hinfo;
