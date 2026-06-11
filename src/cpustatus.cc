@@ -235,7 +235,7 @@ void CPUStatus::update()
       stdlog << "Failed to obtain kern.cp_times!" << "\n";
       LOG_END_FATAL
    }
-#elif defined(__NetBSD__)
+#elif defined(__OpenBSD__)
    int mibKernCpTime[3] = { CTL_KERN, KERN_CPTIME2, 0 };
    for(unsigned int i = 0; i < CPUs; i++) {
       mibKernCpTime[2] = (int)i;

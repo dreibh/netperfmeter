@@ -70,13 +70,13 @@ class CPUStatus
    // ====== Private data ===================================================
    private:
 #if defined(__linux__)
-   typedef long long     tick_t;
+   typedef unsigned long long tick_t;
 #elif defined(__NetBSD__)
-   typedef uint64_t      tick_t;
+   typedef uint64_t           tick_t;
 #elif defined(__FreeBSD__) || defined(__OpenBSD__)
-   typedef unsigned long tick_t;
+   typedef unsigned long      tick_t;
 #elif defined(__APPLE__)
-   typedef unsigned int  tick_t;
+   typedef unsigned int       tick_t;
 #endif
 
 #if defined(__linux__)
