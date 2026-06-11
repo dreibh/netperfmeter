@@ -1158,7 +1158,7 @@ double randomTruncNormal(const double mean, const double stddev)
 // }
 //
 // Some description:
-// http://en.wikipedia.org/wiki/Pareto_distribution
+// https://www.geeksforgeeks.org/engineering-mathematics/pareto-distribution/
 //
 // Mean: E(X) = shape*location / (shape - 1) for alpha > 1
 // => location = E(X)*(shape - 1) / shape
