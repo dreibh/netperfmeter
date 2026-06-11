@@ -70,10 +70,9 @@ class CPUStatus
    private:
 #if defined(__linux__)
    typedef unsigned long long tick_t;
-   FILE*               ProcStatFD;
 
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
-   typedef unsigned long long tick_t;
+   typedef unsigned long tick_t;
    static bool getSysCtl(const char* name, void* ptr, size_t len);
 
 #elif defined(__APPLE__)
@@ -86,6 +85,9 @@ class CPUStatus
    host_name_port_t     host;
 #endif
 
+#if defined(__linux__)
+   FILE*               ProcStatFD;
+#endif
    unsigned int        CPUs;
    tick_t*             CpuTimes;
    tick_t*             OldCpuTimes;

@@ -250,6 +250,11 @@ void CPUStatus::update()
          }
       }
    }
+   else {
+      LOG_FATAL
+      stdlog << "Failed to obtain kern.cp_times!" << "\n";
+      LOG_END_FATAL
+   }
 
 #elif defined(__APPLE__)
    kern_return_t kr;
