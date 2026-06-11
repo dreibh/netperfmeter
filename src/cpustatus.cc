@@ -249,25 +249,24 @@ void CPUStatus::update()
    }
 #elif defined(__APPLE__)
    kern_return_t          kr;
-   processor_info_array_t processor_info_array;
-   natural_t              processor_count;
-   mach_msg_type_number_t info_count;
+   processor_info_array_t processorInfoArray;
+   natural_t              processorCount;
+   mach_msg_type_number_t infoCount;
 
-   if((kr = host_processor_info(host, PROCESSOR_CPU_LOAD_INFO, &processor_count,
-                                &processor_info_array, &info_count)) != KERN_SUCCESS) {
+   if((kr = host_processor_info(host, PROCESSOR_CPU_LOAD_INFO, &processorCount,
+                                &processorInfoArray, &infoCount)) != KERN_SUCCESS) {
       mach_error("host_processor_info():", kr);
       exit(1);
    }
    const processor_cpu_load_info_t cpuLoadInfo =
-      (processor_cpu_load_info_t)processor_info_array;
-
-   for(unsigned int i = 0; i < processor_count; i++) {
+      (processor_cpu_load_info_t)processorInfoArray;
+   for(unsigned int i = 0; i < processorCount; i++) {
       for(unsigned int j = 0; j < CpuStates; j++) {
          CpuTimes[((i + 1) * CpuStates) + j] = cpuLoadInfo[i].cpu_ticks[j];
       }
    }
-   vm_deallocate(mach_task_self(), (vm_address_t)processor_info_array,
-                 info_count * sizeof(integer_t));
+   vm_deallocate(mach_task_self(), (vm_address_t)processorInfoArray,
+                 infoCount * sizeof(integer_t));
 #endif
 
    // ------ Compute total values -------------------------------------------
