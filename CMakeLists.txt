@@ -35,10 +35,14 @@ SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
 #############################################################################
-#### INSTALLATION_DIRECTORIES                                            ####
+#### CMAKE INCLUDES                                                      ####
 #############################################################################
 
-# See: https://cmake.org/cmake/help/v3.0/module/GNUInstallDirs.html
+INCLUDE(CheckCCompilerFlag)
+INCLUDE(CheckCSourceCompiles)
+INCLUDE(CheckCSourceRuns)
+INCLUDE(CheckIncludeFile)
+INCLUDE(CheckStructHasMember)
 INCLUDE(GNUInstallDirs)
 
 
@@ -51,12 +55,13 @@ SET(CPACK_SOURCE_PACKAGE_FILE_NAME
     "${CMAKE_PROJECT_NAME}-${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH}")
 SET(CPACK_SOURCE_IGNORE_FILES "\\\\.git;\\\\.swp$;~$;\\\\.\\\\#;/\\\\#")
 LIST(APPEND CPACK_SOURCE_IGNORE_FILES "^${PROJECT_SOURCE_DIR}/${CMAKE_PROJECT_NAME}[_-]")
-LIST(APPEND CPACK_SOURCE_IGNORE_FILES "\\\\.cmake$|\\\\.make$|\\\\.log$")
+LIST(APPEND CPACK_SOURCE_IGNORE_FILES "\\\\.make$|\\\\.log$")
 LIST(APPEND CPACK_SOURCE_IGNORE_FILES "/CMakeCache\\\\.txt$")
 LIST(APPEND CPACK_SOURCE_IGNORE_FILES "/(CMakeFiles|CMakeScripts|_CPack_Packages)/")
 LIST(APPEND CPACK_SOURCE_IGNORE_FILES "/package-version\\\\.h$")
 LIST(APPEND CPACK_SOURCE_IGNORE_FILES "/packaging\\\\.conf$")
 LIST(APPEND CPACK_SOURCE_IGNORE_FILES "^${PROJECT_SOURCE_DIR}/(po.*/|src.*/|)Makefile$")
+LIST(APPEND CPACK_SOURCE_IGNORE_FILES "^${PROJECT_SOURCE_DIR}/(po.*|src.*|[^/]*)\\\\.cmake$")
 INCLUDE(CPack)
 
 ADD_CUSTOM_TARGET(dist COMMAND ${CMAKE_MAKE_PROGRAM} clean package_source)
@@ -111,8 +116,6 @@ OPTION(WITH_EXAMPLE_RESULTS   "Include example results"                   1)
 #### COMPILER FLAGS                                                      ####
 #############################################################################
 
-INCLUDE(CheckCCompilerFlag)
-
 # ------ Check for "address-of-packed-member" -------------------------------
 CHECK_C_COMPILER_FLAG("-Waddress-of-packed-member -Werror" HAS_ADDRESS_OF_PACKED_MEMBER)
 IF (HAS_ADDRESS_OF_PACKED_MEMBER)
@@ -126,12 +129,10 @@ ADD_COMPILE_DEFINITIONS(_FILE_OFFSET_BITS=64 _TIME_BITS=64)
 
 
 #############################################################################
-#### CHECK STRUCT MEMBERS                                                ####
+#### COMPILE CHECKS                                                      ####
 #############################################################################
 
 # ====== Structure members ==================================================
-INCLUDE(CheckStructHasMember)
-
 CHECK_STRUCT_HAS_MEMBER("struct sockaddr" "sa_len" "sys/types.h;sys/socket.h" HAVE_SA_LEN)
 IF (HAVE_SA_LEN)
     MESSAGE(STATUS "HAVE_SA_LEN")
@@ -158,7 +159,6 @@ ENDIF()
 
 
 # ====== IEEE floating-point numbers ========================================
-INCLUDE(CheckCSourceRuns)
 CHECK_C_SOURCE_RUNS("
 #include <stdio.h>
 
@@ -210,7 +210,7 @@ IF (BZ2_LIBRARY AND BZ2_INCLUDE_DIR)
    MESSAGE(STATUS " BZ2_INCLUDE_DIR: ${BZ2_INCLUDE_DIR}")
 ELSE()
    MESSAGE(FATAL_ERROR
-           " Cannot find BZip2 library! Try:\n"
+           "Cannot find BZip2 library! Try:\n"
            " * Ubuntu/Debian: sudo apt install -y libbz2-dev\n"
            " * Fedora:        sudo dnf install -y bzip2-devel\n"
            " * SuSE:          sudo zypper install -y libbz2-devel\n"
@@ -241,7 +241,7 @@ IF (WITH_KERNEL_SCTP)
          MESSAGE(STATUS " SCTP_INCLUDE_DIR: ${SCTP_INCLUDE_DIR}")
       ELSE()
          MESSAGE(FATAL_ERROR
-               " Cannot find Linux Kernel SCTP library! Try:\n"
+               "Cannot find Linux Kernel SCTP library! Try:\n"
                " * Ubuntu/Debian: sudo apt install -y libsctp-dev\n"
                " * Fedora:        sudo dnf install -y lksctp-tools-devel\n"
                " * SuSE:          sudo zypper install -y lksctp-tools-devel\n"
@@ -256,7 +256,7 @@ ELSE()
    MESSAGE(STATUS "sctplib found: ${SCTPLIB_LIB}")
    IF (NOT HAVE_SCTPLIB_SCTP_H OR NOT SCTPLIB_LIB)
       MESSAGE(FATAL_ERROR
-              " Cannot find libsctplib user-space SCTP library! Try -DWITH_KERNEL_SCTP=1?")
+              "Cannot find libsctplib user-space SCTP library! Try -DWITH_KERNEL_SCTP=1?")
    ENDIF()
 
    CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPSOCKET_SCTP_H)
@@ -264,14 +264,14 @@ ELSE()
    MESSAGE(STATUS "sctpsocket found: ${SCTPSOCKET_LIB}")
    IF (NOT HAVE_SCTPSOCKET_SCTP_H OR NOT SCTPSOCKET_LIB)
       MESSAGE(FATAL_ERROR
-              " Cannot find libsctpsocket sockets API for user-space SCTP library! Try -DWITH_KERNEL_SCTP=1?")
+              "Cannot find libsctpsocket sockets API for user-space SCTP library! Try -DWITH_KERNEL_SCTP=1?")
    ENDIF()
 
    FIND_PACKAGE(PkgConfig)
    PKG_CHECK_MODULES(GLIB glib-2.0)
    IF (NOT ${GLIB_LIBS})
       MESSAGE(FATAL_ERROR
-              " Cannot find libglib-2.0!")
+              "Cannot find libglib-2.0!")
    ENDIF()
 
    SET(SCTP_LIBRARY ${SCTPSOCKET_LIB} ${SCTPLIB_LIB} ${GLIB_LIBRARIES})
@@ -333,7 +333,7 @@ IF (HAVE_QUIC)
       FIND_LIBRARY(GNUTLS_LIBRARY NAMES gnutls)
       IF (NOT GNUTLS_LIBRARY)
          MESSAGE(FATAL_ERROR
-               " Cannot find GnuTLS library (which is required for QUIC)! Try:\n"
+               "Cannot find GnuTLS library (which is required for QUIC)! Try:\n"
                " * Ubuntu/Debian: sudo apt install -y libgnutls28-dev\n"
                " * Fedora:        sudo dnf install -y  gnutls-devel\n"
                " * SuSE:          sudo zypper install -y libgnutls-devel\n"
@@ -359,7 +359,7 @@ IF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
       MESSAGE(STATUS " LIBIBERTY_INCLUDE_DIR: ${LIBIBERTY_INCLUDE_DIR}")
    ELSE()
       MESSAGE(FATAL_ERROR
-              " Cannot find Libiberty library! Try:\n"
+              "Cannot find Libiberty library! Try:\n"
               " * NetBSD: sudo pkgin -y install liberty")
    ENDIF()
 ENDIF()
@@ -378,7 +378,7 @@ IF (WITH_ICONS)
       MESSAGE(STATUS "Ghostscript found: ${GS} (version ${GS_VERSION})")
    ELSE()
       MESSAGE(FATAL_ERROR
-            " Cannot find Ghostscript! Try:\n"
+            "Cannot find Ghostscript! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y ghostscript\n"
             " * Fedora:        sudo dnf install -y ghostscript\n"
             " * SuSE:          sudo zypper install -y ghostscript\n"
@@ -399,7 +399,7 @@ IF (WITH_ICONS)
       MESSAGE(STATUS "GraphicsMagick found: ${GM} (version ${GM_VERSION})")
    ELSE()
       MESSAGE(FATAL_ERROR
-            " Cannot find GraphicsMagick! Try:\n"
+            "Cannot find GraphicsMagick! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y graphicsmagick\n"
             " * Fedora:        sudo dnf install -y GraphicsMagick\n"
             " * SuSE:          sudo zypper install -y GraphicsMagick\n"
@@ -420,7 +420,7 @@ IF (WITH_ICONS)
       MESSAGE(STATUS "pdftocairo found: ${PDFTOCAIRO} (version ${PDFTOCAIRO_VERSION})")
    ELSE()
       MESSAGE(FATAL_ERROR
-            " Cannot find pdftocairo! Try:\n"
+            "Cannot find pdftocairo! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y poppler-utils\n"
             " * Fedora:        sudo dnf install -y poppler-utils\n"
             " * SuSE:          sudo zypper install -y poppler-utils\n"
