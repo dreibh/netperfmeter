@@ -1,3 +1,360 @@
+commit e5226d405122a5e7bbe600d063a1e2426632fbf6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jun 12 17:24:24 2026 +0200
+
+    Improved CMakeLists.txt.
+
+commit 3bb6719d1f133616e994400aa09e3ca714798c35
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jun 12 16:24:35 2026 +0200
+
+    Removed obsolete file.
+
+commit e1ecbe3ff0147c37aa030a5b24ea8362b5e33d97
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jun 12 16:22:33 2026 +0200
+
+    FreeBSD build fix.
+
+commit 19e2cca82dde05f0f720c704519bfc7fde0ccd52
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jun 12 16:16:22 2026 +0200
+
+    Changed pdftocairo to mutool, due to bugs in Fedora.
+
+commit 9ecf9014a19f9716710966eaa54170df3cf9b0d0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 18:28:29 2026 +0200
+
+    Updated build helper script.
+
+commit a0261785f248c3e01a413d8f417da5c4cd3a39ec
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 18:10:27 2026 +0200
+
+    Now running on Apple as well.
+
+commit b860f253dcee4a94d50f5096f527b63f563315a0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 18:07:17 2026 +0200
+
+    Minor Apple clean-ups.
+
+commit cf6a2c2de06b4b54b618b50d3738fe7383684674
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 17:57:11 2026 +0200
+
+    Further clean-ups.
+
+commit c57276e53a20a7b7629bdcc139d32cb6b8b749cc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 17:49:24 2026 +0200
+
+    Some code clean-ups.
+
+commit da4188ad99601081be36a941d8dec89956362542
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 17:47:04 2026 +0200
+
+    Some more testing.
+
+commit 460c2eb7773304a34ba767278affaeb535130d43
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 17:39:28 2026 +0200
+
+    Further clean-ups.
+
+commit 56d572374d8af64b3c7a43855b7f7c3095a1d5e0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 17:20:14 2026 +0200
+
+    Now working under Linux as well.
+
+commit 7f36dba02f29838c156b8b5aa6384eefad96d4ef
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 16:58:18 2026 +0200
+
+    CPU status code working under NetBSD as well.
+
+commit a0089088c941227bb5b9e939397f70fc57154e85
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 17:09:56 2026 +0200
+
+    Further progress with CPU state handling.
+
+commit be39a0bdf7b41faeb0354cf4afdc3ceffd255eef
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 16:09:37 2026 +0200
+
+    FreeBSD handling updates.
+
+commit 6575e887e0284c5289beb135e21558a1c124e91a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 15:57:17 2026 +0200
+
+    Further improvements.
+
+commit c94b2b501a81c71ced493e42ee117c425f8904b3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 15:19:44 2026 +0200
+
+    Some CPU status testing.
+
+commit 6f076ff4b0b6ecc9482a95628657820b5e27c40f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 14:54:05 2026 +0200
+
+    URL update.
+
+commit 874afe7b0b7bad56b0ebc33259bc8c554239da79
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 14:00:13 2026 +0200
+
+    Improved documentation.
+
+commit f0e7cbb3f7a6c758f7992fdddb78bb58ef96d000
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 14:00:04 2026 +0200
+
+    Updated comment.
+
+commit 4dd67af1c681bb45d6fe8ae606b6bac6e39850ea
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 13:38:31 2026 +0200
+
+    A set of code clean-ups.
+
+commit fb9c176a91d9aa3e63cef7cb9a028d14ba92d021
+Merge: 786a4d6 cc3c345
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 13:32:56 2026 +0200
+
+    Merge branch 'master' into dreibh/sctp
+
+commit cc3c34503e4db0a49ef298b6530d561244c72d74
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 13:21:54 2026 +0200
+
+    Fixed typo.
+
+commit 752f141f34a588fa42e0edb894638e8fbd117f8a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 13:21:33 2026 +0200
+
+    Another clean-up.
+
+commit b061c153cb265158d640753a3ad39d178bce5233
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 13:21:17 2026 +0200
+
+    CMakeLists.txt clean-ups.
+
+commit 786a4d6c672abbafa40f6246d94dc9661ac46b54
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 08:52:18 2026 +0200
+
+    CMakeLists.txt error message fix.
+
+commit b4358260c2759fec5c8f20c9ec8e976d0aa8403e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 11 08:52:02 2026 +0200
+
+    Improved lookup of getopt command in scripts.
+
+commit 4c9f340f5f71f655dbd4df09b22f0c6243e069ea
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 10 22:12:54 2026 +0200
+
+    Minor CMakeLists.txt update.
+
+commit 14ec52f8971f5164e6bbc3bbbb4584b6f997af3a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 10 21:53:08 2026 +0200
+
+    Fixed compiler warning.
+
+commit 1e11e44e29384064a20052940643ccdfe5296c9f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 10 21:49:11 2026 +0200
+
+    Small clean-ups.
+
+commit 8bc7a0f2bf386cf209f96335e066a840cf56079b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 10 21:41:50 2026 +0200
+
+    Further improvements and clean-ups.
+
+commit df9936dc212b71e1b88b04fba75a339e4d30d28a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 10 21:17:03 2026 +0200
+
+    Made SCTP support configurable.
+
+commit f6f9435e361231c4af89b3ada7abe22024308c9b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 19:40:25 2026 +0200
+
+    Added missing include file.
+
+commit 0c6a15a445f2cbba76ea1d376c2fb805a8eafbcf
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 15:30:45 2026 +0000
+
+    Added two options #ifdef checks to compile under NetBSD.
+
+commit 912cbe5247e19889c56409cfb427b1fba718209d
+Merge: 7ea8b6c 364f7aa
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 17:26:01 2026 +0200
+
+    Merge branch 'dreibh/endian' of github.com:dreibh/netperfmeter into dreibh/endian
+
+commit 7ea8b6c9096f1b33953da010affece3218cba982
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 17:25:54 2026 +0200
+
+    Minor clean-ups.
+
+commit 364f7aaaafe1599d349fccb04a88d055b9a62bda
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 15:25:04 2026 +0000
+
+    NetBSD needs libiberty.
+
+commit 920e903555b0c51acb97df10957dc9d7d5e66046
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 15:20:07 2026 +0000
+
+    Added handling of platforms without TCP_CONGESTION option.
+
+commit 8181f974872f515acaea4029289a4773863cd0a8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 15:19:07 2026 +0000
+
+    Added missing case.
+
+commit ff8b0de9a6ff1d0d0b234a107c7645e8d1f96f39
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 17:12:41 2026 +0200
+
+    Fixed typo.
+
+commit ec0dc0d23dbd7f971cd2e1d7b61f09641a271f42
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 17:11:38 2026 +0200
+
+    CPU statistics code clean-ups.
+
+commit 295f3963b00330d65bb639e748f713efdf65478a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 16:55:09 2026 +0200
+
+    Some more clean-up.
+
+commit 658dc27083e239079196fb6fbb1490444eaffc95
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 16:47:49 2026 +0200
+
+    Improved platform-independence of endianess-handling functions.
+
+commit 9c2638437b9cf7b3c1b8fd929ecaf390dbc22920
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 16:46:29 2026 +0200
+
+    Minor help string update.
+
+commit bb1bfe8839d14173f7cfd0060bf2269df8304283
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 16:40:56 2026 +0200
+
+    Improved platform-independence.
+
+commit 6450c0dc53bc8865d0548adf6d8affaf7dcb9eb0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 13:56:03 2026 +0000
+
+    NetBSD build fix.
+
+commit d6011f1e175c5bc4dab4ce201517b3f93f5b8d7c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 11:30:17 2026 +0200
+
+    Yet another set of CMakeLists.txt clean-ups.
+
+commit 45e9752aa92f6d3419feb0f3e99f38cc28596a41
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 11:18:14 2026 +0200
+
+    Further CMakeLists.txt improvements and clean-ups.
+
+commit 42704ca2841f78c574c2235c25166d2bce804161
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 10:55:39 2026 +0200
+
+    Replaced dependency pdf2svg by pdftocairo, which is available in more distributions.
+
+commit 0c168ec68560cbb79cceb4880ae8352a50690c81
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 10:26:04 2026 +0200
+
+    Improved CMakeLists.txt.
+
+commit 43f5147772f2deb8f4703d1bf7419a86e91c3f77
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 08:37:35 2026 +0200
+
+    Updated build script.
+
+commit a3b001fa2a6e293eb813b27506bb4bd92164e87c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 08:36:55 2026 +0200
+
+    Updated CI scripts
+
+commit 93c9b184640ecb9c0f5570fdbc3181e1fa0e76df
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 9 08:36:10 2026 +0200
+
+    CMakeLists.txt clean-ups.
+
+commit aa0e7851928c6123831692c419a5915f2c44da5d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 8 12:01:59 2026 +0200
+
+    Minor CMakeLists.txt clean-ups.
+
+commit ddb63c69d2b0ac50e905f28d038c479d5643f0a6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 3 22:04:21 2026 +0200
+
+    Moved deprecated script.
+
+commit 5196b00be3f6a7f9d51240c19b6c8501de7c93f9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri May 29 12:33:12 2026 +0200
+
+    Updated FreeBSD port.
+
+commit 9f60841311813d020bdc3cf67ee9bbddff69ae9b
+Merge: 1b1d8f8 02b873b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri May 29 12:25:38 2026 +0200
+
+    Merge branch 'master' of https://github.com/dreibh/netperfmeter
+
+commit 1b1d8f8f4ecf5a0b7afc9473a3bb7d984be092d8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri May 29 12:25:29 2026 +0200
+
+    Further improvements of the FreeBSD port.
+
+commit 02b873bbcaf7450fdee1c707fd73be91dd9239a7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri May 29 12:21:54 2026 +0200
+
+    New release netperfmeter-2.0.5.
+
 commit 1f383a60d2d770535581e46f78444bcf9c4f4ebf
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Fri May 29 11:29:02 2026 +0200

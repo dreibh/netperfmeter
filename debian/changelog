@@ -1,10 +1,10 @@
-netperfmeter (2.0.6~rc0-1ubuntu1) plucky; urgency=medium
+netperfmeter (2.0.6-1ubuntu1) plucky; urgency=medium
 
   * New upstream release.
   * debian/control: Replaced dependency pdf2svg by mupdf-tools,
                     which is available in more distributions.
 
- -- Thomas Dreibholz <dreibh@simula.no>  Tue, 09 Jun 2026 10:54:03 +0200
+ -- Thomas Dreibholz <dreibh@simula.no>  Fri, 12 Jun 2026 18:22:55 +0200
 
 netperfmeter (2.0.5-1ubuntu1) plucky; urgency=medium
 
