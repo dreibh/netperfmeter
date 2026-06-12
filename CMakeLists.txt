@@ -229,7 +229,7 @@ IF (WITH_KERNEL_SCTP)
    CHECK_INCLUDE_FILE(netinet/sctp.h HAVE_NETINET_SCTP_H)
    IF (HAVE_NETINET_SCTP_H)
       SET(SCTP_INCLUDE "netinet/sctp.h")
-      ADD_DEFINITIONS(-DHAVE_NETINET_SCTP_H)
+      ADD_DEFINITIONS(-DHAVE_SCTP -DHAVE_NETINET_SCTP_H)
    ENDIF()
 
    # ------ Linux LK-SCTP library -------------------------------------------
