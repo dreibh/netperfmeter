@@ -29,8 +29,10 @@
 #### LOGO                                                                ####
 #############################################################################
 
+SET(LOGO      "netperfmeter")
+SET(DIRECTORY "netperfmeter")   # in ${CMAKE_INSTALL_DATAROOTDIR}
+
 IF (WITH_ICONS)
-   SET(LOGO "netperfmeter")
 
    # To check the system's icon sizes available:
    # find /usr/share/icons/hicolor/ -maxdepth 1 -type d -printf "%f\n" | grep -E "^[0-9]+" | sort | cut -dx -f1 | sort -n
@@ -59,33 +61,36 @@ IF (WITH_ICONS)
    SET(LOGO_LENGTH 1920)
 
    FOREACH(iconLength IN ITEMS ${ICON_LENGTHS};${LOGO_LENGTH})
-   # PNG with fixed width, height as necessary:
-   ADD_CUSTOM_COMMAND(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png
-                      COMMAND ${GS} -dNOSAFER -dQUIET -dBATCH -dNOPAUSE -dNOPROMPT -dEPSCrop -dAlignToPixels=0 -dGridFitTT=2 -sDEVICE=pngalpha -r${iconLength}x -sOUTPUTFILE="${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png" "${CMAKE_CURRENT_SOURCE_DIR}/${LOGO}.pdf")
-   ADD_CUSTOM_TARGET(generate_${LOGO}_${iconLength}x_png ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png)
+      # PNG with fixed width, height as necessary:
+      ADD_CUSTOM_COMMAND(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png
+                         COMMAND ${GS} -dNOSAFER -dQUIET -dBATCH -dNOPAUSE -dNOPROMPT -dEPSCrop -dAlignToPixels=0 -dGridFitTT=2 -sDEVICE=pngalpha -r${iconLength}x -sOUTPUTFILE="${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x-tmp.png" "${CMAKE_CURRENT_SOURCE_DIR}/${LOGO}.pdf"
+                         COMMAND ${GM} convert "${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x-tmp.png" -resize ${iconLength}x "${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png"
+                         COMMAND rm -f "${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x-tmp.png")
+      ADD_CUSTOM_TARGET(generate_${LOGO}_${iconLength}x_png ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png)
 
-   # PNG with fixed, same width and height:
-   IF(NOT ${iconLength} STREQUAL "1920")
-      ADD_CUSTOM_COMMAND(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x${iconLength}.png
-                         COMMAND ${GM} convert ${LOGO}-${iconLength}x.png -resize ${iconLength}x -background none -gravity center -extent ${iconLength}x${iconLength} ${LOGO}-${iconLength}x${iconLength}.png
-                         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png)
+      # PNG with fixed, same width and height:
+      IF(NOT iconLength STREQUAL LOGO_LENGTH)
+         ADD_CUSTOM_COMMAND(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x${iconLength}.png
+                            COMMAND ${GM} convert ${LOGO}-${iconLength}x.png -resize ${iconLength}x -background none -gravity center -extent ${iconLength}x${iconLength} ${LOGO}-${iconLength}x${iconLength}.png
+                            DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png)
+         ADD_CUSTOM_TARGET(generate_${LOGO}_${iconLength}x${iconLength}_png
+                           ALL DEPENDS generate_${LOGO}_${iconLength}x_png
+                                       ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x${iconLength}.png)
 
-      ADD_CUSTOM_TARGET(generate_${LOGO}_${iconLength}x${iconLength}_png ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x${iconLength}.png)
-
-      # PNG icon of dimension ${iconLength}x${iconLength}:
-      INSTALL(FILES       ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x${iconLength}.png
-              DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${iconLength}x${iconLength}/apps
-              RENAME      ${LOGO}.png)
-   ENDIF()
+         # PNG icon of dimension ${iconLength}x${iconLength}:
+         INSTALL(FILES       ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x${iconLength}.png
+                 DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${iconLength}x${iconLength}/apps
+                 RENAME      ${LOGO}.png)
+      ENDIF()
    ENDFOREACH()
 
    # A high-resolution logo PNG file:
    INSTALL(FILES       ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${LOGO_LENGTH}x.png
-           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/netperfmeter
+           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${DIRECTORY}
            RENAME      ${LOGO}.png)
 
    # Scalable logo PDF file:
-   INSTALL(FILES ${LOGO}.pdf DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/netperfmeter)
+   INSTALL(FILES ${LOGO}.pdf DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${DIRECTORY})
 
    # Scalable SVG icon:
    ADD_CUSTOM_COMMAND(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}.svg
@@ -99,4 +104,5 @@ IF (WITH_ICONS)
    ADD_CUSTOM_TARGET(generate_${LOGO}_svg ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}.svg)
    INSTALL(FILES       ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}.svg
            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps)
+
 ENDIF()
