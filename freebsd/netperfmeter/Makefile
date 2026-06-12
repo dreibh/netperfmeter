@@ -30,7 +30,7 @@ EXAMPLE_RESULTS_DESC=		Include example results
 
 ICONS_CMAKE_BOOL=		WITH_ICONS
 ICONS_BUILD_DEPENDS=		gm:graphics/GraphicsMagick \
-				pdftocairo:graphics/poppler-utils
+				mutool:graphics/mupdf
 ICONS_USES=			ghostscript shared-mime-info
 
 PLOT_PROGRAMS_CMAKE_BOOL=	WITH_PLOT_PROGRAMS

@@ -68,8 +68,8 @@ IF (WITH_ICONS)
    IF(NOT ${iconLength} STREQUAL "1920")
       ADD_CUSTOM_COMMAND(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x${iconLength}.png
                          COMMAND ${GM} convert ${LOGO}-${iconLength}x.png -resize ${iconLength}x -background none -gravity center -extent ${iconLength}x${iconLength} ${LOGO}-${iconLength}x${iconLength}.png
-                         DEPENDS generate_${LOGO}_${iconLength}x_png
-                                 ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png)
+                         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x.png)
+
       ADD_CUSTOM_TARGET(generate_${LOGO}_${iconLength}x${iconLength}_png ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}-${iconLength}x${iconLength}.png)
 
       # PNG icon of dimension ${iconLength}x${iconLength}:
@@ -89,7 +89,13 @@ IF (WITH_ICONS)
 
    # Scalable SVG icon:
    ADD_CUSTOM_COMMAND(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}.svg
-                      COMMAND ${PDFTOCAIRO} -svg ${CMAKE_CURRENT_SOURCE_DIR}/${LOGO}.pdf ${LOGO}.svg)
+                      COMMAND ${MUTOOL} convert
+                                  -o ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}.svg
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/${LOGO}.pdf 1
+                      COMMAND ${CMAKE_COMMAND} -E rename
+                                  ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}1.svg
+                                  ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}.svg
+                      DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${LOGO}.pdf)
    ADD_CUSTOM_TARGET(generate_${LOGO}_svg ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}.svg)
    INSTALL(FILES       ${CMAKE_CURRENT_BINARY_DIR}/${LOGO}.svg
            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps)

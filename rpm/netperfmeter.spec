@@ -14,7 +14,7 @@ BuildRequires: gcc-c++
 BuildRequires: ghostscript
 BuildRequires: GraphicsMagick
 BuildRequires: lksctp-tools-devel
-BuildRequires: poppler-utils
+BuildRequires: mupdf
 BuildRequires: valgrind-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-build
 
