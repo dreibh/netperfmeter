@@ -20,6 +20,7 @@
 #
 
 use strict;
+use utf8;
 use POSIX;
 use Encode;
 use PDF::API2;
