@@ -8,7 +8,11 @@ URL: https://www.nntb.no/~dreibh/netperfmeter/
 Source: https://www.nntb.no/~dreibh/netperfmeter/download/%{name}-%{version}.tar.xz
 
 AutoReqProv: on
+%if 0%{?suse_version}
+BuildRequires: libbz2-devel
+%else
 BuildRequires: bzip2-devel
+%endif
 BuildRequires: cmake
 BuildRequires: gcc-c++
 BuildRequires: ghostscript
@@ -111,6 +115,7 @@ This package contains common NetPerfMeter files.
 %{_datadir}/icons/hicolor/*x*/apps/netperfmeter.png
 %{_datadir}/icons/hicolor/scalable/apps/netperfmeter.svg
 %{_datadir}/mime/packages/netperfmeter.xml
+%dir %attr(0755, root, root) %{_datadir}/netperfmeter
 %{_datadir}/netperfmeter/netperfmeter.bib
 %{_datadir}/netperfmeter/netperfmeter.pdf
 %{_datadir}/netperfmeter/netperfmeter.png
@@ -148,6 +153,7 @@ This package contains some NetPerfMeter example scripts and results files.
 
 %files examples
 %{_datadir}/netperfmeter/plot-experiment
+%dir %attr(0755, root, root) %{_datadir}/netperfmeter/results-examples
 %{_datadir}/netperfmeter/results-examples/*.pcap*
 %{_datadir}/netperfmeter/results-examples/*.sca*
 %{_datadir}/netperfmeter/results-examples/*.vec*
