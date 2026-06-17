@@ -8,11 +8,7 @@ URL: https://www.nntb.no/~dreibh/netperfmeter/
 Source: https://www.nntb.no/~dreibh/netperfmeter/download/%{name}-%{version}.tar.xz
 
 AutoReqProv: on
-%if 0%{?suse_version}
-BuildRequires: libbz2-devel
-%else
-BuildRequires: bzip2-devel
-%endif
+BuildRequires: (bzip2-devel or libbz2-devel)
 BuildRequires: cmake
 BuildRequires: gcc-c++
 BuildRequires: ghostscript
@@ -20,7 +16,6 @@ BuildRequires: GraphicsMagick
 BuildRequires: lksctp-tools-devel
 BuildRequires: mupdf
 BuildRequires: valgrind-devel
-BuildRoot: %{_tmppath}/%{name}-%{version}-build
 
 Requires: %{name}-common = %{version}-%{release}
 Recommends: %{name}-examples = %{version}-%{release}
@@ -112,6 +107,9 @@ analysing NetPerfMeter packet traffic.
 This package contains common NetPerfMeter files.
 
 %files common
+%dir %attr(0755, root, root) %{_datadir}/icons/hicolor
+%dir %attr(0755, root, root) %{_datadir}/icons/hicolor/*
+%dir %attr(0755, root, root) %{_datadir}/icons/hicolor/*/apps
 %{_datadir}/icons/hicolor/*x*/apps/netperfmeter.png
 %{_datadir}/icons/hicolor/scalable/apps/netperfmeter.svg
 %{_datadir}/mime/packages/netperfmeter.xml
