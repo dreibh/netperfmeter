@@ -60,6 +60,15 @@ This package contains the measurement program.
 %install
 %cmake_install
 
+# Apply shebang fix for Bash and Rscript:
+for directory in %{_bindir} %{_datadir}/netperfmeter ; do
+   find "%{buildroot}/$directory" -type f -exec sed -i \
+      -e 's|^#!/usr/bin/env bash|#!/usr/bin/bash|' \
+      -e 's|^#!/usr/bin/env python3|#!/usr/bin/python3|' \
+      -e 's|^#!/usr/bin/env Rscript|#!/usr/bin/Rscript|' \
+      {} +
+done
+
 %files
 %{_bindir}/combinesummaries
 %{_bindir}/createsummary
@@ -80,6 +89,18 @@ This package contains the measurement program.
 %{_mandir}/man1/netperfmeter-module-loader.1.gz
 %{_mandir}/man1/runtimeestimator.1.gz
 %{_prefix}/lib/systemd/system/netperfmeter-module-loader.service
+
+%pre
+%service_add_pre netperfmeter-module-loader.service
+
+%post
+%service_add_post netperfmeter-module-loader.service
+
+%preun
+%service_del_preun netperfmeter-module-loader.service
+
+%postun
+%service_del_postun netperfmeter-module-loader.service
 
 
 %package common
@@ -188,7 +209,20 @@ This package sets up a service running a NetPerfMeter server instance.
 
 %files service
 %{_prefix}/lib/systemd/system/netperfmeter.service
+%config(noreplace) %{_sysconfdir}/netperfmeter.conf
 %{_sysconfdir}/netperfmeter.conf
+
+%pre service
+%service_add_pre netperfmeter.service
+
+%post service
+%service_add_post netperfmeter.service
+
+%preun service
+%service_del_preun netperfmeter.service
+
+%postun service
+%service_del_postun netperfmeter.service
 
 
 %package pdfproctools
