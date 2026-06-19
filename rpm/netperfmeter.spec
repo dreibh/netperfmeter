@@ -60,7 +60,7 @@ This package contains the measurement program.
 %install
 %cmake_install
 
-# Apply shebang fix for Bash and Rscript:
+# ====== Apply shebang fix for scripts ======================================
 for directory in %{_bindir} %{_datadir}/netperfmeter ; do
    find "%{buildroot}/$directory" -type f -exec sed -i \
       -e 's|^#!/usr/bin/env bash|#!/usr/bin/bash|' \
@@ -68,6 +68,7 @@ for directory in %{_bindir} %{_datadir}/netperfmeter ; do
       -e 's|^#!/usr/bin/env Rscript|#!/usr/bin/Rscript|' \
       {} +
 done
+# ===========================================================================
 
 %files
 %{_bindir}/combinesummaries
