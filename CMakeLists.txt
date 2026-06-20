@@ -213,7 +213,7 @@ ELSE()
            "Cannot find BZip2 library! Try:\n"
            " * Ubuntu/Debian: sudo apt install -y libbz2-dev\n"
            " * Fedora:        sudo dnf install -y bzip2-devel\n"
-           " * SuSE:          sudo zypper install -y libbz2-devel\n"
+           " * OpenSUSE:      sudo zypper install -y libbz2-devel\n"
            " * Alpine:        sudo apk add bzip2-dev\n"
            " * FreeBSD:       sudo pkg install -y bzip2\n"
            " * NetBSD:        (should be installed by default)\n"
@@ -246,7 +246,7 @@ IF (WITH_KERNEL_SCTP)
                "Cannot find Linux Kernel SCTP library! Try:\n"
                " * Ubuntu/Debian: sudo apt install -y libsctp-dev\n"
                " * Fedora:        sudo dnf install -y lksctp-tools-devel\n"
-               " * SuSE:          sudo zypper install -y lksctp-tools-devel\n"
+               " * OpenSUSE:      sudo zypper install -y lksctp-tools-devel\n"
                " * Alpine:        sudo apk add lksctp-tools-dev\n")
       ENDIF()
    ENDIF()
@@ -338,7 +338,7 @@ IF (HAVE_QUIC)
                "Cannot find GnuTLS library (which is required for QUIC)! Try:\n"
                " * Ubuntu/Debian: sudo apt install -y libgnutls28-dev\n"
                " * Fedora:        sudo dnf install -y  gnutls-devel\n"
-               " * SuSE:          sudo zypper install -y libgnutls-devel\n"
+               " * OpenSUSE:      sudo zypper install -y libgnutls-devel\n"
                " * Alpine:        sudo apk add gnutls-dev\n"
                " * FreeBSD:       sudo pkg install -y gnutls\n"
                " * Apple:         brew install gnutls")
@@ -383,7 +383,7 @@ IF (WITH_ICONS)
             "Cannot find Ghostscript! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y ghostscript\n"
             " * Fedora:        sudo dnf install -y ghostscript\n"
-            " * SuSE:          sudo zypper install -y ghostscript\n"
+            " * OpenSUSE:      sudo zypper install -y ghostscript\n"
             " * Alpine:        sudo apk add ghostscript\n"
             " * FreeBSD:       sudo pkg install -y ghostscript10\n"
             " * NetBSD:        sudo pkgin -y install ghostscript\n"
@@ -404,7 +404,7 @@ IF (WITH_ICONS)
             "Cannot find GraphicsMagick! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y graphicsmagick\n"
             " * Fedora:        sudo dnf install -y GraphicsMagick\n"
-            " * SuSE:          sudo zypper install -y GraphicsMagick\n"
+            " * OpenSUSE:      sudo zypper install -y GraphicsMagick\n"
             " * Alpine:        sudo apk add graphicsmagick\n"
             " * FreeBSD:       sudo pkg install -y GraphicsMagick\n"
             " * NetBSD:        sudo pkgin -y install GraphicsMagick\n"
@@ -426,7 +426,7 @@ IF (WITH_ICONS)
             "Cannot find mupdf! Try:\n"
             " * Ubuntu/Debian: sudo apt install -y mupdf-tools\n"
             " * Fedora:        sudo dnf install -y mupdf\n"
-            " * SuSE:          sudo zypper install -y mupdf\n"
+            " * OpenSUSE:      sudo zypper install -y mupdf\n"
             " * Alpine:        sudo apk add mupdf-tools\n"
             " * FreeBSD:       sudo pkg install -y mupdf\n"
             " * NetBSD:        sudo pkgin -y install mupdf\n"
