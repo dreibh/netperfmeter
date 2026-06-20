@@ -1,0 +1,151 @@
+# Maintainer: Thomas Dreibholz <dreibh@simula.no>
+pkgname=netperfmeter
+pkgver=2.0.6
+pkgrel=1
+pkgdesc="Network performance meter for UDP, TCP, MPTCP, SCTP, DCCP and QUIC protocols"
+url="https://www.nntb.no/~dreibh/netperfmeter/"
+arch="all"
+license="GPL-3.0-or-later"
+depends="$pkgname-common=$pkgver-r$pkgrel"
+makedepends="
+	bzip2-dev
+	cmake
+	g++
+	ghostscript
+	graphicsmagick-dev
+	lksctp-tools-dev
+	mupdf-dev
+	ninja
+"
+subpackages="
+	$pkgname-common:common
+	$pkgname-examples:examples
+	$pkgname-service:service
+	$pkgname-pdfproctools:pdfproctools
+	$pkgname-plotting:plotting
+	$pkgname-all:all
+"
+source="https://www.nntb.no/~dreibh/netperfmeter/download/$pkgname-$pkgver.tar.xz"
+builddir="$srcdir/$pkgname-$pkgver"
+
+build() {
+	if [ "$CBUILD" != "$CHOST" ]; then
+		CMAKE_CROSSOPTS="-DCMAKE_SYSTEM_NAME=Linux -DCMAKE_HOST_SYSTEM_NAME=Linux"
+	fi
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_BUILD_TYPE=None \
+		-DWITH_ICONS=ON \
+		-DWITH_PLOT_PROGRAMS=ON \
+		-DWITH_EXAMPLE_SCRIPTS=ON \
+		-DWITH_EXAMPLE_RESULTS=ON \
+		$CMAKE_CROSSOPTS
+	cmake --build build
+}
+
+package() {
+	DESTDIR="$pkgdir" cmake --install build
+
+	# Apply shebang fix for scripts matching Alpine's environment paths
+	for directory in usr/bin usr/share/netperfmeter ; do
+		if [ -d "$pkgdir/$directory" ]; then
+			find "$pkgdir/$directory" -type f -exec sed -i \
+				-e 's|^#!/usr/bin/env bash|#!/bin/bash|' \
+				-e 's|^#!/usr/bin/env python3|#!/usr/bin/python3|' \
+				-e 's|^#!/usr/bin/env Rscript|#!/usr/bin/Rscript|' \
+				{} +
+		fi
+	done
+}
+
+common() {
+	pkgdesc="Network Performance Meter (common files)"
+	arch="noarch"
+
+	mkdir -p "$subpkgdir"/usr/share
+	mv "$pkgdir"/usr/share/icons "$subpkgdir"/usr/share/
+	mv "$pkgdir"/usr/share/mime "$subpkgdir"/usr/share/
+
+	mkdir -p "$subpkgdir"/usr/share/netperfmeter
+	mv "$pkgdir"/usr/share/netperfmeter/netperfmeter.bib "$subpkgdir"/usr/share/netperfmeter/
+	mv "$pkgdir"/usr/share/netperfmeter/netperfmeter.pdf "$subpkgdir"/usr/share/netperfmeter/
+	mv "$pkgdir"/usr/share/netperfmeter/netperfmeter.png "$subpkgdir"/usr/share/netperfmeter/
+}
+
+examples() {
+	pkgdesc="Network Performance Meter (example scripts and results files)"
+	arch="noarch"
+	depends="r-core r-ggplot2 r-data.table r-dplyr"
+
+	mkdir -p "$subpkgdir"/usr/share/netperfmeter
+	mv "$pkgdir"/usr/share/netperfmeter/plot-experiment "$subpkgdir"/usr/share/netperfmeter/
+	mv "$pkgdir"/usr/share/netperfmeter/run-experiment1 "$subpkgdir"/usr/share/netperfmeter/
+	mv "$pkgdir"/usr/share/netperfmeter/results-examples "$subpkgdir"/usr/share/netperfmeter/
+}
+
+service() {
+	pkgdesc="Network Performance Meter (server instance service)"
+	arch="noarch"
+	depends="$pkgname=$pkgver-r$pkgrel"
+
+	mkdir -p "$subpkgdir"/usr/lib/systemd/system
+	mv "$pkgdir"/usr/lib/systemd/system/netperfmeter.service "$subpkgdir"/usr/lib/systemd/system/
+
+	mkdir -p "$subpkgdir"/etc
+	mv "$pkgdir"/etc/netperfmeter.conf "$subpkgdir"/etc/
+}
+
+pdfproctools() {
+	pkgdesc="PDF Processing Tools"
+	arch="noarch"
+	depends="ghostscript perl qpdf"
+
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/pdfembedfonts "$subpkgdir"/usr/bin/
+	mv "$pkgdir"/usr/bin/setpdfmetadata "$subpkgdir"/usr/bin/
+
+	mkdir -p "$subpkgdir"/usr/share/bash-completion/completions
+	mv "$pkgdir"/usr/share/bash-completion/completions/pdfembedfonts "$subpkgdir"/usr/share/bash-completion/completions/
+	mv "$pkgdir"/usr/share/bash-completion/completions/setpdfmetadata "$subpkgdir"/usr/share/bash-completion/completions/
+
+	mkdir -p "$subpkgdir"/usr/share/man/man1
+	mv "$pkgdir"/usr/share/man/man1/pdfembedfonts.1.gz "$subpkgdir"/usr/share/man/man1/
+	mv "$pkgdir"/usr/share/man/man1/setpdfmetadata.1.gz "$subpkgdir"/usr/share/man/man1/
+}
+
+plotting() {
+	pkgdesc="Network Performance Meter (plotting program)"
+	arch="noarch"
+	depends="$pkgname=$pkgver-r$pkgrel $pkgname-pdfproctools=$pkgver-r$pkgrel r-core r-ggplot2"
+
+	mkdir -p "$subpkgdir"/usr/bin
+	mv "$pkgdir"/usr/bin/plot-netperfmeter-results "$subpkgdir"/usr/bin/
+
+	mkdir -p "$subpkgdir"/usr/share/bash-completion/completions
+	mv "$pkgdir"/usr/share/bash-completion/completions/plot-netperfmeter-results "$subpkgdir"/usr/share/bash-completion/completions/
+
+	mkdir -p "$subpkgdir"/usr/share/netperfmeter
+	mv "$pkgdir"/usr/share/netperfmeter/plot-netperfmeter-results.R "$subpkgdir"/usr/share/netperfmeter/
+	mv "$pkgdir"/usr/share/netperfmeter/plotter.R "$subpkgdir"/usr/share/netperfmeter/
+
+	mkdir -p "$subpkgdir"/usr/share/man/man1
+	mv "$pkgdir"/usr/share/man/man1/plot-netperfmeter-results.1.gz "$subpkgdir"/usr/share/man/man1/
+}
+
+all() {
+	pkgdesc="NetPerfMeter metapackage for all sub-packages"
+	arch="noarch"
+	depends="
+		$pkgname=$pkgver-r$pkgrel
+		$pkgname-common=$pkgver-r$pkgrel
+		$pkgname-examples=$pkgver-r$pkgrel
+		$pkgname-plotting=$pkgver-r$pkgrel
+		$pkgname-pdfproctools=$pkgver-r$pkgrel
+		$pkgname-service=$pkgver-r$pkgrel
+	"
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+17c3791295af1461ca5752e85911d1b63eea1da2650ba5eaeaba29a6a720318a987885afa6525e8ac5d7d642614a490a886b405fe06d71030b11aed7cae07c07  netperfmeter-2.0.6.tar.xz
+"
