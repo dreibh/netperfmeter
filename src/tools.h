@@ -38,7 +38,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <netinet/in.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <unistd.h>
 
 #include <ext_socket.h>
