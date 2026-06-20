@@ -6,25 +6,24 @@ pkgdesc="Network performance meter for UDP, TCP, MPTCP, SCTP and DCCP protocols"
 url="https://www.nntb.no/~dreibh/netperfmeter/"
 arch="all"
 license="GPL-3.0-or-later"
-depends="$pkgname-common=$pkgver-r$pkgrel"
+depends=""
 makedepends="
 	bzip2-dev
 	cmake
-	g++
 	ghostscript
-	graphicsmagick-dev
+	graphicsmagick
 	lksctp-tools-dev
 	mupdf-tools
 	ninja
 "
 subpackages="
 	$pkgname-bash-completion
+	$pkgname-doc
 	$pkgname-common:common:noarch
 	$pkgname-examples:examples:noarch
 	$pkgname-systemd:_systemd:noarch
 	$pkgname-pdfproctools:pdfproctools:noarch
 	$pkgname-plotting:plotting:noarch
-	doc
 	$pkgname-all:_all:noarch
 "
 source="https://www.nntb.no/~dreibh/netperfmeter/download/$pkgname-$pkgver.tar.xz"
