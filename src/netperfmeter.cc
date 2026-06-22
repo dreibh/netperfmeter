@@ -525,6 +525,18 @@ bool handleGlobalParameters(int argc, char** argv)
       std::cerr << "ERROR: At least one control channel protocol must be enabled!" << "\n";
       exit(1);
    }
+
+#if defined(__OpenBSD__)
+   if(gLocalControlAddresses == 0) {
+      std::cerr << "ERROR: OpenBSD requires explicit local control address (e.g. --controllocal=0.0.0.0 or --controllocal=::)!\n";
+      exit(1);
+   }
+   if(gLocalDataAddresses == 0) {
+      std::cerr << "ERROR: OpenBSD requires explicit local data address (e.g. --local=0.0.0.0 or --local=::)!\n";
+      exit(1);
+   }
+#endif
+
    return true;
 }
 
