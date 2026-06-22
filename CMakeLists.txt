@@ -380,15 +380,15 @@ IF (WITH_ICONS)
       MESSAGE(STATUS "Ghostscript found: ${GS} (version ${GS_VERSION})")
    ELSE()
       MESSAGE(FATAL_ERROR
-            "Cannot find Ghostscript! Try:\n"
-            " * Ubuntu/Debian: sudo apt install -y ghostscript\n"
-            " * Fedora:        sudo dnf install -y ghostscript\n"
-            " * OpenSUSE:      sudo zypper install -y ghostscript\n"
-            " * Alpine:        sudo apk add ghostscript\n"
-            " * FreeBSD:       sudo pkg install -y ghostscript10\n"
-            " * NetBSD:        sudo pkgin -y install ghostscript\n"
-            " * OpenBSD:       sudo pkg_add ghostscript\n"
-            " * Apple:         brew install ghostscript")
+              "Cannot find Ghostscript! Try:\n"
+              " * Ubuntu/Debian: sudo apt install -y ghostscript\n"
+              " * Fedora:        sudo dnf install -y ghostscript\n"
+              " * OpenSUSE:      sudo zypper install -y ghostscript\n"
+              " * Alpine:        sudo apk add ghostscript\n"
+              " * FreeBSD:       sudo pkg install -y ghostscript10\n"
+              " * NetBSD:        sudo pkgin -y install ghostscript\n"
+              " * OpenBSD:       sudo pkg_add ghostscript\n"
+              " * Apple:         brew install ghostscript")
    ENDIF()
 
    # ------ GraphicsMagick or ImageMagick -----------------------------------
@@ -401,15 +401,15 @@ IF (WITH_ICONS)
       MESSAGE(STATUS "GraphicsMagick found: ${GM} (version ${GM_VERSION})")
    ELSE()
       MESSAGE(FATAL_ERROR
-            "Cannot find GraphicsMagick! Try:\n"
-            " * Ubuntu/Debian: sudo apt install -y graphicsmagick\n"
-            " * Fedora:        sudo dnf install -y GraphicsMagick\n"
-            " * OpenSUSE:      sudo zypper install -y GraphicsMagick\n"
-            " * Alpine:        sudo apk add graphicsmagick\n"
-            " * FreeBSD:       sudo pkg install -y GraphicsMagick\n"
-            " * NetBSD:        sudo pkgin -y install GraphicsMagick\n"
-            " * OpenBSD:       sudo pkg_add GraphicsMagick\n"
-            " * Apple:         brew install graphicsmagick")
+              "Cannot find GraphicsMagick! Try:\n"
+              " * Ubuntu/Debian: sudo apt install -y graphicsmagick\n"
+              " * Fedora:        sudo dnf install -y GraphicsMagick\n"
+              " * OpenSUSE:      sudo zypper install -y GraphicsMagick\n"
+              " * Alpine:        sudo apk add graphicsmagick\n"
+              " * FreeBSD:       sudo pkg install -y GraphicsMagick\n"
+              " * NetBSD:        sudo pkgin -y install GraphicsMagick\n"
+              " * OpenBSD:       sudo pkg_add GraphicsMagick\n"
+              " * Apple:         brew install graphicsmagick")
    ENDIF()
 
    # ------ MuPDF mutool ----------------------------------------------------
@@ -423,15 +423,15 @@ IF (WITH_ICONS)
       MESSAGE(STATUS "MuPDF mutool found: ${MUTOOL} (version ${MUTOOL_VERSION})")
    ELSE()
       MESSAGE(FATAL_ERROR
-            "Cannot find mupdf! Try:\n"
-            " * Ubuntu/Debian: sudo apt install -y mupdf-tools\n"
-            " * Fedora:        sudo dnf install -y mupdf\n"
-            " * OpenSUSE:      sudo zypper install -y mupdf\n"
-            " * Alpine:        sudo apk add mupdf-tools\n"
-            " * FreeBSD:       sudo pkg install -y mupdf\n"
-            " * NetBSD:        sudo pkgin -y install mupdf\n"
-            " * OpenBSD:       sudo pkg_add mupdf\n"
-            " * Apple:         brew install mupdf-tools")
+              "Cannot find mupdf! Try:\n"
+              " * Ubuntu/Debian: sudo apt install -y mupdf-tools\n"
+              " * Fedora:        sudo dnf install -y mupdf\n"
+              " * OpenSUSE:      sudo zypper install -y mupdf\n"
+              " * Alpine:        sudo apk add mupdf-tools\n"
+              " * FreeBSD:       sudo pkg install -y mupdf\n"
+              " * NetBSD:        sudo pkgin -y install mupdf\n"
+              " * OpenBSD:       sudo pkg_add mupdf\n"
+              " * Apple:         brew install mupdf-tools")
    ENDIF()
 
 ELSE()
