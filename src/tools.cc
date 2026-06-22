@@ -650,6 +650,7 @@ int bindSocket(const int             sd,
 #endif
 
    // ====== IPV6_V6ONLY option =============================================
+#if !defined(__OpenBSD__)
 #if defined(IPV6_V6ONLY)
    if(socketFamily == AF_INET6) {
       // Accept IPv4 and IPv6 connections.
@@ -661,6 +662,9 @@ int bindSocket(const int             sd,
    }
 #else
 #error IPV6_V6ONLY not defined?! Please create a bug report and provide some information about your OS!
+#endif
+#else
+   // IPv6 sockets in OpenBSD are always IPv6-only -> nothing to do here!
 #endif
 
    // ====== Bind socket ====================================================
