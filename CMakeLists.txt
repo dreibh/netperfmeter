@@ -371,9 +371,9 @@ IF (WITH_ICONS)
    MESSAGE("Building with icons (WITH_ICONS=${WITH_ICONS})")
 
    # ------ Ghostscript -----------------------------------------------------
-   FIND_PROGRAM(GS gs HINTS /usr/pkg/bin)
+   FIND_PROGRAM(GS gs HINTS /bin /usr/bin /usr/local/bin /usr/pkg/bin)
    IF(GS)
-      EXECUTE_PROCESS(COMMAND ${GS} --version
+      EXECUTE_PROCESS(COMMAND ${GS} -version
                       OUTPUT_VARIABLE GS_OUTPUT
                       ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
       STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" GS_VERSION "${GS_OUTPUT}")
@@ -391,10 +391,10 @@ IF (WITH_ICONS)
             " * Apple:         brew install ghostscript")
    ENDIF()
 
-   # ------ GraphicsMagick --------------------------------------------------
-   FIND_PROGRAM(GM gm HINTS /usr/pkg/bin)
+   # ------ GraphicsMagick or ImageMagick -----------------------------------
+   FIND_PROGRAM(GM gm magick HINTS /bin /usr/bin /usr/local/bin /usr/pkg/bin)
    IF(GM)
-      EXECUTE_PROCESS(COMMAND ${GM} version | head -n1
+      EXECUTE_PROCESS(COMMAND ${GM} -version | head -n1
                       OUTPUT_VARIABLE GM_OUTPUT
                       ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
       STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" GM_VERSION "${GM_OUTPUT}")
@@ -413,7 +413,7 @@ IF (WITH_ICONS)
    ENDIF()
 
    # ------ MuPDF mutool ----------------------------------------------------
-   FIND_PROGRAM(MUTOOL mutool HINTS /usr/pkg/bin)
+   FIND_PROGRAM(MUTOOL mutool HINTS /bin /usr/bin /usr/local/bin /usr/pkg/bin)
    IF(MUTOOL)
       EXECUTE_PROCESS(COMMAND ${MUTOOL} -v
                       ERROR_VARIABLE  MUTOOL_OUTPUT
