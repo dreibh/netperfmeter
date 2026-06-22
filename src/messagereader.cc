@@ -173,6 +173,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 #if defined(HAVE_QUIC)
           || (socket->Protocol == IPPROTO_QUIC)
 #endif
+          || (false)   /* Avoid compile warning without any #ifdef case */
         ) {
          // SCTP, TCP/MPTCP and QUIC can return partial messages upon recv() calls.
          // TCP/MPTCP and QUIC may even return multiple messages, if the buffer
