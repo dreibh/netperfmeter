@@ -87,10 +87,10 @@ void beginLogging()
 
    utsname hostInfo;
    if(uname(&hostInfo) != 0) {
-      strcpy((char*)&gHostName, "?");
+      safestrcpy(gHostName, "?", sizeof(gHostName));
    }
    else {
-      snprintf((char*)&gHostName, sizeof(gHostName), "%s",
+      snprintf(gHostName, sizeof(gHostName), "%s",
                hostInfo.nodename);
    }
 

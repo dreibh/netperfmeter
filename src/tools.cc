@@ -80,9 +80,9 @@ void printTimeStamp(std::ostream& os)
    const unsigned long long microTime = getMicroTime();
    const time_t timeStamp = (time_t)(microTime / 1000000);
    const struct tm *timeptr = localtime(&timeStamp);
-   strftime((char*)&str,sizeof(str),"%d-%b-%Y %H:%M:%S",timeptr);
+   strftime(str, sizeof(str), "%d-%b-%Y %H:%M:%S", timeptr);
    os << str;
-   snprintf((char*)&str,sizeof(str),
+   snprintf(str, sizeof(str),
             ".%04d: ",(unsigned int)(microTime % 1000000) / 100);
    os << str;
 }
@@ -159,7 +159,7 @@ static char* strrindex(char* string, const char character)
    const char* original = string;
 
    if(original != nullptr) {
-      string = (char*)&string[strlen(string)];
+      string = &string[strlen(string)];
       while(*string != character) {
          if(string == original) {
             return nullptr;
@@ -321,12 +321,12 @@ bool address2string(const struct sockaddr* address,
          if( (!hideScope) &&
              (IN6_IS_ADDR_LINKLOCAL(&ipv6address->sin6_addr) ||
               IN6_IS_ADDR_MC_LINKLOCAL(&ipv6address->sin6_addr)) ) {
-            ifname = if_indextoname(ipv6address->sin6_scope_id, (char*)&ifnamebuffer);
+            ifname = if_indextoname(ipv6address->sin6_scope_id, ifnamebuffer);
             if(ifname == nullptr) {
-               safestrcpy((char*)&ifnamebuffer, "(BAD!)", sizeof(ifnamebuffer));
+               safestrcpy(ifnamebuffer, "(BAD!)", sizeof(ifnamebuffer));
                return false;
             }
-            snprintf((char*)&scope, sizeof(scope), "%%%s", ifname);
+            snprintf(scope, sizeof(scope), "%%%s", ifname);
          }
          else {
             scope[0] = 0x00;
@@ -373,17 +373,17 @@ bool string2address(const char*           string,
    if(strlen(string) > sizeof(host)) {
       return false;
    }
-   strcpy((char*)&host,string);
-   strcpy((char*)&port, "0");
+   safestrcpy(host, string, sizeof(host));
+   safestrcpy(port, "0", sizeof(port));
 
    /* ====== Handle RFC2732-compliant addresses ========================== */
    if(string[0] == '[') {
       p1 = strindex(host,']');
       if(p1 != nullptr) {
          if((p1[1] == ':') || (p1[1] == '!')) {
-            strcpy((char*)&port, &p1[2]);
+            safestrcpy(port, &p1[2], sizeof(port));
          }
-         memmove((char*)&host, (char*)&host[1], (unsigned long)p1 - (unsigned long)host - 1);
+         memmove(host, &host[1], (unsigned long)p1 - (unsigned long)host - 1);
          host[(unsigned long)p1 - (unsigned long)host - 1] = 0x00;
       }
    }
@@ -404,7 +404,7 @@ bool string2address(const char*           string,
             }
             if(p1 != nullptr) {
                p1[0] = 0x00;
-               strcpy((char*)&port, &p1[1]);
+               safestrcpy(port, &p1[1], sizeof(port));
             }
          }
       }
@@ -427,7 +427,7 @@ bool string2address(const char*           string,
    isIPv6     = false;
    hostLength = strlen(host);
 
-   memset((char*)&hints,0,sizeof(hints));
+   memset(&hints, 0, sizeof(hints));
    hints.ai_socktype = SOCK_DGRAM;
    hints.ai_family   = AF_UNSPEC;
 
@@ -487,7 +487,7 @@ void printAddress(std::ostream&          os,
 {
    static char str[160];
 
-   if(address2string(address, (char*)&str, sizeof(str), port, hideScope)) {
+   if(address2string(address, str, sizeof(str), port, hideScope)) {
       os << str;
    }
    else {
@@ -674,7 +674,7 @@ int bindSocket(const int             sd,
       if(protocol == IPPROTO_SCTP) {
          // ====== SCTP bind: bind to specified addresses ===================
          char   buffer[localAddressCount * sizeof(sockaddr_union)];
-         char*  ptr = (char*)&buffer[0];
+         char*  ptr = &buffer[0];
          for(unsigned int i = 0;i < localAddressCount;i++) {
             if(localAddressArray[i].sa.sa_family == AF_INET) {
                memcpy(ptr, (void*)&localAddressArray[i].in, sizeof(sockaddr_in));
