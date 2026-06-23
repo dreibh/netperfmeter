@@ -1816,7 +1816,7 @@ static void passiveMode(const uint16_t localPort)
 #if defined(__OpenBSD__)
    if(gLocalDataAddresses == 0) {
       gUDP6Socket = createAndBindSocket(AF_INET6,
-                                        SOCK_DGRAM, IPPROTO_UDP6, localPort,
+                                        SOCK_DGRAM, IPPROTO_UDP, localPort,
                                         gLocalDataAddresses,
                                         (const sockaddr_union*)&gLocalDataAddressArray,
                                         true, gBindV6Only);
@@ -1826,8 +1826,8 @@ static void passiveMode(const uint16_t localPort)
                 << strerror(errno) << "!\n";
          LOG_END_FATAL
       }
-      // NOTE: For connection-less UDP6, the FlowManager takes care of the socket!
-      FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP6, gUDP6Socket);
+      // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
+      FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDP6Socket);
    }
 #endif
    // ------ DCCP -----------------------------------------------------------
