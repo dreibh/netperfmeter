@@ -147,10 +147,8 @@ On the passive side, this option disables incoming control connections via MPTCP
 .It Fl L Ar address[,address,...] | Fl \-local Ar address[,address,...]
 Specifies address(es) of the local *data* endpoint. For TCP, UDP and DCCP, only the first address is used!
 On an active node, this option applies to the following flows, i.e. it must be set before specifying a flow!
-Specifying the local data endpoint address is mandatory under OpenBSD!
 .It Fl l Ar address[,address,...] | Fl \-controllocal Ar address[,address,...]
 Specifies address(es) of the local *control* endpoint (SCTP or TCP). For TCP, only the first address is used!
-Specifying the local control endpoint address is mandatory under OpenBSD!
 .It Fl K Ar key\_file | Fl \-tls\-key Ar key\_file
 Specifies the TLS key file for QUIC authentication. This option is used by the passive side.
 .It Fl J Ar certificate\_file | Fl \-tls\-cert Ar certificate\_file

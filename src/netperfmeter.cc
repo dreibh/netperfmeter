@@ -93,14 +93,23 @@ static int              gPassiveControlMPTCP   = false;
 #endif
 static int              gControlSocket         = -1;
 static int              gControlSocketTCP      = -1;
+#if defined(__OpenBSD__)
+static int              gControlSocketTCP6     = -1;
+#endif
 #if defined(HAVE_SCTP)
 static int              gSCTPSocket            = -1;
 #endif
 static int              gTCPSocket             = -1;
+#if defined(__OpenBSD__)
+static int              gTCP6Socket            = -1;
+#endif
 #if defined(HAVE_MPTCP)
 static int              gMPTCPSocket           = -1;
 #endif
 static int              gUDPSocket             = -1;
+#if defined(__OpenBSD__)
+static int              gUDP6Socket            = -1;
+#endif
 #if defined(HAVE_DCCP)
 static int              gDCCPSocket            = -1;
 #endif
@@ -1313,10 +1322,16 @@ static bool mainLoop(const bool               isActiveMode,
    pollfd             fds[5 + gMessageReader.size()];
    nfds_t             n       = 0;
    int                tcpID   = -1;
+#if defined(__OpenBSD__)
+   int                tcp6ID  = -1;
+#endif
 #if defined(HAVE_MPTCP)
    int                mptcpID = -1;
 #endif
    int                udpID   = -1;
+#if defined(__OpenBSD__)
+   int                udp6ID  = -1;
+#endif
 #if defined(HAVE_SCTP)
    int                sctpID  = -1;
 #endif
@@ -1332,10 +1347,16 @@ static bool mainLoop(const bool               isActiveMode,
 
    // ====== Get parameters for poll() ======================================
    addToPollFDs((pollfd*)&fds, gTCPSocket,     n, &tcpID);
+#if defined(__OpenBSD__)
+   addToPollFDs((pollfd*)&fds, gTCP6Socket,    n, &tcp6ID);
+#endif
 #if defined(HAVE_MPTCP)
    addToPollFDs((pollfd*)&fds, gMPTCPSocket,   n, &mptcpID);
 #endif
    addToPollFDs((pollfd*)&fds, gUDPSocket,     n, &udpID);
+#if defined(__OpenBSD__)
+   addToPollFDs((pollfd*)&fds, gUDP6Socket,    n, &udp6ID);
+#endif
 #if defined(HAVE_SCTP)
    addToPollFDs((pollfd*)&fds, gSCTPSocket,    n, &sctpID);
 #endif
@@ -1406,6 +1427,25 @@ static bool mainLoop(const bool               isActiveMode,
                   LOG_END
                }
             }
+#if defined(__OpenBSD__)
+            else if( (isActiveMode == false) &&
+                     (fds[controlID].fd == gControlSocketTCP6) ) {
+               const int newSD = ext_accept(gControlSocketTCP6, nullptr, 0);
+               if(newSD >= 0) {
+                  LOG_TRACE
+                  stdlog << format("Accept on TCP6 control socket %d -> new control connection %d",
+                                   gControlSocketTCP6, newSD) << "\n";
+                  LOG_END
+                  gMessageReader.registerSocket(IPPROTO_TCP, newSD);
+               }
+               else {
+                  LOG_ERROR
+                  stdlog << format("Accept on TCP6 control socket %d failed: %s!",
+                                   gControlSocketTCP6, strerror(errno)) << "\n";
+                  LOG_END
+               }
+            }
+#endif
             else {
                const bool controlOkay = handleNetPerfMeterControlMessage(
                                            &gMessageReader, fds[controlID].fd);
@@ -1434,6 +1474,18 @@ static bool mainLoop(const bool               isActiveMode,
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
          }
       }
+#if defined(__OpenBSD__)
+      if( (tcp6ID >= 0) && (fds[tcp6ID].revents & (POLLIN|POLLERR)) ) {
+         const int newSD = ext_accept(gTCP6Socket, nullptr, 0);
+         if(newSD >= 0) {
+            LOG_TRACE
+            stdlog << format("Accept on TCP6 data socket %d -> new TCP6 data connection %d",
+                             gTCP6Socket, newSD) << "\n";
+            LOG_END
+            FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
+         }
+      }
+#endif
 #if defined(HAVE_MPTCP)
       if( (mptcpID >= 0) && (fds[mptcpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gMPTCPSocket, nullptr, 0);
@@ -1451,6 +1503,13 @@ static bool mainLoop(const bool               isActiveMode,
          handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDPSocket);
          FlowManager::getFlowManager()->unlock();
       }
+#if defined(__OpenBSD__)
+      if( (udp6ID >= 0) && (fds[udp6ID].revents & (POLLIN|POLLERR)) ) {
+         FlowManager::getFlowManager()->lock();
+         handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDP6Socket);
+         FlowManager::getFlowManager()->unlock();
+      }
+#endif
 #if defined(HAVE_SCTP)
       if( (sctpID >= 0) && (fds[sctpID].revents & (POLLIN|POLLERR)) ) {
          const int newSD = ext_accept(gSCTPSocket, nullptr, 0);
@@ -1614,7 +1673,13 @@ static void passiveMode(const uint16_t localPort)
 
    // ====== Initialize TCP/MPTCP control socket ============================
    if(gPassiveControlTCP) {
-      gControlSocketTCP = createAndBindSocket(AF_UNSPEC, SOCK_STREAM,
+      gControlSocketTCP = createAndBindSocket(
+#if defined(__OpenBSD__)
+                                              (gLocalControlAddresses > 0) ? gLocalControlAddressArray[0].sa.sa_family : AF_INET,
+#else
+                                              AF_UNSPEC,
+#endif
+                                              SOCK_STREAM,
 #if defined(HAVE_MPTCP)
                                               (gPassiveControlMPTCP) ? IPPROTO_MPTCP : IPPROTO_TCP,
 #else
@@ -1639,12 +1704,49 @@ static void passiveMode(const uint16_t localPort)
          LOG_END_FATAL
       }
       gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
+
+#if defined(__OpenBSD__)
+      if(gLocalControlAddresses == 0) {
+         gControlSocketTCP6 = createAndBindSocket(AF_INET6,
+                                                  SOCK_STREAM,
+#if defined(HAVE_MPTCP)
+                                                  (gPassiveControlMPTCP) ? IPPROTO_MPTCP : IPPROTO_TCP,
+#else
+                                                  IPPROTO_TCP,
+#endif
+                                                  localPort + 1,
+                                                  gLocalControlAddresses,
+                                                  (const sockaddr_union*)&gLocalControlAddressArray,
+                                                  true, gBindV6Only);
+         if(gControlSocketTCP6 < 0) {
+            LOG_FATAL
+            stdlog << format("Failed to create and bind TCP6 control socket on port %d: %s!",
+                           localPort + 1, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+         const int noDelayOption = 1;
+         if(ext_setsockopt(gControlSocketTCP6, IPPROTO_TCP, TCP_NODELAY,
+                           (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+            LOG_ERROR
+            stdlog << format("Failed to set TCP6_NODELAY on TCP6 control socket: %s!",
+                              strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+         gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP6);
+      }
+#endif
    }
 
    // ====== Initialize data socket for each protocol =======================
 
    // ------ TCP ------------------------------------------------------------
-   gTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_TCP, localPort,
+   gTCPSocket = createAndBindSocket(
+#if defined(__OpenBSD__)
+                                    (gLocalDataAddresses > 0) ? gLocalDataAddressArray[0].sa.sa_family : AF_INET,
+#else
+                                    AF_UNSPEC,
+#endif
+                                    SOCK_STREAM, IPPROTO_TCP, localPort,
                                     gLocalDataAddresses,
                                     (const sockaddr_union*)&gLocalDataAddressArray,
                                     true, gBindV6Only);
@@ -1657,9 +1759,29 @@ static void passiveMode(const uint16_t localPort)
    if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
       LOG_FATAL
       stdlog << format("Failed to configure buffer sizes on TCP socket %d!",
-                        gTCPSocket) << "\n";
+                       gTCPSocket) << "\n";
       LOG_END_FATAL
    }
+#if defined(__OpenBSD__)
+   if(gLocalDataAddresses == 0) {
+      gTCP6Socket = createAndBindSocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, localPort,
+                                        gLocalDataAddresses,
+                                        (const sockaddr_union*)&gLocalDataAddressArray,
+                                        true, gBindV6Only);
+      if(gTCP6Socket < 0) {
+         LOG_FATAL
+         stdlog << format("Failed to create and bind TCP6 socket on port %d: %s!",
+                        localPort, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+      if(setBufferSizes(gTCP6Socket, gSndBufSize, gRcvBufSize) == false) {
+         LOG_FATAL
+         stdlog << format("Failed to configure buffer sizes on TCP6 socket %d!",
+                          gTCP6Socket) << "\n";
+         LOG_END_FATAL
+      }
+   }
+#endif
 
    // ------ MPTCP ----------------------------------------------------------
 #if defined(HAVE_MPTCP)
@@ -1867,21 +1989,30 @@ static void passiveMode(const uint16_t localPort)
    LOG_END
    LOG_TRACE
    stdlog << "Sockets:\n"
-          << "- SCTP Control = " << gControlSocket    << "\n"
-          << "- TCP Control  = " << gControlSocketTCP << "\n"
-          << "- TCP Data     = " << gTCPSocket        << "\n"
-#if defined(HAVE_MPTCP)
-          << "- MPTCP Data   = " << gMPTCPSocket      << "\n"
+          << "- SCTP Control = " << gControlSocket     << "\n"
+          << "- TCP Control  = " << gControlSocketTCP  << "\n"
+#if defined(__OpenBSD__)
+          << "- TCP6 Control = " << gControlSocketTCP6 << "\n"
 #endif
-          << "- UDP Data     = " << gUDPSocket        << "\n"
+          << "- TCP Data     = " << gTCPSocket         << "\n"
+#if defined(__OpenBSD__)
+          << "- TCP6 Data    = " << gTCP6Socket        << "\n"
+#endif
+#if defined(HAVE_MPTCP)
+          << "- MPTCP Data   = " << gMPTCPSocket       << "\n"
+#endif
+          << "- UDP Data     = " << gUDPSocket         << "\n"
+#if defined(__OpenBSD__)
+          << "- UDP6 Data    = " << gUDPSocket         << "\n"
+#endif
 #if defined(HAVE_SCTP)
-          << "- SCTP Data    = " << gSCTPSocket       << "\n"
+          << "- SCTP Data    = " << gSCTPSocket        << "\n"
 #endif
 #if defined(HAVE_DCCP)
-          << "- DCCP Data    = " << gDCCPSocket       << "\n"
+          << "- DCCP Data    = " << gDCCPSocket        << "\n"
 #endif
 #if defined(HAVE_QUIC)
-          << "- QUIC Data    = " << gQUICSocket       << "\n"
+          << "- QUIC Data    = " << gQUICSocket        << "\n"
 #endif
           ;
    LOG_END
@@ -1903,18 +2034,35 @@ static void passiveMode(const uint16_t localPort)
 
 
    // ====== Clean up =======================================================
+#if defined(__OpenBSD__)
+   if(gControlSocketTCP6 >= 0) {
+      gMessageReader.deregisterSocket(gControlSocketTCP6);
+      ext_close(gControlSocketTCP6);
+   }
+#endif
    if(gControlSocketTCP >= 0) {
       gMessageReader.deregisterSocket(gControlSocketTCP);
       ext_close(gControlSocketTCP);
    }
-   if(gControlSocket>= 0) {
+   if(gControlSocket >= 0) {
       gMessageReader.deregisterSocket(gControlSocket);
       ext_close(gControlSocket);
    }
+#if defined(__OpenBSD__)
+   if(gTCP6Socket >= 0) {
+      ext_close(gTCP6Socket);
+   }
+#endif
    ext_close(gTCPSocket);
 #if defined(HAVE_MPTCP)
    if(gMPTCPSocket >= 0) {
       ext_close(gMPTCPSocket);
+   }
+#endif
+#if defined(__OpenBSD__)
+   if(gUDP6Socket >= 0) {
+      FlowManager::getFlowManager()->removeUnidentifiedSocket(gUDP6Socket, false);
+      ext_close(gUDP6Socket);
    }
 #endif
    FlowManager::getFlowManager()->removeUnidentifiedSocket(gUDPSocket, false);
