@@ -1710,7 +1710,7 @@ static void passiveMode(const uint16_t localPort)
          if(gControlSocketTCP6 < 0) {
             LOG_FATAL
             stdlog << format("Failed to create and bind TCP6 control socket on port %d: %s!",
-                           localPort + 1, strerror(errno)) << "\n";
+                             localPort + 1, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
          const int noDelayOption = 1;
@@ -1718,7 +1718,7 @@ static void passiveMode(const uint16_t localPort)
                            (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
             LOG_ERROR
             stdlog << format("Failed to set TCP6_NODELAY on TCP6 control socket: %s!",
-                              strerror(errno)) << "\n";
+                             strerror(errno)) << "\n";
             LOG_END_FATAL
          }
          gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP6);
@@ -1760,7 +1760,7 @@ static void passiveMode(const uint16_t localPort)
       if(gTCP6Socket < 0) {
          LOG_FATAL
          stdlog << format("Failed to create and bind TCP6 socket on port %d: %s!",
-                        localPort, strerror(errno)) << "\n";
+                          localPort, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gTCP6Socket, gSndBufSize, gRcvBufSize) == false) {
@@ -1795,7 +1795,13 @@ static void passiveMode(const uint16_t localPort)
 #endif
 
    // ------ UDP ------------------------------------------------------------
-   gUDPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_UDP, localPort,
+   gUDPSocket = createAndBindSocket(
+#if defined(__OpenBSD__)
+                                    (gLocalDataAddresses > 0) ? gLocalDataAddressArray[0].sa.sa_family : AF_INET,
+#else
+                                    AF_UNSPEC,
+#endif
+                                    SOCK_DGRAM, IPPROTO_UDP, localPort,
                                     gLocalDataAddresses,
                                     (const sockaddr_union*)&gLocalDataAddressArray,
                                     true, gBindV6Only);
@@ -1807,7 +1813,23 @@ static void passiveMode(const uint16_t localPort)
    }
    // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
    FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDPSocket);
-
+#if defined(__OpenBSD__)
+   if(gLocalDataAddresses == 0) {
+      gUDP6Socket = createAndBindSocket(AF_INET6,
+                                        SOCK_DGRAM, IPPROTO_UDP6, localPort,
+                                        gLocalDataAddresses,
+                                        (const sockaddr_union*)&gLocalDataAddressArray,
+                                        true, gBindV6Only);
+      if(gUDP6Socket < 0) {
+         LOG_FATAL
+         stdlog << "ERROR: Failed to create and bind UDP6 socket on port " << localPort << " - "
+                << strerror(errno) << "!\n";
+         LOG_END_FATAL
+      }
+      // NOTE: For connection-less UDP6, the FlowManager takes care of the socket!
+      FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP6, gUDP6Socket);
+   }
+#endif
    // ------ DCCP -----------------------------------------------------------
 #if defined(HAVE_DCCP)
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
