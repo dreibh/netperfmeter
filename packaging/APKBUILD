@@ -2,7 +2,7 @@
 pkgname=netperfmeter
 pkgver=2.0.6
 pkgrel=1
-pkgdesc="Network performance meter for UDP, TCP, MPTCP, SCTP and DCCP protocols"
+pkgdesc="Network performance meter for UDP, TCP, MPTCP, SCTP, DCCP and QUIC protocols"
 url="https://www.nntb.no/~dreibh/netperfmeter/"
 arch="all"
 license="GPL-3.0-or-later"
@@ -11,7 +11,7 @@ makedepends="
 	bzip2-dev
 	cmake
 	ghostscript
-	graphicsmagick
+	imagemagick
 	lksctp-tools-dev
 	mupdf-tools
 	ninja

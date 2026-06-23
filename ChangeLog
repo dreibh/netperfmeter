@@ -1,3 +1,162 @@
+commit cb277d6bbb83e75f845434f754286d339377e76c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 23 10:58:30 2026 +0200
+
+    Improved documentation.
+
+commit 4b32502625831b4fd3cdbb85054cb463f3f42b7b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 23 10:24:22 2026 +0200
+
+    Further OpenBSD clean-ups.
+
+commit 93a177e8fcef6214111a331c0845e8dec5089215
+Merge: 1b0afe0 18bc038
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 23 10:21:53 2026 +0200
+
+    Merge branch 'dreibh/openbsd' of https://github.com/dreibh/netperfmeter into dreibh/openbsd
+
+commit 18bc03876a93384678d946bbb2a5259f9fc895c6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 23 10:23:21 2026 +0200
+
+    Also added UDP socket handling for OpenBSD.
+
+commit 1b0afe09ed22e894dd2e9c14559fbd85995b0204
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 23 10:21:47 2026 +0200
+
+    OpenBSD clean-ups.
+
+commit b50f99c7f6e76131fae8def9c3a59f4be9b9e610
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 23 10:08:11 2026 +0200
+
+    OpenBSD improvement: allow TCP and UDP connections on both IPv4 and IPv6.
+
+commit 511e6f8e69f4cc4e85ce5f61489e01a9e0c0e45a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 22 23:07:52 2026 +0200
+
+    Improved OpenBSD options handling and manpage.
+
+commit 73e0273991b04b05f35d2e6bcb6a9ff367c34790
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 22 22:57:10 2026 +0200
+
+    Fixed compiler warning under OpenBSD.
+
+commit b32e269826603fa4fe704584fa87cac105748ae8
+Merge: b29ffc7 52ad098
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 22 22:50:08 2026 +0200
+
+    Merge branch 'master' of https://github.com/dreibh/netperfmeter
+
+commit 52ad098675413a3d770e5e2332e529c728240732
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 22 22:50:10 2026 +0200
+
+    Removed usage of strcpy(), and some clean-ups.
+
+commit b29ffc71e4ab430ce5bc3e3aeb1ad06b3854dbf4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 22 22:49:02 2026 +0200
+
+    OpenBSD fix: IPv6 sockets in OpenBSD are always IPv6-only -> do not use IPV6_V6ONLY socket option.
+
+commit 16a5b6c43c39c680d1b45620119a41b6dd9669fa
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 22 22:05:45 2026 +0200
+
+    Minor clean-ups.
+
+commit 54f810fc7bd7a09f860d8010456ed1757ea79442
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 22 22:04:50 2026 +0200
+
+    Improved CMakeLists.txt.
+
+commit 11bf809e50eb0f69c8138da021faf0feb0d6a1d5
+Merge: 4a9563c 261a896
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jun 20 21:41:24 2026 +0200
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 4a9563cee0e06ef4ff84b4c198cdbd6f7581252f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jun 20 21:39:56 2026 +0200
+
+    Minor CMakeLists.txt update.
+
+commit acc1e6f92b6c05e4b88e8fa9ab4ee887d777c5e8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jun 20 18:45:25 2026 +0200
+
+    Improved APKBUILD file.
+
+commit e786056923373ebbed1523c5919d41a6526e703d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jun 20 18:15:34 2026 +0200
+
+    Improved APKBUILD file.
+
+commit 261a8962e031052b29ef39010ce0ddea122f5b02
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jun 20 18:02:00 2026 +0200
+
+    Fixed include: sys/poll.h -> poll.h.
+
+commit 200f3dd8b2d7eafe186e162eadaa857d38535ce7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jun 20 17:27:09 2026 +0200
+
+    Added initial APKBUILD file.
+
+commit d68cbbee370d5b9a314080c911ef8f173f3bbc09
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jun 19 14:34:17 2026 +0200
+
+    Minor RPM spec clean-up.
+
+commit 3d38d225fe9f918405e1e4971fa1bc62428798b8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 18 17:51:53 2026 +0200
+
+    Yet another RPM spec update.
+
+commit 3e288be2aeac20ef0290a6d2f9e9e72a7da8659a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jun 18 13:09:36 2026 +0200
+
+    Yet another RPM spec update.
+
+commit 8633f2af8b1784a8e982196d7d1e41fffe97ca26
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 17 18:20:25 2026 +0200
+
+    Improved RPM spec.
+
+commit 23e4771e2210b88364fa54bcc8214c4ec7c9f479
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 17 14:04:20 2026 +0200
+
+    RPM spec improvements.
+
+commit 0542a91490f9f908ad32d9f7dad5898311dded7e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Jun 14 16:18:02 2026 +0200
+
+    Added UTF-8 handling to setpdfmetadata, removing the ISO-8859 restriction for PDF metadata.
+
+commit d4ef289b43670bd51d9955b7e57541abbefdd499
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jun 12 18:22:57 2026 +0200
+
+    New release netperfmeter-2.0.6.
+
 commit e5226d405122a5e7bbe600d063a1e2426632fbf6
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Fri Jun 12 17:24:24 2026 +0200

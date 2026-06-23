@@ -1,3 +1,9 @@
+netperfmeter (2.0.7-1ubuntu1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Thomas Dreibholz <dreibh@simula.no>  Tue, 23 Jun 2026 11:07:58 +0200
+
 netperfmeter (2.0.6-1ubuntu1) plucky; urgency=medium
 
   * New upstream release.
