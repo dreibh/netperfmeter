@@ -535,17 +535,6 @@ bool handleGlobalParameters(int argc, char** argv)
       exit(1);
    }
 
-#if defined(__OpenBSD__)
-   if(gLocalControlAddresses == 0) {
-      std::cerr << "ERROR: OpenBSD requires explicit local control address (e.g. --controllocal=0.0.0.0 or --controllocal=::)!\n";
-      exit(1);
-   }
-   if(gLocalDataAddresses == 0) {
-      std::cerr << "ERROR: OpenBSD requires explicit local data address (e.g. --local=0.0.0.0 or --local=::)!\n";
-      exit(1);
-   }
-#endif
-
    return true;
 }
 
@@ -2003,7 +1992,7 @@ static void passiveMode(const uint16_t localPort)
 #endif
           << "- UDP Data     = " << gUDPSocket         << "\n"
 #if defined(__OpenBSD__)
-          << "- UDP6 Data    = " << gUDPSocket         << "\n"
+          << "- UDP6 Data    = " << gUDP6Socket        << "\n"
 #endif
 #if defined(HAVE_SCTP)
           << "- SCTP Data    = " << gSCTPSocket        << "\n"
