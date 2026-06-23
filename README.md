@@ -140,6 +140,15 @@ sudo kldload sctp
 kldstat | grep sctp
 ```
 
+### SCTP on NetBSD
+
+NetBSD requires a custom kernel, with SCTP enabled.
+
+### SCTP on OpenBSD
+
+Unfortunately, OpenBSD does not support SCTP. Therefore, NetPerfMeter on OpenBSD uses TCP for control communication by default.
+
+
 ## Protocols and Ports
 
 NetPerfMeter's usage of protocols and ports depends on the base port parameter of the passive instance (server).
