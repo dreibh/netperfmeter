@@ -91,18 +91,6 @@ done
 %{_mandir}/man1/runtimeestimator.1.gz
 %{_prefix}/lib/systemd/system/netperfmeter-module-loader.service
 
-%pre
-%service_add_pre netperfmeter-module-loader.service
-
-%post
-%service_add_post netperfmeter-module-loader.service
-
-%preun
-%service_del_preun netperfmeter-module-loader.service
-
-%postun
-%service_del_postun netperfmeter-module-loader.service
-
 
 %package common
 Summary: Network Performance Meter (common files)
@@ -212,18 +200,6 @@ This package sets up a service running a NetPerfMeter server instance.
 %{_prefix}/lib/systemd/system/netperfmeter.service
 %config(noreplace) %{_sysconfdir}/netperfmeter.conf
 %{_sysconfdir}/netperfmeter.conf
-
-%pre service
-%service_add_pre netperfmeter.service
-
-%post service
-%service_add_post netperfmeter.service
-
-%preun service
-%service_del_preun netperfmeter.service
-
-%postun service
-%service_del_postun netperfmeter.service
 
 
 %package pdfproctools
