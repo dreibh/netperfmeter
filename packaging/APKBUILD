@@ -58,6 +58,8 @@ package() {
 common() {
 	pkgdesc="Network Performance Meter (common files)"
 
+	install_if="$pkgname=$pkgver-r$pkgrel"
+
 	mkdir -p "$subpkgdir"/usr/share
 	mv "$pkgdir/usr/share/icons" "$subpkgdir/usr/share/"
 	mv "$pkgdir/usr/share/mime" "$subpkgdir/usr/share/"
