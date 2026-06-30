@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2034,SC1094
 #
 # PROVIDE: netperfmeter_module_loader
 # REQUIRE: FILESYSTEMS
@@ -39,7 +40,7 @@ rcvar="netperfmeter_module_loader_enable"
 load_rc_config $name
 
 # Set fallback defaults:
-: ${netperfmeter_module_loader_enable:="NO"}
+: "${netperfmeter_module_loader_enable:=NO}"
 
 loader_script="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin netperfmeter-module-loader"
 extra_commands="status"
