@@ -37,7 +37,7 @@ ExecStartPre=+/bin/sh -c "sysctl -w net.ipv4.tcp_allowed_congestion_control=\"$(
 
 ExecStart=/usr/bin/netperfmeter \
    "${NETPERFMETER_PORT}"       \
-   "${NETPERFMETER_OPTIONS}"    \
+   $NETPERFMETER_OPTIONS        \
    -loglevel="${LOGLEVEL}"      \
    -nodisplay
 
