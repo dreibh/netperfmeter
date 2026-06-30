@@ -90,12 +90,19 @@ INSTALL(FILES   netperfmeter.bib DESTINATION         ${CMAKE_INSTALL_DATADIR}/ne
 INSTALL(FILES       netperfmeter.bash-completion
         DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
         RENAME      netperfmeter)
+
+INSTALL(PROGRAMS netperfmeter-module-loader   DESTINATION ${CMAKE_INSTALL_BINDIR})
+INSTALL(FILES    netperfmeter-module-loader.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
    INSTALL(FILES    netperfmeter.service               DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
    INSTALL(FILES    netperfmeter.conf                  DESTINATION /etc)
    INSTALL(FILES    netperfmeter-module-loader.service DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
-   INSTALL(PROGRAMS netperfmeter-module-loader         DESTINATION ${CMAKE_INSTALL_BINDIR})
-   INSTALL(FILES    netperfmeter-module-loader.1       DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+ELSE()
+   INSTALL(PROGRAMS netperfmeter.rc                    DESTINATION "etc/rc.d"
+           RENAME   netperfmeter)
+   INSTALL(PROGRAMS netperfmeter-module-loader.rc      DESTINATION "etc/rc.d"
+           RENAME   netperfmeter-module-loader)
 ENDIF()
 
 # ====== Create Summary Tool ================================================
