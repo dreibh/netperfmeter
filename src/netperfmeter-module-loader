@@ -78,32 +78,44 @@ showStatus()
 {
    # ------ Print the relevant modules --------------------------------------
    echo "Modules:"
-   lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp" || true ) | sort
+   if [ "${UNAME}" == "Linux" ] ;  then
+      lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp" || true ) | sort
 
-   # ------ Print the allowed TCP CCs ---------------------------------------
-   local allowedCCs
-   local numberOfAllowedCCs
-   allowedCCs="$(sysctl -n net.ipv4.tcp_allowed_congestion_control)"
-   numberOfAllowedCCs="$(echo "${allowedCCs}" | xargs -n1 | wc -l)"
-   echo "Allowed TCP CCs (${numberOfAllowedCCs}): ${allowedCCs}"
+      # ------ Print the allowed TCP CCs ---------------------------------------
+      local allowedCCs
+      local numberOfAllowedCCs
+      allowedCCs="$(sysctl -n net.ipv4.tcp_allowed_congestion_control)"
+      numberOfAllowedCCs="$(echo "${allowedCCs}" | xargs -n1 | wc -l)"
+      echo "Allowed TCP CCs (${numberOfAllowedCCs}): ${allowedCCs}"
+   else
+      : # FIXME!
+   fi
 }
 
 
 
 # ###### Main program #######################################################
+
+# ====== Check argument =====================================================
 if [ $# -lt 1 ] ; then
   echo >&2 "Usage: $0 start|stop|status"
   exit 1
 fi
+UNAME="$(uname)"
 
+# ====== Load modules =======================================================
 if [ "$1" == "start" ] ; then
    kernel="$(uname -r)"
 
    # Load protocol modules:
-   tryToLoadModules "TCP"   "tcp_*.ko*"   "/lib/modules/${kernel}/kernel/net/ipv4/"  "/lib/modules/${kernel}/extra/net/ipv4/"
-   tryToLoadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
-   tryToLoadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
-   tryToLoadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
+   if [ "${UNAME}" == "Linux" ] ; then
+      tryToLoadModules "TCP"   "tcp_*.ko*"   "/lib/modules/${kernel}/kernel/net/ipv4/"  "/lib/modules/${kernel}/extra/net/ipv4/"
+      tryToLoadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
+      tryToLoadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
+      tryToLoadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
+   else
+      : # FIXME!
+   fi
 
    # Enable TCP CCs:
    availableCCs="$(sysctl net.ipv4.tcp_available_congestion_control | sed -e "s/.*= //g")"
@@ -111,6 +123,7 @@ if [ "$1" == "start" ] ; then
 
    showStatus
 
+# ====== Unload modules =====================================================
 elif [ "$1" == "stop" ] ; then
 
    kernel="$(uname -r)"
@@ -118,18 +131,24 @@ elif [ "$1" == "stop" ] ; then
    # Unload protocol modules, in two stages to cover dependencies:
    # shellcheck disable=SC2034
    for stage in 1 2 ; do
-      tryToUnloadModules "TCP"   "tcp_*.ko*"   "/lib/modules/${kernel}/kernel/net/ipv4/"  "/lib/modules/${kernel}/extra/net/ipv4/"
-      tryToUnloadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
-      tryToUnloadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
-      tryToUnloadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
+      if [ "${UNAME}" == "Linux" ] ; then
+         tryToUnloadModules "TCP"   "tcp_*.ko*"   "/lib/modules/${kernel}/kernel/net/ipv4/"  "/lib/modules/${kernel}/extra/net/ipv4/"
+         tryToUnloadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
+         tryToUnloadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
+         tryToUnloadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
+      else
+         : # FIXME!
+      fi
    done
 
    showStatus
 
+# ====== Show status ========================================================
 elif [ "$1" == "status" ] ; then
 
    showStatus
 
+# ====== Invalid argument ===================================================
 else
    echo >&2 "ERROR: Unknown command $1!"
    exit 1
