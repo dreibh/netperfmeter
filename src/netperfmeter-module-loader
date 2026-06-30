@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==========================================================================
 #         _   _      _   ____            __ __  __      _
 #        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
@@ -37,7 +37,7 @@ tryToLoadModules()
    local pattern="$2"
    shift 2
 
-   echo -en "Loading ${component} modules: "
+   echo -en "\x1b[32mLoading ${component} modules ... "
    while [ $# -gt 0 ] ; do
       local directory="$1"
       shift
@@ -45,11 +45,15 @@ tryToLoadModules()
          modules="$(find "${directory}" -name "${pattern}" -print0 | xargs -0 -r -n1 basename | sed -e "s/\.ko.*$//g" | sort)"
          for module in ${modules} ; do
             echo -en "${module} "
-            modprobe "${module}" >/dev/null 2>&1
+            if [ "${UNAME}" == "Linux" ] ; then
+               modprobe "${module}" >/dev/null 2>&1
+            elif [ "${UNAME}" == "FreeBSD" ] ; then
+               kldload "${module}" >/dev/null 2>&1 || true
+            fi
          done
       fi
    done
-   echo ""
+   echo -e "\x1b[0m"
 }
 
 
@@ -66,7 +70,11 @@ tryToUnloadModules()
       if [ -e "${directory}" ] ; then
          modules="$(find "${directory}" -name "${pattern}" -print0 | xargs -0 -r -n1 basename | sed -e "s/\.ko.*$//g" | sort)"
          for module in ${modules} ; do
-            rmmod "${module}" >/dev/null 2>&1 || true
+            if [ "${UNAME}" == "Linux" ] ; then
+               rmmod "${module}" >/dev/null 2>&1 || true
+            elif [ "${UNAME}" == "FreeBSD" ] ; then
+               kldunload "${module}" >/dev/null 2>&1 || true
+            fi
          done
       fi
    done
@@ -76,20 +84,29 @@ tryToUnloadModules()
 # ###### Print status #######################################################
 showStatus()
 {
-   # ------ Print the relevant modules --------------------------------------
-   echo "Modules:"
-   if [ "${UNAME}" == "Linux" ] ;  then
-      lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp" || true ) | sort
+   local modules=""
+   local allowedCCs=""
+   local defaultCC=""
 
-      # ------ Print the allowed TCP CCs ---------------------------------------
-      local allowedCCs
-      local numberOfAllowedCCs
+   # ------ Print the relevant modules --------------------------------------
+   if [ "${UNAME}" == "Linux" ] ;  then
+      modules="$(lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp" || true ) | sort | xargs)"
       allowedCCs="$(sysctl -n net.ipv4.tcp_allowed_congestion_control)"
-      numberOfAllowedCCs="$(echo "${allowedCCs}" | xargs -n1 | wc -l)"
-      echo "Allowed TCP CCs (${numberOfAllowedCCs}): ${allowedCCs}"
-   else
-      : # FIXME!
+      defaultCC="$(sysctl -n net.ipv4.tcp_congestion_control)"
+   elif [ "${UNAME}" == "FreeBSD" ] ;  then
+      modules="$(kldstat | ( grep -E "cc_" || true ) | awk '{ print $5 }' | sort | xargs)"
+      allowedCCs="$(sysctl -n net.inet.tcp.cc.available | awk '(($1 != "CCmod") && ($1 != "")) { print $1 }' | xargs)"
+      defaultCC="$(sysctl -n net.inet.tcp.cc.algorithm)"
    fi
+
+   local numberOfAllowedCCs
+   numberOfAllowedCCs="$(echo "${allowedCCs}" | xargs -n1 | wc -l | tr -d " ")"
+
+   echo -en "\x1b[34m"
+   echo "Modules:           ${modules}"
+   echo -e "Available TCP CCs: ${allowedCCs} \x1b[33m(total: ${numberOfAllowedCCs})\x1b[34m"
+   echo "Default TCP CC:    ${defaultCC}"
+   echo -en "\x1b[0m"
 }
 
 
@@ -105,21 +122,22 @@ UNAME="$(uname)"
 
 # ====== Load modules =======================================================
 if [ "$1" == "start" ] ; then
-   kernel="$(uname -r)"
 
-   # Load protocol modules:
    if [ "${UNAME}" == "Linux" ] ; then
+      kernel="$(uname -r)"
       tryToLoadModules "TCP"   "tcp_*.ko*"   "/lib/modules/${kernel}/kernel/net/ipv4/"  "/lib/modules/${kernel}/extra/net/ipv4/"
       tryToLoadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
       tryToLoadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
       tryToLoadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
-   else
-      : # FIXME!
-   fi
 
-   # Enable TCP CCs:
-   availableCCs="$(sysctl net.ipv4.tcp_available_congestion_control | sed -e "s/.*= //g")"
-   sysctl -qw net.ipv4.tcp_allowed_congestion_control="${availableCCs}"
+      # Allow TCP CCs:
+      availableCCs="$(sysctl net.ipv4.tcp_available_congestion_control | sed -e "s/.*= //g")"
+      sysctl -qw net.ipv4.tcp_allowed_congestion_control="${availableCCs}"
+
+   elif [ "${UNAME}" == "FreeBSD" ] ; then
+      tryToLoadModules "CC"   "cc_*.ko" "/boot/kernel/"
+      tryToLoadModules "SCTP" "sctp.ko" "/boot/kernel/"
+   fi
 
    showStatus
 
@@ -136,8 +154,9 @@ elif [ "$1" == "stop" ] ; then
          tryToUnloadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
          tryToUnloadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
          tryToUnloadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
-      else
-         : # FIXME!
+      elif [ "${UNAME}" == "FreeBSD" ] ; then
+         tryToUnloadModules "CC"   "cc_*.ko" "/boot/kernel/"
+         tryToUnloadModules "SCTP" "sctp.ko" "/boot/kernel/"
       fi
    done
 
