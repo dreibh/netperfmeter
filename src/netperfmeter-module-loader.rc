@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# PROVIDE: netperfmeter_module_loader
+# REQUIRE: FILESYSTEMS
+# BEFORE: netperfmeter
+
+. /etc/rc.subr
+
+name="netperfmeter_module_loader"
+rcvar="netperfmeter_module_loader_enable"
+
+load_rc_config $name
+
+# Set fallback defaults:
+: ${netperfmeter_module_loader_enable:="NO"}
+
+start_cmd="netperfmeter_module_loader_start"
+stop_cmd="netperfmeter_module_loader_stop"
+
+netperfmeter_module_loader_start() {
+    echo "Loading FreeBSD TCP congestion control modules..."
+    for mod in cc_cubic cc_htcp cc_vegas cc_cdg; do
+        kldload ${mod} >/dev/null 2>&1 || true
+    done
+}
+
+netperfmeter_module_loader_stop() {
+    echo "Unloading FreeBSD TCP congestion control modules..."
+    for mod in cc_cdg cc_vegas cc_htcp cc_cubic; do
+        kldunload ${mod} >/dev/null 2>&1 || true
+    done
+}
+
+run_rc_command "$1"

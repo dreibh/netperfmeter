@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# PROVIDE: netperfmeter
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="netperfmeter"
+rcvar="netperfmeter_enable"
+
+# Load the configuration from /etc/rc.conf:
+load_rc_config $name
+
+# Set fallback defaults:
+: ${netperfmeter_enable:="NO"}
+: ${netperfmeter_port:="9000"}
+: ${netperfmeter_loglevel:="2"}
+: ${netperfmeter_options:="-control-over-tcp"}
+
+actual_command="/usr/local/bin/netperfmeter"
+pidfile="/var/run/${name}.pid"
+command="/usr/sbin/daemon"
+command_args="-p ${pidfile} -f ${actual_command} ${netperfmeter_port} ${netperfmeter_options} -loglevel=${netperfmeter_loglevel} -nodisplay"
+
+run_rc_command "$1"
