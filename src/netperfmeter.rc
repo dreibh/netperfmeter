@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC2034,SC1094
 #
 # PROVIDE: netperfmeter
 # REQUIRE: NETWORKING
@@ -13,10 +14,10 @@ rcvar="netperfmeter_enable"
 load_rc_config $name
 
 # Set fallback defaults:
-: ${netperfmeter_enable:="NO"}
-: ${netperfmeter_port:="9000"}
-: ${netperfmeter_loglevel:="2"}
-: ${netperfmeter_options:="-control-over-tcp"}
+: "${netperfmeter_enable:=NO}"
+: "${netperfmeter_port:=9000}"
+: "${netperfmeter_loglevel:=2}"
+: "${netperfmeter_options:=-control-over-tcp}"
 
 actual_command="/usr/local/bin/netperfmeter"
 procname="${actual_command}"
