@@ -19,6 +19,8 @@ load_rc_config $name
 : ${netperfmeter_options:="-control-over-tcp"}
 
 actual_command="/usr/local/bin/netperfmeter"
+procname="${actual_command}"
+
 pidfile="/var/run/${name}.pid"
 command="/usr/sbin/daemon"
 command_args="-p ${pidfile} -f ${actual_command} ${netperfmeter_port} ${netperfmeter_options} -loglevel=${netperfmeter_loglevel} -nodisplay"
