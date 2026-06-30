@@ -14,21 +14,11 @@ load_rc_config $name
 # Set fallback defaults:
 : ${netperfmeter_module_loader_enable:="NO"}
 
-start_cmd="netperfmeter_module_loader_start"
-stop_cmd="netperfmeter_module_loader_stop"
+loader_script="PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin netperfmeter-module-loader"
+extra_commands="status"
 
-netperfmeter_module_loader_start() {
-    echo "Loading FreeBSD TCP congestion control modules..."
-    for mod in cc_cubic cc_htcp cc_vegas cc_cdg; do
-        kldload ${mod} >/dev/null 2>&1 || true
-    done
-}
-
-netperfmeter_module_loader_stop() {
-    echo "Unloading FreeBSD TCP congestion control modules..."
-    for mod in cc_cdg cc_vegas cc_htcp cc_cubic; do
-        kldunload ${mod} >/dev/null 2>&1 || true
-    done
-}
+start_cmd="${loader_script} start"
+stop_cmd="${loader_script} stop"
+status_cmd="${loader_script} status"
 
 run_rc_command "$1"
