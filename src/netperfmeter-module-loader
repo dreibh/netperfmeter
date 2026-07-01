@@ -41,10 +41,10 @@ tryToLoadModules()
    while [ $# -gt 0 ] ; do
       local directory="$1"
       shift
-      if [ -e "${directory}" ] ; then
+      if [ -d "${directory}" ] ; then
          modules="$(find "${directory}" -name "${pattern}" -print0 | xargs -0 -r -n1 basename | sed -e "s/\.ko.*$//g" | sort)"
          for module in ${modules} ; do
-            echo -en "${module} "
+            echo -en "\x1b[35m${module}\x1b[0m "
             if [ "${UNAME}" == "Linux" ] ; then
                modprobe "${module}" >/dev/null 2>&1
             elif [ "${UNAME}" == "FreeBSD" ] ; then
@@ -69,7 +69,7 @@ tryToUnloadModules()
    while [ $# -gt 0 ] ; do
       local directory="$1"
       shift
-      if [ -e "${directory}" ] ; then
+      if [ -d "${directory}" ] ; then
          modules="$(find "${directory}" -name "${pattern}" -print0 | xargs -0 -r -n1 basename | sed -e "s/\.ko.*$//g" | sort)"
          for module in ${modules} ; do
             if [ "${UNAME}" == "Linux" ] ; then
@@ -141,9 +141,7 @@ if [ "$1" == "start" ] ; then
       tryToLoadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
       tryToLoadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
       tryToLoadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
-      tryToLoadModules "QUIC"  "quic*.ko*"   "/lib/modules/${kernel}/kernel/net/quic/"  "/lib/modules/${kernel}/extra/quic/"
-
-      modules/net/quic/quic.ko
+      tryToLoadModules "QUIC"  "quic.ko*"    "/lib/modules/${kernel}/kernel/net/quic/"  "/lib/modules/${kernel}/extra/"
 
       # Allow TCP CCs:
       availableCCs="$(sysctl net.ipv4.tcp_available_congestion_control | sed -e "s/.*= //g")"
@@ -179,7 +177,7 @@ elif [ "$1" == "stop" ] ; then
          tryToUnloadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
          tryToUnloadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
          tryToUnloadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
-         tryToUnloadModules "QUIC"  "quic*.ko*"   "/lib/modules/${kernel}/kernel/net/quic/"  "/lib/modules/${kernel}/extra/quic/"
+         tryToUnloadModules "QUIC"  "quic.ko*"    "/lib/modules/${kernel}/kernel/net/quic/"  "/lib/modules/${kernel}/extra/"
 
       elif [ "${UNAME}" == "FreeBSD" ] ; then
          tryToUnloadModules "CC"   "cc_*.ko" "/boot/kernel/"
