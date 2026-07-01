@@ -57,7 +57,7 @@ version () {
 # ###### Main program #######################################################
 
 # ====== Handle arguments ===================================================
-GETOPT="$(PATH=/usr/local/bin:${PATH} which getopt)"
+GETOPT="$(PATH=/usr/local/bin:${PATH} which getopt || true)"
 options="$(${GETOPT} -o o:1flqhv --long output-prefix:,only-first-entry,skip-first-entry,skip-last-entry,quiet,help,version -a -- "$@")"
 # shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
