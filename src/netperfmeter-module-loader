@@ -94,7 +94,7 @@ showStatus()
 
    # ------ Print the relevant modules --------------------------------------
    if [ "${UNAME}" == "Linux" ] ;  then
-      modules="$(lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp" || true ) | sort | xargs)"
+      modules="$(lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp|^quic" || true ) | sort | xargs)"
       allowedCCs="$(sysctl -n net.ipv4.tcp_allowed_congestion_control)"
       defaultCC="$(sysctl -n net.ipv4.tcp_congestion_control)"
    elif [ "${UNAME}" == "FreeBSD" ] ;  then
@@ -141,6 +141,9 @@ if [ "$1" == "start" ] ; then
       tryToLoadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
       tryToLoadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
       tryToLoadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
+      tryToLoadModules "QUIC"  "quic*.ko*"   "/lib/modules/${kernel}/kernel/net/quic/"  "/lib/modules/${kernel}/extra/quic/"
+
+      modules/net/quic/quic.ko
 
       # Allow TCP CCs:
       availableCCs="$(sysctl net.ipv4.tcp_available_congestion_control | sed -e "s/.*= //g")"
@@ -176,6 +179,7 @@ elif [ "$1" == "stop" ] ; then
          tryToUnloadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
          tryToUnloadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
          tryToUnloadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
+         tryToUnloadModules "QUIC"  "quic*.ko*"   "/lib/modules/${kernel}/kernel/net/quic/"  "/lib/modules/${kernel}/extra/quic/"
 
       elif [ "${UNAME}" == "FreeBSD" ] ; then
          tryToUnloadModules "CC"   "cc_*.ko" "/boot/kernel/"
