@@ -44,7 +44,7 @@ tryToLoadModules()
       if [ -d "${directory}" ] ; then
          modules="$(find "${directory}" -name "${pattern}" -print0 | xargs -0 -r -n1 basename | sed -e "s/\.ko.*$//g" | sort)"
          for module in ${modules} ; do
-            echo -en "\x1b[35m${module}\x1b[0m "
+            echo -en "\x1b[37m${module}\x1b[0m "
             if [ "${UNAME}" == "Linux" ] ; then
                modprobe "${module}" >/dev/null 2>&1
             elif [ "${UNAME}" == "FreeBSD" ] ; then
@@ -94,7 +94,7 @@ showStatus()
 
    # ------ Print the relevant modules --------------------------------------
    if [ "${UNAME}" == "Linux" ] ;  then
-      modules="$(lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp|^quic" || true ) | sort | xargs)"
+      modules="$(lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp|^quic" || true ) | awk '{ print $1 }' | sort | xargs)"
       allowedCCs="$(sysctl -n net.ipv4.tcp_allowed_congestion_control)"
       defaultCC="$(sysctl -n net.ipv4.tcp_congestion_control)"
    elif [ "${UNAME}" == "FreeBSD" ] ;  then
@@ -115,9 +115,9 @@ showStatus()
    numberOfAllowedCCs="$(echo "${allowedCCs}" | xargs -n1 | wc -l | tr -d " ")"
 
    echo -en "\x1b[34m"
-   echo "Modules:           ${modules}"
-   echo -e "Available TCP CCs: ${allowedCCs} \x1b[33m(total: ${numberOfAllowedCCs})\x1b[34m"
-   echo "Default TCP CC:    ${defaultCC}"
+   echo -e "Modules:           \x1b[35m${modules}\x1b[34m"
+   echo -e "Available TCP CCs: \x1b[35m${allowedCCs} \x1b[33m(total: ${numberOfAllowedCCs})\x1b[34m"
+   echo -e "Default TCP CC:    \x1b[35m${defaultCC}\x1b[34m"
    echo -en "\x1b[0m"
 }
 
