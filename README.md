@@ -148,6 +148,28 @@ NetBSD requires a custom kernel, with SCTP enabled.
 
 Unfortunately, OpenBSD does not support SCTP. Therefore, NetPerfMeter on OpenBSD uses TCP for control communication by default.
 
+### TCP Congestion Control Modules
+
+NetPerfMeter provides a helper script to load, unload, and show the available congestion control modules:
+
+* Show status:
+
+  ```bash
+  netperfmeter-module-loader status
+  ```
+
+* Load modules:
+
+  ```bash
+  sudo netperfmeter-module-loader start
+  ```
+
+* Unload modules:
+
+  ```bash
+  sudo netperfmeter-module-loader stop
+  ```
+
 
 ## Protocols and Ports
 
