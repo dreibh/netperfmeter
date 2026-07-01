@@ -49,6 +49,8 @@ tryToLoadModules()
                modprobe "${module}" >/dev/null 2>&1
             elif [ "${UNAME}" == "FreeBSD" ] ; then
                kldload "${module}" >/dev/null 2>&1 || true
+            elif [ "${UNAME}" == "NetBSD" ] ; then
+               modload "${module}" >/dev/null 2>&1 || true
             fi
          done
       fi
@@ -74,6 +76,8 @@ tryToUnloadModules()
                rmmod "${module}" >/dev/null 2>&1 || true
             elif [ "${UNAME}" == "FreeBSD" ] ; then
                kldunload "${module}" >/dev/null 2>&1 || true
+            elif [ "${UNAME}" == "NetBSD" ] ; then
+               modunload "${module}" >/dev/null 2>&1 || true
             fi
          done
       fi
@@ -97,6 +101,14 @@ showStatus()
       modules="$(kldstat | ( grep -E "cc_" || true ) | awk '{ print $5 }' | sort | xargs)"
       allowedCCs="$(sysctl -n net.inet.tcp.cc.available | awk '(($1 != "CCmod") && ($1 != "")) { print $1 }' | xargs)"
       defaultCC="$(sysctl -n net.inet.tcp.cc.algorithm)"
+   elif [ "${UNAME}" == "NetBSD" ] ; then
+      modules="$(modstat | ( grep -E "sctp" || true ) | awk '{ print $1 }' | sort | xargs)"
+      allowedCCs="$(sysctl -n net.inet.tcp.congctl.available)"
+      defaultCC="$(sysctl -n net.inet.tcp.congctl.selected)"
+   elif [ "${UNAME}" == "OpenBSD" ] ;  then
+      modules="None (monolithic kernel)"
+      allowedCCs="newreno"
+      defaultCC="newreno"
    fi
 
    local numberOfAllowedCCs
@@ -137,6 +149,16 @@ if [ "$1" == "start" ] ; then
    elif [ "${UNAME}" == "FreeBSD" ] ; then
       tryToLoadModules "CC"   "cc_*.ko" "/boot/kernel/"
       tryToLoadModules "SCTP" "sctp.ko" "/boot/kernel/"
+
+  elif [ "${UNAME}" == "NetBSD" ] ; then
+      true
+      # arch="$(uname -m)"
+      # kernel="$(uname -r)"
+      # tryToLoadModules "SCTP" "sctp.kmod" "/stand/${arch}/${kernel}/modules/"
+
+   elif [ "${UNAME}" == "OpenBSD" ] ; then
+      true
+
    fi
 
    showStatus
@@ -154,9 +176,18 @@ elif [ "$1" == "stop" ] ; then
          tryToUnloadModules "MPTCP" "mptcp_*.ko*" "/lib/modules/${kernel}/kernel/net/mptcp/" "/lib/modules/${kernel}/extra/net/mptcp/"
          tryToUnloadModules "SCTP"  "sctp*.ko*"   "/lib/modules/${kernel}/kernel/net/sctp/"  "/lib/modules/${kernel}/extra/net/sctp/"
          tryToUnloadModules "DCCP"  "dccp*.ko*"   "/lib/modules/${kernel}/kernel/net/dccp/"  "/lib/modules/${kernel}/extra/net/dccp/"
+
       elif [ "${UNAME}" == "FreeBSD" ] ; then
          tryToUnloadModules "CC"   "cc_*.ko" "/boot/kernel/"
          tryToUnloadModules "SCTP" "sctp.ko" "/boot/kernel/"
+
+      elif [ "${UNAME}" == "NetBSD" ] ; then
+         true
+         # arch="$(uname -m)"
+         # tryToUnloadModules "SCTP" "sctp.kmod" "/stand/${arch}/${kernel}/modules/"
+
+      elif [ "${UNAME}" == "OpenBSD" ] ; then
+         true
       fi
    done
 
