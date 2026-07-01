@@ -172,6 +172,8 @@ For the following examples, the base port is usually set to 9000.
 
 ## Starting the Passive Instance (Server)
 
+### Manual Run
+
 * Run a passive instance (i.e.&nbsp;server side), using base port 9000:
 
   ```bash
@@ -188,6 +190,78 @@ For the following examples, the base port is usually set to 9000.
   ```
 
   Note that the active instance (i.e.&nbsp;client side) can only connect via TCP in this case, and it needs to be instructed (as explained below, also using the `-control-over-tcp` option) to do so!
+
+
+### Run as a Service
+
+#### Linux
+
+A NetPerfMeter service unit for SystemD is available:
+
+* [`netperfmeter.service`](src/netperfmeter.service)
+* [`/etc/netperfmeter.conf`](src/netperfmeter.conf)
+
+In addition, a service unit for loading and allowing all available congestion control modules is provided as well: [`netperfmeter-module-loader.service`](src/netperfmeter-module-loader.service). The module loader service is optional, i.e.&nbsp;without it, only manually-enabled congestion control modules will be available.
+
+Enable and start:
+
+```bash
+# Optional:
+sudo systemctl enable netperfmeter-module-loader.service
+sudo systemctl start netperfmeter-module-loader.service
+
+sudo systemctl enable netperfmeter.service
+sudo systemctl start netperfmeter.service
+sudo systemctl status netperfmeter.service
+```
+
+Stop and disable:
+
+```bash
+sudo systemctl stop netperfmeter.service
+sudo systemctl disable netperfmeter.service
+
+sudo systemctl stop netperfmeter-module-loader.service
+sudo systemctl disable netperfmeter-module-loader.service
+```
+
+#### FreeBSD
+
+A NetPerfMeter service script for RC is available: [`netperfmeter.rc`](src/netperfmeter.rc).
+
+In addition, an RC service script for loading and allowing all available congestion control modules is provided as well: [`netperfmeter-module-loader.rc`](src/netperfmeter-module-loader.rc). The module loader service is optional, i.e.&nbsp;without it, only manually-enabled congestion control modules will be available.
+
+In `/etc/rc.conf`:
+
+```bash
+# Optional:
+netperfmeter_module_loader_enable="YES"
+
+netperfmeter_enable="YES"
+netperfmeter_port="9000"
+netperfmeter_loglevel="2"
+netperfmeter_options="-control-over-tcp"
+```
+
+Enable and start:
+
+```bash
+sudo service netperfmeter-module-loader enable
+sudo service netperfmeter-module-loader start
+
+sudo service netperfmeter enable
+sudo service netperfmeter start
+```
+
+Stop and disable:
+
+```bash
+sudo service netperfmeter stop
+sudo service netperfmeter disable
+
+sudo service netperfmeter-module-loader stop
+sudo service netperfmeter-module-loader disable
+```
 
 
 ## Running the Active Instance (Client)
