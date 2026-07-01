@@ -1,3 +1,180 @@
+commit 6becf2455008d500967cf61c25c9e37c78607728
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 17:34:44 2026 +0200
+
+    Further output improvements for the module loader.
+
+commit 1accf8d6212e1663436165fc5eb33cc60ac1168e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 17:30:27 2026 +0200
+
+    Improved module loading.
+
+commit 138505c4c471afa5e02b94d62654f6176ba7407f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 17:22:00 2026 +0200
+
+    Added QUIC module loading support to netperfmeter-module-loader.
+
+commit 76584adea866769a9a2cccb4cec4d409aa2b1926
+Merge: 3b55b74 78468d1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 16:51:27 2026 +0200
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 3b55b746a9bfc3b6ac2de41b5d045a790b34fa84
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 16:51:00 2026 +0200
+
+    Further documentation updates.
+
+commit 78468d1d654a58fe58ac1e1190ab2bdffc4ee192
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 16:42:44 2026 +0200
+
+    Improved script.
+
+commit 053dc89a959f8d99ed2d9eb92e3fe71fce3946ea
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 16:19:15 2026 +0200
+
+    Improved documentation.
+
+commit 080dd23ed4cec5f9f4673023ca07986e47fc1256
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 15:56:16 2026 +0200
+
+    Improved helper scripts.
+
+commit a7802cd0ed46e0c2e3c5cd81ead18cd6b6b4b808
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 11:47:54 2026 +0200
+
+    Improved detection of GNU getopt, to provide a useful error message when it is missing.
+
+commit d6b1e0813bf71ef1b233207566d5c50198f3c71e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 11:47:32 2026 +0200
+
+    Updated CMakeLists.txt.
+
+commit eab51d35152c7e5422f7ea1ee2bcc0843e277d75
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 18:04:06 2026 +0200
+
+    Updated APKBUILD file.
+
+commit 95e2dcca283f59c6f1ce4efe246c19870ad5aea7
+Merge: 1c8e3ad 2ceda55
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 17:52:30 2026 +0200
+
+    Merge branch 'dreibh/freebsd-cc' of github.com:dreibh/netperfmeter into dreibh/freebsd-cc
+
+commit 1c8e3adb6f3e48752aff8eb672a570edbb2c0bd8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 17:52:22 2026 +0200
+
+    Header updates.
+
+commit 2ceda5596a55f1492679d27f86afb69d64046246
+Merge: 1574b16 354f5a1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 17:52:06 2026 +0200
+
+    Merge branch 'dreibh/freebsd-cc' of https://github.com/dreibh/netperfmeter into dreibh/freebsd-cc
+
+commit 1574b162706f62a95e7e04c075f06f40c6f7b4c3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 17:51:53 2026 +0200
+
+    Service script improvements.
+
+commit 354f5a14d5bc9d9ec0a9fa1c23cb70a416bc3dd8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 17:43:35 2026 +0200
+
+    Improved service unit.
+
+commit 451879d81b540a9ca692bc42fdc7126a2f6fe8e2
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 17:36:22 2026 +0200
+
+    Improved NetPerfMeter BSD service script.
+
+commit 4acbb27fb9efc1ebd3196debc8af517d41b1315a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 17:26:32 2026 +0200
+
+    Improved BSD service script.
+
+commit 0a84037b12b507f38e429a8ebdeaa1255952dc54
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 17:17:33 2026 +0200
+
+    Improved script, now supporting FreeBSD modules as well.
+
+commit e172c472669b8990f6f49a317c7f23034dcaa446
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 16:33:10 2026 +0200
+
+    Started to add FreeBSD support into netperfmeter-module-loader.
+
+commit d32ce31fed52978088fb06fbc359897549df35a7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 16:33:03 2026 +0200
+
+    Updated CMakeLists.txt.
+
+commit d864247a05adec984317ceca4823ebbd0d783075
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 16:32:47 2026 +0200
+
+    Added initial BSD rc.d services.
+
+commit 359c6ccdfc1996f947b7d3dbb181886cd0295c8c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 16:16:46 2026 +0200
+
+    Improved service description.
+
+commit a583b9d8913e51bcabc0a49f7745dba92672f7fe
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 30 16:08:26 2026 +0200
+
+    Improved service configuration.
+
+commit e0596e577c91cc6b20062da2ba3d4fc1e709c42e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 29 15:42:33 2026 +0200
+
+    Updated CI configuration
+
+commit 9969840ea0407def529ecdd0df626b575c515b68
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 29 15:42:31 2026 +0200
+
+    Updated CI scripts
+
+commit 47b38cd7f5982bccb142aaca4f6937573172400b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jun 29 15:41:32 2026 +0200
+
+    Updated FreeBSD workflow.
+
+commit aad785674716df36ee335d0e5a8ccd37b6955a03
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jun 24 15:33:36 2026 +0200
+
+    Packaging fixes.
+
+commit 0bb4d65256ad03d7e3c8379e1a5b7f73158df54a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jun 23 11:07:59 2026 +0200
+
+    New release netperfmeter-2.0.7.
+
 commit cb277d6bbb83e75f845434f754286d339377e76c
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Tue Jun 23 10:58:30 2026 +0200
