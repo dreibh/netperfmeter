@@ -33,9 +33,19 @@ set -euo pipefail
 
 
 DIRNAME="$(dirname "$0")"
+HOSTNAME="$(hostname -f 2>/dev/null || hostname 2>/dev/null || echo "localhost")"
+if [ "${#HOSTNAME}" -gt 64 ] ; then
+   echo >&2 "ERROR: The FQDN hostname ${HOSTNAME} is too long (> 64 bytes) for a CN!"
+   exit 1
+fi
+UNAME="$(uname)"
+if [ "${UNAME}" == "Darwin" ] ; then
+   PATH="/opt/homebrew/opt/openssl/bin:$PATH"
+fi
+
 
 # Generate a client certificate for the local machine (hostname as FQDN):
-"${DIRNAME}/generate-test-certificates" TestCA --client --san LOCAL "$(hostname -f)"
+"${DIRNAME}/generate-test-certificates" TestCA --client --san LOCAL "${HOSTNAME}"
 
 # Generate some test server certificates:
 # NOTE: These lines must contain resolvable (/etc/hosts or DNS) hostnames:
@@ -46,7 +56,7 @@ DIRNAME="$(dirname "$0")"
 # Generate some test server certificates:
 "${DIRNAME}/generate-test-certificates" TestCA --server sognsvann.company.example
 "${DIRNAME}/generate-test-certificates" TestCA --server svartkulp.company.example
-"${DIRNAME}/generate-test-certificates" TestCA --server svartkulp.company.example
+"${DIRNAME}/generate-test-certificates" TestCA --server maridalsvannet.company.example
 "${DIRNAME}/generate-test-certificates" TestCA --server blanksjoe.company.example
 "${DIRNAME}/generate-test-certificates" TestCA --server tryvann.company.example
 "${DIRNAME}/generate-test-certificates" TestCA --server aaklungen.company.example
