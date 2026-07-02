@@ -37,10 +37,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
-#include <sys/fcntl.h>
 #include <sys/time.h>
 #include <inttypes.h>
 #include <netinet/in.h>
+#include <fcntl.h>
 #include <poll.h>
 
 
@@ -237,16 +237,16 @@ union sctp_notification {
       uint16_t sn_type;
       uint16_t sn_flags;
       uint32_t sn_length;
-   }                           sn_header;
-   struct sctp_assoc_change    sn_assoc_change;
-   struct sctp_paddr_change    sn_paddr_change;
-   struct sctp_remote_error    sn_remote_error;
-   struct sctp_send_failed     sn_send_failed;
-   struct sctp_shutdown_event  sn_shutdown_event;
-   struct sctp_adaptation_event  sn_adaptation_event;
-   struct sctp_pdapi_event     sn_pdapi_event;
+   }                            sn_header;
+   struct sctp_assoc_change     sn_assoc_change;
+   struct sctp_paddr_change     sn_paddr_change;
+   struct sctp_remote_error     sn_remote_error;
+   struct sctp_send_failed      sn_send_failed;
+   struct sctp_shutdown_event   sn_shutdown_event;
+   struct sctp_adaptation_event sn_adaptation_event;
+   struct sctp_pdapi_event      sn_pdapi_event;
 
-   struct sctp_data_arrive     sn_data_arrive;
+   struct sctp_data_arrive      sn_data_arrive;
 };
 
 
