@@ -2188,7 +2188,7 @@ static void activeMode(const char* remoteEndpoint)
       memcpy(&paddr.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
       paddr.spp_flags      = SPP_HB_ENABLE;
       paddr.spp_hbinterval = 30000;
-      if(setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, sizeof(paddr)) < 0) {
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, sizeof(paddr)) < 0) {
          LOG_WARNING
          stdlog << format("Unable to enable heartbeats on control association: %s!",
                           strerror(errno)) << "\n";
