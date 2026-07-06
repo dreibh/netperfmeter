@@ -1541,15 +1541,15 @@ static bool mainLoop(const bool               isActiveMode,
 
             uint8_t      sessionKey[64];
             unsigned int sessionKeyLength = sizeof(sessionKey);
-            if(getsockopt(gQUICSocket,   /* NOTE: accepting socket, not newSD! */
-                          SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
-                          &sessionKey, &sessionKeyLength) == 0) {
+            if(ext_getsockopt(newSD,
+                              SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
+                              &sessionKey, &sessionKeyLength) == 0) {
                if(server_handshake(newSD, ALPN_NETPERFMETER_DATA,
                                    gQUICCA, gQUICCertificate, gQUICKey,
                                    sessionKey, sessionKeyLength) == 0) {
                   LOG_TRACE
                   stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
-                                 gQUICSocket, newSD) << "\n";
+                                   gQUICSocket, newSD) << "\n";
                   LOG_END
                   FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
                }
@@ -1560,7 +1560,7 @@ static bool mainLoop(const bool               isActiveMode,
             else {
                LOG_WARNING
                stdlog << "getsockopt(QUIC_SOCKOPT_SESSION_TICKET): "
-                      << strerror(errno);
+                      << strerror(errno) << "\n";
                LOG_END
                ext_close(newSD);
             }
