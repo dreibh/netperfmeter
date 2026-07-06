@@ -43,24 +43,29 @@ if [ "${UNAME}" == "Darwin" ] ; then
    PATH="/opt/homebrew/opt/openssl/bin:$PATH"
 fi
 
+# parameters=( "--key-algorithm" "RSA" "--keylen-ca" "16384" "--keylen-cert" "16384" )
+# parameters=( "--key-algorithm" "EC" "--ec-curve" "brainpoolP512r1" )
+# parameters=( "--key-algorithm" "ED25519" )
+parameters=( "--key-algorithm" "ED448" )
+
 
 # Generate a client certificate for the local machine (hostname as FQDN):
-"${DIRNAME}/generate-test-certificates" TestCA --client --san LOCAL "${HOSTNAME}"
+"${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --client --san LOCAL "${HOSTNAME}"
 
 # Generate some test server certificates:
 # NOTE: These lines must contain resolvable (/etc/hosts or DNS) hostnames:
-# "${DIRNAME}/generate-test-certificates" TestCA --server --san LOOKUP besserud.proxmox.crnalab.net
-# "${DIRNAME}/generate-test-certificates" TestCA --server --san LOOKUP lillevann.proxmox.crnalab.net
-# "${DIRNAME}/generate-test-certificates" TestCA --server --san LOOKUP midtstuen.proxmox.crnalab.net
+# "${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --server --san LOOKUP besserud.proxmox.crnalab.net
+# "${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --server --san LOOKUP lillevann.proxmox.crnalab.net
+# "${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --server --san LOOKUP midtstuen.proxmox.crnalab.net
 
 # Generate some test server certificates:
-"${DIRNAME}/generate-test-certificates" TestCA --server sognsvann.company.example
-"${DIRNAME}/generate-test-certificates" TestCA --server svartkulp.company.example
-"${DIRNAME}/generate-test-certificates" TestCA --server maridalsvannet.company.example
-"${DIRNAME}/generate-test-certificates" TestCA --server blanksjoe.company.example
-"${DIRNAME}/generate-test-certificates" TestCA --server tryvann.company.example
-"${DIRNAME}/generate-test-certificates" TestCA --server aaklungen.company.example
+"${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --server sognsvann.company.example
+"${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --server svartkulp.company.example
+"${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --server maridalsvannet.company.example
+"${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --server blanksjoe.company.example
+"${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --server tryvann.company.example
+"${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --server aaklungen.company.example
 
 # Generate some test user certificates:
-"${DIRNAME}/generate-test-certificates" TestCA --user "Dr. Al Bundy <al.bundy@company.example>"
-"${DIRNAME}/generate-test-certificates" TestCA --user "James Bond <james.bond@company.example>"
+"${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --user "Dr. Al Bundy <al.bundy@company.example>"
+"${DIRNAME}/generate-test-certificates" TestCA "${parameters[@]}" --user "James Bond <james.bond@company.example>"
