@@ -28,7 +28,7 @@
 [Unit]
 Description=NetPerfMeter Kernel Module Loader
 Documentation=man:netperfmeter-module-loader(1)
-After=network-online.target netperfmeter-module-loader.service
+After=network-online.target netperfmeter.service
 Wants=network-online.target
 
 [Service]
