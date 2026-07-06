@@ -94,7 +94,7 @@ showStatus()
 
    # ------ Print the relevant modules --------------------------------------
    if [ "${UNAME}" == "Linux" ] ;  then
-      modules="$(lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp|^quic" || true ) | awk '{ print $1 }' | sort | xargs)"
+      modules="$(lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp\|^quic" || true ) | awk '{ print $1 }' | sort | xargs)"
       allowedCCs="$(sysctl -n net.ipv4.tcp_allowed_congestion_control)"
       defaultCC="$(sysctl -n net.ipv4.tcp_congestion_control)"
    elif [ "${UNAME}" == "FreeBSD" ] ;  then
