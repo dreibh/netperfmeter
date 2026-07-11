@@ -1,3 +1,57 @@
+commit 95090e53e0e13cb387e8519c01009d47397baf28
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 6 12:10:52 2026 +0200
+
+    Bugfix: fixed missing "ext_" to allow for SocketAPI support.
+
+commit f188afdd427652199ef8eb61cfa6d0f9909c8b88
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 6 12:10:29 2026 +0200
+
+    Bugfix: Fixed broken QUIC ticket handling.
+
+commit da2591a3bd3717f4880e0b0658ede010519c9686
+Author: NorNet Praesum Presum <nornetpp@pilestredet>
+Date:   Mon Jul 6 11:00:34 2026 +0200
+
+    Grep syntax fix.
+
+commit 20fc16c4cffe584e9ec69705aea119ef08fa19ea
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 6 10:48:20 2026 +0200
+
+    Improved service unit.
+
+commit 047189d192081db43ccce4b0a3452ce1c16e25b1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 6 10:32:45 2026 +0200
+
+    Improved X.509 example.
+
+commit b6a4027059aaae77a944df22b2eaf8f8df4a7e91
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jul 2 15:49:06 2026 +0200
+
+    FreeBSD port update.
+
+commit 2e017643b814a1175ec8ee53586348575044d6a1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Jul 2 15:17:44 2026 +0200
+
+    Minor clean-up.
+
+commit 401cc81a1c2380ceda2667d2a161891657c773c8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 17:53:06 2026 +0200
+
+    Updated APKBUILD file.
+
+commit bac28e73777eb9875651f4f904749c93278e90a6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Jul 1 17:38:01 2026 +0200
+
+    New release netperfmeter-2.0.8.
+
 commit 6becf2455008d500967cf61c25c9e37c78607728
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Wed Jul 1 17:34:44 2026 +0200
