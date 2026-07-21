@@ -45,6 +45,9 @@
 #include <sys/sysctl.h>
 #elif defined(__APPLE__)
 #include <mach/mach.h>
+#elif defined(__sun__)
+#include <kstat.h>
+#include <sys/sysinfo.h>
 #endif
 
 
@@ -65,6 +68,12 @@ const char* CPUStatus::CpuStateNames[] = {
 #define IDLE_INDEX 5
 const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Spinning", "Interrupt", "Idle"
+};
+
+#elif defined(__sun__)
+#define IDLE_INDEX 3
+const char* CPUStatus::CpuStateNames[] = {
+   "User", "System", "Wait", "Idle"
 };
 
 #elif defined(__APPLE__)
@@ -122,6 +131,13 @@ CPUStatus::CPUStatus()
       LOG_END_FATAL
    };
    CPUs = (unsigned int)hinfo.max_cpus;
+
+#elif defined(__sun) || defined(__sun__)
+   CpuStates = 4;
+   CPUs = sysconf(_SC_NPROCESSORS_CONF);
+   if(CPUs < 1) {
+      CPUs = 1;
+   }
 
 #else
 #error Missing case!
@@ -267,6 +283,29 @@ void CPUStatus::update()
    }
    vm_deallocate(mach_task_self(), (vm_address_t)processorInfoArray,
                  infoCount * sizeof(integer_t));
+#elif defined(__sun) || defined(__sun__)
+   kstat_ctl_t* kc = kstat_open();
+   if(kc == nullptr) {
+      LOG_FATAL
+      stdlog << "Unable to open kstat!" << "\n";
+      LOG_END_FATAL
+   }
+
+   unsigned int cpuIndex = 0;
+   for(kstat_t* ksp = kc->kc_chain; (ksp != nullptr) && (cpuIndex < CPUs); ksp = ksp->ks_next) {
+      if(strcmp(ksp->ks_module, "cpu_stat") == 0) {
+         if(kstat_read(kc, ksp, nullptr) != -1) {
+            const cpu_stat_t* cs = static_cast<cpu_stat_t*>(ksp->ks_data);
+            const unsigned int base = (cpuIndex + 1) * CpuStates;
+            CpuTimes[base + 0] = cs->cpu_sysinfo.cpu[CPU_USER];
+            CpuTimes[base + 1] = cs->cpu_sysinfo.cpu[CPU_KERNEL];
+            CpuTimes[base + 2] = cs->cpu_sysinfo.cpu[CPU_WAIT];
+            CpuTimes[base + 3] = cs->cpu_sysinfo.cpu[CPU_IDLE];
+            cpuIndex++;
+         }
+      }
+   }
+   kstat_close(kc);
 #endif
 
    // ------ Compute total values -------------------------------------------
