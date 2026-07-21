@@ -209,12 +209,12 @@ FIND_PACKAGE(Threads REQUIRED)
 
 # ====== Solaris: libsocket and libnsl ======================================
 IF (CMAKE_SYSTEM_NAME MATCHES "SunOS")
-   FIND_LIBRARY(SOCKET_LIBRARY socket)
-   FIND_LIBRARY(NSL_LIBRARY    nsl)
-   FIND_LIBRARY(KSTAT_LIBRARY  kstat)
+   FIND_LIBRARY(SOCKET_LIBRARY socket REQUIRED)
+   FIND_LIBRARY(NSL_LIBRARY    nsl    REQUIRED)
+   FIND_LIBRARY(KSTAT_LIBRARY  kstat  REQUIRED)
 ENDIF()
 
-# ====== Liberty ============================================================
+# ====== NetBSD: liberty ====================================================
 IF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
    FIND_LIBRARY(LIBIBERTY_LIBRARY NAMES iberty PATHS /usr/pkg/lib)
    FIND_PATH(LIBIBERTY_INCLUDE_DIR NAMES libiberty.h PATHS /usr/pkg/include)
