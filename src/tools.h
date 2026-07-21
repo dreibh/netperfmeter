@@ -44,7 +44,7 @@
 #include <ext_socket.h>
 
 // Endianess conversions: htobe*(), be*toh():
-#if defined(__linux__) || defined(__OpenBSD__)
+#if defined(__linux__) || defined(__OpenBSD__) || defined(__sun__)
 #include <endian.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/endian.h>

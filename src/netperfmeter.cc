@@ -302,7 +302,7 @@ bool handleGlobalParameters(int argc, char** argv)
                gLocalDataAddresses = 0;
                char* address = optarg;
                while(gLocalDataAddresses < MAX_LOCAL_ADDRESSES) {
-                  char* idx = index(address, ',');
+                  char* idx = strchr(address, ',');
                   if(idx) {
                      *idx = 0x00;
                   }
@@ -325,7 +325,7 @@ bool handleGlobalParameters(int argc, char** argv)
                gLocalControlAddresses = 0;
                char* address = optarg;
                while(gLocalControlAddresses < MAX_LOCAL_ADDRESSES) {
-                  char* idx = index(address, ',');
+                  char* idx = strchr(address, ',');
                   if(idx) {
                      *idx = 0x00;
                   }
@@ -2285,7 +2285,7 @@ int main(int argc, char** argv)
    if(argc - optind != 1) {
       usage(argv[0], 1);
    }
-   const unsigned int localPort     = (index(argv[optind], ':') == nullptr) ?
+   const unsigned int localPort     = (strchr(argv[optind], ':') == nullptr) ?
                                          atol(argv[optind]) : 0;
    const bool         inPassiveMode = (localPort >= 1) && (localPort < 65535);
    if( (!inPassiveMode) && (gAssocSpecs.size() < 1) ) {

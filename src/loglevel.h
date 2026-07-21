@@ -48,7 +48,7 @@ extern std::ostream* gStdLog;
 extern unsigned int  gLogLevel;
 extern bool          gColorMode;
 extern bool          gCloseStdLog;
-extern char          gHostName[256];
+extern char          gHostName[258];
 extern Mutex         gLogMutex;
 
 #define stdlog (*gStdLog)
