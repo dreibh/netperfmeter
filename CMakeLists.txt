@@ -98,6 +98,8 @@ ELSEIF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
    # SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
    MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
+ELSEIF (CMAKE_SYSTEM_NAME MATCHES "SunOS")
+   MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "Darwin")
    MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
 ELSE()
@@ -205,6 +207,29 @@ ENDIF()
 # ====== Threads ============================================================
 FIND_PACKAGE(Threads REQUIRED)
 
+# ====== Solaris: libsocket and libnsl ======================================
+IF (CMAKE_SYSTEM_NAME MATCHES "SunOS")
+   FIND_LIBRARY(SOCKET_LIBRARY socket)
+   FIND_LIBRARY(NSL_LIBRARY    nsl)
+   FIND_LIBRARY(KSTAT_LIBRARY  kstat)
+ENDIF()
+
+# ====== Liberty ============================================================
+IF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
+   FIND_LIBRARY(LIBIBERTY_LIBRARY NAMES iberty PATHS /usr/pkg/lib)
+   FIND_PATH(LIBIBERTY_INCLUDE_DIR NAMES libiberty.h PATHS /usr/pkg/include)
+   IF ((LIBIBERTY_LIBRARY) AND (LIBIBERTY_INCLUDE_DIR))
+      ADD_DEFINITIONS(-DHAVE_LIBIBERTY)
+      MESSAGE(STATUS "Libiberty library found:")
+      MESSAGE(STATUS " LIBIBERTY_LIBRARY:     ${LIBIBERTY_LIBRARY}")
+      MESSAGE(STATUS " LIBIBERTY_INCLUDE_DIR: ${LIBIBERTY_INCLUDE_DIR}")
+   ELSE()
+      MESSAGE(FATAL_ERROR
+              "Cannot find Libiberty library! Try:\n"
+              " * NetBSD: sudo pkgin -y install liberty")
+   ENDIF()
+ENDIF()
+
 # ====== libbz2 =============================================================
 FIND_LIBRARY(BZ2_LIBRARY NAMES bz2)
 FIND_PATH(BZ2_INCLUDE_DIR NAMES bzlib.h)
@@ -217,11 +242,12 @@ ELSE()
            "Cannot find BZip2 library! Try:\n"
            " * Ubuntu/Debian: sudo apt install -y libbz2-dev\n"
            " * Fedora:        sudo dnf install -y bzip2-devel\n"
-           " * OpenSUSE:      sudo zypper install -y libbz2-devel\n"
+           " * SuSE:          sudo zypper install -y libbz2-devel\n"
            " * Alpine:        sudo apk add bzip2-dev\n"
            " * FreeBSD:       sudo pkg install -y bzip2\n"
            " * NetBSD:        (should be installed by default)\n"
            " * OpenBSD:       (should be installed by default)\n"
+           " * Solaris    :   sudo pkg install bzip2\n"
            " * Apple:         brew install bzip2")
 ENDIF()
 
@@ -351,22 +377,6 @@ IF (HAVE_QUIC)
       ADD_DEFINITIONS(-DHAVE_QUIC)
    ELSE()
       MESSAGE(WARNING "QUIC is available, but libquic is not!")
-   ENDIF()
-ENDIF()
-
-# ====== Liberty ============================================================
-IF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
-   FIND_LIBRARY(LIBIBERTY_LIBRARY NAMES iberty PATHS /usr/pkg/lib)
-   FIND_PATH(LIBIBERTY_INCLUDE_DIR NAMES libiberty.h PATHS /usr/pkg/include)
-   IF ((LIBIBERTY_LIBRARY) AND (LIBIBERTY_INCLUDE_DIR))
-      ADD_DEFINITIONS(-DHAVE_LIBIBERTY)
-      MESSAGE(STATUS "Libiberty library found:")
-      MESSAGE(STATUS " LIBIBERTY_LIBRARY:     ${LIBIBERTY_LIBRARY}")
-      MESSAGE(STATUS " LIBIBERTY_INCLUDE_DIR: ${LIBIBERTY_INCLUDE_DIR}")
-   ELSE()
-      MESSAGE(FATAL_ERROR
-              "Cannot find Libiberty library! Try:\n"
-              " * NetBSD: sudo pkgin -y install liberty")
    ENDIF()
 ENDIF()
 
