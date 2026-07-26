@@ -986,7 +986,7 @@ static int client_handshake(int            sd,
             error = quic_session_set_alpn(session, alpns, strlen(alpns));
          }
          if(!error) {
-            error = gnutls_server_name_set(session, GNUTLS_NAME_DNS, host, strlen(host));
+            error = gnutls_server_name_set(session, GNUTLS_NAME_DNS, host, (host != NULL) ? strlen(host) : 0);
          }
          if(!error) {
             gnutls_session_set_verify_cert(session, host, 0);
