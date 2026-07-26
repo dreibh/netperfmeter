@@ -419,15 +419,13 @@ sudo service netperfmeter-module-loader disable
   * `TestCA/server.domain.example/server.domain.example.key`: The server key.
   * `TestCA/server.domain.example/server.domain.example.crt`: The corresponding server certificate.
 
-  The server certificate can be verified using the CA certificate:
+  The [X.509-Tools](https://www.nntb.no/~dreibh/system-tools/index.html#x.509-tools) from the [System-Tools](https://www.nntb.no/~dreibh/system-tools/) package provide further helpful utilities to handle X.509 certificates. Particularly, [Check-Certificate](https://www.nntb.no/~dreibh/system-tools/#check-certificate) verifies a certificate and its chain from a trusted CA certificate. With X.509-Tools installed, the server certificate can be verified using the CA certificate:
 
   ```bash
-  ./check-certificate \
+  check-certificate \
      TestCA/TestLevel1/certs/TestLevel1.crt \
      TestCA/server.domain.example/server.domain.example.crt
   ```
-
-  The [X.509-Tools](https://www.nntb.no/~dreibh/system-tools/index.html#x.509-tools) provide further helpful utilities to handle X.509 certificates.
 
 * Run a passive instance (i.e.&nbsp;server side), using base port 9000, and specifying server key, server certificate, as well as root CA certificate:
 
