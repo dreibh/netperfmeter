@@ -542,6 +542,42 @@ bool Flow::configureSocket(const int socketDescriptor)
          return false;
       }
    }
+#if defined(HAVE_QUIC)
+   else if(TrafficSpec.Protocol == IPPROTO_QUIC) {
+      quic_config quicCnfig;
+      socklen_t   quicCnfigLength = sizeof(quicCnfig);
+      if(ext_getsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicCnfig, &quicCnfigLength) < 0) {
+
+         LOG_ERROR
+         stdlog << format("Failed to obtain configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
+                           socketDescriptor, strerror(errno)) << "\n";
+         LOG_END
+         return false;
+      }
+      const char* congestionControl = TrafficSpec.CongestionControl.c_str();
+      if( (strcmp(congestionControl, "reno") == 0) || (strcmp(congestionControl, "default") == 0) ) {
+         quicCnfig.congestion_control_algo = QUIC_CONG_ALG_RENO;
+      }
+      else if(strcmp(congestionControl, "cubic") == 0) {
+         quicCnfig.congestion_control_algo = QUIC_CONG_ALG_CUBIC;
+      }
+      else {
+         LOG_ERROR
+         stdlog << format("Invalid congestion control %s for QUIC requested on socket %d",
+                          congestionControl, socketDescriptor) << "\n";
+         LOG_END
+         return false;
+      }
+      if(ext_setsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicCnfig, quicCnfigLength) < 0) {
+
+         LOG_ERROR
+         stdlog << format("Failed to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
+                           socketDescriptor, strerror(errno)) << "\n";
+         LOG_END
+         return false;
+      }
+   }
+#endif
 #endif
 
    return true;
