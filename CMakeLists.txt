@@ -247,7 +247,7 @@ ELSE()
            " * FreeBSD:       sudo pkg install -y bzip2\n"
            " * NetBSD:        (should be installed by default)\n"
            " * OpenBSD:       (should be installed by default)\n"
-           " * Solaris    :   sudo pkg install bzip2\n"
+           " * Solaris:       sudo pkg install bzip2\n"
            " * Apple:         brew install bzip2")
 ENDIF()
 
