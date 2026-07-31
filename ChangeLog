@@ -1,3 +1,111 @@
+commit 11c6dc78853f203a3d967c8002a3f327410d725f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jul 28 14:40:04 2026 +0200
+
+    Improved check for enhanced getopt.
+
+commit 80eecb2405fe0cb32cf0173cbf4d8b1cb7ea288d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 27 15:52:14 2026 +0200
+
+    Minor CMakeLists.txt clean-up.
+
+commit 33e798223c9ac91685e62be998a01b0c1f99f760
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Jul 27 15:51:41 2026 +0200
+
+    QUIC configuration improvements.
+
+commit 5528699e0c3b24d862144594a55e258c7e6787c3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Jul 26 23:13:10 2026 +0200
+
+    Improved documentation.
+
+commit d7d53ec354b43f57062e74e1b1340654706c41d2
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Jul 26 23:13:00 2026 +0200
+
+    Updated QUIC setup scripts.
+
+commit ae56081266e37c3683d2729c3f82b0845270aa7e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Jul 26 22:51:53 2026 +0200
+
+    Bugfix: need to check for null-pointer, since host can be NULL.
+
+commit fb35aa73a95c3d6a4c897adcdf2dd27689170483
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jul 21 14:23:29 2026 +0200
+
+    Minor clean-ups.
+
+commit fa2b1d1a693ef1e2f9ec025cafd2f787763faa37
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jul 21 13:59:41 2026 +0200
+
+    CMakeLists.txt clean-ups.
+
+commit dec9de6a4a907e3b22e29591388b362425778b3b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jul 21 13:56:57 2026 +0200
+
+    Added Solaris support to CMakeLists.txt.
+
+commit ecd2638dc17ce367558d4cb3ef3cfcba1d7ea9c3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jul 21 11:33:42 2026 +0200
+
+    Added missing Solaris parts.
+
+commit 6cc75b1c383ee373dabbaf10146f406979df79ed
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jul 21 11:32:15 2026 +0200
+
+    Another Solaris build update.
+
+commit c833ace33db8bc23f79a385ee202b1453c865894
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jul 21 11:31:37 2026 +0200
+
+    Minor updates for building under Solaris.
+
+commit 7d4823464b791cd0bac9cd27b67ca38faaed49ec
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Jul 21 10:58:44 2026 +0200
+
+    Added Solaris support.
+
+commit 84becda425597ca5779700af49bd17593689aa95
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jul 18 16:44:16 2026 +0200
+
+    Updated build helper script.
+
+commit 105e55dc5f0c5028ce23f97c5c5eb09a7b2de453
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jul 18 15:26:50 2026 +0200
+
+    Further NetBSD improvements in CMakeLists.txt.
+
+commit 0585fc16e1134c7f8ef106ddaa10c21f7354a19d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jul 18 15:13:08 2026 +0200
+
+    Updated build helper script.
+
+commit 38d92137e4f0bddfd7ac63a732c2f9f8ffbe153e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jul 18 15:00:58 2026 +0200
+
+    CMakeLists.txt fix for NetBSD: need to set CMAKE_INSTALL_RPATH_USE_LINK_PATH if necessary.
+
+commit 7c26eec091cb989f163d9ee7ca6b2c0fc46c99c4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Jul 11 13:21:19 2026 +0200
+
+    New release netperfmeter-2.0.9.
+
 commit 95090e53e0e13cb387e8519c01009d47397baf28
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Mon Jul 6 12:10:52 2026 +0200
