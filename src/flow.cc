@@ -544,9 +544,9 @@ bool Flow::configureSocket(const int socketDescriptor)
    }
 #if defined(HAVE_QUIC)
    else if(TrafficSpec.Protocol == IPPROTO_QUIC) {
-      quic_config quicCnfig;
-      socklen_t   quicCnfigLength = sizeof(quicCnfig);
-      if(ext_getsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicCnfig, &quicCnfigLength) < 0) {
+      quic_config quicConfig;
+      socklen_t   quicConfigLength = sizeof(quicConfig);
+      if(ext_getsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
 
          LOG_ERROR
          stdlog << format("Failed to obtain configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
@@ -556,10 +556,10 @@ bool Flow::configureSocket(const int socketDescriptor)
       }
       const char* congestionControl = TrafficSpec.CongestionControl.c_str();
       if( (strcmp(congestionControl, "reno") == 0) || (strcmp(congestionControl, "default") == 0) ) {
-         quicCnfig.congestion_control_algo = QUIC_CONG_ALG_RENO;
+         quicConfig.congestion_control_algo = QUIC_CONG_ALG_RENO;
       }
       else if(strcmp(congestionControl, "cubic") == 0) {
-         quicCnfig.congestion_control_algo = QUIC_CONG_ALG_CUBIC;
+         quicConfig.congestion_control_algo = QUIC_CONG_ALG_CUBIC;
       }
       else {
          LOG_ERROR
@@ -568,13 +568,13 @@ bool Flow::configureSocket(const int socketDescriptor)
          LOG_END
          return false;
       }
-      if(ext_setsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicCnfig, quicCnfigLength) < 0) {
+      if(ext_setsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
 
-         LOG_ERROR
+         LOG_WARNING
          stdlog << format("Failed to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
                            socketDescriptor, strerror(errno)) << "\n";
          LOG_END
-         return false;
+         // return false;
       }
    }
 #endif
