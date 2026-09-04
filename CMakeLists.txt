@@ -386,7 +386,7 @@ IF (WITH_ICONS)
 
    # ------ Ghostscript -----------------------------------------------------
    FIND_PROGRAM(GS gs HINTS /bin /usr/bin /usr/local/bin /usr/pkg/bin)
-   IF(GS)
+   IF (GS)
       EXECUTE_PROCESS(COMMAND ${GS} -version
                       OUTPUT_VARIABLE GS_OUTPUT
                       ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -402,12 +402,14 @@ IF (WITH_ICONS)
               " * FreeBSD:       sudo pkg install -y ghostscript10\n"
               " * NetBSD:        sudo pkgin -y install ghostscript\n"
               " * OpenBSD:       sudo pkg_add ghostscript\n"
-              " * Apple:         brew install ghostscript")
+              " * Solaris:       sudo pkg install ghostscript gnu-gs-fonts-std gnu-gs-fonts-other dejavu\n"
+              " * Apple:         brew install ghostscript\n"
+              "If desktop icons are not required, they can be disabled by setting WITH_ICONS=OFF (add -DWITH_ICONS=OFF to CMake options)!")
    ENDIF()
 
    # ------ GraphicsMagick or ImageMagick -----------------------------------
    FIND_PROGRAM(GM gm magick HINTS /bin /usr/bin /usr/local/bin /usr/pkg/bin)
-   IF(GM)
+   IF (GM)
       EXECUTE_PROCESS(COMMAND ${GM} -version | head -n1
                       OUTPUT_VARIABLE GM_OUTPUT
                       ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -423,7 +425,9 @@ IF (WITH_ICONS)
               " * FreeBSD:       sudo pkg install -y GraphicsMagick\n"
               " * NetBSD:        sudo pkgin -y install GraphicsMagick\n"
               " * OpenBSD:       sudo pkg_add GraphicsMagick\n"
-              " * Apple:         brew install graphicsmagick")
+              " * Solaris:       sudo pkg install graphicsmagick\n"
+              " * Apple:         brew install graphicsmagick\n"
+              "If desktop icons are not required, they can be disabled by setting WITH_ICONS=OFF (add -DWITH_ICONS=OFF to CMake options)!")
    ENDIF()
 
    # ------ PDF to SVG Conversion (pdf2svg, mutool, or Inkscape) ------------
