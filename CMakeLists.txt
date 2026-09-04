@@ -426,26 +426,42 @@ IF (WITH_ICONS)
               " * Apple:         brew install graphicsmagick")
    ENDIF()
 
-   # ------ MuPDF mutool ----------------------------------------------------
-   FIND_PROGRAM(MUTOOL mutool HINTS /bin /usr/bin /usr/local/bin /usr/pkg/bin)
-   IF(MUTOOL)
+   # ------ PDF to SVG Conversion (pdf2svg, mutool, or Inkscape) ------------
+   FIND_PROGRAM(PDF2SVG  pdf2svg  HINTS /bin /usr/bin /usr/local/bin /usr/pkg/bin)
+   FIND_PROGRAM(MUTOOL   mutool   HINTS /bin /usr/bin /usr/local/bin /usr/pkg/bin)
+   FIND_PROGRAM(INKSCAPE inkscape HINTS /bin /usr/bin /usr/local/bin /usr/pkg/bin)
+   IF (PDF2SVG)
+      MESSAGE(STATUS "PDF2SVG found: ${PDF2SVG}")
+   ENDIF()
+   IF (MUTOOL)
       EXECUTE_PROCESS(COMMAND ${MUTOOL} -v
                       ERROR_VARIABLE  MUTOOL_OUTPUT
                       OUTPUT_VARIABLE MUTOOL_OUTPUT
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
       STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" MUTOOL_VERSION "${MUTOOL_OUTPUT}")
       MESSAGE(STATUS "MuPDF mutool found: ${MUTOOL} (version ${MUTOOL_VERSION})")
-   ELSE()
+   ENDIF()
+   IF (INKSCAPE)
+      EXECUTE_PROCESS(COMMAND ${INKSCAPE} --version
+                      ERROR_VARIABLE  INKSCAPE_OUTPUT
+                      OUTPUT_VARIABLE INKSCAPE_OUTPUT
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
+      STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" INKSCAPE_VERSION "${INKSCAPE_OUTPUT}")
+      MESSAGE(STATUS "Inkscape found: ${INKSCAPE} (version ${INKSCAPE_VERSION})")
+   ENDIF()
+   IF ((NOT PDF2SVG) AND (NOT MUTOOL) AND (NOT INKSCAPE))
       MESSAGE(FATAL_ERROR
-              "Cannot find mupdf! Try:\n"
-              " * Ubuntu/Debian: sudo apt install -y mupdf-tools\n"
-              " * Fedora:        sudo dnf install -y mupdf\n"
-              " * OpenSUSE:      sudo zypper install -y mupdf\n"
-              " * Alpine:        sudo apk add mupdf-tools\n"
-              " * FreeBSD:       sudo pkg install -y mupdf\n"
-              " * NetBSD:        sudo pkgin -y install mupdf\n"
-              " * OpenBSD:       sudo pkg_add mupdf\n"
-              " * Apple:         brew install mupdf-tools")
+              "Cannot find Inkscape! Try:\n"
+              " * Ubuntu/Debian: sudo apt install -y inkscape\n"
+              " * Fedora:        sudo dnf install -y inkscape\n"
+              " * OpenSUSE:      sudo zypper install -y inkscape\n"
+              " * Alpine:        sudo apk add inkscape\n"
+              " * FreeBSD:       sudo pkg install -y inkscape\n"
+              " * NetBSD:        sudo pkgin -y install inkscape\n"
+              " * OpenBSD:       sudo pkg_add inkscape\n"
+              " * Solaris:       sudo pkg install inkscape\n"
+              " * Apple:         brew install inkscape\n"
+              "If desktop icons are not required, they can be disabled by setting WITH_ICONS=OFF (add -DWITH_ICONS=OFF to CMake options)!")
    ENDIF()
 
 ELSE()
