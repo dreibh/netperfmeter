@@ -10,14 +10,14 @@ WWW=		https://www.nntb.no/~dreibh/netperfmeter/
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
-USES=		cmake shebangfix tar:xz
+USES=		cmake shared-mime-info shebangfix tar:xz
 
 SHEBANG_FILES=	src/pdfembedfonts src/plot-netperfmeter-results \
 		src/setpdfmetadata
 
 # Work-around for build issue on ARM:
 # https://bugs.freebsd.org/285706 https://bugs.freebsd.org/292237
-MAKE_ENV=       OMP_NUM_THREADS=1
+MAKE_ENV=	OMP_NUM_THREADS=1
 
 OPTIONS_DEFINE=			ICONS \
 				PLOT_PROGRAMS \
@@ -38,7 +38,7 @@ EXAMPLE_SCRIPTS_CMAKE_BOOL=	WITH_EXAMPLE_SCRIPTS
 
 ICONS_BUILD_DEPENDS=		gm:graphics/GraphicsMagick \
 				mutool:graphics/mupdf
-ICONS_USES=			ghostscript shared-mime-info
+ICONS_USES=			ghostscript
 ICONS_CMAKE_BOOL=		WITH_ICONS
 
 PLOT_PROGRAMS_RUN_DEPENDS=	R-cran-bit64>0:devel/R-cran-bit64 \
