@@ -96,13 +96,13 @@ INSTALL(FILES    netperfmeter-module-loader.1 DESTINATION ${CMAKE_INSTALL_MANDIR
 
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
    INSTALL(FILES    netperfmeter.service               DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
-   INSTALL(FILES    netperfmeter.conf                  DESTINATION /etc)
+   INSTALL(FILES    netperfmeter.conf                  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR})
    INSTALL(FILES    netperfmeter-module-loader.service DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
 ELSEIF ( (CMAKE_SYSTEM_NAME MATCHES "FreeBSD") OR
          (CMAKE_SYSTEM_NAME MATCHES "NetBSD") )
-   INSTALL(PROGRAMS netperfmeter.rc                    DESTINATION "etc/rc.d"
+   INSTALL(PROGRAMS netperfmeter.rc                    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/rc.d
            RENAME   netperfmeter)
-   INSTALL(PROGRAMS netperfmeter-module-loader.rc      DESTINATION "etc/rc.d"
+   INSTALL(PROGRAMS netperfmeter-module-loader.rc      DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/rc.d
            RENAME   netperfmeter-module-loader)
 ENDIF()
 

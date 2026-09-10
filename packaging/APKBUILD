@@ -30,12 +30,13 @@ source="https://www.nntb.no/~dreibh/netperfmeter/download/$pkgname-$pkgver.tar.x
 builddir="$srcdir/$pkgname-$pkgver"
 
 build() {
-	cmake -B build -G Ninja      \
-		-DCMAKE_INSTALL_PREFIX=/usr \
-		-DCMAKE_BUILD_TYPE=None     \
-		-DWITH_ICONS=ON             \
-		-DWITH_PLOT_PROGRAMS=ON     \
-		-DWITH_EXAMPLE_SCRIPTS=ON   \
+	cmake -B build -G Ninja               \
+		-DCMAKE_INSTALL_PREFIX:PATH=/usr     \
+		-DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
+		-DCMAKE_BUILD_TYPE=None              \
+		-DWITH_ICONS=ON                      \
+		-DWITH_PLOT_PROGRAMS=ON              \
+		-DWITH_EXAMPLE_SCRIPTS=ON            \
 		-DWITH_EXAMPLE_RESULTS=ON
 	cmake --build build
 }
