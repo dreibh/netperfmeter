@@ -1,3 +1,57 @@
+commit 8f509fa8f062e1dcb43c9a119c4441833c0c2c5a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Sep 10 10:43:43 2026 +0200
+
+    Replaced hard-coded /etc by ${CMAKE_INSTALL_SYSCONFDIR} in CMakeLists.txt.
+
+commit b2423121305575428087c86ac4a383567162f601
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Sep 10 10:19:21 2026 +0200
+
+    Updated FreeBSD port.
+
+commit 92bbc2293c684481078dab579923438d694c377c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Sep 4 16:51:40 2026 +0200
+
+    Updated build helper script.
+
+commit 201e47481475f67b806ec477d5639a1bd8e6e4bd
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Sep 4 16:51:24 2026 +0200
+
+    Updated CI scripts
+
+commit 985f744c9fc0e2f440ac6a23e1eaf9a86621f469
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Sep 4 16:47:31 2026 +0200
+
+    Further CMakeLists.txt improvements.
+
+commit fec2b4d7119427599a787d86aa7836a98de49e86
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Sep 4 15:34:34 2026 +0200
+
+    Improved CMakeLists.txt: PDF to SVG can now be processed by pdf2svg, mutool, or Inkscape.
+
+commit 1bd90da6a902f207884acbb012c1848fd86ce50f
+Author: NorNet Praesum Presum <nornetpp@pilestredet>
+Date:   Sun Aug 9 22:18:23 2026 +0200
+
+    QUIC updates.
+
+commit 30af827ba48dceb340adffeb03d14fef0957da62
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jul 31 13:21:44 2026 +0200
+
+    Updated APKBUILD file.
+
+commit aea0d512948129f6aa77fbaf457e57976d6e3ba4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Jul 31 12:49:38 2026 +0200
+
+    New release netperfmeter-2.0.10.
+
 commit 11c6dc78853f203a3d967c8002a3f327410d725f
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Tue Jul 28 14:40:04 2026 +0200
