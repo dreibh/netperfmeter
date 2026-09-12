@@ -42,7 +42,6 @@ std::ostream* gStdLog        = &std::cerr;
 unsigned int  gLogLevel      = LOGLEVEL_INFO;
 bool          gColorMode     = true;
 bool          gCloseStdLog   = false;
-char          gHostName[258] = { 0x00 };
 Mutex         gLogMutex;
 
 
@@ -83,15 +82,6 @@ void beginLogging()
       *gStdLog << "\n"
                << "#############################################################################"
                << "\n\n";
-   }
-
-   struct utsname hostInfo;
-   if(uname(&hostInfo) != 0) {
-      safestrcpy(gHostName, "?", sizeof(gHostName));
-   }
-   else {
-      snprintf(gHostName, sizeof(gHostName), "%s",
-               hostInfo.nodename);
    }
 
    LOG_DEBUG
