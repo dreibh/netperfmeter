@@ -93,7 +93,7 @@ CPUStatus::CPUStatus()
    // ====== Initialize =====================================================
 #if defined(__linux__) || defined(__gnu_hurd__)
    CpuStates = 8;
-   CPUs = sysconf(_SC_NPROCESSORS_CONF);
+   CPUs = sysconf(_SC_NPROCESSORS_ONLN);
    if(CPUs < 1) {
       CPUs = 1;
    }
@@ -187,6 +187,7 @@ void CPUStatus::update()
    // ====== Save old values ================================================
    size_t cpuTimesSize = sizeof(tick_t) * (CPUs + 1) * CpuStates;
    memcpy(OldCpuTimes, CpuTimes, cpuTimesSize);
+   memset(CpuTimes, 0, cpuTimesSize);
 
    // ====== Get counters ===================================================
 #if defined(__linux__) || defined(__gnu_hurd__)
@@ -223,6 +224,9 @@ void CPUStatus::update()
                            &CpuTimes[(i * CpuStates) + 5],
                            &CpuTimes[(i * CpuStates) + 6],
                            &CpuTimes[(i * CpuStates) + 7]);
+            if(result < 1) {
+               break;
+            }
          }
          if( ((i == 0) && (result < 8)) || ((i > 0) && (result < 9)) ) {
             LOG_FATAL
