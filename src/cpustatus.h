@@ -79,9 +79,7 @@ class CPUStatus
    typedef unsigned int       tick_t;
 #endif
 
-#if defined(__linux__)
-   FILE*               ProcStatFD;
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
    host_name_port_t    host;
 #endif
    unsigned int        CPUs;
