@@ -79,17 +79,15 @@ class CPUStatus
    typedef unsigned int       tick_t;
 #endif
 
-#if defined(__linux__) || defined(__gnu_hurd__)
-   FILE*               ProcStatFD;
-#elif defined(__APPLE__)
-   host_name_port_t    host;
+#if defined(__APPLE__)
+   host_name_port_t           host;
 #endif
-   unsigned int        CPUs;
-   tick_t*             CpuTimes;
-   tick_t*             OldCpuTimes;
-   float*              Percentages;
-   unsigned int        CpuStates;
-   static const char*  CpuStateNames[];
+   unsigned int               CPUs;
+   tick_t*                    CpuTimes;
+   tick_t*                    OldCpuTimes;
+   float*                     Percentages;
+   unsigned int               CpuStates;
+   static const char*         CpuStateNames[];
 };
 
 #endif

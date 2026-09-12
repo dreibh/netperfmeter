@@ -98,8 +98,8 @@ CPUStatus::CPUStatus()
       CPUs = 1;
    }
 
-   ProcStatFD = fopen("/proc/stat", "r");
-   if(ProcStatFD == nullptr) {
+   FILE* procStatFD = fopen("/proc/stat", "r");
+   if(procStatFD == nullptr) {
       LOG_FATAL
       stdlog << "Unable to open /proc/stat!" << "\n";
       LOG_END_FATAL
@@ -175,10 +175,7 @@ CPUStatus::~CPUStatus()
    OldCpuTimes = nullptr;
    delete[] Percentages;
    Percentages = nullptr;
-#if defined(__linux__) || defined(__gnu_hurd__)
-   fclose(ProcStatFD);
-   ProcStatFD = nullptr;
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
    mach_port_deallocate(mach_task_self(), host);
 #endif
 }
@@ -191,50 +188,52 @@ void CPUStatus::update()
    size_t cpuTimesSize = sizeof(tick_t) * (CPUs + 1) * CpuStates;
    memcpy(OldCpuTimes, CpuTimes, cpuTimesSize);
 
-
    // ====== Get counters ===================================================
 #if defined(__linux__) || defined(__gnu_hurd__)
-   fseek(ProcStatFD, 0, SEEK_SET);
-   for(unsigned int i = 0; i <= CPUs; i++) {
-      char buffer[1024];
-      if(fgets(buffer, sizeof(buffer), ProcStatFD) == 0) {
-         LOG_FATAL
-         stdlog << "Unable to read from /proc/stat!" << "\n";
-         LOG_END_FATAL
+   FILE* procStatFD = fopen("/proc/stat", "r");
+   if(procStatFD) {
+      for(unsigned int i = 0; i <= CPUs; i++) {
+         char buffer[1024];
+         if(fgets(buffer, sizeof(buffer), procStatFD) == 0) {
+            LOG_FATAL
+            stdlog << "Unable to read from /proc/stat!" << "\n";
+            LOG_END_FATAL
+         }
+         int result;
+         if(i == 0) {   // Get totals
+            result = sscanf(buffer, "cpu %llu %llu %llu %llu %llu %llu %llu %llu\n",
+                           &CpuTimes[0],
+                           &CpuTimes[1],
+                           &CpuTimes[2],
+                           &CpuTimes[3],
+                           &CpuTimes[4],
+                           &CpuTimes[5],
+                           &CpuTimes[6],
+                           &CpuTimes[7]);
+         }
+         else {
+            unsigned int id;
+            result = sscanf(buffer, "cpu%u %llu %llu %llu %llu %llu %llu %llu %llu\n",
+                           &id,
+                           &CpuTimes[(i * CpuStates) + 0],
+                           &CpuTimes[(i * CpuStates) + 1],
+                           &CpuTimes[(i * CpuStates) + 2],
+                           &CpuTimes[(i * CpuStates) + 3],
+                           &CpuTimes[(i * CpuStates) + 4],
+                           &CpuTimes[(i * CpuStates) + 5],
+                           &CpuTimes[(i * CpuStates) + 6],
+                           &CpuTimes[(i * CpuStates) + 7]);
+         }
+         if( ((i == 0) && (result < 8)) || ((i > 0) && (result < 9)) ) {
+            LOG_FATAL
+            stdlog << "Bad input format in /proc/stat!" << "\n";
+            LOG_END_FATAL
+         }
       }
-      int result;
-      if(i == 0) {   // Get totals
-         result = sscanf(buffer, "cpu %llu %llu %llu %llu %llu %llu %llu %llu\n",
-                         &CpuTimes[0],
-                         &CpuTimes[1],
-                         &CpuTimes[2],
-                         &CpuTimes[3],
-                         &CpuTimes[4],
-                         &CpuTimes[5],
-                         &CpuTimes[6],
-                         &CpuTimes[7]);
-      }
-      else {
-         unsigned int id;
-         result = sscanf(buffer, "cpu%u %llu %llu %llu %llu %llu %llu %llu %llu\n",
-                         &id,
-                         &CpuTimes[(i * CpuStates) + 0],
-                         &CpuTimes[(i * CpuStates) + 1],
-                         &CpuTimes[(i * CpuStates) + 2],
-                         &CpuTimes[(i * CpuStates) + 3],
-                         &CpuTimes[(i * CpuStates) + 4],
-                         &CpuTimes[(i * CpuStates) + 5],
-                         &CpuTimes[(i * CpuStates) + 6],
-                         &CpuTimes[(i * CpuStates) + 7]);
-      }
-      if( ((i == 0) && (result < 8)) || ((i > 0) && (result < 9)) ) {
-         LOG_FATAL
-         stdlog << "Bad input format in /proc/stat!" << "\n";
-         LOG_END_FATAL
-      }
+      fclose(procStatFD);
    }
-
 #else
+
    // ------ Get the per-core values ----------------------------------------
 #if defined(__FreeBSD__) || defined(__NetBSD__)
    cpuTimesSize = sizeof(tick_t) * CPUs * CpuStates;   /* Total is calculated later! */
@@ -251,6 +250,7 @@ void CPUStatus::update()
       stdlog << "Failed to obtain kern.cp_times!" << "\n";
       LOG_END_FATAL
    }
+
 #elif defined(__OpenBSD__)
    int mibKernCpTime[3] = { CTL_KERN, KERN_CPTIME2, 0 };
    for(unsigned int i = 0; i < CPUs; i++) {
@@ -263,26 +263,7 @@ void CPUStatus::update()
          LOG_END_FATAL
       }
    }
-#elif defined(__APPLE__)
-   kern_return_t          kr;
-   processor_info_array_t processorInfoArray;
-   natural_t              processorCount;
-   mach_msg_type_number_t infoCount;
 
-   if((kr = host_processor_info(host, PROCESSOR_CPU_LOAD_INFO, &processorCount,
-                                &processorInfoArray, &infoCount)) != KERN_SUCCESS) {
-      mach_error("host_processor_info():", kr);
-      exit(1);
-   }
-   const processor_cpu_load_info_t cpuLoadInfo =
-      (processor_cpu_load_info_t)processorInfoArray;
-   for(unsigned int i = 0; i < processorCount; i++) {
-      for(unsigned int j = 0; j < CpuStates; j++) {
-         CpuTimes[((i + 1) * CpuStates) + j] = cpuLoadInfo[i].cpu_ticks[j];
-      }
-   }
-   vm_deallocate(mach_task_self(), (vm_address_t)processorInfoArray,
-                 infoCount * sizeof(integer_t));
 #elif defined(__sun) || defined(__sun__)
    kstat_ctl_t* kc = kstat_open();
    if(kc == nullptr) {
@@ -306,6 +287,27 @@ void CPUStatus::update()
       }
    }
    kstat_close(kc);
+
+#elif defined(__APPLE__)
+   kern_return_t          kr;
+   processor_info_array_t processorInfoArray;
+   natural_t              processorCount;
+   mach_msg_type_number_t infoCount;
+
+   if((kr = host_processor_info(host, PROCESSOR_CPU_LOAD_INFO, &processorCount,
+                                &processorInfoArray, &infoCount)) != KERN_SUCCESS) {
+      mach_error("host_processor_info():", kr);
+      exit(1);
+   }
+   const processor_cpu_load_info_t cpuLoadInfo =
+      (processor_cpu_load_info_t)processorInfoArray;
+   for(unsigned int i = 0; i < processorCount; i++) {
+      for(unsigned int j = 0; j < CpuStates; j++) {
+         CpuTimes[((i + 1) * CpuStates) + j] = cpuLoadInfo[i].cpu_ticks[j];
+      }
+   }
+   vm_deallocate(mach_task_self(), (vm_address_t)processorInfoArray,
+                 infoCount * sizeof(integer_t));
 #endif
 
    // ------ Compute total values -------------------------------------------
