@@ -119,15 +119,15 @@ CPUStatus::CPUStatus()
    host_basic_info_data_t hinfo;
 
    CpuStates = CPU_STATE_MAX;
-   if((host = mach_host_self()) == MACH_PORT_NULL) {
+   if((MachHost = mach_host_self()) == MACH_PORT_NULL) {
       LOG_FATAL
-      stdlog << "Couldn't receive send rights!" << "\n";
+      stdlog << "mach_host_self() failed!" << "\n";
       LOG_END_FATAL
    }
    count = HOST_BASIC_INFO_COUNT;
-   if((kr = host_info(host, HOST_BASIC_INFO, (host_info_t)&hinfo, &count)) != KERN_SUCCESS) {
+   if((kr = host_info(MachHost, HOST_BASIC_INFO, (host_info_t)&hinfo, &count)) != KERN_SUCCESS) {
       LOG_FATAL
-      mach_error("host_info():", kr);
+      stdlog << "host_info() failed with error code " << kr << "!\n";
       LOG_END_FATAL
    };
    CPUs = (unsigned int)hinfo.max_cpus;
@@ -176,7 +176,7 @@ CPUStatus::~CPUStatus()
    delete[] Percentages;
    Percentages = nullptr;
 #if defined(__APPLE__)
-   mach_port_deallocate(mach_task_self(), host);
+   mach_port_deallocate(mach_task_self(), MachHost);
 #endif
 }
 
@@ -294,10 +294,11 @@ void CPUStatus::update()
    natural_t              processorCount;
    mach_msg_type_number_t infoCount;
 
-   if((kr = host_processor_info(host, PROCESSOR_CPU_LOAD_INFO, &processorCount,
+   if((kr = host_processor_info(MachHost, PROCESSOR_CPU_LOAD_INFO, &processorCount,
                                 &processorInfoArray, &infoCount)) != KERN_SUCCESS) {
-      mach_error("host_processor_info():", kr);
-      exit(1);
+      LOG_FATAL
+      stdlog << "host_processor_info() failed with error code " << kr << "\n";
+      LOG_END_FATAL
    }
    const processor_cpu_load_info_t cpuLoadInfo =
       (processor_cpu_load_info_t)processorInfoArray;

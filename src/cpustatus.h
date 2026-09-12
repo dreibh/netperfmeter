@@ -80,7 +80,7 @@ class CPUStatus
 #endif
 
 #if defined(__APPLE__)
-   host_name_port_t           host;
+   host_name_port_t           MachHost;
 #endif
    unsigned int               CPUs;
    tick_t*                    CpuTimes;
