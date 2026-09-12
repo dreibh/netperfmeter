@@ -69,7 +69,7 @@ class CPUStatus
 
    // ====== Private data ===================================================
    private:
-#if defined(__linux__)
+#if defined(__linux__) || defined(__gnu_hurd__)
    typedef unsigned long long tick_t;
 #elif defined(__NetBSD__)
    typedef uint64_t           tick_t;
@@ -79,7 +79,7 @@ class CPUStatus
    typedef unsigned int       tick_t;
 #endif
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__gnu_hurd__)
    FILE*               ProcStatFD;
 #elif defined(__APPLE__)
    host_name_port_t    host;

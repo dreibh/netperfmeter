@@ -51,7 +51,7 @@
 #endif
 
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__gnu_hurd__)
 #define IDLE_INDEX 3
 const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Idle", "IOWait",
@@ -91,7 +91,7 @@ const char* CPUStatus::CpuStateNames[] = {
 CPUStatus::CPUStatus()
 {
    // ====== Initialize =====================================================
-#if defined(__linux__)
+#if defined(__linux__) || defined(__gnu_hurd__)
    CpuStates = 8;
    CPUs = sysconf(_SC_NPROCESSORS_CONF);
    if(CPUs < 1) {
@@ -175,7 +175,7 @@ CPUStatus::~CPUStatus()
    OldCpuTimes = nullptr;
    delete[] Percentages;
    Percentages = nullptr;
-#if defined(__linux__)
+#if defined(__linux__) || defined(__gnu_hurd__)
    fclose(ProcStatFD);
    ProcStatFD = nullptr;
 #elif defined(__APPLE__)
@@ -193,7 +193,7 @@ void CPUStatus::update()
 
 
    // ====== Get counters ===================================================
-#if defined(__linux__)
+#if defined(__linux__) || defined(__gnu_hurd__)
    fseek(ProcStatFD, 0, SEEK_SET);
    for(unsigned int i = 0; i <= CPUs; i++) {
       char buffer[1024];
