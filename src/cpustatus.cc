@@ -45,7 +45,7 @@
 #include <sys/sysctl.h>
 #elif defined(__APPLE__)
 #include <mach/mach.h>
-#elif defined(__sun__)
+#elif defined(__sun) || defined(__sun__)
 #include <kstat.h>
 #include <sys/sysinfo.h>
 #endif
@@ -70,7 +70,7 @@ const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Spinning", "Interrupt", "Idle"
 };
 
-#elif defined(__sun__)
+#elif defined(__sun) || defined(__sun__)
 #define IDLE_INDEX 3
 const char* CPUStatus::CpuStateNames[] = {
    "User", "System", "Wait", "Idle"
