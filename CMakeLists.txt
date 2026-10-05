@@ -228,7 +228,7 @@ IF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
    ELSE()
       MESSAGE(FATAL_ERROR
               "Cannot find Libiberty library! Try:\n"
-              " * NetBSD: sudo pkgin -y install liberty")
+              " * NetBSD: sudo pkgin -y install libiberty")
    ENDIF()
 ENDIF()
 
