@@ -45,13 +45,13 @@
 #include <sys/sysctl.h>
 #elif defined(__APPLE__)
 #include <mach/mach.h>
-#elif defined(__sun) || defined(__sun__)
+#elif defined(__sun)
 #include <kstat.h>
 #include <sys/sysinfo.h>
 #endif
 
 
-#if defined(__linux__) || defined(__gnu_hurd__)
+#if defined(__linux__) || defined(__GNU__)
 #define IDLE_INDEX 3
 const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Idle", "IOWait",
@@ -70,7 +70,7 @@ const char* CPUStatus::CpuStateNames[] = {
    "User", "Nice", "System", "Spinning", "Interrupt", "Idle"
 };
 
-#elif defined(__sun) || defined(__sun__)
+#elif defined(__sun)
 #define IDLE_INDEX 3
 const char* CPUStatus::CpuStateNames[] = {
    "User", "System", "Wait", "Idle"
@@ -91,7 +91,7 @@ const char* CPUStatus::CpuStateNames[] = {
 CPUStatus::CPUStatus()
 {
    // ====== Initialize =====================================================
-#if defined(__linux__) || defined(__gnu_hurd__)
+#if defined(__linux__) || defined(__GNU__)
    CpuStates = 8;
    CPUs = sysconf(_SC_NPROCESSORS_ONLN);
    if(CPUs < 1) {
@@ -132,7 +132,7 @@ CPUStatus::CPUStatus()
    };
    CPUs = (unsigned int)hinfo.max_cpus;
 
-#elif defined(__sun) || defined(__sun__)
+#elif defined(__sun)
    CpuStates = 4;
    CPUs = sysconf(_SC_NPROCESSORS_CONF);
    if(CPUs < 1) {
@@ -190,7 +190,7 @@ void CPUStatus::update()
    memset(CpuTimes, 0, cpuTimesSize);
 
    // ====== Get counters ===================================================
-#if defined(__linux__) || defined(__gnu_hurd__)
+#if defined(__linux__) || defined(__GNU__)
    FILE* procStatFD = fopen("/proc/stat", "r");
    if(procStatFD) {
       for(unsigned int i = 0; i <= CPUs; i++) {
@@ -268,7 +268,7 @@ void CPUStatus::update()
       }
    }
 
-#elif defined(__sun) || defined(__sun__)
+#elif defined(__sun)
    kstat_ctl_t* kc = kstat_open();
    if(kc == nullptr) {
       LOG_FATAL

@@ -34,11 +34,11 @@
 #include <sys/time.h>
 
 // Endianess conversions: htobe*(), be*toh():
-#if defined(__linux__) || defined(__gnu_hurd__)
+#if defined(__linux__) || defined(__GNU__)
 #include <endian.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/endian.h>
-#elif defined(__OpenBSD__) || defined(__sun) || defined(__sun__)
+#elif defined(__OpenBSD__) || defined(__sun)
 #include <endian.h>
 #elif defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
