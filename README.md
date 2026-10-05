@@ -901,26 +901,137 @@ Please use the issue tracker at [https://github.com/dreibh/netperfmeter/issues](
 
 ## Ubuntu Linux
 
-For ready-to-install Ubuntu Linux packages of NetPerfMeter, see [Launchpad PPA for Thomas Dreibholz](https://launchpad.net/~dreibh/+archive/ubuntu/ppa/+packages?field.name_filter=netperfmeter&field.status_filter=published&field.series_filter=)!
+For ready-to-install [Ubuntu Linux](https://ubuntu.com/) packages of NetPerfMeter, see the [Launchpad PPA for Thomas Dreibholz](https://launchpad.net/~dreibh/+archive/ubuntu/ppa/+packages?field.name_filter=netperfmeter&field.status_filter=published&field.series_filter=)!
+
+Add the PPA repository:
 
 ```bash
 sudo apt-add-repository -sy ppa:dreibh/ppa
 sudo apt-get update
+```
+
+For the basic NetPerfMeter (without the dependency-heavy plotting scripts and examples):
+
+```bash
+sudo apt-get install netperfmeter
+```
+
+For the complete NetPerfMeter (including plotting scripts and examples):
+
+```bash
+sudo apt-get install netperfmeter-all
+```
+
+## Debian Linux
+
+For ready-to-install [Debian Linux](https://www.debian.org/) packages of NetPerfMeter, see the [Open Build Service PPA for Thomas Dreibholz](https://build.opensuse.org/project/show/home:dreibh)!
+
+Add the PPA repository:
+
+```bash
+. /etc/os-release
+DISTRIBUTION="Debian_${VERSION_ID:-$([ "${VERSION_CODENAME:-}" = sid ] && echo Unstable || echo Testing)}"
+URL="https://download.opensuse.org/repositories/home:/dreibh/${DISTRIBUTION}"
+KEY="/etc/apt/keyrings/dreibh-obs.gpg"
+
+curl -fsSL "${URL}/Release.key" | sudo gpg --batch --yes --dearmor -o "${KEY}"
+printf "deb [signed-by=%s] %s/ /\ndeb-src [signed-by=%s] %s/ /\n" "${KEY}" "${URL}" "${KEY}" "${URL}" | \
+   sudo tee /etc/apt/sources.list.d/obs-dreibh.list
+sudo apt update
+```
+
+For the basic NetPerfMeter (without the dependency-heavy plotting scripts and examples):
+
+```bash
+sudo apt-get install netperfmeter
+```
+
+For the complete NetPerfMeter (including plotting scripts and examples):
+
+```bash
 sudo apt-get install netperfmeter-all
 ```
 
 ## Fedora Linux
 
-For ready-to-install Fedora Linux packages of NetPerfMeter, see [COPR PPA for Thomas Dreibholz](https://copr.fedorainfracloud.org/coprs/dreibh/ppa/package/netperfmeter/)!
+For ready-to-install [Fedora Linux](https://fedoraproject.org/) packages of NetPerfMeter, see the [COPR PPA for Thomas Dreibholz](https://copr.fedorainfracloud.org/coprs/dreibh/ppa/package/netperfmeter/)!
+
+Add the PPA repository:
 
 ```bash
 sudo dnf copr enable -y dreibh/ppa
+```
+
+For the basic NetPerfMeter (without the dependency-heavy plotting scripts and examples):
+
+```bash
+sudo dnf install netperfmeter
+```
+
+For the complete NetPerfMeter (including plotting scripts and examples):
+
+```bash
 sudo dnf install netperfmeter-all
+```
+
+## OpenSUSE Linux
+
+For ready-to-install [OpenSUSE Linux](https://www.opensuse.org/) packages of NetPerfMeter, see [Open Build Service PPA for Thomas Dreibholz](https://build.opensuse.org/project/show/home:dreibh)!
+
+Add the PPA repository:
+
+```bash
+. /etc/os-release
+[[ $VERSION_ID =~ ^[0-9]+\.[0-9]+$ ]] && DISTRIBUTION="${VERSION_ID}" || DISTRIBUTION="${NAME// /_}"
+URL="https://download.opensuse.org/repositories/home:/dreibh/${DISTRIBUTION}"
+rpm --import "${URL}/repodata/repomd.xml.key"
+zypper addrepo -f "${URL}/" dreibh-obs
+```
+
+For the basic NetPerfMeter (without the dependency-heavy plotting scripts and examples):
+
+```bash
+sudo zypper install netperfmeter
+```
+
+For the complete NetPerfMeter (including plotting scripts and examples):
+
+```bash
+sudo zypper install netperfmeter-all
+```
+
+## Alpine Linux
+
+For ready-to-install [Alpine Linux](https://alpinelinux.org/) packages of NetPerfMeter, see [Open Build Service PPA for Thomas Dreibholz](https://build.opensuse.org/project/show/home:dreibh)!
+
+Add the PPA repository:
+
+```bash
+DISTRIBUTION="Alpine_Latest_community"
+URL="https://download.opensuse.org/repositories/home:/dreibh"
+wget -O \
+   /etc/apk/keys/home:dreibh@build.opensuse.org-527a4e72.rsa.pub \
+   "${URL}/${DISTRIBUTION}/x86_64/home:dreibh%40build.opensuse.org-527a4e72.rsa.pub"
+if ! grep -q "^${URL}/${DISTRIBUTION}" /etc/apk/repositories ; then
+   echo "${URL}/${DISTRIBUTION}" | sudo tee -a /etc/apk/repositories
+fi
+```
+
+For the basic NetPerfMeter (without the dependency-heavy plotting scripts and examples):
+
+```bash
+sudo apk add netperfmeter
+```
+
+For the complete NetPerfMeter (including plotting scripts and examples):
+
+```bash
+sudo apk add netperfmeter-all
 ```
 
 ## FreeBSD
 
-For ready-to-install FreeBSD packages of NetPerfMeter, it is included in the ports collection; see [FreeBSD ports tree index of benchmarks/netperfmeter/](https://cgit.freebsd.org/ports/tree/benchmarks/netperfmeter/)!
+For ready-to-install [FreeBSD](https://www.freebsd.org/) packages of NetPerfMeter, it is included in the ports collection; see [FreeBSD ports tree index of net/netperfmeter/](https://cgit.freebsd.org/ports/tree/net/netperfmeter/)!
 
 ```bash
 sudo pkg install netperfmeter
@@ -929,9 +1040,42 @@ sudo pkg install netperfmeter
 Alternatively, to compile it from the ports sources:
 
 ```bash
-cd /usr/ports/benchmarks/netperfmeter
+cd /usr/ports/net/netperfmeter
 make
 sudo make install
+```
+
+## NetBSD
+
+NetPerfMeter supports [NetBSD](https://netbsd.org/). However, there is no NetBSD packaging yet. Just build from sources!
+
+## OpenBSD
+
+NetPerfMeter supports [OpenBSD](https://www.openbsd.org/). However, there is no OpenBSD packaging yet. Just build from sources!
+
+## Solaris (OpenIndiana)
+
+NetPerfMeter supports [Solaris (OpenIndiana)](https://www.openindiana.org/). However, there is no Solaris packaging yet. Just build from sources!
+
+## GNU Hurd
+
+NetPerfMeter supports [GNU Hurd](https://www.gnu.org/software/hurd/) ([Debian GNU/Hurd](https://www.debian.org/ports/hurd/)). However, there is no Debian GNU/Hurd PPA on Open Build Service available yet. Just build from sources!
+
+## Homebrew (Apple, Linux)
+
+For the [Homebrew](https://brew.sh/) formula of NetPerfMeter, see [Thomas Dreibholz's Homebrew Tap](https://github.com/dreibh/homebrew-tap)!
+
+Add tap:
+
+```bash
+brew tap dreibh/tap
+brew trust dreibh/tap
+```
+
+Install basic NetPerfMeter (without the dependency-heavy plotting scripts and examples):
+
+```bash
+brew install netperfmeter
 ```
 
 
