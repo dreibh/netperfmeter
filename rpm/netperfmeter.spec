@@ -18,13 +18,13 @@ BuildRequires: mupdf
 BuildRequires: valgrind-devel
 
 Requires: %{name}-common = %{version}-%{release}
-Recommends: %{name}-examples = %{version}-%{release}
-Recommends: %{name}-plotting = %{version}-%{release}
 Recommends: gnutls-devel
 Recommends: hipercontracer
 Recommends: iputils
 Recommends: wireshark-cli
 Recommends: subnetcalc
+Suggests: %{name}-examples = %{version}-%{release}
+Suggests: %{name}-plotting = %{version}-%{release}
 Suggests: %{name}-service = %{version}-%{release}
 Suggests: dynmhs
 Suggests: td-system-info
