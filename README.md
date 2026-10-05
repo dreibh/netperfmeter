@@ -10,8 +10,8 @@
 
 # 💡 What is Network Performance Meter&nbsp;(NetPerfMeter)?
 
-NetPerfMeter is a network performance meter for the [TCP](http://www.tcpipguide.com/free/t_TCPIPTransmissionControlProtocolTCP.htm), [MPTCP](https://www.nntb.no/~dreibh/mptcp/), [SCTP](https://www.nntb.no/~dreibh/sctp/), [UDP](http://www.tcpipguide.com/free/t_TCPIPUserDatagramProtocolUDP.htm), [DCCP](https://www.kernel.org/doc/html/v5.8/networking/dccp.html), and [QUIC](https://www.rfc-editor.org/rfc/rfc9000.html) transport protocols over [IPv4](http://www.tcpipguide.com/free/t_InternetProtocolVersion4IPIPv4.htm) and [IPv6](http://www.tcpipguide.com/free/t_InternetProtocolVersion6IPv6IPNextGenerationIPng.htm). It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. Flows can be saturated (i.e.&nbsp;"send as much as possible") or non-saturated with frame rate and frame sizes (like a multimedia transmission). Non-saturated flows can be configured with constant or variable frame rate/frame size, i.e.&nbsp;to realise [Constant Bit Rate&nbsp;(CBR)](https://wiki.hydrogenaudio.org/index.php?title=Constant_bitrate) or [Variable Bit Rate&nbsp;(VBR)](https://wiki.hydrogenaudio.org/index.php?title=VBR) traffic. For both, frame rate and frame size, it is not only possible to set constant values but to also to use random distributions. Furthermore, flows can be set up as on/off flows. Of course, the flow parameters can be configured individually per flow and flow direction.
-The measurement results can be recorded as scalar files (summary of the run) and vector files (time series). These files can be processed further, e.g.&nbsp;for detailed analysis and plotting of the results.
+NetPerfMeter is a network performance meter for the [TCP](http://www.tcpipguide.com/free/t_TCPIPTransmissionControlProtocolTCP.htm), [MPTCP](https://www.nntb.no/~dreibh/mptcp/), [SCTP](https://www.nntb.no/~dreibh/sctp/), [UDP](http://www.tcpipguide.com/free/t_TCPIPUserDatagramProtocolUDP.htm), [DCCP](https://www.kernel.org/doc/html/v5.8/networking/dccp.html), and [QUIC](https://www.rfc-editor.org/rfc/rfc9000.html) transport protocols over [IPv4](http://www.tcpipguide.com/free/t_InternetProtocolVersion4IPIPv4.htm) and [IPv6](http://www.tcpipguide.com/free/t_InternetProtocolVersion6IPv6IPNextGenerationIPng.htm). It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. Flows can be saturated (i.e., "send as much as possible") or non-saturated with frame rate and frame sizes (like a multimedia transmission). Non-saturated flows can be configured with constant or variable frame rate/frame size, i.e., to realise [Constant Bit Rate&nbsp;(CBR)](https://wiki.hydrogenaudio.org/index.php?title=Constant_bitrate) or [Variable Bit Rate&nbsp;(VBR)](https://wiki.hydrogenaudio.org/index.php?title=VBR) traffic. For both frame rate and frame size, it is not only possible to set constant values, but also to use random distributions. Furthermore, flows can be set up as on/off flows. Of course, the flow parameters can be configured individually per flow and flow direction.
+The measurement results can be recorded as scalar files (summary of the run) and vector files (time series). These files can be processed further, e.g., for detailed analysis and plotting of the results.
 The [Wireshark](https://www.wireshark.org/) network protocol analyser provides out-of-the-box support for analysing NetPerfMeter packet traffic.
 
 <p align="center">
@@ -22,7 +22,7 @@ The [Wireshark](https://www.wireshark.org/) network protocol analyser provides o
 
 ## Design Goals and Features
 
-The key goal of NetPerfMeter is to provide a tool for the performance comparison of multiple transport connections, which are further denoted as *Flows*. That is, it is possible to configure different flows between two systems using varying parameters, in order run a configured measurement, collect the obtained results and post-process them for statistical analyses. Particularly, all five relevant IETF Transport Layer protocols are supported:
+The key goal of NetPerfMeter is to provide a tool for the performance comparison of multiple transport connections, which are further denoted as *Flows*. That is, it is possible to configure different flows between two systems using varying parameters, in order to run a configured measurement, collect the obtained results and post-process them for statistical analyses. Particularly, all five relevant IETF Transport Layer protocols are supported:
 
    * [UDP](http://www.tcpipguide.com/free/t_TCPIPUserDatagramProtocolUDP.htm) (User Datagram Protocol; see [RFC&nbsp;768](https://www.rfc-editor.org/rfc/rfc768.html)),
    * [DCCP](https://www.kernel.org/doc/html/v5.8/networking/dccp.html) (Datagram Congestion Control Protocol; see [RFC&nbsp;4340](https://www.rfc-editor.org/rfc/rfc4340.html)),
@@ -31,15 +31,15 @@ The key goal of NetPerfMeter is to provide a tool for the performance comparison
    * [SCTP](https://www.nntb.no/~dreibh/sctp/) (Stream Control Transmission Protocol; see [RFC&nbsp;9260](https://www.rfc-editor.org/rfc/rfc9260.html)),
    * [QUIC](https://www.rfc-editor.org/rfc/rfc9000.html) (Quick UDP Internet Connections; see [RFC&nbsp;9000](https://www.rfc-editor.org/rfc/rfc9000.html)).
 
-Of course, this support includes the possibility to parametrise various protocol-specific options. Note, that the protocol support by NetPerfMeter depends on the underlying operating system. DCCP, MPTCP, as well as some SCTP extensions are not available on all platforms, yet.
+Of course, this support includes the possibility to parametrise various protocol-specific options. Note that the protocol support by NetPerfMeter depends on the underlying operating system. DCCP, MPTCP, as well as some SCTP extensions are not available on all platforms, yet.
 
 Furthermore, each flow is able to apply its specific traffic behaviour:
 
-   * Each flow may use its own Transport Layer protocol (i.e.&nbsp;UDP, DCCP, TCP, MTCP or SCTP).
+   * Each flow may use its own Transport Layer protocol (i.e., UDP, DCCP, TCP, MPTCP or SCTP).
    * Bidirectional data transfer is possible, with individual parameters for each direction.
-   * Flows may either be saturated (i.e.&nbsp;try to send as much as possible) or non-saturated. In the latter case, a frame rate and a frame size have to be configured. Both may be distributed randomly, using a certain distribution (like uniform, negative exponential, etc.). This feature allows to mimic multimedia traffic.
+   * Flows may either be saturated (i.e., try to send as much as possible) or non-saturated. In the latter case, a frame rate and a frame size have to be configured. Both may be distributed randomly, using a certain distribution (like uniform, negative exponential, etc.). This feature allows mimicking multimedia traffic.
    * For the stream-oriented SCTP, an independent traffic configuration is possible for each stream.
-   * Support for on-off traffic is provided by allowing to specify a sequence of time stamps when to start, stop and restart a flow or stream.
+   * Support for on-off traffic is provided by allowing users to specify a sequence of time stamps when to start, stop and restart a flow or stream.
    * Also, for SCTP, it is possible to configure partial reliability (see [RFC&nbsp;3758](https://www.rfc-editor.org/rfc/rfc3758.html)) as well as ordered and unordered delivery (see [RFC&nbsp;9260](https://www.rfc-editor.org/rfc/rfc9260.html)).
 
 Clearly, the NetPerfMeter application provides features similar to the [NetPerfMeter simulation model in OMNeT++](https://doc.omnetpp.org/inet/api-4.4.0/neddoc/inet.applications.netperfmeter.NetPerfMeter.html). It is therefore relatively easy – from the parametrisation perspective – to reproduce NetPerfMeter simulation scenarios in reality.
@@ -52,7 +52,7 @@ Clearly, the NetPerfMeter application provides features similar to the [NetPerfM
  The Concept of a NetPerfMeter Measurement
 </p>
 
-Similar to the [NetPerfMeter simulation model in OMNeT++](https://doc.omnetpp.org/inet/api-4.4.0/neddoc/inet.applications.netperfmeter.NetPerfMeter.html), an application instance may either be in *Active Mode* (client side) or *Passive Mode* (server side). The figure above illustrates the concept of a NetPerfMeter measurement. The passive instance accepts incoming NetPerfMeter connections from the active instance. The active instance controls the passive instance, by using a control protocol denoted as NetPerfMeter Control Protocol&nbsp;(NPMP-CONTROL). That is, the passive instance may run as a daemon; no manual interaction by the user – e.g.&nbsp;to restart it before a new measurement run – is required. This feature is highly practical for a setup distributed over multiple Internet sites (e.g.&nbsp;like the [NorNet Testbed](https://www.nntb.no/)) and allows for parameter studies consisting of many measurement runs.
+Similar to the [NetPerfMeter simulation model in OMNeT++](https://doc.omnetpp.org/inet/api-4.4.0/neddoc/inet.applications.netperfmeter.NetPerfMeter.html), an application instance may either be in *Active Mode* (client side) or *Passive Mode* (server side). The figure above illustrates the concept of a NetPerfMeter measurement. The passive instance accepts incoming NetPerfMeter connections from the active instance. The active instance controls the passive instance, by using a control protocol denoted as NetPerfMeter Control Protocol&nbsp;(NPMP-CONTROL). That is, the passive instance may run as a daemon; no manual interaction by the user – e.g., to restart it before a new measurement run – is required. This feature is highly practical for a setup distributed over multiple Internet sites (e.g., the [NorNet Testbed](https://www.nntb.no/)) and allows for parameter studies consisting of many measurement runs.
 
 The payload data between active and passive instances is transported using the NetPerfMeter Data Protocol&nbsp;(NPMP-DATA). The figure below shows the protocol stack of a NetPerfMeter node.
 
@@ -61,7 +61,7 @@ The payload data between active and passive instances is transported using the N
  The NetPerfMeter Protocol Stack
 </p>
 
-The NPMP-DATA protocol transmits data as frames, with a given frame rate. In case of a saturated sender, the flow tries to send as many frames as possible (i.e.&nbsp;as allowed by the underlying transport and its flow and congestion control). Otherwise, the configured frame rate is used (e.g.&nbsp;25 frames/s as for typical video transmissions). NPMP-DATA breaks down frames into messages, to make sure that large frames can be transported over the underlying transport protocol. The maximum message size can be configured. Frames larger than the message size limit are split into multiple messages before sending them. On the receiving side, the messages are combined back into frames. The underlying transport protocol handles the messages as its payload.
+The NPMP-DATA protocol transmits data as frames, with a given frame rate. In case of a saturated sender, the flow tries to send as many frames as possible (i.e., as allowed by the underlying transport and its flow and congestion control). Otherwise, the configured frame rate is used (e.g., 25 frames/s as for typical video transmissions). NPMP-DATA breaks down frames into messages, to make sure that large frames can be transported over the underlying transport protocol. The maximum message size can be configured. Frames larger than the message size limit are split into multiple messages before sending them. On the receiving side, the messages are combined back into frames. The underlying transport protocol handles the messages as its payload.
 
 
 ## Measurement Processing
@@ -78,24 +78,24 @@ Note that the [Wireshark](https://www.wireshark.org/) network protocol analyser 
 
 ## Measurement Setup
 
-A new measurement run setup is initiated by the active NetPerfMeter instance by establishing an NPMP-CONTROL association to the passive instance first. The NPMP-CONTROL association by default uses SCTP for transport. If SCTP is not possible in the underlying networks (e.g.&nbsp;due to firewalling restrictions), it is optionally possible to use TCP for the NPMP-CONTROL association instead. Then, the configured NPMP-DATA connections are established by their configured Transport Layer protocols. For the connection-less UDP, the message transfer is just started. The passive NetPerfMeter instance is informed about the identification and parameters of each new flow by using NPMP-CONTROL&nbsp;Add&nbsp;Flow messages. On startup of the NPMP-DATA flow, an NPMP-DATA&nbsp;Identify message allows the mapping of a newly incoming connection to a configured flow by the passive instance. It acknowledges each newly set up flow by an NPMP-CONTROL&nbsp;Acknowledge message. After setting up all flows, the scenario is ready to start the measurement run.
+A new measurement run setup is initiated by the active NetPerfMeter instance by establishing an NPMP-CONTROL association to the passive instance first. The NPMP-CONTROL association by default uses SCTP for transport. If SCTP is not possible in the underlying networks (e.g., due to firewalling restrictions), it is optionally possible to use TCP for the NPMP-CONTROL association instead. Then, the configured NPMP-DATA connections are established by their configured Transport Layer protocols. For the connection-less UDP, the message transfer is just started. The passive NetPerfMeter instance is informed about the identification and parameters of each new flow by using NPMP-CONTROL&nbsp;Add&nbsp;Flow messages. On startup of the NPMP-DATA flow, an NPMP-DATA&nbsp;Identify message allows the mapping of a newly incoming connection to a configured flow by the passive instance. It acknowledges each newly set up flow by an NPMP-CONTROL&nbsp;Acknowledge message. After setting up all flows, the scenario is ready to start the measurement run.
 
 
 ## Measurement Run
 
 The actual measurement run is initiated from the active NetPerfMeter instance using an NPMP-CONTROL&nbsp;Start&nbsp;Measurement message, which is also acknowledged by an NPMP-CONTROL&nbsp;Acknowledge message. Then, both instances start running the configured scenario by transmitting NPMP-DATA&nbsp;Data messages over their configured flows.
 
-During the measurement run, incoming and outgoing flow bandwidths may be recorded as vectors – i.e.&nbsp;time series – at both instances, since NPMP-DATA&nbsp;Data traffic may be bidirectional. Furthermore, the CPU utilisations – separately for each CPU and CPU&nbsp;core – are also tracked. This allows to identify performance bottlenecks, which is particularly useful when debugging and comparing transport protocol implementation performance. Furthermore, the one-way delay of messages can be recorded. Of course, in order to use this feature, the clocks of both nodes need to be appropriately synchronised, e.g.&nbsp;by using the [Network Time Protocol&nbsp;(NTP)](https://www.geeksforgeeks.org/computer-networks/network-time-protocol-ntp/).
+During the measurement run, incoming and outgoing flow bandwidths may be recorded as vectors – i.e., time series – at both instances, since NPMP-DATA&nbsp;Data traffic may be bidirectional. Furthermore, the CPU utilisations – separately for each CPU and CPU&nbsp;core – are also tracked. This allows identifying performance bottlenecks, which is particularly useful when debugging and comparing transport protocol implementation performance. Furthermore, the one-way delay of messages can be recorded. Of course, in order to use this feature, the clocks of both nodes need to be appropriately synchronised, e.g., by using the [Network Time Protocol&nbsp;(NTP)](https://www.geeksforgeeks.org/computer-networks/network-time-protocol-ntp/).
 
 
 ## Measurement Termination
 
-The end of a measurement run is initiated – from the active NetPerfMeter instance – by using an NPMP-CONTROL&nbsp;Stop&nbsp;Measurement message. Again, it is acknowledged by an NPMP-CONTROL&nbsp;Acknowledge message. At the end of the measurement, average bandwidth and one-way delay of each flow and stream are recorded as scalars (i.e.&nbsp;single values). They may provide an overview of the long-term system performance.
+The end of a measurement run is initiated – from the active NetPerfMeter instance – by using an NPMP-CONTROL&nbsp;Stop&nbsp;Measurement message. Again, it is acknowledged by an NPMP-CONTROL&nbsp;Acknowledge message. At the end of the measurement, average bandwidth and one-way delay of each flow and stream are recorded as scalars (i.e., single values). They may provide an overview of the long-term system performance.
 
 
 ## Result Collection
 
-After stopping the measurement, the passive NetPerfMeter instance sends its global vector and scalar results (i.e.&nbsp;over all flows) to the active instance, by using one or more NPMP-CONTROL&nbsp;Results messages.
+After stopping the measurement, the passive NetPerfMeter instance sends its global vector and scalar results (i.e., over all flows) to the active instance, by using one or more NPMP-CONTROL&nbsp;Results messages.
 Then, the active NetPerfMeter instance sequentially removes the flows by using NPMP-CONTROL&nbsp;Remove&nbsp;Flow messages, which are acknowledged by NPMP-CONTROL Acknowledge messages. On flow removal, the passive instance sends its per-flow results for the corresponding flow, again by using NPMP-CONTROL&nbsp;Results messages.
 
 The active instance, as well, archives its local vector and scalar results data and stores them – together with the results received from its peer – locally.
@@ -104,13 +104,13 @@ All result data is compressed by using BZip2 compression (see [bzip2](https://so
 
 ## Measurement Execution, Result Post-Processing and Visualisation
 
-By using shell scripts, it is possible to apply NetPerfMeter for parameter studies, i.e.&nbsp;to create a set of runs for each input parameter combination. For example, a script could iterate over a send buffer size&nbsp;σ from&nbsp;64&nbsp;KiB to 192&nbsp;KiB in steps of 64&nbsp;KiB as well as a path bandwidth&nbsp;ρ from&nbsp;10&nbsp;Mbit/s to 100&nbsp;Mbit/s in steps of&nbsp;10&nbsp;Mbit/s and perform 5&nbsp;measurement runs for each parameter combination.
+By using shell scripts, it is possible to apply NetPerfMeter for parameter studies, i.e., to create a set of runs for each input parameter combination. For example, a script could iterate over a send buffer size&nbsp;σ from&nbsp;64&nbsp;KiB to 192&nbsp;KiB in steps of 64&nbsp;KiB as well as a path bandwidth&nbsp;ρ from&nbsp;10&nbsp;Mbit/s to 100&nbsp;Mbit/s in steps of&nbsp;10&nbsp;Mbit/s and perform 5&nbsp;measurement runs for each parameter combination.
 
 When all measurement runs have eventually been processed, the results have to be visualised for analysis and interpretation. The NetPerfMeter package provides support to visualise the scalar results, which are distributed over the scalar files written by measurement runs. Therefore, the first step necessary is to bring the data from the various scalar files into an appropriate form for further post-processing. This step is denoted as *Summarisation*; an introduction is also provided in "[SimProcTC – The Design and Realization of a Powerful Tool-Chain for OMNeT++ Simulations](https://www.nntb.no/~dreibh/netperfmeter/#Publications-OMNeT__Workshop2009)".
 
 The summarisation task is performed by the tool `createsummary`. An external program – instead of just using [GNU&nbsp;R](https://www.r-project.org/) itself to perform this step – is used due to the requirements on memory and CPU power. `createsummary` iterates over all scalar files of a measurement&nbsp;M. Each file is read – with on-the-fly BZip2-decompression – and each scalar value as well as the configuration&nbsp;m∈M having led to this value – are stored in memory. Depending on the number of scalars, the required storage space may have a size of multiple&nbsp;GiB.
 
-Since usually not all scalars of a measurement are required for analysis (e.g.&nbsp;for an SCTP measurement, it may be unnecessary to include unrelated statistics), a list of scalar name prefixes to be excluded from summarisation can be provided to `createsummary`, in form of the so-called *Summary Skip List*. This feature may significantly reduce the memory and disk space requirements of the summarisation step. Since the skipped scalars still remain stored in the scalar files themselves, it is possible to simply re-run `createsummary` with updated summary skip list later, in order to also include them.
+Since usually not all scalars of a measurement are required for analysis (e.g., for an SCTP measurement, it may be unnecessary to include unrelated statistics), a list of scalar name prefixes to be excluded from summarisation can be provided to `createsummary`, in the form of the so-called *Summary Skip List*. This feature may significantly reduce the memory and disk space requirements of the summarisation step. Since the skipped scalars still remain stored in the scalar files themselves, it is possible to simply re-run `createsummary` with an updated summary skip list later, in order to also include them.
 
 Having all relevant scalars stored in memory, a data file – which can be processed by [GNU&nbsp;R](https://www.r-project.org/), [LibreOffice](https://www.libreoffice.org/) or other programs – is written for each scalar. The data file is simply a table in text form, containing the column names on the first line. Each following line contains the data, with line number and an entry for each column (all separated by spaces); an example is provided in Listing&nbsp;3 of "[SimProcTC – The Design and Realization of a Powerful Tool-Chain for OMNeT++ Simulations](https://www.nntb.no/~dreibh/netperfmeter/#Publications-OMNeT__Workshop2009)". That is, each line consists of the settings of all parameters and the resulting scalar value. The data files are also BZip2-compressed on the fly, in order to reduce the storage space requirements.
 
@@ -196,22 +196,22 @@ For the following examples, the base port is usually set to 9000.
 
 ### Manual Run
 
-* Run a passive instance (i.e.&nbsp;server side), using base port 9000:
+* Run a passive instance (i.e., server side), using base port 9000:
 
   ```bash
   netperfmeter 9000
   ```
 
-  NetPerfMeter supports SCTP and TCP for the NPMP-CONTROL control communication. By default, the passive side accepts incoming control connections on both protocols. In case of unavailability of SCTP, e.g.&nbsp;the SCTP kernel module is not loaded, a warning is printed. Obviously, control communication in this case will only be possible via TCP.
+  NetPerfMeter supports SCTP and TCP for the NPMP-CONTROL control communication. By default, the passive side accepts incoming control connections on both protocols. In case of unavailability of SCTP, e.g., the SCTP kernel module is not loaded, a warning is printed. Obviously, control communication in this case will only be possible via TCP.
 
 
-* Run a passive instance (i.e.&nbsp;server side), using base port 9000, and allowing NPMP-CONTROL control communication only over TCP (this disables checking for SCTP, and the warning if unavailable):
+* Run a passive instance (i.e., server side), using base port 9000, and allowing NPMP-CONTROL control communication only over TCP (this disables checking for SCTP, and the warning if unavailable):
 
   ```bash
   netperfmeter 9000 -no-control-over-sctp
   ```
 
-  Note that the active instance (i.e.&nbsp;client side) can only connect via TCP in this case, and it needs to be instructed (as explained below, also using the `-control-over-tcp` option) to do so!
+  Note that the active instance (i.e., client side) can only connect via TCP in this case, and it needs to be instructed (as explained below, also using the `-control-over-tcp` option) to do so!
 
 
 ### Run as a Service
@@ -223,7 +223,7 @@ A NetPerfMeter service unit for SystemD is available:
 * [`netperfmeter.service`](src/netperfmeter.service)
 * [`/etc/netperfmeter.conf`](src/netperfmeter.conf)
 
-In addition, a service unit for loading and allowing all available congestion control modules is provided as well: [`netperfmeter-module-loader.service`](src/netperfmeter-module-loader.service). The module loader service is optional, i.e.&nbsp;without it, only manually-enabled congestion control modules will be available.
+In addition, a service unit for loading and allowing all available congestion control modules is provided as well: [`netperfmeter-module-loader.service`](src/netperfmeter-module-loader.service). The module loader service is optional, i.e., without it, only manually-enabled congestion control modules will be available.
 
 Enable and start:
 
@@ -251,7 +251,7 @@ sudo systemctl disable netperfmeter-module-loader.service
 
 A NetPerfMeter service script for RC is available: [`netperfmeter.rc`](src/netperfmeter.rc).
 
-In addition, an RC service script for loading and allowing all available congestion control modules is provided as well: [`netperfmeter-module-loader.rc`](src/netperfmeter-module-loader.rc). The module loader service is optional, i.e.&nbsp;without it, only manually-enabled congestion control modules will be available.
+In addition, an RC service script for loading and allowing all available congestion control modules is provided as well: [`netperfmeter-module-loader.rc`](src/netperfmeter-module-loader.rc). The module loader service is optional, i.e., without it, only manually-enabled congestion control modules will be available.
 
 In `/etc/rc.conf`:
 
@@ -289,27 +289,27 @@ sudo service netperfmeter-module-loader disable
 ## Running the Active Instance (Client)
 
 
-## Simple TCP Communication
+### Simple TCP Communication
 
-* Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional TCP flow:
+* Run an active instance (i.e., client side), with a saturated bidirectional TCP flow:
 
   ```bash
   netperfmeter $SERVER:9000 -tcp const0:const1400:const0:const1400
   ```
 
-  Replace $SERVER by the IP&nbsp;address or hostname of the passive instance, or set an environment variable `SERVER=<address>`!
+  Replace $SERVER with the IP&nbsp;address or hostname of the passive instance, or set an environment variable `SERVER=<address>`!
 
-  The flow parameter specifies a saturated flow (frame rate&nbsp;0 – send a much as possible) with a constant frame size of 1400&nbsp;B. The first block specifies the direction from active (client) to passive (server) instance, the second block specifies the direction from passive (server) to active (client) instance.
+  The flow parameter specifies a saturated flow (frame rate&nbsp;0 – send as much as possible) with a constant frame size of 1400&nbsp;B. The first block specifies the direction from active (client) to passive (server) instance, the second block specifies the direction from passive (server) to active (client) instance.
 
   ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP (or MPTCP) instead (to be shown in the next example, using the `-control-over-tcp` option):
 
-  - Firewalls blocking SCTP traffic, e.g&nbsp;many public Wi-Fi networks.
+  - Firewalls blocking SCTP traffic, e.g., many public Wi-Fi networks.
   - Routing over NAT/PAT may not work well due to lack of support for SCTP.
-  - The Docker daemon, by default, creates a local interface <em>dummy0</em> with IP address&nbsp;172.17.0.1 for the default [bridge network setup](https://docs.docker.com/engine/network/drivers/bridge/). If this is enabled on active and passive side, the SCTP out-of-the blue&nbsp;(OOTB) message handling causes the SCTP association to be aborted, since both devices have an identical IP&nbsp;address.
+  - The Docker daemon, by default, creates a local interface <em>dummy0</em> with IP address&nbsp;172.17.0.1 for the default [bridge network setup](https://docs.docker.com/engine/network/drivers/bridge/). If this is enabled on active and passive side, the SCTP out-of-the-blue&nbsp;(OOTB) message handling causes the SCTP association to be aborted, since both devices have an identical IP&nbsp;address.
 
   In case of connectivity problems try control over TCP as shown next.
 
-* Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional TCP flow, using NPMP-CONTROL control communication over TCP.
+* Run an active instance (i.e., client side), with a saturated bidirectional TCP flow, using NPMP-CONTROL control communication over TCP.
 
   ```bash
   netperfmeter $SERVER:9000 -control-over-tcp -tcp const0:const1400:const0:const1400
@@ -321,14 +321,14 @@ sudo service netperfmeter-module-loader disable
   ```
 
 
-* Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional TCP flow, using NPMP-CONTROL control communication over SCTP (this is the default):
+* Run an active instance (i.e., client side), with a saturated bidirectional TCP flow, using NPMP-CONTROL control communication over SCTP (this is the default):
 
   ```bash
   netperfmeter $SERVER:9000 -tcp const0:const1400:const0:const1400
   ```
 
 
-* Run an active instance (i.e.&nbsp;client side), with a download-only TCP flow (server to client):
+* Run an active instance (i.e., client side), with a download-only TCP flow (server to client):
 
   ```bash
   netperfmeter $SERVER:9000 -tcp const0:const0:const0:const1400
@@ -336,16 +336,16 @@ sudo service netperfmeter-module-loader disable
   Setting both, frame rate and frame size to 0, means to send nothing in the corresponding direction.
 
 
-* Run an active instance (i.e.&nbsp;client side), with a upload-only TCP flow (client to server):
+* Run an active instance (i.e., client side), with a upload-only TCP flow (client to server):
 
   ```bash
   netperfmeter $SERVER:9000 -tcp const0:const1400:const0:const0
   ```
 
 
-## Simple Non-TCP Communication
+### Simple Non-TCP Communication
 
-* Run an active instance (i.e.&nbsp;client side), with bidirectional UDP flow:
+* Run an active instance (i.e., client side), with bidirectional UDP flow:
 
   - Active to passive instance: constant 2&nbsp;frames/s, constant 200&nbsp;B/frame;
   - Passive to active instance: constant 25&nbsp;frames/s, constant 5000&nbsp;B/frame.
@@ -359,7 +359,7 @@ sudo service netperfmeter-module-loader disable
   Note: UDP does not have flow and congestion control. A saturated UDP flow is therefore <em>not</em> possible!
 
 
-* Run an active instance (i.e.&nbsp;client side), with bidirectional DCCP flow:
+* Run an active instance (i.e., client side), with bidirectional DCCP flow:
 
   - Active to passive instance: constant 10&nbsp;frames/s, constant 128&nbsp;B/frame;
   - Passive to active instance: constant 25&nbsp;frames/s, constant 1200&nbsp;B/frame.
@@ -369,7 +369,7 @@ sudo service netperfmeter-module-loader disable
   ```
   Note: DCCP is only available when provided by the operating system kernel, and DCCP supports need to be compiled into NetPerfMeter.
 
-* Run an active instance (i.e.&nbsp;client side), with 2&nbsp;bidirectional SCTP flows over a single SCTP association (i.e.&nbsp;2&nbsp;streams):
+* Run an active instance (i.e., client side), with 2&nbsp;bidirectional SCTP flows over a single SCTP association (i.e., 2&nbsp;streams):
 
   Stream 0:
 
@@ -386,7 +386,7 @@ sudo service netperfmeter-module-loader disable
   ```
 
 
-* Run an active instance (i.e.&nbsp;client side), with a saturated bidirectional MPTCP flow:
+* Run an active instance (i.e., client side), with a saturated bidirectional MPTCP flow:
 
   ```bash
   netperfmeter $SERVER:9000 -mptcp const0:const1400:const0:const1400
@@ -395,10 +395,10 @@ sudo service netperfmeter-module-loader disable
   Notes:
 
   - MPTCP is only available when provided by the operating system kernel!
-  - NetPerfMeter &ge;2.0 is required! Older versions &lt;2.0 only support the expermental Linux MTCP with incompatible API!
+  - NetPerfMeter &ge;2.0 is required! Older versions &lt;2.0 only support the experimental Linux MTCP with incompatible API!
 
 
-## QUIC Communication
+### QUIC Communication
 
 [QUIC](https://www.rfc-editor.org/rfc/rfc9000.html) uses built-in security based on [Transport Layer Security&nbsp;(TLS)](https://www.internetsociety.org/deploy360/tls/basics/). To use QUIC, it is therefore necessary to properly set up TLS first. Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
 
@@ -406,7 +406,7 @@ sudo service netperfmeter-module-loader disable
 
 * Build NetPerfMeter from sources (see [Build from Sources](#build-from-sources)). Make sure that Linux Kernel QUIC is detected during the CMake configuration!
 
-* Generate a key and corresponding [X.509](https://www.geeksforgeeks.org/computer-networks/public-key-infrastructure/) TLS certificate for the server. For details, see e.g.&nbsp;the various documentations and tutorials for [OpenSSL](https://www.openssl.org/), [Gnu TLS](https://www.gnutls.org/), or [NSS](https://nss-crypto.org/). Also, the directory [`src/quic-setup`](src/quic-setup) provides some example scripts. The following commands use these scripts to generate a test cerfitication authority *TestCA*, signing a server certificate for server *server.domain.example* (with the local machine's IP addresses in SubjectAltName):
+* Generate a key and corresponding [X.509](https://www.geeksforgeeks.org/computer-networks/public-key-infrastructure/) TLS certificate for the server. For details, see e.g., the various documentations and tutorials for [OpenSSL](https://www.openssl.org/), [Gnu TLS](https://www.gnutls.org/), or [NSS](https://nss-crypto.org/). Also, the directory [`src/quic-setup`](src/quic-setup) provides some example scripts. The following commands use these scripts to generate a test certification authority *TestCA*, signing a server certificate for server *server.domain.example* (with the local machine's IP addresses in SubjectAltName):
 
   ```bash
   cd src/quic-setup
@@ -427,7 +427,7 @@ sudo service netperfmeter-module-loader disable
      TestCA/server.domain.example/server.domain.example.crt
   ```
 
-* Run a passive instance (i.e.&nbsp;server side), using base port 9000, and specifying server key, server certificate, as well as root CA certificate:
+* Run a passive instance (i.e., server side), using base port 9000, and specifying server key, server certificate, as well as root CA certificate:
 
   ```bash
   netperfmeter 9000 \
@@ -436,7 +436,7 @@ sudo service netperfmeter-module-loader disable
      -tls-ca   $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt
   ```
 
-* Run an active instance (i.e.&nbsp;client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation:
+* Run an active instance (i.e., client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation:
 
   - Active to passive instance: constant 10&nbsp;frames/s, constant 128&nbsp;B/frame;
   - Passive to active instance: constant 25&nbsp;frames/s, constant 1200&nbsp;B/frame.
@@ -448,16 +448,16 @@ sudo service netperfmeter-module-loader disable
      -quic const10:const128:const25:const1200
   ```
 
-  Make sure that the server name matches the with the information in the server certificate provided by the passive instance. TLS is verifying it, and the TLS handshake will fail (as intended) if it does not match!
+  Make sure that the server name matches the information in the server certificate provided by the passive instance. TLS is verifying it, and the TLS handshake will fail (as intended) if it does not match!
 
 * See [Wireshark](#-wireshark-dissector-for-netperfmeter-packets) for details on how to examine the NetPerfMeter QUIC traffic with Wireshark!
 
 
-## Variable Bitrate Flows
+### Variable Bitrate Flows
 
 NetPerfMeter supports randomised frame rate and frame size, to create variable bitrate&nbsp;(VBR) flows. The following distributions are currently available:
 
-* <tt>const<em>&lt;value&gt;</em>,<em>&lt;b&gt;</em></tt>: Constant, i.e.&nbsp;always the same setting <em>&lt;value&gt;</em>. Example: a frame rate const1000 means that all frames have a size of 1000&nbsp;bytes.
+* <tt>const<em>&lt;value&gt;</em>,<em>&lt;b&gt;</em></tt>: Constant, i.e., always the same setting <em>&lt;value&gt;</em>. Example: a frame rate const1000 means that all frames have a size of 1000&nbsp;bytes.
 * <tt>uniform<em>&lt;a&gt;</em>,<em>&lt;b&gt;</em></tt>: Uniform distribution from the interval [a,b). Example: uniform900,1100.
 * <tt>exp<em>&lt;p&gt;</em></tt>: Exponential distribution with mean <em>&lt;mean&gt;</em>. Example: exp1000.
 * <tt>pareto<em>&lt;location&gt;</em>,<em>&lt;shape&gt;</em></tt>: Pareto distribution with location <em>&lt;location&gt;</em> and shape <em>&lt;shape&gt;</em>. Example: pareto0.166667,1.5.
@@ -473,13 +473,13 @@ A configured distribution is used to determine:
 
 Some examples:
 
-* A unidirectional TCP flow with constant 2&nbsp;frames;/s and uniformly distributed frame sizes between 100&nbsp;bytes and 20000&nbsp;bytes:
+* A unidirectional TCP flow with constant 2&nbsp;frames/s and uniformly distributed frame sizes between 100&nbsp;bytes and 20000&nbsp;bytes:
 
   ```bash
   netperfmeter $SERVER:9000 -tcp const2:uniform100,20000
   ```
 
-* A bidirectional SCTP flow with constant 2&nbsp;frames;/s and uniformly distributed frame sizes between 100&nbsp;bytes and 1000&nbsp;bytes outgoing, and an uniform frame rate from [0.2, 10.5) frames/s and frame sizes with an average of 1000&nbsp;bytes using exponential distribution incoming:
+* A bidirectional SCTP flow with constant 2&nbsp;frames/s and uniformly distributed frame sizes between 100&nbsp;bytes and 1000&nbsp;bytes outgoing, and a uniform frame rate from [0.2, 10.5) frames/s and frame sizes with an average of 1000&nbsp;bytes using exponential distribution incoming:
 
   ```bash
   netperfmeter $SERVER:9000 -sctp const2:uniform100,1000:uniform0.2,10.5:exp1000
@@ -492,7 +492,7 @@ Some examples:
   ```
 
 
-## Multiple Flows and Measurement Results Recording
+### Multiple Flows and Measurement Results Recording
 
 * Create 10 flows with the same parameters:
 
@@ -500,10 +500,10 @@ Some examples:
   netperfmeter $SERVER:9000 \
      -runtime=60 \
      -count=10 \
-     -tcp  const10:const4096:const10:const4906
+     -tcp  const10:const4096:const10:const4096
  ```
 
-* Run an active instance (i.e.&nbsp;client side), with 7&nbsp;flows, stopping the measurement after 60&nbsp;s:
+* Run an active instance (i.e., client side), with 7&nbsp;flows, stopping the measurement after 60&nbsp;s:
 
   - TCP flow, constant 10&nbsp;frames/s, constant 4096&nbsp;B/frame, in both directions;
   - UDP flow, constant 10&nbsp;frames/s, constant 1024&nbsp;B/frame, in both directions;
@@ -512,7 +512,7 @@ Some examples:
   ```bash
   netperfmeter $SERVER:9000 \
      -runtime=60 \
-     -tcp  const10:const4096:const10:const4906 \
+     -tcp  const10:const4096:const10:const4096 \
      -udp  const10:const1024:const10:const1024 \
      -sctp \
         const1:const512:const5:const512 \
@@ -522,7 +522,7 @@ Some examples:
         const5:const512:const1:const512
   ```
 
-* Run an active instance (i.e.&nbsp;client side), with 9&nbsp;flows, stopping the measurement after 60&nbsp;s:
+* Run an active instance (i.e., client side), with 9&nbsp;flows, stopping the measurement after 60&nbsp;s:
 
   - TCP flow, constant 10&nbsp;frames/s, constant 4096&nbsp;B/frame, in both directions;
   - MPTCP flow, constant 10&nbsp;frames/s, constant 4096&nbsp;B/frame, in both directions;
@@ -544,8 +544,8 @@ Some examples:
     -scalar=multi.sca \
     -activenodename "Active Instance" \
     -passivenodename "Passive Instance" \
-    -tcp   const10:const4096:const10:const4906:description="TCP" \
-    -mptcp const10:const4096:const10:const4906:description="MPTCP" \
+    -tcp   const10:const4096:const10:const4096:description="TCP" \
+    -mptcp const10:const4096:const10:const4096:description="MPTCP" \
     -udp   const10:const1024:const10:const1024:description="UDP" \
     -dccp  const10:const1024:const10:const1024:description="DCCP" \
     -sctp \
@@ -557,17 +557,17 @@ Some examples:
   ```
 
   Notes:
-  - Note: DCCP and MPTCP are only available when provided by the operating system kernel!
-  - NetPerfMeter &ge;2.0 is required! Older versions &lt;2.0 only support the expermental Linux MTCP with incompatible API!
+  - DCCP and MPTCP are only available when provided by the operating system kernel!
+  - NetPerfMeter &ge;2.0 is required! Older versions &lt;2.0 only support the experimental Linux MTCP with incompatible API!
 
 
-* An example output of the multi-flow example above, measurered in a multi-homed testbed setup, provides the following output:
+* An example output of the multi-flow example above, measured in a multi-homed testbed setup, provides the following output:
 
   - The configuration file [`multi.config`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.config). It contains the flows and their parameters. It can be used to further process the scalar and vector output. Particularly, it is also used by [`plot-netperfmeter-results`](https://github.com/dreibh/netperfmeter/blob/master/src/plot-netperfmeter-results) to plot an overview of the recorded vectors.
 
-  - Scalar files (i.e.&nbsp;summaries of the single measurement run) from active side ([`multi-active.sca`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active.sca)) and passive side ([`multi-passive.sca`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive.sca)). The scalar file format is the same as used by [OMNeT++](https://omnetpp.org/).
+  - Scalar files (i.e., summaries of the single measurement run) from active side ([`multi-active.sca`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active.sca)) and passive side ([`multi-passive.sca`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive.sca)). The scalar file format is the same as used by [OMNeT++](https://omnetpp.org/).
 
-  - Vector files (i.e.&nbsp;time series) for each flow, from active and passive side:
+  - Vector files (i.e., time series) for each flow, from active and passive side:
 
     + Flow 0 (TCP flow):
       [`active-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000000-0000.vec),
@@ -656,9 +656,9 @@ Some examples:
 
   Notes:
 
-  - Wireshark provides out-of-the-box support for NetPerfMeter, i.e.&nbsp;a dissector is included in all recent Wireshark packages.
+  - Wireshark provides out-of-the-box support for NetPerfMeter, i.e., a dissector is included in all recent Wireshark packages.
 
-  - To decode NetPerfMeter packets, particularly over TCP and UDP, it may be necessary to configure ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs). While SCTP (by [Payload Protocol Identifiers](https://www.iana.org/assignments/sctp-parameters/sctp-parameters.xhtml) 36 and&nbsp;37), DCCP (by [Service Code](https://www.iana.org/assignments/service-codes/service-codes.xhtml) "npmp") and QUIC (by [ALPNs](https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids) "netperfmeter/control" and "netperfmeter/data") allow for unambiguous identification of the NetPerfMeter payload, Wireshark has to rely on heuristics for TCP and UDP. They may fail to recognise the NetPerfMeter payload. The "Decode As" rules configuration in the "Analyze" menu allows to set explicit rules for TCP ports (e.g.&nbsp;8999, 9000, and 9001) and UDP port numbers (e.g.&nbsp;8999 and 9000) for decoding matching packets as NetPerfMeter payload.
+  - To decode NetPerfMeter packets, particularly over TCP and UDP, it may be necessary to configure ["Decode As" rules](https://www.wireshark.org/docs/wsug_html_chunked/ChCustProtocolDissectionSection.html#ChAdvDecodeAs). While SCTP (by [Payload Protocol Identifiers](https://www.iana.org/assignments/sctp-parameters/sctp-parameters.xhtml) 36 and&nbsp;37), DCCP (by [Service Code](https://www.iana.org/assignments/service-codes/service-codes.xhtml) "npmp") and QUIC (by [ALPNs](https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids) "netperfmeter/control" and "netperfmeter/data") allow for unambiguous identification of the NetPerfMeter payload, Wireshark has to rely on heuristics for TCP and UDP. They may fail to recognise the NetPerfMeter payload. The "Decode As" rules configuration in the "Analyze" menu allows users to set explicit rules for TCP ports (e.g., 8999, 9000, and 9001) and UDP port numbers (e.g., 8999 and 9000) for decoding matching packets as NetPerfMeter payload.
 
   - To simplify SCTP packet filtering, it is recommended to activate "Enable association indexing" in the SCTP protocol settings (Preferences → Protocols/SCTP → Enable association indexing).
 
@@ -691,7 +691,7 @@ Some examples:
 
 # 📚 Running Larger-Scale Measurements using the CreateSummary and CombineSummaries Tools
 
-Goal of many NetPerfMeter measurements is likely to perform larger-scale measurements, with multiple NetPerfMeter runs for every combination of NetPerfMeter as well as non-NetPerfMeter parameters.
+The goal of many NetPerfMeter measurements is likely to perform larger-scale measurements, with multiple NetPerfMeter runs for every combination of NetPerfMeter as well as non-NetPerfMeter parameters.
 
 ## Creating a Run Script
 
@@ -704,7 +704,7 @@ Example "experiment1":
 * Option 2: test1, test2, test3
 * ...
 
-The corresponding measurement can be implemented as script (in arbitrary language, e.g.&nbsp;as a simple shell script), basically implementing something like this:
+The corresponding measurement can be implemented as a script (in arbitrary language, e.g., as a simple shell script), basically implementing something like this:
 
 ```bash
 #!/bin/sh -eu
@@ -766,14 +766,14 @@ done
 Notes:
 
 * The current date (from `date -u -Iseconds`) is used to create a unique identifier for each run.
-* The parameter combination (in `run`) may contain special characters, e.g.&nbsp;spaces and slashes, etc. To create a usable and reasonably short directory name, it is [SHA-1](https://www.rfc-editor.org/info/rfc3174/)-hashed, to assemble a directoryName in `directory`.
+* The parameter combination (in `run`) may contain special characters, e.g., spaces and slashes. To create a usable and reasonably short directory name, it is [SHA-1](https://www.rfc-editor.org/info/rfc3174/)-hashed, to assemble a directoryName in `directory`.
 * ⚠️Important: The example NetPerfMeter run could be extended by `--vector ...` to also write vector files. However, in larger-scale or high-bandwidth measurements, vectors are often unnecessary, and their output can be very large. Therefore, only apply it if necessary!
 
 The result of the script execution is a directory `experiment1`, with one subdirectory <tt>run-<em>&lt;HASH&gt;</em></tt> for each NetPerfMeter run. Each of these subdirectories will contain the scalar files `run-active.sca.bz2` (active-side results) and `run-passive.sca.bz2` (passive-side results), with all written scalars.
 
 ## Applying CreateSummary
 
-Clearly, the goal is to create a summary for each scalar, i.e.&nbsp;a table with columns for each parameter setting and the resulting scalar value, i.e.&nbsp;for the scalar *passive.flow-ReceivedBitRate*:
+Clearly, the goal is to create a summary for each scalar, i.e., a table with columns for each parameter setting and the resulting scalar value, i.e., for the scalar *passive.flow-ReceivedBitRate*:
 
 <table summary="Summary Example">
  <tr>
@@ -799,7 +799,7 @@ The summarisation task can be realised by the tool CreateSummary. It generates t
 * For debugging convenience, the directory name of each run.
 
 
-In the example above, this information needs to be added by preparing an input file `results.summary`, and then process this input by CreateSummary:
+In the example above, this information needs to be added by preparing an input file `results.summary`, and then processing this input by CreateSummary:
 
 ```bash
 ...
@@ -838,7 +838,7 @@ The full script is available in: [`run-experiment1`](src/examples/run-experiment
 
 Notes:
 
-* Rerunning the measurement script appends new results. That is, the whole measurement may be repeated multiple times to create more accurate data, e.g.&nbsp;to calculate averages, etc.
+* Rerunning the measurement script appends new results. That is, the whole measurement may be repeated multiple times to create more accurate data, e.g., to calculate averages.
 * Of course, in case of change of the parameters (like adding/removing a parameter), the measurement needs to be started from scratch!
 
 The result of the script execution is a BZip2-compressed CSV table for each scalar, e.g. `active.flow-ReceivedBitRate.data.bz2` and `passive.flow-ReceivedBitRate.data.bz2` containing the received bit rates of active and passive side. These files can be loaded into arbitrary tools handling CSV files. If necessary TAB needs to be specified as delimiter. For example, in [GNU&nbsp;R](https://www.r-project.org/):
@@ -855,7 +855,7 @@ print(results$"active.flow-ReceivedBitRate" / 1000000.0)   # Received bit rate i
 
 ## Applying CombineSummaries
 
-In some cases, it may be necessary to combine summary tables written by CreateSummary. For example, measurements have been from hosts *host1.example* and *host2.example*, now having collected data from both hosts. For analysis, the results in separate files (i.e.&nbsp;tables) for each host can be combined into a single file, with a new table column "Host" containing the measurement host:
+In some cases, it may be necessary to combine summary tables written by CreateSummary. For example, measurements have been conducted from hosts *host1.example* and *host2.example*, now having collected data from both hosts. For analysis, the results in separate files (i.e., tables) for each host can be combined into a single file, with a new table column "Host" containing the measurement host:
 
 ```bash
 (
@@ -920,7 +920,7 @@ sudo dnf install netperfmeter-all
 
 ## FreeBSD
 
-For ready-to-install FreeBSD packages of NetPerfMeter, it is included in the ports collection, see [FreeBSD ports tree index of benchmarks/netperfmeter/](https://cgit.freebsd.org/ports/tree/benchmarks/netperfmeter/)!
+For ready-to-install FreeBSD packages of NetPerfMeter, it is included in the ports collection; see [FreeBSD ports tree index of benchmarks/netperfmeter/](https://cgit.freebsd.org/ports/tree/benchmarks/netperfmeter/)!
 
 ```bash
 sudo pkg install netperfmeter
@@ -937,7 +937,7 @@ sudo make install
 
 # 💾 Build from Sources
 
-NetPerfMeter is released under the [GNU General Public Licence&nbsp;(GPL)](https://www.gnu.org/licenses/gpl-3.0.en.html#license-text).
+NetPerfMeter is released under the [GNU General Public License&nbsp;(GPL)](https://www.gnu.org/licenses/gpl-3.0.en.html#license-text).
 
 Please use the issue tracker at [https://github.com/dreibh/netperfmeter/issues](https://github.com/dreibh/netperfmeter/issues) to report bugs and issues!
 
@@ -959,7 +959,13 @@ Optionally, for installation to the standard paths (usually under `/usr/local`):
 sudo make install
 ```
 
-Note: The script [`ci/get-dependencies`](https://github.com/dreibh/netperfmeter/blob/master/ci/get-dependencies) automatically installs the build dependencies under Debian/Ubuntu Linux, Fedora Linux, and FreeBSD. For manual handling of the build dependencies, see the packaging configuration in [`debian/control`](https://github.com/dreibh/netperfmeter/blob/master/debian/control) (Debian/Ubuntu Linux), [`netperfmeter.spec`](https://github.com/dreibh/netperfmeter/blob/master/rpm/netperfmeter.spec) (Fedora Linux), and [`Makefile`](https://github.com/dreibh/netperfmeter/blob/master/freebsd/netperfmeter/Makefile) FreeBSD.
+Note: The script [`ci/get-dependencies`](https://github.com/dreibh/netperfmeter/blob/master/ci/get-dependencies) automatically installs the build dependencies under Debian/Ubuntu Linux, Fedora Linux, OpenSUSE Linux, Alpine Linux, FreeBSD, and Debian GNU/Hurd. For manual handling of the build dependencies, take a look at the packaging configuration files:
+
+* [`debian/control`](https://github.com/dreibh/netperfmeter/blob/master/debian/control) (Debian/Ubuntu Linux, Debian GNU/Hurd),
+* [`netperfmeter.spec`](https://github.com/dreibh/netperfmeter/blob/master/rpm/netperfmeter.spec) (Fedora Linux, OpenSUSE Linux),
+* [`APKBUILD`](https://github.com/dreibh/netperfmeter/blob/master/packaging/APKBUILD) (Alpine Linux),
+* [`Makefile`](https://github.com/dreibh/netperfmeter/blob/master/freebsd/netperfmeter/Makefile) (FreeBSD), and
+* [`netperfmeter.rb`](https://github.com/dreibh/netperfmeter/blob/master/packaging/netperfmeter.rb) (Homebrew).
 
 Contributions:
 
