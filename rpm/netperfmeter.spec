@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.11
+Version: 2.0.12~rc0
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -18,6 +18,7 @@ BuildRequires: mupdf
 BuildRequires: valgrind-devel
 
 Requires: %{name}-common = %{version}-%{release}
+Requires: findutils
 Recommends: gnutls-devel
 Recommends: hipercontracer
 Recommends: iputils

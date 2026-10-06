@@ -976,7 +976,7 @@ sudo dnf install netperfmeter-all
 
 ## OpenSUSE Linux
 
-For ready-to-install [OpenSUSE Linux](https://www.opensuse.org/) packages of NetPerfMeter, see [Open Build Service PPA for Thomas Dreibholz](https://build.opensuse.org/project/show/home:dreibh)!
+For ready-to-install [OpenSUSE Linux](https://www.opensuse.org/) packages of NetPerfMeter, see the [Open Build Service PPA for Thomas Dreibholz](https://build.opensuse.org/project/show/home:dreibh)!
 
 Add the PPA repository:
 
@@ -1002,7 +1002,7 @@ sudo zypper install netperfmeter-all
 
 ## Alpine Linux
 
-For ready-to-install [Alpine Linux](https://alpinelinux.org/) packages of NetPerfMeter, see [Open Build Service PPA for Thomas Dreibholz](https://build.opensuse.org/project/show/home:dreibh)!
+For ready-to-install [Alpine Linux](https://alpinelinux.org/) packages of NetPerfMeter, see the [Open Build Service PPA for Thomas Dreibholz](https://build.opensuse.org/project/show/home:dreibh)!
 
 Add the PPA repository:
 
@@ -1031,7 +1031,7 @@ sudo apk add netperfmeter-all
 
 ## FreeBSD
 
-For ready-to-install [FreeBSD](https://www.freebsd.org/) packages of NetPerfMeter, it is included in the ports collection; see [FreeBSD ports tree index of net/netperfmeter/](https://cgit.freebsd.org/ports/tree/net/netperfmeter/)!
+For ready-to-install [FreeBSD](https://www.freebsd.org/) packages of NetPerfMeter, it is included in the ports collection; see [FreeBSD ports tree index of benchmarks/netperfmeter/](https://cgit.freebsd.org/ports/tree/benchmarks/netperfmeter/)!
 
 ```bash
 sudo pkg install netperfmeter
@@ -1072,7 +1072,7 @@ brew tap dreibh/tap
 brew trust dreibh/tap
 ```
 
-Install basic NetPerfMeter (without the dependency-heavy plotting scripts and examples):
+For the complete NetPerfMeter (including plotting scripts and examples):
 
 ```bash
 brew install netperfmeter

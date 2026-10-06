@@ -30,7 +30,7 @@ PROJECT(netperfmeter LANGUAGES C CXX)
 
 SET(BUILD_MAJOR "2")
 SET(BUILD_MINOR "0")
-SET(BUILD_PATCH "11")
+SET(BUILD_PATCH "12~rc0")
 SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
@@ -461,7 +461,7 @@ IF (WITH_ICONS)
               " * Ubuntu/Debian: sudo apt install -y inkscape\n"
               " * Fedora:        sudo dnf install -y inkscape\n"
               " * OpenSUSE:      sudo zypper install -y inkscape\n"
-              " * Alpine:        sudo apk add inkscape\n"
+              " * Alpine:        sudo apk add inkscape font-dejavu\n"
               " * FreeBSD:       sudo pkg install -y inkscape\n"
               " * NetBSD:        sudo pkgin -y install inkscape\n"
               " * OpenBSD:       sudo pkg_add inkscape\n"
