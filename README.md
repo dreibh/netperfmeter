@@ -22,7 +22,7 @@ The [Wireshark](https://www.wireshark.org/) network protocol analyser provides o
 
 ## Design Goals and Features
 
-The key goal of NetPerfMeter is to provide a tool for the performance comparison of multiple transport connections, which are further denoted as *Flows*. That is, it is possible to configure different flows between two systems using varying parameters, in order to run a configured measurement, collect the obtained results and post-process them for statistical analyses. Particularly, all five relevant IETF Transport Layer protocols are supported:
+The key goal of NetPerfMeter is to provide a tool for the performance comparison of multiple transport connections, which are further denoted as *Flows*. That is, it is possible to configure different flows between two systems using varying parameters, in order to run a configured measurement, collect the obtained results and post-process them for statistical analyses. Particularly, all six relevant IETF Transport Layer protocols are supported:
 
    * [UDP](http://www.tcpipguide.com/free/t_TCPIPUserDatagramProtocolUDP.htm) (User Datagram Protocol; see [RFC&nbsp;768](https://www.rfc-editor.org/rfc/rfc768.html)),
    * [DCCP](https://www.kernel.org/doc/html/v5.8/networking/dccp.html) (Datagram Congestion Control Protocol; see [RFC&nbsp;4340](https://www.rfc-editor.org/rfc/rfc4340.html)),
@@ -463,7 +463,7 @@ NetPerfMeter supports randomised frame rate and frame size, to create variable b
 * <tt>pareto<em>&lt;location&gt;</em>,<em>&lt;shape&gt;</em></tt>: Pareto distribution with location <em>&lt;location&gt;</em> and shape <em>&lt;shape&gt;</em>. Example: pareto0.166667,1.5.
 * <tt>normal<em>&lt;mean&gt;</em>,<em>&lt;stddev&gt;</em></tt>: Normal distribution with mean <em>&lt;mean&gt;</em> and standard deviation <em>&lt;stddev&gt;</em>. Example: normal1000,500.
 Note that normal distribution may result in negative values, which may be ignored (frame size) or interpreted as saturated traffic (frame rate). Use truncnormal to prevent negative values.
-* <tt>truncnormal<em>&lt;mean&gt;</em>,<em>&lt;stddev&gt;</em></tt>: Truncated normal distribution with mean <em>&lt;mean&gt;</em> and standard deviation <em>&lt;stddev&gt;</em>, i.e. normal distribution without negative values. Example: truncnormal1000,500.
+* <tt>truncnormal<em>&lt;mean&gt;</em>,<em>&lt;stddev&gt;</em></tt>: Truncated normal distribution with mean <em>&lt;mean&gt;</em> and standard deviation <em>&lt;stddev&gt;</em>, i.e., normal distribution without negative values. Example: truncnormal1000,500.
 
 A configured distribution is used to determine:
 
