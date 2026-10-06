@@ -841,7 +841,7 @@ Notes:
 * Rerunning the measurement script appends new results. That is, the whole measurement may be repeated multiple times to create more accurate data, e.g., to calculate averages.
 * Of course, in case of change of the parameters (like adding/removing a parameter), the measurement needs to be started from scratch!
 
-The result of the script execution is a BZip2-compressed CSV table for each scalar, e.g. `active.flow-ReceivedBitRate.data.bz2` and `passive.flow-ReceivedBitRate.data.bz2` containing the received bit rates of active and passive side. These files can be loaded into arbitrary tools handling CSV files. If necessary TAB needs to be specified as delimiter. For example, in [GNU&nbsp;R](https://www.r-project.org/):
+The result of the script execution is a BZip2-compressed CSV table for each scalar, e.g., `active.flow-ReceivedBitRate.data.bz2` and `passive.flow-ReceivedBitRate.data.bz2` containing the received bit rates of active and passive side. These files can be loaded into arbitrary tools handling CSV files. If necessary TAB needs to be specified as delimiter. For example, in [GNU&nbsp;R](https://www.r-project.org/):
 
 ```r
 library("data.table")
