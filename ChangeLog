@@ -1,3 +1,161 @@
+commit 97274613e6420aec1a0ca35ac6307d752b88c046
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 6 13:26:17 2026 +0200
+
+    Fixed typo.
+
+commit 603999a3133bbc500e8ffc12c6c0eba31d9b991d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 6 13:19:55 2026 +0200
+
+    Minor documentation update.
+
+commit cbbc367a3e6cf06ee34d725ccb89d5287892e4fe
+Merge: c70b1b6 5dfe289
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 6 11:53:25 2026 +0200
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit c70b1b6fa47c27d2fd52d8aa5b58c3aa4f091a66
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 6 11:52:56 2026 +0200
+
+    Improved documentation.
+
+commit 5dfe289dbcdafd999add909e47840ba7be6818f9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 5 21:21:35 2026 +0200
+
+    Fixed typo.
+
+commit 63640f5979d0e799cab38dec9b07883ba4625f33
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 5 16:24:54 2026 +0200
+
+    Consistently checking for __sun and __GNU__ cases now.
+
+commit dca944911f8e9a4ed053b7338357e34f13a487e9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 5 12:16:02 2026 +0200
+
+    Packaging improvement for Debian/Ubuntu/Fedora/OpenSuSE: Moved netperfmeter-plotting and netperfmeter-examples from "Recommends" to "Suggests", to avoid dependency-heavy R installation by default when just installing "netperfmeter".
+
+commit e9602cbd657effa406631b2ec6a6af077d4c9e6d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 5 12:15:44 2026 +0200
+
+    Further documentation improvements.
+
+commit f701fdf84addf735c2b30a6be0bd43917322f772
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 5 11:58:15 2026 +0200
+
+    Improved documentation.
+
+commit 391d6b3773a86c0be00b23e5be77a429a9aa6450
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 2 17:34:51 2026 +0200
+
+    Updated build helper script.
+
+commit 95e85712fcef267728ce2c1f2cae82b1f6c4bf9b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 2 15:29:44 2026 +0200
+
+    Updated script.
+
+commit 1dac7d65c1f36fdc2059b3376ead4463b00d352d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 2 15:21:55 2026 +0200
+
+    Updated helper script.
+
+commit 22b1bfe19e78a0948007a3c22120e60aef70bc7e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Sep 17 17:00:04 2026 +0200
+
+    Updated APKBUILD file.
+
+commit 41f8cb9c3f86e2ef000e1fe7fabb238b08961ab1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Sep 17 16:59:52 2026 +0200
+
+    Solaris code clean-ups.
+
+commit 49c9289b7a3cc386d2ae36803acf3b4086f3c862
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Sep 12 22:35:02 2026 +0200
+
+    Removed unnecessary uname() call from loglevel.cc.
+
+commit 3eeef467d74db9210864db145f0b85f2ec9a5514
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Sep 12 21:23:23 2026 +0100
+
+    GNU Hurd CPU statistics now also works with SMP kernels.
+
+commit a4e6774a5b5f492448ae94350bba87de6688fb25
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Sep 12 20:46:33 2026 +0100
+
+    Commented out test.
+
+commit 7b87e561cf0377882cd9720accb750226b4b8a64
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Sep 12 20:45:03 2026 +0100
+
+    Some clean-ups.
+
+commit 1168ec9b57b43a22b7118fa8d9a89e86ec35de82
+Merge: 896ce9d 900a071
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Sep 12 20:29:16 2026 +0100
+
+    Merge remote-tracking branch 'origin/master' into dreibh/hurd
+
+commit 896ce9dd71b3a88c5e1c0332acb33905c6ded47c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Sep 12 20:24:36 2026 +0100
+
+    Added GNU Hurd support for CPU statistics.
+
+commit 900a0718404d1e9cb10bdb011c689da0a9514f08
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Sep 12 21:23:42 2026 +0200
+
+    Bugfix: Fixed processing of stale CPU statistics from /proc under Linux.
+
+commit 23ef1f021986fb0ec96479e87e4da7cbb4514e88
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Sep 12 17:27:12 2026 +0100
+
+    Added GNU Hurd support.
+
+commit 8cfc4b5af46df203e57a43aaaab2a72c2269f39e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Sep 12 17:26:51 2026 +0100
+
+    Added cases for GNU Hurd.
+
+commit 12e8cd36f3c0c72e818f9066dea5f9c9ae8091e0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Sep 12 16:40:45 2026 +0100
+
+    Updated build helper script.
+
+commit 1417ae21756953aa325f0fb23dacba113ef7bae9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Sep 10 11:36:41 2026 +0200
+
+    Updated FreeBSD port.
+
+commit 5bdccc72f1dd43ad3484f5582a8951b8bf2e9630
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Sep 10 11:08:11 2026 +0200
+
+    New release netperfmeter-2.0.11.
+
 commit 8f509fa8f062e1dcb43c9a119c4441833c0c2c5a
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Thu Sep 10 10:43:43 2026 +0200
