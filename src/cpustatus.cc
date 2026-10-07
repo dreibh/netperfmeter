@@ -104,6 +104,7 @@ CPUStatus::CPUStatus()
       stdlog << "Unable to open /proc/stat!" << "\n";
       LOG_END_FATAL
    }
+   fclose(procStatFD);
 
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
    CpuStates = CPUSTATES;
