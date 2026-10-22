@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [ "$1" == "on" ] ; then
+   for chain in INPUT OUTPUT ; do
+      sudo iptables -F CHAIN
+      for port in sport dport ; do
+         sudo iptables -A $chain -p udp --$port 9000 -j DROP
+         sudo iptables -A $chain -p tcp --$port 9000 -j DROP
+         sudo iptables -A $chain -p tcp --$port 9001 -j DROP
+      done
+   done
+
+   sudo iptables -L INPUT -nv
+   sudo iptables -L OUTPUT -nv
+
+   echo "*** BLOCKING NetPerfMeter traffic! ***"
+else
+   sudo iptables -F INPUT
+   sudo iptables -F OUTPUT
+   echo "*** Flushed ***"
+fi
