@@ -2258,12 +2258,60 @@ static void activeMode(const char* remoteEndpoint)
       params.spp_pathmaxrxt = gControlHBCount;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &params, sizeof(params)) < 0) {
          LOG_WARNING
-         stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control association: %s!",
+         stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END
       }
    }
+   else
 #endif
+   if(gActiveControlProtocol == IPPROTO_TCP) {
+      const int keepAliveOption = 1;
+      if(ext_setsockopt(gControlSocket, SOL_SOCKET, SO_KEEPALIVE,
+                        (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
+         LOG_ERROR
+         stdlog << format("Failed to set SO_KEEPALIVE on TCP control socket %d: %s!",
+                          gControlSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+#if defined(TCP_KEEPIDLE)
+      const int keepIdleOption = (int)gControlHBInterval / 1000;   // in s
+      if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPIDLE,
+                        (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
+         LOG_ERROR
+         stdlog << format("Failed to set TCP_KEEPIDLE on TCP control socket %d: %s!",
+                          gControlSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+#else
+#note No TCP_KEEPIDLE option available!
+#endif
+#if defined(TCP_KEEPINTVL)
+      const int keepIntervalOption = (int)gControlHBInterval / 1000;   // in s
+      if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPINTVL,
+                        (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
+         LOG_ERROR
+         stdlog << format("Failed to set TCP_KEEPINTVL on TCP control socket %d: %s!",
+                          gControlSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+#else
+#note No TCP_KEEPINTVL option available!
+#endif
+#if defined(TCP_KEEPCNT)
+      const int keepCountOption = (int)gControlHBCount;
+      if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPCNT,
+                        (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
+         LOG_ERROR
+         stdlog << format("Failed to set TCP_KEEPCNT on TCP control socket %s: %s!",
+                          gControlSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+#else
+#note No TCP_KEEPCNT option available!
+#endif
+   }
+
    LOG_TRACE
    stdlog << "<okay; sd=" << gControlSocket << ">\n";
    LOG_END
