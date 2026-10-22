@@ -27,8 +27,8 @@
 .\"
 .\" ###### Setup ############################################################
 .Dd October 22, 2026
-.Dt netperfmeter\-module\-loader 1
-.Os netperfmeter\-module\-loader
+.Dt netperfmeter-module-loader 1
+.Os netperfmeter-module-loader
 .\" ###### Name #############################################################
 .Sh NAME
 .Nm netperfmeter\-module\-loader
@@ -36,24 +36,28 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm netperfmeter\-module\-loader
-start | stop | status
+.Cm start
+.Nm netperfmeter\-module\-loader
+.Cm stop
+.Nm netperfmeter\-module\-loader
+.Cm status
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm netperfmeter\-module\-loader
 loads the network protocol and congestion control kernel modules for
-NetPerfMeter, to support the TCP, MPTCP, UDP, DCCP and SCTP transport
+NetPerfMeter, to support the TCP, MPTCP, UDP, DCCP, and SCTP transport
 protocols (if available) and corresponding congestion controls (if available).
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
-The following arguments can to be provided:
+The following arguments may be provided:
 .Bl -tag -width indent
-.It start
+.It Cm start
 Load all available modules.
-.It start
+.It Cm stop
 Try to unload all available modules. Note that some modules may still be in
-use, i.e. they will remain loaded.
-.It status
+use, i.e., they will remain loaded.
+.It Cm status
 Prints the loaded modules and allowed TCP congestion controls.
 .El
 .\" ###### Exit status ######################################################
@@ -63,12 +67,20 @@ The
 tool exits with 0 on success, and >0 in case of an error.
 .\" ###### Examples #########################################################
 .Sh EXAMPLES
-Some netperfmeter\-module\-loader usage examples:
-.Bl -tag -width indent
-.It sudo netperfmeter\-module\-loader start
-.It sudo netperfmeter\-module\-loader stop
-.It netperfmeter\-module\-loader status
-.El
+Load all available kernel modules:
+.Bd -literal
+sudo netperfmeter\-module\-loader start
+.Ed
+.Pp
+Unload all available kernel modules:
+.Bd -literal
+sudo netperfmeter\-module\-loader stop
+.Ed
+.Pp
+Show status of loaded modules and congestion controls:
+.Bd -literal
+netperfmeter\-module\-loader status
+.Ed
 .\" ###### See also #########################################################
 .Sh SEE ALSO
 .Xr netperfmeter 1
