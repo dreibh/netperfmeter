@@ -1780,7 +1780,7 @@ static void passiveMode(const uint16_t localPort)
          LOG_END_FATAL
       }
 #else
-#note No TCP_KEEPIDLE option available!
+#warning No TCP_KEEPIDLE option available!
 #endif
 #if defined(TCP_KEEPINTVL)
       const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
@@ -1792,7 +1792,7 @@ static void passiveMode(const uint16_t localPort)
          LOG_END_FATAL
       }
 #else
-#note No TCP_KEEPINTVL option available!
+#warning No TCP_KEEPINTVL option available!
 #endif
 #if defined(TCP_KEEPCNT)
       const int keepCountOption = (int)gControlHBPathMaxRtx;
@@ -1804,7 +1804,7 @@ static void passiveMode(const uint16_t localPort)
          LOG_END_FATAL
       }
 #else
-#note No TCP_KEEPCNT option available!
+#warning No TCP_KEEPCNT option available!
 #endif
 
       gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
@@ -2341,7 +2341,7 @@ static void activeMode(const char* remoteEndpoint)
          LOG_END_FATAL
       }
 #else
-#note No TCP_KEEPIDLE option available!
+#warning No TCP_KEEPIDLE option available!
 #endif
 #if defined(TCP_KEEPINTVL)
       const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
@@ -2353,7 +2353,7 @@ static void activeMode(const char* remoteEndpoint)
          LOG_END_FATAL
       }
 #else
-#note No TCP_KEEPINTVL option available!
+#warning No TCP_KEEPINTVL option available!
 #endif
 #if defined(TCP_KEEPCNT)
       const int keepCountOption = (int)gControlHBPathMaxRtx;
@@ -2365,7 +2365,7 @@ static void activeMode(const char* remoteEndpoint)
          LOG_END_FATAL
       }
 #else
-#note No TCP_KEEPCNT option available!
+#warning No TCP_KEEPCNT option available!
 #endif
    }
 
