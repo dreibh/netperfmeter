@@ -529,6 +529,12 @@ static bool handleGlobalParameters(int argc, char** argv)
          case '!':
             gLogLevel = LOGLEVEL_TRACE;
           break;
+         case 'B':
+            gControlHBInterval = std::min((unsigned int)atoi(optarg), 86400000U);
+          break;
+         case 'b':
+            gControlHBCount = std::min((unsigned int)atoi(optarg), 1000000U);
+          break;
          case 'v':
             version();
           break;
@@ -601,7 +607,7 @@ static void printGlobalParameters()
    else {
       stdlog << "(any)";
    }
-   stdlog << "\n";
+   stdlog << "\n - Control Heartbeats        = " <<gControlHBCount << " / " <<gControlHBInterval << " ms\n";
    LOG_END
 }
 
