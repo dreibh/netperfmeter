@@ -20,12 +20,44 @@
 #
 
 use strict;
+use warnings;
 use utf8;
-use POSIX;
+use POSIX qw(strftime getuid);
 use Encode;
+use Getopt::Long qw(:config bundling no_ignore_case);
 use PDF::API2;
 use subs qw(updatePDFMetadataRecursion);
 use subs qw(updatePDFMetadata);
+
+
+# ------ BEGIN-OF-USAGE-BLOCK ------
+# ###### Usage ##############################################################
+sub usage($$) {
+   my ($program, $exitCode) = @_;
+   my $header = "\x1b[4m";
+   my $cmd    = "\x1b[1m";
+   my $opt    = "\x1b[1m";
+   my $arg    = "\x1b[4m";
+   my $syn    = "\x1b[1m";
+   my $reset  = "\x1b[0m";
+
+   print STDERR "${header}Usage:${reset}\n";
+   print STDERR "${cmd}${program}${reset} ${arg}input_pdf${reset} ${arg}metadata_file${reset} ${arg}output_pdf${reset}\n";
+   print STDERR "${cmd}${program}${reset}\n";
+   print STDERR "\t${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}\n";
+   print STDERR "${cmd}${program}${reset}\n";
+   print STDERR "\t${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}\n";
+
+   exit($exitCode);
+}
+# ------ END-OF-USAGE-BLOCK ------
+
+
+# ###### Version ############################################################
+sub version() {
+   print "setpdfmetadata \@BUILD_MAJOR\@.\@BUILD_MINOR\@.\@BUILD_PATCH@\n";
+   exit(0);
+}
 
 
 # ###### Get next command line ##############################################
@@ -97,35 +129,35 @@ sub updatePDFMetadataRecursion($$$$) {
       if($command =~ /^subject/) {
          my ($dummy, $subject) = split(/ /, $command, 2);
          Encode::from_to($subject, "utf8", "iso-8859-1");
-         $pdfFile->info('Subject' => $subject)
+         $pdfFile->info('Subject' => $subject);
       }
 
       # ===== Handle "author" command =======================================
       if($command =~ /^author/) {
          my ($dummy, $author) = split(/ /, $command, 2);
          Encode::from_to($author, "utf8", "iso-8859-1");
-         $pdfFile->info('Author' => $author)
+         $pdfFile->info('Author' => $author);
       }
 
       # ===== Handle "creator" command ======================================
       if($command =~ /^creator/) {
          my ($dummy, $creator) = split(/ /, $command, 2);
          Encode::from_to($creator, "utf8", "iso-8859-1");
-         $pdfFile->info('Creator' => $creator)
+         $pdfFile->info('Creator' => $creator);
       }
 
       # ===== Handle "producer" command =====================================
       if($command =~ /^producer/) {
          my ($dummy, $producer) = split(/ /, $command, 2);
          Encode::from_to($producer, "utf8", "iso-8859-1");
-         $pdfFile->info('Producer' => $producer)
+         $pdfFile->info('Producer' => $producer);
       }
 
       # ===== Handle "keywords" command =====================================
       if($command =~ /^keywords/) {
          my ($dummy, $keywords) = split(/ /, $command, 2);
          Encode::from_to($keywords, "utf8", "iso-8859-1");
-         $pdfFile->info('Keywords' => $keywords)
+         $pdfFile->info('Keywords' => $keywords);
       }
 
       $command = getNextCommand($inputFile);
@@ -135,10 +167,10 @@ sub updatePDFMetadataRecursion($$$$) {
 
 # ###### Update PDF metadata (outlines, properties) #########################
 sub updatePDFMetadata($$) {
-   my $pdfFile   = shift;   # PDF file
+   my $pdfFile      = shift;   # PDF file
    my $metadataFile = shift;   # Metadata input file
 
-   my $command = getNextCommand(*metadataFile);
+   my $command = getNextCommand($metadataFile);
 
    updatePDFMetadataRecursion($pdfFile, $pdfFile->outlines, $command, $metadataFile);
 }
@@ -146,21 +178,41 @@ sub updatePDFMetadata($$) {
 
 
 # ###### Main program #######################################################
-if ($#ARGV != 2) {
-   printf(STDERR "Usage: %s input.pdf metadata.meta output.pdf\n", $0);
-   exit 1;
+
+# ====== Handle command-line arguments ======================================
+my $help    = 0;
+my $version = 0;
+
+GetOptions(
+   'help|h'    => \$help,
+   'version|v' => \$version,
+) or usage($0, 1);
+
+if ($help) {
+   usage($0, 0);
+}
+if ($version) {
+   version();
 }
 
-# ====== Handle arguments ===================================================
+if (@ARGV != 3) {
+   usage($0, 1);
+}
+
 my $inputPDFName      = $ARGV[0];
 my $inputMetadataName = $ARGV[1];
 my $outputPDFName     = $ARGV[2];
-my $pdfFile           = PDF::API2->open($inputPDFName);
-open(metadataFile, "<", $inputMetadataName) or
-   die("ERROR: Unable to open metadata file \"", $inputMetadataName, "\"");
+
+my $pdfFile = PDF::API2->open($inputPDFName);
+if (!$pdfFile) {
+   die("ERROR: Unable to open PDF file \"$inputPDFName\"\n");
+}
+
+open(my $metadataFile, "<", $inputMetadataName) or
+   die("ERROR: Unable to open metadata file \"$inputMetadataName\": $!\n");
 
 # ====== Set default author and producer ====================================
-my $userID=POSIX::getuid();
+my $userID = POSIX::getuid();
 my ($name, $passwd, $uid, $gid, $quota, $comment, $gcos, $dir, $shell) = getpwuid($userID);
 if($gcos) {
    my ($fullName) = split(/,/, $gcos, 2);
@@ -173,7 +225,8 @@ my $time = strftime("D:%Y%m%d%H%M%S%z", localtime());
 $pdfFile->info('ModDate' => $time);
 
 # ====== Apply metadata changes from metadata file ==========================
-updatePDFMetadata($pdfFile, *metadataFile);
+updatePDFMetadata($pdfFile, $metadataFile);
+close($metadataFile);
 
 # ====== Save results =======================================================
 $pdfFile->saveas($outputPDFName);

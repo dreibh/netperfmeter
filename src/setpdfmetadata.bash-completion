@@ -43,26 +43,53 @@ _setpdfmetadata()
       # shellcheck disable=SC2034
       prev="${COMP_WORDS[COMP_CWORD-1]}"
       # shellcheck disable=SC2034,SC2124
-      words="${COMP_WORDS[@]}"
+      words=("${COMP_WORDS[@]}")
       # shellcheck disable=SC2034
       cword="${COMP_CWORD}"
    fi
 
-   if [ "${cword}" -eq 1 ] ; then
-      _filedir '@(pdf)'
-      return
-   elif [ "${cword}" -eq 2 ] ; then
-      _filedir '@(meta)'
-      return
-   elif [ "${cword}" -eq 3 ] ; then
-      _filedir '@(pdf)'
-      return
+   # ====== Positional parameters ===========================================
+   if [ "${cur:0:1}" != "-" ] ; then
+      case "${cword}" in
+         1)
+            # Parameter 1: input_pdf
+            if type -t _filedir >/dev/null; then
+               _filedir 'pdf'
+            else
+               mapfile -t COMPREPLY < <(compgen -f -X '!*.pdf' -- "${cur}")
+            fi
+            return 0
+            ;;
+         2)
+            # Parameter 2: metadata_file
+            if type -t _filedir >/dev/null; then
+               _filedir 'meta'
+            else
+               mapfile -t COMPREPLY < <(compgen -f -X '!*.meta' -- "${cur}")
+            fi
+            return 0
+            ;;
+         3)
+            # Parameter 3: output_pdf
+            if type -t _filedir >/dev/null; then
+               _filedir 'pdf'
+            else
+               mapfile -t COMPREPLY < <(compgen -f -X '!*.pdf' -- "${cur}")
+            fi
+            return 0
+            ;;
+         *)
+            return 0
+            ;;
+      esac
    fi
 
    # ====== All options =====================================================
    local opts="
+-h --help
+-v --version
 "
-   mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}" )
+   mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}")
    return 0
 }
 
