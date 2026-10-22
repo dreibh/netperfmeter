@@ -91,9 +91,13 @@ INSTALL(FILES       netperfmeter.bash-completion
         DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
         RENAME      netperfmeter)
 
-INSTALL(PROGRAMS netperfmeter-module-loader   DESTINATION ${CMAKE_INSTALL_BINDIR})
-INSTALL(FILES    netperfmeter-module-loader.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
-
+CONFIGURE_FILE(netperfmeter-module-loader netperfmeter-module-loader.versioned @ONLY)
+SET_PROPERTY(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES netperfmeter-module-loader.versioned)
+INSTALL(PROGRAMS netperfmeter-module-loader.versioned DESTINATION ${CMAKE_INSTALL_BINDIR})
+INSTALL(PROGRAMS    ${CMAKE_CURRENT_BINARY_DIR}/netperfmeter-module-loader.versioned
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
+        RENAME      netperfmeter-module-loader)
+INSTALL(FILES       netperfmeter-module-loader.1       DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
    INSTALL(FILES    netperfmeter.service               DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
    INSTALL(FILES    netperfmeter.conf                  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR})
