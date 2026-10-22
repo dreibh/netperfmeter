@@ -37,7 +37,9 @@
 .Sh SYNOPSIS
 .Nm extractvectors
 .Op Ar input\_file
+.br
 .Op Ar output\_file
+.br
 .Op Ar [!]vector\_name\_prefix
 .Op ...
 .br
@@ -70,9 +72,9 @@ The name of the output data table to be created.
 .It Op Ar [!]vector\_name\_prefix
 Name prefix of vectors to be extracted. Multiple vector name prefixes may be specified. If no name prefix is given, all vectors will be extracted. A "!" in front of the name turns vector splitting for this prefix on (see \-\-split option below).
 .It Fl c Ar level | Fl \-compress Ar level
-Sets the BZip2 compression level; 1=none, 9=highest (default).
+Sets the BZip2 compression level; 1=fastest (lowest), 9=highest (default).
 .It Fl s Ar separator | Fl \-separator Ar separator
-Sets the separator for the tables. Default: tabulator character (i.e. $'\t').
+Sets the separator for the tables. Default: tabulator character (i.e., $'\et').
 .It Fl l | Fl \-line\-numbers
 Add line numbers into the output table files, as usual for GNU R.
 .It Fl n | Fl \-no\-line\-numbers
@@ -95,7 +97,7 @@ The
 .Nm
 tool exits with 0 on success, and >0 in case of an error.
 .\" ###### Examples #########################################################
-.Sh EXAMPLE
+.Sh EXAMPLES
 Consider an OMNeT++ vector file containing the vectors
 "Slow Start Threshold <assoc>:<path>" and
 "Congestion Window <assoc>:<path>",
@@ -105,40 +107,35 @@ ExtractVectors can be used to extract all vectors beginning with "Slow Start Thr
 table
 .Pa results.data.bz2
 by the following command:
-.br
+.Bd -literal
 extractvectors results.vec.bz2 results.data.bz2 \\
    "Slow Start Threshold" \\
    "Congestion Window"
-.br
+.Ed
+.Pp
 For each vector entry, an output line containing
 time (Time), event number (Event),
 object name (Object),
 vector name (Vector),
 name split parameter (Split), and
 the vector value (Value) will be created.
-.br
+.Pp
 Example:
-.br
+.Bd -literal
 Time     Event               Object Vector                          Split Value
-.br
 0.003672   174 "net.client[0].sctp" "Slow Start Threshold 2:Total"  ""    10000000
-.br
 0.003672   174 "net.client[0].sctp" "Slow Start Threshold 2:Total"  ""    10000000
-.br
 0.003672   174 "net.client[0].sctp" "Congestion Window 2:Total"     ""    4380
-.br
 0.003672   174 "net.client[0].sctp" "Congestion Window 2:Total"     ""    8760
-.br
 0.003913   238 "net.server[0].sctp" "Slow Start Threshold 4:Total"  ""    10000000
-.br
 0.003913   238 "net.server[0].sctp" "Slow Start Threshold 4:Total"  ""    10000000
-.br
 0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     ""    3000
-.br
 0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     ""    6000
+.Ed
 .\" ###### See also #########################################################
 .Sh SEE ALSO
-.Xr extractvectors 1
+.Xr combinesummaries 1 ,
+.Xr createsummary 1
 .\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
