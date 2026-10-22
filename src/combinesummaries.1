@@ -35,7 +35,9 @@
 .Nd Scalar Summary Combination Tool
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm combinesummaries Ar output\_file
+.Nm combinesummaries
+.Ar output\_file
+.br
 .Op Ar variable\_names
 .br
 .Op Fl c Ar level | Fl \-compress Ar level
@@ -75,7 +77,7 @@ A space\-separated list of output variable names to be added to the output data 
 .It Fl c Ar level | Fl \-compress Ar level
 Sets the BZip2 compression level; 1=fastest (lowest), 9=highest (default).
 .It Fl s Ar separator | Fl \-separator Ar separator
-Sets the separator for the tables. Default: tabulator character (i.e. $'\et').
+Sets the separator for the tables. Default: tabulator character (i.e., $'\et').
 .It Fl l | Fl \-line\-numbers
 Generate line numbers for output rows (GNU R: row names). In this case, the input files must contain line numbers (GNU R: row names) as well! The original line numbers are kept in column SubLineNo. Default: off.
 .It Fl n | Fl \-no\-line\-numbers
@@ -102,9 +104,9 @@ Consider two data tables:
 The output data table should be written to
 .Pa output.data.bz2 .
 .br
-( echo \-e "\-\-values=\\"Alpha\\"\et\\"Test 1\\"" && \\
+( echo \-e "\-\-values=\e\[dq]Alpha\e\[dq]\et\e\[dq]Test 1\e\[dq]" && \\
   echo "\-\-input=v1.data.bz2"               && \\
-  echo \-e "\-\-values=\\"Beta\\"\et\\"Test 2\\""  && \\
+  echo \-e "\-\-values=\e\[dq]Beta\e\[dq]\et\e\[dq]Test 2\e\[dq]"  && \\
   echo "\-\-input=v2.data.bz2" ) | combinesummaries output.data.bz2 $'ParameterX\etParameterY'
 .\" ###### See also #########################################################
 .Sh SEE ALSO

@@ -153,22 +153,34 @@ void addDataFile(OutputFile&         outputFile,
 }
 
 
+// ------ BEGIN-OF-USAGE-BLOCK ------
 // ###### Usage #############################################################
-[[ noreturn ]] static void usage(const char* program, const int exitCode)
+#define HEADER(s)    "\x1b[4m" << (s) << "\x1b[0m"
+#define CMD(s)       "\x1b[1m" << (s) << "\x1b[0m"
+#define OPT(s)       "\x1b[1m" s "\x1b[0m"
+#define ARG(s)       "\x1b[4m" s "\x1b[0m"
+#define SYN(s)       "\x1b[1m" s "\x1b[0m"
+#define PIPE         SYN(" | ")
+#define ENTRY(s)     "\t" SYN("[") s SYN("]\n")
+
+[[ noreturn ]]
+static void usage(const char* program, const int exitCode)
 {
-   std::cerr << "Usage:\n"
-      << "* Run:\n  "
-      << program << "\n"
-         "    output_file\n"
-         "    [variable_names]\n"
-         "    [-c level|--compress level]\n"
-         "    [-s separator|--separator separator]\n"
-         "    [-l|--line-numbers|-n|--no-line-numbers]\n"
-         "    [-q|--quiet]\n"
-         "* Version:\n  " << program << " [-v|--version]\n"
-         "* Help:\n  "    << program << " [-h|--help]\n";
+   std::cerr << HEADER("Usage:") << "\n"
+             << CMD(program) << " "
+                ARG("output_file") "\n"
+                   ENTRY(ARG("variable_names"))
+                   ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
+                   ENTRY(OPT("-s") " " ARG("separator") PIPE OPT("--separator") " " ARG("separator"))
+                   ENTRY(OPT("-l") PIPE OPT("--line-numbers") PIPE OPT("-n") PIPE OPT("--no-line-numbers"))
+                   ENTRY(OPT("-q") PIPE OPT("--quiet"))
+             << CMD(program) << "\n"
+                   ENTRY(OPT("-h") PIPE OPT("--help"))
+             << CMD(program) << "\n"
+                   ENTRY(OPT("-v") PIPE OPT("--version"));
    exit(exitCode);
 }
+// ------ END-OF-USAGE-BLOCK ------
 
 
 
@@ -273,7 +285,7 @@ int main(int argc, char** argv)
        outputFileFormat = OFF_BZip2;
    }
    if(outputFile.initialize(outputFileName.c_str(), outputFileFormat,
-                            compressionLevel)== false) {
+                            compressionLevel) == false) {
       exit(1);
    }
 
