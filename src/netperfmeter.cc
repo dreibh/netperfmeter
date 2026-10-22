@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -33,6 +33,7 @@
 #include "loglevel.h"
 #include "transfer.h"
 #include "package-version.h"
+#include "tools.h"
 
 #include <cerrno>
 #include <cmath>
@@ -148,7 +149,7 @@ static MessageReader gMessageReader;
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cerr << "NetPerfMeter" << " " << NETPERFMETER_VERSION << "\n";
+   std::cerr << "NetPerfMeter " << NETPERFMETER_VERSION << "\n";
    exit(0);
 }
 
@@ -178,7 +179,7 @@ static void usage(const char* program, const int exitCode)
                                 "\a" + std::string(PACKAGE_SOURCEREPO) + "\a" +
                                 std::string("\x1b]8;;\a\x1b[0m"));
 
-   std::cerr << HEADER("Usage:") << "\n"
+   std::cerr << HEADER(gettext("Usage:")) << "\n"
              << CMD(program) << " "
                 ARG("local_port") "\n"
                    ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-X") PIPE OPT("--no-control-over-sctp"))
@@ -238,8 +239,8 @@ static void usage(const char* program, const int exitCode)
              << CMD("FLOWSPEC:") << " "
                 ARG("outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option:...") "\n"
              << "\n"
-             << format("For further information, see the man page for %s, read the documentation at %s, examine the source code at %s, or consult your favourite LLM.",
-                           manpage.c_str(), homepage.c_str(), repository.c_str()) << "\n";
+             << formatText(gettext("For further information, see the man page for {}, read the documentation at {}, examine the source code at {}, or consult your favourite LLM."),
+                           manpage, homepage, repository) << "\n";
    exit(exitCode);
 }
 // ------ END-OF-USAGE-BLOCK ------
@@ -299,296 +300,281 @@ static bool handleGlobalParameters(int argc, char** argv)
       {  nullptr,                        0,                 0, 0      }
    };
 
-   int      option;
-   int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
+   int option;
+   int longIndex;
+   while((option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1) {
       switch(option) {
          case 'x':
 #if defined(HAVE_SCTP)
             gActiveControlProtocol = IPPROTO_SCTP;
             gPassiveControlSCTP    = true;
 #else
-            std::cerr << "ERROR: SCTP support is not compiled in!" << "\n";
+            std::cerr << gettext("ERROR: SCTP support is not compiled in!\n");
             exit(1);
 #endif
-          break;
+            break;
          case 'X':
 #if defined(HAVE_SCTP)
-            gPassiveControlSCTP    = false;
+            gPassiveControlSCTP = false;
 #else
-            std::cerr << "ERROR: SCTP support is not compiled in!" << "\n";
+            std::cerr << gettext("ERROR: SCTP support is not compiled in!\n");
             exit(1);
 #endif
-          break;
+            break;
          case 'y':
             gActiveControlProtocol = IPPROTO_TCP;
             gPassiveControlTCP     = true;
-          break;
+            break;
          case 'Y':
-            gPassiveControlTCP     = false;
+            gPassiveControlTCP = false;
 #if defined(HAVE_MPTCP)
-            gPassiveControlMPTCP   = false;
+            gPassiveControlMPTCP = false;
 #endif
-          break;
+            break;
          case 'w':
 #if defined(HAVE_MPTCP)
             gActiveControlProtocol = IPPROTO_MPTCP;
             gPassiveControlTCP     = true;
             gPassiveControlMPTCP   = true;
 #else
-            std::cerr << "ERROR: MPTCP support is not compiled in!" << "\n";
+            std::cerr << gettext("ERROR: MPTCP support is not compiled in!\n");
             exit(1);
 #endif
-          break;
+            break;
          case 'W':
 #if defined(HAVE_MPTCP)
-            gPassiveControlMPTCP   = false;
+            gPassiveControlMPTCP = false;
 #endif
-          break;
-         case 'L':
-            {
-               gLocalDataAddresses = 0;
-               char* address = optarg;
-               while(gLocalDataAddresses < MAX_LOCAL_ADDRESSES) {
-                  char* idx = strchr(address, ',');
-                  if(idx) {
-                     *idx = 0x00;
-                  }
-                  if(!string2address(address, &gLocalDataAddressArray[gLocalDataAddresses])) {
-                     std::cerr << "ERROR: Bad address " << address
-                               << " for local data endpoint! Use format <address:port>.\n";
-                     exit(1);
-                  }
-                  gLocalDataAddresses++;
-                  if(!idx) {
-                     break;
-                  }
-                  address = idx;
-                  address++;
+            break;
+         case 'L': {
+            gLocalDataAddresses = 0;
+            char* address = optarg;
+            while(gLocalDataAddresses < MAX_LOCAL_ADDRESSES) {
+               char* idx = strchr(address, ',');
+               if(idx) {
+                  *idx = '\0';
                }
-            }
-          break;
-         case 'l':
-            {
-               gLocalControlAddresses = 0;
-               char* address = optarg;
-               while(gLocalControlAddresses < MAX_LOCAL_ADDRESSES) {
-                  char* idx = strchr(address, ',');
-                  if(idx) {
-                     *idx = 0x00;
-                  }
-                  if(!string2address(address, &gLocalControlAddressArray[gLocalControlAddresses])) {
-                     std::cerr << "ERROR: Bad address " << address
-                               << " for local control endpoint! Use format <address:port>.\n";
-                     exit(1);
-                  }
-                  gLocalControlAddresses++;
-                  if(!idx) {
-                     break;
-                  }
-                  address = idx;
-                  address++;
+               if(!string2address(address, &gLocalDataAddressArray[gLocalDataAddresses])) {
+                  std::cerr << formatText(gettext("ERROR: Bad address {} for local data endpoint! Use format <address:port>.\n"), address);
+                  exit(1);
                }
+               gLocalDataAddresses++;
+               if(!idx) {
+                  break;
+               }
+               address = idx + 1;
             }
-          break;
+            break;
+         }
+         case 'l': {
+            gLocalControlAddresses = 0;
+            char* address = optarg;
+            while(gLocalControlAddresses < MAX_LOCAL_ADDRESSES) {
+               char* idx = strchr(address, ',');
+               if(idx) {
+                  *idx = '\0';
+               }
+               if(!string2address(address, &gLocalControlAddressArray[gLocalControlAddresses])) {
+                  std::cerr << formatText(gettext("ERROR: Bad address {} for local control endpoint! Use format <address:port>.\n"), address);
+                  exit(1);
+               }
+               gLocalControlAddresses++;
+               if(!idx) {
+                  break;
+               }
+               address = idx + 1;
+            }
+            break;
+         }
          case '6':
             gBindV6Only = true;
-          break;
+            break;
          case 0x2001:
             gDisplayEnabled = true;
-          break;
+            break;
          case 0x2002:
             gDisplayEnabled = false;
-          break;
+            break;
          case 'o':
             gSndBufSize = atol(optarg);
-          break;
+            break;
          case 'i':
             gRcvBufSize = atol(optarg);
-          break;
+            break;
          case 'N':
             gFlowCount = atol(optarg);
-            if( (gFlowCount < 1) || (gFlowCount > 256) ) {
-               std::cerr << "ERROR: Invalid flow count " << gFlowCount << "!\n";
+            if((gFlowCount < 1) || (gFlowCount > 256)) {
+               std::cerr << formatText(gettext("ERROR: Invalid flow count {}!\n"), gFlowCount);
                exit(1);
             }
-          break;
+            break;
          case 'T':
             gRuntime = atof(optarg);
-          break;
+            break;
          case 'C':
             gConfigName = optarg;
-          break;
+            break;
          case 'S':
             gScalarNamePattern = optarg;
-            if(gScalarNamePattern[0] == 0x00)
+            if(gScalarNamePattern[0] == '\0') {
                gScalarFileFormat = OFF_None;
+            }
             else if(hasSuffix(gScalarNamePattern, ".bz2")) {
                gScalarFileFormat = OFF_BZip2;
             }
             else {
                gScalarFileFormat = OFF_Plain;
             }
-          break;
+            break;
          case 'V':
             gVectorNamePattern = optarg;
-            if(gVectorNamePattern[0] == 0x00)
+            if(gVectorNamePattern[0] == '\0') {
                gVectorFileFormat = OFF_None;
+            }
             else if(hasSuffix(gVectorNamePattern, ".bz2")) {
                gVectorFileFormat = OFF_BZip2;
             }
             else {
                gVectorFileFormat = OFF_Plain;
             }
-          break;
+            break;
          case 'A':
             gActiveNodeName = optarg;
-          break;
+            break;
          case 'P':
             gPassiveNodeName = optarg;
-          break;
+            break;
          case 't':
          case 'm':
          case 'u':
          case 'd':
          case 's':
-         case 'k':
-            {
-               AssocSpec flow;
-               flow.Flows.push_back(optarg);
-               switch(option) {
-                  case 's':
-                     flow.Protocol = IPPROTO_SCTP;
-                     while( (optind < argc) && (argv[optind][0] != '-')) {
-                        flow.Flows.push_back(argv[optind]);
-                        optind++;
-                     }
-                   break;
-                  case 't':
-                     flow.Protocol = IPPROTO_TCP;
-                   break;
-                  case 'u':
-                     flow.Protocol = IPPROTO_UDP;
-                   break;
-                  case 'm':
+         case 'k': {
+            AssocSpec flow;
+            flow.Flows.push_back(optarg);
+            switch(option) {
+               case 's':
+                  flow.Protocol = IPPROTO_SCTP;
+                  while((optind < argc) && (argv[optind][0] != '-')) {
+                     flow.Flows.push_back(argv[optind]);
+                     optind++;
+                  }
+                  break;
+               case 't':
+                  flow.Protocol = IPPROTO_TCP;
+                  break;
+               case 'u':
+                  flow.Protocol = IPPROTO_UDP;
+                  break;
+               case 'm':
 #if defined(HAVE_MPTCP)
-                     flow.Protocol = IPPROTO_MPTCP;
+                  flow.Protocol = IPPROTO_MPTCP;
 #else
-                     std::cerr << "ERROR: MPTCP support is not compiled in!" << "\n";
-                     exit(1);
+                  std::cerr << gettext("ERROR: MPTCP support is not compiled in!\n");
+                  exit(1);
 #endif
-                   break;
-                  case 'd':
+                  break;
+               case 'd':
 #if defined(HAVE_DCCP)
-                     flow.Protocol = IPPROTO_DCCP;
+                  flow.Protocol = IPPROTO_DCCP;
 #else
-                     std::cerr << "ERROR: DCCP support is not compiled in!" << "\n";
-                     exit(1);
+                  std::cerr << gettext("ERROR: DCCP support is not compiled in!\n");
+                  exit(1);
 #endif
-                   break;
-                  case 'k':
+                  break;
+               case 'k':
 #if defined(HAVE_QUIC)
-                     flow.Protocol = IPPROTO_QUIC;
-                     while( (optind < argc) && (argv[optind][0] != '-')) {
-                        flow.Flows.push_back(argv[optind]);
-                        optind++;
-                     }
+                  flow.Protocol = IPPROTO_QUIC;
+                  while((optind < argc) && (argv[optind][0] != '-')) {
+                     flow.Flows.push_back(argv[optind]);
+                     optind++;
+                  }
 #else
-                     std::cerr << "ERROR: QUIC support is not compiled in!" << "\n";
-                     exit(1);
+                  std::cerr << gettext("ERROR: QUIC support is not compiled in!\n");
+                  exit(1);
 #endif
-                   break;
-                  default:
-                     abort();
-                   // break;
-               }
-               gAssocSpecs.push_back(flow);
+                  break;
+               default:
+                  abort();
             }
-          break;
+            gAssocSpecs.push_back(flow);
+            break;
+         }
          case 'K':
 #if defined(HAVE_QUIC)
             gQUICKey = optarg;
 #endif
-          break;
+            break;
          case 'J':
 #if defined(HAVE_QUIC)
             gQUICCertificate = optarg;
 #endif
-          break;
+            break;
          case 'I':
 #if defined(HAVE_QUIC)
             gQUICCA = optarg;
 #endif
-          break;
+            break;
          case 'H':
 #if defined(HAVE_QUIC)
             gQUICHostname = optarg;
 #endif
-          break;
+            break;
          case 0x3000:
-            gLogLevel = std::min((unsigned int)atoi(optarg),MAX_LOGLEVEL);
-          break;
+            gLogLevel = std::min(static_cast<unsigned int>(atoi(optarg)), MAX_LOGLEVEL);
+            break;
          case 0x3001:
-            if(!(strcmp(optarg,"off"))) {
-               gColorMode = false;
-            }
-            else {
-               gColorMode = true;
-            }
-          break;
+            gColorMode = (strcmp(optarg, "off") != 0);
+            break;
          case 0x3010:
-            if(!initLogFile(gLogLevel,optarg,"a")) {
-               std::cerr << format("ERROR: Unable to initialise log file %s!", optarg) << "\n";
+            if(!initLogFile(gLogLevel, optarg, "a")) {
+               std::cerr << formatText(gettext("ERROR: Unable to initialise log file {}!\n"), optarg);
                exit(1);
             }
-          break;
+            break;
          case 0x3011:
-            if(!initLogFile(gLogLevel,optarg,"w")) {
-               std::cerr << format("ERROR: Unable to initialise log file %s!", optarg) << "\n";
+            if(!initLogFile(gLogLevel, optarg, "w")) {
+               std::cerr << formatText(gettext("ERROR: Unable to initialise log file {}!\n"), optarg);
                exit(1);
             }
-          break;
+            break;
          case 'q':
             gLogLevel = LOGLEVEL_ERROR;
-          break;
+            break;
          case '!':
             gLogLevel = LOGLEVEL_TRACE;
-          break;
+            break;
          case 0x4000:
-            gControlHBInterval = std::min((unsigned int)atoi(optarg), 86400000U);
-          break;
+            gControlHBInterval = std::min(static_cast<unsigned int>(atoi(optarg)), 86400000U);
+            break;
          case 0x4001:
-            gControlHBPathMaxRtx = std::max(1U, std::min((unsigned int)atoi(optarg), 1000000U));
-          break;
+            gControlHBPathMaxRtx = std::max(1U, std::min(static_cast<unsigned int>(atoi(optarg)), 1000000U));
+            break;
          case 0x4002:
-            gControlHBAssocMaxRtx = std::max(1U, std::min((unsigned int)atoi(optarg), 1000000U));
-          break;
+            gControlHBAssocMaxRtx = std::max(1U, std::min(static_cast<unsigned int>(atoi(optarg)), 1000000U));
+            break;
          case 'v':
             version();
-          break;
+            break;
          case 'h':
          case '?':
-            // Exit with 0 on h/help, exit with 1 on '?' (unknown option):
             usage(argv[0], (option == 'h') ? 0 : 1);
-          break;
+            break;
          case '-':
-          break;
+            break;
          default:
-            // This should not happen: wrong getopt parameters, or missing case?
             fprintf(stderr, "INTERNAL ERROR: Unhandled option c=%c code=%x!\n",
-                    (isprint(option) ? (char)option : ' '), option);
-            return 1;
-          break;
+                    isprint(option) ? static_cast<char>(option) : ' ', option);
+            return false;
       }
    }
 
-   if(
 #if defined(HAVE_SCTP)
-       (!gPassiveControlSCTP) &&
+   if(!gPassiveControlSCTP && !gPassiveControlTCP) {
+#else
+   if(!gPassiveControlTCP) {
 #endif
-       (!gPassiveControlTCP)
-     ) {
-      std::cerr << "ERROR: At least one control channel protocol must be enabled!" << "\n";
+      std::cerr << gettext("ERROR: At least one control channel protocol must be enabled!\n");
       exit(1);
    }
 
@@ -600,18 +586,18 @@ static bool handleGlobalParameters(int argc, char** argv)
 static void printGlobalParameters()
 {
    LOG_INFO
-   stdlog << "Global Parameters:\n"
-          << " - Runtime                   = ";
+   stdlog << gettext("Global Parameters:\n")
+          << gettext(" - Runtime                   = ");
    if(gRuntime >= 0.0) {
       stdlog << gRuntime << " s\n";
    }
    else {
-      stdlog << "until manual stop\n";
+      stdlog << gettext("until manual stop\n");
    }
-   stdlog << " - Minimum Logging Level     = " << gLogLevel << "\n"
-          << " - Active Node Name          = " << gActiveNodeName  << "\n"
-          << " - Passive Node Name         = " << gPassiveNodeName << "\n"
-          << " - Local Data Address(es)    = ";
+   stdlog << formatText(gettext(" - Minimum Logging Level     = {}\n"), gLogLevel)
+          << formatText(gettext(" - Active Node Name          = {}\n"), gActiveNodeName)
+          << formatText(gettext(" - Passive Node Name         = {}\n"), gPassiveNodeName)
+          << gettext(" - Local Data Address(es)    = ");
    if(gLocalDataAddresses > 0) {
       for(unsigned int i = 0; i < gLocalDataAddresses; i++) {
          if(i > 0) {
@@ -621,9 +607,9 @@ static void printGlobalParameters()
       }
    }
    else {
-      stdlog << "(any)";
+      stdlog << gettext("(any)");
    }
-   stdlog << "\n - Local Control Address(es) = ";
+   stdlog << gettext("\n - Local Control Address(es) = ");
    if(gLocalControlAddresses > 0) {
       for(unsigned int i = 0; i < gLocalControlAddresses; i++) {
          if(i > 0) {
@@ -633,12 +619,10 @@ static void printGlobalParameters()
       }
    }
    else {
-      stdlog << "(any)";
+      stdlog << gettext("(any)");
    }
-   stdlog << "\n - Control Heartbeats        = "
-          << gControlHBPathMaxRtx << " per path / "
-          << gControlHBPathMaxRtx << " per association / "
-          << gControlHBInterval << " ms\n";
+   stdlog << formatText(gettext("\n - Control Heartbeats        = {} per path / {} per association / {} ms\n"),
+                        gControlHBPathMaxRtx, gControlHBAssocMaxRtx, gControlHBInterval);
    LOG_END
 }
 
@@ -649,7 +633,7 @@ static const char* parseNextEntry(const char* parameters,
                                   uint8_t*    rng)
 {
    int n = 0;
-   for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+   for(size_t i = 0; i < NETPERFMETER_RNG_INPUT_PARAMETERS; i++) {
       valueArray[i] = 0.0;
    }
    if(sscanf(parameters, "const%lf%n", &valueArray[0], &n) == 1) {
@@ -675,13 +659,13 @@ static const char* parseNextEntry(const char* parameters,
       *rng = RANDOM_CONSTANT;
    }
    else {
-      std::cerr << "ERROR: Invalid parameters " << parameters << "!\n";
+      std::cerr << formatText(gettext("ERROR: Invalid parameters {}!\n"), parameters);
       exit(1);
    }
-   if(parameters[n] == 0x00) {
+   if(parameters[n] == '\0') {
       return nullptr;
    }
-   return (const char*)&parameters[n + 1];
+   return static_cast<const char*>(&parameters[n + 1]);
 }
 
 
@@ -696,7 +680,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
    unsigned int intValue = 0;
 
    if(sscanf(parameters, "id=%u%n", &intValue, &n) == 1) {
-      flowID = (uint32_t)intValue;
+      flowID = static_cast<uint32_t>(intValue);
    }
    else if(sscanf(parameters, "maxmsgsize=%u%n", &intValue, &n) == 1) {
       if(intValue > 65535) {
@@ -708,118 +692,118 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       trafficSpec.MaxMsgSize = intValue;
    }
    else if(sscanf(parameters, "defragtimeout=%u%n", &intValue, &n) == 1) {
-      trafficSpec.DefragmentTimeout = 1000ULL * (uint32_t)intValue;
+      trafficSpec.DefragmentTimeout = 1000ULL * static_cast<uint32_t>(intValue);
    }
    else if(sscanf(parameters, "ordered=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         std::cerr << "ERROR: Bad probability for \"ordered\" option in " << parameters << "!\n";
+         std::cerr << formatText(gettext("ERROR: Bad probability for \"ordered\" option in {}!\n"), parameters);
          exit(1);
       }
       trafficSpec.OrderedMode = dblValue;
    }
    else if(sscanf(parameters, "unordered=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         std::cerr << "ERROR: Bad probability for \"unordered\" option in " << parameters << "!\n";
+         std::cerr << formatText(gettext("ERROR: Bad probability for \"unordered\" option in {}!\n"), parameters);
          exit(1);
       }
       trafficSpec.OrderedMode = 1.0 - dblValue;
    }
    else if(sscanf(parameters, "reliable=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         std::cerr << "ERROR: Bad probability for \"reliable\" option in " << parameters << "!\n";
+         std::cerr << formatText(gettext("ERROR: Bad probability for \"reliable\" option in {}!\n"), parameters);
          exit(1);
       }
       trafficSpec.ReliableMode = dblValue;
    }
    else if(sscanf(parameters, "unreliable=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         std::cerr << "ERROR: Bad probability for \"unreliable\" option in " << parameters << "!\n";
+         std::cerr << formatText(gettext("ERROR: Bad probability for \"unreliable\" option in {}!\n"), parameters);
          exit(1);
       }
       trafficSpec.ReliableMode = 1.0 - dblValue;
    }
    else if(sscanf(parameters, "rtx_timeout=%u%n", &intValue, &n) == 1) {
-      trafficSpec.RetransmissionTrials     = (uint32_t)intValue;
+      trafficSpec.RetransmissionTrials     = static_cast<uint32_t>(intValue);
       trafficSpec.RetransmissionTrialsInMS = true;
    }
    else if(sscanf(parameters, "rtx_trials=%u%n", &intValue, &n) == 1) {
-      trafficSpec.RetransmissionTrials     = (uint32_t)intValue;
+      trafficSpec.RetransmissionTrials     = static_cast<uint32_t>(intValue);
       trafficSpec.RetransmissionTrialsInMS = false;
    }
    else if(sscanf(parameters, "rcvbuf=%u%n", &intValue, &n) == 1) {
-      trafficSpec.RcvBufferSize = (uint32_t)intValue;
+      trafficSpec.RcvBufferSize = static_cast<uint32_t>(intValue);
    }
    else if(sscanf(parameters, "sndbuf=%u%n", &intValue, &n) == 1) {
-      trafficSpec.SndBufferSize = (uint32_t)intValue;
+      trafficSpec.SndBufferSize = static_cast<uint32_t>(intValue);
    }
    else if(strncmp(parameters, "cmt=", 4) == 0) {
       unsigned int cmt;
       int          pos;
-      if(strncmp((const char*)&parameters[4], "off", 3) == 0) {
+      if(strncmp(static_cast<const char*>(&parameters[4]), "off", 3) == 0) {
          trafficSpec.CMT = NPAF_PRIMARY_PATH;
          n = 4 + 3;
       }
-      else if(strncmp((const char*)&parameters[4], "cmtrpv1", 7) == 0) {
+      else if(strncmp(static_cast<const char*>(&parameters[4]), "cmtrpv1", 7) == 0) {
          trafficSpec.CMT = NPAF_CMTRPv1;
          n = 4 + 7;
       }
-      else if(strncmp((const char*)&parameters[4], "cmtrpv2", 7) == 0) {
+      else if(strncmp(static_cast<const char*>(&parameters[4]), "cmtrpv2", 7) == 0) {
          trafficSpec.CMT = NPAF_CMTRPv2;
          n = 4 + 7;
       }
-      else if(strncmp((const char*)&parameters[4], "cmt", 3) == 0) {
+      else if(strncmp(static_cast<const char*>(&parameters[4]), "cmt", 3) == 0) {
          trafficSpec.CMT = NPAF_CMT;
          n = 4 + 3;
       }
-      else if( (strncmp((const char*)&parameters[4], "like-mptcp", 10) == 0) ||
-               (strncmp((const char*)&parameters[4], "mptcp-like", 10) == 0) ) {
+      else if((strncmp(static_cast<const char*>(&parameters[4]), "like-mptcp", 10) == 0) ||
+              (strncmp(static_cast<const char*>(&parameters[4]), "mptcp-like", 10) == 0)) {
          trafficSpec.CMT = NPAF_LikeMPTCP;
          n = 4 + 10;
       }
-      else if(strncmp((const char*)&parameters[4], "mptcp", 5) == 0) {
+      else if(strncmp(static_cast<const char*>(&parameters[4]), "mptcp", 5) == 0) {
          trafficSpec.CMT = NPAF_LikeMPTCP;
          n = 4 + 5;
       }
-      else if(strncmp((const char*)&parameters[4], "normal", 6) == 0) {   // Legacy: use "cmt"!
+      else if(strncmp(static_cast<const char*>(&parameters[4]), "normal", 6) == 0) {   // Legacy: use "cmt"!
          trafficSpec.CMT = NPAF_CMT;
          n = 4 + 6;
       }
-      else if(strncmp((const char*)&parameters[4], "rp", 2) == 0) {   // Legacy: use "cmtrpv1"!
+      else if(strncmp(static_cast<const char*>(&parameters[4]), "rp", 2) == 0) {       // Legacy: use "cmtrpv1"!
          trafficSpec.CMT = NPAF_CMTRPv1;
          n = 4 + 2;
       }
-      else if(sscanf((const char*)&parameters[4], "%u%n", &cmt, &pos) == 1) {
+      else if(sscanf(static_cast<const char*>(&parameters[4]), "%u%n", &cmt, &pos) == 1) {
          trafficSpec.CMT = cmt;
          n = 4 + pos;
       }
       else {
-         std::cerr << "ERROR: Invalid \"cmt\" setting: " << (const char*)&parameters[4] << "!\n";
+         std::cerr << formatText(gettext("ERROR: Invalid \"cmt\" setting: {}!\n"), static_cast<const char*>(&parameters[4]));
          exit(1);
       }
    }
    else if(strncmp(parameters, "ccid=", 5) == 0) {
       unsigned int ccid;
       int          pos;
-      if(sscanf((const char*)&parameters[5], "%u%n", &ccid, &pos) == 1) {
+      if(sscanf(static_cast<const char*>(&parameters[5]), "%u%n", &ccid, &pos) == 1) {
          trafficSpec.CCID = ccid;
          n = 5 + pos;
       }
       else {
-         std::cerr << "ERROR: Invalid \"ccid\" setting: " << (const char*)&parameters[5] << "!\n";
+         std::cerr << formatText(gettext("ERROR: Invalid \"ccid\" setting: {}!\n"), static_cast<const char*>(&parameters[5]));
          exit(1);
       }
    }
    else if(strncmp(parameters, "error_on_abort=", 15) == 0) {
-      if(strncmp((const char*)&parameters[15], "on", 2) == 0) {
+      if(strncmp(static_cast<const char*>(&parameters[15]), "on", 2) == 0) {
          trafficSpec.ErrorOnAbort = true;
          n = 15 + 2;
       }
-      else if(strncmp((const char*)&parameters[15], "off", 3) == 0) {
+      else if(strncmp(static_cast<const char*>(&parameters[15]), "off", 3) == 0) {
          trafficSpec.ErrorOnAbort = false;
          n = 15 + 3;
       }
       else {
-         std::cerr << "ERROR: Invalid \"error_on_abort\" setting: " << (const char*)&parameters[4] << "!\n";
+         std::cerr << formatText(gettext("ERROR: Invalid \"error_on_abort\" setting: {}!\n"), static_cast<const char*>(&parameters[4]));
          exit(1);
       }
    }
@@ -827,14 +811,14 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       trafficSpec.BindV6Only = true;
       n = 6;
    }
-   else if(sscanf(parameters, "description=%255[^:]s%n", (char*)&description, &n) == 1) {
+   else if(sscanf(parameters, "description=%255[^:]s%n", static_cast<char*>(description), &n) == 1) {
       trafficSpec.Description = std::string(description);
       n = 12 + strlen(description);
    }
-   else if(strncmp(parameters,"onoff=", 6) == 0) {
+   else if(strncmp(parameters, "onoff=", 6) == 0) {
       unsigned long m = 5;
       trafficSpec.RepeatOnOff = false;
-      while( (parameters[m] != 0x00) && (parameters[m] != ':') ) {
+      while((parameters[m] != '\0') && (parameters[m] != ':')) {
          m++;
 
          OnOffEvent event;
@@ -847,30 +831,30 @@ static const char* parseTrafficSpecOption(const char*      parameters,
             event.RelativeTime = true;
             m++;
          }
-         else if(strncmp((const char*)&parameters[m], "repeat", 6) == 0) {
+         else if(strncmp(static_cast<const char*>(&parameters[m]), "repeat", 6) == 0) {
             m += 6;
             trafficSpec.RepeatOnOff = true;
             break;
          }
-         const char* p = parseNextEntry((const char*)&parameters[m], (double*)&event.ValueArray, (uint8_t*)&event.RandNumGen);
+         const char* p = parseNextEntry(static_cast<const char*>(&parameters[m]), reinterpret_cast<double*>(&event.ValueArray), reinterpret_cast<uint8_t*>(&event.RandNumGen));
          if(p != nullptr) {
-            m += (unsigned long)p - (unsigned long)&parameters[m + 1];
+            m += static_cast<unsigned long>(p - &parameters[m + 1]);
          }
          else {
-            m += strlen((const char*)&parameters[m]);
+            m += strlen(static_cast<const char*>(&parameters[m]));
          }
 
          trafficSpec.OnOffEvents.push_back(event);
       }
       if(trafficSpec.RepeatOnOff == true) {
          if((trafficSpec.OnOffEvents.size() % 2) != 0) {
-            std::cerr << "ERROR: Repeated on/off traffic needs even number of events!\n";
+            std::cerr << gettext("ERROR: Repeated on/off traffic needs even number of events!\n");
             exit(1);
          }
          for(std::vector<OnOffEvent>::const_iterator iterator = trafficSpec.OnOffEvents.begin();
-            iterator != trafficSpec.OnOffEvents.end();iterator++) {
+             iterator != trafficSpec.OnOffEvents.end(); iterator++) {
             if((*iterator).RelativeTime == false) {
-               std::cerr << "ERROR: Repeated on/off traffic needs relative times!\n";
+               std::cerr << gettext("ERROR: Repeated on/off traffic needs relative times!\n");
                exit(1);
             }
          }
@@ -878,30 +862,29 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       n = m;
    }
    else if(strncmp(parameters, "nodelay=", 8) == 0) {
-      if(strncmp((const char*)&parameters[8], "on", 2) == 0) {
+      if(strncmp(static_cast<const char*>(&parameters[8]), "on", 2) == 0) {
          trafficSpec.NoDelay = true;
          n = 8 + 2;
       }
-      else if(strncmp((const char*)&parameters[8], "off", 3) == 0) {
+      else if(strncmp(static_cast<const char*>(&parameters[8]), "off", 3) == 0) {
          trafficSpec.NoDelay = false;
          n = 8 + 3;
       }
       else {
-         std::cerr << "ERROR: Invalid \"nodelay\" setting: " << (const char*)&parameters[8] << "!\n";
+         std::cerr << formatText(gettext("ERROR: Invalid \"nodelay\" setting: {}!\n"), static_cast<const char*>(&parameters[8]));
          exit(1);
       }
    }
    else if(strncmp(parameters, "debug=", 6) == 0) {
-      if(strncmp((const char*)&parameters[6], "on", 2) == 0) {
+      if(strncmp(static_cast<const char*>(&parameters[6]), "on", 2) == 0) {
          trafficSpec.Debug = true;
-         // n = 6 + 2;
       }
-      else if(strncmp((const char*)&parameters[6], "off", 3) == 0) {
+      else if(strncmp(static_cast<const char*>(&parameters[6]), "off", 3) == 0) {
          trafficSpec.Debug = false;
          n = 6 + 3;
       }
       else {
-         std::cerr << "ERROR: Invalid \"debug\" setting: " << (const char*)&parameters[6] << "!\n";
+         std::cerr << formatText(gettext("ERROR: Invalid \"debug\" setting: {}!\n"), static_cast<const char*>(&parameters[6]));
          exit(1);
       }
    }
@@ -909,31 +892,29 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       char   congestionControl[NETPERFMETER_CC_LENGTH + 1];
       size_t i = 0;
       while(i < NETPERFMETER_CC_LENGTH) {
-         if( (parameters[3 + i] == ':') ||
-             (parameters[3 + i] == 0x00) ) {
+         if((parameters[3 + i] == ':') || (parameters[3 + i] == '\0')) {
             break;
          }
          congestionControl[i] = parameters[3 + i];
          i++;
       }
-      congestionControl[i] = 0x00;
-      if( (parameters[3 + i] != ':') && (parameters[3 + i] != 0x00) ) {
-         std::cerr << "ERROR: Invalid \"cc\" setting: " << (const char*)&parameters[8]
-                   << " - name too long!\n";
-          exit(1);
+      congestionControl[i] = '\0';
+      if((parameters[3 + i] != ':') && (parameters[3 + i] != '\0')) {
+         std::cerr << formatText(gettext("ERROR: Invalid \"cc\" setting: {} - name too long!\n"), static_cast<const char*>(&parameters[8]));
+         exit(1);
       }
-      trafficSpec.CongestionControl = std::string((const char*)&congestionControl);
-      n = 3 + strlen((const char*)&congestionControl);
+      trafficSpec.CongestionControl = std::string(static_cast<const char*>(congestionControl));
+      n = 3 + strlen(static_cast<const char*>(congestionControl));
    }
    else {
-      std::cerr << "ERROR: Invalid option \"" << parameters << "\"!\n";
+      std::cerr << formatText(gettext("ERROR: Invalid option \"{}\"!\n"), parameters);
       exit(1);
    }
 
-   if(parameters[n] == 0x00) {
+   if(parameters[n] == '\0') {
       return nullptr;
    }
-   return (const char*)&parameters[n + 1];
+   return static_cast<const char*>(&parameters[n + 1]);
 }
 
 
@@ -959,8 +940,7 @@ static int server_handshake(int          sd,
                                                 tlsCAFile, GNUTLS_X509_FMT_PEM);
       if(loadedCAs <= 0) {
          LOG_ERROR
-         stdlog << "Loading CA certificate from "
-                << ((tlsCAFile != nullptr) ? tlsCAFile : "(none)") << " failed\n";
+         stdlog << formatText(gettext("Loading CA certificate from {} failed\n"), ((tlsCAFile != nullptr) ? tlsCAFile : "(none)"));
          LOG_END
          gnutls_certificate_free_credentials(credentials);
          return -1;
@@ -982,13 +962,13 @@ static int server_handshake(int          sd,
                   error = gnutls_record_set_max_early_data_size(session, 0xffffffffu);
                   if(!error) {
                      error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
-                     if( (!error) && (alpns != NULL) ) {
+                     if((!error) && (alpns != NULL)) {
                         error = quic_session_set_alpn(session, alpns, strlen(alpns));
                      }
                      if(!error) {
                         gnutls_transport_set_int(session, sd);
                         error = quic_handshake(session);
-                        if( (!error) && (alpns != NULL) ) {
+                        if((!error) && (alpns != NULL)) {
                            size_t alpnLength;
                            char   alpn[64];
                            alpnLength = sizeof(alpn);
@@ -1006,7 +986,7 @@ static int server_handshake(int          sd,
 
    if(error) {
       LOG_ERROR
-      stdlog << "TLS setup failed: " << gnutls_strerror(error) << "\n";
+      stdlog << formatText(gettext("TLS setup failed: {}\n"), gnutls_strerror(error));
       LOG_END
    }
    return error;
@@ -1031,8 +1011,7 @@ static int client_handshake(int            sd,
    if(!error) {
       int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
       if(loadedCAs <= 0) {
-         std::cerr << "ERROR: Loading CA certificate from "
-                   << ((tlsCAFile != nullptr) ? tlsCAFile : "(none)") << " failed\n";
+         std::cerr << formatText(gettext("ERROR: Loading CA certificate from {} failed\n"), ((tlsCAFile != nullptr) ? tlsCAFile : "(none)"));
          gnutls_certificate_free_credentials(credentials);
          return -1;
       }
@@ -1042,7 +1021,7 @@ static int client_handshake(int            sd,
          if(!error) {
             error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
          }
-         if( (!error) && (alpns != NULL) ) {
+         if((!error) && (alpns != NULL)) {
             error = quic_session_set_alpn(session, alpns, strlen(alpns));
          }
          if(!error) {
@@ -1056,15 +1035,9 @@ static int client_handshake(int            sd,
             }
             if(!error) {
                error = quic_handshake(session);
-               // if( (!error) && (alpns != NULL) ) {
-               //    size_t alpnLength;
-               //    char   alpn[64];
-               //    alpnLength = sizeof(alpn);
-               //    error = quic_session_get_alpn(session, alpn, &alpnLength);
-               // }
             }
-            if( (!error) && (ticketOut != NULL) ) {
-               error =  quic_session_get_data(session, ticketOut, ticketOutLength);
+            if((!error) && (ticketOut != NULL)) {
+               error = quic_session_get_data(session, ticketOut, ticketOutLength);
             }
          }
          gnutls_deinit(session);
@@ -1073,7 +1046,7 @@ static int client_handshake(int            sd,
    }
 
    if(error) {
-      std::cerr << "ERROR: TLS setup failed: " << gnutls_strerror(error) << "\n";
+      std::cerr << formatText(gettext("ERROR: TLS setup failed: {}\n"), gnutls_strerror(error));
    }
    return error;
 }
@@ -1089,11 +1062,9 @@ static Flow* createFlow(Flow*                  previousFlow,
                         const int              initialProtocol,
                         const sockaddr_union&  remoteAddress)
 {
-   // ====== Get flow ID and stream ID ======================================
-   static uint32_t flowID   = 0; // will be increased with each successfull call
+   static uint32_t flowID   = 0;
    uint16_t        streamID = (previousFlow != nullptr) ? previousFlow->getStreamID() + 1 : 0;
 
-   // ====== Get FlowTrafficSpec ============================================
    FlowTrafficSpec trafficSpec;
    trafficSpec.Protocol = initialProtocol;
 #if defined(HAVE_MPTCP)
@@ -1111,105 +1082,94 @@ static Flow* createFlow(Flow*                  previousFlow,
          case IPPROTO_MPTCP:
 #endif
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 20;
-          break;
+            break;
          case IPPROTO_UDP:
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 8;
             trafficSpec.OutboundFrameRate[0] = 25;
-          break;
+            break;
 #if defined(HAVE_DCCP)
          case IPPROTO_DCCP:
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 40;   // 1420B for IPv6 via 1500B MTU!
-          break;
+            break;
 #endif
 #if defined(HAVE_QUIC)
          case IPPROTO_QUIC:
             trafficSpec.OutboundFrameSize[0] = 1400;   // Some reasonable default
-          break;
+            break;
 #endif
          default:
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 12 - 16;
-          break;
+            break;
       }
-      parameters = (char*)&parameters[7];
-      if(parameters[0] != 0x00) {
+      parameters = static_cast<const char*>(&parameters[7]);
+      if(parameters[0] != '\0') {
          parameters++;
-         while( (parameters = parseTrafficSpecOption(parameters, trafficSpec, flowID)) ) { }
+         while((parameters = parseTrafficSpecOption(parameters, trafficSpec, flowID))) { }
       }
    }
    else {
-      parameters = parseNextEntry(parameters, (double*)&trafficSpec.OutboundFrameRate, &trafficSpec.OutboundFrameRateRng);
+      parameters = parseNextEntry(parameters, reinterpret_cast<double*>(&trafficSpec.OutboundFrameRate), &trafficSpec.OutboundFrameRateRng);
       if(parameters) {
-         parameters = parseNextEntry(parameters, (double*)&trafficSpec.OutboundFrameSize, &trafficSpec.OutboundFrameSizeRng);
+         parameters = parseNextEntry(parameters, reinterpret_cast<double*>(&trafficSpec.OutboundFrameSize), &trafficSpec.OutboundFrameSizeRng);
          if(parameters) {
-            parameters = parseNextEntry(parameters, (double*)&trafficSpec.InboundFrameRate, &trafficSpec.InboundFrameRateRng);
+            parameters = parseNextEntry(parameters, reinterpret_cast<double*>(&trafficSpec.InboundFrameRate), &trafficSpec.InboundFrameRateRng);
             if(parameters) {
-               parameters = parseNextEntry(parameters, (double*)&trafficSpec.InboundFrameSize, &trafficSpec.InboundFrameSizeRng);
+               parameters = parseNextEntry(parameters, reinterpret_cast<double*>(&trafficSpec.InboundFrameSize), &trafficSpec.InboundFrameSizeRng);
                if(parameters) {
-                  while( (parameters = parseTrafficSpecOption(parameters, trafficSpec, flowID)) ) { }
+                  while((parameters = parseTrafficSpecOption(parameters, trafficSpec, flowID))) { }
                }
             }
          }
       }
    }
-   if(trafficSpec.Description == "") {
-      trafficSpec.Description = format("Flow %u", flowID);
+   if(trafficSpec.Description.empty()) {
+      trafficSpec.Description = formatText(gettext("Flow {}"), flowID);
    }
 
-   // ------ Use TCP or MPTCP? ----------------------------------------------
 #if defined(HAVE_MPTCP)
-   if( (trafficSpec.Protocol == IPPROTO_TCP) && (trafficSpec.CMT == NPAF_LikeMPTCP) ) {
+   if((trafficSpec.Protocol == IPPROTO_TCP) && (trafficSpec.CMT == NPAF_LikeMPTCP)) {
       trafficSpec.Protocol = IPPROTO_MPTCP;
    }
-   if( (trafficSpec.Protocol == IPPROTO_MPTCP) && (trafficSpec.CMT != NPAF_LikeMPTCP) ) {
-      std::cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
-                << " for MPTCP! Using default instead!\n";
+   if((trafficSpec.Protocol == IPPROTO_MPTCP) && (trafficSpec.CMT != NPAF_LikeMPTCP)) {
+      std::cerr << formatText(gettext("WARNING: Invalid \"cmt\" setting: {} for MPTCP! Using default instead!\n"), static_cast<const char*>(&parameters[4]));
       exit(1);
    }
 #endif
-   // -----------------------------------------------------------------------
 
-   // ====== Create new flow ================================================
    if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID) != nullptr) {
-      std::cerr << "ERROR: Flow ID " << flowID << " is used twice. Ensure correct id=<ID> parameters!\n";
+      std::cerr << formatText(gettext("ERROR: Flow ID {} is used twice. Ensure correct id=<ID> parameters!\n"), flowID);
       exit(1);
    }
    Flow* flow = new Flow(measurementID, flowID, streamID, trafficSpec);
    assure(flow != nullptr);
 
-   // ====== Initialize vector file =========================================
    const std::string vectorName = flow->getNodeOutputName(gVectorNamePattern,
                                                           "active",
-                                                          format("-%08x-%04x", flowID, streamID));
+                                                          formatText("-{:08x}-{:04x}", flowID, streamID));
    if(!flow->initializeVectorFile(vectorName.c_str(), gVectorFileFormat)) {
-      std::cerr << "ERROR: Unable to create vector file <" << vectorName << ">!\n";
+      std::cerr << formatText(gettext("ERROR: Unable to create vector file <{}>!\n"), vectorName);
       exit(1);
    }
 
-   // ====== Initialise destination address =================================
    sockaddr_union destinationAddress = remoteAddress;
 #if defined(HAVE_MPTCP)
    if(trafficSpec.Protocol == IPPROTO_MPTCP) {
-      // An MPTCP subflow is just a TCP connection on the wire. To allow for
-      // MPTCP and TCP simultaneously, MPTCP needs a different port number:
       setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
    }
 #endif
 #if defined(HAVE_QUIC)
    if(trafficSpec.Protocol == IPPROTO_QUIC) {
-      // A QUIC connection is just a UDP "connection" on the wire. To allow for
-      // QUIC and UDP simultaneously, QUIC needs a different port number:
       setPort(&destinationAddress.sa, getPort(&destinationAddress.sa) - 1);
    }
 #endif
 
-   // ====== Print information ==============================================
    LOG_INFO
-   stdlog << format("Flow #%u: connecting %s socket to",
-                     flow->getFlowID(), getProtocolName(trafficSpec.Protocol)) << " ";
+   stdlog << formatText(gettext("Flow #{}: connecting {} socket to "),
+                        flow->getFlowID(), getProtocolName(trafficSpec.Protocol));
    printAddress(stdlog, &destinationAddress.sa, true);
-   stdlog << " from ";
+   stdlog << gettext(" from ");
    if(gLocalDataAddresses > 0) {
-      for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
+      for(unsigned int i = 0; i < gLocalDataAddresses; i++) {
          if(i > 0) {
             stdlog << ", ";
          }
@@ -1217,12 +1177,11 @@ static Flow* createFlow(Flow*                  previousFlow,
       }
    }
    else {
-      stdlog << "(any)";
+      stdlog << gettext("(any)");
    }
    stdlog << " ...\n";
    LOG_END
 
-   // ====== Set up socket ==================================================
    int  socketDescriptor;
    bool originalSocketDescriptor;
 
@@ -1230,8 +1189,8 @@ static Flow* createFlow(Flow*                  previousFlow,
       originalSocketDescriptor = false;
       socketDescriptor         = previousFlow->getSocketDescriptor();
       LOG_INFO
-      stdlog << format("Flow #%u: connected socket %d",
-                       flow->getFlowID(), socketDescriptor) << "\n";
+      stdlog << formatText(gettext("Flow #{}: connected socket {}\n"),
+                           flow->getFlowID(), socketDescriptor);
       LOG_END
    }
    else {
@@ -1239,84 +1198,80 @@ static Flow* createFlow(Flow*                  previousFlow,
       switch(trafficSpec.Protocol) {
          case IPPROTO_SCTP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_SCTP, 0,
-                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
+                                                   gLocalDataAddresses, reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray), false,
                                                    trafficSpec.BindV6Only);
-           break;
+            break;
          case IPPROTO_TCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_TCP, 0,
-                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
+                                                   gLocalDataAddresses, reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray), false,
                                                    trafficSpec.BindV6Only);
-           break;
+            break;
          case IPPROTO_UDP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_UDP, 0,
-                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
+                                                   gLocalDataAddresses, reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray), false,
                                                    trafficSpec.BindV6Only);
-           break;
+            break;
 #if defined(HAVE_MPTCP)
          case IPPROTO_MPTCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_STREAM, IPPROTO_MPTCP, 0,
-                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
+                                                   gLocalDataAddresses, reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray), false,
                                                    trafficSpec.BindV6Only);
-           break;
+            break;
 #endif
 #if defined(HAVE_DCCP)
          case IPPROTO_DCCP:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DCCP, IPPROTO_DCCP, 0,
-                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
+                                                   gLocalDataAddresses, reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray), false,
                                                    trafficSpec.BindV6Only);
-           break;
+            break;
 #endif
 #if defined(HAVE_QUIC)
          case IPPROTO_QUIC:
             socketDescriptor = createAndBindSocket(remoteAddress.sa.sa_family, SOCK_DGRAM, IPPROTO_QUIC, 0,
-                                                   gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false,
+                                                   gLocalDataAddresses, reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray), false,
                                                    trafficSpec.BindV6Only);
-           break;
+            break;
 #endif
          default:
             abort();
-
       }
       if(socketDescriptor < 0) {
-         std::cerr << "ERROR: Unable to create " << getProtocolName(trafficSpec.Protocol)
-                   << " socket - " << strerror(errno) << "!\n";
+         std::cerr << formatText(gettext("ERROR: Unable to create {} socket - {}!\n"),
+                                 getProtocolName(trafficSpec.Protocol), strerror(errno));
          exit(1);
       }
 
-      // ====== Establish connection ========================================
 #if defined(HAVE_SCTP)
       if(trafficSpec.Protocol == IPPROTO_SCTP) {
-         // ------ Set SCTP stream parameters--------------------------------
          sctp_initmsg initmsg;
-         memset((char*)&initmsg, 0 ,sizeof(initmsg));
+         memset(reinterpret_cast<char*>(&initmsg), 0, sizeof(initmsg));
          initmsg.sinit_num_ostreams  = 65535;
          initmsg.sinit_max_instreams = 65535;
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
                            &initmsg, sizeof(initmsg)) < 0) {
-            std::cerr << "ERROR: Unable to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - "
-                      << strerror(errno) << "!\n";
+            std::cerr << formatText(gettext("ERROR: Unable to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - {}!\n"),
+                                    strerror(errno));
             exit(1);
          }
 
-         // ------ Enable SCTP events ---------------------------------------
          sctp_event_subscribe events;
-         memset((char*)&events, 0 ,sizeof(events));
+         memset(reinterpret_cast<char*>(&events), 0, sizeof(events));
          events.sctp_data_io_event = 1;
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
                            &events, sizeof(events)) < 0) {
-            std::cerr << "ERROR: Unable to configure events on SCTP socket (SCTP_EVENTS option) - "
-                      << strerror(errno) << "!\n";
+            std::cerr << formatText(gettext("ERROR: Unable to configure events on SCTP socket (SCTP_EVENTS option) - {}!\n"),
+                                    strerror(errno));
             exit(1);
          }
       }
 #endif
 
-      if(flow->configureSocket(socketDescriptor) == false) {
+      if(!flow->configureSocket(socketDescriptor)) {
          exit(1);
       }
       if(ext_connect(socketDescriptor, &destinationAddress.sa, getSocklen(&destinationAddress.sa)) < 0) {
-         std::cerr << "ERROR: Unable to connect " << getProtocolName(trafficSpec.Protocol)
-                   << " socket - " << strerror(errno) << "!\n";
+         std::cerr << formatText(gettext("ERROR: Unable to connect {} socket - {}!\n"),
+                                 getProtocolName(trafficSpec.Protocol), strerror(errno));
          exit(1);
       }
 
@@ -1324,7 +1279,6 @@ static Flow* createFlow(Flow*                  previousFlow,
       stdlog << "okay <sd=" << socketDescriptor << ">\n";
       LOG_END
 
-      // ====== QUIC handshake ==============================================
 #if defined(HAVE_QUIC)
       if(trafficSpec.Protocol == IPPROTO_QUIC) {
          LOG_TRACE
@@ -1341,9 +1295,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 #endif
    }
 
-   // ====== Update flow with socket descriptor =============================
    flow->setSocketDescriptor(socketDescriptor, originalSocketDescriptor);
-
    flowID++;
    return flow;
 }
@@ -1357,7 +1309,7 @@ static void addToPollFDs(pollfd* pollFDs, const int fd, nfds_t& n, int* index = 
       pollFDs[n].events  = POLLIN;
       pollFDs[n].revents = 0;
       if(index) {
-         *index = (int)n;
+         *index = static_cast<int>(n);
       }
       n++;
    }
@@ -1390,107 +1342,99 @@ static bool mainLoop(const bool               isActiveMode,
 #if defined(HAVE_QUIC)
    int                quicID  = -1;
 #endif
-   unsigned long long now     = getMicroTime();
+   uint64_t           now     = getMicroTime();
    std::map<int, pollfd*> pollFDIndex;
 
 
    // ====== Get parameters for poll() ======================================
-   addToPollFDs((pollfd*)&fds, gTCPSocket,     n, &tcpID);
+   addToPollFDs(static_cast<pollfd*>(fds), gTCPSocket,     n, &tcpID);
 #if defined(__OpenBSD__)
-   addToPollFDs((pollfd*)&fds, gTCP6Socket,    n, &tcp6ID);
+   addToPollFDs(static_cast<pollfd*>(fds), gTCP6Socket,    n, &tcp6ID);
 #endif
 #if defined(HAVE_MPTCP)
-   addToPollFDs((pollfd*)&fds, gMPTCPSocket,   n, &mptcpID);
+   addToPollFDs(static_cast<pollfd*>(fds), gMPTCPSocket,   n, &mptcpID);
 #endif
-   addToPollFDs((pollfd*)&fds, gUDPSocket,     n, &udpID);
+   addToPollFDs(static_cast<pollfd*>(fds), gUDPSocket,     n, &udpID);
 #if defined(__OpenBSD__)
-   addToPollFDs((pollfd*)&fds, gUDP6Socket,    n, &udp6ID);
+   addToPollFDs(static_cast<pollfd*>(fds), gUDP6Socket,    n, &udp6ID);
 #endif
 #if defined(HAVE_SCTP)
-   addToPollFDs((pollfd*)&fds, gSCTPSocket,    n, &sctpID);
+   addToPollFDs(static_cast<pollfd*>(fds), gSCTPSocket,    n, &sctpID);
 #endif
 #if defined(HAVE_DCCP)
-   addToPollFDs((pollfd*)&fds, gDCCPSocket,    n, &dccpID);
+   addToPollFDs(static_cast<pollfd*>(fds), gDCCPSocket,    n, &dccpID);
 #endif
 #if defined(HAVE_QUIC)
-   addToPollFDs((pollfd*)&fds, gQUICSocket,    n, &quicID);
+   addToPollFDs(static_cast<pollfd*>(fds), gQUICSocket,    n, &quicID);
 #endif
    int    controlFDSet[gMessageReader.size()];
-   size_t controlFDs = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
-   const int controlIDMin = (int)n;
+   size_t controlFDs = gMessageReader.getAllSDs(reinterpret_cast<int*>(&controlFDSet), sizeof(controlFDSet) / sizeof(int));
+   const int controlIDMin = static_cast<int>(n);
    for(size_t i = 0; i < controlFDs; i++) {
-      addToPollFDs((pollfd*)&fds, controlFDSet[i], n, nullptr);
+      addToPollFDs(static_cast<pollfd*>(fds), controlFDSet[i], n, nullptr);
    }
-   const int controlIDMax = (int)n - 1;
+   const int controlIDMax = static_cast<int>(n) - 1;
 
 
    // ====== Use poll() to wait for events ==================================
-   const int timeout = pollTimeout(now, 2,
-                                   stopAt,
-                                   now + 1000000);
+   const int timeout = pollTimeout(now, 2, stopAt, now + 1000000ULL);
 
-   // printf("timeout=%d\n",timeout);
-   const int result = ext_poll_wrapper((pollfd*)&fds, n, timeout);
-   // printf("result=%d\n",result);
+   const int result = ext_poll_wrapper(static_cast<pollfd*>(fds), n, timeout);
 
 
    // ====== Handle socket events ===========================================
-   now = getMicroTime();   // Get current time.
+   now = getMicroTime();
    if(result > 0) {
 
       // ====== Incoming control message ====================================
-      int controlID;
-      for(controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
-         if(fds[controlID].revents & (POLLIN|POLLERR)) {
-            if( (isActiveMode == false) &&
-                (fds[controlID].fd == gControlSocket) ) {
+      for(int controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
+         if(fds[controlID].revents & (POLLIN | POLLERR)) {
+            if(!isActiveMode && (fds[controlID].fd == gControlSocket)) {
                const int newSD = ext_accept(gControlSocket, nullptr, 0);
                if(newSD >= 0) {
                   LOG_TRACE
-                  stdlog << format("Accept on SCTP control socket %d -> new control connection %d",
-                                   gControlSocket, newSD) << "\n";
+                  stdlog << formatText(gettext("Accept on SCTP control socket {} -> new control connection {}\n"),
+                                       gControlSocket, newSD);
                   LOG_END
                   gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
                }
                else {
                   LOG_ERROR
-                  stdlog << format("Accept on SCTP control socket %d failed: %s!",
-                                   gControlSocket, strerror(errno)) << "\n";
+                  stdlog << formatText(gettext("Accept on SCTP control socket {} failed: {}!\n"),
+                                       gControlSocket, strerror(errno));
                   LOG_END
                }
             }
-            else if( (isActiveMode == false) &&
-                     (fds[controlID].fd == gControlSocketTCP) ) {
+            else if(!isActiveMode && (fds[controlID].fd == gControlSocketTCP)) {
                const int newSD = ext_accept(gControlSocketTCP, nullptr, 0);
                if(newSD >= 0) {
                   LOG_TRACE
-                  stdlog << format("Accept on TCP control socket %d -> new control connection %d",
-                                   gControlSocketTCP, newSD) << "\n";
+                  stdlog << formatText(gettext("Accept on TCP control socket {} -> new control connection {}\n"),
+                                       gControlSocketTCP, newSD);
                   LOG_END
                   gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                }
                else {
                   LOG_ERROR
-                  stdlog << format("Accept on TCP control socket %d failed: %s!",
-                                   gControlSocketTCP, strerror(errno)) << "\n";
+                  stdlog << formatText(gettext("Accept on TCP control socket {} failed: {}!\n"),
+                                       gControlSocketTCP, strerror(errno));
                   LOG_END
                }
             }
 #if defined(__OpenBSD__)
-            else if( (isActiveMode == false) &&
-                     (fds[controlID].fd == gControlSocketTCP6) ) {
+            else if(!isActiveMode && (fds[controlID].fd == gControlSocketTCP6)) {
                const int newSD = ext_accept(gControlSocketTCP6, nullptr, 0);
                if(newSD >= 0) {
                   LOG_TRACE
-                  stdlog << format("Accept on TCP6 control socket %d -> new control connection %d",
-                                   gControlSocketTCP6, newSD) << "\n";
+                  stdlog << formatText(gettext("Accept on TCP6 control socket {} -> new control connection {}\n"),
+                                       gControlSocketTCP6, newSD);
                   LOG_END
                   gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                }
                else {
                   LOG_ERROR
-                  stdlog << format("Accept on TCP6 control socket %d failed: %s!",
-                                   gControlSocketTCP6, strerror(errno)) << "\n";
+                  stdlog << formatText(gettext("Accept on TCP6 control socket {} failed: {}!\n"),
+                                       gControlSocketTCP6, strerror(errno));
                   LOG_END
                }
             }
@@ -1502,8 +1446,6 @@ static bool mainLoop(const bool               isActiveMode,
                   if(isActiveMode) {
                      return false;
                   }
-                  // Make sure to deregister all flows belonging to this
-                  // control connection!
                   handleControlAssocShutdown(fds[controlID].fd);
                   gMessageReader.deregisterSocket(fds[controlID].fd);
                   ext_close(fds[controlID].fd);
@@ -1513,83 +1455,83 @@ static bool mainLoop(const bool               isActiveMode,
       }
 
       // ====== Incoming data message =======================================
-      if( (tcpID >= 0) && (fds[tcpID].revents & (POLLIN|POLLERR)) ) {
+      if((tcpID >= 0) && (fds[tcpID].revents & (POLLIN | POLLERR))) {
          const int newSD = ext_accept(gTCPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on TCP data socket %d -> new TCP data connection %d",
-                             gTCPSocket, newSD) << "\n";
+            stdlog << formatText(gettext("Accept on TCP data socket {} -> new TCP data connection {}\n"),
+                                 gTCPSocket, newSD);
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
          }
       }
 #if defined(__OpenBSD__)
-      if( (tcp6ID >= 0) && (fds[tcp6ID].revents & (POLLIN|POLLERR)) ) {
+      if((tcp6ID >= 0) && (fds[tcp6ID].revents & (POLLIN | POLLERR))) {
          const int newSD = ext_accept(gTCP6Socket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on TCP6 data socket %d -> new TCP6 data connection %d",
-                             gTCP6Socket, newSD) << "\n";
+            stdlog << formatText(gettext("Accept on TCP6 data socket {} -> new TCP6 data connection {}\n"),
+                                 gTCP6Socket, newSD);
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
          }
       }
 #endif
 #if defined(HAVE_MPTCP)
-      if( (mptcpID >= 0) && (fds[mptcpID].revents & (POLLIN|POLLERR)) ) {
+      if((mptcpID >= 0) && (fds[mptcpID].revents & (POLLIN | POLLERR))) {
          const int newSD = ext_accept(gMPTCPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on MPTCP data socket %d -> new MPTCP data connection %d",
-                             gMPTCPSocket, newSD) << "\n";
+            stdlog << formatText(gettext("Accept on MPTCP data socket {} -> new MPTCP data connection {}\n"),
+                                 gMPTCPSocket, newSD);
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_MPTCP, newSD);
          }
       }
 #endif
-      if( (udpID >= 0) && (fds[udpID].revents & (POLLIN|POLLERR)) ) {
+      if((udpID >= 0) && (fds[udpID].revents & (POLLIN | POLLERR))) {
          FlowManager::getFlowManager()->lock();
          handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDPSocket);
          FlowManager::getFlowManager()->unlock();
       }
 #if defined(__OpenBSD__)
-      if( (udp6ID >= 0) && (fds[udp6ID].revents & (POLLIN|POLLERR)) ) {
+      if((udp6ID >= 0) && (fds[udp6ID].revents & (POLLIN | POLLERR))) {
          FlowManager::getFlowManager()->lock();
          handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDP6Socket);
          FlowManager::getFlowManager()->unlock();
       }
 #endif
 #if defined(HAVE_SCTP)
-      if( (sctpID >= 0) && (fds[sctpID].revents & (POLLIN|POLLERR)) ) {
+      if((sctpID >= 0) && (fds[sctpID].revents & (POLLIN | POLLERR))) {
          const int newSD = ext_accept(gSCTPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on SCTP data socket %d -> new SCTP data connection %d",
-                             gSCTPSocket, newSD) << "\n";
+            stdlog << formatText(gettext("Accept on SCTP data socket {} -> new SCTP data connection {}\n"),
+                                 gSCTPSocket, newSD);
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_SCTP, newSD);
          }
       }
 #endif
 #if defined(HAVE_DCCP)
-      if( (dccpID >= 0) && (fds[dccpID].revents & (POLLIN|POLLERR)) ) {
+      if((dccpID >= 0) && (fds[dccpID].revents & (POLLIN | POLLERR))) {
          const int newSD = ext_accept(gDCCPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on DCCP data socket %d -> new DCCP data connection %d",
-                             gDCCPSocket, newSD) << "\n";
+            stdlog << formatText(gettext("Accept on DCCP data socket {} -> new DCCP data connection {}\n"),
+                                 gDCCPSocket, newSD);
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_DCCP, newSD);
          }
       }
 #endif
 #if defined(HAVE_QUIC)
-      if( (quicID >= 0) && (fds[quicID].revents & (POLLIN|POLLERR)) ) {
+      if((quicID >= 0) && (fds[quicID].revents & (POLLIN | POLLERR))) {
          const int newSD = ext_accept(gQUICSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
-                             gQUICSocket, newSD) << "\n";
+            stdlog << formatText(gettext("Accept on QUIC data socket {} -> new QUIC data connection {}\n"),
+                                 gQUICSocket, newSD);
             LOG_END
             LOG_TRACE
             stdlog << "server handshake <sd=" << gQUICSocket
@@ -1601,15 +1543,14 @@ static bool mainLoop(const bool               isActiveMode,
 
             uint8_t      sessionKey[64];
             unsigned int sessionKeyLength = sizeof(sessionKey);
-            if(ext_getsockopt(newSD,
-                              IPPROTO_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
+            if(ext_getsockopt(newSD, IPPROTO_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
                               &sessionKey, &sessionKeyLength) == 0) {
                if(server_handshake(newSD, ALPN_NETPERFMETER_DATA,
                                    gQUICCA, gQUICCertificate, gQUICKey,
                                    sessionKey, sessionKeyLength) == 0) {
                   LOG_TRACE
-                  stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
-                                   gQUICSocket, newSD) << "\n";
+                  stdlog << formatText(gettext("Accept on QUIC data socket {} -> new QUIC data connection {}\n"),
+                                       gQUICSocket, newSD);
                   LOG_END
                   FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
                }
@@ -1619,8 +1560,7 @@ static bool mainLoop(const bool               isActiveMode,
             }
             else {
                LOG_WARNING
-               stdlog << "getsockopt(QUIC_SOCKOPT_SESSION_TICKET): "
-                      << strerror(errno) << "\n";
+               stdlog << formatText(gettext("getsockopt(QUIC_SOCKOPT_SESSION_TICKET): {}\n"), strerror(errno));
                LOG_END
                ext_close(newSD);
             }
@@ -1652,7 +1592,7 @@ static void passiveMode(const uint16_t localPort)
                                     &testAddress, true, false);
    if(testSD >= 0) {
       LOG_WARNING
-      stdlog << "WARNING: This machine seems to have an interface with address 172.17.0.1! This is typically used by Docker setups. If you connect from another machine having the same configuration, in an environment with only private addresses SCTP may try to use this address -> OOTB ABORT." << "\n";
+      stdlog << gettext("WARNING: This machine seems to have an interface with address 172.17.0.1! This is typically used by Docker setups. If you connect from another machine having the same configuration, in an environment with only private addresses SCTP may try to use this address -> OOTB ABORT.\n");
       LOG_END
       ext_close(testSD);
    }
@@ -1663,22 +1603,22 @@ static void passiveMode(const uint16_t localPort)
       gControlSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP,
                                            localPort + 1,
                                            gLocalControlAddresses,
-                                           (const sockaddr_union*)&gLocalControlAddressArray,
+                                           reinterpret_cast<const sockaddr_union*>(&gLocalControlAddressArray),
                                            true, gBindV6Only);
       if(gControlSocket >= 0) {
-         // ------ Set default send parameters ---------------------------------
+         // ------ Set default send parameters ------------------------------
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
          sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM,
                            &sinfo, sizeof(sinfo)) < 0) {
             LOG_FATAL
-            stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
-                             gControlSocket, strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket {}: {}!\n"),
+                                 gControlSocket, strerror(errno));
             LOG_END_FATAL
          }
 
-         // ------ Set default peer parameters ---------------------------------
+         // ------ Set default peer parameters ------------------------------
          struct sctp_paddrparams params;
          memset(&params, 0, sizeof(params));
          params.spp_assoc_id   = SCTP_FUTURE_ASSOC;
@@ -1688,8 +1628,8 @@ static void passiveMode(const uint16_t localPort)
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
                            &params, sizeof(params)) < 0) {
             LOG_FATAL
-            stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
-                             gControlSocket, strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket {}: {}!\n"),
+                                 gControlSocket, strerror(errno));
             LOG_END_FATAL
          }
 
@@ -1699,48 +1639,46 @@ static void passiveMode(const uint16_t localPort)
          assocparams.sasoc_asocmaxrxt = gControlHBAssocMaxRtx;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
             LOG_WARNING
-            stdlog << format("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket %d: %s!",
-                             gControlSocket, strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket {}: {}!\n"),
+                                 gControlSocket, strerror(errno));
             LOG_END
          }
 
          const int noDelayOption = 1;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_NODELAY,
-                           (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+                           reinterpret_cast<const char*>(&noDelayOption), sizeof(noDelayOption)) < 0) {
             LOG_ERROR
-            stdlog << format("Unable to set SCTP_NODELAY on SCTP control socket: %s!",
-                              strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to set SCTP_NODELAY on SCTP control socket: {}!\n"),
+                                 strerror(errno));
             LOG_END_FATAL
          }
 
-         // ------ Enable SCTP events ------------------------------------------
+         // ------ Enable SCTP events ---------------------------------------
          sctp_event_subscribe events;
-         memset((char*)&events, 0 ,sizeof(events));
+         memset(reinterpret_cast<char*>(&events), 0, sizeof(events));
          events.sctp_data_io_event     = 1;
          events.sctp_association_event = 1;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
             LOG_FATAL
-            stdlog << format("Unable to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
-                             gControlSocket, strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to configure events (SCTP_EVENTS option) on SCTP socket {}: {}!\n"),
+                                 gControlSocket, strerror(errno));
             LOG_END_FATAL
          }
 
          gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
       }
       else {
-         if( (errno != EPROTONOSUPPORT) ||
-             (gPassiveControlTCP == false) ) {
+         if((errno != EPROTONOSUPPORT) || !gPassiveControlTCP) {
             LOG_FATAL
-            stdlog << format("Unable to create and bind SCTP control socket on port %d: %s!",
-                             localPort + 1, strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to create and bind SCTP control socket on port {}: {}!\n"),
+                                 localPort + 1, strerror(errno));
             if(errno == EPROTONOSUPPORT) {
-               stdlog << "SCTP is not available => Try -y|--control-over-tcp for control over TCP!\n";
+               stdlog << gettext("SCTP is not available => Try -y|--control-over-tcp for control over TCP!\n");
             }
             LOG_END_FATAL
          }
          LOG_WARNING
-         stdlog << "WARNING: SCTP is not available => no control connections via SCTP possible!\n"
-                   "SCTP can be disabled by -X|--no-control-over-sctp.\n";
+         stdlog << gettext("WARNING: SCTP is not available => no control connections via SCTP possible!\nSCTP can be disabled by -X|--no-control-over-sctp.\n");
          LOG_END
       }
    }
@@ -1756,71 +1694,65 @@ static void passiveMode(const uint16_t localPort)
 #endif
                                               SOCK_STREAM,
 #if defined(HAVE_MPTCP)
-                                              (gPassiveControlMPTCP) ? IPPROTO_MPTCP : IPPROTO_TCP,
+                                              gPassiveControlMPTCP ? IPPROTO_MPTCP : IPPROTO_TCP,
 #else
                                               IPPROTO_TCP,
 #endif
                                               localPort + 1,
                                               gLocalControlAddresses,
-                                              (const sockaddr_union*)&gLocalControlAddressArray,
+                                              reinterpret_cast<const sockaddr_union*>(&gLocalControlAddressArray),
                                               true, gBindV6Only);
       if(gControlSocketTCP < 0) {
          LOG_FATAL
-         stdlog << format("Unable to create and bind TCP control socket on port %d: %s!",
-                        localPort + 1, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to create and bind TCP control socket on port {}: {}!\n"),
+                              localPort + 1, strerror(errno));
          LOG_END_FATAL
       }
       const int noDelayOption = 1;
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_NODELAY,
-                        (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+                        reinterpret_cast<const char*>(&noDelayOption), sizeof(noDelayOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_NODELAY on TCP control socket: %s!",
-                           strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set TCP_NODELAY on TCP control socket: {}!\n"),
+                              strerror(errno));
          LOG_END_FATAL
       }
       const int keepAliveOption = 1;
       if(ext_setsockopt(gControlSocketTCP, SOL_SOCKET, SO_KEEPALIVE,
-                        (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
+                        reinterpret_cast<const char*>(&keepAliveOption), sizeof(keepAliveOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set SO_KEEPALIVE on TCP control socket: %s!",
-                           strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set SO_KEEPALIVE on TCP control socket: {}!\n"),
+                              strerror(errno));
          LOG_END_FATAL
       }
 #if defined(TCP_KEEPIDLE)
-      const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
+      const int keepIdleOption = std::max(1, static_cast<int>(gControlHBInterval / 1000));
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPIDLE,
-                        (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
+                        reinterpret_cast<const char*>(&keepIdleOption), sizeof(keepIdleOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket: %s!",
-                           strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set TCP_KEEPIDLE on TCP control socket: {}!\n"),
+                              strerror(errno));
          LOG_END_FATAL
       }
-#else
-#warning No TCP_KEEPIDLE option available!
 #endif
 #if defined(TCP_KEEPINTVL)
-      const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
+      const int keepIntervalOption = std::max(1, static_cast<int>(gControlHBInterval / 1000));
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPINTVL,
-                        (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
+                        reinterpret_cast<const char*>(&keepIntervalOption), sizeof(keepIntervalOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket: %s!",
-                           strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set TCP_KEEPINTVL on TCP control socket: {}!\n"),
+                              strerror(errno));
          LOG_END_FATAL
       }
-#else
-#warning No TCP_KEEPINTVL option available!
 #endif
 #if defined(TCP_KEEPCNT)
-      const int keepCountOption = (int)gControlHBPathMaxRtx;
+      const int keepCountOption = static_cast<int>(gControlHBPathMaxRtx);
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPCNT,
-                        (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
+                        reinterpret_cast<const char*>(&keepCountOption), sizeof(keepCountOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket: %s!",
-                           strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set TCP_KEEPCNT on TCP control socket: {}!\n"),
+                              strerror(errno));
          LOG_END_FATAL
       }
-#else
-#warning No TCP_KEEPCNT option available!
 #endif
 
       gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
@@ -1830,26 +1762,26 @@ static void passiveMode(const uint16_t localPort)
          gControlSocketTCP6 = createAndBindSocket(AF_INET6,
                                                   SOCK_STREAM,
 #if defined(HAVE_MPTCP)
-                                                  (gPassiveControlMPTCP) ? IPPROTO_MPTCP : IPPROTO_TCP,
+                                                  gPassiveControlMPTCP ? IPPROTO_MPTCP : IPPROTO_TCP,
 #else
                                                   IPPROTO_TCP,
 #endif
                                                   localPort + 1,
                                                   gLocalControlAddresses,
-                                                  (const sockaddr_union*)&gLocalControlAddressArray,
+                                                  reinterpret_cast<const sockaddr_union*>(&gLocalControlAddressArray),
                                                   true, gBindV6Only);
          if(gControlSocketTCP6 < 0) {
             LOG_FATAL
-            stdlog << format("Unable to create and bind TCP6 control socket on port %d: %s!",
-                             localPort + 1, strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to create and bind TCP6 control socket on port {}: {}!\n"),
+                                 localPort + 1, strerror(errno));
             LOG_END_FATAL
          }
          const int noDelayOption = 1;
          if(ext_setsockopt(gControlSocketTCP6, IPPROTO_TCP, TCP_NODELAY,
-                           (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+                           reinterpret_cast<const char*>(&noDelayOption), sizeof(noDelayOption)) < 0) {
             LOG_ERROR
-            stdlog << format("Unable to set TCP6_NODELAY on TCP6 control socket: %s!",
-                             strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to set TCP6_NODELAY on TCP6 control socket: {}!\n"),
+                                 strerror(errno));
             LOG_END_FATAL
          }
          gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP6);
@@ -1868,36 +1800,36 @@ static void passiveMode(const uint16_t localPort)
 #endif
                                     SOCK_STREAM, IPPROTO_TCP, localPort,
                                     gLocalDataAddresses,
-                                    (const sockaddr_union*)&gLocalDataAddressArray,
+                                    reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray),
                                     true, gBindV6Only);
    if(gTCPSocket < 0) {
       LOG_FATAL
-      stdlog << format("Unable to create and bind TCP socket on port %d: %s!",
-                       localPort, strerror(errno)) << "\n";
+      stdlog << formatText(gettext("Unable to create and bind TCP socket on port {}: {}!\n"),
+                           localPort, strerror(errno));
       LOG_END_FATAL
    }
-   if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
+   if(!setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize)) {
       LOG_FATAL
-      stdlog << format("Unable to configure buffer sizes on TCP socket %d!",
-                       gTCPSocket) << "\n";
+      stdlog << formatText(gettext("Unable to configure buffer sizes on TCP socket {}!\n"),
+                           gTCPSocket);
       LOG_END_FATAL
    }
 #if defined(__OpenBSD__)
    if(gLocalDataAddresses == 0) {
       gTCP6Socket = createAndBindSocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, localPort,
                                         gLocalDataAddresses,
-                                        (const sockaddr_union*)&gLocalDataAddressArray,
+                                        reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray),
                                         true, gBindV6Only);
       if(gTCP6Socket < 0) {
          LOG_FATAL
-         stdlog << format("Unable to create and bind TCP6 socket on port %d: %s!",
-                          localPort, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to create and bind TCP6 socket on port {}: {}!\n"),
+                              localPort, strerror(errno));
          LOG_END_FATAL
       }
-      if(setBufferSizes(gTCP6Socket, gSndBufSize, gRcvBufSize) == false) {
+      if(!setBufferSizes(gTCP6Socket, gSndBufSize, gRcvBufSize)) {
          LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on TCP6 socket %d!",
-                          gTCP6Socket) << "\n";
+         stdlog << formatText(gettext("Unable to configure buffer sizes on TCP6 socket {}!\n"),
+                              gTCP6Socket);
          LOG_END_FATAL
       }
    }
@@ -1907,19 +1839,19 @@ static void passiveMode(const uint16_t localPort)
 #if defined(HAVE_MPTCP)
    gMPTCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_MPTCP, localPort - 1,
                                       gLocalDataAddresses,
-                                      (const sockaddr_union*)&gLocalDataAddressArray,
+                                      reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray),
                                       true, gBindV6Only);
    if(gMPTCPSocket < 0) {
       LOG_DEBUG
-      stdlog << format("NOTE: Unable to create and bind MPTCP socket on port %d: %s!",
-                        localPort - 1, strerror(errno)) << "\n";
+      stdlog << formatText(gettext("NOTE: Unable to create and bind MPTCP socket on port {}: {}!\n"),
+                           localPort - 1, strerror(errno));
       LOG_END
    }
    else {
-      if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
+      if(!setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize)) {
          LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on MPTCP socket %d!",
-                          gMPTCPSocket) << "\n";
+         stdlog << formatText(gettext("Unable to configure buffer sizes on MPTCP socket {}!\n"),
+                              gMPTCPSocket);
          LOG_END_FATAL
       }
    }
@@ -1934,57 +1866,56 @@ static void passiveMode(const uint16_t localPort)
 #endif
                                     SOCK_DGRAM, IPPROTO_UDP, localPort,
                                     gLocalDataAddresses,
-                                    (const sockaddr_union*)&gLocalDataAddressArray,
+                                    reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray),
                                     true, gBindV6Only);
    if(gUDPSocket < 0) {
       LOG_FATAL
-      stdlog << "ERROR: Unable to create and bind UDP socket on port " << localPort << " - "
-             << strerror(errno) << "!\n";
+      stdlog << formatText(gettext("ERROR: Unable to create and bind UDP socket on port {} - {}!\n"),
+                           localPort, strerror(errno));
       LOG_END_FATAL
    }
-   // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
    FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDPSocket);
 #if defined(__OpenBSD__)
    if(gLocalDataAddresses == 0) {
       gUDP6Socket = createAndBindSocket(AF_INET6,
                                         SOCK_DGRAM, IPPROTO_UDP, localPort,
                                         gLocalDataAddresses,
-                                        (const sockaddr_union*)&gLocalDataAddressArray,
+                                        reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray),
                                         true, gBindV6Only);
       if(gUDP6Socket < 0) {
          LOG_FATAL
-         stdlog << "ERROR: Unable to create and bind UDP6 socket on port " << localPort << " - "
-                << strerror(errno) << "!\n";
+         stdlog << formatText(gettext("ERROR: Unable to create and bind UDP6 socket on port {} - {}!\n"),
+                              localPort, strerror(errno));
          LOG_END_FATAL
       }
-      // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
       FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDP6Socket);
    }
 #endif
+
    // ------ DCCP -----------------------------------------------------------
 #if defined(HAVE_DCCP)
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
                                      gLocalDataAddresses,
-                                     (const sockaddr_union*)&gLocalDataAddressArray,
+                                     reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray),
                                      true, gBindV6Only);
    if(gDCCPSocket < 0) {
       LOG_INFO
-      stdlog << format("NOTE: Unable to create and bind DCCP socket on port %d: %s!",
-                        localPort, strerror(errno)) << "\n";
+      stdlog << formatText(gettext("NOTE: Unable to create and bind DCCP socket on port {}: {}!\n"),
+                           localPort, strerror(errno));
       LOG_END
    }
    else {
       const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(gDCCPSocket, IPPROTO_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket: %s!",
-                           (unsigned int)be32toh(service[0]), gDCCPSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to configure DCCP service code {} (DCCP_SOCKOPT_SERVICE option) on DCCP socket {}: {}!\n"),
+                              static_cast<unsigned int>(be32toh(service[0])), gDCCPSocket, strerror(errno));
          LOG_END_FATAL
       }
-      if(setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize) == false) {
+      if(!setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize)) {
          LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on DCCP socket %d!",
-                          gDCCPSocket) << "\n";
+         stdlog << formatText(gettext("Unable to configure buffer sizes on DCCP socket {}!\n"),
+                              gDCCPSocket);
          LOG_END_FATAL
       }
    }
@@ -1993,32 +1924,33 @@ static void passiveMode(const uint16_t localPort)
    // ------ QUIC -----------------------------------------------------------
 #if defined(HAVE_QUIC)
    gQUICSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_QUIC, localPort - 1,
-                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
-   // NOTE: It is necessary to set the ALPN before enabling the listening mode!
+                                     gLocalDataAddresses,
+                                     reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray),
+                                     false, gBindV6Only);
    if(gQUICSocket < 0) {
       LOG_INFO
-      stdlog << format("NOTE: Unable to create and bind QUIC socket on port %d: %s!",
-                        localPort, strerror(errno)) << "\n";
+      stdlog << formatText(gettext("NOTE: Unable to create and bind QUIC socket on port {}: {}!\n"),
+                           localPort, strerror(errno));
       LOG_END
    }
    else {
       if(ext_setsockopt(gQUICSocket, IPPROTO_QUIC, QUIC_SOCKOPT_ALPN,
                         ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket: %s!",
-                          gQUICSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket {}: {}!\n"),
+                              gQUICSocket, strerror(errno));
          LOG_END_FATAL
       }
-      if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
+      if(!setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize)) {
          LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on QUIC socket %d!",
-                          gQUICSocket) << "\n";
+         stdlog << formatText(gettext("Unable to configure buffer sizes on QUIC socket {}!\n"),
+                              gQUICSocket);
          LOG_END_FATAL
       }
       if(ext_listen(gQUICSocket, 100) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to enable listening on QUIC socket %d!",
-                          gQUICSocket) << "\n";
+         stdlog << formatText(gettext("Unable to enable listening on QUIC socket {}!\n"),
+                              gQUICSocket);
          LOG_END_FATAL
       }
    }
@@ -2028,48 +1960,43 @@ static void passiveMode(const uint16_t localPort)
 #if defined(HAVE_SCTP)
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
                                      gLocalDataAddresses,
-                                     (const sockaddr_union*)&gLocalDataAddressArray,
+                                     reinterpret_cast<const sockaddr_union*>(&gLocalDataAddressArray),
                                      true, gBindV6Only);
    if(gSCTPSocket >= 0) {
-
-      // ------ Set SCTP stream parameters-----------------------------------
       sctp_initmsg initmsg;
-      memset((char*)&initmsg, 0 ,sizeof(initmsg));
+      memset(reinterpret_cast<char*>(&initmsg), 0, sizeof(initmsg));
       initmsg.sinit_num_ostreams  = 65535;
       initmsg.sinit_max_instreams = 65535;
       if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG,
                         &initmsg, sizeof(initmsg)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure INIT parameters (SCTP_INITMSG option) on SCTP socket %d: %s!",
-                          gSCTPSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to configure INIT parameters (SCTP_INITMSG option) on SCTP socket {}: {}!\n"),
+                              gSCTPSocket, strerror(errno));
          LOG_END_FATAL
       }
 
-      // ------ Enable SCTP events ------------------------------------------
       sctp_event_subscribe events;
-      memset((char*)&events, 0 ,sizeof(events));
+      memset(reinterpret_cast<char*>(&events), 0, sizeof(events));
       events.sctp_data_io_event = 1;
       if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
-                          gSCTPSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to configure events (SCTP_EVENTS option) on SCTP socket {}: {}!\n"),
+                              gSCTPSocket, strerror(errno));
          LOG_END_FATAL
       }
 
-      // ------ Set SCTP buffer sizes ---------------------------------------
-      if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
+      if(!setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize)) {
          LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on SCTP socket %d!",
-                          gSCTPSocket) << "\n";
+         stdlog << formatText(gettext("Unable to configure buffer sizes on SCTP socket {}!\n"),
+                              gSCTPSocket);
          LOG_END_FATAL
       }
-
    }
    else {
-      if( (errno != EPROTONOSUPPORT) || (gPassiveControlTCP == false) ) {
+      if((errno != EPROTONOSUPPORT) || !gPassiveControlTCP) {
          LOG_FATAL
-         stdlog << format("Unable to create and bind SCTP socket on port %d: %s!",
-                          localPort, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to create and bind SCTP socket on port {}: {}!\n"),
+                              localPort, strerror(errno));
          LOG_END_FATAL
       }
    }
@@ -2084,7 +2011,7 @@ static void passiveMode(const uint16_t localPort)
    }
 #endif
    if(gControlSocketTCP >= 0) {
-      if(controlProtocols.size() > 0) {
+      if(!controlProtocols.empty()) {
          controlProtocols += "/";
       }
       controlProtocols += "TCP";
@@ -2112,22 +2039,22 @@ static void passiveMode(const uint16_t localPort)
 #endif
 #if defined(HAVE_QUIC)
    if(gQUICSocket > 0) {
-      if(dataProtocols2.size() > 0) {
+      if(!dataProtocols2.empty()) {
          dataProtocols2 += "/";
       }
       dataProtocols2 += "QUIC";
    }
 #endif
-   if(dataProtocols2.size() > 0) {
-      dataProtocols2 = format(", and %s on port %u",
-                              dataProtocols2.c_str(), localPort - 1);
+   if(!dataProtocols2.empty()) {
+      dataProtocols2 = formatText(gettext(", and {} on port {}"),
+                                  dataProtocols2, localPort - 1);
    }
-   stdlog << format("Passive Mode: Waiting for incoming connections:\n"
-                    " - Control Channel = %s on port %u\n"
-                    " - Data Channel    = %s on port %u%s\n",
-                    controlProtocols.c_str(), localPort + 1,
-                    dataProtocols1.c_str(), localPort,
-                    dataProtocols2.c_str());
+   stdlog << formatText(gettext("Passive Mode: Waiting for incoming connections:\n"
+                                " - Control Channel = {} on port {}\n"
+                                " - Data Channel    = {} on port {}{}\n"),
+                        controlProtocols, localPort + 1,
+                        dataProtocols1, localPort,
+                        dataProtocols2);
    LOG_END
    LOG_TRACE
    stdlog << "Sockets:\n"
@@ -2167,8 +2094,8 @@ static void passiveMode(const uint16_t localPort)
    FlowManager::getFlowManager()->configureDisplay(gDisplayEnabled);
 
    const unsigned long long stopAt = (gRuntime > 0) ?
-      (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
-   while( (!breakDetected()) && (!gStopTimeReached) ) {
+      (getMicroTime() + static_cast<unsigned long long>(rint(gRuntime * 1000000.0))) : ~0ULL;
+   while(!breakDetected() && !gStopTimeReached) {
       mainLoop(false, stopAt);
    }
 
@@ -2233,9 +2160,9 @@ static void activeMode(const char* remoteEndpoint)
 {
    // ====== Initialize remote and control addresses ========================
    sockaddr_union remoteAddress;
-   if(string2address(remoteEndpoint, &remoteAddress) == false) {
+   if(!string2address(remoteEndpoint, &remoteAddress)) {
       LOG_FATAL
-      std::cerr << format("ERROR: Invalid remote address %s", remoteEndpoint) << "!\n";
+      std::cerr << formatText(gettext("ERROR: Invalid remote address {}!\n"), remoteEndpoint);
       LOG_END_FATAL
    }
    if(getPort(&remoteAddress.sa) < 2) {
@@ -2255,38 +2182,37 @@ static void activeMode(const char* remoteEndpoint)
    switch(gActiveControlProtocol) {
       case IPPROTO_SCTP:
          controlProtocol = "SCTP";
-       break;
+         break;
       case IPPROTO_TCP:
          controlProtocol = "TCP";
-       break;
+         break;
 #if defined(HAVE_MPTCP)
       case IPPROTO_MPTCP:
          controlProtocol = "MPTCP";
-       break;
+         break;
 #endif
    }
 
    LOG_INFO
-   stdlog << "Active Mode:\n"
-          << "- Measurement ID  = " << format("$%llx", measurementID) << "\n"
-          << "- Remote Address  = ";
+   stdlog << gettext("Active Mode:\n")
+          << formatText(gettext("- Measurement ID  = ${:x}\n"), measurementID)
+          << gettext("- Remote Address  = ");
    printAddress(stdlog, &remoteAddress.sa, true);
-   stdlog << "\n"
-          << "- Control Address = ";
+   stdlog << gettext("\n- Control Address = ");
    printAddress(stdlog, &controlAddress.sa, true);
-   stdlog << " - connecting via " << controlProtocol << " ...\n";
+   stdlog << formatText(gettext(" - connecting via {} ...\n"), controlProtocol);
    LOG_END
 
    // ====== Initialize control socket ======================================
    gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, SOCK_STREAM, gActiveControlProtocol,
-                                        0, gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
+                                        0, gLocalControlAddresses, reinterpret_cast<const sockaddr_union*>(&gLocalControlAddressArray),
                                         false, gBindV6Only);
    if(gControlSocket < 0) {
       LOG_FATAL
-      stdlog << format("Unable to create and bind control socket: %s!",
-                       strerror(errno)) << "\n";
-      if( (gActiveControlProtocol == IPPROTO_SCTP) && (errno == EPROTONOSUPPORT) ) {
-         stdlog << "SCTP is not available => Try -y|--control-over-tcp for control over TCP!\n";
+      stdlog << formatText(gettext("Unable to create and bind control socket: {}!\n"),
+                           strerror(errno));
+      if((gActiveControlProtocol == IPPROTO_SCTP) && (errno == EPROTONOSUPPORT)) {
+         stdlog << gettext("SCTP is not available => Try -y|--control-over-tcp for control over TCP!\n");
       }
       LOG_END_FATAL
    }
@@ -2297,18 +2223,18 @@ static void activeMode(const char* remoteEndpoint)
       sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket: %s!",
-                          strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket: {}!\n"),
+                              strerror(errno));
          LOG_END_FATAL
       }
    }
 #endif
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
       LOG_FATAL
-      stdlog << format("Unable to establish control association: %s!",
-                       strerror(errno)) << "\n";
+      stdlog << formatText(gettext("Unable to establish control association: {}!\n"),
+                           strerror(errno));
       if(gActiveControlProtocol == IPPROTO_SCTP) {
-         stdlog << "Note: Try -y|--control-over-tcp for control over TCP in case of NAT traversal or restrictive firewalls!\n";
+         stdlog << gettext("Note: Try -y|--control-over-tcp for control over TCP in case of NAT traversal or restrictive firewalls!\n");
       }
       LOG_END_FATAL
    }
@@ -2321,18 +2247,19 @@ static void activeMode(const char* remoteEndpoint)
       paddrparams.spp_pathmaxrxt = gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddrparams, sizeof(paddrparams)) < 0) {
          LOG_WARNING
-         stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket {}: {}!\n"),
+                              gControlSocket, strerror(errno));
          LOG_END
       }
 
       sctp_assocparams assocparams;
       memset(&assocparams, 0, sizeof(assocparams));
+      assocparams.sasoc_assoc_id   = SCTP_FUTURE_ASSOC;
       assocparams.sasoc_asocmaxrxt = gControlHBAssocMaxRtx;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
          LOG_WARNING
-         stdlog << format("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket %d: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket {}: {}!\n"),
+                              gControlSocket, strerror(errno));
          LOG_END
       }
    }
@@ -2341,47 +2268,41 @@ static void activeMode(const char* remoteEndpoint)
    if(gActiveControlProtocol == IPPROTO_TCP) {
       const int keepAliveOption = 1;
       if(ext_setsockopt(gControlSocket, SOL_SOCKET, SO_KEEPALIVE,
-                        (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
+                        reinterpret_cast<const char*>(&keepAliveOption), sizeof(keepAliveOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set SO_KEEPALIVE on TCP control socket %d: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set SO_KEEPALIVE on TCP control socket {}: {}!\n"),
+                              gControlSocket, strerror(errno));
          LOG_END_FATAL
       }
 #if defined(TCP_KEEPIDLE)
-      const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
+      const int keepIdleOption = std::max(1, static_cast<int>(gControlHBInterval / 1000));
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPIDLE,
-                        (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
+                        reinterpret_cast<const char*>(&keepIdleOption), sizeof(keepIdleOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket %d: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set TCP_KEEPIDLE on TCP control socket {}: {}!\n"),
+                              gControlSocket, strerror(errno));
          LOG_END_FATAL
       }
-#else
-#warning No TCP_KEEPIDLE option available!
 #endif
 #if defined(TCP_KEEPINTVL)
-      const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
+      const int keepIntervalOption = std::max(1, static_cast<int>(gControlHBInterval / 1000));
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPINTVL,
-                        (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
+                        reinterpret_cast<const char*>(&keepIntervalOption), sizeof(keepIntervalOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket %d: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set TCP_KEEPINTVL on TCP control socket {}: {}!\n"),
+                              gControlSocket, strerror(errno));
          LOG_END_FATAL
       }
-#else
-#warning No TCP_KEEPINTVL option available!
 #endif
 #if defined(TCP_KEEPCNT)
-      const int keepCountOption = (int)gControlHBPathMaxRtx;
+      const int keepCountOption = static_cast<int>(gControlHBPathMaxRtx);
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPCNT,
-                        (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
+                        reinterpret_cast<const char*>(&keepCountOption), sizeof(keepCountOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket %s: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set TCP_KEEPCNT on TCP control socket {}: {}!\n"),
+                              gControlSocket, strerror(errno));
          LOG_END_FATAL
       }
-#else
-#warning No TCP_KEEPCNT option available!
 #endif
    }
 
@@ -2394,20 +2315,20 @@ static void activeMode(const char* remoteEndpoint)
    // ====== Handle command-line parameters =================================
 
    // ------ Handle other parameters ----------------------------------------
-   for(int f = 0; f <gFlowCount; f++) {
+   for(int f = 0; f < gFlowCount; f++) {
       for(std::vector<AssocSpec>::const_iterator assocSpecIterator = gAssocSpecs.begin();
-         assocSpecIterator != gAssocSpecs.end(); assocSpecIterator++) {
+          assocSpecIterator != gAssocSpecs.end(); assocSpecIterator++) {
          const AssocSpec& assocSpec = *assocSpecIterator;
          Flow* lastFlow = nullptr;
          for(std::vector<const char*>::const_iterator flowIterator = assocSpec.Flows.begin();
-            flowIterator != assocSpec.Flows.end(); flowIterator++) {
+             flowIterator != assocSpec.Flows.end(); flowIterator++) {
             const char* flowSpec = *flowIterator;
             lastFlow = createFlow(lastFlow, flowSpec, measurementID,
                                   gVectorNamePattern, gVectorFileFormat,
                                   assocSpec.Protocol, remoteAddress);
             if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
                LOG_FATAL
-               stdlog << "ERROR: Unable to add flow to remote node!\n";
+               stdlog << gettext("ERROR: Unable to add flow to remote node!\n");
                LOG_END_FATAL
             }
             LOG_TRACE
@@ -2428,21 +2349,21 @@ static void activeMode(const char* remoteEndpoint)
                                 gVectorNamePattern, gVectorFileFormat,
                                 gScalarNamePattern, gScalarFileFormat)) {
       LOG_FATAL
-      stdlog << "ERROR: Unable to start measurement!\n";
+      stdlog << gettext("ERROR: Unable to start measurement!\n");
       LOG_END_FATAL
    }
 
 
    // ====== Main loop ======================================================
    const unsigned long long stopAt = (gRuntime > 0) ?
-      (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
+      (getMicroTime() + static_cast<unsigned long long>(rint(gRuntime * 1000000.0))) : ~0ULL;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
 
    FlowManager::getFlowManager()->configureDisplay(gDisplayEnabled);
-   while( (!breakDetected()) && (!gStopTimeReached) ) {
+   while((!breakDetected()) && (!gStopTimeReached)) {
       if(!mainLoop(true, stopAt)) {
-         std::cout << "\n" << "*** Aborted ***\n";
+         std::cout << "\n" << gettext("*** Aborted ***\n");
          break;
       }
    }
@@ -2455,11 +2376,11 @@ static void activeMode(const char* remoteEndpoint)
 
    // ====== Stop measurement ===============================================
    LOG_INFO
-   stdlog << "Shutdown" << "\n";
+   stdlog << gettext("Shutdown\n");
    LOG_END
    if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID)) {
       LOG_FATAL
-      stdlog << "Unable to stop measurement and download the results!\n";
+      stdlog << gettext("Unable to stop measurement and download the results!\n");
       LOG_END_FATAL
    }
 }
@@ -2477,23 +2398,22 @@ int main(int argc, char** argv)
    const unsigned int localPort     = (strchr(argv[optind], ':') == nullptr) ?
                                          atol(argv[optind]) : 0;
    const bool         inPassiveMode = (localPort >= 1) && (localPort < 65535);
-   if( (!inPassiveMode) && (gAssocSpecs.size() < 1) ) {
-      std::cerr << "ERROR: No flows specified!\n";
+   if((!inPassiveMode) && (gAssocSpecs.size() < 1)) {
+      std::cerr << gettext("ERROR: No flows specified!\n");
       return 1;
    }
 
    // ====== Start logging ==================================================
    beginLogging();
    LOG_INFO
-   stdlog << "Network Performance Meter " << NETPERFMETER_VERSION
-          << " in "
-          << ((inPassiveMode == true) ? "Passive Mode" : "Active Mode")
-          << "\n";
+   stdlog << formatText(gettext("Network Performance Meter {} in {}\n"),
+                        NETPERFMETER_VERSION,
+                        inPassiveMode ? gettext("Passive Mode") : gettext("Active Mode"));
    LOG_END
 
    // ====== Run active or passive instance =================================
    if(inPassiveMode) {
-      passiveMode(localPort);
+      passiveMode(static_cast<uint16_t>(localPort));
    }
    else {
       activeMode(argv[optind]);
