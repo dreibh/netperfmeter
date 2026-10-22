@@ -27,13 +27,26 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include <cctype>
+#include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-#include <stdint.h>
-#include <sys/time.h>
+#include <fstream>
+#include <getopt.h>
+#include <iostream>
+#include <unistd.h>
 
-// Endianess conversions: htobe*(), be*toh():
+#if defined(HAVE_LIBIBERTY)
+#include <libiberty.h>
+extern "C" {
+int getopt_long_only(int argc, char* const* argv, const char* optstring,
+                     const struct option* longopts, int* longindex);
+}
+#endif
+
+// Endianness conversions: htobe64(), be64toh():
 #if defined(__linux__) || defined(__GNU__)
 #include <endian.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__)
@@ -42,95 +55,157 @@
 #include <endian.h>
 #elif defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
-#define htobe16(x) OSSwapHostToBigInt16(x)
-#define be16toh(x) OSSwapBigToHostInt16(x)
-#define htobe32(x) OSSwapHostToBigInt32(x)
-#define be32toh(x) OSSwapBigToHostInt32(x)
 #define htobe64(x) OSSwapHostToBigInt64(x)
 #define be64toh(x) OSSwapBigToHostInt64(x)
+#elif defined(_WIN32)
+#if defined(_MSC_VER)
+#define htobe64(x) _byteswap_uint64(x)
+#define be64toh(x) _byteswap_uint64(x)
 #else
-#error Unsupported system: add endianess conversion function definitions!
+#define htobe64(x) __builtin_bswap64(x)
+#define be64toh(x) __builtin_bswap64(x)
 #endif
+#else
+#error Unsupported system: add endianness conversion function definitions!
+#endif
+
+#include "package-version.h"
+
+
+// ###### Version ###########################################################
+[[ noreturn ]] static void version()
+{
+   std::cerr << "RuntimeEstimator" << " " << RUNTIMEESTIMATOR_VERSION << "\n";
+   exit(0);
+}
+
+
+// ------ BEGIN-OF-USAGE-BLOCK ------
+// ###### Usage #############################################################
+#define HEADER(s)    "\x1b[4m" << (s) << "\x1b[0m"
+#define CMD(s)       "\x1b[1m" << (s) << "\x1b[0m"
+#define OPT(s)       "\x1b[1m" s "\x1b[0m"
+#define ARG(s)       "\x1b[4m" s "\x1b[0m"
+#define SYN(s)       "\x1b[1m" s "\x1b[0m"
+#define PIPE         SYN(" | ")
+#define ENTRY(s)     "\t" SYN("[") s SYN("]\n")
+
+[[ noreturn ]]
+static void usage(const char* program, const int exitCode)
+{
+   std::cerr << HEADER("Usage:") << "\n"
+             << CMD(program) << " "
+                ARG("start_file") " " ARG("total_runs") " " ARG("current_run") "\n"
+             << CMD(program) << "\n"
+                   ENTRY(OPT("-h") PIPE OPT("--help"))
+             << CMD(program) << "\n"
+                   ENTRY(OPT("-v") PIPE OPT("--version"));
+   exit(exitCode);
+}
+// ------ END-OF-USAGE-BLOCK ------
 
 
 // ###### Get current time stamp ############################################
 static unsigned long long getMicroTime()
 {
-  timespec ts;
-  if(__builtin_expect( (clock_gettime(CLOCK_REALTIME, &ts) != 0) , 0)) {
-     perror("clock_gettime():");
-     abort();
-  }
-  return ((unsigned long long)ts.tv_sec * 1000000ULL) +
-            ((unsigned long long)ts.tv_nsec / 1000ULL);
+   using MicrosecondsU64 = std::chrono::duration<unsigned long long, std::micro>;
+   return std::chrono::duration_cast<MicrosecondsU64>(
+      std::chrono::system_clock::now().time_since_epoch()
+   ).count();
 }
 
 
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
-   // ====== Handle arguments ===============================================
-   if(argc < 4) {
-      fprintf(stderr, "Usage: %s start_file total_runs current_run\n",
-              argv[0]);
-      exit(1);
+   // ====== Handle command-line arguments ==================================
+   const static struct option long_options[] = {
+      { "help",    no_argument, 0, 'h' },
+      { "version", no_argument, 0, 'v' },
+      {  nullptr,  0,           0, 0   }
+   };
+
+   int option;
+   int longIndex;
+   while( (option = getopt_long_only(argc, argv, "hv", long_options, &longIndex)) != -1 ) {
+      switch(option) {
+         case 'v':
+            version();
+          break;
+         case 'h':
+         case '?':
+            // Exit with 0 on h/help, exit with 1 on '?' (unknown option):
+            usage(argv[0], (option == 'h') ? 0 : 1);
+          break;
+         case '-':
+          break;
+         default:
+            // This should not happen: wrong getopt parameters, or missing case?
+            fprintf(stderr, "INTERNAL ERROR: Unhandled option c=%c code=%x!\n",
+                    (isprint(option) ? (char)option : ' '), option);
+            return 1;
+          break;
+      }
    }
+
+   if(optind + 3 != argc) {
+      usage(argv[0], 1);
+   }
+
+   const char* startFileName = argv[optind++];
+   const char* totalRunsStr  = argv[optind++];
+   const char* currentRunStr = argv[optind++];
 
    char* endptr;
    long  value;
 
-   value = strtol(argv[2], &endptr, 10);
-   if( (endptr == argv[2]) || (*endptr != 0x00) || (value < 1) ) {
-      fprintf(stderr, "ERROR: Invalid total runs parameter (must be >= 1)!\n");
+   value = strtol(totalRunsStr, &endptr, 10);
+   if( (endptr == totalRunsStr) || (*endptr != 0x00) || (value < 1) ) {
+      std::cerr << "ERROR: Invalid total runs parameter (must be >= 1)!\n";
       exit(1);
    }
    const unsigned int totalRuns = (unsigned int)value;
 
-   value = strtol(argv[3], &endptr, 10);
-   if( (endptr == argv[3]) || (*endptr != 0x00) || (value < 0) ) {
-      fprintf(stderr, "ERROR: Invalid current run parameter (must be >= 0)!\n");
+   value = strtol(currentRunStr, &endptr, 10);
+   if( (endptr == currentRunStr) || (*endptr != 0x00) || (value < 0) ) {
+      std::cerr << "ERROR: Invalid current run parameter (must be >= 0)!\n";
       exit(1);
    }
    const unsigned int currentRun = (unsigned int)value;
 
    if(currentRun > totalRuns) {
-      fprintf(stderr, "ERROR: Current run must be less or equal to total runs!\n");
+      std::cerr << "ERROR: Current run must be less or equal to total runs!\n";
       exit(1);
    }
 
    // ====== Initialise (Run 0) =============================================
    if(currentRun == 0) {
-      FILE* fh = fopen(argv[1], "w");
-      if(fh == nullptr) {
-         fprintf(stderr, "ERROR: Unable to create file <%s>!\n", argv[1]);
+      std::ofstream stream(startFileName, std::ios::binary | std::ios::trunc);
+      if(!stream.is_open()) {
+         std::cerr << "ERROR: Unable to create file <" << startFileName << ">!\n";
          exit(1);
       }
-      unsigned long long now        = getMicroTime();
-      const uint64_t     nowToWrite = htobe64(now);
-      if(fwrite((void*)&nowToWrite, sizeof(nowToWrite), 1, fh) != 1) {
-         fprintf(stderr, "ERROR: Unable to write timestamp to file <%s>!\n", argv[1]);
-         fclose(fh);
+      const uint64_t nowToWrite = htobe64(getMicroTime());
+      if(!stream.write(reinterpret_cast<const char*>(&nowToWrite), sizeof(nowToWrite))) {
+         std::cerr << "ERROR: Unable to write timestamp to file <" << startFileName << ">!\n";
          exit(1);
       }
-      fclose(fh);
       printf("\x1b[34m##### ESTIMATION: - [0 of %u - 0.00%%]\x1b[0m\n", totalRuns);
    }
 
    // ====== Estimate runtime (Run > 0) =====================================
    else {
-      FILE* fh = fopen(argv[1], "r");
-      if(fh == nullptr) {
-         fprintf(stderr, "ERROR: Unable to open file <%s>!\n", argv[1]);
+      std::ifstream stream(startFileName, std::ios::binary);
+      if(!stream.is_open()) {
+         std::cerr << "ERROR: Unable to open file <" << startFileName << ">!\n";
          exit(1);
       }
       uint64_t timeStampRead;
-      if(fread((void*)&timeStampRead, sizeof(timeStampRead), 1, fh) != 1) {
-         fprintf(stderr, "ERROR: Unable to read timestamp from file <%s>!\n", argv[1]);
-         fclose(fh);
+      if(!stream.read(reinterpret_cast<char*>(&timeStampRead), sizeof(timeStampRead))) {
+         std::cerr << "ERROR: Unable to read timestamp from file <" << startFileName << ">!\n";
          exit(1);
       }
       const unsigned long long startTimeStamp = be64toh(timeStampRead);
-      fclose(fh);
 
       const unsigned long long now  = getMicroTime();
       const double tstart           = (double)startTimeStamp;
@@ -141,12 +216,12 @@ int main(int argc, char** argv)
          now + (unsigned long long)((estimatedRuntime > 0) ? estimatedRuntime : 0.0);
 
       char             str[64];
-      const time_t     timeStamp = (time_t)(estEndTimeStamp / 1000000);
+      const time_t     timeStamp = (time_t)(estEndTimeStamp / 1000000ULL);
       const struct tm* timeptr   = localtime(&timeStamp);
 
       strftime(str, sizeof(str), "ESTIMATION: %d-%b-%Y %H:%M:%S", timeptr);
       printf("\x1b[34m##### %s.%04d (in %1.2f minutes)  [%u of %u - %1.2f%%]\x1b[0m\n",
-             str, (unsigned int)(estEndTimeStamp % 1000000) / 100,
+             str, (unsigned int)(estEndTimeStamp % 1000000ULL) / 100,
              estimatedRuntime / 60000000.0,
              currentRun, totalRuns, (100.0 * currentRun) / (double)totalRuns);
    }

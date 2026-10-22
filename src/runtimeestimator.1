@@ -35,16 +35,24 @@
 .Nd Batch Job Runtime Estimator
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm runtimeestimator Ar start\_file Ar total\_runs Ar current\_run
+.Nm runtimeestimator
+.Ar start\_file
+.br
+.Ar total\_runs
+.br
+.Ar current\_run
+.Nm runtimeestimator
+.Op Fl h | Fl \-help
+.Nm runtimeestimator
+.Op Fl v | Fl \-version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm runtimeestimator
-is a simple program to estimate the total runtime of a batch job consisting of multiple runs. Upon initialisation, it initialises a start file with a time stamp. Each time a run is completed, it prints out the estimated total
-runtime.
+is a simple program to estimate the total runtime of a batch job consisting of multiple runs. Upon initialisation, it initialises a start file with a time stamp. Each time a run is completed, it prints out the estimated total runtime.
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
-The following arguments have to be provided:
+The following arguments and options may be provided:
 .Bl -tag -width indent
 .It Ar start\_file
 The name of the start file.
@@ -52,6 +60,10 @@ The name of the start file.
 The total number of runs.
 .It Ar current\_run
 The current run number that has just been completed.
+.It Fl h | Fl \-help
+Prints command help.
+.It Fl v | Fl \-version
+Prints program version.
 .El
 .\" ###### Exit status ######################################################
 .Sh EXIT STATUS
@@ -63,8 +75,9 @@ tool exits with 0 on success, and >0 in case of an error.
 Some runtimeestimator usage examples:
 .Bl -tag -width indent
 .It runtimeestimator runtime.dat 100 0
-Initialize runtime estimation (i.e. before the first run). The start file
-"runtime.dat" is created.
+Initialize runtime estimation (i.e., before the first run). The start file
+.Pa runtime.dat
+is created.
 .It runtimeestimator runtime.dat 100 1
 Completed run 1 of 100 (i.e. the first run).
 .It runtimeestimator runtime.dat 100 5
