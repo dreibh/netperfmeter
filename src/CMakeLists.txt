@@ -164,6 +164,9 @@ ADD_EXECUTABLE(runtimeestimator runtimeestimator.cc)
 TARGET_LINK_LIBRARIES(runtimeestimator)
 INSTALL(TARGETS runtimeestimator   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   runtimeestimator.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
+INSTALL(FILES       runtimeestimator.bash-completion
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+        RENAME      runtimeestimator)
 
 # ====== getabstime =========================================================
 ADD_EXECUTABLE(getabstime getabstime.cc)

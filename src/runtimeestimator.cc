@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -105,16 +105,6 @@ static void usage(const char* program, const int exitCode)
 // ------ END-OF-USAGE-BLOCK ------
 
 
-// ###### Get current time stamp ############################################
-static unsigned long long getMicroTime()
-{
-   using MicrosecondsU64 = std::chrono::duration<unsigned long long, std::micro>;
-   return std::chrono::duration_cast<MicrosecondsU64>(
-      std::chrono::system_clock::now().time_since_epoch()
-   ).count();
-}
-
-
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
@@ -185,7 +175,11 @@ int main(int argc, char** argv)
          std::cerr << "ERROR: Unable to create file <" << startFileName << ">!\n";
          exit(1);
       }
-      const uint64_t nowToWrite = htobe64(getMicroTime());
+      const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+      const uint64_t nowMicroseconds = static_cast<uint64_t>(
+         std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count()
+      );
+      const uint64_t nowToWrite = htobe64(nowMicroseconds);
       if(!stream.write(reinterpret_cast<const char*>(&nowToWrite), sizeof(nowToWrite))) {
          std::cerr << "ERROR: Unable to write timestamp to file <" << startFileName << ">!\n";
          exit(1);
@@ -205,24 +199,44 @@ int main(int argc, char** argv)
          std::cerr << "ERROR: Unable to read timestamp from file <" << startFileName << ">!\n";
          exit(1);
       }
-      const unsigned long long startTimeStamp = be64toh(timeStampRead);
+      const uint64_t startTimeStamp = be64toh(timeStampRead);
 
-      const unsigned long long now  = getMicroTime();
-      const double tstart           = (double)startTimeStamp;
-      const double tend             = (double)now;
-      const double usecPerRun       = (tend - tstart) / currentRun;
-      const double estimatedRuntime = (totalRuns - currentRun) * usecPerRun;
-      const unsigned long long estEndTimeStamp =
-         now + (unsigned long long)((estimatedRuntime > 0) ? estimatedRuntime : 0.0);
+      const std::chrono::system_clock::time_point now       = std::chrono::system_clock::now();
+      const std::chrono::system_clock::time_point startTime = std::chrono::system_clock::time_point(
+         std::chrono::duration_cast<std::chrono::system_clock::duration>(
+            std::chrono::microseconds(startTimeStamp)
+         )
+      );
 
-      char             str[64];
-      const time_t     timeStamp = (time_t)(estEndTimeStamp / 1000000ULL);
-      const struct tm* timeptr   = localtime(&timeStamp);
+      const std::chrono::duration<double, std::micro> elapsed =
+         now - startTime;
+      const std::chrono::duration<double, std::micro> usecPerRun =
+         elapsed / currentRun;
+      const std::chrono::duration<double, std::micro> estimatedRuntime =
+         usecPerRun * (totalRuns - currentRun);
+      const std::chrono::system_clock::time_point estimatedEndTime = now +
+         std::chrono::duration_cast<std::chrono::system_clock::duration>(
+         (estimatedRuntime.count() > 0.0) ?
+            estimatedRuntime :
+            std::chrono::duration<double, std::micro>::zero()
+      );
 
-      strftime(str, sizeof(str), "ESTIMATION: %d-%b-%Y %H:%M:%S", timeptr);
-      printf("\x1b[34m##### %s.%04d (in %1.2f minutes)  [%u of %u - %1.2f%%]\x1b[0m\n",
-             str, (unsigned int)(estEndTimeStamp % 1000000ULL) / 100,
-             estimatedRuntime / 60000000.0,
+      const std::time_t timeStamp = std::chrono::system_clock::to_time_t(estimatedEndTime);
+      const struct tm*  timeptr   = std::localtime(&timeStamp);
+
+      char str[64];
+      std::strftime(str, sizeof(str), "ESTIMATION: %d-%b-%Y %H:%M:%S", timeptr);
+
+      const uint64_t estimatedEndTimeUs = static_cast<uint64_t>(
+         std::chrono::duration_cast<std::chrono::microseconds>(
+            estimatedEndTime.time_since_epoch()).count()
+      );
+      const double remainingMinutes =
+         std::chrono::duration_cast<std::chrono::duration<double, std::ratio<60>>>(estimatedRuntime).count();
+
+      printf("\x1b[34m##### %s.%04u (in %1.2f minutes)  [%u of %u - %1.2f%%]\x1b[0m\n",
+             str, static_cast<unsigned int>((estimatedEndTimeUs % 1000000ULL) / 100ULL),
+             remainingMinutes,
              currentRun, totalRuns, (100.0 * currentRun) / (double)totalRuns);
    }
 
