@@ -67,8 +67,7 @@ Sets the values of the output variables for the next scalar file to the provided
 .It Fl \-input=filename
 Process the given scalar file.
 .It Fl \-logfile=name
-Sets the log file for the next scalar file. On an error related to this scalar file, the log file's name is displayed. This option can be used to identify bad simulation/measurement runs by pointing to the log file being created for
-the simulation/measurement.
+Sets the log file for the next scalar file. On an error related to this scalar file, the log file's name is displayed. This option can be used to identify bad simulation/measurement runs by pointing to the log file being created for the simulation/measurement.
 .It Fl \-statusfile=name
 Sets the status file for the next scalar file. On an error related to this scalar file, the status file is deleted. This option can be used to repeat bad simulation/measurement runs by re\-running the simulation/measurement on missing status files.
 .It Fl \-skip=prefix
@@ -77,6 +76,8 @@ All scalars beginning with the given prefix are not written to output tables. Th
 Sets the directory where to find the scalar files.
 .It Fl \-resultsdirectory=directory
 Sets the directory where to write the summary tables to.
+.It Fl \-splitall
+Enables scalar splitting mode for all following scalar files.
 .It Fl \-ignore\-scalar\-file\-errors
 Ignore scalar file errors (that is, missing input files) instead of aborting.
 .El
@@ -92,9 +93,9 @@ Run in batch mode. The program is aborted on errors.
 .It Fl i | Fl \-interactive
 Run in interactive mode (default). On errors, the program is continued.
 .It Fl c Ar level | Fl \-compress Ar level
-Sets the BZip2 compression level; 1=none, 9=highest (default).
+Sets the BZip2 compression level; 0=none, 1=fastest (lowest), 9=highest (default).
 .It Fl s Ar separator | Fl \-separator Ar separator
-Sets the separator for the tables. Default: tabulator character (i.e. $'\t').
+Sets the separator for the tables. Default: tabulator character (i.e., $'\et').
 .It Fl l | Fl \-line\-numbers
 Add line numbers into the output table files, as usual for GNU R.
 .It Fl n | Fl \-no\-line\-numbers
@@ -118,7 +119,7 @@ The
 .Nm
 tool exits with 0 on success, and >0 in case of an error.
 .\" ###### Examples #########################################################
-.Sh EXAMPLE
+.Sh EXAMPLES
 Consider two simulation results
 .Pa test1.sca.bz2
 (created with ParameterX=One) and

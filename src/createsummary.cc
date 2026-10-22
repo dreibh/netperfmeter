@@ -28,6 +28,7 @@
  */
 
 #include <cassert>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
@@ -123,8 +124,7 @@ ScalarNode::~ScalarNode()
 // ###### Get ScalarNode object from storage node ###########################
 static inline ScalarNode* getScalarNodeFromStorageNode(struct SimpleRedBlackTreeNode* node)
 {
-   const long offset = (long)(&((class ScalarNode*)node)->Node) - (long)node;
-   return  (class ScalarNode*)( (long)node - offset );
+   return (ScalarNode*)((char*)node - offsetof(ScalarNode, Node));
 }
 
 
@@ -542,7 +542,7 @@ static void handleScalar(const std::string& varNames,
                  strlen(skipListNode->Prefix)) == 0) {
          break;
       }
-      skipListNode = skipListNode->Next;;
+      skipListNode = skipListNode->Next;
    }
    if(skipListNode == nullptr) {
       addScalar(scalarName, splitName, aggNames, aggValues,
@@ -863,24 +863,37 @@ static void dumpScalars(const std::string& simulationsDirectory,
 }
 
 
+// ------ BEGIN-OF-USAGE-BLOCK ------
 // ###### Usage #############################################################
-[[ noreturn ]] static void usage(const char* program, const int exitCode)
+#define HEADER(s)    "\x1b[4m" << (s) << "\x1b[0m"
+#define CMD(s)       "\x1b[1m" << (s) << "\x1b[0m"
+#define OPT(s)       "\x1b[1m" s "\x1b[0m"
+#define ARG(s)       "\x1b[4m" s "\x1b[0m"
+#define SYN(s)       "\x1b[1m" s "\x1b[0m"
+#define PIPE         SYN(" | ")
+#define ENTRY(s)     "\t" SYN("[") s SYN("]\n")
+
+[[ noreturn ]]
+static void usage(const char* program, const int exitCode)
 {
-   std::cerr << "Usage:\n"
-      << "* Run:\n  "
-      << program << "\n"
-         "    [variable_names]\n"
-         "    [-b|--batch|-i|--interactive]\n"
-         "    [-c level|--compress level]\n"
-         "    [-s separator|--separator separator]\n"
-         "    [-l|--line-numbers|-n|--no-line-numbers]\n"
-         "    [-p|--split|-a|--no-split]\n"
-         "    [-r|--ignore-scalar-file-errors]\n"
-         "    [-q|--quiet]\n"
-         "* Version:\n  " << program << " [-v|--version]\n"
-         "* Help:\n  "    << program << " [-h|--help]\n";
+   std::cerr << HEADER("Usage:") << "\n"
+             << CMD(program) << "\n"
+                   ENTRY(ARG("variable_names"))
+                   ENTRY(OPT("-b") PIPE OPT("--batch") PIPE OPT("-i") PIPE OPT("--interactive"))
+                   ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
+                   ENTRY(OPT("-s") " " ARG("separator") PIPE OPT("--separator") " " ARG("separator"))
+                   ENTRY(OPT("-l") PIPE OPT("--line-numbers") PIPE OPT("-n") PIPE OPT("--no-line-numbers"))
+                   ENTRY(OPT("-p") PIPE OPT("--split") PIPE OPT("-a") PIPE OPT("--no-split"))
+                   ENTRY(OPT("-r") PIPE OPT("--ignore-scalar-file-errors"))
+                   ENTRY(OPT("-q") PIPE OPT("--quiet"))
+             << CMD(program) << "\n"
+                   ENTRY(OPT("-h") PIPE OPT("--help"))
+             << CMD(program) << "\n"
+                   ENTRY(OPT("-v") PIPE OPT("--version"));
    exit(exitCode);
 }
+// ------ END-OF-USAGE-BLOCK ------
+
 
 
 // ###### Main program ######################################################
@@ -923,7 +936,7 @@ int main(int argc, char** argv)
 
    int option;
    int longIndex;
-   while( (option = getopt_long_only(argc, argv, "ibcs:lnpt:rqhv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "ibc:s:lnparqhv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'i':
             interactiveMode = true;
@@ -1160,13 +1173,13 @@ int main(int argc, char** argv)
       delete NextScalarNode;
       NextScalarNode = nullptr;
    }
-   ScalarNode* scalarNode = (ScalarNode*)simpleRedBlackTreeGetFirst(&StatisticsStorage);
-   while(scalarNode) {
-      simpleRedBlackTreeRemove(&StatisticsStorage, &scalarNode->Node);
+   SimpleRedBlackTreeNode* node = simpleRedBlackTreeGetFirst(&StatisticsStorage);
+   while(node != nullptr) {
+      ScalarNode* scalarNode = getScalarNodeFromStorageNode(node);
+      simpleRedBlackTreeRemove(&StatisticsStorage, node);
       delete scalarNode;
-      scalarNode = (ScalarNode*)simpleRedBlackTreeGetFirst(&StatisticsStorage);
+      node = simpleRedBlackTreeGetFirst(&StatisticsStorage);
    }
-   simpleRedBlackTreeDelete(&StatisticsStorage);
 
    SkipListNode* currentSkipNode = SkipList;
    while(currentSkipNode != nullptr) {
