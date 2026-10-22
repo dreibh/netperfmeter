@@ -41,6 +41,10 @@
 .Cm stop
 .Nm netperfmeter\-module\-loader
 .Cm status
+.Nm netperfmeter\-module\-loader
+.Op Fl h | Fl \-help
+.Nm netperfmeter\-module\-loader
+.Op Fl v | Fl \-version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm netperfmeter\-module\-loader
@@ -50,7 +54,7 @@ protocols (if available) and corresponding congestion controls (if available).
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
-The following arguments may be provided:
+The following arguments and options may be provided:
 .Bl -tag -width indent
 .It Cm start
 Load all available modules.
@@ -59,6 +63,10 @@ Try to unload all available modules. Note that some modules may still be in
 use, i.e., they will remain loaded.
 .It Cm status
 Prints the loaded modules and allowed TCP congestion controls.
+.It Fl h | Fl \-help
+Prints command\-line help.
+.It Fl v | Fl \-version
+Prints program version.
 .El
 .\" ###### Exit status ######################################################
 .Sh EXIT STATUS
@@ -80,6 +88,16 @@ sudo netperfmeter\-module\-loader stop
 Show status of loaded modules and congestion controls:
 .Bd -literal
 netperfmeter\-module\-loader status
+.Ed
+.Pp
+Print command\-line help:
+.Bd -literal
+netperfmeter\-module\-loader \-\-help
+.Ed
+.Pp
+Print program version:
+.Bd -literal
+netperfmeter\-module\-loader \-\-version
 .Ed
 .\" ###### See also #########################################################
 .Sh SEE ALSO

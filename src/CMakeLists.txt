@@ -90,6 +90,14 @@ INSTALL(FILES   netperfmeter.bib DESTINATION         ${CMAKE_INSTALL_DATADIR}/ne
 INSTALL(FILES       netperfmeter.bash-completion
         DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
         RENAME      netperfmeter)
+IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
+   INSTALL(FILES    netperfmeter.service               DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
+   INSTALL(FILES    netperfmeter.conf                  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR})
+ELSEIF ( (CMAKE_SYSTEM_NAME MATCHES "FreeBSD") OR
+         (CMAKE_SYSTEM_NAME MATCHES "NetBSD") )
+   INSTALL(PROGRAMS netperfmeter.rc                    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/rc.d
+           RENAME   netperfmeter)
+ENDIF()
 
 CONFIGURE_FILE(netperfmeter-module-loader netperfmeter-module-loader.versioned @ONLY)
 SET_PROPERTY(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES netperfmeter-module-loader.versioned)
@@ -98,14 +106,13 @@ INSTALL(PROGRAMS    ${CMAKE_CURRENT_BINARY_DIR}/netperfmeter-module-loader.versi
         DESTINATION ${CMAKE_INSTALL_BINDIR}
         RENAME      netperfmeter-module-loader)
 INSTALL(FILES       netperfmeter-module-loader.1       DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
+INSTALL(FILES       netperfmeter-module-loader.bash-completion
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+        RENAME      netperfmeter-module-loader)
 IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
-   INSTALL(FILES    netperfmeter.service               DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
-   INSTALL(FILES    netperfmeter.conf                  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR})
    INSTALL(FILES    netperfmeter-module-loader.service DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/systemd/system)
 ELSEIF ( (CMAKE_SYSTEM_NAME MATCHES "FreeBSD") OR
          (CMAKE_SYSTEM_NAME MATCHES "NetBSD") )
-   INSTALL(PROGRAMS netperfmeter.rc                    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/rc.d
-           RENAME   netperfmeter)
    INSTALL(PROGRAMS netperfmeter-module-loader.rc      DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/rc.d
            RENAME   netperfmeter-module-loader)
 ENDIF()

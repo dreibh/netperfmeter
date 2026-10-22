@@ -46,7 +46,7 @@ tryToLoadModules()
          for module in ${modules} ; do
             echo -en "\x1b[37m${module}\x1b[0m "
             if [ "${UNAME}" == "Linux" ] ; then
-               modprobe "${module}" >/dev/null 2>&1
+               modprobe "${module}" >/dev/null 2>&1 || true
             elif [ "${UNAME}" == "FreeBSD" ] ; then
                kldload "${module}" >/dev/null 2>&1 || true
             elif [ "${UNAME}" == "NetBSD" ] ; then
@@ -94,7 +94,7 @@ showStatus()
 
    # ------ Print the relevant modules --------------------------------------
    if [ "${UNAME}" == "Linux" ] ;  then
-      modules="$(lsmod | ( grep "^tcp_\|^mptcp_\|^sctp\|^dccp\|^quic" || true ) | awk '{ print $1 }' | sort | xargs)"
+      modules="$(lsmod | ( grep -E "^(tcp_|mptcp_|sctp|dccp|quic)" || true ) | awk '{ print $1 }' | sort | xargs)"
       allowedCCs="$(sysctl -n net.ipv4.tcp_allowed_congestion_control)"
       defaultCC="$(sysctl -n net.ipv4.tcp_congestion_control)"
    elif [ "${UNAME}" == "FreeBSD" ] ;  then
@@ -112,7 +112,7 @@ showStatus()
    fi
 
    local numberOfAllowedCCs
-   numberOfAllowedCCs="$(echo "${allowedCCs}" | xargs -n1 | wc -l | tr -d " ")"
+   numberOfAllowedCCs="$(echo "${allowedCCs}" | wc -w | tr -d " ")"
 
    echo -en "\x1b[34m"
    echo -e "Modules:           \x1b[35m${modules}\x1b[34m"
@@ -122,18 +122,97 @@ showStatus()
 }
 
 
+# ###### Version ############################################################
+version () {
+   echo "netperfmeter-module-loader @BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
+   exit 0
+}
+
+
+# ------ BEGIN-OF-USAGE-BLOCK ------
+# ###### Usage ##############################################################
+usage () {
+   local program="$1"
+   local exitCode="$2"
+   local header=$'\x1b[4m'
+   local cmd=$'\x1b[1m'
+   local opt=$'\x1b[1m'
+   # local arg=$'\x1b[4m'
+   local syn=$'\x1b[1m'
+   local reset=$'\x1b[0m'
+   cat >&2 <<EOF
+${header}Usage:${reset}
+${cmd}${program}${reset} ${syn}start${reset}
+${cmd}${program}${reset} ${syn}stop${reset}
+${cmd}${program}${reset} ${syn}status${reset}
+${cmd}${program}${reset}
+	${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}
+${cmd}${program}${reset}
+	${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}
+EOF
+   exit "${exitCode}"
+}
+# ------ END-OF-USAGE-BLOCK ------
+
+
 
 # ###### Main program #######################################################
 
-# ====== Check argument =====================================================
-if [ $# -lt 1 ] ; then
-  echo >&2 "Usage: $0 start|stop|status"
-  exit 1
-fi
+# ====== Handle arguments ===================================================
 UNAME="$(uname)"
+case "${UNAME}" in
+   FreeBSD)
+      GETOPT="$(PATH="/usr/local/bin:${PATH}" command -v getopt || true)"
+      ;;
+   NetBSD)
+      GETOPT="$(PATH="/usr/pkg/bin:${PATH}" command -v getopt || true)"
+      ;;
+   OpenBSD)
+      GETOPT="$(command -v gnugetopt || true)"
+      ;;
+   SunOS)
+      GETOPT="$(PATH="/usr/gnu/bin:${PATH}" command -v getopt || true)"
+      ;;
+   Darwin)
+      GETOPT="$(env PATH="/opt/homebrew/opt/gnu-getopt/bin:${PATH}" command -v getopt || true)"
+      ;;
+   *)
+      GETOPT="$(command -v getopt || true)"
+      ;;
+esac
+if [ -z "${GETOPT}" ] || "${GETOPT}" -T >/dev/null 2>&1 || [[ $? -ne 4 ]]; then
+   echo >&2 "ERROR: Enhanced/GNU getopt is required!"
+   exit 1
+fi
+
+if ! options="$("${GETOPT}" -o hv --long help,version -a -- "$@")"; then
+   usage "$0" 1
+fi
+
+eval set -- "${options}"
+while [ $# -gt 0 ] ; do
+   case "$1" in
+      -h | --help)
+         usage "$0" 0
+         ;;
+      -v | --version)
+         version
+         ;;
+      --)
+         shift
+         break
+         ;;
+   esac
+   shift
+done
+
+if [ $# -ne 1 ] ; then
+   usage "$0" 1
+fi
+COMMAND="$1"
 
 # ====== Load modules =======================================================
-if [ "$1" == "start" ] ; then
+if [ "${COMMAND}" == "start" ] ; then
 
    if [ "${UNAME}" == "Linux" ] ; then
       kernel="$(uname -r)"
@@ -144,14 +223,14 @@ if [ "$1" == "start" ] ; then
       tryToLoadModules "QUIC"  "quic.ko*"    "/lib/modules/${kernel}/kernel/net/quic/"  "/lib/modules/${kernel}/extra/"
 
       # Allow TCP CCs:
-      availableCCs="$(sysctl net.ipv4.tcp_available_congestion_control | sed -e "s/.*= //g")"
+      availableCCs="$(sysctl -n net.ipv4.tcp_available_congestion_control)"
       sysctl -qw net.ipv4.tcp_allowed_congestion_control="${availableCCs}"
 
    elif [ "${UNAME}" == "FreeBSD" ] ; then
       tryToLoadModules "CC"   "cc_*.ko" "/boot/kernel/"
       tryToLoadModules "SCTP" "sctp.ko" "/boot/kernel/"
 
-  elif [ "${UNAME}" == "NetBSD" ] ; then
+   elif [ "${UNAME}" == "NetBSD" ] ; then
       true
       # arch="$(uname -m)"
       # kernel="$(uname -r)"
@@ -165,7 +244,7 @@ if [ "$1" == "start" ] ; then
    showStatus
 
 # ====== Unload modules =====================================================
-elif [ "$1" == "stop" ] ; then
+elif [ "${COMMAND}" == "stop" ] ; then
 
    kernel="$(uname -r)"
 
@@ -196,12 +275,12 @@ elif [ "$1" == "stop" ] ; then
    showStatus
 
 # ====== Show status ========================================================
-elif [ "$1" == "status" ] ; then
+elif [ "${COMMAND}" == "status" ] ; then
 
    showStatus
 
 # ====== Invalid argument ===================================================
 else
-   echo >&2 "ERROR: Unknown command $1!"
-   exit 1
+   echo >&2 "ERROR: Unknown command ${COMMAND}!"
+   usage "$0" 1
 fi
