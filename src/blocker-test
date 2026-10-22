@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -euxo pipefail
 
 if [ "$1" == "on" ] ; then
    for chain in INPUT OUTPUT ; do
-      sudo iptables -F CHAIN
+      sudo iptables -F $chain
       for port in sport dport ; do
          sudo iptables -A $chain -p udp --$port 9000 -j DROP
          sudo iptables -A $chain -p tcp --$port 9000 -j DROP

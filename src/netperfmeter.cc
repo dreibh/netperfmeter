@@ -1692,7 +1692,51 @@ static void passiveMode(const uint16_t localPort)
                            strerror(errno)) << "\n";
          LOG_END_FATAL
       }
+      const int keepAliveOption = 1;
+      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, SO_KEEPALIVE,
+                        (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
+         LOG_ERROR
+         stdlog << format("Failed to set SO_KEEPALIVE on TCP control socket: %s!",
+                           strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+#if defined(TCP_KEEPIDLE)
+      const int keepIdleOption = 15;   // 15 s
+      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPIDLE,
+                        (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
+         LOG_ERROR
+         stdlog << format("Failed to set TCP_KEEPIDLE on TCP control socket: %s!",
+                           strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+#else
+#note No TCP_KEEPIDLE option available!
+#endif
+#if defined(TCP_KEEPINTVL)
+      const int keepIntervalOption = 10;   // 10 s
+      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPINTVL,
+                        (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
+         LOG_ERROR
+         stdlog << format("Failed to set TCP_KEEPINTVL on TCP control socket: %s!",
+                           strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+#else
+#note No TCP_KEEPINTVL option available!
+#endif
+#if defined(TCP_KEEPCNT)
+      const int keepCountOption = 3;   // 3 trials
+      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPCNT,
+                        (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
+         LOG_ERROR
+         stdlog << format("Failed to set TCP_KEEPCNT on TCP control socket: %s!",
+                           strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
       gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
+#else
+#note No TCP_KEEPCNT option available!
+#endif
 
 #if defined(__OpenBSD__)
       if(gLocalControlAddresses == 0) {
