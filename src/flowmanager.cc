@@ -1007,7 +1007,7 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
    if(sndBufSize > 0) {
       if(ext_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &sndBufSize, sizeof(sndBufSize)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to configure send buffer size %d (SO_SNDBUF option) on socket %d: %s!",
+         stdlog << format("Unable to configure send buffer size %d (SO_SNDBUF option) on socket %d: %s!",
                           sndBufSize, sd, strerror(errno)) << "\n";
          LOG_END
          return false;
@@ -1016,7 +1016,7 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(sd, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to obtain send buffer size (SO_SNDBUF option) on socket %d: %s!",
+         stdlog << format("Unable to obtain send buffer size (SO_SNDBUF option) on socket %d: %s!",
                           sd, strerror(errno)) << "\n";
          LOG_END
          return false;
@@ -1033,7 +1033,7 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
    if(rcvBufSize > 0) {
       if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvBufSize, sizeof(rcvBufSize)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to configure receive buffer size %d (SO_RCVBUF option) on socket %d: %s!",
+         stdlog << format("Unable to configure receive buffer size %d (SO_RCVBUF option) on socket %d: %s!",
                           rcvBufSize, sd, strerror(errno)) << "\n";
          LOG_END
          return false;
@@ -1042,7 +1042,7 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(sd, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to obtain receive buffer size (SO_RCVBUF option) on socket %d: %s!",
+         stdlog << format("Unable to obtain receive buffer size (SO_RCVBUF option) on socket %d: %s!",
                           sd, strerror(errno)) << "\n";
          LOG_END
          return false;
@@ -1076,7 +1076,7 @@ int createAndBindSocket(const int             family,
       int reuse = 1;
       if(ext_setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
          LOG_WARNING
-         stdlog << format("Failed to configure socket reuse (SO_REUSEADDR option) on socket %d: %s!",
+         stdlog << format("Unable to configure socket reuse (SO_REUSEADDR option) on socket %d: %s!",
                           sd, strerror(errno)) << "\n";
          LOG_END
       }

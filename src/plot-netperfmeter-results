@@ -30,12 +30,23 @@
 set -euo pipefail
 
 
+# ------ BEGIN-OF-USAGE-BLOCK ------
 # ###### Usage ##############################################################
 usage () {
-   local exitCode="$1"
-   echo >&2 "Usage: $0 config_file [-w|--own-file] [-k|--keep-summaries] [-p|--per-flow-plots] [-h|--help] [-v|--version]"
+   local program="$1"
+   local exitCode="$2"
+   local header=$'\x1b[4m'
+   local cmd=$'\x1b[1m'
+   # local opt=$'\x1b[1m'
+   # local arg=$'\x1b[4m'
+   # local syn=$'\x1b[1m'
+   local reset=$'\x1b[0m'
+   cat >&2 <<EOF
+${header}Usage:${reset}
+EOF
    exit "${exitCode}"
 }
+# ------ END-OF-USAGE-BLOCK ------
 
 
 # ###### Version ############################################################
@@ -77,7 +88,7 @@ fi
 options="$(${GETOPT} -o wkphv --long own-file,ownfile,keep-summaries,per-flow-plots,help,version -a -- "$@")"
 # shellcheck disable=SC2181
 if [[ $? -ne 0 ]]; then
-   usage 1
+   usage "$0" 1
 fi
 
 KEEP_SUMMARIES=0
@@ -99,7 +110,7 @@ while [ $# -gt 0 ] ; do
          shift
          ;;
       -h | --help)
-         usage 0
+         usage "$0" 0
          ;;
       -v | --version)
          version
@@ -112,7 +123,7 @@ while [ $# -gt 0 ] ; do
   shift
 done
 if [ $# -ne 1 ] ; then
-   usage 1
+   usage "$0" 1
 fi
 CONFIG_FILE="$1"
 if [ ! -e "${CONFIG_FILE}" ] ; then

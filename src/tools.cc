@@ -656,7 +656,7 @@ int bindSocket(const int             sd,
       // Accept IPv4 and IPv6 connections.
       const int on = (bindV6Only == true) ? 1 : 0;
       // printf("IPV6_V6ONLY=%d\n", on);
-      if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) < 0) {
+      if(ext_setsockopt(sd, SOL_IPV6, IPV6_V6ONLY, &on, sizeof(on)) < 0) {
          return -2;
       }
    }

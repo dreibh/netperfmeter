@@ -53,7 +53,7 @@
 .br
 .Op Fl B Ar milliseconds | Fl \-control-hbinterval Ar milliseconds
 .br
-.Op Fl b Ar count | Fl \-control-hbcount Ar count
+.Op Fl b Ar count | Fl \-control-hbmaxrtx Ar count
 .br
 .Op Fl 6 | Fl \-v6only
 .br
@@ -81,7 +81,7 @@
 .br
 .Op Fl B Ar milliseconds | Fl \-control-hbinterval Ar milliseconds
 .br
-.Op Fl b Ar count | Fl \-control-hbcount Ar count
+.Op Fl b Ar count | Fl \-control-hbmaxrtx Ar count
 .br
 .Op Fl 6 | Fl \-v6only
 .Op Fl \-display | Fl \-nodisplay
@@ -181,7 +181,7 @@ Specifies the TLS certificate hostname for QUIC authentication. It is used by th
 The hostname must match the remote (i.e. passive side's) hostname, as provided by the passive side's TLS certificate, to allow for hostname verification. As alternative, it is possible to add the IP addresses into the X.509 SubjectAltName of its certificate.
 .It Fl B Ar milliseconds | Fl \-control-hbinterval Ar milliseconds
 Sets the heartbeat interval (in ms) for the control connection. Default: 15000.
-.It Fl b Ar count | Fl \-control-hbcount Ar count
+.It Fl b Ar count | Fl \-control-hbmaxrtx Ar count
 Sets the heartbeat count for the control connection. Default: 3.
 .It Fl 6 | Fl \-v6only
 Use sockets with IPv6 only (by setting IPV6\_V6ONLY socket option).

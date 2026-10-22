@@ -710,7 +710,7 @@ static bool uploadOutputFile(const int         controlSocket,
       resultsMsg->Header.Length = htobe16(sizeof(NetPerfMeterResults) + bytes);
       if(ferror(outputFile.getFile())) {
          LOG_ERROR
-         stdlog << format("Failed to read results from %s: %s!",
+         stdlog << format("Unable to read results from %s: %s!",
                           outputFile.getName().c_str(), strerror(errno)) << "\n";
          LOG_END
          success = false;
@@ -720,7 +720,7 @@ static bool uploadOutputFile(const int         controlSocket,
       // ====== Transmit chunk ==============================================
       if(ext_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, 0) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to upload results on socket %d: %s!",
+         stdlog << format("Unable to upload results on socket %d: %s!",
                           controlSocket, strerror(errno)) << "\n";
          LOG_END
          success = false;

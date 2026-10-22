@@ -130,11 +130,13 @@ _netperfmeter()
 
       case "${prev}" in
          #  ====== Generic value ============================================
-         -A | --activenodename  | \
-         -P | --passivenodename | \
-         -o | --sndbuf          | \
-         -i | --rcvbuf          | \
-         -T | --runtime)
+         -A | --activenodename     | \
+         -P | --passivenodename    | \
+         -o | --sndbuf             | \
+         -i | --rcvbuf             | \
+         -T | --runtime            | \
+         -B | --control-hbinterval | \
+         -b | --control-hbmaxrtx)
             return
             ;;
          # ====== Local address =============================================
@@ -203,64 +205,37 @@ _netperfmeter()
    if [ "${cword}" -ge 2 ] && [[ ! "${words[1]}" =~ ^[0-9]+$ ]] ; then
       if [ ${flowSpec} -eq 0 ] ; then
          opts="
--x
---control-over-sctp
--y
---control-over-tcp
--w
---control-over-mptcp
--L
---local
--l
---controllocal
--H
---tls-hostname
--I
---tls-ca
---6
---v6only
---display
---nodisplay
--o
---sndbuf
--i
---rcvbuf
--T
---runtime
--C
---Ar
--S
---scalar
--V
---vector
--A
---activenodename
--P
---passivenodename
+-x | --control-over-sctp | -y | --control-over-tcp | -w | --control-over-mptcp
+-L | --local
+-l | --controllocal
+-H | --tls-hostname
+-B | --control-hbinterval
+-b | --control-hbmaxrtx
+-6 | --v6only
+--display | --nodisplay
+-o | --sndbuf
+-i | --rcvbuf
+-N | --count
+-T | --runtime
+-C | --config
+-S | --scalar
+-V | --vector
+-A | --activenodename
+-P | --passivenodename
 --loglevel
 --logcolor
 --logfile
 --logappend
--t
---tcp
--m
---mptcp
--u
---udp
--d
---dccp
--s
---sctp
--k
---quic
--q
---quiet
--!
---verbose
--h
---help
--v
---version
+-t | --tcp
+-m | --mptcp
+-u | --udp
+-d | --dccp
+-s | --sctp
+-k | --quic
+-q | --quiet
+-! | --verbose
+-h | --help
+-v | --version
 "
       else
          opts="const exp pareto uniform"
@@ -269,40 +244,23 @@ _netperfmeter()
    # ------ Passive side ----------------------------------------------------
    else
       opts="
--x
---control-over-sctp
--X
---no-control-over-sctp
--y
---control-over-tcp
--Y
---no-control-over-tcp
--w
---control-over-mptcp
--W
---no-control-over-tcp
--L
---local
--l
---controllocal
--K
---tls-key
--I
---tls-ca
--J
---tls-cert
---6
---v6only
---display
---nodisplay
+-x | --control-over-sctp | -X | --no-control-over-sctp
+-y | --control-over-tcp | -Y | --no-control-over-tcp | -w | --control-over-mptcp | -W | --no-control-over-mptcp
+-L | --local
+-l | --controllocal
+-K | --tls-key
+-J | --tls-cert
+-I | --tls-ca
+-B | --control-hbinterval
+-b | --control-hbmaxrtx
+-6 | --v6only
+--display | --nodisplay
 --loglevel
 --logcolor
 --logfile
 --logappend
--q
---quiet
--!
---verbose
+-q | --quiet
+-! | --verbose
 "
    fi
 

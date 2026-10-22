@@ -251,7 +251,7 @@ void CPUStatus::update()
            &CpuTimes[CpuStates], &length, nullptr, 0) < 0) ||
        (length != cpuTimesSize) ) {
       LOG_FATAL
-      stdlog << "Failed to obtain kern.cp_times!" << "\n";
+      stdlog << "Unable to obtain kern.cp_times!" << "\n";
       LOG_END_FATAL
    }
 
@@ -263,7 +263,7 @@ void CPUStatus::update()
       if(sysctl(mibKernCpTime, sizeof(mibKernCpTime) / sizeof(mibKernCpTime[0]),
                 &CpuTimes[(i + 1) * CpuStates], &length, nullptr, 0) < 0) {
          LOG_FATAL
-         stdlog << "Failed to obtain per-core KERN_CPTIME2 for core " << i << "!\n";
+         stdlog << "Unable to obtain per-core KERN_CPTIME2 for core " << i << "!\n";
          LOG_END_FATAL
       }
    }

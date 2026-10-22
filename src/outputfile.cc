@@ -189,7 +189,7 @@ bool OutputFile::write(const char* buffer, const size_t bufferLength)
       // ====== Write string as plain text ==================================
       else if(File) {
          if(fwrite(buffer, bufferLength, 1, File) != 1) {
-            std::cerr << "ERROR: Failed to write into file <" << Name << ">!\n";
+            std::cerr << "ERROR: Unable to write into file <" << Name << ">!\n";
             return false;
          }
       }

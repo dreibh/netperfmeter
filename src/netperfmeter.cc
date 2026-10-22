@@ -260,7 +260,7 @@ static bool handleGlobalParameters(int argc, char** argv)
       { "quic",                          required_argument, 0, 'k'    },
 
       { "control-hbinterval",            required_argument, 0, 'B'    },
-      { "control-hbcount",               required_argument, 0, 'b'    },
+      { "control-hbmaxrtx",              required_argument, 0, 'b'    },
 
       { "loglevel",                      required_argument, 0, 0x3000 },
       { "logcolor",                      required_argument, 0, 0x3001 },
@@ -513,13 +513,13 @@ static bool handleGlobalParameters(int argc, char** argv)
           break;
          case 0x3010:
             if(!initLogFile(gLogLevel,optarg,"a")) {
-               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
+               std::cerr << format("ERROR: Unable to initialise log file %s!", optarg) << "\n";
                exit(1);
             }
           break;
          case 0x3011:
             if(!initLogFile(gLogLevel,optarg,"w")) {
-               std::cerr << format("ERROR: Failed to initialise log file %s!", optarg) << "\n";
+               std::cerr << format("ERROR: Unable to initialise log file %s!", optarg) << "\n";
                exit(1);
             }
           break;
@@ -1260,9 +1260,9 @@ static Flow* createFlow(Flow*                  previousFlow,
          memset((char*)&initmsg, 0 ,sizeof(initmsg));
          initmsg.sinit_num_ostreams  = 65535;
          initmsg.sinit_max_instreams = 65535;
-         if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
+         if(ext_setsockopt(socketDescriptor, SOL_SCTP, SCTP_INITMSG,
                            &initmsg, sizeof(initmsg)) < 0) {
-            std::cerr << "ERROR: Failed to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - "
+            std::cerr << "ERROR: Unable to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - "
                       << strerror(errno) << "!\n";
             exit(1);
          }
@@ -1271,9 +1271,9 @@ static Flow* createFlow(Flow*                  previousFlow,
          sctp_event_subscribe events;
          memset((char*)&events, 0 ,sizeof(events));
          events.sctp_data_io_event = 1;
-         if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
+         if(ext_setsockopt(socketDescriptor, SOL_SCTP, SCTP_EVENTS,
                            &events, sizeof(events)) < 0) {
-            std::cerr << "ERROR: Failed to configure events on SCTP socket (SCTP_EVENTS option) - "
+            std::cerr << "ERROR: Unable to configure events on SCTP socket (SCTP_EVENTS option) - "
                       << strerror(errno) << "!\n";
             exit(1);
          }
@@ -1639,10 +1639,10 @@ static void passiveMode(const uint16_t localPort)
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
          sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
-         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM,
+         if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_DEFAULT_SEND_PARAM,
                            &sinfo, sizeof(sinfo)) < 0) {
             LOG_FATAL
-            stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
+            stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
                              gControlSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
@@ -1654,19 +1654,30 @@ static void passiveMode(const uint16_t localPort)
          params.spp_flags      = SPP_HB_ENABLE;
          params.spp_hbinterval = gControlHBInterval;
          params.spp_pathmaxrxt = gControlHBCount;
-         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
+         if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_PEER_ADDR_PARAMS,
                            &params, sizeof(params)) < 0) {
             LOG_FATAL
-            stdlog << format("Failed to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
+            stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
                              gControlSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
 
+         sctp_assocparams assocparams;
+         memset(&assocparams, 0, sizeof(assocparams));
+         assocparams.sasoc_assoc_id   = SCTP_FUTURE_ASSOC;
+         assocparams.sasoc_asocmaxrxt = gControlHBCount;
+         if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
+            LOG_WARNING
+            stdlog << format("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket %d: %s!",
+                             gControlSocket, strerror(errno)) << "\n";
+            LOG_END
+         }
+
          const int noDelayOption = 1;
-         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_NODELAY,
+         if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_NODELAY,
                            (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
             LOG_ERROR
-            stdlog << format("Failed to set SCTP_NODELAY on SCTP control socket: %s!",
+            stdlog << format("Unable to set SCTP_NODELAY on SCTP control socket: %s!",
                               strerror(errno)) << "\n";
             LOG_END_FATAL
          }
@@ -1676,9 +1687,9 @@ static void passiveMode(const uint16_t localPort)
          memset((char*)&events, 0 ,sizeof(events));
          events.sctp_data_io_event     = 1;
          events.sctp_association_event = 1;
-         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
+         if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
             LOG_FATAL
-            stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
+            stdlog << format("Unable to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
                              gControlSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
@@ -1689,7 +1700,7 @@ static void passiveMode(const uint16_t localPort)
          if( (errno != EPROTONOSUPPORT) ||
              (gPassiveControlTCP == false) ) {
             LOG_FATAL
-            stdlog << format("Failed to create and bind SCTP control socket on port %d: %s!",
+            stdlog << format("Unable to create and bind SCTP control socket on port %d: %s!",
                              localPort + 1, strerror(errno)) << "\n";
             if(errno == EPROTONOSUPPORT) {
                stdlog << "SCTP is not available => Try -y|--control-over-tcp for control over TCP!\n";
@@ -1724,15 +1735,15 @@ static void passiveMode(const uint16_t localPort)
                                               true, gBindV6Only);
       if(gControlSocketTCP < 0) {
          LOG_FATAL
-         stdlog << format("Failed to create and bind TCP control socket on port %d: %s!",
+         stdlog << format("Unable to create and bind TCP control socket on port %d: %s!",
                         localPort + 1, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       const int noDelayOption = 1;
-      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_NODELAY,
+      if(ext_setsockopt(gControlSocketTCP, SOL_TCP, TCP_NODELAY,
                         (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to set TCP_NODELAY on TCP control socket: %s!",
+         stdlog << format("Unable to set TCP_NODELAY on TCP control socket: %s!",
                            strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -1740,16 +1751,16 @@ static void passiveMode(const uint16_t localPort)
       if(ext_setsockopt(gControlSocketTCP, SOL_SOCKET, SO_KEEPALIVE,
                         (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to set SO_KEEPALIVE on TCP control socket: %s!",
+         stdlog << format("Unable to set SO_KEEPALIVE on TCP control socket: %s!",
                            strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 #if defined(TCP_KEEPIDLE)
-      const int keepIdleOption = (int)gControlHBInterval / 1000;   // in s
-      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPIDLE,
+      const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
+      if(ext_setsockopt(gControlSocketTCP, SOL_TCP, TCP_KEEPIDLE,
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to set TCP_KEEPIDLE on TCP control socket: %s!",
+         stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket: %s!",
                            strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -1757,11 +1768,11 @@ static void passiveMode(const uint16_t localPort)
 #note No TCP_KEEPIDLE option available!
 #endif
 #if defined(TCP_KEEPINTVL)
-      const int keepIntervalOption = (int)gControlHBInterval / 1000;   // in s
-      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPINTVL,
+      const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
+      if(ext_setsockopt(gControlSocketTCP, SOL_TCP, TCP_KEEPINTVL,
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to set TCP_KEEPINTVL on TCP control socket: %s!",
+         stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket: %s!",
                            strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -1770,10 +1781,10 @@ static void passiveMode(const uint16_t localPort)
 #endif
 #if defined(TCP_KEEPCNT)
       const int keepCountOption = (int)gControlHBCount;
-      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPCNT,
+      if(ext_setsockopt(gControlSocketTCP, SOL_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to set TCP_KEEPCNT on TCP control socket: %s!",
+         stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket: %s!",
                            strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -1798,15 +1809,15 @@ static void passiveMode(const uint16_t localPort)
                                                   true, gBindV6Only);
          if(gControlSocketTCP6 < 0) {
             LOG_FATAL
-            stdlog << format("Failed to create and bind TCP6 control socket on port %d: %s!",
+            stdlog << format("Unable to create and bind TCP6 control socket on port %d: %s!",
                              localPort + 1, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
          const int noDelayOption = 1;
-         if(ext_setsockopt(gControlSocketTCP6, IPPROTO_TCP, TCP_NODELAY,
+         if(ext_setsockopt(gControlSocketTCP6, SOL_TCP, TCP_NODELAY,
                            (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
             LOG_ERROR
-            stdlog << format("Failed to set TCP6_NODELAY on TCP6 control socket: %s!",
+            stdlog << format("Unable to set TCP6_NODELAY on TCP6 control socket: %s!",
                              strerror(errno)) << "\n";
             LOG_END_FATAL
          }
@@ -1830,13 +1841,13 @@ static void passiveMode(const uint16_t localPort)
                                     true, gBindV6Only);
    if(gTCPSocket < 0) {
       LOG_FATAL
-      stdlog << format("Failed to create and bind TCP socket on port %d: %s!",
+      stdlog << format("Unable to create and bind TCP socket on port %d: %s!",
                        localPort, strerror(errno)) << "\n";
       LOG_END_FATAL
    }
    if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
       LOG_FATAL
-      stdlog << format("Failed to configure buffer sizes on TCP socket %d!",
+      stdlog << format("Unable to configure buffer sizes on TCP socket %d!",
                        gTCPSocket) << "\n";
       LOG_END_FATAL
    }
@@ -1848,13 +1859,13 @@ static void passiveMode(const uint16_t localPort)
                                         true, gBindV6Only);
       if(gTCP6Socket < 0) {
          LOG_FATAL
-         stdlog << format("Failed to create and bind TCP6 socket on port %d: %s!",
+         stdlog << format("Unable to create and bind TCP6 socket on port %d: %s!",
                           localPort, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gTCP6Socket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         stdlog << format("Failed to configure buffer sizes on TCP6 socket %d!",
+         stdlog << format("Unable to configure buffer sizes on TCP6 socket %d!",
                           gTCP6Socket) << "\n";
          LOG_END_FATAL
       }
@@ -1869,14 +1880,14 @@ static void passiveMode(const uint16_t localPort)
                                       true, gBindV6Only);
    if(gMPTCPSocket < 0) {
       LOG_DEBUG
-      stdlog << format("NOTE: Failed to create and bind MPTCP socket on port %d: %s!",
+      stdlog << format("NOTE: Unable to create and bind MPTCP socket on port %d: %s!",
                         localPort - 1, strerror(errno)) << "\n";
       LOG_END
    }
    else {
       if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         stdlog << format("Failed to configure buffer sizes on MPTCP socket %d!",
+         stdlog << format("Unable to configure buffer sizes on MPTCP socket %d!",
                           gMPTCPSocket) << "\n";
          LOG_END_FATAL
       }
@@ -1896,7 +1907,7 @@ static void passiveMode(const uint16_t localPort)
                                     true, gBindV6Only);
    if(gUDPSocket < 0) {
       LOG_FATAL
-      stdlog << "ERROR: Failed to create and bind UDP socket on port " << localPort << " - "
+      stdlog << "ERROR: Unable to create and bind UDP socket on port " << localPort << " - "
              << strerror(errno) << "!\n";
       LOG_END_FATAL
    }
@@ -1911,7 +1922,7 @@ static void passiveMode(const uint16_t localPort)
                                         true, gBindV6Only);
       if(gUDP6Socket < 0) {
          LOG_FATAL
-         stdlog << "ERROR: Failed to create and bind UDP6 socket on port " << localPort << " - "
+         stdlog << "ERROR: Unable to create and bind UDP6 socket on port " << localPort << " - "
                 << strerror(errno) << "!\n";
          LOG_END_FATAL
       }
@@ -1927,7 +1938,7 @@ static void passiveMode(const uint16_t localPort)
                                      true, gBindV6Only);
    if(gDCCPSocket < 0) {
       LOG_INFO
-      stdlog << format("NOTE: Failed to create and bind DCCP socket on port %d: %s!",
+      stdlog << format("NOTE: Unable to create and bind DCCP socket on port %d: %s!",
                         localPort, strerror(errno)) << "\n";
       LOG_END
    }
@@ -1935,13 +1946,13 @@ static void passiveMode(const uint16_t localPort)
       const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_FATAL
-         stdlog << format("Failed to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket: %s!",
+         stdlog << format("Unable to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket: %s!",
                            (unsigned int)be32toh(service[0]), gDCCPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         stdlog << format("Failed to configure buffer sizes on DCCP socket %d!",
+         stdlog << format("Unable to configure buffer sizes on DCCP socket %d!",
                           gDCCPSocket) << "\n";
          LOG_END_FATAL
       }
@@ -1955,7 +1966,7 @@ static void passiveMode(const uint16_t localPort)
    // NOTE: It is necessary to set the ALPN before enabling the listening mode!
    if(gQUICSocket < 0) {
       LOG_INFO
-      stdlog << format("NOTE: Failed to create and bind QUIC socket on port %d: %s!",
+      stdlog << format("NOTE: Unable to create and bind QUIC socket on port %d: %s!",
                         localPort, strerror(errno)) << "\n";
       LOG_END
    }
@@ -1963,19 +1974,19 @@ static void passiveMode(const uint16_t localPort)
       if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
                         ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
          LOG_FATAL
-         stdlog << format("Failed to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket: %s!",
+         stdlog << format("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket: %s!",
                           gQUICSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         stdlog << format("Failed to configure buffer sizes on QUIC socket %d!",
+         stdlog << format("Unable to configure buffer sizes on QUIC socket %d!",
                           gQUICSocket) << "\n";
          LOG_END_FATAL
       }
       if(ext_listen(gQUICSocket, 100) < 0) {
          LOG_FATAL
-         stdlog << format("Failed to enable listening on QUIC socket %d!",
+         stdlog << format("Unable to enable listening on QUIC socket %d!",
                           gQUICSocket) << "\n";
          LOG_END_FATAL
       }
@@ -1995,10 +2006,10 @@ static void passiveMode(const uint16_t localPort)
       memset((char*)&initmsg, 0 ,sizeof(initmsg));
       initmsg.sinit_num_ostreams  = 65535;
       initmsg.sinit_max_instreams = 65535;
-      if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG,
+      if(ext_setsockopt(gSCTPSocket, SOL_SCTP, SCTP_INITMSG,
                         &initmsg, sizeof(initmsg)) < 0) {
          LOG_FATAL
-         stdlog << format("Failed to configure INIT parameters (SCTP_INITMSG option) on SCTP socket %d: %s!",
+         stdlog << format("Unable to configure INIT parameters (SCTP_INITMSG option) on SCTP socket %d: %s!",
                           gSCTPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2007,9 +2018,9 @@ static void passiveMode(const uint16_t localPort)
       sctp_event_subscribe events;
       memset((char*)&events, 0 ,sizeof(events));
       events.sctp_data_io_event = 1;
-      if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
+      if(ext_setsockopt(gSCTPSocket, SOL_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
          LOG_FATAL
-         stdlog << format("Failed to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
+         stdlog << format("Unable to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
                           gSCTPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2017,7 +2028,7 @@ static void passiveMode(const uint16_t localPort)
       // ------ Set SCTP buffer sizes ---------------------------------------
       if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         stdlog << format("Failed to configure buffer sizes on SCTP socket %d!",
+         stdlog << format("Unable to configure buffer sizes on SCTP socket %d!",
                           gSCTPSocket) << "\n";
          LOG_END_FATAL
       }
@@ -2026,7 +2037,7 @@ static void passiveMode(const uint16_t localPort)
    else {
       if( (errno != EPROTONOSUPPORT) || (gPassiveControlTCP == false) ) {
          LOG_FATAL
-         stdlog << format("Failed to create and bind SCTP socket on port %d: %s!",
+         stdlog << format("Unable to create and bind SCTP socket on port %d: %s!",
                           localPort, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2241,7 +2252,7 @@ static void activeMode(const char* remoteEndpoint)
                                         false, gBindV6Only);
    if(gControlSocket < 0) {
       LOG_FATAL
-      stdlog << format("Failed to create and bind control socket: %s!",
+      stdlog << format("Unable to create and bind control socket: %s!",
                        strerror(errno)) << "\n";
       if( (gActiveControlProtocol == IPPROTO_SCTP) && (errno == EPROTONOSUPPORT) ) {
          stdlog << "SCTP is not available => Try -y|--control-over-tcp for control over TCP!\n";
@@ -2253,9 +2264,9 @@ static void activeMode(const char* remoteEndpoint)
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
+      if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
          LOG_FATAL
-         stdlog << format("Failed to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket: %s!",
+         stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket: %s!",
                           strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2272,15 +2283,24 @@ static void activeMode(const char* remoteEndpoint)
    }
 #if defined(HAVE_SCTP)
    if(gActiveControlProtocol == IPPROTO_SCTP) {
-      sctp_paddrparams params;
-      memset(&params, 0, sizeof(params));
-      memcpy(&params.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
-      params.spp_flags      = SPP_HB_ENABLE;
-      params.spp_hbinterval = gControlHBInterval;
-      params.spp_pathmaxrxt = gControlHBCount;
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &params, sizeof(params)) < 0) {
+      sctp_paddrparams paddrparams;
+      memset(&paddrparams, 0, sizeof(paddrparams));
+      paddrparams.spp_flags      = SPP_HB_ENABLE;
+      paddrparams.spp_hbinterval = gControlHBInterval;
+      paddrparams.spp_pathmaxrxt = gControlHBCount;
+      if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_PEER_ADDR_PARAMS, &paddrparams, sizeof(paddrparams)) < 0) {
          LOG_WARNING
          stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
+                          gControlSocket, strerror(errno)) << "\n";
+         LOG_END
+      }
+
+      sctp_assocparams assocparams;
+      memset(&assocparams, 0, sizeof(assocparams));
+      assocparams.sasoc_asocmaxrxt = gControlHBCount;
+      if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
+         LOG_WARNING
+         stdlog << format("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket %d: %s!",
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END
       }
@@ -2292,16 +2312,16 @@ static void activeMode(const char* remoteEndpoint)
       if(ext_setsockopt(gControlSocket, SOL_SOCKET, SO_KEEPALIVE,
                         (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to set SO_KEEPALIVE on TCP control socket %d: %s!",
+         stdlog << format("Unable to set SO_KEEPALIVE on TCP control socket %d: %s!",
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 #if defined(TCP_KEEPIDLE)
-      const int keepIdleOption = (int)gControlHBInterval / 1000;   // in s
-      if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPIDLE,
+      const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
+      if(ext_setsockopt(gControlSocket, SOL_TCP, TCP_KEEPIDLE,
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to set TCP_KEEPIDLE on TCP control socket %d: %s!",
+         stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket %d: %s!",
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2309,11 +2329,11 @@ static void activeMode(const char* remoteEndpoint)
 #note No TCP_KEEPIDLE option available!
 #endif
 #if defined(TCP_KEEPINTVL)
-      const int keepIntervalOption = (int)gControlHBInterval / 1000;   // in s
-      if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPINTVL,
+      const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
+      if(ext_setsockopt(gControlSocket, SOL_TCP, TCP_KEEPINTVL,
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to set TCP_KEEPINTVL on TCP control socket %d: %s!",
+         stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket %d: %s!",
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2322,10 +2342,10 @@ static void activeMode(const char* remoteEndpoint)
 #endif
 #if defined(TCP_KEEPCNT)
       const int keepCountOption = (int)gControlHBCount;
-      if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPCNT,
+      if(ext_setsockopt(gControlSocket, SOL_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Failed to set TCP_KEEPCNT on TCP control socket %s: %s!",
+         stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket %s: %s!",
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2356,7 +2376,7 @@ static void activeMode(const char* remoteEndpoint)
                                   assocSpec.Protocol, remoteAddress);
             if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
                LOG_FATAL
-               stdlog << "ERROR: Failed to add flow to remote node!\n";
+               stdlog << "ERROR: Unable to add flow to remote node!\n";
                LOG_END_FATAL
             }
             LOG_TRACE
@@ -2377,7 +2397,7 @@ static void activeMode(const char* remoteEndpoint)
                                 gVectorNamePattern, gVectorFileFormat,
                                 gScalarNamePattern, gScalarFileFormat)) {
       LOG_FATAL
-      stdlog << "ERROR: Failed to start measurement!\n";
+      stdlog << "ERROR: Unable to start measurement!\n";
       LOG_END_FATAL
    }
 
@@ -2408,7 +2428,7 @@ static void activeMode(const char* remoteEndpoint)
    LOG_END
    if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID)) {
       LOG_FATAL
-      stdlog << "Failed to stop measurement and download the results!\n";
+      stdlog << "Unable to stop measurement and download the results!\n";
       LOG_END_FATAL
    }
 }
