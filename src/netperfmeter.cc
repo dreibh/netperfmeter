@@ -153,54 +153,70 @@ static MessageReader gMessageReader;
 
 // ------ BEGIN-OF-USAGE-BLOCK ------
 // ###### Usage #############################################################
-[[ noreturn ]] static void usage(const char* program, const int exitCode)
+#define HEADER(s)    "\x1b[4m" << (s) << "\x1b[0m"
+#define CMD(s)       "\x1b[1m" << (s) << "\x1b[0m"
+#define OPT(s)       "\x1b[1m" s "\x1b[0m"
+#define ARG(s)       "\x1b[4m" s "\x1b[0m"
+#define SYN(s)       "\x1b[1m" s "\x1b[0m"
+#define PIPE         SYN(" | ")
+#define ENTRY(s)     "\t" SYN("[") s SYN("]\n")
+
+[[ noreturn ]]
+static void usage(const char* program, const int exitCode)
 {
-   std::cerr << "Usage:\n"
-      << "* Passive (Server) Side:\n  " << program
-      << " local_port\n"
-         "    [-x|--control-over-sctp|-y|--control-over-tcp|--control-over-mptcp]\n"
-         "    [-L address[,address,...]|--local address[,address,...]]\n"
-         "    [-l address[,address,...]|--controllocal address[,address,...]]\n"
-         "    [-K|--tls-key key_file] [-J|--tls-cert certificate_file] [-I|--tls-ca ca_certificate_file]\n"
-         "    [-6|--v6only]\n"
-         "    [--display|--nodisplay]\n"
-         "    [--loglevel level]\n"
-         "    [--logcolor on|off]\n"
-         "    [--logfile file]\n"
-         "    [--logappend file]\n"
-         "    [-q|--quiet]\n"
-         "    [-!|--verbose]\n"
-      << "* Active (Client) Side:\n  " << program << " remote_endpoint:remote_port\n"
-         "    [-x|--control-over-sctp|-X|--no-control-over-sctp]\n"
-         "    [-y|--control-over-tcp|-Y|--no-control-over-tcp|--control-over-mptcp|--no-control-over-mptcp]\n"
-         "    [-L address[,address,...]|--local address[,address,...]]\n"
-         "    [-l address[,address,...]|--controllocal address[,address,...]]\n"
-         "    [-6|--v6only]\n"
-         "    [--display|--nodisplay]\n"
-         "    [-o bytes|--sndbuf bytes]\n"
-         "    [-i bytes|--rcvbuf bytes]\n"
-         "    [-T seconds|--runtime seconds]\n"
-         "    [-C configuration_file_pattern|--config configuration_file_pattern]\n"
-         "    [-S scalar_file_pattern|--scalar scalar_file_pattern]\n"
-         "    [-V vector_file_pattern|--vector vector_file_pattern]\n"
-         "    [-A description|--activenodename description]\n"
-         "    [-P description|--passivenodename description]\n"
-         "    [-H|--tls-hostname hostname]\n"
-         "    [-t|--tcp FLOWSPEC]\n"
-         "    [-m|--mptcp FLOWSPEC]\n"
-         "    [-u|--udp FLOWSPEC]\n"
-         "    [-d|--dccp FLOWSPEC]\n"
-         "    [-s|--sctp FLOWSPEC [FLOWSPEC ...]]\n"
-         "    [-k|--quic FLOWSPEC [FLOWSPEC ...]]\n"
-         "    [--loglevel level]\n"
-         "    [--logcolor on|off]\n"
-         "    [--logfile file]\n"
-         "    [--logappend file]\n"
-         "    [-q|--quiet]\n"
-         "    [-!|--verbose]\n"
-         "  with FLOWSPEC := outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:[options[:...]\n"
-      << "* Version:\n  " << program << " [-v|--version]\n"
-      << "* Help:\n  "    << program << " [-h|--help]\n";
+   std::cerr << HEADER("Usage:") << "\n"
+             << CMD(program) << " "
+                ARG("local_port") "\n"
+                   ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-X") PIPE OPT("--no-control-over-sctp"))
+                   ENTRY(OPT("-y") PIPE OPT("--control-over-tcp") PIPE OPT("-Y") PIPE OPT("--no-control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp") PIPE OPT("-W") PIPE OPT("--no-control-over-mptcp"))
+                   ENTRY(OPT("-L") " " ARG("address[,address,...]") PIPE OPT("--local") " " ARG("address[,address,...]"))
+                   ENTRY(OPT("-l") " " ARG("address[,address,...]") PIPE OPT("--controllocal") " " ARG("address[,address,...]"))
+                   ENTRY(OPT("-K") " " ARG("key_file") PIPE OPT("--tls-key") " " ARG("key_file"))
+                   ENTRY(OPT("-J") " " ARG("certificate_file") PIPE OPT("--tls-cert") " " ARG("certificate_file"))
+                   ENTRY(OPT("-I") " " ARG("ca_certificate_file") PIPE OPT("--tls-ca") " " ARG("ca_certificate_file"))
+                   ENTRY(OPT("-6") PIPE OPT("--v6only"))
+                   ENTRY(OPT("--display") PIPE OPT("--nodisplay"))
+                   ENTRY(OPT("--loglevel") " " ARG("level"))
+                   ENTRY(OPT("--logcolor") " " ARG("on|off"))
+                   ENTRY(OPT("--logfile") " " ARG("file"))
+                   ENTRY(OPT("--logappend") " " ARG("file"))
+                   ENTRY(OPT("-q") PIPE OPT("--quiet"))
+                   ENTRY(OPT("-!") PIPE OPT("--verbose"))
+             << CMD(program) << " "
+                ARG("remote_endpoint:remote_port") "\n"
+                   ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-y") PIPE OPT("--control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp"))
+                   ENTRY(OPT("-L") " " ARG("address[,address,...]") PIPE OPT("--local") " " ARG("address[,address,...]"))
+                   ENTRY(OPT("-l") " " ARG("address[,address,...]") PIPE OPT("--controllocal") " " ARG("address[,address,...]"))
+                   ENTRY(OPT("-H") " " ARG("hostname") PIPE OPT("--tls-hostname") " " ARG("hostname"))
+                   ENTRY(OPT("-6") PIPE OPT("--v6only"))
+                   ENTRY(OPT("--display") PIPE OPT("--nodisplay"))
+                   ENTRY(OPT("-o") " " ARG("bytes") PIPE OPT("--sndbuf") " " ARG("bytes"))
+                   ENTRY(OPT("-i") " " ARG("bytes") PIPE OPT("--rcvbuf") " " ARG("bytes"))
+                   ENTRY(OPT("-N") " " ARG("count") PIPE OPT("--count") " " ARG("count"))
+                   ENTRY(OPT("-T") " " ARG("seconds") PIPE OPT("--runtime") " " ARG("seconds"))
+                   ENTRY(OPT("-C") " " ARG("configuration_file") PIPE OPT("--config") " " ARG("configuration_file"))
+                   ENTRY(OPT("-S") " " ARG("scalar_file_pattern") PIPE OPT("--scalar") " " ARG("scalar_file_pattern"))
+                   ENTRY(OPT("-V") " " ARG("vector_file_pattern") PIPE OPT("--vector") " " ARG("vector_file_pattern"))
+                   ENTRY(OPT("-A") " " ARG("description") PIPE OPT("--activenodename") " " ARG("description"))
+                   ENTRY(OPT("-P") " " ARG("description") PIPE OPT("--passivenodename") " " ARG("description"))
+                   ENTRY(OPT("--loglevel") " " ARG("level"))
+                   ENTRY(OPT("--logcolor") " " ARG("on|off"))
+                   ENTRY(OPT("--logfile") " " ARG("file"))
+                   ENTRY(OPT("--logappend") " " ARG("file"))
+                   ENTRY(OPT("-t") " " ARG("FLOWSPEC") PIPE OPT("--tcp") " " ARG("FLOWSPEC"))
+                   ENTRY(OPT("-m") " " ARG("FLOWSPEC") PIPE OPT("--mptcp") " " ARG("FLOWSPEC"))
+                   ENTRY(OPT("-u") " " ARG("FLOWSPEC") PIPE OPT("--udp") " " ARG("FLOWSPEC"))
+                   ENTRY(OPT("-d") " " ARG("FLOWSPEC") PIPE OPT("--dccp") " " ARG("FLOWSPEC"))
+                   ENTRY(OPT("-s") " " ARG("FLOWSPEC") PIPE OPT("--sctp") " " ARG("FLOWSPEC") " " ARG("[FLOWSPEC") " " ARG("...]"))
+                   ENTRY(OPT("-k") " " ARG("FLOWSPEC") PIPE OPT("--quic") " " ARG("FLOWSPEC") " " ARG("[FLOWSPEC") " " ARG("...]"))
+                   ENTRY(OPT("-q") PIPE OPT("--quiet"))
+                   ENTRY(OPT("-!") PIPE OPT("--verbose"))
+             << CMD(program) << "\n"
+                   ENTRY(OPT("-h") PIPE OPT("--help"))
+             << CMD(program) << "\n"
+                   ENTRY(OPT("-v") PIPE OPT("--version"))
+             << CMD("FLOWSPEC:") << " "
+                ARG("outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option:...") "\n";
    exit(exitCode);
 }
 // ------ END-OF-USAGE-BLOCK ------
