@@ -56,7 +56,7 @@ size_t strlcpy(char* dest, const char* src, size_t size)
    if(size > 0) {
       const size_t copy_len = (src_len >= size) ? size - 1 : src_len;
       memcpy(dest, src, copy_len);
-      dest[copy_len] = '\0';
+      dest[copy_len] = 0x00;
    }
    return src_len;
 }
@@ -74,7 +74,7 @@ size_t strlcat(char* dest, const char* src, size_t size)
    }
    const size_t copy_len = (src_len >= size - dest_len) ? size - dest_len - 1 : src_len;
    memcpy(dest + dest_len, src, copy_len);
-   dest[dest_len + copy_len] = '\0';
+   dest[dest_len + copy_len] = 0x00;
    return dest_len + src_len;
 }
 #endif
@@ -295,7 +295,7 @@ bool address2string(const struct sockaddr* address,
             snprintf(scope, sizeof(scope), "%%%s", ifname);
          }
          else {
-            scope[0] = '\0';
+            scope[0] = 0x00;
          }
          if(inet_ntop(AF_INET6, &ipv6->sin6_addr, str, sizeof(str)) != nullptr) {
             const std::string formatted = port ?
@@ -308,6 +308,7 @@ bool address2string(const struct sockaddr* address,
       }
 
       case AF_UNSPEC:
+         // TRANSLATORS: Representation for an uninitialized or unspecified network address.
          strlcpy(buffer, gettext("(unspecified)"), length);
          return true;
    }
@@ -338,7 +339,7 @@ bool string2address(const char*           string,
             strlcpy(port, &p1[2], sizeof(port));
          }
          memmove(host, &host[1], static_cast<size_t>(p1 - host - 1));
-         host[p1 - host - 1] = '\0';
+         host[p1 - host - 1] = 0x00;
       }
    }
    else if(readPort) {
@@ -354,7 +355,7 @@ bool string2address(const char*           string,
             p1 = strrindex(host, '!');
          }
          if(p1 != nullptr) {
-            p1[0] = '\0';
+            p1[0] = 0x00;
             strlcpy(port, &p1[1], sizeof(port));
          }
       }
@@ -436,6 +437,7 @@ void printAddress(std::ostream&          os,
       os << str;
    }
    else {
+      // TRANSLATORS: Fallback text when formatting a network address fails.
       os << gettext("(invalid!)");
    }
 }
@@ -457,7 +459,9 @@ const char* getProtocolName(const int protocol)
 #if defined(HAVE_QUIC)
       case IPPROTO_QUIC:  return "QUIC";
 #endif
-      default:            return gettext("unknown?!");
+      default:
+         // TRANSLATORS: Fallback text when an unknown transport protocol number is passed.
+         return gettext("unknown?!");
    }
 }
 
@@ -514,6 +518,7 @@ int createSocket(const int             family,
 
 #if defined(HAVE_MPTCP)
    if((protocol == IPPROTO_MPTCP) && (localAddresses > 1)) {
+      // TRANSLATORS: Warning about multipath TCP limitations when multiple local addresses are provided.
       std::cerr << gettext("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
    }
 #endif
@@ -557,6 +562,7 @@ int bindSocket(const int             sd,
 
 #if defined(HAVE_MPTCP)
    if((protocol == IPPROTO_MPTCP) && (localAddresses > 1)) {
+      // TRANSLATORS: Warning about multipath TCP limitations when multiple local addresses are provided.
       std::cerr << gettext("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
       localAddressCount = 0;
    }
@@ -679,6 +685,7 @@ void breakDetector(int)
       }
       else if(now - LastDetection >= 2000000ULL) {
          PrintedKill = true;
+         // TRANSLATORS: Signal handler alert printed when SIGINT is caught twice within 2 seconds.
          std::cerr << "\x1b[0m\n" << gettext("*** Kill ***") << "\n\n";
          kill(MainThreadPID, SIGKILL);
       }
@@ -708,6 +715,7 @@ bool breakDetected()
 {
    if(DetectedBreak && !PrintedBreak) {
       if(!Quiet) {
+         // TRANSLATORS: Signal notification printed on the first SIGINT. {} is the signal number (SIGINT=2).
          std::cerr << formatText(gettext("\x1b[0m\n*** Break ***    Signal #{}\n\n"), SIGINT);
       }
       PrintedBreak = true;
@@ -743,7 +751,7 @@ const char* getRandomGeneratorName(const uint8_t rng)
       case RANDOM_UNIFORM:     return "uniform";
       case RANDOM_EXPONENTIAL: return "exponential";
       case RANDOM_PARETO:      return "pareto";
-      default:                 return gettext("(invalid!)");
+      default:                 return "(invalid!)";
    }
 }
 
