@@ -48,15 +48,25 @@ _runtimeestimator()
       cword="${COMP_CWORD}"
    fi
 
-   if [ "${cword}" -eq 1 ] ; then
-      _filedir
-      return
+   # ====== Positional parameters ===========================================
+   if [ "${cur:0:1}" != "-" ] ; then
+      case "${cword}" in
+         1)
+            # Parameter 1: start_file
+            _filedir
+            return
+            ;;
+         *)
+            # Parameters 2 and 3: total_runs & current_run (numbers)
+            return
+            ;;
+      esac
    fi
 
    # ====== All options =====================================================
    local opts="
--h | --help
--v | --version
+-h --help
+-v --version
 "
    mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}" )
    return 0
