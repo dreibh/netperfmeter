@@ -82,7 +82,7 @@ ADD_EXECUTABLE(netperfmeter
    transfer.h
 )
 TARGET_INCLUDE_DIRECTORIES(netperfmeter PRIVATE ${BZ2_INCLUDE_DIR} ${SCTP_INCLUDE_DIR} ${QUIC_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(netperfmeter ${BZ2_LIBRARY} ${SCTP_LIBRARY} ${QUIC_LIBRARY} ${LIBIBERTY_LIBRARY} ${KSTAT_LIBRARY} ${SOCKET_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+TARGET_LINK_LIBRARIES(netperfmeter PRIVATE ${BZ2_LIBRARY} ${SCTP_LIBRARY} ${QUIC_LIBRARY} ${LIBIBERTY_LIBRARY} ${KSTAT_LIBRARY} ${SOCKET_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 INSTALL(TARGETS netperfmeter     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   netperfmeter.1   DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES   netperfmeter.xml DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)
@@ -124,7 +124,7 @@ ADD_EXECUTABLE(createsummary
    simpleredblacktree.h
 )
 TARGET_INCLUDE_DIRECTORIES(createsummary PRIVATE ${BZ2_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(createsummary ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY})
+TARGET_LINK_LIBRARIES(createsummary PRIVATE ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     createsummary   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       createsummary.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       createsummary.bash-completion
@@ -140,7 +140,7 @@ ADD_EXECUTABLE(combinesummaries
    outputfile.cc
 )
 TARGET_INCLUDE_DIRECTORIES(combinesummaries PRIVATE ${BZ2_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(combinesummaries ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY} ${LIBIBERTY_LIBRARY})
+TARGET_LINK_LIBRARIES(combinesummaries PRIVATE ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY} ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     combinesummaries   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       combinesummaries.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       combinesummaries.bash-completion
@@ -156,7 +156,7 @@ ADD_EXECUTABLE(extractvectors
    outputfile.cc
 )
 TARGET_INCLUDE_DIRECTORIES(extractvectors PRIVATE ${BZ2_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(extractvectors ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY})
+TARGET_LINK_LIBRARIES(extractvectors PRIVATE ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     extractvectors  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       extractvectors.1 DESTINATION        ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       extractvectors.bash-completion
@@ -165,7 +165,8 @@ INSTALL(FILES       extractvectors.bash-completion
 
 # ====== Runtime Estimator Tool =============================================
 ADD_EXECUTABLE(runtimeestimator runtimeestimator.cc)
-TARGET_LINK_LIBRARIES(runtimeestimator)
+TARGET_INCLUDE_DIRECTORIES(runtimeestimator PRIVATE ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(runtimeestimator PRIVATE ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS runtimeestimator   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   runtimeestimator.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       runtimeestimator.bash-completion
@@ -174,7 +175,8 @@ INSTALL(FILES       runtimeestimator.bash-completion
 
 # ====== getabstime =========================================================
 ADD_EXECUTABLE(getabstime getabstime.cc)
-TARGET_LINK_LIBRARIES(getabstime)
+TARGET_INCLUDE_DIRECTORIES(getabstime PRIVATE ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(getabstime PRIVATE ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS getabstime   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   getabstime.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       getabstime.bash-completion
@@ -217,11 +219,11 @@ ENDIF()
 
 # ====== Test Programs ======================================================
 # ADD_EXECUTABLE(t1 t1.cc assure.cc cpustatus.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(t1 ${SCTP_LIBRARY} ${KSTAT_LIBRARY} ${SOCKET_LIBRARY})
+# TARGET_LINK_LIBRARIES(t1 PRIVATE ${SCTP_LIBRARY} ${KSTAT_LIBRARY} ${SOCKET_LIBRARY})
 # ADD_EXECUTABLE(qs qs.cc assure.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(qs ${SCTP_LIBRARY} ${QUIC_LIBRARY})
+# TARGET_LINK_LIBRARIES(qs PRIVATE ${SCTP_LIBRARY} ${QUIC_LIBRARY})
 # ADD_EXECUTABLE(qc qc.cc assure.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(qc ${SCTP_LIBRARY} ${QUIC_LIBRARY})
+# TARGET_LINK_LIBRARIES(qc PRIVATE ${SCTP_LIBRARY} ${QUIC_LIBRARY})
 
 
 #############################################################################

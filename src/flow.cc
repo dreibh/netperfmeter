@@ -459,7 +459,7 @@ bool Flow::configureSocket(const int socketDescriptor)
    if(TrafficSpec.Protocol == IPPROTO_TCP) {
 #endif
       const int noDelayOption = (TrafficSpec.NoDelay == true) ? 1 : 0;
-      if (ext_setsockopt(socketDescriptor, SOL_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+      if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
          LOG_ERROR
          stdlog << format("Unable to configure Nagle algorithm (TCP_NODELAY option) on TCP socket %d: %s!",
                            socketDescriptor, strerror(errno)) << "\n";
@@ -470,7 +470,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       const char* congestionControl = TrafficSpec.CongestionControl.c_str();
       if(strcmp(congestionControl, "default") != 0) {
 #if defined(TCP_CONGESTION)
-         if (ext_setsockopt(socketDescriptor, SOL_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
+         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
             LOG_ERROR
             stdlog << format("Unable to configure congestion control %s (TCP_CONGESTION option) on TCP socket %d: %s!",
                              congestionControl, socketDescriptor, strerror(errno)) << "\n";
@@ -491,7 +491,7 @@ bool Flow::configureSocket(const int socketDescriptor)
    else if(TrafficSpec.Protocol == IPPROTO_SCTP) {
       if (TrafficSpec.NoDelay) {
          const int noDelayOption = 1;
-         if (ext_setsockopt(socketDescriptor, SOL_SCTP, SCTP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+         if (ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
             LOG_ERROR
             stdlog << format("Unable to configure Nagle algorithm (SCTP_NODELAY option) on SCTP socket %d: %s!",
                              socketDescriptor, strerror(errno)) << "\n";
@@ -503,7 +503,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       struct sctp_assoc_value cmtOnOff;
       cmtOnOff.assoc_id    = 0;
       cmtOnOff.assoc_value = TrafficSpec.CMT;
-      if(ext_setsockopt(socketDescriptor, SOL_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
+      if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
          if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
             LOG_ERROR
             stdlog << format("Unable to configure CMT usage (SCTP_CMT_ON_OFF option) on SCTP socket %d: %s!",
@@ -526,7 +526,7 @@ bool Flow::configureSocket(const int socketDescriptor)
    else if(TrafficSpec.Protocol == IPPROTO_DCCP) {
       const uint8_t value = TrafficSpec.CCID;
       if(value != 0) {
-         if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
+         if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
             LOG_WARNING
             stdlog << format("Unable to configure CCID %u (DCCP_SOCKOPT_CCID option) on DCCP socket: %s!",
                              (unsigned int)value, socketDescriptor, strerror(errno)) << "\n";
@@ -534,7 +534,7 @@ bool Flow::configureSocket(const int socketDescriptor)
          }
       }
       const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
-      if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
+      if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_ERROR
          stdlog << format("Unable to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket: %s!",
                            (unsigned int)be32toh(service[0]), socketDescriptor, strerror(errno)) << "\n";
@@ -546,7 +546,7 @@ bool Flow::configureSocket(const int socketDescriptor)
    else if(TrafficSpec.Protocol == IPPROTO_QUIC) {
       quic_config quicConfig;
       socklen_t   quicConfigLength = sizeof(quicConfig);
-      if(ext_getsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
+      if(ext_getsockopt(socketDescriptor, IPPROTO_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
 
          LOG_ERROR
          stdlog << format("Unable to obtain configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
@@ -568,7 +568,7 @@ bool Flow::configureSocket(const int socketDescriptor)
          LOG_END
          return false;
       }
-      if(ext_setsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
+      if(ext_setsockopt(socketDescriptor, IPPROTO_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
 
          LOG_WARNING
          stdlog << format("Unable to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
