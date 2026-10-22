@@ -27,27 +27,103 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include <cctype>
+#include <chrono>
 #include <cstdio>
-#include <cstdlib>
-#include <ctime>
+#include <getopt.h>
+#include <iostream>
+
+#if defined(HAVE_LIBIBERTY)
+#include <libiberty.h>
+extern "C" {
+int getopt_long_only(int argc, char* const* argv, const char* optstring,
+                     const struct option* longopts, int* longindex);
+}
+#endif
+
+#include "package-version.h"
+
+
+// ###### Version ###########################################################
+[[ noreturn ]] static void version()
+{
+   std::cerr << "GetAbsTime" << " " << GETABSTIME_VERSION << "\n";
+   exit(0);
+}
+
+
+// ------ BEGIN-OF-USAGE-BLOCK ------
+// ###### Usage #############################################################
+#define HEADER(s)    "\x1b[4m" << (s) << "\x1b[0m"
+#define CMD(s)       "\x1b[1m" << (s) << "\x1b[0m"
+#define OPT(s)       "\x1b[1m" s "\x1b[0m"
+#define ARG(s)       "\x1b[4m" s "\x1b[0m"
+#define SYN(s)       "\x1b[1m" s "\x1b[0m"
+#define PIPE         SYN(" | ")
+#define ENTRY(s)     "\t" SYN("[") s SYN("]\n")
+
+[[ noreturn ]]
+static void usage(const char* program, const int exitCode)
+{
+   std::cerr << HEADER("Usage:") << "\n"
+             << CMD(program) << "\n"
+             << CMD(program) << "\n"
+                   ENTRY(OPT("-h") PIPE OPT("--help"))
+             << CMD(program) << "\n"
+                   ENTRY(OPT("-v") PIPE OPT("--version"));
+   exit(exitCode);
+}
+// ------ END-OF-USAGE-BLOCK ------
 
 
 // ###### Get current time stamp ############################################
 static unsigned long long getMicroTime()
 {
-  timespec ts;
-  if(__builtin_expect( (clock_gettime(CLOCK_REALTIME, &ts) != 0) , 0)) {
-     perror("clock_gettime():");
-     abort();
-  }
-  return ((unsigned long long)ts.tv_sec * 1000000ULL) +
-            ((unsigned long long)ts.tv_nsec / 1000ULL);
+   using MicrosecondsU64 = std::chrono::duration<unsigned long long, std::micro>;
+   return std::chrono::duration_cast<MicrosecondsU64>(
+      std::chrono::system_clock::now().time_since_epoch()
+   ).count();
 }
 
 
 // ###### Main program ######################################################
-int main(int, char**)
+int main(int argc, char** argv)
 {
-   printf("%llu\n", getMicroTime());
+   // ====== Handle command-line arguments ==================================
+   const static struct option long_options[] = {
+      { "help",    no_argument, 0, 'h' },
+      { "version", no_argument, 0, 'v' },
+      {  nullptr,  0,           0, 0   }
+   };
+
+   int option;
+   int longIndex;
+   while( (option = getopt_long_only(argc, argv, "hv", long_options, &longIndex)) != -1 ) {
+      switch(option) {
+         case 'v':
+            version();
+          break;
+         case 'h':
+         case '?':
+            // Exit with 0 on h/help, exit with 1 on '?' (unknown option):
+            usage(argv[0], (option == 'h') ? 0 : 1);
+          break;
+         case '-':
+          break;
+         default:
+            // This should not happen: wrong getopt parameters, or missing case?
+            fprintf(stderr, "INTERNAL ERROR: Unhandled option c=%c code=%x!\n",
+                    (isprint(option) ? (char)option : ' '), option);
+            return 1;
+          break;
+      }
+   }
+   if(optind < argc) {
+      std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
+      usage(argv[0], 1);
+   }
+
+   // ====== Print time stamp ===============================================
+   std::cout << getMicroTime() << "\n";
    return 0;
 }

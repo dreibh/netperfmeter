@@ -36,14 +36,44 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm getabstime
+.Nm getabstime
+.Op Fl h | Fl \-help
+.Nm getabstime
+.Op Fl v | Fl \-version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm getabstime
 prints the current 64\-bit time stamp in microseconds since the epoch
-(i.e. 1970\-01\-01 00:00.00.000000 UTC).
+(i.e., 1970\-01\-01 00:00:00.000000 UTC).
 .Pp
+.\" ###### Arguments ########################################################
+.Sh ARGUMENTS
+The following options are available:
+.Bl -tag -width indent
+.It Fl h | Fl \-help
+Prints command help.
+.It Fl v | Fl \-version
+Prints program version.
+.El
+.\" ###### Exit status ######################################################
+.Sh EXIT STATUS
+The
+.Nm
+tool exits with 0 on success, and >0 in case of an error.
+.\" ###### Examples #########################################################
+.Sh EXAMPLES
+Print the current time stamp:
+.Bd -literal
+getabstime
+.Ed
+.Pp
+Store the time stamp in a shell variable:
+.Bd -literal
+TIMESTAMP=$(getabstime)
+.Ed
 .\" ###### See also #########################################################
 .Sh SEE ALSO
+.Xr netperfmeter 1 ,
 .Xr runtimeestimator 1
 .\" ###### Notes ############################################################
 .Sh NOTES

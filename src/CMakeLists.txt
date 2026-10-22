@@ -170,6 +170,9 @@ ADD_EXECUTABLE(getabstime getabstime.cc)
 TARGET_LINK_LIBRARIES(getabstime)
 INSTALL(TARGETS getabstime   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   getabstime.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
+INSTALL(FILES       getabstime.bash-completion
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+        RENAME      getabstime)
 
 # ====== Plot Programs ======================================================
 IF (WITH_PLOT_PROGRAMS)
