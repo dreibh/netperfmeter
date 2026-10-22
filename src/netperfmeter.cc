@@ -128,6 +128,8 @@ static OutputFileFormat gVectorFileFormat      = OFF_None;
 static const char*      gScalarNamePattern     = "";
 static OutputFileFormat gScalarFileFormat      = OFF_None;
 static const char*      gConfigName            = "";
+static unsigned int     gControlHBInterval     = 15000;   // ms
+static unsigned int     gControlHBCount        = 3;       // trials
 
 struct AssocSpec
 {
@@ -149,6 +151,7 @@ static MessageReader gMessageReader;
 }
 
 
+// ------ BEGIN-OF-USAGE-BLOCK ------
 // ###### Usage #############################################################
 [[ noreturn ]] static void usage(const char* program, const int exitCode)
 {
@@ -200,10 +203,11 @@ static MessageReader gMessageReader;
       << "* Help:\n  "    << program << " [-h|--help]\n";
    exit(exitCode);
 }
+// ------ END-OF-USAGE-BLOCK ------
 
 
 // ###### Handle global command-line parameter ##############################
-bool handleGlobalParameters(int argc, char** argv)
+static bool handleGlobalParameters(int argc, char** argv)
 {
    const static struct option long_options[] = {
       { "control-over-sctp",             no_argument,       0, 'x'    },
@@ -239,6 +243,9 @@ bool handleGlobalParameters(int argc, char** argv)
       { "sctp",                          required_argument, 0, 's'    },
       { "quic",                          required_argument, 0, 'k'    },
 
+      { "control-hbinterval",            required_argument, 0, 'B'    },
+      { "control-hbcount",               required_argument, 0, 'b'    },
+
       { "loglevel",                      required_argument, 0, 0x3000 },
       { "logcolor",                      required_argument, 0, 0x3001 },
       { "logappend",                     required_argument, 0, 0x3010 },
@@ -253,7 +260,7 @@ bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:q!hv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
 #if defined(HAVE_SCTP)
@@ -540,7 +547,7 @@ bool handleGlobalParameters(int argc, char** argv)
 
 
 // ###### Print global parameter settings ###################################
-void printGlobalParameters()
+static void printGlobalParameters()
 {
    LOG_INFO
    stdlog << "Global Parameters:\n"
@@ -1618,6 +1625,21 @@ static void passiveMode(const uint16_t localPort)
             LOG_END_FATAL
          }
 
+         // ------ Set default peer parameters ---------------------------------
+         struct sctp_paddrparams params;
+         memset(&params, 0, sizeof(params));
+         params.spp_assoc_id   = SCTP_FUTURE_ASSOC;
+         params.spp_flags      = SPP_HB_ENABLE;
+         params.spp_hbinterval = gControlHBInterval;
+         params.spp_pathmaxrxt = gControlHBCount;
+         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
+                           &params, sizeof(params)) < 0) {
+            LOG_FATAL
+            stdlog << format("Failed to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
+                             gControlSocket, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+
          const int noDelayOption = 1;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_NODELAY,
                            (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
@@ -1693,7 +1715,7 @@ static void passiveMode(const uint16_t localPort)
          LOG_END_FATAL
       }
       const int keepAliveOption = 1;
-      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, SO_KEEPALIVE,
+      if(ext_setsockopt(gControlSocketTCP, SOL_SOCKET, SO_KEEPALIVE,
                         (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
          LOG_ERROR
          stdlog << format("Failed to set SO_KEEPALIVE on TCP control socket: %s!",
@@ -1701,7 +1723,7 @@ static void passiveMode(const uint16_t localPort)
          LOG_END_FATAL
       }
 #if defined(TCP_KEEPIDLE)
-      const int keepIdleOption = 15;   // 15 s
+      const int keepIdleOption = (int)gControlHBInterval / 1000;   // in s
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPIDLE,
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
          LOG_ERROR
@@ -1713,7 +1735,7 @@ static void passiveMode(const uint16_t localPort)
 #note No TCP_KEEPIDLE option available!
 #endif
 #if defined(TCP_KEEPINTVL)
-      const int keepIntervalOption = 10;   // 10 s
+      const int keepIntervalOption = (int)gControlHBInterval / 1000;   // in s
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPINTVL,
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
          LOG_ERROR
@@ -1725,7 +1747,7 @@ static void passiveMode(const uint16_t localPort)
 #note No TCP_KEEPINTVL option available!
 #endif
 #if defined(TCP_KEEPCNT)
-      const int keepCountOption = 3;   // 3 trials
+      const int keepCountOption = (int)gControlHBCount;
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
          LOG_ERROR
@@ -1733,10 +1755,11 @@ static void passiveMode(const uint16_t localPort)
                            strerror(errno)) << "\n";
          LOG_END_FATAL
       }
-      gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
 #else
 #note No TCP_KEEPCNT option available!
 #endif
+
+      gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
 
 #if defined(__OpenBSD__)
       if(gLocalControlAddresses == 0) {
@@ -2227,15 +2250,16 @@ static void activeMode(const char* remoteEndpoint)
    }
 #if defined(HAVE_SCTP)
    if(gActiveControlProtocol == IPPROTO_SCTP) {
-      sctp_paddrparams paddr;
-      memset(&paddr, 0, sizeof(paddr));
-      memcpy(&paddr.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
-      paddr.spp_flags      = SPP_HB_ENABLE;
-      paddr.spp_hbinterval = 30000;
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddr, sizeof(paddr)) < 0) {
+      sctp_paddrparams params;
+      memset(&params, 0, sizeof(params));
+      memcpy(&params.spp_address, &controlAddress.sa, getSocklen(&controlAddress.sa));
+      params.spp_flags      = SPP_HB_ENABLE;
+      params.spp_hbinterval = gControlHBInterval;
+      params.spp_pathmaxrxt = gControlHBCount;
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &params, sizeof(params)) < 0) {
          LOG_WARNING
-         stdlog << format("Unable to enable heartbeats on control association: %s!",
-                          strerror(errno)) << "\n";
+         stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control association: %s!",
+                          gControlSocket, strerror(errno)) << "\n";
          LOG_END
       }
    }
