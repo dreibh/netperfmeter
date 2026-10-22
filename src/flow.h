@@ -41,7 +41,10 @@
 #include "thread.h"
 #include "tools.h"
 
+#include <chrono>
+#include <cstdint>
 #include <map>
+#include <string>
 #include <vector>
 
 
@@ -110,16 +113,16 @@ class Flow : public Thread
    inline FlowBandwidthStats& getCurrentBandwidthStats() {
       return CurrentBandwidthStats;
    }
-   inline unsigned long long getFirstTransmission() const {
+   inline uint64_t getFirstTransmission() const {
       return FirstTransmission;
    }
-   inline unsigned long long getLastTransmission() const {
+   inline uint64_t getLastTransmission() const {
       return LastTransmission;
    }
-   inline unsigned long long getFirstReception() const {
+   inline uint64_t getFirstReception() const {
       return FirstReception;
    }
-   inline unsigned long long getLastReception() const {
+   inline uint64_t getLastReception() const {
       return LastReception;
    }
 
@@ -167,26 +170,24 @@ class Flow : public Thread
       std::string prefix;
       std::string suffix;
       dissectName(pattern, prefix, suffix);
-      const std::string result = prefix + "-" + std::string(type) +
-                                 std::string(extension) + suffix;
-      return result;
+      return formatText("{}-{}{}{}", prefix, type, extension, suffix);
    }
 
    bool initializeVectorFile(const char* name, const OutputFileFormat format);
-   void updateTransmissionStatistics(const unsigned long long now,
-                                     const size_t             addedFrames,
-                                     const size_t             addedPackets,
-                                     const size_t             addedBytes);
-   void updateReceptionStatistics(const unsigned long long now,
-                                  const size_t             addedFrames,
-                                  const size_t             addedBytes,
-                                  const size_t             lostFrames,
-                                  const size_t             lostPackets,
-                                  const size_t             lostBytes,
-                                  const unsigned long long seqNumber,
-                                  const double             delay,
-                                  const double             delayDiff,
-                                  const double             jitter);
+   void updateTransmissionStatistics(const uint64_t now,
+                                     const size_t   addedFrames,
+                                     const size_t   addedPackets,
+                                     const size_t   addedBytes);
+   void updateReceptionStatistics(const uint64_t now,
+                                  const size_t   addedFrames,
+                                  const size_t   addedBytes,
+                                  const size_t   lostFrames,
+                                  const size_t   lostPackets,
+                                  const size_t   lostBytes,
+                                  const uint64_t seqNumber,
+                                  const double   delay,
+                                  const double   delayDiff,
+                                  const double   jitter);
 
 
    void print(std::ostream& os, const bool printStatistics = false);
@@ -203,9 +204,9 @@ class Flow : public Thread
 
    // ====== Private Methods ================================================
    private:
-   unsigned long long scheduleNextTransmissionEvent();
-   unsigned long long scheduleNextStatusChangeEvent(const unsigned long long now);
-   void handleStatusChangeEvent(const unsigned long long now);
+   uint64_t scheduleNextTransmissionEvent();
+   uint64_t scheduleNextStatusChangeEvent(const uint64_t now);
+   void handleStatusChangeEvent(const uint64_t now);
 
 
    // ====== Flow Identification ============================================
@@ -225,12 +226,12 @@ class Flow : public Thread
 
 
    // ====== Timing =========================================================
-   unsigned long long TimeBase;     // when has flow been started?
-   unsigned long long TimeOffset;   // time offset to TimeBase for next event
-   unsigned long long FirstTransmission;
-   unsigned long long FirstReception;
-   unsigned long long LastTransmission;
-   unsigned long long LastReception;
+   uint64_t           TimeBase;     // when has flow been started?
+   uint64_t           TimeOffset;   // time offset to TimeBase for next event
+   uint64_t           FirstTransmission;
+   uint64_t           FirstReception;
+   uint64_t           LastTransmission;
+   uint64_t           LastReception;
 
    // ====== Traffic Specification ==========================================
    FlowTrafficSpec    TrafficSpec;
@@ -238,7 +239,7 @@ class Flow : public Thread
    FlowStatus         OutputStatus;
    uint32_t           LastOutboundFrameID;     // ID of last outbound frame
    uint64_t           LastOutboundSeqNumber;   // ID of last outbound packet
-   unsigned long long NextStatusChangeEvent;
+   uint64_t           NextStatusChangeEvent;
    size_t             OnOffEventPointer;
 
    // ====== Statistics =====================================================

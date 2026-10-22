@@ -33,6 +33,7 @@
 #include "flow.h"
 #include "messagereader.h"
 
+#include <cstdint>
 #include <ext_socket.h>
 
 

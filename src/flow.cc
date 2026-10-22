@@ -32,7 +32,11 @@
 #include "control.h"
 #include "loglevel.h"
 #include "transfer.h"
+#include "tools.h"
 
+#include <chrono>
+#include <cmath>
+#include <cstdint>
 #include <cstring>
 #include <netinet/tcp.h>
 #include <signal.h>
@@ -67,9 +71,9 @@ Flow::Flow(const uint64_t         measurementID,
    FirstReception           = 0;
    LastReception            = 0;
    resetStatistics();
-   LastOutboundSeqNumber    = ~0ULL;
-   LastOutboundFrameID      = ~0U;
-   NextStatusChangeEvent    = ~0ULL;
+   LastOutboundSeqNumber    = static_cast<uint64_t>(-1);
+   LastOutboundFrameID      = static_cast<uint32_t>(-1);
+   NextStatusChangeEvent    = static_cast<uint64_t>(-1);
    OnOffEventPointer        = 0;
 
    FlowManager::getFlowManager()->addFlow(this);
@@ -97,8 +101,8 @@ void Flow::resetStatistics()
    lock();
    CurrentBandwidthStats.reset();
    LastBandwidthStats.reset();
-   Jitter = 0;
-   Delay  = 0;
+   Jitter = 0.0;
+   Delay  = 0.0;
    unlock();
 }
 
@@ -108,7 +112,7 @@ bool Flow::setMeasurement(Measurement* measurement)
 {
    bool success;
    lock();
-   if( (MyMeasurement == nullptr) || (measurement == nullptr) ) {
+   if((MyMeasurement == nullptr) || (measurement == nullptr)) {
       MyMeasurement = measurement;
       success = true;
    }
@@ -127,29 +131,31 @@ void Flow::print(std::ostream& os, const bool printStatistics)
 
    lock();
    if(TrafficSpec.Protocol != IPPROTO_SCTP) {
-      ss << format("+ %s Flow (Flow #%u \"%s\" of Measurement $%llx):",
-                   getProtocolName(TrafficSpec.Protocol),
-                   FlowID, TrafficSpec.Description.c_str(),
-                   MeasurementID) << "\n";
+      // TRANSLATORS: Flow summary header. Placeholders: {} 1: protocol name, 2: flow ID, 3: flow description, {:x} 4: measurement ID (hex).
+      ss << formatText(gettext("+ {} Flow (Flow #{} \"{}\" of Measurement ${:x}):\n"),
+                       getProtocolName(TrafficSpec.Protocol),
+                       FlowID, TrafficSpec.Description,
+                       MeasurementID);
    }
    else {
-      ss << format("+ %s Flow (of Measurement $%llx):",
-                   getProtocolName(TrafficSpec.Protocol),
-                   MeasurementID) << "\n";
+      // TRANSLATORS: SCTP association flow header. Placeholders: {} 1: protocol name, {:x} 2: measurement ID (hex).
+      ss << formatText(gettext("+ {} Flow (of Measurement ${:x}):\n"),
+                       getProtocolName(TrafficSpec.Protocol),
+                       MeasurementID);
    }
    if(TrafficSpec.Protocol == IPPROTO_SCTP) {
-      ss << format("   o Stream #%u (Flow ID #%u \"%s\" of Measurement $%llx):",
-                   StreamID,
-                   FlowID, TrafficSpec.Description.c_str(),
-                   MeasurementID) << "\n";
+      // TRANSLATORS: SCTP stream description inside an association. Placeholders: {} 1: stream ID, 2: flow ID, 3: flow description, {:x} 4: measurement ID (hex).
+      ss << formatText(gettext("   o Stream #{} (Flow ID #{} \"{}\" of Measurement ${:x}):\n"),
+                       StreamID,
+                       FlowID, TrafficSpec.Description,
+                       MeasurementID);
    }
    TrafficSpec.print(ss);
 
-
    if(printStatistics) {
       CurrentBandwidthStats.print(ss,
-                                  (LastTransmission - FirstTransmission) / 1000000.0,
-                                  (LastReception    - FirstReception)    / 1000000.0);
+                                  std::chrono::duration<double>(std::chrono::microseconds(LastTransmission - FirstTransmission)).count(),
+                                  std::chrono::duration<double>(std::chrono::microseconds(LastReception - FirstReception)).count());
    }
    unlock();
 
@@ -198,10 +204,10 @@ bool Flow::initializeVectorFile(const char* name, const OutputFileFormat format)
 
 
 // ###### Update transmission statistics ####################################
-void Flow::updateTransmissionStatistics(const unsigned long long now,
-                                        const size_t             addedFrames,
-                                        const size_t             addedPackets,
-                                        const size_t             addedBytes)
+void Flow::updateTransmissionStatistics(const uint64_t now,
+                                        const size_t   addedFrames,
+                                        const size_t   addedPackets,
+                                        const size_t   addedBytes)
 {
    lock();
 
@@ -219,16 +225,16 @@ void Flow::updateTransmissionStatistics(const unsigned long long now,
 
 
 // ###### Update reception statistics #######################################
-void Flow::updateReceptionStatistics(const unsigned long long now,
-                                     const size_t             addedFrames,
-                                     const size_t             addedBytes,
-                                     const size_t             lostFrames,
-                                     const size_t             lostPackets,
-                                     const size_t             lostBytes,
-                                     const unsigned long long seqNumber,
-                                     const double             delay,
-                                     const double             delayDiff,
-                                     const double             jitter)
+void Flow::updateReceptionStatistics(const uint64_t now,
+                                     const size_t   addedFrames,
+                                     const size_t   addedBytes,
+                                     const size_t   lostFrames,
+                                     const size_t   lostPackets,
+                                     const size_t   lostBytes,
+                                     const uint64_t seqNumber,
+                                     const double   delay,
+                                     const double   delayDiff,
+                                     const double   jitter)
 {
    lock();
 
@@ -247,14 +253,14 @@ void Flow::updateReceptionStatistics(const unsigned long long now,
    Jitter = jitter;
 
    // ====== Write line to flow's vector file ===============================
-   if( (MyMeasurement) && (MyMeasurement->getFirstStatisticsEvent() > 0) ) {
+   if((MyMeasurement) && (MyMeasurement->getFirstStatisticsEvent() > 0)) {
       VectorFile.printf(
          "%06llu\t%llu\t%1.6f\t%llu\t"
          "%llu\t%llu\t%llu\t"
          "%u\t%u\t%u\t"
          "%1.3f\t%1.3f\t%1.3f\n",
          VectorFile.nextLine(), now,
-         (double)(now - MyMeasurement->getFirstStatisticsEvent()) / 1000000.0,
+         std::chrono::duration<double>(std::chrono::microseconds(now - MyMeasurement->getFirstStatisticsEvent())).count(),
          seqNumber,
          CurrentBandwidthStats.ReceivedBytes, CurrentBandwidthStats.ReceivedPackets, CurrentBandwidthStats.ReceivedFrames,
          addedBytes, 1, addedFrames,
@@ -303,21 +309,21 @@ void Flow::deactivate(const bool asyncStop)
 
 
 // ###### Schedule next transmission event (non-saturated sender) ###########
-unsigned long long Flow::scheduleNextTransmissionEvent()
+uint64_t Flow::scheduleNextTransmissionEvent()
 {
-   unsigned long long nextTransmissionEvent = ~0ULL;   // No transmission
+   uint64_t nextTransmissionEvent = static_cast<uint64_t>(-1);   // No transmission
 
    lock();
    if(OutputStatus == On) {
       // ====== Saturated sender ============================================
-      if( (TrafficSpec.OutboundFrameSize[0] > 0.0) && (TrafficSpec.OutboundFrameRate[0] <= 0.0000001) ) {
+      if((TrafficSpec.OutboundFrameSize[0] > 0.0) && (TrafficSpec.OutboundFrameRate[0] <= 0.0000001)) {
          nextTransmissionEvent = 0;
       }
       // ====== Non-saturated sender ========================================
-      else if( (TrafficSpec.OutboundFrameSize[0] > 0.0) && (TrafficSpec.OutboundFrameRate[0] > 0.0000001) ) {
-         const double nextFrameRate = getRandomValue((const double*)&TrafficSpec.OutboundFrameRate,
+      else if((TrafficSpec.OutboundFrameSize[0] > 0.0) && (TrafficSpec.OutboundFrameRate[0] > 0.0000001)) {
+         const double nextFrameRate = getRandomValue(static_cast<const double*>(TrafficSpec.OutboundFrameRate),
                                                      TrafficSpec.OutboundFrameRateRng);
-         nextTransmissionEvent = LastTransmission + (unsigned long long)rint(1000000.0 / nextFrameRate);
+         nextTransmissionEvent = LastTransmission + static_cast<uint64_t>(rint(1000000.0 / nextFrameRate));
       }
    }
    unlock();
@@ -327,28 +333,29 @@ unsigned long long Flow::scheduleNextTransmissionEvent()
 
 
 // ###### Schedule next status change event #################################
-unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long now)
+uint64_t Flow::scheduleNextStatusChangeEvent(const uint64_t now)
 {
    lock();
 
    if(OnOffEventPointer >= TrafficSpec.OnOffEvents.size()) {
-      NextStatusChangeEvent = ~0ULL;
+      NextStatusChangeEvent = static_cast<uint64_t>(-1);
       if(TrafficSpec.RepeatOnOff == true) {
          OnOffEventPointer = 0;
       }
    }
 
    if(OnOffEventPointer < TrafficSpec.OnOffEvents.size()) {
-      const OnOffEvent&        event        = TrafficSpec.OnOffEvents[OnOffEventPointer];
-      const unsigned long long relNextEvent = (unsigned long long)rint(1000000.0 * getRandomValue((const double*)&event.ValueArray, event.RandNumGen));
-      const unsigned long long absNextEvent = TimeBase + TimeOffset + relNextEvent;
+      const OnOffEvent& event        = TrafficSpec.OnOffEvents[OnOffEventPointer];
+      const uint64_t    relNextEvent = static_cast<uint64_t>(rint(1000000.0 * getRandomValue(static_cast<const double*>(event.ValueArray), event.RandNumGen)));
+      const uint64_t    absNextEvent = TimeBase + TimeOffset + relNextEvent;
 
       TimeOffset            = TimeOffset + relNextEvent;
       NextStatusChangeEvent = absNextEvent;
 
-      if((long long)absNextEvent - (long long)now < -10000000) {
+      if(static_cast<int64_t>(absNextEvent) - static_cast<int64_t>(now) < -10000000) {
          LOG_WARNING
-         stdlog << "Schedule is more than 10s behind clock time! Check on/off parameters!" << "\n";
+         // TRANSLATORS: Warning when event scheduling falls significantly behind real time.
+         stdlog << gettext("Schedule is more than 10s behind clock time! Check on/off parameters!\n");
          LOG_END
       }
    }
@@ -359,7 +366,7 @@ unsigned long long Flow::scheduleNextStatusChangeEvent(const unsigned long long 
 
 
 // ###### Status change event ###############################################
-void Flow::handleStatusChangeEvent(const unsigned long long now)
+void Flow::handleStatusChangeEvent(const uint64_t now)
 {
    lock();
    if(NextStatusChangeEvent <= now) {
@@ -392,14 +399,14 @@ void Flow::run()
    bool result = true;
    do {
       // ====== Schedule next status change event ===========================
-      unsigned long long       now              = getMicroTime();
-      const unsigned long long nextTransmission = scheduleNextTransmissionEvent();
-      unsigned long long       nextEvent        = std::min(NextStatusChangeEvent, nextTransmission);
+      uint64_t       now              = getMicroTime();
+      const uint64_t nextTransmission = scheduleNextTransmissionEvent();
+      uint64_t       nextEvent        = std::min(NextStatusChangeEvent, nextTransmission);
 
       // ====== Wait until there is something to do =========================
       if(nextEvent > now) {
          int timeout = pollTimeout(now, 2,
-                                   now + 1000000,
+                                   now + 1000000ULL,
                                    nextEvent);
          ext_poll_wrapper(nullptr, 0, timeout);
          now = getMicroTime();
@@ -417,11 +424,11 @@ void Flow::run()
 
          // ====== Outgoing data (non-saturated sender) =====================
          else if(TrafficSpec.outgoingFlowIsNotSaturated()) {
-            const unsigned long long lastEvent = LastTransmission;
+            const uint64_t lastEvent = LastTransmission;
             if(nextTransmission <= now) {
                do {
                   result = transmitFrame(this, now);
-                  if(now - lastEvent > 1000000) {
+                  if(now - lastEvent > 1000000ULL) {
                      // Time gap of more than 1s -> do not try to correct.
                      // But the next transmission needs to be scheduled!
                      scheduleNextTransmissionEvent();
@@ -441,28 +448,29 @@ void Flow::run()
       if(NextStatusChangeEvent <= now) {
          handleStatusChangeEvent(now);
       }
-   } while( (result == true) && (!isStopping()) );
+   } while((result == true) && (!isStopping()));
 }
 
 
 // ###### Configure socket parameters #######################################
 bool Flow::configureSocket(const int socketDescriptor)
 {
-   if(setBufferSizes(socketDescriptor,
-                     (int)TrafficSpec.SndBufferSize,
-                     (int)TrafficSpec.RcvBufferSize) == false) {
+   if(!setBufferSizes(socketDescriptor,
+                      static_cast<int>(TrafficSpec.SndBufferSize),
+                      static_cast<int>(TrafficSpec.RcvBufferSize))) {
       return false;
    }
 #if defined(HAVE_MPTCP)
-   if( (TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP) ) {
+   if((TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP)) {
 #else
    if(TrafficSpec.Protocol == IPPROTO_TCP) {
 #endif
       const int noDelayOption = (TrafficSpec.NoDelay == true) ? 1 : 0;
-      if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+      if(ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&noDelayOption), sizeof(noDelayOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to configure Nagle algorithm (TCP_NODELAY option) on TCP socket %d: %s!",
-                           socketDescriptor, strerror(errno)) << "\n";
+         // TRANSLATORS: Error message when setsockopt(TCP_NODELAY) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to configure Nagle algorithm (TCP_NODELAY option) on TCP socket {}: {}!\n"),
+                              socketDescriptor, strerror(errno));
          LOG_END
          return false;
       }
@@ -470,18 +478,20 @@ bool Flow::configureSocket(const int socketDescriptor)
       const char* congestionControl = TrafficSpec.CongestionControl.c_str();
       if(strcmp(congestionControl, "default") != 0) {
 #if defined(TCP_CONGESTION)
-         if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
+         if(ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
             LOG_ERROR
-            stdlog << format("Unable to configure congestion control %s (TCP_CONGESTION option) on TCP socket %d: %s!",
-                             congestionControl, socketDescriptor, strerror(errno)) << "\n";
+            // TRANSLATORS: Error message when setsockopt(TCP_CONGESTION) fails. Placeholders: {} 1: congestion control algorithm name, 2: socket fd, 3: strerror() message.
+            stdlog << formatText(gettext("Unable to configure congestion control {} (TCP_CONGESTION option) on TCP socket {}: {}!\n"),
+                                 congestionControl, socketDescriptor, strerror(errno));
             LOG_END
             return false;
          }
 #else
 #warning TCP option TCP_CONGESTION is not supported by the API of this system!
          LOG_ERROR
-         stdlog << format("Congestion control configuration to %s is not supported by TCP socket %d: %s!",
-                          congestionControl, socketDescriptor) << "\n";
+         // TRANSLATORS: Error message when congestion control configuration is unsupported on TCP socket. Placeholders: {} 1: congestion control algorithm name, 2: socket fd.
+         stdlog << formatText(gettext("Congestion control configuration to {} is not supported by TCP socket {}!\n"),
+                              congestionControl, socketDescriptor);
          LOG_END
          return false;
 #endif
@@ -489,12 +499,13 @@ bool Flow::configureSocket(const int socketDescriptor)
    }
 #if defined(HAVE_SCTP)
    else if(TrafficSpec.Protocol == IPPROTO_SCTP) {
-      if (TrafficSpec.NoDelay) {
+      if(TrafficSpec.NoDelay) {
          const int noDelayOption = 1;
-         if (ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+         if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, reinterpret_cast<const char*>(&noDelayOption), sizeof(noDelayOption)) < 0) {
             LOG_ERROR
-            stdlog << format("Unable to configure Nagle algorithm (SCTP_NODELAY option) on SCTP socket %d: %s!",
-                             socketDescriptor, strerror(errno)) << "\n";
+            // TRANSLATORS: Error message when setsockopt(SCTP_NODELAY) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to configure Nagle algorithm (SCTP_NODELAY option) on SCTP socket {}: {}!\n"),
+                                 socketDescriptor, strerror(errno));
             LOG_END
             return false;
          }
@@ -506,8 +517,9 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_CMT_ON_OFF, &cmtOnOff, sizeof(cmtOnOff)) < 0) {
          if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
             LOG_ERROR
-            stdlog << format("Unable to configure CMT usage (SCTP_CMT_ON_OFF option) on SCTP socket %d: %s!",
-                             socketDescriptor, strerror(errno)) << "\n";
+            // TRANSLATORS: Error message when setsockopt(SCTP_CMT_ON_OFF) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to configure CMT usage (SCTP_CMT_ON_OFF option) on SCTP socket {}: {}!\n"),
+                                 socketDescriptor, strerror(errno));
             LOG_END
             return false;
          }
@@ -515,7 +527,8 @@ bool Flow::configureSocket(const int socketDescriptor)
 #else
       if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
          LOG_ERROR
-         stdlog << "CMT usage on SCTP socket configured, but not supported by this system!" << "\n";
+         // TRANSLATORS: Error message when CMT is requested on SCTP but unsupported by the system.
+         stdlog << gettext("CMT usage on SCTP socket configured, but not supported by this system!\n");
          LOG_END
          return false;
       }
@@ -528,16 +541,18 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(value != 0) {
          if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
             LOG_WARNING
-            stdlog << format("Unable to configure CCID %u (DCCP_SOCKOPT_CCID option) on DCCP socket: %s!",
-                             (unsigned int)value, socketDescriptor, strerror(errno)) << "\n";
+            // TRANSLATORS: Warning message when setsockopt(DCCP_SOCKOPT_CCID) fails. Placeholders: {} 1: CCID number, 2: socket fd, 3: strerror() message.
+            stdlog << formatText(gettext("Unable to configure CCID {} (DCCP_SOCKOPT_CCID option) on DCCP socket {}: {}!\n"),
+                                 static_cast<unsigned int>(value), socketDescriptor, strerror(errno));
             LOG_END
          }
       }
       const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket: %s!",
-                           (unsigned int)be32toh(service[0]), socketDescriptor, strerror(errno)) << "\n";
+         // TRANSLATORS: Error message when setsockopt(DCCP_SOCKOPT_SERVICE) fails. Placeholders: {} 1: service code number, 2: socket fd, 3: strerror() message.
+         stdlog << formatText(gettext("Unable to configure DCCP service code {} (DCCP_SOCKOPT_SERVICE option) on DCCP socket {}: {}!\n"),
+                              static_cast<unsigned int>(be32toh(service[0])), socketDescriptor, strerror(errno));
          LOG_END
          return false;
       }
@@ -547,15 +562,15 @@ bool Flow::configureSocket(const int socketDescriptor)
       quic_config quicConfig;
       socklen_t   quicConfigLength = sizeof(quicConfig);
       if(ext_getsockopt(socketDescriptor, IPPROTO_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
-
          LOG_ERROR
-         stdlog << format("Unable to obtain configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
-                           socketDescriptor, strerror(errno)) << "\n";
+         // TRANSLATORS: Error message when getsockopt(QUIC_SOCKOPT_CONFIG) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to obtain configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket {}: {}!\n"),
+                              socketDescriptor, strerror(errno));
          LOG_END
          return false;
       }
       const char* congestionControl = TrafficSpec.CongestionControl.c_str();
-      if( (strcmp(congestionControl, "reno") == 0) || (strcmp(congestionControl, "default") == 0) ) {
+      if((strcmp(congestionControl, "reno") == 0) || (strcmp(congestionControl, "default") == 0)) {
          quicConfig.congestion_control_algo = QUIC_CONG_ALG_RENO;
       }
       else if(strcmp(congestionControl, "cubic") == 0) {
@@ -563,18 +578,18 @@ bool Flow::configureSocket(const int socketDescriptor)
       }
       else {
          LOG_ERROR
-         stdlog << format("Invalid congestion control %s for QUIC requested on socket %d",
-                          congestionControl, socketDescriptor) << "\n";
+         // TRANSLATORS: Error message when invalid congestion control algorithm is requested for QUIC. Placeholders: {} 1: congestion control name, 2: socket fd.
+         stdlog << formatText(gettext("Invalid congestion control {} for QUIC requested on socket {}!\n"),
+                              congestionControl, socketDescriptor);
          LOG_END
          return false;
       }
       if(ext_setsockopt(socketDescriptor, IPPROTO_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
-
          LOG_WARNING
-         stdlog << format("Unable to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
-                           socketDescriptor, strerror(errno)) << "\n";
+         // TRANSLATORS: Warning message when setsockopt(QUIC_SOCKOPT_CONFIG) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket {}: {}!\n"),
+                              socketDescriptor, strerror(errno));
          LOG_END
-         // return false;
       }
    }
 #endif

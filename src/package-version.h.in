@@ -36,6 +36,8 @@
 #define NETPERFMETER_VERSION       "@BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
 #define NETPERFMETER_PACKAGE       "@PROJECT_NAME@-@BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
 
+#define NETPERFMETER_LOCALEDIR     "@CMAKE_INSTALL_FULL_DATADIR@/locale"
+
 #define PACKAGE_HOMEPAGE           "https://www.nntb.no/~dreibh/netperfmeter"
 #define PACKAGE_SOURCEREPO         "https://github.com/dreibh/netperfmeter"
 

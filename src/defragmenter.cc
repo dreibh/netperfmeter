@@ -35,7 +35,7 @@
 #include <map>
 
 
-// ###### Constructor #################b######################################
+// ###### Constructor #######################################################
 Defragmenter::Defragmenter()
 {
    NextFrameID         = 0;
