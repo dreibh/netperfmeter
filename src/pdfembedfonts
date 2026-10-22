@@ -30,12 +30,18 @@ usage () {
    local exitCode="$2"
    local header=$'\x1b[4m'
    local cmd=$'\x1b[1m'
-   # local opt=$'\x1b[1m'
-   # local arg=$'\x1b[4m'
-   # local syn=$'\x1b[1m'
+   local opt=$'\x1b[1m'
+   local arg=$'\x1b[4m'
+   local syn=$'\x1b[1m'
    local reset=$'\x1b[0m'
    cat >&2 <<EOF
 ${header}Usage:${reset}
+${cmd}${program}${reset} ${arg}input_pdf${reset} ${arg}output_pdf${reset}
+	${syn}[${reset}${opt}-O${reset} ${syn}|${reset} ${opt}--optimise${reset} ${syn}|${reset} ${opt}--optimize${reset}${syn}]${reset}
+${cmd}${program}${reset}
+	${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}
+${cmd}${program}${reset}
+	${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}
 EOF
    exit "${exitCode}"
 }
