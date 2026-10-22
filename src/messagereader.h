@@ -31,15 +31,16 @@
 #define MESSAGEREADER_H
 
 #include <cstddef>
+#include <cstdint>
 #include <ext_socket.h>
 #include <map>
 #include <sys/types.h>
 
 
-#define MRRM_SOCKET_ERROR (ssize_t)-1
-#define MRRM_STREAM_ERROR (ssize_t)-2
-#define MRRM_PARTIAL_READ (ssize_t)-3
-#define MRRM_BAD_SOCKET   (ssize_t)-4
+#define MRRM_SOCKET_ERROR static_cast<ssize_t>(-1)
+#define MRRM_STREAM_ERROR static_cast<ssize_t>(-2)
+#define MRRM_PARTIAL_READ static_cast<ssize_t>(-3)
+#define MRRM_BAD_SOCKET   static_cast<ssize_t>(-4)
 
 class MessageReader
 {
@@ -63,7 +64,7 @@ class MessageReader
                           int*             msgFlags = nullptr);
    size_t getAllSDs(int* sds, const size_t maxEntries);
 
-   inline size_t size() {
+   inline size_t size() const {
       return SocketMap.size();
    }
 

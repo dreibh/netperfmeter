@@ -32,6 +32,7 @@
 #include "loglevel.h"
 #include "tools.h"
 
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
@@ -87,8 +88,9 @@ bool MessageReader::registerSocket(const int    protocol,
    else {
       if(mustBeNew) {
          LOG_FATAL
-         stdlog << format("Socket %d should be new, but MessageReader already has a state!",
-                          sd) << "\n";
+         // TRANSLATORS: Fatal error when attempting to register an already existing socket. Placeholder: {} is socket descriptor.
+         stdlog << formatText(gettext("Socket {} should be new, but MessageReader already has a state!"),
+                              sd) << "\n";
          abort();
          LOG_END_FATAL
       }
@@ -116,7 +118,7 @@ bool MessageReader::deregisterSocket(const int sd)
 #endif
       if(socket->UseCount == 0) {
          SocketMap.erase(found);
-         delete [] socket->MessageBuffer;
+         delete[] socket->MessageBuffer;
          delete socket;
          return true;
       }
@@ -152,7 +154,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       // ===== UDP ==========================================================
       if(socket->Protocol == IPPROTO_UDP) {
          // For UDP, reading always returns a full message. There is no
-         // particul reading!
+         // partial reading!
          const ssize_t received =
             ext_recvfrom(socket->SocketDescriptor,
                          buffer, bufferSize,
@@ -223,10 +225,10 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       else if(socket->Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
          received = sctp_recvmsg(socket->SocketDescriptor,
-                                 (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
+                                 &socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  from, fromSize, &sinfo, msgFlags);
          if(streamID != nullptr) {
-            *streamID = (int64_t)sinfo.sinfo_stream;
+            *streamID = static_cast<int64_t>(sinfo.sinfo_stream);
          }
       }
 #endif
@@ -234,20 +236,20 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       else if(socket->Protocol == IPPROTO_QUIC) {
          uint32_t flags = 0;
          received = quic_recvmsg(socket->SocketDescriptor,
-                                 (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
+                                 &socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  streamID, &flags);
       }
 #endif
       else {
          received = ext_recvfrom(socket->SocketDescriptor,
-                                 (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
+                                 &socket->MessageBuffer[socket->BytesRead], bytesToRead,
                                  *msgFlags, from, fromSize);
       }
 
 
       // ====== Handle received data ========================================
       if(received > 0) {
-         socket->BytesRead += (size_t)received;
+         socket->BytesRead += static_cast<size_t>(received);
          // ====== Handle message header ====================================
          if(socket->Status == Socket::MRS_WaitingForHeader) {
 #if defined(HAVE_SCTP)
@@ -268,7 +270,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             else {
 #endif
                if(socket->BytesRead >= sizeof(TLVHeader)) {
-                  const TLVHeader* header = (const TLVHeader*)socket->MessageBuffer;
+                  const auto* header = reinterpret_cast<const TLVHeader*>(socket->MessageBuffer);
 #if defined(DEBUG_MESSAGEREADER)
                   printf("Socket %d:   header T=%u F=%02x L=%u   [Header]\n",
                           socket->SocketDescriptor,
@@ -278,16 +280,18 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                   socket->MessageSize = be16toh(header->Length);
                   if(socket->MessageSize < sizeof(TLVHeader)) {
                      LOG_WARNING
-                     stdlog << format("Message size < TLV size in message from socket %d!",
-                                      socket->SocketDescriptor) << "\n";
+                     // TRANSLATORS: Warning when message length is smaller than TLV header size. Placeholder: {} is socket descriptor.
+                     stdlog << formatText(gettext("Message size < TLV size in message from socket {}!"),
+                                          socket->SocketDescriptor) << "\n";
                      LOG_END
                      socket->Status = Socket::MRS_StreamError;
                      return MRRM_STREAM_ERROR;
                   }
                   else if(socket->MessageSize > socket->MessageBufferSize) {
                      LOG_WARNING
-                     stdlog << format("Message too large to fit buffer for message from socket %d!",
-                                      socket->SocketDescriptor) << "\n";
+                     // TRANSLATORS: Warning when message size exceeds the internal buffer capacity. Placeholder: {} is socket descriptor.
+                     stdlog << formatText(gettext("Message too large to fit buffer for message from socket {}!"),
+                                          socket->SocketDescriptor) << "\n";
                      LOG_END
                      socket->Status = Socket::MRS_StreamError;
                      return MRRM_STREAM_ERROR;
@@ -323,10 +327,11 @@ ssize_t MessageReader::receiveMessage(const int        sd,
                   if(*msgFlags & MSG_EOR) {   // end of SCTP message
                      if(!(*msgFlags & MSG_NOTIFICATION)) {   // data message
                         LOG_WARNING
-                        stdlog << format("SCTP message end before TLV message end (read %u, expected %u) for message from socket %d!",
-                                         socket->SocketDescriptor,
-                                         (unsigned int)socket->BytesRead,
-                                         (unsigned int)socket->MessageSize) << "\n";
+                        // TRANSLATORS: Warning when SCTP message end occurs before TLV payload completes. Placeholders: {} 1: bytes read, 2: expected bytes, 3: socket descriptor.
+                        stdlog << formatText(gettext("SCTP message end before TLV message end (read {}, expected {}) for message from socket {}!"),
+                                             static_cast<unsigned int>(socket->BytesRead),
+                                             static_cast<unsigned int>(socket->MessageSize),
+                                             socket->SocketDescriptor) << "\n";
                         LOG_END
                         socket->Status = Socket::MRS_StreamError;
                         return MRRM_STREAM_ERROR;
@@ -350,22 +355,23 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             // ====== Completed reading =====================================
             if(socket->MessageSize > bufferSize) {
                LOG_WARNING
-               stdlog << format("Buffer size is too small (buffer %u, message %u) for message from socket %d!",
-                                socket->SocketDescriptor,
-                                bufferSize, socket->MessageSize) << "\n";
+               // TRANSLATORS: Warning when destination buffer is smaller than received message size. Placeholders: {} 1: destination buffer size, 2: message size, 3: socket descriptor.
+               stdlog << formatText(gettext("Buffer size is too small (buffer {}, message {}) for message from socket {}!"),
+                                    bufferSize, socket->MessageSize, socket->SocketDescriptor) << "\n";
                LOG_END
                socket->Status = Socket::MRS_StreamError;
                return MRRM_STREAM_ERROR;
             }
             if((socket->Protocol == IPPROTO_SCTP) && (!(*msgFlags & MSG_EOR))) {
                LOG_WARNING
-               stdlog << format("TLV message end does not match with SCTP message end in message from socket %d!",
-                                socket->SocketDescriptor) << "\n";
+               // TRANSLATORS: Warning when TLV message boundary does not align with SCTP message boundary. Placeholder: {} is socket descriptor.
+               stdlog << formatText(gettext("TLV message end does not match with SCTP message end in message from socket {}!"),
+                                    socket->SocketDescriptor) << "\n";
                LOG_END
                socket->Status = Socket::MRS_StreamError;
                return MRRM_STREAM_ERROR;
             }
-            received = (ssize_t)socket->MessageSize;
+            received = static_cast<ssize_t>(socket->MessageSize);
             memcpy(buffer, socket->MessageBuffer, socket->MessageSize);
             socket->Status      = Socket::MRS_WaitingForHeader;
             socket->MessageSize = 0;
@@ -387,7 +393,8 @@ ssize_t MessageReader::receiveMessage(const int        sd,
    }
 
    LOG_ERROR
-   stdlog << format("Invalid socket %d!", sd) << "\n";
+   // TRANSLATORS: Error message when attempting to read from an invalid socket descriptor. Placeholder: {} is socket descriptor.
+   stdlog << formatText(gettext("Invalid socket {}!"), sd) << "\n";
    LOG_END
    return MRRM_BAD_SOCKET;
 }
