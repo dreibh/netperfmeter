@@ -130,18 +130,19 @@ _netperfmeter()
 
       case "${prev}" in
          #  ====== Generic value ============================================
-         -A | --activenodename     | \
-         -P | --passivenodename    | \
-         -o | --sndbuf             | \
-         -i | --rcvbuf             | \
-         -T | --runtime            | \
-         -B | --control-hbinterval | \
-         -b | --control-hbmaxrtx)
+         -A | --activenodename    | \
+         -P | --passivenodename   | \
+         -o | --sndbuf            | \
+         -i | --rcvbuf            | \
+         -T | --runtime           | \
+         --control-hbinterval     | \
+         --control-hbpathmaxrtx   | \
+         --control-hbassocmaxrtx)
             return
             ;;
          # ====== Local address =============================================
          -L | --local | \
-         -l | --controllocal)
+         -l | --control-local)
             # Suggest local IP addresses:
             # NOTE: For IPv6, ":" must bave been removed from COMP_WORDBREAKS
             #       See comment above!
@@ -207,10 +208,11 @@ _netperfmeter()
          opts="
 -x | --control-over-sctp | -y | --control-over-tcp | -w | --control-over-mptcp
 -L | --local
--l | --controllocal
+-l | --control-local
 -H | --tls-hostname
--B | --control-hbinterval
--b | --control-hbmaxrtx
+--control-hbinterval
+--control-hbpathmaxrtx
+--control-hbassocmaxrtx
 -6 | --v6only
 --display | --nodisplay
 -o | --sndbuf
@@ -247,12 +249,13 @@ _netperfmeter()
 -x | --control-over-sctp | -X | --no-control-over-sctp
 -y | --control-over-tcp | -Y | --no-control-over-tcp | -w | --control-over-mptcp | -W | --no-control-over-mptcp
 -L | --local
--l | --controllocal
+-l | --control-local
 -K | --tls-key
 -J | --tls-cert
 -I | --tls-ca
--B | --control-hbinterval
--b | --control-hbmaxrtx
+--control-hbinterval
+--control-hbpathmaxrtx
+--control-hbassocmaxrtx
 -6 | --v6only
 --display | --nodisplay
 --loglevel

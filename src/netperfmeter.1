@@ -43,7 +43,7 @@
 .br
 .Op Fl L Ar address[,address,...] | Fl \-local Ar address[,address,...]
 .br
-.Op Fl l Ar address[,address,...] | Fl \-controllocal Ar address[,address,...]
+.Op Fl l Ar address[,address,...] | Fl \-control-local Ar address[,address,...]
 .br
 .Op Fl K Ar key\_file | Fl \-tls\-key Ar key\_file
 .br
@@ -51,9 +51,11 @@
 .br
 .Op Fl I Ar ca\_certificate\_file | Fl \-tls\-ca Ar ca\_certificate\_file
 .br
-.Op Fl B Ar milliseconds | Fl \-control-hbinterval Ar milliseconds
+.Op Fl \-control-hbinterval Ar milliseconds
 .br
-.Op Fl b Ar count | Fl \-control-hbmaxrtx Ar count
+.Op Fl \-control-hbpathmaxrtx Ar count
+.br
+.Op Fl \-control-hbassocmaxrtx Ar count
 .br
 .Op Fl 6 | Fl \-v6only
 .br
@@ -75,13 +77,15 @@
 .br
 .Op Fl L Ar address[,address,...] | Fl \-local Ar address[,address,...]
 .br
-.Op Fl l Ar address[,address,...] | Fl \-controllocal Ar address[,address,...]
+.Op Fl l Ar address[,address,...] | Fl \-control-local Ar address[,address,...]
 .br
 .Op Fl H Ar hostname | Fl \-tls\-hostname Ar hostname
 .br
-.Op Fl B Ar milliseconds | Fl \-control-hbinterval Ar milliseconds
+.Op Fl \-control-hbinterval Ar milliseconds
 .br
-.Op Fl b Ar count | Fl \-control-hbmaxrtx Ar count
+.Op Fl \-control-hbpathmaxrtx Ar count
+.br
+.Op Fl \-control-hbassocmaxrtx Ar count
 .br
 .Op Fl 6 | Fl \-v6only
 .Op Fl \-display | Fl \-nodisplay
@@ -167,7 +171,7 @@ On the passive side, this option disables incoming control connections via MPTCP
 .It Fl L Ar address[,address,...] | Fl \-local Ar address[,address,...]
 Specifies address(es) of the local data endpoint. For TCP, UDP and DCCP, only the first address is used!
 On an active node, this option applies to the following flows, i.e. it must be set before specifying a flow!
-.It Fl l Ar address[,address,...] | Fl \-controllocal Ar address[,address,...]
+.It Fl l Ar address[,address,...] | Fl \-control-local Ar address[,address,...]
 Specifies address(es) of the local control endpoint (SCTP or TCP). For TCP, only the first address is used!
 .It Fl K Ar key\_file | Fl \-tls\-key Ar key\_file
 Specifies the TLS key file for QUIC authentication. This option is used by the passive side.
@@ -179,10 +183,12 @@ Specifies the TLS root CA certificate file for QUIC authentication.
 .It Fl H Ar hostname | Fl \-tls\-hostname Ar hostname
 Specifies the TLS certificate hostname for QUIC authentication. It is used by the active side.
 The hostname must match the remote (i.e. passive side's) hostname, as provided by the passive side's TLS certificate, to allow for hostname verification. As alternative, it is possible to add the IP addresses into the X.509 SubjectAltName of its certificate.
-.It Fl B Ar milliseconds | Fl \-control-hbinterval Ar milliseconds
-Sets the heartbeat interval (in ms) for the control connection. Default: 15000.
-.It Fl b Ar count | Fl \-control-hbmaxrtx Ar count
-Sets the heartbeat count for the control connection. Default: 3.
+.It Fl \-control-hbinterval Ar milliseconds
+Sets the heartbeat interval (in ms) for the control connection. Minimum: 1000; Maximum: 86400000 (1 day); Default: 15000.
+.It Fl \-control-hbpathmaxrtx Ar count
+Sets the per-path heartbeat retransmission limit for the control connection. Minimum: 1; Maximum: 1000000; Default: 3.
+.It Fl \-control-hbassocmaxrtx Ar count
+Sets the per-association heartbeat retransmission limit for the control connection. It only applied to control connections over SCTP. Minimum: 1; Maximum: 1000000; Default: 3.
 .It Fl 6 | Fl \-v6only
 Use sockets with IPv6 only (by setting IPV6\_V6ONLY socket option).
 .It Fl \-display

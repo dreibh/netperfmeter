@@ -129,7 +129,8 @@ static const char*      gScalarNamePattern     = "";
 static OutputFileFormat gScalarFileFormat      = OFF_None;
 static const char*      gConfigName            = "";
 static unsigned int     gControlHBInterval     = 15000;   // ms
-static unsigned int     gControlHBCount        = 3;       // trials
+static unsigned int     gControlHBPathMaxRtx   = 3;       // trials
+static unsigned int     gControlHBAssocMaxRtx  = 6;       // trials
 
 struct AssocSpec
 {
@@ -174,6 +175,9 @@ static void usage(const char* program, const int exitCode)
                    ENTRY(OPT("-K") " " ARG("key_file") PIPE OPT("--tls-key") " " ARG("key_file"))
                    ENTRY(OPT("-J") " " ARG("certificate_file") PIPE OPT("--tls-cert") " " ARG("certificate_file"))
                    ENTRY(OPT("-I") " " ARG("ca_certificate_file") PIPE OPT("--tls-ca") " " ARG("ca_certificate_file"))
+                   ENTRY(OPT("--control-hbinterval") " " ARG("milliseconds"))
+                   ENTRY(OPT("--control-hbpathmaxrtx") " " ARG("count"))
+                   ENTRY(OPT("--control-hbassocmaxrtx") " " ARG("count"))
                    ENTRY(OPT("-6") PIPE OPT("--v6only"))
                    ENTRY(OPT("--display") PIPE OPT("--nodisplay"))
                    ENTRY(OPT("--loglevel") " " ARG("level"))
@@ -188,6 +192,9 @@ static void usage(const char* program, const int exitCode)
                    ENTRY(OPT("-L") " " ARG("address[,address,...]") PIPE OPT("--local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-l") " " ARG("address[,address,...]") PIPE OPT("--controllocal") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-H") " " ARG("hostname") PIPE OPT("--tls-hostname") " " ARG("hostname"))
+                   ENTRY(OPT("--control-hbinterval") " " ARG("milliseconds"))
+                   ENTRY(OPT("--control-hbpathmaxrtx") " " ARG("count"))
+                   ENTRY(OPT("--control-hbassocmaxrtx") " " ARG("count"))
                    ENTRY(OPT("-6") PIPE OPT("--v6only"))
                    ENTRY(OPT("--display") PIPE OPT("--nodisplay"))
                    ENTRY(OPT("-o") " " ARG("bytes") PIPE OPT("--sndbuf") " " ARG("bytes"))
@@ -233,7 +240,8 @@ static bool handleGlobalParameters(int argc, char** argv)
       { "control-over-mptcp",            no_argument,       0, 'w'    },
       { "no-control-over-mptcp",         no_argument,       0, 'W'    },
       { "local",                         required_argument, 0, 'L'    },
-      { "controllocal",                  required_argument, 0, 'l'    },
+      { "controllocal",                  required_argument, 0, 'l'    },   // deprecated
+      { "control-local",                 required_argument, 0, 'l'    },
       { "display",                       no_argument,       0, 0x2001 },
       { "nodisplay",                     no_argument,       0, 0x2002 },
       { "v6only",                        no_argument,       0, '6'    },
@@ -259,8 +267,9 @@ static bool handleGlobalParameters(int argc, char** argv)
       { "sctp",                          required_argument, 0, 's'    },
       { "quic",                          required_argument, 0, 'k'    },
 
-      { "control-hbinterval",            required_argument, 0, 'B'    },
-      { "control-hbmaxrtx",              required_argument, 0, 'b'    },
+      { "control-hbinterval",            required_argument, 0, 0x4000 },
+      { "control-hbpathmaxrtx",          required_argument, 0, 0x4001 },
+      { "control-hbassocmaxrtx",         required_argument, 0, 0x4002 },
 
       { "loglevel",                      required_argument, 0, 0x3000 },
       { "logcolor",                      required_argument, 0, 0x3001 },
@@ -529,11 +538,14 @@ static bool handleGlobalParameters(int argc, char** argv)
          case '!':
             gLogLevel = LOGLEVEL_TRACE;
           break;
-         case 'B':
+         case 0x4000:
             gControlHBInterval = std::min((unsigned int)atoi(optarg), 86400000U);
           break;
-         case 'b':
-            gControlHBCount = std::min((unsigned int)atoi(optarg), 1000000U);
+         case 0x4001:
+            gControlHBPathMaxRtx = std::max(1U, std::min((unsigned int)atoi(optarg), 1000000U));
+          break;
+         case 0x4002:
+            gControlHBAssocMaxRtx = std::max(1U, std::min((unsigned int)atoi(optarg), 1000000U));
           break;
          case 'v':
             version();
@@ -607,7 +619,10 @@ static void printGlobalParameters()
    else {
       stdlog << "(any)";
    }
-   stdlog << "\n - Control Heartbeats        = " <<gControlHBCount << " / " <<gControlHBInterval << " ms\n";
+   stdlog << "\n - Control Heartbeats        = "
+          << gControlHBPathMaxRtx << " per path / "
+          << gControlHBPathMaxRtx << " per association / "
+          << gControlHBInterval << " ms\n";
    LOG_END
 }
 
@@ -1653,7 +1668,7 @@ static void passiveMode(const uint16_t localPort)
          params.spp_assoc_id   = SCTP_FUTURE_ASSOC;
          params.spp_flags      = SPP_HB_ENABLE;
          params.spp_hbinterval = gControlHBInterval;
-         params.spp_pathmaxrxt = gControlHBCount;
+         params.spp_pathmaxrxt = gControlHBPathMaxRtx;
          if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_PEER_ADDR_PARAMS,
                            &params, sizeof(params)) < 0) {
             LOG_FATAL
@@ -1665,7 +1680,7 @@ static void passiveMode(const uint16_t localPort)
          sctp_assocparams assocparams;
          memset(&assocparams, 0, sizeof(assocparams));
          assocparams.sasoc_assoc_id   = SCTP_FUTURE_ASSOC;
-         assocparams.sasoc_asocmaxrxt = gControlHBCount;
+         assocparams.sasoc_asocmaxrxt = gControlHBAssocMaxRtx;
          if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
             LOG_WARNING
             stdlog << format("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket %d: %s!",
@@ -1780,7 +1795,7 @@ static void passiveMode(const uint16_t localPort)
 #note No TCP_KEEPINTVL option available!
 #endif
 #if defined(TCP_KEEPCNT)
-      const int keepCountOption = (int)gControlHBCount;
+      const int keepCountOption = (int)gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocketTCP, SOL_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
          LOG_ERROR
@@ -2287,7 +2302,7 @@ static void activeMode(const char* remoteEndpoint)
       memset(&paddrparams, 0, sizeof(paddrparams));
       paddrparams.spp_flags      = SPP_HB_ENABLE;
       paddrparams.spp_hbinterval = gControlHBInterval;
-      paddrparams.spp_pathmaxrxt = gControlHBCount;
+      paddrparams.spp_pathmaxrxt = gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_PEER_ADDR_PARAMS, &paddrparams, sizeof(paddrparams)) < 0) {
          LOG_WARNING
          stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
@@ -2297,7 +2312,7 @@ static void activeMode(const char* remoteEndpoint)
 
       sctp_assocparams assocparams;
       memset(&assocparams, 0, sizeof(assocparams));
-      assocparams.sasoc_asocmaxrxt = gControlHBCount;
+      assocparams.sasoc_asocmaxrxt = gControlHBAssocMaxRtx;
       if(ext_setsockopt(gControlSocket, SOL_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
          LOG_WARNING
          stdlog << format("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket %d: %s!",
@@ -2341,7 +2356,7 @@ static void activeMode(const char* remoteEndpoint)
 #note No TCP_KEEPINTVL option available!
 #endif
 #if defined(TCP_KEEPCNT)
-      const int keepCountOption = (int)gControlHBCount;
+      const int keepCountOption = (int)gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocket, SOL_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
          LOG_ERROR
