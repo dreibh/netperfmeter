@@ -61,8 +61,8 @@ static bool downloadOutputFile(MessageReader* messageReader,
    if(fh == nullptr) {
       LOG_ERROR
       // TRANSLATORS: Error creating output file for downloading results. Placeholders: {} 1: file name, 2: strerror() message.
-      stdlog << formatText(gettext("Unable to create file {}: {}!\n"),
-                           fileName, strerror(errno));
+      stdlog << formatText(gettext("Unable to create file {}: {}!"),
+                           fileName, strerror(errno)) << "\n";
       LOG_END
       return false;
    }
@@ -74,8 +74,8 @@ static bool downloadOutputFile(MessageReader* messageReader,
          if(resultsMsg->Header.Type != NETPERFMETER_RESULTS) {
             LOG_ERROR
             // TRANSLATORS: Error message when an unexpected message type is received. Placeholders: {:02x} 1: hex message type, {} 2: socket descriptor.
-            stdlog << formatText(gettext("Received unexpected message type ${:02x} on socket {}!\n"),
-                                 static_cast<unsigned int>(resultsMsg->Header.Type), controlSocket);
+            stdlog << formatText(gettext("Received unexpected message type ${:02x} on socket {}!"),
+                                 static_cast<unsigned int>(resultsMsg->Header.Type), controlSocket) << "\n";
             LOG_END
             fclose(fh);
             return false;
@@ -83,7 +83,7 @@ static bool downloadOutputFile(MessageReader* messageReader,
          if(bytes != (size_t)received) {
             LOG_ERROR
             // TRANSLATORS: Error message when NETPERFMETER_RESULTS message header length does not match bytes received.
-            stdlog << gettext("Received malformed NETPERFMETER_RESULTS message!\n");
+            stdlog << gettext("Received malformed NETPERFMETER_RESULTS message!") << "\n";
             LOG_END
             fclose(fh);
             return false;
@@ -93,8 +93,8 @@ static bool downloadOutputFile(MessageReader* messageReader,
             if(fwrite((char*)&resultsMsg->Data, bytes - sizeof(NetPerfMeterResults), 1, fh) != 1) {
                LOG_ERROR
                // TRANSLATORS: Error writing downloaded measurement results to file. Placeholders: {} 1: file name, 2: strerror() message.
-               stdlog << formatText(gettext("Unable to write results to file {}: {}!\n"),
-                                    fileName, strerror(errno));
+               stdlog << formatText(gettext("Unable to write results to file {}: {}!"),
+                                    fileName, strerror(errno)) << "\n";
                LOG_END
                fclose(fh);
                return false;
@@ -103,8 +103,8 @@ static bool downloadOutputFile(MessageReader* messageReader,
          else {
             LOG_WARNING
             // TRANSLATORS: Warning message when empty results are received for a file. Placeholders: {} 1: file name, 2: socket descriptor.
-            stdlog << formatText(gettext("No results received for file {} from socket {}!\n"),
-                                 fileName, controlSocket);
+            stdlog << formatText(gettext("No results received for file {} from socket {}!"),
+                                 fileName, controlSocket) << "\n";
             LOG_END
          }
 
@@ -121,8 +121,8 @@ static bool downloadOutputFile(MessageReader* messageReader,
    if(!success) {
       LOG_ERROR
       // TRANSLATORS: Error message when downloading results from a socket fails. Placeholders: {} 1: socket descriptor, 2: strerror() message.
-      stdlog << formatText(gettext("Unable to download results from socket {} (errno={})!\n"),
-                           controlSocket, strerror(errno));
+      stdlog << formatText(gettext("Unable to download results from socket {} (errno={})!"),
+                           controlSocket, strerror(errno)) << "\n";
       LOG_END
    }
    fclose(fh);
@@ -143,8 +143,8 @@ static bool downloadResults(MessageReader*     messageReader,
 
    LOG_INFO
    // TRANSLATORS: Log message when beginning download of flow results. Placeholders: {} 1: file path, 2: socket descriptor.
-   stdlog << formatText(gettext("Downloading results [{}] from socket {}\n"),
-                        outputName, controlSocket);
+   stdlog << formatText(gettext("Downloading results [{}] from socket {}"),
+                        outputName, controlSocket) << "\n";
    LOG_END
    bool success = awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                                flow->getMeasurementID(),
@@ -241,8 +241,8 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    if(ext_send(controlSocket, addFlowMsg, addFlowMsgSize, 0) <= 0) {
       LOG_ERROR
       // TRANSLATORS: Error message when transmitting a message on a socket fails. Placeholders: {} 1: socket descriptor, 2: strerror() message.
-      stdlog << formatText(gettext("Sending message failed on socket {}: {}!\n"),
-                           controlSocket, strerror(errno));
+      stdlog << formatText(gettext("Sending message failed on socket {}: {}!"),
+                           controlSocket, strerror(errno)) << "\n";
       LOG_END
       return false;
    }
@@ -256,8 +256,8 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
                                    flow->getFlowID(), flow->getStreamID()) == false) {
       LOG_ERROR
       // TRANSLATORS: Error message when receiving a message on a socket fails. Placeholders: {} 1: socket descriptor, 2: strerror() message.
-      stdlog << formatText(gettext("Receiving message failed on socket {}: {}!\n"),
-                           controlSocket, strerror(errno));
+      stdlog << formatText(gettext("Receiving message failed on socket {}: {}!"),
+                           controlSocket, strerror(errno)) << "\n";
       LOG_END
       return false;
    }
@@ -367,8 +367,8 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       if(configFile == nullptr) {
          LOG_ERROR
          // TRANSLATORS: Error message when config file cannot be created. Placeholders: {} 1: config file name, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to create config file {}: {}!\n"),
-                              configName, strerror(errno));
+         stdlog << formatText(gettext("Unable to create config file {}: {}!"),
+                              configName, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
@@ -456,8 +456,8 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
 
       LOG_INFO
       // TRANSLATORS: Status message when starting a measurement. Placeholders: {:x} 1: measurement ID (hex), {} 2: socket descriptor.
-      stdlog << formatText(gettext("Starting measurement ${:x} on socket {} ...\n"),
-                           measurementID, controlSocket);
+      stdlog << formatText(gettext("Starting measurement ${:x} on socket {} ..."),
+                           measurementID, controlSocket) << "\n";
       LOG_END
       if(ext_send(controlSocket, &startMsg, sizeof(startMsg), 0) < 0) {
          return false;
@@ -537,8 +537,8 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
 
    LOG_INFO
    // TRANSLATORS: Status message when stopping a measurement. Placeholder: {} is socket descriptor.
-   stdlog << formatText(gettext("Stopping measurement on socket {} ...\n"),
-                        controlSocket);
+   stdlog << formatText(gettext("Stopping measurement on socket {} ..."),
+                        controlSocket) << "\n";
    LOG_END
    if(ext_send(controlSocket, &stopMsg, sizeof(stopMsg), 0) < 0) {
       return false;
@@ -558,8 +558,8 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
 
       LOG_INFO
       // TRANSLATORS: Status message when downloading vector results. Placeholders: {} 1: file path, 2: socket descriptor.
-      stdlog << formatText(gettext("Downloading vector results [{}] from socket {}\n"),
-                           vectorName, controlSocket);
+      stdlog << formatText(gettext("Downloading vector results [{}] from socket {}"),
+                           vectorName, controlSocket) << "\n";
       LOG_END
       if(downloadOutputFile(messageReader, controlSocket, vectorName.c_str()) == false) {
          delete measurement;
@@ -576,8 +576,8 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
          measurement->getScalarNamePattern(), "passive");
       LOG_INFO
       // TRANSLATORS: Status message when downloading scalar results. Placeholders: {} 1: file path, 2: socket descriptor.
-      stdlog << formatText(gettext("Downloading scalar results [{}] from socket {}\n"),
-                           scalarName, controlSocket);
+      stdlog << formatText(gettext("Downloading scalar results [{}] from socket {}"),
+                           scalarName, controlSocket) << "\n";
       LOG_END
       if(downloadOutputFile(messageReader, controlSocket, scalarName.c_str()) == false) {
          delete measurement;
@@ -668,8 +668,8 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    if(ackMsg.Header.Type != NETPERFMETER_ACKNOWLEDGE) {
       LOG_WARNING
       // TRANSLATORS: Warning message when unexpected message type is received instead of ACK. Placeholders: {:02x} 1: hex message type, {} 2: socket descriptor.
-      stdlog << formatText(gettext("Received message type ${:02x} instead of NETPERFMETER_ACKNOWLEDGE on socket {}!\n"),
-                           static_cast<unsigned int>(ackMsg.Header.Type), controlSocket);
+      stdlog << formatText(gettext("Received message type ${:02x} instead of NETPERFMETER_ACKNOWLEDGE on socket {}!"),
+                           static_cast<unsigned int>(ackMsg.Header.Type), controlSocket) << "\n";
       LOG_END
       return false;
    }
@@ -680,8 +680,8 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
        (be16toh(ackMsg.StreamID) != streamID) ) {
       LOG_WARNING
       // TRANSLATORS: Warning message when ACK parameters do not match the expected flow/stream. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Received NETPERFMETER_ACKNOWLEDGE for wrong measurement/flow/stream on socket {}!\n"),
-                           controlSocket);
+      stdlog << formatText(gettext("Received NETPERFMETER_ACKNOWLEDGE for wrong measurement/flow/stream on socket {}!"),
+                           controlSocket) << "\n";
       LOG_END
       return false;
    }
@@ -714,7 +714,7 @@ static bool uploadOutputFile(const int         controlSocket,
    // ====== Transmission loop ==============================================
    LOG_DEBUG
    // TRANSLATORS: Log message when uploading measurement results. Placeholder: {} is socket descriptor.
-   stdlog << formatText(gettext("Uploading results on socket {} ...\n"), controlSocket);
+   stdlog << formatText(gettext("Uploading results on socket {} ..."), controlSocket) << "\n";
    LOG_END
 
    bool success = true;
@@ -728,8 +728,8 @@ static bool uploadOutputFile(const int         controlSocket,
       if(ferror(outputFile.getFile())) {
          LOG_ERROR
          // TRANSLATORS: Error message when reading measurement output file fails. Placeholders: {} 1: file path, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to read results from {}: {}!\n"),
-                              outputFile.getName(), strerror(errno));
+         stdlog << formatText(gettext("Unable to read results from {}: {}!"),
+                              outputFile.getName(), strerror(errno)) << "\n";
          LOG_END
          success = false;
          break;
@@ -739,8 +739,8 @@ static bool uploadOutputFile(const int         controlSocket,
       if(ext_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, 0) < 0) {
          LOG_ERROR
          // TRANSLATORS: Error message when uploading measurement results fails. Placeholders: {} 1: socket descriptor, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to upload results on socket {}: {}!\n"),
-                              controlSocket, strerror(errno));
+         stdlog << formatText(gettext("Unable to upload results on socket {}: {}!"),
+                              controlSocket, strerror(errno)) << "\n";
          LOG_END
          success = false;
          break;
@@ -751,8 +751,8 @@ static bool uploadOutputFile(const int         controlSocket,
    if(!success) {
       LOG_WARNING
       // TRANSLATORS: Warning message when uploading results fails. Placeholders: {} 1: socket descriptor, 2: strerror() message.
-      stdlog << formatText(gettext("Unable to upload results on socket {} (errno={})!\n"),
-                           controlSocket, strerror(errno));
+      stdlog << formatText(gettext("Unable to upload results on socket {} (errno={})!"),
+                           controlSocket, strerror(errno)) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
    }
@@ -794,8 +794,8 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    if(received < sizeof(NetPerfMeterAddFlowMessage)) {
       LOG_WARNING
       // TRANSLATORS: Warning message when incoming ADD_FLOW control message is too short. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Received malformed NETPERFMETER_ADD_FLOW control message on socket {}!\n"),
-                           controlSocket);
+      stdlog << formatText(gettext("Received malformed NETPERFMETER_ADD_FLOW control message on socket {}!"),
+                           controlSocket) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -807,8 +807,8 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    if(received < sizeof(NetPerfMeterAddFlowMessage) + (startStopEvents * sizeof(NetPerfMeterOnOffEvent))) {
       LOG_WARNING
       // TRANSLATORS: Warning message when ADD_FLOW control message has fewer on/off entries than specified. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Too few start/stop entries in NETPERFMETER_ADD_FLOW control message on socket {}!\n"),
-                           controlSocket);
+      stdlog << formatText(gettext("Too few start/stop entries in NETPERFMETER_ADD_FLOW control message on socket {}!"),
+                           controlSocket) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -819,8 +819,8 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID)) {
       LOG_WARNING
       // TRANSLATORS: Warning message when ADD_FLOW tries to add a flow that already exists. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("NETPERFMETER_ADD_FLOW tried to add already-existing flow on socket {}!\n"),
-                           controlSocket);
+      stdlog << formatText(gettext("NETPERFMETER_ADD_FLOW tried to add already-existing flow on socket {}!"),
+                           controlSocket) << "\n";
       LOG_END
       return(sendNetPerfMeterAcknowledge(controlSocket,
                                          measurementID, flowID, streamID,
@@ -890,8 +890,8 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
    if(received < sizeof(NetPerfMeterRemoveFlowMessage)) {
       LOG_WARNING
       // TRANSLATORS: Warning message when incoming REMOVE_FLOW control message is too short. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Received malformed NETPERFMETER_REMOVE_FLOW control message on socket {}!\n"),
-                           controlSocket);
+      stdlog << formatText(gettext("Received malformed NETPERFMETER_REMOVE_FLOW control message on socket {}!"),
+                           controlSocket) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -903,8 +903,8 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
    if(flow == nullptr) {
       LOG_WARNING
       // TRANSLATORS: Warning message when REMOVE_FLOW references a non-existent flow. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("NETPERFMETER_REMOVE_FLOW tried to remove not-existing flow on socket {}!\n"),
-                           controlSocket);
+      stdlog << formatText(gettext("NETPERFMETER_REMOVE_FLOW tried to remove not-existing flow on socket {}!"),
+                           controlSocket) << "\n";
       LOG_END
       return(sendNetPerfMeterAcknowledge(controlSocket,
                                          measurementID, flowID, streamID,
@@ -934,8 +934,8 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    if(received < sizeof(NetPerfMeterStartMessage)) {
       LOG_WARNING
       // TRANSLATORS: Warning message when incoming START control message is too short. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Received malformed NETPERFMETER_START control message on socket {}!\n"),
-                           controlSocket);
+      stdlog << formatText(gettext("Received malformed NETPERFMETER_START control message on socket {}!"),
+                           controlSocket) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -943,8 +943,8 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    const uint64_t measurementID = be64toh(startMsg->MeasurementID);
    LOG_INFO
    // TRANSLATORS: Status message when remote peer requests measurement start. Placeholders: {:x} 1: measurement ID (hex), {} 2: socket descriptor.
-   stdlog << formatText(gettext("Starting measurement ${:x} on socket {} ...\n"),
-                        measurementID, controlSocket);
+   stdlog << formatText(gettext("Starting measurement ${:x} on socket {} ..."),
+                        measurementID, controlSocket) << "\n";
    LOG_END
 
    OutputFileFormat scalarFileFormat = OFF_Plain;
@@ -984,8 +984,8 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
    if(received < sizeof(NetPerfMeterStopMessage)) {
       LOG_WARNING
       // TRANSLATORS: Warning message when incoming STOP control message is too short. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Received malformed NETPERFMETER_STOP control message on socket {}!\n"),
-                           controlSocket);
+      stdlog << formatText(gettext("Received malformed NETPERFMETER_STOP control message on socket {}!"),
+                           controlSocket) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -993,8 +993,8 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
    const uint64_t measurementID = be64toh(stopMsg->MeasurementID);
    LOG_INFO
    // TRANSLATORS: Status message when remote peer requests measurement stop. Placeholders: {:x} 1: measurement ID (hex), {} 2: socket descriptor.
-   stdlog << formatText(gettext("Stopping measurement ${:x} on socket {} ...\n"),
-                        measurementID, controlSocket);
+   stdlog << formatText(gettext("Stopping measurement ${:x} on socket {} ..."),
+                        measurementID, controlSocket) << "\n";
    LOG_END
 
    // ====== Stop flows =====================================================
@@ -1072,8 +1072,8 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       if(received < 0) {
          LOG_WARNING
          // TRANSLATORS: Warning message when control connection socket encounters read error. Placeholder: {} is socket descriptor.
-         stdlog << formatText(gettext("Control connection is broken on socket {}!\n"),
-                              controlSocket);
+         stdlog << formatText(gettext("Control connection is broken on socket {}!"),
+                              controlSocket) << "\n";
          LOG_END
          ext_shutdown(controlSocket, SHUT_RDWR);
       }
@@ -1098,8 +1098,8 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       if(be16toh(header->Length) != received) {
          LOG_WARNING
          // TRANSLATORS: Warning message when control message length does not match payload length received. Placeholders: {} 1: socket descriptor, 2: expected length, 3: received length.
-         stdlog << formatText(gettext("Received malformed control message on socket {}: expected length {}, but received length {}!\n"),
-                              controlSocket, static_cast<unsigned int>(be16toh(header->Length)), static_cast<unsigned int>(received));
+         stdlog << formatText(gettext("Received malformed control message on socket {}: expected length {}, but received length {}!"),
+                              controlSocket, static_cast<unsigned int>(be16toh(header->Length)), static_cast<unsigned int>(received)) << "\n";
          LOG_END
          ext_shutdown(controlSocket, SHUT_RDWR);
          return false;
@@ -1125,8 +1125,8 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
          default:
             LOG_WARNING
             // TRANSLATORS: Warning message when unrecognized control message type is received. Placeholders: {:02x} 1: hex message type, {} 2: socket descriptor.
-            stdlog << formatText(gettext("Received invalid control message of type ${:02x} on socket {}!\n"),
-                                 static_cast<unsigned int>(header->Type), controlSocket);
+            stdlog << formatText(gettext("Received invalid control message of type ${:02x} on socket {}!"),
+                                 static_cast<unsigned int>(header->Type), controlSocket) << "\n";
             LOG_END
             ext_shutdown(controlSocket, SHUT_RDWR);
             return false;
@@ -1176,8 +1176,8 @@ bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
       // No known flow -> no association to send response to!
       LOG_WARNING
       // TRANSLATORS: Warning message when IDENTIFY_FLOW message references an unknown flow. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("NETPERFMETER_IDENTIFY_FLOW message for unknown flow on socket {}!\n"),
-                           sd);
+      stdlog << formatText(gettext("NETPERFMETER_IDENTIFY_FLOW message for unknown flow on socket {}!"),
+                           sd) << "\n";
       LOG_END
       return false;
    }

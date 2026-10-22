@@ -132,23 +132,23 @@ void Flow::print(std::ostream& os, const bool printStatistics)
    lock();
    if(TrafficSpec.Protocol != IPPROTO_SCTP) {
       // TRANSLATORS: Flow summary header. Placeholders: {} 1: protocol name, 2: flow ID, 3: flow description, {:x} 4: measurement ID (hex).
-      ss << formatText(gettext("+ {} Flow (Flow #{} \"{}\" of Measurement ${:x}):\n"),
+      ss << formatText(gettext("+ {} Flow (Flow #{} \"{}\" of Measurement ${:x}):"),
                        getProtocolName(TrafficSpec.Protocol),
                        FlowID, TrafficSpec.Description,
-                       MeasurementID);
+                       MeasurementID) << "\n";
    }
    else {
       // TRANSLATORS: SCTP association flow header. Placeholders: {} 1: protocol name, {:x} 2: measurement ID (hex).
-      ss << formatText(gettext("+ {} Flow (of Measurement ${:x}):\n"),
+      ss << formatText(gettext("+ {} Flow (of Measurement ${:x}):"),
                        getProtocolName(TrafficSpec.Protocol),
-                       MeasurementID);
+                       MeasurementID) << "\n";
    }
    if(TrafficSpec.Protocol == IPPROTO_SCTP) {
       // TRANSLATORS: SCTP stream description inside an association. Placeholders: {} 1: stream ID, 2: flow ID, 3: flow description, {:x} 4: measurement ID (hex).
-      ss << formatText(gettext("   o Stream #{} (Flow ID #{} \"{}\" of Measurement ${:x}):\n"),
+      ss << formatText(gettext("   o Stream #{} (Flow ID #{} \"{}\" of Measurement ${:x}):"),
                        StreamID,
                        FlowID, TrafficSpec.Description,
-                       MeasurementID);
+                       MeasurementID) << "\n";
    }
    TrafficSpec.print(ss);
 
@@ -355,7 +355,7 @@ uint64_t Flow::scheduleNextStatusChangeEvent(const uint64_t now)
       if(static_cast<int64_t>(absNextEvent) - static_cast<int64_t>(now) < -10000000) {
          LOG_WARNING
          // TRANSLATORS: Warning when event scheduling falls significantly behind real time.
-         stdlog << gettext("Schedule is more than 10s behind clock time! Check on/off parameters!\n");
+         stdlog << gettext("Schedule is more than 10s behind clock time! Check on/off parameters!") << "\n";
          LOG_END
       }
    }
@@ -469,8 +469,8 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&noDelayOption), sizeof(noDelayOption)) < 0) {
          LOG_ERROR
          // TRANSLATORS: Error message when setsockopt(TCP_NODELAY) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to configure Nagle algorithm (TCP_NODELAY option) on TCP socket {}: {}!\n"),
-                              socketDescriptor, strerror(errno));
+         stdlog << formatText(gettext("Unable to configure Nagle algorithm (TCP_NODELAY option) on TCP socket {}: {}!"),
+                              socketDescriptor, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
@@ -481,8 +481,8 @@ bool Flow::configureSocket(const int socketDescriptor)
          if(ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_CONGESTION, congestionControl, strlen(congestionControl)) < 0) {
             LOG_ERROR
             // TRANSLATORS: Error message when setsockopt(TCP_CONGESTION) fails. Placeholders: {} 1: congestion control algorithm name, 2: socket fd, 3: strerror() message.
-            stdlog << formatText(gettext("Unable to configure congestion control {} (TCP_CONGESTION option) on TCP socket {}: {}!\n"),
-                                 congestionControl, socketDescriptor, strerror(errno));
+            stdlog << formatText(gettext("Unable to configure congestion control {} (TCP_CONGESTION option) on TCP socket {}: {}!"),
+                                 congestionControl, socketDescriptor, strerror(errno)) << "\n";
             LOG_END
             return false;
          }
@@ -490,8 +490,8 @@ bool Flow::configureSocket(const int socketDescriptor)
 #warning TCP option TCP_CONGESTION is not supported by the API of this system!
          LOG_ERROR
          // TRANSLATORS: Error message when congestion control configuration is unsupported on TCP socket. Placeholders: {} 1: congestion control algorithm name, 2: socket fd.
-         stdlog << formatText(gettext("Congestion control configuration to {} is not supported by TCP socket {}!\n"),
-                              congestionControl, socketDescriptor);
+         stdlog << formatText(gettext("Congestion control configuration to {} is not supported by TCP socket {}!"),
+                              congestionControl, socketDescriptor) << "\n";
          LOG_END
          return false;
 #endif
@@ -504,8 +504,8 @@ bool Flow::configureSocket(const int socketDescriptor)
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_NODELAY, reinterpret_cast<const char*>(&noDelayOption), sizeof(noDelayOption)) < 0) {
             LOG_ERROR
             // TRANSLATORS: Error message when setsockopt(SCTP_NODELAY) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
-            stdlog << formatText(gettext("Unable to configure Nagle algorithm (SCTP_NODELAY option) on SCTP socket {}: {}!\n"),
-                                 socketDescriptor, strerror(errno));
+            stdlog << formatText(gettext("Unable to configure Nagle algorithm (SCTP_NODELAY option) on SCTP socket {}: {}!"),
+                                 socketDescriptor, strerror(errno)) << "\n";
             LOG_END
             return false;
          }
@@ -518,8 +518,8 @@ bool Flow::configureSocket(const int socketDescriptor)
          if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
             LOG_ERROR
             // TRANSLATORS: Error message when setsockopt(SCTP_CMT_ON_OFF) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
-            stdlog << formatText(gettext("Unable to configure CMT usage (SCTP_CMT_ON_OFF option) on SCTP socket {}: {}!\n"),
-                                 socketDescriptor, strerror(errno));
+            stdlog << formatText(gettext("Unable to configure CMT usage (SCTP_CMT_ON_OFF option) on SCTP socket {}: {}!"),
+                                 socketDescriptor, strerror(errno)) << "\n";
             LOG_END
             return false;
          }
@@ -528,7 +528,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
          LOG_ERROR
          // TRANSLATORS: Error message when CMT is requested on SCTP but unsupported by the system.
-         stdlog << gettext("CMT usage on SCTP socket configured, but not supported by this system!\n");
+         stdlog << gettext("CMT usage on SCTP socket configured, but not supported by this system!") << "\n";
          LOG_END
          return false;
       }
@@ -542,8 +542,8 @@ bool Flow::configureSocket(const int socketDescriptor)
          if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
             LOG_WARNING
             // TRANSLATORS: Warning message when setsockopt(DCCP_SOCKOPT_CCID) fails. Placeholders: {} 1: CCID number, 2: socket fd, 3: strerror() message.
-            stdlog << formatText(gettext("Unable to configure CCID {} (DCCP_SOCKOPT_CCID option) on DCCP socket {}: {}!\n"),
-                                 static_cast<unsigned int>(value), socketDescriptor, strerror(errno));
+            stdlog << formatText(gettext("Unable to configure CCID {} (DCCP_SOCKOPT_CCID option) on DCCP socket {}: {}!"),
+                                 static_cast<unsigned int>(value), socketDescriptor, strerror(errno)) << "\n";
             LOG_END
          }
       }
@@ -551,8 +551,8 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_ERROR
          // TRANSLATORS: Error message when setsockopt(DCCP_SOCKOPT_SERVICE) fails. Placeholders: {} 1: service code number, 2: socket fd, 3: strerror() message.
-         stdlog << formatText(gettext("Unable to configure DCCP service code {} (DCCP_SOCKOPT_SERVICE option) on DCCP socket {}: {}!\n"),
-                              static_cast<unsigned int>(be32toh(service[0])), socketDescriptor, strerror(errno));
+         stdlog << formatText(gettext("Unable to configure DCCP service code {} (DCCP_SOCKOPT_SERVICE option) on DCCP socket: {}!"),
+                              static_cast<unsigned int>(be32toh(service[0])), socketDescriptor, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
@@ -564,8 +564,8 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(ext_getsockopt(socketDescriptor, IPPROTO_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
          LOG_ERROR
          // TRANSLATORS: Error message when getsockopt(QUIC_SOCKOPT_CONFIG) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to obtain configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket {}: {}!\n"),
-                              socketDescriptor, strerror(errno));
+         stdlog << formatText(gettext("Unable to obtain configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket {}: {}!"),
+                              socketDescriptor, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
@@ -579,16 +579,16 @@ bool Flow::configureSocket(const int socketDescriptor)
       else {
          LOG_ERROR
          // TRANSLATORS: Error message when invalid congestion control algorithm is requested for QUIC. Placeholders: {} 1: congestion control name, 2: socket fd.
-         stdlog << formatText(gettext("Invalid congestion control {} for QUIC requested on socket {}!\n"),
-                              congestionControl, socketDescriptor);
+         stdlog << formatText(gettext("Invalid congestion control {} for QUIC requested on socket {}!"),
+                              congestionControl, socketDescriptor) << "\n";
          LOG_END
          return false;
       }
       if(ext_setsockopt(socketDescriptor, IPPROTO_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
          LOG_WARNING
          // TRANSLATORS: Warning message when setsockopt(QUIC_SOCKOPT_CONFIG) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket {}: {}!\n"),
-                              socketDescriptor, strerror(errno));
+         stdlog << formatText(gettext("Unable to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket {}: {}!"),
+                              socketDescriptor, strerror(errno)) << "\n";
          LOG_END
       }
    }

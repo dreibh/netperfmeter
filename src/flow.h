@@ -170,7 +170,7 @@ class Flow : public Thread
       std::string prefix;
       std::string suffix;
       dissectName(pattern, prefix, suffix);
-      return formatText("{}-{}{}{}", prefix, type, extension, suffix);
+      return std::format("{}-{}{}{}", prefix, type, extension, suffix);
    }
 
    bool initializeVectorFile(const char* name, const OutputFileFormat format);
