@@ -37,12 +37,20 @@ usage () {
    local exitCode="$2"
    local header=$'\x1b[4m'
    local cmd=$'\x1b[1m'
-   # local opt=$'\x1b[1m'
-   # local arg=$'\x1b[4m'
-   # local syn=$'\x1b[1m'
+   local opt=$'\x1b[1m'
+   local arg=$'\x1b[4m'
+   local syn=$'\x1b[1m'
    local reset=$'\x1b[0m'
    cat >&2 <<EOF
 ${header}Usage:${reset}
+${cmd}${program}${reset} ${arg}config_name${reset}
+	${syn}[${reset}${opt}-w${reset} ${syn}|${reset} ${opt}--own-file${reset} ${syn}|${reset} ${opt}--ownfile${reset}${syn}]${reset}
+	${syn}[${reset}${opt}-k${reset} ${syn}|${reset} ${opt}--keep-summaries${reset}${syn}]${reset}
+	${syn}[${reset}${opt}-p${reset} ${syn}|${reset} ${opt}--per-flow-plots${reset}${syn}]${reset}
+${cmd}${program}${reset}
+	${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}
+${cmd}${program}${reset}
+	${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}
 EOF
    exit "${exitCode}"
 }
@@ -81,13 +89,12 @@ case "${UNAME}" in
       GETOPT="$(command -v getopt || true)"
       ;;
 esac
-if "${GETOPT}" -T >/dev/null 2>&1 || [[ $? -ne 4 ]]; then
+if [ -z "${GETOPT}" ] || "${GETOPT}" -T >/dev/null 2>&1 || [[ $? -ne 4 ]]; then
    echo >&2 "ERROR: Enhanced/GNU getopt is required!"
    exit 1
 fi
-options="$(${GETOPT} -o wkphv --long own-file,ownfile,keep-summaries,per-flow-plots,help,version -a -- "$@")"
-# shellcheck disable=SC2181
-if [[ $? -ne 0 ]]; then
+
+if ! options="$("${GETOPT}" -o wkphv --long own-file,ownfile,keep-summaries,per-flow-plots,help,version -a -- "$@")"; then
    usage "$0" 1
 fi
 
@@ -99,15 +106,12 @@ while [ $# -gt 0 ] ; do
    case "$1" in
       -w | --own-file | --ownfile)
          PLOT_OWN_FILE="TRUE"
-         shift
          ;;
       -k | --keep-summaries)
          KEEP_SUMMARIES=1
-         shift
          ;;
       -p | --per-flow-plots)
          PER_FLOW_PLOTS=1
-         shift
          ;;
       -h | --help)
          usage "$0" 0
@@ -119,8 +123,8 @@ while [ $# -gt 0 ] ; do
          shift
          break
          ;;
-  esac
-  shift
+   esac
+   shift
 done
 if [ $# -ne 1 ] ; then
    usage "$0" 1
@@ -139,7 +143,7 @@ VECTOR_PASSIVE_NODE=""
 NUM_FLOWS=0
 # shellcheck disable=SC1090
 . "${CONFIG_FILE}"
-if [ "${VECTOR_PASSIVE_NODE}" == "" ] || [ "${VECTOR_ACTIVE_NODE}" == "" ] || [ ${NUM_FLOWS} -lt 1 ] ; then
+if [ -z "${VECTOR_PASSIVE_NODE}" ] || [ -z "${VECTOR_ACTIVE_NODE}" ] || [ "${NUM_FLOWS}" -lt 1 ] ; then
    echo >&2 "ERROR: Bad vector file configuration!"
    exit 1
 fi
@@ -148,7 +152,7 @@ if [ ! -e "${VECTOR_ACTIVE_NODE}" ] ; then
    exit 1
 fi
 if [ ! -e "${VECTOR_PASSIVE_NODE}" ] ; then
-   echo >&2 "ERROR: Vector file ${VECTOR_ACTIVE_NODE} of passive node not found!"
+   echo >&2 "ERROR: Vector file ${VECTOR_PASSIVE_NODE} of passive node not found!"
    exit 1
 fi
 # shellcheck disable=SC2001
@@ -177,7 +181,7 @@ SUMMARY_NAME="${OUTPUT_PREFIX}-summary.data.bz2"
    echo "--input=${VECTOR_ACTIVE_NODE}"
    echo -e "--values=\"\"${NAME_PASSIVE_NODE}\"\t0\""
    echo "--input=${VECTOR_PASSIVE_NODE}"
-) | ${COMBINESUMMARIES} "${SUMMARY_NAME}" $'NodeName\tIsActive' --separator $'\t' --line-numbers --quiet
+) | "${COMBINESUMMARIES}" "${SUMMARY_NAME}" $'NodeName\tIsActive' --separator $'\t' --line-numbers --quiet
 
 FLOW_SUMMARY_NAME="${OUTPUT_PREFIX}-flows.data.bz2"
 (
@@ -199,7 +203,7 @@ FLOW_SUMMARY_NAME="${OUTPUT_PREFIX}-flows.data.bz2"
       echo "--input=${passiveVector}"
       i=$((i+1))
    done
-) | ${COMBINESUMMARIES} "${FLOW_SUMMARY_NAME}" $'FlowName\tFlowID\tNodeName\tIsActive' --separator $'\t' --line-numbers --quiet
+) | "${COMBINESUMMARIES}" "${FLOW_SUMMARY_NAME}" $'FlowName\tFlowID\tNodeName\tIsActive' --separator $'\t' --line-numbers --quiet
 
 
 # ====== Plot the results ===================================================
@@ -215,11 +219,11 @@ for searchPath in ${SEARCH_PATHS} ; do
       break
    fi
 done
-if [ "${PLOT_PROGRAM_DIR}" = "" ] ; then
+if [ -z "${PLOT_PROGRAM_DIR}" ] ; then
    echo >&2 "ERROR: Cannot find ${PLOT_PROGRAM_SCRIPT}!"
    exit 1
 elif [ "${PLOT_PROGRAM_DIR}" = "." ] ; then
-   echo "Using ${PLOT_PROGRAM_SCRIPT} from ${searchPath}"
+   echo "Using ${PLOT_PROGRAM_SCRIPT} from ${PLOT_PROGRAM_DIR}"
 fi
 
 

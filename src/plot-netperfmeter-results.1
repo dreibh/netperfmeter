@@ -32,12 +32,15 @@
 .\" ###### Name #############################################################
 .Sh NAME
 .Nm plot\-netperfmeter\-results
-.Nd Network Performance Meter
+.Nd Results Plotting Tool for NetPerfMeter
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm plot\-netperfmeter\-results Ar config\_name
+.Nm plot\-netperfmeter\-results
+.Ar config\_name
 .br
-.Op Fl w | Fl \-ownfile
+.Op Fl w | Fl \-own\-file | Fl \-ownfile
+.br
+.Op Fl k | Fl \-keep\-summaries
 .br
 .Op Fl p | Fl \-per\-flow\-plots
 .Nm plot\-netperfmeter\-results
@@ -55,8 +58,10 @@ The following arguments have to be provided:
 .Bl -tag -width indent
 .It Ar config\_name
 The name of the config file written by NetPerfMeter.
-.It Fl w | Fl \-ownfile
+.It Fl w | Fl \-own\-file | Fl \-ownfile
 Plot a separate PDF file for each page.
+.It Fl k | Fl \-keep\-summaries
+Keep temporary summary data files.
 .It Fl p | Fl \-per\-flow\-plots
 Also generate separate plots for each flow.
 .It Fl h | Fl \-help
@@ -77,15 +82,15 @@ Some plot\-netperfmeter\-results usage examples:
 Plot the results given by output.config. The resulting PDF file will be named output.pdf.
 .It plot\-netperfmeter\-results output.config \--per\-flow\-plots
 Plot the results given by output.config, including per\-flow plots. The resulting PDF file will be named output.pdf.
-.It plot\-netperfmeter\-results output.config \--ownfile
+.It plot\-netperfmeter\-results output.config \--own\-file
 Plot the results given by output.config. For each page, a separate PDF file is written. The resulting PDF files will be named output\-<title>.pdf, where <title> corresponds to the page title.
 .It plot\-netperfmeter\-results \--version
 .It plot\-netperfmeter\-results \--help
 .El
 .\" ###### See also #########################################################
 .Sh SEE ALSO
-.Xr netperfmeter 1 ,
-.Xr pdfembedfonts 1 ,
+.Xr netperfmeter 1,
+.Xr pdfembedfonts 1,
 .Xr setpdfmetadata 1
 .\" ###### Notes ############################################################
 .Sh NOTES
