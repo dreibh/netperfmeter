@@ -32,15 +32,16 @@
 
 #include "flow.h"
 
+#include <cstdint>
 #include <sys/types.h>
 
 
-bool transmitFrame(Flow*                    flow,
-                   const unsigned long long now);
+bool transmitFrame(Flow*          flow,
+                   const uint64_t now);
 
-bool handleNetPerfMeterData(const bool               isActiveMode,
-                            const unsigned long long now,
-                            const int                protocol,
-                            const int                sd);
+bool handleNetPerfMeterData(const bool     isActiveMode,
+                            const uint64_t now,
+                            const int      protocol,
+                            const int      sd);
 
 #endif

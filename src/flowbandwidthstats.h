@@ -30,8 +30,9 @@
 #ifndef FLOWBANDWIDTHSTATS_H
 #define FLOWBANDWIDTHSTATS_H
 
-#include <iostream>
 #include <cmath>
+#include <cstdint>
+#include <iostream>
 #include <string>
 
 
@@ -47,27 +48,27 @@ class FlowBandwidthStats
               const double  receptionDuration) const;
    void reset();
 
-   inline static unsigned long long calculateRate(const unsigned long long value,
-                                                  const double             duration) {
+   inline static uint64_t calculateRate(const uint64_t value,
+                                        const double   duration) {
       if(duration < 0.000001) {
          return 0;
       }
-      return (unsigned long long)rint(value / duration);
+      return static_cast<uint64_t>(rint(static_cast<double>(value) / duration));
    }
 
    // ====== Public Data ====================================================
    public:
-   unsigned long long TransmittedBytes;
-   unsigned long long TransmittedPackets;
-   unsigned long long TransmittedFrames;
+   uint64_t TransmittedBytes;
+   uint64_t TransmittedPackets;
+   uint64_t TransmittedFrames;
 
-   unsigned long long ReceivedBytes;
-   unsigned long long ReceivedPackets;
-   unsigned long long ReceivedFrames;
+   uint64_t ReceivedBytes;
+   uint64_t ReceivedPackets;
+   uint64_t ReceivedFrames;
 
-   unsigned long long LostBytes;
-   unsigned long long LostPackets;
-   unsigned long long LostFrames;
+   uint64_t LostBytes;
+   uint64_t LostPackets;
+   uint64_t LostFrames;
 };
 
 

@@ -29,6 +29,7 @@
 
 #include "cpustatus.h"
 #include "loglevel.h"
+#include "tools.h"
 
 #include <cassert>
 #include <cerrno>
@@ -101,7 +102,8 @@ CPUStatus::CPUStatus()
    FILE* procStatFD = fopen("/proc/stat", "r");
    if(procStatFD == nullptr) {
       LOG_FATAL
-      stdlog << "Unable to open /proc/stat!" << "\n";
+      // TRANSLATORS: Error message when /proc/stat cannot be opened.
+      stdlog << gettext("Unable to open /proc/stat!") << "\n";
       LOG_END_FATAL
    }
 
@@ -121,13 +123,15 @@ CPUStatus::CPUStatus()
    CpuStates = CPU_STATE_MAX;
    if((MachHost = mach_host_self()) == MACH_PORT_NULL) {
       LOG_FATAL
-      stdlog << "mach_host_self() failed!" << "\n";
+      // TRANSLATORS: Fatal error when macOS mach_host_self() fails.
+      stdlog << gettext("mach_host_self() failed!") << "\n";
       LOG_END_FATAL
    }
    count = HOST_BASIC_INFO_COUNT;
    if((kr = host_info(MachHost, HOST_BASIC_INFO, (host_info_t)&hinfo, &count)) != KERN_SUCCESS) {
       LOG_FATAL
-      stdlog << "host_info() failed with error code " << kr << "!\n";
+      // TRANSLATORS: Fatal error when macOS host_info() fails. Placeholder: {} is error code.
+      stdlog << formatText(gettext("host_info() failed with error code {}!"), kr) << "\n";
       LOG_END_FATAL
    };
    CPUs = (unsigned int)hinfo.max_cpus;
@@ -158,7 +162,7 @@ CPUStatus::CPUStatus()
    Percentages = new float[cpuTimeElements];
    assert(Percentages != nullptr);
    for(unsigned int i = 0; i < cpuTimeElements; i++) {
-      Percentages[i] = 100.0 / CpuStates;
+      Percentages[i] = 100.0f / static_cast<float>(CpuStates);
    }
 
    // ====== Initialise =====================================================
@@ -197,7 +201,8 @@ void CPUStatus::update()
          char buffer[1024];
          if(fgets(buffer, sizeof(buffer), procStatFD) == 0) {
             LOG_FATAL
-            stdlog << "Unable to read from /proc/stat!" << "\n";
+            // TRANSLATORS: Error message when reading from /proc/stat fails.
+            stdlog << gettext("Unable to read from /proc/stat!") << "\n";
             LOG_END_FATAL
          }
          int result;
@@ -230,7 +235,8 @@ void CPUStatus::update()
          }
          if( ((i == 0) && (result < 8)) || ((i > 0) && (result < 9)) ) {
             LOG_FATAL
-            stdlog << "Bad input format in /proc/stat!" << "\n";
+            // TRANSLATORS: Error message when /proc/stat contains malformed input.
+            stdlog << gettext("Bad input format in /proc/stat!") << "\n";
             LOG_END_FATAL
          }
       }
@@ -251,7 +257,8 @@ void CPUStatus::update()
            &CpuTimes[CpuStates], &length, nullptr, 0) < 0) ||
        (length != cpuTimesSize) ) {
       LOG_FATAL
-      stdlog << "Unable to obtain kern.cp_times!" << "\n";
+      // TRANSLATORS: Error message when sysctl for kern.cp_times fails.
+      stdlog << gettext("Unable to obtain kern.cp_times!") << "\n";
       LOG_END_FATAL
    }
 
@@ -263,7 +270,8 @@ void CPUStatus::update()
       if(sysctl(mibKernCpTime, sizeof(mibKernCpTime) / sizeof(mibKernCpTime[0]),
                 &CpuTimes[(i + 1) * CpuStates], &length, nullptr, 0) < 0) {
          LOG_FATAL
-         stdlog << "Unable to obtain per-core KERN_CPTIME2 for core " << i << "!\n";
+         // TRANSLATORS: Error message when OpenBSD sysctl for per-core KERN_CPTIME2 fails. Placeholder: {} is CPU core index.
+         stdlog << formatText(gettext("Unable to obtain per-core KERN_CPTIME2 for core {}!"), i) << "\n";
          LOG_END_FATAL
       }
    }
@@ -272,7 +280,8 @@ void CPUStatus::update()
    kstat_ctl_t* kc = kstat_open();
    if(kc == nullptr) {
       LOG_FATAL
-      stdlog << "Unable to open kstat!" << "\n";
+      // TRANSLATORS: Error message when Solaris kstat_open() fails.
+      stdlog << gettext("Unable to open kstat!") << "\n";
       LOG_END_FATAL
    }
 
@@ -301,7 +310,8 @@ void CPUStatus::update()
    if((kr = host_processor_info(MachHost, PROCESSOR_CPU_LOAD_INFO, &processorCount,
                                 &processorInfoArray, &infoCount)) != KERN_SUCCESS) {
       LOG_FATAL
-      stdlog << "host_processor_info() failed with error code " << kr << "\n";
+      // TRANSLATORS: Fatal error when macOS host_processor_info() fails. Placeholder: {} is error code.
+      stdlog << formatText(gettext("host_processor_info() failed with error code {}"), kr) << "\n";
       LOG_END_FATAL
    }
    const processor_cpu_load_info_t cpuLoadInfo =
@@ -336,12 +346,12 @@ void CPUStatus::update()
       for(unsigned int j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
          if(diffTotal != 0) {   // Avoid division by zero!
-            Percentages[index] = 100.0 * (float)diff[j] / (float)diffTotal;
+            Percentages[index] = static_cast<float>(100.0 * static_cast<double>(diff[j]) / static_cast<double>(diffTotal));
          } else {
             // No ticks passed => 100% idle
-            Percentages[index] = (j == IDLE_INDEX) ? 100.0 : 0.0;
+            Percentages[index] = (j == IDLE_INDEX) ? 100.0f : 0.0f;
          }
-         assert( (Percentages[index] >= 0.0) && (Percentages[index] <= 100.0) );
+         assert( (Percentages[index] >= 0.0f) && (Percentages[index] <= 100.0f) );
       }
    }
 }
@@ -350,5 +360,5 @@ void CPUStatus::update()
 // ###### Get CPU utilization ###############################################
 float CPUStatus::getCpuUtilization(const unsigned int cpuIndex) const
 {
-   return 100.0 - getCpuStatePercentage(cpuIndex, IDLE_INDEX);
+   return 100.0f - getCpuStatePercentage(cpuIndex, IDLE_INDEX);
 }

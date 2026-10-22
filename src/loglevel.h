@@ -33,6 +33,8 @@
 #include "mutex.h"
 #include "tools.h"
 
+#include <iostream>
+
 
 #define LOGLEVEL_FATAL   5U
 #define LOGLEVEL_ERROR   4U
@@ -68,14 +70,15 @@ extern Mutex         gLogMutex;
       loggingMutexUnlock();       \
    }
 
-#define LOG_END_FATAL                          \
-      *gStdLog << "FATAL ERROR - ABORTING!\n"; \
-      if(gColorMode) {                         \
-        *gStdLog << "\x1b[0m\x1b[2K";          \
-      }                                        \
-      gStdLog->flush();                        \
-      loggingMutexUnlock();                    \
-   }                                           \
+// TRANSLATORS: Fatal error termination notice.
+#define LOG_END_FATAL                                           \
+      *gStdLog << gettext("FATAL ERROR - ABORTING!") << "\n";   \
+      if(gColorMode) {                                          \
+        *gStdLog << "\x1b[0m\x1b[2K";                           \
+      }                                                         \
+      gStdLog->flush();                                         \
+      loggingMutexUnlock();                                     \
+   }                                                            \
    exit(1);
 
 
@@ -90,6 +93,9 @@ extern Mutex         gLogMutex;
 bool initLogFile(const unsigned int logLevel,
                  const char*        fileName,
                  const bool         appendMode);
+bool initLogFile(const unsigned int logLevel,
+                 const char*        fileName,
+                 const char*        mode);
 void beginLogging();
 void finishLogging();
 

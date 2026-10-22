@@ -33,22 +33,10 @@
 // ###### Constructor #######################################################
 Mutex::Mutex()
 {
-#if !defined(__APPLE__)
-   pthread_mutexattr_t attr;
-   pthread_mutexattr_init(&attr);
-   pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-   pthread_mutex_init(&MyMutex, &attr);
-   pthread_mutexattr_destroy(&attr);
-#else
-   MutexOwner          = 0;
-   MutexRecursionLevel = 0;
-   pthread_mutex_init(&MyMutex, nullptr);
-#endif
 }
 
 
 // ###### Destructor ########################################################
 Mutex::~Mutex()
 {
-   pthread_mutex_destroy(&MyMutex);
 }

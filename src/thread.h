@@ -32,39 +32,44 @@
 
 #include "mutex.h"
 
+#include <atomic>
+#include <chrono>
+#include <cstdint>
+#include <thread>
+
 
 class Thread : public Mutex
 {
+   // ====== Methods ========================================================
    public:
    Thread();
    virtual ~Thread();
 
+   Thread(const Thread&) = delete;
+   Thread& operator=(const Thread&) = delete;
+
    inline bool isRunning() const {
-      return MyThread != 0;
+      return MyThread.joinable();
    }
-   inline bool isStopping() {
-      lock();
-      const bool stopping = Stopping;
-      unlock();
-      return stopping;
+   inline bool isStopping() const {
+      return Stopping.load();
    }
 
    virtual bool start();
    virtual void stop();
    void waitForFinish();
 
-   static void delay(const unsigned int us);
+   static void delay(const uint32_t us);
+   static void delay(const std::chrono::microseconds duration);
 
+   // ====== Protected Methods ==============================================
    protected:
    virtual void run() = 0;
 
+   // ====== Protected Data =================================================
    protected:
-   pthread_t MyThread;
-
-   private:
-   static void* startRoutine(void* object);
-
-   bool         Stopping;
+   std::thread       MyThread;
+   std::atomic<bool> Stopping;
 };
 
 #endif

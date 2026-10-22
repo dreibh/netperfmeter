@@ -30,49 +30,34 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 
-#include <cassert>
-#include <pthread.h>
+#include <mutex>
 
 
 class Mutex
 {
+   // ====== Methods ========================================================
    public:
    Mutex();
    virtual ~Mutex();
 
+   Mutex(const Mutex&) = delete;
+   Mutex& operator=(const Mutex&) = delete;
+
    inline void lock() {
-#if !defined(__APPLE__)
-      pthread_mutex_lock(&MyMutex);
-#else
-      if(!pthread_equal(MutexOwner, pthread_self())) {
-         pthread_mutex_lock(&MyMutex);
-         MutexOwner = pthread_self();
-      }
-      MutexRecursionLevel++;
-#endif
+      MyMutex.lock();
    }
 
    inline void unlock() {
-#if !defined(__APPLE__)
-      pthread_mutex_unlock(&MyMutex);
-#else
-      assert(MutexRecursionLevel != 0);
-      if(pthread_equal(MutexOwner, pthread_self())) {
-         MutexRecursionLevel--;
-         if(MutexRecursionLevel == 0) {
-            MutexOwner = 0;
-            pthread_mutex_unlock(&MyMutex);
-         }
-      }
-#endif
+      MyMutex.unlock();
    }
 
+   inline bool try_lock() {
+      return MyMutex.try_lock();
+   }
+
+   // ====== Private Data ===================================================
    private:
-   pthread_mutex_t MyMutex;
-#if defined(__APPLE__)
-   pthread_t       MutexOwner;
-   unsigned int    MutexRecursionLevel;
-#endif
+   std::recursive_mutex MyMutex;
 };
 
 #endif

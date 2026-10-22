@@ -35,6 +35,9 @@
 #include "flowbandwidthstats.h"
 #include "tools.h"
 
+#include <cstdint>
+#include <string>
+
 
 class Measurement : public Mutex
 {
@@ -60,43 +63,43 @@ class Measurement : public Mutex
    const OutputFile& getScalarFile() const {
       return ScalarFile;
    }
-   inline unsigned long long getFirstStatisticsEvent() const {
+   inline uint64_t getFirstStatisticsEvent() const {
       return FirstStatisticsEvent;
    }
 
-   bool initialize(const unsigned long long now,
-                   const int                controlSocketDescriptor,
-                   const uint64_t           measurementID,
-                   const char*              vectorNamePattern,
-                   const OutputFileFormat   vectorFileFormat,
-                   const char*              scalarNamePattern,
-                   const OutputFileFormat   scalarFileFormat);
+   bool initialize(const uint64_t         now,
+                   const int              controlSocketDescriptor,
+                   const uint64_t         measurementID,
+                   const char*            vectorNamePattern,
+                   const OutputFileFormat vectorFileFormat,
+                   const char*            scalarNamePattern,
+                   const OutputFileFormat scalarFileFormat);
    bool finish(const bool closeFiles);
 
-   void writeScalarStatistics(const unsigned long long now);
-   void writeVectorStatistics(const unsigned long long now,
-                              FlowBandwidthStats&      globalStats,
-                              FlowBandwidthStats&      relGlobalStats);
+   void writeScalarStatistics(const uint64_t now);
+   void writeVectorStatistics(const uint64_t     now,
+                              FlowBandwidthStats& globalStats,
+                              FlowBandwidthStats& relGlobalStats);
 
 
    // ====== Private Data ===================================================
    private:
-   int                ControlSocketDescriptor;
-   uint64_t           MeasurementID;
-   unsigned long long StatisticsInterval;
-   unsigned long long FirstStatisticsEvent;
-   unsigned long long LastStatisticsEvent;
-   unsigned long long NextStatisticsEvent;
+   int         ControlSocketDescriptor;
+   uint64_t    MeasurementID;
+   uint64_t    StatisticsInterval;
+   uint64_t    FirstStatisticsEvent;
+   uint64_t    LastStatisticsEvent;
+   uint64_t    NextStatisticsEvent;
 
-   std::string        VectorNamePattern;
-   std::string        ScalarNamePattern;
-   OutputFile         VectorFile;
-   OutputFile         ScalarFile;
+   std::string VectorNamePattern;
+   std::string ScalarNamePattern;
+   OutputFile  VectorFile;
+   OutputFile  ScalarFile;
 
-   unsigned long long LastTransmission;
-   unsigned long long FirstTransmission;
-   unsigned long long LastReception;
-   unsigned long long FirstReception;
+   uint64_t    LastTransmission;
+   uint64_t    FirstTransmission;
+   uint64_t    LastReception;
+   uint64_t    FirstReception;
 };
 
 #endif

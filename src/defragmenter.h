@@ -30,7 +30,9 @@
 #ifndef DEFRAGMENTER_H
 #define DEFRAGMENTER_H
 
+#include <cstdint>
 #include <map>
+#include <ostream>
 
 #include "netperfmeterpackets.h"
 
@@ -44,14 +46,14 @@ class Defragmenter
 
    void print(std::ostream& os);
 
-   void addFragment(const unsigned long long       now,
+   void addFragment(const uint64_t                 now,
                     const NetPerfMeterDataMessage* dataMsg);
-   void purge(const unsigned long long now,
-              const unsigned long long defragmentTimeout,
-              size_t&                  receivedFrames,
-              size_t&                  lostFrames,
-              size_t&                  lostPackets,
-              size_t&                  lostBytes);
+   void purge(const uint64_t now,
+              const uint64_t defragmentTimeout,
+              size_t&        receivedFrames,
+              size_t&        lostFrames,
+              size_t&        lostPackets,
+              size_t&        lostBytes);
 
 
    // ====== Private Data ===================================================
@@ -66,7 +68,7 @@ class Defragmenter
    struct Frame
    {
       uint32_t                      FrameID;
-      unsigned long long            LastUpdate;
+      uint64_t                      LastUpdate;
       std::map<uint64_t, Fragment*> FragmentSet;
       bool                          Completed;
    };

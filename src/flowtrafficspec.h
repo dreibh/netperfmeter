@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -33,6 +33,7 @@
 #include "netperfmeterpackets.h"
 #include "tools.h"
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -79,10 +80,10 @@ class FlowTrafficSpec
 
    uint16_t                MaxMsgSize;
 
-   unsigned int            RcvBufferSize;
-   unsigned int            SndBufferSize;
+   uint32_t                RcvBufferSize;
+   uint32_t                SndBufferSize;
 
-   unsigned long long      DefragmentTimeout;
+   uint64_t                DefragmentTimeout;
 
    double                  OutboundFrameRate[NETPERFMETER_RNG_INPUT_PARAMETERS];
    double                  OutboundFrameSize[NETPERFMETER_RNG_INPUT_PARAMETERS];

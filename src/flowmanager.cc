@@ -32,13 +32,15 @@
 #include "control.h"
 #include "loglevel.h"
 #include "transfer.h"
+#include "tools.h"
 
-#include <poll.h>
-#include <signal.h>
-#include <netinet/tcp.h>
-
+#include <chrono>
+#include <cstdint>
 #include <cstring>
+#include <netinet/tcp.h>
+#include <poll.h>
 #include <set>
+#include <signal.h>
 #include <sstream>
 
 
@@ -53,7 +55,7 @@ FlowManager FlowManager::FlowManagerSingleton;
 FlowManager::FlowManager()
 {
    DisplayEnabled    = false;
-   DisplayInterval   = 1000000;
+   DisplayInterval   = 1000000ULL;
    FirstDisplayEvent = 0;
    LastDisplayEvent  = 0;
    NextDisplayEvent  = 0;
@@ -118,7 +120,7 @@ void FlowManager::removeFlow(Flow* flow)
    // ====== Remove flow from flow set ======================================
    flow->PollFDEntry = nullptr;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
        if(*iterator == flow) {
           FlowSet.erase(iterator);
           break;
@@ -128,7 +130,7 @@ void FlowManager::removeFlow(Flow* flow)
    // ====== Check whether the socket descriptor is still referenced ========
    flow->OriginalSocketDescriptor = true;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
        if((*iterator)->SocketDescriptor == flow->SocketDescriptor) {
           flow->OriginalSocketDescriptor = false;
           break;
@@ -144,10 +146,11 @@ void FlowManager::printFlows(std::ostream& os,
                              const bool    printStatistics)
 {
    lock();
-   os << "FlowManager:\n";
+   // TRANSLATORS: Header for printing active flows in the FlowManager.
+   os << gettext("FlowManager:") << "\n";
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
-      Flow* flow= *iterator;
+       iterator != FlowSet.end(); iterator++) {
+      Flow* flow = *iterator;
       flow->print(os, printStatistics);
    }
    unlock();
@@ -163,7 +166,7 @@ Flow* FlowManager::findFlow(const uint64_t measurementID,
 
    lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
       Flow* flow = *iterator;
       if( (flow->MeasurementID == measurementID) &&
           (flow->FlowID == flowID) &&
@@ -186,7 +189,7 @@ Flow* FlowManager::findFlow(const int      socketDescriptor,
 
    lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
       Flow* flow = *iterator;
       if(flow->SocketDescriptor == socketDescriptor) {
          if(flow->StreamID == streamID) {
@@ -208,7 +211,7 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
 
    lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
       Flow* flow = *iterator;
       if( (flow->RemoteAddressIsValid) &&
           (addresscmp(from, &flow->RemoteAddress.sa, true) == 0) ) {
@@ -223,13 +226,13 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
 
 
 // ###### Begin measurement #################################################
-bool FlowManager::beginMeasurement(const int                controlSocket,
-                                   const uint64_t           measurementID,
-                                   const unsigned long long now,
-                                   const char*              vectorNamePattern,
-                                   const OutputFileFormat   vectorFileFormat,
-                                   const char*              scalarNamePattern,
-                                   const OutputFileFormat   scalarFileFormat)
+bool FlowManager::beginMeasurement(const int              controlSocket,
+                                   const uint64_t         measurementID,
+                                   const uint64_t         now,
+                                   const char*            vectorNamePattern,
+                                   const OutputFileFormat vectorFileFormat,
+                                   const char*            scalarNamePattern,
+                                   const OutputFileFormat scalarFileFormat)
 {
    std::stringstream ss;
    bool              success = false;
@@ -242,7 +245,7 @@ bool FlowManager::beginMeasurement(const int                controlSocket,
                                  scalarNamePattern, scalarFileFormat)) {
          success = true;
          for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-            iterator != FlowSet.end();iterator++) {
+            iterator != FlowSet.end(); iterator++) {
             Flow* flow = *iterator;
             if(flow->MeasurementID == measurementID) {
                if(flow->setMeasurement(measurement)) {
@@ -258,8 +261,9 @@ bool FlowManager::beginMeasurement(const int                controlSocket,
                }
                else {
                   LOG_WARNING
-                  stdlog << format("Flow associated with Measurement $%llx on socket %d is already owned by another measurement!",
-                                   measurementID, controlSocket) << "\n";
+                  // TRANSLATORS: Warning message when a flow is already associated with another measurement. Placeholders: {:x} 1: measurement ID (hex), {} 2: socket descriptor.
+                  stdlog << formatText(gettext("Flow associated with Measurement ${:x} on socket {} is already owned by another measurement!"),
+                                       measurementID, controlSocket) << "\n";
                   LOG_END
                }
             }
@@ -274,8 +278,9 @@ bool FlowManager::beginMeasurement(const int                controlSocket,
 
    if(success) {
       LOG_INFO
-      stdlog << format("Prepared measurement $%llx on socket %d:",
-                       measurementID, controlSocket)
+      // TRANSLATORS: Status message when preparing measurement. Placeholders: {:x} 1: measurement ID (hex), {} 2: socket descriptor.
+      stdlog << formatText(gettext("Prepared measurement ${:x} on socket {}:"),
+                           measurementID, controlSocket)
              << "\n" << ss.str();
       LOG_END
    }
@@ -290,8 +295,9 @@ void FlowManager::finishMeasurement(const int      controlSocket,
    CPULoadStats.update();
 
    LOG_INFO
-   stdlog << format("Stopped measurement $%llx on socket %d\n",
-                     measurementID, controlSocket);
+   // TRANSLATORS: Status message when finishing measurement. Placeholders: {:x} 1: measurement ID (hex), {} 2: socket descriptor.
+   stdlog << formatText(gettext("Stopped measurement ${:x} on socket {}"),
+                        measurementID, controlSocket) << "\n";
    LOG_END
 }
 
@@ -374,13 +380,11 @@ void FlowManager::removeAllMeasurements(const int controlSocket)
 // ###### Print measurements ################################################
 void FlowManager::printMeasurements(std::ostream& os)
 {
-   os << "Measurements:\n";
+   // TRANSLATORS: Header for printing active measurements in the FlowManager.
+   os << gettext("Measurements:") << "\n";
    for(std::map<std::pair<int, uint64_t>, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
-      char str[64];
-      snprintf((char*)&str, sizeof(str), "%llx -> ptr=%p",
-               (unsigned long long)iterator->first.second, (void*)iterator->second);
-      os << "   - " << str << "\n";
+      os << "   - " << formatText("{:x} -> ptr={}", iterator->first.second, static_cast<const void*>(iterator->second)) << "\n";
    }
 }
 
@@ -458,9 +462,9 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
 
 
 // ###### Get next statistics or display events #############################
-unsigned long long FlowManager::getNextEvent()
+uint64_t FlowManager::getNextEvent()
 {
-   unsigned long long nextEvent = NextDisplayEvent;
+   uint64_t nextEvent = NextDisplayEvent;
 
    lock();
    for(std::map<std::pair<int, uint64_t>, Measurement*>::iterator iterator = MeasurementSet.begin();
@@ -475,7 +479,7 @@ unsigned long long FlowManager::getNextEvent()
 
 
 // ###### Handle statistics and display events ##############################
-void FlowManager::handleEvents(const unsigned long long now)
+void FlowManager::handleEvents(const uint64_t now)
 {
    lock();
 
@@ -511,32 +515,32 @@ void FlowManager::handleEvents(const unsigned long long now)
          static const char* colorCPU         = "\x1b[0m\x1b[31m";
          static const char* colorCPUHighLoad = "\x1b[31;47;21m";
          const double       duration         = (now - LastDisplayEvent) / 1000000.0;
-         const unsigned int totalDuration    = (unsigned int)((now - FirstDisplayEvent) / 1000000ULL);
+         const unsigned int totalDuration    = static_cast<unsigned int>((now - FirstDisplayEvent) / 1000000ULL);
 
          char cpuUtilization[160];
-         cpuUtilization[0] = 0x00;
+         cpuUtilization[0] = '\0';
          CPUDisplayStats.update();
          if(CPUDisplayStats.getNumberOfCPUs() <= cpuDisplayLimit) {
             for(unsigned int i = 1; i <= CPUDisplayStats.getNumberOfCPUs(); i++) {
-               const unsigned int load = (unsigned int)rint(10 * CPUDisplayStats.getCpuUtilization(i));
+               const unsigned int load = static_cast<unsigned int>(rint(10 * CPUDisplayStats.getCpuUtilization(i)));
                char str[48];
-               snprintf((char*)&str, sizeof(str), "%s%s%3u.%u%%%s",
+               snprintf(str, sizeof(str), "%s%s%3u.%u%%%s",
                         (i > 1) ? "/" : "",
                         (load < 900) ? colorCPU : colorCPUHighLoad,
                         load / 10, load % 10,
                         colorCPU);
-               safestrcat((char*)&cpuUtilization, str, sizeof(cpuUtilization));
+               strlcat(cpuUtilization, str, sizeof(cpuUtilization));
             }
          }
-         const unsigned int load = (unsigned int)rint(10 * CPUDisplayStats.getCpuUtilization(0));
+         const unsigned int load = static_cast<unsigned int>(rint(10 * CPUDisplayStats.getCpuUtilization(0)));
          char str[48];
-         snprintf((char*)&str, sizeof(str), "%s%s%3u.%u%%%s%s",
+         snprintf(str, sizeof(str), "%s%s%3u.%u%%%s%s",
                   (CPUDisplayStats.getNumberOfCPUs() > cpuDisplayLimit) ? "" : " [",
                   (load < 900) ? colorCPU : colorCPUHighLoad,
                   load / 10, load % 10,
                   colorCPU,
                   (CPUDisplayStats.getNumberOfCPUs() > cpuDisplayLimit) ? " total" : "]");
-         safestrcat((char*)&cpuUtilization, str, sizeof(cpuUtilization));
+         strlcat(cpuUtilization, str, sizeof(cpuUtilization));
 
          fprintf(stdout,
                  "\r<-- %s%u:%02u:%02u   "
@@ -550,14 +554,14 @@ void FlowManager::handleEvents(const unsigned long long now)
                  (totalDuration / 60) % 60,
                  totalDuration % 60,
                  colorFlows,
-                 (unsigned int)FlowSet.size(),
-                 (unsigned int)MeasurementSet.size(),
+                 static_cast<unsigned int>(FlowSet.size()),
+                 static_cast<unsigned int>(MeasurementSet.size()),
                  colorTransmitted,
-                 GlobalStats.TransmittedBytes / (1024.0 * 1024.0),
-                 (duration > 0.0) ? (8 * RelGlobalStats.TransmittedBytes / (1000.0 * duration)) : 0.0,
+                 static_cast<double>(GlobalStats.TransmittedBytes) / (1024.0 * 1024.0),
+                 (duration > 0.0) ? (8.0 * static_cast<double>(RelGlobalStats.TransmittedBytes) / (1000.0 * duration)) : 0.0,
                  colorReceived,
-                 GlobalStats.ReceivedBytes / (1024.0 * 1024.0),
-                 (duration > 0.0) ? (8 * RelGlobalStats.ReceivedBytes / (1000.0 * duration)) : 0.0,
+                 static_cast<double>(GlobalStats.ReceivedBytes) / (1024.0 * 1024.0),
+                 (duration > 0.0) ? (8.0 * static_cast<double>(RelGlobalStats.ReceivedBytes) / (1000.0 * duration)) : 0.0,
                  colorCPU,
                  cpuUtilization,
                  colorOff);
@@ -573,10 +577,10 @@ void FlowManager::handleEvents(const unsigned long long now)
 
 
 // ###### Write scalars #####################################################
-void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
-                                        const unsigned long long now,
-                                        OutputFile&              scalarFile,
-                                        const unsigned long long firstStatisticsEvent)
+void FlowManager::writeScalarStatistics(const uint64_t measurementID,
+                                        const uint64_t now,
+                                        OutputFile&    scalarFile,
+                                        const uint64_t firstStatisticsEvent)
 {
    std::string objectName =
       std::string("netPerfMeter.") +
@@ -585,7 +589,7 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
    lock();
    FlowBandwidthStats totalBandwidthStats;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-      iterator != FlowSet.end();iterator++) {
+      iterator != FlowSet.end(); iterator++) {
       Flow* flow = *iterator;
       flow->lock();
       if(flow->MeasurementID == measurementID) {
@@ -706,13 +710,13 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
 
 
 // ###### Write vectors #####################################################
-void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
-                                        const unsigned long long now,
-                                        OutputFile&              vectorFile,
-                                        FlowBandwidthStats&      globalStats,
-                                        FlowBandwidthStats&      relGlobalStats,
-                                        const unsigned long long firstStatisticsEvent,
-                                        const unsigned long long lastStatisticsEvent)
+void FlowManager::writeVectorStatistics(const uint64_t     measurementID,
+                                        const uint64_t     now,
+                                        OutputFile&        vectorFile,
+                                        FlowBandwidthStats& globalStats,
+                                        FlowBandwidthStats& relGlobalStats,
+                                        const uint64_t     firstStatisticsEvent,
+                                        const uint64_t     lastStatisticsEvent)
 {
    // ====== Write vector statistics header =================================
    if(vectorFile.getLine() == 0) {
@@ -730,7 +734,7 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
    FlowBandwidthStats currentTotalStats;
    const double duration = (now - lastStatisticsEvent) / 1000000.0;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
        Flow* flow = *iterator;
        if(flow->MeasurementID == measurementID) {
           flow->lock();
@@ -740,7 +744,7 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
           currentTotalStats  = currentTotalStats + flow->CurrentBandwidthStats;
           CurrentGlobalStats = CurrentGlobalStats + relStats;
 
-          const unsigned long long line = vectorFile.getLine();
+          const uint64_t line = vectorFile.getLine();
           vectorFile.printf(
             "%06llu\t%llu\t%1.6f\t%1.6f\t%u\t\"%s\"\t%1.3f\t"
                "\"Sent\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
@@ -772,7 +776,7 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
    }
 
    // ====== Write total statistics =========================================
-   const unsigned long long line = vectorFile.getLine();
+   const uint64_t line = vectorFile.getLine();
    const FlowBandwidthStats relTotalStats = currentTotalStats - lastTotalStats;
       vectorFile.printf(
          "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
@@ -827,7 +831,7 @@ void FlowManager::run()
 #if defined(DEBUG_POLL)
       std::cerr << "poll-init:\n";
 #endif
-      for(unsigned int i = 0;i  < FlowSet.size(); i++) {
+      for(unsigned int i = 0; i < FlowSet.size(); i++) {
          FlowSet[i]->lock();
          FlowSet[i]->PollFDEntry = nullptr;
          if( (FlowSet[i]->InputStatus != Flow::Off) &&
@@ -870,14 +874,14 @@ void FlowManager::run()
             n++;
          }
       }
-      const unsigned long long nextEvent = getNextEvent();
+      const uint64_t nextEvent = getNextEvent();
       unlock();
 
 
       // ====== Wait for events =============================================
-      unsigned long long now = getMicroTime();
+      uint64_t now = getMicroTime();
       const int timeout = pollTimeout(getMicroTime(), 2,
-                                      now + 2500000,
+                                      now + 2500000ULL,
                                       nextEvent);
 #if defined(DEBUG_POLL)
       std::cerr << "poll with timeout=" << timeout << " ms\n";
@@ -913,8 +917,9 @@ void FlowManager::run()
                   if(!dataOkay) {
                      // Close the broken connection!
                      LOG_WARNING
-                     stdlog << format("Closing disconnected socket %d!",
-                                       FlowSet[i]->SocketDescriptor) << "\n";
+                     // TRANSLATORS: Warning message when closing a broken socket. Placeholder: {} is socket descriptor.
+                     stdlog << formatText(gettext("Closing disconnected socket {}!"),
+                                          FlowSet[i]->SocketDescriptor) << "\n";
                      LOG_END
                      const bool deregisteredFromReader =
                         Reader.deregisterSocket(FlowSet[i]->SocketDescriptor);
@@ -961,8 +966,9 @@ void FlowManager::run()
                      if(!dataOkay) {
                         // Incoming connection has already been closed -> remove it!
                         LOG_WARNING
-                        stdlog << format("Shutdown of still unidentified incoming connection on socket %d!",
-                                         ud->SocketDescriptor) << "\n";
+                        // TRANSLATORS: Warning message when closing an unidentified incoming socket that failed handshake. Placeholder: {} is socket descriptor.
+                        stdlog << formatText(gettext("Shutdown of still unidentified incoming connection on socket {}!"),
+                                             ud->SocketDescriptor) << "\n";
                         LOG_END
                         ud->ToBeRemoved = true;   // Mark for removal
                         ud->ToBeClosed  = true;
@@ -1007,8 +1013,9 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
    if(sndBufSize > 0) {
       if(ext_setsockopt(sd, SOL_SOCKET, SO_SNDBUF, &sndBufSize, sizeof(sndBufSize)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to configure send buffer size %d (SO_SNDBUF option) on socket %d: %s!",
-                          sndBufSize, sd, strerror(errno)) << "\n";
+         // TRANSLATORS: Error message when setsockopt(SO_SNDBUF) fails. Placeholders: {} 1: requested buffer size, 2: socket descriptor, 3: strerror() message.
+         stdlog << formatText(gettext("Unable to configure send buffer size {} (SO_SNDBUF option) on socket {}: {}!"),
+                              sndBufSize, sd, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
@@ -1016,15 +1023,17 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(sd, SOL_SOCKET, SO_SNDBUF, &newBufferSize, &newBufferSizeLength) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to obtain send buffer size (SO_SNDBUF option) on socket %d: %s!",
-                          sd, strerror(errno)) << "\n";
+         // TRANSLATORS: Error message when getsockopt(SO_SNDBUF) fails. Placeholders: {} 1: socket descriptor, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to obtain send buffer size (SO_SNDBUF option) on socket {}: {}!"),
+                              sd, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
       if(newBufferSize < sndBufSize) {
          LOG_ERROR
-         stdlog << format("Actual send buffer size %d < configured send buffer size %d on socket %d!",
-                          newBufferSize, sndBufSize, sd) << "\n";
+         // TRANSLATORS: Error message when actual buffer size is less than configured. Placeholders: {} 1: actual size, 2: requested size, 3: socket descriptor.
+         stdlog << formatText(gettext("Actual send buffer size {} < configured send buffer size {} on socket {}!"),
+                              newBufferSize, sndBufSize, sd) << "\n";
          LOG_END
          return false;
       }
@@ -1033,8 +1042,9 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
    if(rcvBufSize > 0) {
       if(ext_setsockopt(sd, SOL_SOCKET, SO_RCVBUF, &rcvBufSize, sizeof(rcvBufSize)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to configure receive buffer size %d (SO_RCVBUF option) on socket %d: %s!",
-                          rcvBufSize, sd, strerror(errno)) << "\n";
+         // TRANSLATORS: Error message when setsockopt(SO_RCVBUF) fails. Placeholders: {} 1: requested buffer size, 2: socket descriptor, 3: strerror() message.
+         stdlog << formatText(gettext("Unable to configure receive buffer size {} (SO_RCVBUF option) on socket {}: {}!"),
+                              rcvBufSize, sd, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
@@ -1042,15 +1052,17 @@ bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize)
       socklen_t newBufferSizeLength = sizeof(newBufferSize);
       if(ext_getsockopt(sd, SOL_SOCKET, SO_RCVBUF, &newBufferSize, &newBufferSizeLength) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to obtain receive buffer size (SO_RCVBUF option) on socket %d: %s!",
-                          sd, strerror(errno)) << "\n";
+         // TRANSLATORS: Error message when getsockopt(SO_RCVBUF) fails. Placeholders: {} 1: socket descriptor, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to obtain receive buffer size (SO_RCVBUF option) on socket {}: {}!"),
+                              sd, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
       if(newBufferSize < rcvBufSize) {
          LOG_ERROR
-         stdlog << format("Actual receive buffer size %d < configured receive buffer size %d on socket %d!",
-                          newBufferSize, rcvBufSize, sd) << "\n";
+         // TRANSLATORS: Error message when actual buffer size is less than configured. Placeholders: {} 1: actual size, 2: requested size, 3: socket descriptor.
+         stdlog << formatText(gettext("Actual receive buffer size {} < configured receive buffer size {} on socket {}!"),
+                              newBufferSize, rcvBufSize, sd) << "\n";
          LOG_END
          return false;
       }
@@ -1076,8 +1088,9 @@ int createAndBindSocket(const int             family,
       int reuse = 1;
       if(ext_setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) < 0) {
          LOG_WARNING
-         stdlog << format("Unable to configure socket reuse (SO_REUSEADDR option) on socket %d: %s!",
-                          sd, strerror(errno)) << "\n";
+         // TRANSLATORS: Warning message when setsockopt(SO_REUSEADDR) fails. Placeholders: {} 1: socket descriptor, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to configure socket reuse (SO_REUSEADDR option) on socket {}: {}!"),
+                              sd, strerror(errno)) << "\n";
          LOG_END
       }
 

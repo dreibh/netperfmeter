@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -28,6 +28,7 @@
  */
 
 #include "flowtrafficspec.h"
+#include "tools.h"
 
 
 // ###### Constructor #######################################################
@@ -48,83 +49,101 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
                                 const double* valueArray,
                                 const uint8_t rng)
 {
-   char str[256];
-
    switch(rng) {
       case RANDOM_CONSTANT:
-         snprintf((char*)&str, sizeof(str), "%1.6lf (constant)",
-                  valueArray[0]);
-       break;
+         // TRANSLATORS: Random distribution parameter: constant value. Placeholder: {:1.6f} is constant value.
+         os << formatText(gettext("{:1.6f} (constant)"), valueArray[0]) << " ";
+         break;
       case RANDOM_EXPONENTIAL:
-         snprintf((char*)&str, sizeof(str), "mean=%1.6lf (neg. exp.)",
-                  valueArray[0]);
-       break;
+         // TRANSLATORS: Random distribution parameter: negative exponential distribution. Placeholder: {:1.6f} is mean value.
+         os << formatText(gettext("mean={:1.6f} (neg. exp.)"), valueArray[0]) << " ";
+         break;
       case RANDOM_UNIFORM:
-         snprintf((char*)&str, sizeof(str), "internal=[%1.6lf, %1.3lf) (uniform)",
-                  valueArray[0], valueArray[1]);
-       break;
+         // TRANSLATORS: Random distribution parameter: uniform distribution interval. Placeholders: {:1.6f} 1: lower bound, {:1.3f} 2: upper bound.
+         os << formatText(gettext("interval=[{:1.6f}, {:1.3f}) (uniform)"), valueArray[0], valueArray[1]) << " ";
+         break;
       case RANDOM_PARETO:
-         snprintf((char*)&str, sizeof(str), "location=%1.6lf, shape=%1.6lf (pareto)",
-                  valueArray[0], valueArray[1]);
-       break;
+         // TRANSLATORS: Random distribution parameter: Pareto distribution. Placeholders: {:1.6f} 1: location parameter, {:1.6f} 2: shape parameter.
+         os << formatText(gettext("location={:1.6f}, shape={:1.6f} (pareto)"), valueArray[0], valueArray[1]) << " ";
+         break;
       case RANDOM_NORMAL:
-         snprintf((char*)&str, sizeof(str), "mean=%1.6lf, stddev=%1.6lf (normal)",
-                  valueArray[0], valueArray[1]);
-       break;
+         // TRANSLATORS: Random distribution parameter: normal distribution. Placeholders: {:1.6f} 1: mean value, {:1.6f} 2: standard deviation.
+         os << formatText(gettext("mean={:1.6f}, stddev={:1.6f} (normal)"), valueArray[0], valueArray[1]) << " ";
+         break;
       case RANDOM_TRUNCATED_NORMAL:
-         snprintf((char*)&str, sizeof(str), "mean=%1.6lf, stddev=%1.6lf (truncated normal)",
-                  valueArray[0], valueArray[1]);
-       break;
+         // TRANSLATORS: Random distribution parameter: truncated normal distribution. Placeholders: {:1.6f} 1: mean value, {:1.6f} 2: standard deviation.
+         os << formatText(gettext("mean={:1.6f}, stddev={:1.6f} (truncated normal)"), valueArray[0], valueArray[1]) << " ";
+         break;
       default:
-         snprintf((char*)&str, sizeof(str), "unknown?!");
-       break;
+         // TRANSLATORS: Fallback text when an unknown random distribution is specified.
+         os << gettext("unknown?!") << " ";
+         break;
    }
-
-   os << str << " ";
 }
 
 
 // ###### Print FlowTrafficSpec #############################################
 void FlowTrafficSpec::print(std::ostream& os) const
 {
-   os << " - Receive Buffer Size: " << RcvBufferSize << "\n";
-   os << " - Send Buffer Size:    " << SndBufferSize << "\n";
-   os << " - Max. Message Size:   " << MaxMsgSize << "\n";
-   os << " - Defragment Timeout:  " << DefragmentTimeout / 1000 << "ms\n";
-   os << " - Outbound Frame Rate: ";
-   showEntry(os, (const double*)&OutboundFrameRate, OutboundFrameRateRng);
-   os << "\n - Outbound Frame Size: ";
-   showEntry(os, (const double*)&OutboundFrameSize, OutboundFrameSizeRng);
-   os << "\n - Inbound Frame Rate:  ";
-   showEntry(os, (const double*)&InboundFrameRate, InboundFrameRateRng);
-   os << "\n - Inbound Frame Size:  ";
-   showEntry(os, (const double*)&InboundFrameSize, InboundFrameSizeRng);
+   // TRANSLATORS: Socket receive buffer size. Placeholder: {} is buffer size in bytes.
+   os << formatText(gettext(" - Receive Buffer Size: {}"), RcvBufferSize) << "\n";
+   // TRANSLATORS: Socket send buffer size. Placeholder: {} is buffer size in bytes.
+   os << formatText(gettext(" - Send Buffer Size:    {}"), SndBufferSize) << "\n";
+   // TRANSLATORS: Maximum message size in bytes. Placeholder: {} is size in bytes.
+   os << formatText(gettext(" - Max. Message Size:   {}"), MaxMsgSize) << "\n";
+   // TRANSLATORS: Defragmentation timeout in milliseconds. Placeholder: {} is duration in ms.
+   os << formatText(gettext(" - Defragment Timeout:  {} ms"), DefragmentTimeout / 1000ULL) << "\n";
+   // TRANSLATORS: Outbound frame transmission rate label.
+   os << gettext(" - Outbound Frame Rate: ");
+   showEntry(os, static_cast<const double*>(OutboundFrameRate), OutboundFrameRateRng);
+   // TRANSLATORS: Outbound frame size label.
+   os << "\n" << gettext(" - Outbound Frame Size: ");
+   showEntry(os, static_cast<const double*>(OutboundFrameSize), OutboundFrameSizeRng);
+   // TRANSLATORS: Inbound frame rate label.
+   os << "\n" << gettext(" - Inbound Frame Rate:  ");
+   showEntry(os, static_cast<const double*>(InboundFrameRate), InboundFrameRateRng);
+   // TRANSLATORS: Inbound frame size label.
+   os << "\n" << gettext(" - Inbound Frame Size:  ");
+   showEntry(os, static_cast<const double*>(InboundFrameSize), InboundFrameSizeRng);
    os << "\n";
    if(Protocol == IPPROTO_SCTP) {
-      char ordered[32];
-      char reliable[32];
-      snprintf((char*)&ordered, sizeof(ordered), "%1.3f%%", 100.0 * OrderedMode);
-      snprintf((char*)&reliable, sizeof(reliable), "%1.3f%%", 100.0 * ReliableMode);
-      os << " - Ordered Mode:        " << ordered  << "\n";
-      os << " - Reliable Mode:       " << reliable << "\n";
-      os << " - Retransmissions:     ";
-      if( (RetransmissionTrialsInMS) && (RetransmissionTrials == ~((uint32_t)0)) ) {
-         os << "unlimited";
+      // TRANSLATORS: SCTP ordered delivery mode percentage. Placeholder: {} is percentage string.
+      os << formatText(gettext(" - Ordered Mode:        {}"), formatText("{:1.3f}%", 100.0 * OrderedMode)) << "\n";
+      // TRANSLATORS: SCTP reliable delivery mode percentage. Placeholder: {} is percentage string.
+      os << formatText(gettext(" - Reliable Mode:       {}"), formatText("{:1.3f}%", 100.0 * ReliableMode)) << "\n";
+      // TRANSLATORS: Parameter label for SCTP retransmissions.
+      os << gettext(" - Retransmissions:     ");
+      if((RetransmissionTrialsInMS) && (RetransmissionTrials == static_cast<uint32_t>(-1))) {
+         // TRANSLATORS: Indicator for unlimited retransmissions.
+         os << gettext("unlimited");
+      }
+      else if(RetransmissionTrialsInMS) {
+         // TRANSLATORS: SCTP retransmission timeout in milliseconds. Placeholder: {} is duration in ms.
+         os << formatText(gettext("{} ms"), RetransmissionTrials);
       }
       else {
-         os << RetransmissionTrials
-            << (RetransmissionTrialsInMS ? "ms" : " trials");
+         // TRANSLATORS: SCTP retransmission attempt count. Placeholder: {} is trial count.
+         os << formatText(gettext("{} trials"), RetransmissionTrials);
       }
       os << "\n";
    }
 
-   os << " - On/Off:              { ";
-   if(OnOffEvents.size() > 0) {
+   // TRANSLATORS: Label for on/off traffic patterns.
+   os << gettext(" - On/Off:              { ");
+   if(!OnOffEvents.empty()) {
       bool start = true;
       for(std::vector<OnOffEvent>::const_iterator iterator = OnOffEvents.begin();
-          iterator != OnOffEvents.end();iterator++) {
-         os << "\n" << "         " << ((start == true) ? "🟢on:  " : "🔴off: ");
-         showEntry(os, (const double*)&(*iterator).ValueArray, (*iterator).RandNumGen);
+          iterator != OnOffEvents.end(); iterator++) {
+         os << "\n" << "         ";
+         if(start) {
+            // TRANSLATORS: On-period prefix indicator for on/off traffic pattern.
+            os << gettext("🟢on:  ");
+         }
+         else {
+            // TRANSLATORS: Off-period prefix indicator for on/off traffic pattern.
+            os << gettext("🔴off: ");
+         }
+         showEntry(os, static_cast<const double*>((*iterator).ValueArray), (*iterator).RandNumGen);
          start = !start;
       }
    }
@@ -132,49 +151,57 @@ void FlowTrafficSpec::print(std::ostream& os) const
       os << "*0 ";
    }
    os << "}\n"
-      << " - Repeat On/Off:       " << ((RepeatOnOff == true) ? "yes" : "no") << "\n";
+      // TRANSLATORS: Parameter label for repeating on/off traffic pattern. Placeholder: {} is yes/no.
+      << formatText(gettext(" - Repeat On/Off:       {}"), RepeatOnOff ? gettext("yes") : gettext("no")) << "\n";
 
-   os << " - Error on Abort:      "
-      << ((ErrorOnAbort == true) ? "yes" : "no") << "\n";
-   if( (Protocol == IPPROTO_SCTP) || (Protocol == IPPROTO_TCP)
+   // TRANSLATORS: Error on abort configuration parameter label. Placeholder: {} is yes/no.
+   os << formatText(gettext(" - Error on Abort:      {}"), ErrorOnAbort ? gettext("yes") : gettext("no")) << "\n";
+   if((Protocol == IPPROTO_SCTP) || (Protocol == IPPROTO_TCP)
 #if defined(HAVE_MPTCP)
-       || (Protocol == IPPROTO_MPTCP)
+      || (Protocol == IPPROTO_MPTCP)
 #endif
      ) {
-      os << " - No Delay:            "
-         << ((NoDelay == true) ? "yes" : "no") << "\n";
+      // TRANSLATORS: TCP/SCTP Nagle algorithm status (No Delay). Placeholder: {} is yes/no.
+      os << formatText(gettext(" - No Delay:            {}"), NoDelay ? gettext("yes") : gettext("no")) << "\n";
    }
-   if( (Protocol == IPPROTO_TCP)
+   if((Protocol == IPPROTO_TCP)
 #if defined(HAVE_MPTCP)
-       || (Protocol == IPPROTO_MPTCP)
+      || (Protocol == IPPROTO_MPTCP)
 #endif
      ) {
-      os << " - Congestion Control:  " << CongestionControl << "\n";
+      // TRANSLATORS: Congestion control algorithm label. Placeholder: {} is the algorithm name.
+      os << formatText(gettext(" - Congestion Control:  {}"), CongestionControl) << "\n";
    }
    if(Protocol == IPPROTO_SCTP) {
-      os << " - CMT:                 #" << (unsigned int)CMT << " ";
+      std::string cmtMode;
       switch(CMT) {
          case NPAF_PRIMARY_PATH:
-            os << "(off)";
-         break;
+            // TRANSLATORS: CMT disabled mode description.
+            cmtMode = gettext("(off)");
+            break;
          case NPAF_CMT:
-            os << "(CMT)";
-         break;
+            cmtMode = "(CMT)";
+            break;
          case NPAF_CMTRPv1:
-            os << "(CMT/RPv1)";
-         break;
+            cmtMode = "(CMT/RPv1)";
+            break;
          case NPAF_CMTRPv2:
-            os << "(CMT/RPv2)";
-         break;
+            cmtMode = "(CMT/RPv2)";
+            break;
          case NPAF_LikeMPTCP:
-            os << "(MPTCP)";
-         break;
+            cmtMode = "(MPTCP)";
+            break;
+         default:
+            cmtMode = "";
+            break;
       }
-      os << "\n";
+      // TRANSLATORS: Concurrent Multipath Transfer setting. Placeholders: {} 1: CMT number, 2: CMT mode name.
+      os << formatText(gettext(" - CMT:                 #{} {}"), static_cast<unsigned int>(CMT), cmtMode) << "\n";
    }
 #if defined(HAVE_DCCP)
    if(Protocol == IPPROTO_DCCP) {
-      os << " - CCID:                #" << (unsigned int)CCID << "\n";
+      // TRANSLATORS: DCCP Congestion Control ID setting. Placeholder: {} is CCID number.
+      os << formatText(gettext(" - CCID:                #{}"), static_cast<unsigned int>(CCID)) << "\n";
    }
 #endif
 }
@@ -184,12 +211,12 @@ void FlowTrafficSpec::print(std::ostream& os) const
 void FlowTrafficSpec::reset()
 {
    MaxMsgSize               = 16000;
-   DefragmentTimeout        = 5000000;
+   DefragmentTimeout        = 5000000ULL;
    SndBufferSize            = 233016;   // Upper limit for FreeBSD
    RcvBufferSize            = 233016;   // Upper limit for FreeBSD
    OrderedMode              = 1.0;
    ReliableMode             = 1.0;
-   RetransmissionTrials     = ~0U;
+   RetransmissionTrials     = static_cast<uint32_t>(-1);
    RetransmissionTrialsInMS = true;
    ErrorOnAbort             = true;
    Debug                    = false;
@@ -199,7 +226,7 @@ void FlowTrafficSpec::reset()
    CongestionControl        = "default";
    CMT                      = 0x00;
    CCID                     = 0x00;
-   for(size_t i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
+   for(size_t i = 0; i < NETPERFMETER_RNG_INPUT_PARAMETERS; i++) {
       OutboundFrameRate[i] = 0.0;
       OutboundFrameSize[i] = 0.0;
       InboundFrameRate[i]  = 0.0;

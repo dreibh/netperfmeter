@@ -40,6 +40,8 @@
 #include "cpustatus.h"
 #include "tools.h"
 
+#include <chrono>
+#include <cstdint>
 #include <map>
 #include <vector>
 
@@ -87,33 +89,33 @@ class FlowManager : public Thread
    void printFlows(std::ostream& os,
                    const bool    printStatistics);
 
-   bool beginMeasurement(const int                controlSocket,
-                         const uint64_t           measurementID,
-                         const unsigned long long now,
-                         const char*              vectorNamePattern,
-                         const OutputFileFormat   vectorFileFormat,
-                         const char*              scalarNamePattern,
-                         const OutputFileFormat   scalarFileFormat);
+   bool beginMeasurement(const int              controlSocket,
+                         const uint64_t         measurementID,
+                         const uint64_t         now,
+                         const char*            vectorNamePattern,
+                         const OutputFileFormat vectorFileFormat,
+                         const char*            scalarNamePattern,
+                         const OutputFileFormat scalarFileFormat);
    void finishMeasurement(const int      controlSocket,
                           const uint64_t measurementID);
 
-   void writeScalarStatistics(const uint64_t           measurementID,
-                              const unsigned long long now,
-                              OutputFile&              scalarFile,
-                              const unsigned long long firstStatisticsEvent);
-   void writeVectorStatistics(const uint64_t           measurementID,
-                              const unsigned long long now,
-                              OutputFile&              vectorFile,
-                              FlowBandwidthStats&      globalStats,
-                              FlowBandwidthStats&      relGlobalStats,
-                              const unsigned long long firstStatisticsEvent,
-                              const unsigned long long lastStatisticsEvent);
+   void writeScalarStatistics(const uint64_t measurementID,
+                              const uint64_t now,
+                              OutputFile&    scalarFile,
+                              const uint64_t firstStatisticsEvent);
+   void writeVectorStatistics(const uint64_t     measurementID,
+                              const uint64_t     now,
+                              OutputFile&        vectorFile,
+                              FlowBandwidthStats& globalStats,
+                              FlowBandwidthStats& relGlobalStats,
+                              const uint64_t     firstStatisticsEvent,
+                              const uint64_t     lastStatisticsEvent);
 
    Flow* findFlow(const uint64_t measurementID,
                   const uint32_t flowID,
                   const uint16_t streamID);
-   Flow* findFlow(const int socketDescriptor,
-                  uint16_t  streamID);
+   Flow* findFlow(const int      socketDescriptor,
+                  const uint16_t streamID);
    Flow* findFlow(const struct sockaddr* from);
 
 
@@ -126,12 +128,12 @@ class FlowManager : public Thread
 
    // ====== Protected Methods ==============================================
    protected:
-   void run();
+   virtual void run();
 
 
    // ====== Private Methods ================================================
-   unsigned long long getNextEvent();
-   void handleEvents(const unsigned long long now);
+   uint64_t getNextEvent();
+   void handleEvents(const uint64_t now);
 
 
    // ====== Private Data ===================================================
@@ -148,10 +150,10 @@ class FlowManager : public Thread
    // ------ Measurement Management -----------------------------------------
    std::map<std::pair<int, uint64_t>,
             Measurement*>             MeasurementSet;
-   unsigned long long                 DisplayInterval;
-   unsigned long long                 FirstDisplayEvent;
-   unsigned long long                 LastDisplayEvent;
-   unsigned long long                 NextDisplayEvent;
+   uint64_t                           DisplayInterval;
+   uint64_t                           FirstDisplayEvent;
+   uint64_t                           LastDisplayEvent;
+   uint64_t                           NextDisplayEvent;
    CPUStatus                          CPULoadStats;
    FlowBandwidthStats                 GlobalStats;      // For displaying only
    FlowBandwidthStats                 RelGlobalStats;   // For displaying only

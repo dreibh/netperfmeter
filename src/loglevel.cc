@@ -30,6 +30,7 @@
 #include "loglevel.h"
 #include "tools.h"
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -69,6 +70,16 @@ bool initLogFile(const unsigned int logLevel,
 }
 
 
+// ###### Initialise log file (mode string overload) ########################
+bool initLogFile(const unsigned int logLevel,
+                 const char*        fileName,
+                 const char*        mode)
+{
+   const bool appendMode = (mode != nullptr) && (mode[0] == 'a');
+   return initLogFile(logLevel, fileName, appendMode);
+}
+
+
 // ###### Begin logging #####################################################
 void beginLogging()
 {
@@ -85,7 +96,8 @@ void beginLogging()
    }
 
    LOG_DEBUG
-   *gStdLog << format("Logging started, log level is %d.", gLogLevel)
+   // TRANSLATORS: Debug status message when logging starts. Placeholder: {} is the log level number.
+   *gStdLog << formatText(gettext("Logging started, log level is {}."), gLogLevel)
             << "\n";
    LOG_END
 
@@ -98,7 +110,8 @@ void finishLogging()
 {
    if((gStdLog) && (gCloseStdLog)) {
       LOG_DEBUG
-      *gStdLog << "Logging finished.\n";
+      // TRANSLATORS: Debug status message when logging finishes.
+      *gStdLog << gettext("Logging finished.") << "\n";
       LOG_END
       delete gStdLog;
       gStdLog      = &std::cerr;

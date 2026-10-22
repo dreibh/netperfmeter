@@ -28,6 +28,7 @@
  */
 
 #include "flowbandwidthstats.h"
+#include "tools.h"
 
 
 // ###### Constructor #######################################################
@@ -88,65 +89,71 @@ void FlowBandwidthStats::print(std::ostream& os,
                                const double  transmissionDuration,
                                const double  receptionDuration) const
 {
-   const unsigned long long transmittedBits       = 8 * TransmittedBytes;
-   const unsigned long long transmittedBitRate    = calculateRate(transmittedBits, transmissionDuration);
-   const unsigned long long transmittedBytes      = TransmittedBytes;
-   const unsigned long long transmittedByteRate   = calculateRate(transmittedBytes, transmissionDuration);
-   const unsigned long long transmittedPackets    = TransmittedPackets;
-   const unsigned long long transmittedPacketRate = calculateRate(transmittedPackets, transmissionDuration);
-   const unsigned long long transmittedFrames     = TransmittedFrames;
-   const unsigned long long transmittedFrameRate  = calculateRate(transmittedFrames, transmissionDuration);
+   const uint64_t transmittedBits       = 8 * TransmittedBytes;
+   const uint64_t transmittedBitRate    = calculateRate(transmittedBits, transmissionDuration);
+   const uint64_t transmittedBytes      = TransmittedBytes;
+   const uint64_t transmittedByteRate   = calculateRate(transmittedBytes, transmissionDuration);
+   const uint64_t transmittedPackets    = TransmittedPackets;
+   const uint64_t transmittedPacketRate = calculateRate(transmittedPackets, transmissionDuration);
+   const uint64_t transmittedFrames     = TransmittedFrames;
+   const uint64_t transmittedFrameRate  = calculateRate(transmittedFrames, transmissionDuration);
 
-   const unsigned long long receivedBits          = 8 * ReceivedBytes;
-   const unsigned long long receivedBitRate       = calculateRate(receivedBits, receptionDuration);
-   const unsigned long long receivedBytes         = ReceivedBytes;
-   const unsigned long long receivedByteRate      = calculateRate(receivedBytes, receptionDuration);
-   const unsigned long long receivedPackets       = ReceivedPackets;
-   const unsigned long long receivedPacketRate    = calculateRate(receivedPackets, receptionDuration);
-   const unsigned long long receivedFrames        = ReceivedFrames;
-   const unsigned long long receivedFrameRate     = calculateRate(receivedFrames, receptionDuration);
+   const uint64_t receivedBits          = 8 * ReceivedBytes;
+   const uint64_t receivedBitRate       = calculateRate(receivedBits, receptionDuration);
+   const uint64_t receivedBytes         = ReceivedBytes;
+   const uint64_t receivedByteRate      = calculateRate(receivedBytes, receptionDuration);
+   const uint64_t receivedPackets       = ReceivedPackets;
+   const uint64_t receivedPacketRate    = calculateRate(receivedPackets, receptionDuration);
+   const uint64_t receivedFrames        = ReceivedFrames;
+   const uint64_t receivedFrameRate     = calculateRate(receivedFrames, receptionDuration);
 
-   const unsigned long long lostBits              = 8 * LostBytes;
-   const unsigned long long lostBitRate           = calculateRate(lostBits, receptionDuration);
-   const unsigned long long lostBytes             = LostBytes;
-   const unsigned long long lostByteRate          = calculateRate(lostBytes, receptionDuration);
-   const unsigned long long lostPackets           = LostPackets;
-   const unsigned long long lostPacketRate        = calculateRate(lostPackets, receptionDuration);
-   const unsigned long long lostFrames            = LostFrames;
-   const unsigned long long lostFrameRate         = calculateRate(lostFrames, receptionDuration);
+   const uint64_t lostBits              = 8 * LostBytes;
+   const uint64_t lostBitRate           = calculateRate(lostBits, receptionDuration);
+   const uint64_t lostBytes             = LostBytes;
+   const uint64_t lostByteRate          = calculateRate(lostBytes, receptionDuration);
+   const uint64_t lostPackets           = LostPackets;
+   const uint64_t lostPacketRate        = calculateRate(lostPackets, receptionDuration);
+   const uint64_t lostFrames            = LostFrames;
+   const uint64_t lostFrameRate         = calculateRate(lostFrames, receptionDuration);
 
-   os << " - Transmission:\n"
-      << "  * Duration:         " << transmissionDuration << " s\n"
-      << "  * Bytes:            " << transmittedBytes << " B\t-> "
-                                         << transmittedByteRate << " B/s\n"
-      << "  * Bits:             " << transmittedBits << " bit\t-> "
-                                         << transmittedBitRate << " bit/s\n"
-      << "  * Packets:          " << transmittedPackets << " packets\t-> "
-                                         << transmittedPacketRate << " packets/s\n"
-      << "  * Frames:           " << transmittedFrames << " frames\t-> "
-                                         << transmittedFrameRate << " frames/s\n";
+   // TRANSLATORS: Bandwidth statistics section header for transmitted traffic.
+   os << gettext(" - Transmission:") << "\n"
+      // TRANSLATORS: Measurement duration. Placeholder: {} is duration in seconds.
+      << formatText(gettext("  * Duration:         {} s"), transmissionDuration) << "\n"
+      // TRANSLATORS: Transmitted byte statistics. Placeholders: {} 1: total bytes, 2: byte rate in B/s.
+      << formatText(gettext("  * Bytes:            {} B\t-> {} B/s"), transmittedBytes, transmittedByteRate) << "\n"
+      // TRANSLATORS: Transmitted bit statistics. Placeholders: {} 1: total bits, 2: bit rate in bit/s.
+      << formatText(gettext("  * Bits:             {} bit\t-> {} bit/s"), transmittedBits, transmittedBitRate) << "\n"
+      // TRANSLATORS: Transmitted packet statistics. Placeholders: {} 1: total packets, 2: packet rate in packets/s.
+      << formatText(gettext("  * Packets:          {} packets\t-> {} packets/s"), transmittedPackets, transmittedPacketRate) << "\n"
+      // TRANSLATORS: Transmitted frame statistics. Placeholders: {} 1: total frames, 2: frame rate in frames/s.
+      << formatText(gettext("  * Frames:           {} frames\t-> {} frames/s"), transmittedFrames, transmittedFrameRate) << "\n";
 
-   os << " - Reception:\n"
-      << "  * Duration:         " << receptionDuration << "s\n"
-      << "  * Bytes:            " << receivedBytes << " B\t-> "
-                                         << receivedByteRate << " B/s\n"
-      << "  * Bits:             " << receivedBits << " bit\t-> "
-                                         << receivedBitRate << " bit/s\n"
-      << "  * Packets:          " << receivedPackets << " packets\t-> "
-                                         << receivedPacketRate << " packets/s\n"
-      << "  * Frames:           " << receivedFrames << " frames\t-> "
-                                         << receivedFrameRate << " frames/s\n";
+   // TRANSLATORS: Bandwidth statistics section header for received traffic.
+   os << gettext(" - Reception:") << "\n"
+      // TRANSLATORS: Measurement duration. Placeholder: {} is duration in seconds.
+      << formatText(gettext("  * Duration:         {} s"), receptionDuration) << "\n"
+      // TRANSLATORS: Received byte statistics. Placeholders: {} 1: total bytes, 2: byte rate in B/s.
+      << formatText(gettext("  * Bytes:            {} B\t-> {} B/s"), receivedBytes, receivedByteRate) << "\n"
+      // TRANSLATORS: Received bit statistics. Placeholders: {} 1: total bits, 2: bit rate in bit/s.
+      << formatText(gettext("  * Bits:             {} bit\t-> {} bit/s"), receivedBits, receivedBitRate) << "\n"
+      // TRANSLATORS: Received packet statistics. Placeholders: {} 1: total packets, 2: packet rate in packets/s.
+      << formatText(gettext("  * Packets:          {} packets\t-> {} packets/s"), receivedPackets, receivedPacketRate) << "\n"
+      // TRANSLATORS: Received frame statistics. Placeholders: {} 1: total frames, 2: frame rate in frames/s.
+      << formatText(gettext("  * Frames:           {} frames\t-> {} frames/s"), receivedFrames, receivedFrameRate) << "\n";
 
-   os << " - Loss:\n"
-      << "  * Duration:         " << receptionDuration << "s\n"
-      << "  * Bytes:            " << lostBytes << " B\t-> "
-                                         << lostByteRate << " B/s\n"
-      << "  * Bits:             " << lostBits << " bit\t-> "
-                                         << lostBitRate << " bit/s\n"
-      << "  * Packets:          " << lostPackets << " packets\t-> "
-                                         << lostPacketRate << " packets/s\n"
-      << "  * Frames:           " << lostFrames << " frames\t-> "
-                                         << lostFrameRate << " frames/s\n";
+   // TRANSLATORS: Bandwidth statistics section header for lost traffic.
+   os << gettext(" - Loss:") << "\n"
+      // TRANSLATORS: Measurement duration. Placeholder: {} is duration in seconds.
+      << formatText(gettext("  * Duration:         {} s"), receptionDuration) << "\n"
+      // TRANSLATORS: Lost byte statistics. Placeholders: {} 1: total bytes, 2: byte rate in B/s.
+      << formatText(gettext("  * Bytes:            {} B\t-> {} B/s"), lostBytes, lostByteRate) << "\n"
+      // TRANSLATORS: Lost bit statistics. Placeholders: {} 1: total bits, 2: bit rate in bit/s.
+      << formatText(gettext("  * Bits:             {} bit\t-> {} bit/s"), lostBits, lostBitRate) << "\n"
+      // TRANSLATORS: Lost packet statistics. Placeholders: {} 1: total packets, 2: packet rate in packets/s.
+      << formatText(gettext("  * Packets:          {} packets\t-> {} packets/s"), lostPackets, lostPacketRate) << "\n"
+      // TRANSLATORS: Lost frame statistics. Placeholders: {} 1: total frames, 2: frame rate in frames/s.
+      << formatText(gettext("  * Frames:           {} frames\t-> {} frames/s"), lostFrames, lostFrameRate) << "\n";
 }
 
 

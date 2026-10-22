@@ -31,7 +31,7 @@
 #include "flow.h"
 
 
-// ###### Destructor ########################################################
+// ###### Constructor #######################################################
 Measurement::Measurement()
 {
    MeasurementID        = 0;
@@ -40,7 +40,7 @@ Measurement::Measurement()
    FirstReception       = 0;
    LastReception        = 0;
 
-   StatisticsInterval   = 1000000;
+   StatisticsInterval   = 1000000ULL;
    FirstStatisticsEvent = 0;
    LastStatisticsEvent  = 0;
    NextStatisticsEvent  = 0;
@@ -55,13 +55,13 @@ Measurement::~Measurement()
 
 
 // ###### Initialize measurement ############################################
-bool Measurement::initialize(const unsigned long long now,
-                             const int                controlSocketDescriptor,
-                             const uint64_t           measurementID,
-                             const char*              vectorNamePattern,
-                             const OutputFileFormat   vectorFileFormat,
-                             const char*              scalarNamePattern,
-                             const OutputFileFormat   scalarFileFormat)
+bool Measurement::initialize(const uint64_t         now,
+                             const int              controlSocketDescriptor,
+                             const uint64_t         measurementID,
+                             const char*            vectorNamePattern,
+                             const OutputFileFormat vectorFileFormat,
+                             const char*            scalarNamePattern,
+                             const OutputFileFormat scalarFileFormat)
 {
    ControlSocketDescriptor = controlSocketDescriptor;
    MeasurementID           = measurementID;
@@ -99,7 +99,7 @@ bool Measurement::finish(const bool closeFiles)
 
 
 // ###### Write scalars #####################################################
-void Measurement::writeScalarStatistics(const unsigned long long now)
+void Measurement::writeScalarStatistics(const uint64_t now)
 {
    lock();
    FlowManager::getFlowManager()->writeScalarStatistics(
@@ -110,9 +110,9 @@ void Measurement::writeScalarStatistics(const unsigned long long now)
 
 
 // ###### Write vectors #####################################################
-void Measurement::writeVectorStatistics(const unsigned long long now,
-                                        FlowBandwidthStats&      globalStats,
-                                        FlowBandwidthStats&      relGlobalStats)
+void Measurement::writeVectorStatistics(const uint64_t      now,
+                                        FlowBandwidthStats& globalStats,
+                                        FlowBandwidthStats& relGlobalStats)
 {
    lock();
 
