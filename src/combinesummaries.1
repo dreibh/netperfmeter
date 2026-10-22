@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd May 28, 2026
+.Dd October 22, 2026
 .Dt combinesummaries 1
 .Os CombineSummaries
 .\" ###### Name #############################################################
@@ -53,7 +53,7 @@
 .Sh DESCRIPTION
 .Nm combinesummaries
 is a combination tool for CSV/GNU R data files: it creates a single data table from multiple input files. CombineSummaries supports on\-the\-fly BZip2 compression. After startup, the program accepts the following commands from standard input (*not* as command\-line arguments!):
-.Bl -tag -width ident
+.Bl -tag -width indent
 .It Fl \-varnames=variables
 A space\-separated list of output variable names to be added to the output data tables.
 .It Fl \-values=values
@@ -73,9 +73,9 @@ The name of the output file to be created.
 .It Op Ar variable\_names
 A space\-separated list of output variable names to be added to the output data tables.
 .It Fl c Ar level | Fl \-compress Ar level
-Sets the BZip2 compression level; 1=none, 9=highest (default).
+Sets the BZip2 compression level; 1=fastest (lowest), 9=highest (default).
 .It Fl s Ar separator | Fl \-separator Ar separator
-Sets the separator for the tables. Default: tabulator character (i.e. $'\t').
+Sets the separator for the tables. Default: tabulator character (i.e. $'\et').
 .It Fl l | Fl \-line\-numbers
 Generate line numbers for output rows (GNU R: row names). In this case, the input files must contain line numbers (GNU R: row names) as well! The original line numbers are kept in column SubLineNo. Default: off.
 .It Fl n | Fl \-no\-line\-numbers
@@ -93,7 +93,7 @@ The
 .Nm
 tool exits with 0 on success, and >0 in case of an error.
 .\" ###### Examples #########################################################
-.Sh EXAMPLE
+.Sh EXAMPLES
 Consider two data tables:
 .Pa v1.data.bz2
 (created with ParameterY=Alpha) and
@@ -102,10 +102,10 @@ Consider two data tables:
 The output data table should be written to
 .Pa output.data.bz2 .
 .br
-( echo \-e "\-\-values=\\"Alpha\\"\\t\\"Test 1\\"" && \\
+( echo \-e "\-\-values=\\"Alpha\\"\et\\"Test 1\\"" && \\
   echo "\-\-input=v1.data.bz2"               && \\
-  echo \-e "\-\-values=\\"Beta\\"\\t\\"Test 2\\""  && \\
-  echo "\-\-input=v2.data.bz2" ) | combinesummaries output.data.bz2 $'ParameterX\\tParameterY'
+  echo \-e "\-\-values=\\"Beta\\"\et\\"Test 2\\""  && \\
+  echo "\-\-input=v2.data.bz2" ) | combinesummaries output.data.bz2 $'ParameterX\etParameterY'
 .\" ###### See also #########################################################
 .Sh SEE ALSO
 .Xr createsummary 1 ,
