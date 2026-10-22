@@ -39,6 +39,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <getopt.h>
 #include <iostream>
 #include <netinet/in.h>
@@ -165,6 +166,18 @@ static MessageReader gMessageReader;
 [[ noreturn ]]
 static void usage(const char* program, const int exitCode)
 {
+   const std::string manpage(std::string("\x1b[1m") +
+                             std::filesystem::path(program).stem().string() +
+                             std::string("\x1b[0m"));
+   const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
+                              std::string(PACKAGE_HOMEPAGE) +
+                              "\a" + std::string(PACKAGE_HOMEPAGE) + "\a" +
+                              std::string("\x1b]8;;\a\x1b[0m"));
+   const std::string repository(std::string("\x1b[1m\x1b]8;;") +
+                                std::string(PACKAGE_SOURCEREPO) +
+                                "\a" + std::string(PACKAGE_SOURCEREPO) + "\a" +
+                                std::string("\x1b]8;;\a\x1b[0m"));
+
    std::cerr << HEADER("Usage:") << "\n"
              << CMD(program) << " "
                 ARG("local_port") "\n"
@@ -223,7 +236,10 @@ static void usage(const char* program, const int exitCode)
              << CMD(program) << "\n"
                    ENTRY(OPT("-v") PIPE OPT("--version"))
              << CMD("FLOWSPEC:") << " "
-                ARG("outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option:...") "\n";
+                ARG("outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option:...") "\n"
+             << "\n"
+             << format("For further information, see the man page for %s, read the documentation at %s, examine the source code at %s, or consult your favourite LLM.",
+                           manpage.c_str(), homepage.c_str(), repository.c_str()) << "\n";
    exit(exitCode);
 }
 // ------ END-OF-USAGE-BLOCK ------
