@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -34,30 +34,43 @@
 #include "config.h"
 #endif
 
+#include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <format>
 #include <iostream>
 #include <netinet/in.h>
 #include <poll.h>
+#include <string>
+#include <string_view>
 #include <unistd.h>
 
 #include <ext_socket.h>
 
-// Endianess conversions: htobe*(), be*toh():
+#ifdef ENABLE_NLS
+#include <libintl.h>
+#else
+#define bindtextdomain(domain, dirname) { }
+#define textdomain(domain)              { }
+#define gettext(string)                 (string)
+#define ngettext(singular, plural, n)   (((n) == 1) ? (singular) : (plural))
+#endif
+
+// Endianness conversions: htobe*(), be*toh():
 #if defined(__linux__) || defined(__OpenBSD__) || defined(__sun) || defined(__sun__) || defined(__GNU__)
 #include <endian.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/endian.h>
 #elif defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
-// Big Endian conversions:
 #define htobe16(x) OSSwapHostToBigInt16(x)
 #define be16toh(x) OSSwapBigToHostInt16(x)
 #define htobe32(x) OSSwapHostToBigInt32(x)
 #define be32toh(x) OSSwapBigToHostInt32(x)
 #define htobe64(x) OSSwapHostToBigInt64(x)
 #define be64toh(x) OSSwapBigToHostInt64(x)
-// Little Endian conversions:
 #define htole16(x) OSSwapHostToLittleInt16(x)
 #define le16toh(x) OSSwapLittleToHostInt16(x)
 #define htole32(x) OSSwapHostToLittleInt32(x)
@@ -70,7 +83,6 @@
 
 #include "mutex.h"
 
-
 // MPTCP definitions
 #if defined(HAVE_MPTCP)
 #include <linux/mptcp.h>
@@ -81,8 +93,6 @@
 extern "C" {
 #include <netinet/quic.h>
 }
-// #else
-// #warning QUIC is not supported by the API of this system!
 #endif
 
 // DCCP definitions
@@ -91,15 +101,53 @@ extern "C" {
 #endif
 
 
-std::string format(const char* fmt, ...);
+// ###### Modern C++20 string formatting ###################################
+template<typename... Args>
+inline std::string formatText(const std::string_view fmt, Args&&... args)
+{
+   return std::vformat(fmt, std::make_format_args(args...));
+}
 
-unsigned long long getMicroTime();
+// Backward compatibility alias for format() using C++20 formatting
+template<typename... Args>
+inline std::string format(const std::string_view fmt, Args&&... args)
+{
+   return std::vformat(fmt, std::make_format_args(args...));
+}
+
+
+// ###### Chrono-based time helpers #########################################
+inline uint64_t getMicroTime()
+{
+   return static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(
+         std::chrono::system_clock::now().time_since_epoch()
+      ).count()
+   );
+}
+
 void printTimeStamp(std::ostream& os);
 int pollTimeout(const unsigned long long now, const size_t n, ...);
 
 
-int safestrcpy(char* dest, const char* src, const size_t size);
-int safestrcat(char* dest, const char* src, const size_t size);
+// ###### String copy/cat (strlcpy/strlcat) #################################
+#if !defined(HAVE_STRLCPY)
+size_t strlcpy(char* dest, const char* src, size_t size);
+#endif
+#if !defined(HAVE_STRLCAT)
+size_t strlcat(char* dest, const char* src, size_t size);
+#endif
+
+// Backward compatibility wrappers
+inline int safestrcpy(char* dest, const char* src, const size_t size)
+{
+   return strlcpy(dest, src, size) < size;
+}
+
+inline int safestrcat(char* dest, const char* src, const size_t size)
+{
+   return strlcat(dest, src, size) < size;
+}
 
 bool hasSuffix(const std::string& name, const std::string& suffix);
 void dissectName(const std::string& name,
@@ -115,7 +163,9 @@ union sockaddr_union {
 
 bool checkIPv6();
 size_t getSocklen(const struct sockaddr* address);
-int addresscmp(const struct sockaddr* a1, const struct sockaddr* a2, const bool port);
+int addresscmp(const struct sockaddr* a1,
+               const struct sockaddr* a2,
+               const bool             port);
 bool address2string(const struct sockaddr* address,
                     char*                  buffer,
                     const size_t           length,
@@ -184,7 +234,6 @@ double randomTruncNormal(const double mean, const double stddev);
 double randomParetoDouble(const double location, const double shape);
 
 #if defined(__APPLE__)
-// Apple's poll() function is broken. We need a wrapper to select() here!
 int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time);
 #else
 inline int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)

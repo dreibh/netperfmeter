@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -35,7 +35,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <ctype.h>
+#include <cctype>
 #include <ext_socket.h>
 #include <netdb.h>
 #include <net/if.h>
@@ -48,43 +48,51 @@
 #include <sys/uio.h>
 
 
-// ###### Create formatted string (printf-like) #############################
-std::string format(const char* fmt, ...)
+// ###### Fallback implementation of strlcpy() ##############################
+#if !defined(HAVE_STRLCPY)
+size_t strlcpy(char* dest, const char* src, size_t size)
 {
-   char buffer[16384];
-   va_list va;
-   va_start(va, fmt);
-   vsnprintf(buffer, sizeof(buffer), fmt, va);
-   va_end(va);
-   return std::string(buffer);
+   const size_t src_len = strlen(src);
+   if(size > 0) {
+      const size_t copy_len = (src_len >= size) ? size - 1 : src_len;
+      memcpy(dest, src, copy_len);
+      dest[copy_len] = '\0';
+   }
+   return src_len;
 }
+#endif
 
 
-// ###### Get current time stamp ############################################
-unsigned long long getMicroTime()
+// ###### Fallback implementation of strlcat() ##############################
+#if !defined(HAVE_STRLCAT)
+size_t strlcat(char* dest, const char* src, size_t size)
 {
-  timespec ts;
-  if(__builtin_expect( (clock_gettime(CLOCK_REALTIME, &ts) != 0) , 0)) {
-     perror("clock_gettime():");
-     abort();
-  }
-  return ((unsigned long long)ts.tv_sec * 1000000ULL) +
-            ((unsigned long long)ts.tv_nsec / 1000ULL);
+   const size_t dest_len = strlen(dest);
+   const size_t src_len  = strlen(src);
+   if(dest_len >= size) {
+      return size + src_len;
+   }
+   const size_t copy_len = (src_len >= size - dest_len) ? size - dest_len - 1 : src_len;
+   memcpy(dest + dest_len, src, copy_len);
+   dest[dest_len + copy_len] = '\0';
+   return dest_len + src_len;
 }
+#endif
 
 
 // ###### Print time stamp ##################################################
 void printTimeStamp(std::ostream& os)
 {
-   char str[128];
-   const unsigned long long microTime = getMicroTime();
-   const time_t timeStamp = (time_t)(microTime / 1000000);
-   const struct tm *timeptr = localtime(&timeStamp);
-   strftime(str, sizeof(str), "%d-%b-%Y %H:%M:%S", timeptr);
-   os << str;
-   snprintf(str, sizeof(str),
-            ".%04d: ",(unsigned int)(microTime % 1000000) / 100);
-   os << str;
+   const std::chrono::system_clock::time_point now     = std::chrono::system_clock::now();
+   const auto totalUs = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count();
+   const time_t sec   = std::chrono::system_clock::to_time_t(now);
+
+   struct tm timeinfo;
+   localtime_r(&sec, &timeinfo);
+
+   char str[64];
+   strftime(str, sizeof(str), "%d-%b-%Y %H:%M:%S", &timeinfo);
+   os << str << formatText(".{:04d}: ", static_cast<unsigned int>((totalUs % 1000000) / 100));
 }
 
 
@@ -94,45 +102,20 @@ int pollTimeout(const unsigned long long now, const size_t n, ...)
    va_list va;
    va_start(va, n);
    unsigned long long timeout = ~0ULL;
-   for(size_t i = 0;i < n;i++) {
+   for(size_t i = 0; i < n; i++) {
       const unsigned long long t = va_arg(va, unsigned long long);
       timeout = std::min(timeout, t);
    }
+   va_end(va);
+
    if(timeout == ~0ULL) {
-      return -1;   // Infinite wait time (only care for sockets/files)
+      return -1;   // Infinite wait time
    }
    const double delta = (double)timeout - (double)now;
    if(delta <= 0.0) {
-      return 0;   // Do not wait, just check sockets/files
+      return 0;    // Do not wait
    }
-   else {
-      // Return wait time in milliseconds.
-      // NOTE: Return ceiling of the value, since 999ULL/1000ULL == 0!
-      return (int)ceil(delta / 1000.0);
-   }
-}
-
-
-// ###### Length-checking strcpy() #########################################
-int safestrcpy(char* dest, const char* src, const size_t size)
-{
-   assert(size > 0);
-   strncpy(dest, src, size);
-   dest[size - 1] = 0x00;
-   return strlen(dest) < size;
-}
-
-
-// ###### Length-checking strcat() #########################################
-int safestrcat(char* dest, const char* src, const size_t size)
-{
-   const size_t l1 = strlen(dest);
-   const size_t l2 = strlen(src);
-
-   assert(size > 0);
-   strncat(dest, src, size - l1 - 1);
-   dest[size - 1] = 0x00;
-   return l1 + l2 < size;
+   return static_cast<int>(ceil(delta / 1000.0));
 }
 
 
@@ -152,12 +135,10 @@ static char* strindex(char* string, const char character)
 }
 
 
-
 // ###### Find last occurrence of character in string #######################
 static char* strrindex(char* string, const char character)
 {
    const char* original = string;
-
    if(original != nullptr) {
       string = &string[strlen(string)];
       while(*string != character) {
@@ -175,11 +156,8 @@ static char* strrindex(char* string, const char character)
 // ###### Check filename for given suffix ###################################
 bool hasSuffix(const std::string& name, const std::string& suffix)
 {
-   const size_t found = name.rfind(suffix);
-   if(found == name.length() - suffix.length()) {
-      return true;
-   }
-   return false;
+   return (name.length() >= suffix.length()) &&
+          (name.compare(name.length() - suffix.length(), suffix.length(), suffix) == 0);
 }
 
 
@@ -191,15 +169,11 @@ void dissectName(const std::string& name,
    const size_t slash = name.find_last_of('/');
    size_t dot         = name.find_last_of('.');
    if((dot != std::string::npos) &&
-      ((slash == std::string::npos) || (slash < dot)) ) {
-      // There is a suffix which is part of the file name itself
+      ((slash == std::string::npos) || (slash < dot))) {
       if(std::string(name, dot) == ".bz2") {
-         // There is a .bz2 suffix. Look for the actual suffix.
          const size_t dot2 = name.find_last_of('.', dot - 1);
-         if( (dot2 != std::string::npos) &&
-             ((slash == std::string::npos) || (slash < dot2)) ) {
-            // There is another suffix (*.bz2) *and* the second dot
-            // is not part of a directory name
+         if((dot2 != std::string::npos) &&
+            ((slash == std::string::npos) || (slash < dot2))) {
             dot = dot2;
          }
       }
@@ -242,41 +216,40 @@ size_t getSocklen(const struct sockaddr* address)
 // ###### Compare addresses #################################################
 int addresscmp(const struct sockaddr* a1, const struct sockaddr* a2, const bool port)
 {
-   uint16_t     p1, p2;
-   uint32_t     x1[4];
-   uint32_t     x2[4];
-   int          result;
+   uint16_t p1, p2;
+   uint32_t x1[4];
+   uint32_t x2[4];
 
-   if( ((a1->sa_family == AF_INET) || (a1->sa_family == AF_INET6)) &&
-       ((a2->sa_family == AF_INET) || (a2->sa_family == AF_INET6)) ) {
+   if(((a1->sa_family == AF_INET) || (a1->sa_family == AF_INET6)) &&
+      ((a2->sa_family == AF_INET) || (a2->sa_family == AF_INET6))) {
       if(a1->sa_family == AF_INET6) {
-         memcpy((void*)&x1, (void*)&((struct sockaddr_in6*)a1)->sin6_addr, 16);
+         memcpy(x1, &((const struct sockaddr_in6*)a1)->sin6_addr, 16);
       }
       else {
          x1[0] = 0;
          x1[1] = 0;
          x1[2] = htobe32(0xffff);
-         x1[3] = *((uint32_t*)&((struct sockaddr_in*)a1)->sin_addr);
+         x1[3] = *reinterpret_cast<const uint32_t*>(&((const struct sockaddr_in*)a1)->sin_addr);
       }
 
       if(a2->sa_family == AF_INET6) {
-         memcpy((void*)&x2, (void*)&((struct sockaddr_in6*)a2)->sin6_addr, 16);
+         memcpy(x2, &((const struct sockaddr_in6*)a2)->sin6_addr, 16);
       }
       else {
          x2[0] = 0;
          x2[1] = 0;
          x2[2] = htobe32(0xffff);
-         x2[3] = *((uint32_t*)&((struct sockaddr_in*)a2)->sin_addr);
+         x2[3] = *reinterpret_cast<const uint32_t*>(&((const struct sockaddr_in*)a2)->sin_addr);
       }
 
-      result = memcmp((void*)&x1,(void*)&x2,16);
+      const int result = memcmp(x1, x2, 16);
       if(result != 0) {
          return result;
       }
 
       if(port) {
-         p1 = getPort((struct sockaddr*)a1);
-         p2 = getPort((struct sockaddr*)a2);
+         p1 = getPort(a1);
+         p2 = getPort(a2);
          if(p1 < p2) {
             return -1;
          }
@@ -297,54 +270,45 @@ bool address2string(const struct sockaddr* address,
                     const bool             port,
                     const bool             hideScope)
 {
-   const struct sockaddr_in*  ipv4address;
-   const struct sockaddr_in6* ipv6address;
-   char                       str[128];
-   char                       scope[IFNAMSIZ + 16];
-   char                       ifnamebuffer[IFNAMSIZ];
-   const char*                ifname;
+   char str[128];
+   char scope[IFNAMSIZ + 16];
+   char ifnamebuffer[IFNAMSIZ];
 
    switch(address->sa_family) {
-      case AF_INET:
-         ipv4address = (const struct sockaddr_in*)address;
-         if(port) {
-            snprintf(buffer, length,
-                     "%s:%d", inet_ntoa(ipv4address->sin_addr), be16toh(ipv4address->sin_port));
-         }
-         else {
-            snprintf(buffer, length, "%s", inet_ntoa(ipv4address->sin_addr));
-         }
+      case AF_INET: {
+         const auto* ipv4 = reinterpret_cast<const struct sockaddr_in*>(address);
+         const std::string formatted = port ?
+            formatText("{}:{}", inet_ntoa(ipv4->sin_addr), be16toh(ipv4->sin_port)) :
+            std::string(inet_ntoa(ipv4->sin_addr));
+         strlcpy(buffer, formatted.c_str(), length);
          return true;
+      }
 
-      case AF_INET6:
-         ipv6address = (const struct sockaddr_in6*)address;
-         if( (!hideScope) &&
-             (IN6_IS_ADDR_LINKLOCAL(&ipv6address->sin6_addr) ||
-              IN6_IS_ADDR_MC_LINKLOCAL(&ipv6address->sin6_addr)) ) {
-            ifname = if_indextoname(ipv6address->sin6_scope_id, ifnamebuffer);
+      case AF_INET6: {
+         const auto* ipv6 = reinterpret_cast<const struct sockaddr_in6*>(address);
+         if(!hideScope && (IN6_IS_ADDR_LINKLOCAL(&ipv6->sin6_addr) || IN6_IS_ADDR_MC_LINKLOCAL(&ipv6->sin6_addr))) {
+            const char* ifname = if_indextoname(ipv6->sin6_scope_id, ifnamebuffer);
             if(ifname == nullptr) {
-               safestrcpy(ifnamebuffer, "(BAD!)", sizeof(ifnamebuffer));
+               strlcpy(ifnamebuffer, "(BAD!)", sizeof(ifnamebuffer));
                return false;
             }
             snprintf(scope, sizeof(scope), "%%%s", ifname);
          }
          else {
-            scope[0] = 0x00;
+            scope[0] = '\0';
          }
-         if(inet_ntop(AF_INET6, &ipv6address->sin6_addr, str, sizeof(str)) != nullptr) {
-            if(port) {
-               snprintf(buffer, length,
-                        "[%s%s]:%d", str, scope, be16toh(ipv6address->sin6_port));
-            }
-            else {
-               snprintf(buffer, length, "%s%s", str, scope);
-            }
+         if(inet_ntop(AF_INET6, &ipv6->sin6_addr, str, sizeof(str)) != nullptr) {
+            const std::string formatted = port ?
+               formatText("[{}{}]:{}", str, scope, be16toh(ipv6->sin6_port)) :
+               formatText("{}{}", str, scope);
+            strlcpy(buffer, formatted.c_str(), length);
             return true;
          }
-       break;
+         break;
+      }
 
       case AF_UNSPEC:
-         safestrcpy(buffer, "(unspecified)", length);
+         strlcpy(buffer, gettext("(unspecified)"), length);
          return true;
    }
    return false;
@@ -356,94 +320,73 @@ bool string2address(const char*           string,
                     union sockaddr_union* address,
                     const bool            readPort)
 {
-   char                 host[128];
-   char                 port[128];
-   struct sockaddr_in*  ipv4address = (struct sockaddr_in*)address;
-   struct sockaddr_in6* ipv6address = (struct sockaddr_in6*)address;
-   int                  portNumber  = 0;
-   char*                p1;
+   char host[128];
+   char port[128];
+   int  portNumber = 0;
+   char* p1;
 
-   struct addrinfo  hints;
-   struct addrinfo* res;
-   bool isNumeric;
-   bool isIPv6;
-   size_t hostLength;
-   size_t i;
-
-   if(strlen(string) > sizeof(host)) {
+   if(strlen(string) >= sizeof(host)) {
       return false;
    }
-   safestrcpy(host, string, sizeof(host));
-   safestrcpy(port, "0", sizeof(port));
+   strlcpy(host, string, sizeof(host));
+   strlcpy(port, "0", sizeof(port));
 
-   /* ====== Handle RFC2732-compliant addresses ========================== */
    if(string[0] == '[') {
-      p1 = strindex(host,']');
+      p1 = strindex(host, ']');
       if(p1 != nullptr) {
          if((p1[1] == ':') || (p1[1] == '!')) {
-            safestrcpy(port, &p1[2], sizeof(port));
+            strlcpy(port, &p1[2], sizeof(port));
          }
-         memmove(host, &host[1], (unsigned long)p1 - (unsigned long)host - 1);
-         host[(unsigned long)p1 - (unsigned long)host - 1] = 0x00;
+         memmove(host, &host[1], static_cast<size_t>(p1 - host - 1));
+         host[p1 - host - 1] = '\0';
       }
    }
-
-   /* ====== Handle standard address:port ================================ */
-   else {
-      if(readPort) {
-         unsigned int colons = 0;
-         for(size_t i = 0;i < strlen(host);i++) {
-            if(host[i] == ':') {
-               colons++;
-            }
+   else if(readPort) {
+      unsigned int colons = 0;
+      for(size_t i = 0; i < strlen(host); i++) {
+         if(host[i] == ':') {
+            colons++;
          }
-         if(colons == 1) {
-            p1 = strrindex(host,':');
-            if(p1 == nullptr) {
-               p1 = strrindex(host,'!');
-            }
-            if(p1 != nullptr) {
-               p1[0] = 0x00;
-               safestrcpy(port, &p1[1], sizeof(port));
-            }
+      }
+      if(colons == 1) {
+         p1 = strrindex(host, ':');
+         if(p1 == nullptr) {
+            p1 = strrindex(host, '!');
+         }
+         if(p1 != nullptr) {
+            p1[0] = '\0';
+            strlcpy(port, &p1[1], sizeof(port));
          }
       }
    }
 
-   /* ====== Check port number =========================================== */
-   portNumber = ~0;
-   if((sscanf(port, "%d", &portNumber) != 1) ||
-      (portNumber < 0) ||
-      (portNumber > 65535)) {
+   if((sscanf(port, "%d", &portNumber) != 1) || (portNumber < 0) || (portNumber > 65535)) {
       return false;
    }
 
-
-   /* ====== Create address structure ==================================== */
-
-   /* ====== Get information for host ==================================== */
-   res        = nullptr;
-   isNumeric  = true;
-   isIPv6     = false;
-   hostLength = strlen(host);
-
+   struct addrinfo hints;
+   struct addrinfo* res = nullptr;
    memset(&hints, 0, sizeof(hints));
    hints.ai_socktype = SOCK_DGRAM;
    hints.ai_family   = AF_UNSPEC;
 
-   for(i = 0;i < hostLength;i++) {
+   bool isNumeric = true;
+   bool isIPv6    = false;
+   const size_t hostLength = strlen(host);
+
+   for(size_t i = 0; i < hostLength; i++) {
       if(host[i] == ':') {
          isIPv6 = true;
          break;
       }
    }
    if(!isIPv6) {
-      for(i = 0;i < hostLength;i++) {
-         if(!(isdigit(host[i]) || (host[i] == '.'))) {
+      for(size_t i = 0; i < hostLength; i++) {
+         if(!isdigit(static_cast<unsigned char>(host[i])) && (host[i] != '.')) {
             isNumeric = false;
             break;
          }
-       }
+      }
    }
    if(isNumeric) {
       hints.ai_flags = AI_NUMERICHOST;
@@ -453,24 +396,27 @@ bool string2address(const char*           string,
       return false;
    }
 
-   memset((char*)address,0,sizeof(union sockaddr_union));
-   memcpy((char*)address,res->ai_addr,res->ai_addrlen);
+   memset(address, 0, sizeof(union sockaddr_union));
+   memcpy(address, res->ai_addr, res->ai_addrlen);
 
-   switch(ipv4address->sin_family) {
+   auto* ipv4 = reinterpret_cast<struct sockaddr_in*>(address);
+   auto* ipv6 = reinterpret_cast<struct sockaddr_in6*>(address);
+
+   switch(ipv4->sin_family) {
       case AF_INET:
-         ipv4address->sin_port = htobe16(portNumber);
+         ipv4->sin_port = htobe16(static_cast<uint16_t>(portNumber));
 #if defined(HAVE_SIN_LEN)
-         ipv4address->sin_len  = sizeof(struct sockaddr_in);
+         ipv4->sin_len  = sizeof(struct sockaddr_in);
 #endif
-       break;
+         break;
       case AF_INET6:
-         ipv6address->sin6_port = htobe16(portNumber);
+         ipv6->sin6_port = htobe16(static_cast<uint16_t>(portNumber));
 #if defined(HAVE_SIN6_LEN)
-         ipv6address->sin6_len  = sizeof(struct sockaddr_in6);
+         ipv6->sin6_len  = sizeof(struct sockaddr_in6);
 #endif
-       break;
-
+         break;
       default:
+         freeaddrinfo(res);
          return false;
    }
 
@@ -485,13 +431,12 @@ void printAddress(std::ostream&          os,
                   const bool             port,
                   const bool             hideScope)
 {
-   static char str[160];
-
+   char str[160];
    if(address2string(address, str, sizeof(str), port, hideScope)) {
       os << str;
    }
    else {
-      os << "(invalid!)";
+      os << gettext("(invalid!)");
    }
 }
 
@@ -499,37 +444,21 @@ void printAddress(std::ostream&          os,
 // ###### Get protocol name #################################################
 const char* getProtocolName(const int protocol)
 {
-   const char* protocolName;
    switch(protocol) {
-      case IPPROTO_SCTP:
-         protocolName = "SCTP";
-       break;
-      case IPPROTO_TCP:
-         protocolName = "TCP";
-       break;
-      case IPPROTO_UDP:
-         protocolName = "UDP";
-       break;
+      case IPPROTO_SCTP:  return "SCTP";
+      case IPPROTO_TCP:   return "TCP";
+      case IPPROTO_UDP:   return "UDP";
 #if defined(HAVE_MPTCP)
-      case IPPROTO_MPTCP:
-         protocolName = "MPTCP";
-       break;
+      case IPPROTO_MPTCP: return "MPTCP";
 #endif
 #if defined(HAVE_DCCP)
-      case IPPROTO_DCCP:
-         protocolName = "DCCP";
-       break;
+      case IPPROTO_DCCP:  return "DCCP";
 #endif
 #if defined(HAVE_QUIC)
-      case IPPROTO_QUIC:
-         protocolName = "QUIC";
-       break;
+      case IPPROTO_QUIC:  return "QUIC";
 #endif
-      default:
-         protocolName = "unknown?!";
-       break;
+      default:            return gettext("unknown?!");
    }
-   return protocolName;
 }
 
 
@@ -539,9 +468,9 @@ uint16_t getPort(const struct sockaddr* address)
    if(address != nullptr) {
       switch(address->sa_family) {
          case AF_INET:
-            return be16toh(((struct sockaddr_in*)address)->sin_port);
+            return be16toh(reinterpret_cast<const struct sockaddr_in*>(address)->sin_port);
          case AF_INET6:
-            return be16toh(((struct sockaddr_in6*)address)->sin6_port);
+            return be16toh(reinterpret_cast<const struct sockaddr_in6*>(address)->sin6_port);
          default:
             return 0;
       }
@@ -556,10 +485,10 @@ bool setPort(struct sockaddr* address, uint16_t port)
    if(address != nullptr) {
       switch(address->sa_family) {
          case AF_INET:
-            ((struct sockaddr_in*)address)->sin_port = htobe16(port);
+            reinterpret_cast<struct sockaddr_in*>(address)->sin_port = htobe16(port);
             return true;
          case AF_INET6:
-            ((struct sockaddr_in6*)address)->sin6_port = htobe16(port);
+            reinterpret_cast<struct sockaddr_in6*>(address)->sin6_port = htobe16(port);
             return true;
       }
    }
@@ -574,33 +503,22 @@ int createSocket(const int             family,
                  const unsigned int    localAddresses,
                  const sockaddr_union* localAddressArray)
 {
-   // ====== Get family =====================================================
    int socketFamily = family;
    if(socketFamily == AF_UNSPEC) {
       socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
-      if( (localAddresses == 1) &&
-          (protocol != IPPROTO_SCTP) &&
-          (localAddressArray[0].sa.sa_family == AF_INET) ) {
-         socketFamily = AF_INET;   // Restrict to IPv4!
+      if((localAddresses == 1) && (protocol != IPPROTO_SCTP) &&
+         (localAddressArray[0].sa.sa_family == AF_INET)) {
+         socketFamily = AF_INET;
       }
    }
 
-   // ====== Get protocol ===================================================
-   int socketProtocol = protocol;
 #if defined(HAVE_MPTCP)
-   if(socketProtocol == IPPROTO_MPTCP) {
-      if(localAddresses > 1) {
-         printf("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
-      }
+   if((protocol == IPPROTO_MPTCP) && (localAddresses > 1)) {
+      std::cerr << gettext("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
    }
 #endif
 
-   // ====== Create socket ==================================================
-   int sd = ext_socket(socketFamily, type, socketProtocol);
-   if(sd < 0) {
-      return -2;
-   }
-   return sd;
+   return ext_socket(socketFamily, type, protocol);
 }
 
 
@@ -617,18 +535,15 @@ int bindSocket(const int             sd,
 {
    unsigned int localAddressCount = localAddresses;
 
-   // ====== Get family =====================================================
    int socketFamily = family;
    if(socketFamily == AF_UNSPEC) {
       socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
-      if( (localAddresses == 1) &&
-          (protocol != IPPROTO_SCTP) &&
-          (localAddressArray[0].sa.sa_family == AF_INET) ) {
-         socketFamily = AF_INET;   // Restrict to IPv4!
+      if((localAddresses == 1) && (protocol != IPPROTO_SCTP) &&
+         (localAddressArray[0].sa.sa_family == AF_INET)) {
+         socketFamily = AF_INET;
       }
    }
 
-   // Prepare ANY address for the corresponding family
    sockaddr_union anyAddress;
    memset(&anyAddress, 0, sizeof(anyAddress));
    if(socketFamily == AF_INET6) {
@@ -641,33 +556,21 @@ int bindSocket(const int             sd,
    }
 
 #if defined(HAVE_MPTCP)
-   if(protocol == IPPROTO_MPTCP) {
-      if(localAddresses > 1) {
-         fprintf(stderr, "WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
-         localAddressCount = 0;
-      }
+   if((protocol == IPPROTO_MPTCP) && (localAddresses > 1)) {
+      std::cerr << gettext("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
+      localAddressCount = 0;
    }
 #endif
 
-   // ====== IPV6_V6ONLY option =============================================
-#if !defined(__OpenBSD__)
-#if defined(IPV6_V6ONLY)
+#if !defined(__OpenBSD__) && defined(IPV6_V6ONLY)
    if(socketFamily == AF_INET6) {
-      // Accept IPv4 and IPv6 connections.
-      const int on = (bindV6Only == true) ? 1 : 0;
-      // printf("IPV6_V6ONLY=%d\n", on);
+      const int on = bindV6Only ? 1 : 0;
       if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &on, sizeof(on)) < 0) {
          return -2;
       }
    }
-#else
-#error IPV6_V6ONLY not defined?! Please create a bug report and provide some information about your OS!
-#endif
-#else
-   // IPv6 sockets in OpenBSD are always IPv6-only -> nothing to do here!
 #endif
 
-   // ====== Bind socket ====================================================
    if(localAddressCount == 0) {
       if(ext_bind(sd, &anyAddress.sa, getSocklen(&anyAddress.sa)) != 0) {
          return -3;
@@ -676,43 +579,35 @@ int bindSocket(const int             sd,
    else {
 #if defined(HAVE_SCTP)
       if(protocol == IPPROTO_SCTP) {
-         // ====== SCTP bind: bind to specified addresses ===================
-         char   buffer[localAddressCount * sizeof(sockaddr_union)];
-         char*  ptr = &buffer[0];
-         for(unsigned int i = 0;i < localAddressCount;i++) {
+         char buffer[localAddressCount * sizeof(sockaddr_union)];
+         char* ptr = buffer;
+         for(unsigned int i = 0; i < localAddressCount; i++) {
             if(localAddressArray[i].sa.sa_family == AF_INET) {
-               memcpy(ptr, (void*)&localAddressArray[i].in, sizeof(sockaddr_in));
-               ((sockaddr_in*)ptr)->sin_port = htobe16(localPort);
+               memcpy(ptr, &localAddressArray[i].in, sizeof(sockaddr_in));
+               reinterpret_cast<sockaddr_in*>(ptr)->sin_port = htobe16(localPort);
                ptr += sizeof(sockaddr_in);
             }
             else if(localAddressArray[i].sa.sa_family == AF_INET6) {
-               memcpy(ptr, (void*)&localAddressArray[i].in6, sizeof(sockaddr_in6));
-               ((sockaddr_in6*)ptr)->sin6_port = htobe16(localPort);
+               memcpy(ptr, &localAddressArray[i].in6, sizeof(sockaddr_in6));
+               reinterpret_cast<sockaddr_in6*>(ptr)->sin6_port = htobe16(localPort);
                ptr += sizeof(sockaddr_in6);
             }
-            else {
-               assert(false);
-            }
          }
-         if(sctp_bindx(sd, (sockaddr*)&buffer, (int)localAddressCount,
+         if(sctp_bindx(sd, reinterpret_cast<sockaddr*>(buffer), static_cast<int>(localAddressCount),
                        SCTP_BINDX_ADD_ADDR) != 0) {
             return -3;
          }
       }
       else {
 #endif
-         // ====== Non-SCTP bind: bind to ANY address =======================
          sockaddr_union localAddress;
          if(localAddressArray[0].sa.sa_family == AF_INET) {
-            memcpy(&localAddress, (void*)&localAddressArray[0].in, sizeof(sockaddr_in));
-            ((sockaddr_in*)&localAddress)->sin_port = htobe16(localPort);
+            memcpy(&localAddress, &localAddressArray[0].in, sizeof(sockaddr_in));
+            localAddress.in.sin_port = htobe16(localPort);
          }
          else if(localAddressArray[0].sa.sa_family == AF_INET6) {
-            memcpy(&localAddress, (void*)&localAddressArray[0].in6, sizeof(sockaddr_in6));
-            ((sockaddr_in6*)&localAddress)->sin6_port = htobe16(localPort);
-         }
-         else {
-            assert(false);
+            memcpy(&localAddress, &localAddressArray[0].in6, sizeof(sockaddr_in6));
+            localAddress.in6.sin6_port = htobe16(localPort);
          }
 
          if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
@@ -723,7 +618,6 @@ int bindSocket(const int             sd,
 #endif
    }
 
-   // ====== Put socket into listening mode =================================
    if(listenMode) {
       ext_listen(sd, 10);
    }
@@ -745,138 +639,13 @@ bool sendAbort(int sd, sctp_assoc_t assocID)
 #endif
 
 
-#if !defined(HAVE_IEEE_FP)
-#warning Is this code really working correctly?
-
-#define DBL_EXP_BITS  11
-#define DBL_EXP_BIAS  1023
-#define DBL_EXP_MAX   ((1L << DBL_EXP_BITS) - 1 - DBL_EXP_BIAS)
-#define DBL_EXP_MIN   (1 - DBL_EXP_BIAS)
-#define DBL_FRC1_BITS 20
-#define DBL_FRC2_BITS 32
-#define DBL_FRC_BITS  (DBL_FRC1_BITS + DBL_FRC2_BITS)
-
-
-struct IeeeDouble {
-#if __BYTE_ORDER == __BIG_ENDIAN
-   unsigned int s : 1;
-   unsigned int e : 11;
-   unsigned int f1 : 20;
-   unsigned int f2 : 32;
-#elif  __BYTE_ORDER == __LITTLE_ENDIAN
-   unsigned int f2 : 32;
-   unsigned int f1 : 20;
-   unsigned int e : 11;
-   unsigned int s : 1;
-#else
-#error Unknown byteorder settings!
-#endif
-};
-
-
-// ###### Convert double to machine-independent form ########################
-network_double_t doubleToNetwork(const double d)
-{
-   struct IeeeDouble ieee;
-
-   if(isnan(d)) {
-      // NaN
-      ieee.s = 0;
-      ieee.e = DBL_EXP_MAX + DBL_EXP_BIAS;
-      ieee.f1 = 1;
-      ieee.f2 = 1;
-   } else if(isinf(d)) {
-      // +/- infinity
-      ieee.s = (d < 0);
-      ieee.e = DBL_EXP_MAX + DBL_EXP_BIAS;
-      ieee.f1 = 0;
-      ieee.f2 = 0;
-   } else if(d == 0.0) {
-      // zero
-      ieee.s = 0;
-      ieee.e = 0;
-      ieee.f1 = 0;
-      ieee.f2 = 0;
-   } else {
-      // finite number
-      int exp;
-      double frac = frexp (fabs (d), &exp);
-
-      while (frac < 1.0 && exp >= DBL_EXP_MIN) {
-         frac = ldexp (frac, 1);
-         --exp;
-      }
-      if (exp < DBL_EXP_MIN) {
-          // denormalized number (or zero)
-          frac = ldexp (frac, exp - DBL_EXP_MIN);
-          exp = 0;
-      } else {
-         // normalized number
-         assert((1.0 <= frac) && (frac < 2.0));
-         assert((DBL_EXP_MIN <= exp) && (exp <= DBL_EXP_MAX));
-
-         exp += DBL_EXP_BIAS;
-         frac -= 1.0;
-      }
-      ieee.s = (d < 0);
-      ieee.e = exp;
-      ieee.f1 = (unsigned long)ldexp (frac, DBL_FRC1_BITS);
-      ieee.f2 = (unsigned long)ldexp (frac, DBL_FRC_BITS);
-   }
-   return htobe64(*((network_double_t*)&ieee));
-}
-
-
-// ###### Convert machine-independent form to double ########################
-double networkToDouble(network_double_t value)
-{
-   network_double_t   hValue;
-   struct IeeeDouble* ieee;
-   double             d;
-
-   hValue = be64toh(value);
-   ieee = (struct IeeeDouble*)&hValue;
-   if(ieee->e == 0) {
-      if((ieee->f1 == 0) && (ieee->f2 == 0)) {
-         // zero
-         d = 0.0;
-      } else {
-         // denormalized number
-         d  = ldexp((double)ieee->f1, -DBL_FRC1_BITS + DBL_EXP_MIN);
-         d += ldexp((double)ieee->f2, -DBL_FRC_BITS  + DBL_EXP_MIN);
-         if (ieee->s) {
-            d = -d;
-         }
-      }
-   } else if(ieee->e == DBL_EXP_MAX + DBL_EXP_BIAS) {
-      if((ieee->f1 == 0) && (ieee->f2 == 0)) {
-         // +/- infinity
-         d = (ieee->s) ? -INFINITY : INFINITY;
-      } else {
-         // not a number
-         d = NAN;
-      }
-   } else {
-      // normalized number
-      d = ldexp(ldexp((double)ieee->f1, -DBL_FRC1_BITS) +
-                ldexp((double)ieee->f2, -DBL_FRC_BITS) + 1.0,
-                      ieee->e - DBL_EXP_BIAS);
-      if(ieee->s) {
-         d = -d;
-      }
-   }
-   return d;
-}
-
-#else
-
+// ###### IEEE Floating Point Conversion ####################################
 union DoubleIntUnion
 {
    double             Double;
    unsigned long long Integer;
 };
 
-// ###### Convert double to machine-independent form ########################
 network_double_t doubleToNetwork(const double d)
 {
    union DoubleIntUnion valueUnion;
@@ -884,7 +653,6 @@ network_double_t doubleToNetwork(const double d)
    return htobe64(valueUnion.Integer);
 }
 
-// ###### Convert machine-independent form to double ########################
 double networkToDouble(network_double_t value)
 {
    union DoubleIntUnion valueUnion;
@@ -892,356 +660,146 @@ double networkToDouble(network_double_t value)
    return valueUnion.Double;
 }
 
-#endif
 
-
-
-/* Kill after timeout: Send kill signal, if Ctrl-C is pressed again
-   after more than KILL_TIMEOUT microseconds */
-#define KILL_AFTER_TIMEOUT
-#define KILL_TIMEOUT 2000000
-
-
-// ###### Global variables ##################################################
+// ###### Break and Termination Handling ####################################
 static bool   DetectedBreak = false;
 static bool   PrintedBreak  = false;
 static bool   Quiet         = false;
 static pid_t  MainThreadPID = 0;
-#if defined(KILL_AFTER_TIMEOUT)
-static bool               PrintedKill   = false;
-static unsigned long long LastDetection = (unsigned long long)-1;
-#endif
+static bool   PrintedKill   = false;
+static uint64_t LastDetection = static_cast<uint64_t>(-1);
 
-
-// ###### Handler for SIGINT ################################################
-void breakDetector(int signum)
+void breakDetector(int)
 {
    DetectedBreak = true;
-
-#if defined(KILL_AFTER_TIMEOUT)
    if(!PrintedKill) {
-      const unsigned long long now = getMicroTime();
-      if(LastDetection == (unsigned long long)-1) {
+      const uint64_t now = getMicroTime();
+      if(LastDetection == static_cast<uint64_t>(-1)) {
          LastDetection = now;
       }
-      else if(now - LastDetection >= 2000000) {
+      else if(now - LastDetection >= 2000000ULL) {
          PrintedKill = true;
-         fprintf(stderr,"\x1b[0m\n*** Kill ***\n\n");
-         kill(MainThreadPID,SIGKILL);
+         std::cerr << "\x1b[0m\n" << gettext("*** Kill ***") << "\n\n";
+         kill(MainThreadPID, SIGKILL);
       }
    }
-#endif
 }
 
-
-// ###### Install break detector ############################################
 void installBreakDetector()
 {
    DetectedBreak = false;
    PrintedBreak  = false;
    Quiet         = false;
    MainThreadPID = getpid();
-#if defined(KILL_AFTER_TIMEOUT)
    PrintedKill   = false;
-   LastDetection = (unsigned long long)-1;
-#endif
-   signal(SIGINT,&breakDetector);
+   LastDetection = static_cast<uint64_t>(-1);
+   signal(SIGINT, &breakDetector);
 }
 
-
-// ###### Unnstall break detector ###########################################
 void uninstallBreakDetector()
 {
-   signal(SIGINT,SIG_DFL);
-#if defined(KILL_AFTER_TIMEOUT)
+   signal(SIGINT, SIG_DFL);
    PrintedKill   = false;
-   LastDetection = (unsigned long long)-1;
-#endif
-   /* No reset here!
-      DetectedBreak = false;
-      PrintedBreak  = false; */
+   LastDetection = static_cast<uint64_t>(-1);
    Quiet         = false;
 }
 
-
-// ###### Check, if break has been detected #################################
 bool breakDetected()
 {
-   if((DetectedBreak) && (!PrintedBreak)) {
+   if(DetectedBreak && !PrintedBreak) {
       if(!Quiet) {
-         fprintf(stderr,"\x1b[0m\n*** Break ***    Signal #%d\n\n",SIGINT);
+         std::cerr << formatText(gettext("\x1b[0m\n*** Break ***    Signal #{}\n\n"), SIGINT);
       }
-      PrintedBreak = getMicroTime();
+      PrintedBreak = true;
    }
    return DetectedBreak;
 }
 
-
-// ###### Send break to main thread #########################################
 void sendBreak(const bool quiet)
 {
    Quiet = quiet;
-   kill(MainThreadPID,SIGINT);
+   kill(MainThreadPID, SIGINT);
 }
 
 
-
-// ###### Get random value using specified random number generator ##########
+// ###### Random Number Generation ##########################################
 double getRandomValue(const double* valueArray, const uint8_t rng)
 {
-   double value;
    switch(rng) {
-      case RANDOM_CONSTANT:
-         value = valueArray[0];
-       break;
-      case RANDOM_UNIFORM:
-         value = valueArray[0] + (randomDouble() * (valueArray[1] - valueArray[0]));
-       break;
-      case RANDOM_EXPONENTIAL:
-         value = randomExpDouble(valueArray[0]);
-       break;
-      case RANDOM_PARETO:
-         value = randomParetoDouble(valueArray[0], valueArray[1]);
-       break;
-      case RANDOM_NORMAL:
-         value = randomNormal(valueArray[0], valueArray[1]);
-       break;
-      case RANDOM_TRUNCATED_NORMAL:
-         value = randomTruncNormal(valueArray[0], valueArray[1]);
-       break;
-      default:
-         abort();
-       break;
+      case RANDOM_CONSTANT:         return valueArray[0];
+      case RANDOM_UNIFORM:          return valueArray[0] + (randomDouble() * (valueArray[1] - valueArray[0]));
+      case RANDOM_EXPONENTIAL:      return randomExpDouble(valueArray[0]);
+      case RANDOM_PARETO:           return randomParetoDouble(valueArray[0], valueArray[1]);
+      case RANDOM_NORMAL:           return randomNormal(valueArray[0], valueArray[1]);
+      case RANDOM_TRUNCATED_NORMAL: return randomTruncNormal(valueArray[0], valueArray[1]);
+      default:                      abort();
    }
-   return value;
 }
 
-
-// ###### Get name of specified random number generator #####################
 const char* getRandomGeneratorName(const uint8_t rng)
 {
    switch(rng) {
-      case RANDOM_CONSTANT:
-         return "constant";
-      case RANDOM_UNIFORM:
-         return "uniform";
-      case RANDOM_EXPONENTIAL:
-         return "exponential";
-      case RANDOM_PARETO:
-         return "pareto";
+      case RANDOM_CONSTANT:    return "constant";
+      case RANDOM_UNIFORM:     return "uniform";
+      case RANDOM_EXPONENTIAL: return "exponential";
+      case RANDOM_PARETO:      return "pareto";
+      default:                 return gettext("(invalid!)");
    }
-   return "(invalid!)";
 }
 
-
-/*
-   It is tried to use /dev/urandom as random source first, since
-   it provides high-quality random numbers. If /dev/urandom is not
-   available, use the clib's random() function with a seed given
-   by the current microseconds time. However, the random number
-   quality is much lower since the seed may be easily predictable.
-*/
-
-#define RS_TRY_DEVICE 0
-#define RS_DEVICE     1
-#define RS_CLIB       2
-
-static int   RandomSource = RS_TRY_DEVICE;
 static FILE* RandomDevice = nullptr;
 
+uint8_t random8()   { return static_cast<uint8_t>(random32()); }
+uint16_t random16() { return static_cast<uint16_t>(random32()); }
+uint64_t random64() { return (static_cast<uint64_t>(random32()) << 32) | random32(); }
 
-// ###### Get 8-bit random value ############################################
-uint8_t random8()
-{
-   return (uint8_t)random32();
-}
-
-
-// ###### Get 16-bit random value ###########################################
-uint16_t random16()
-{
-   return (uint16_t)random32();
-}
-
-
-// ###### Get 64-bit random value ###########################################
-uint64_t random64()
-{
-   return (((uint64_t)random32()) << 32) | (uint64_t)random32();
-}
-
-
-// ###### Get 32-bit random value ###########################################
 uint32_t random32()
 {
-#if defined(SIM_IMPORT) || defined(OMNETPPLIBS_IMPORT)
-#warning Using OMNeT++ random generator instead of time-seeded one!
-   const double value = uniform(0.0, (double)0xffffffff);
-   return (uint32_t)rint(value);
-#else
    uint32_t number;
-
-   switch(RandomSource) {
-      case RS_DEVICE:
-         if(fread(&number, sizeof(number), 1, RandomDevice) == 1) {
-            return number;
-         }
-         RandomSource = RS_CLIB;
-       break;
-      case RS_TRY_DEVICE:
-         RandomDevice = fopen("/dev/urandom", "r");
-         if(RandomDevice != nullptr) {
-            if(fread(&number, sizeof(number), 1, RandomDevice) == 1) {
-               srandom(number);
-               RandomSource = RS_DEVICE;
-               return number;
-            }
-            fclose(RandomDevice);
-         }
-         RandomSource = RS_CLIB;
-         srandom((unsigned int)(getMicroTime() & (uint64_t)0xffffffff));
-       break;
+   if(RandomDevice == nullptr) {
+      RandomDevice = fopen("/dev/urandom", "r");
    }
+   if((RandomDevice != nullptr) && (fread(&number, sizeof(number), 1, RandomDevice) == 1)) {
+      return number;
+   }
+   srandom(static_cast<unsigned int>(getMicroTime() & 0xffffffff));
    const uint16_t a = random() & 0xffff;
    const uint16_t b = random() & 0xffff;
-   return (((uint32_t)a) << 16) | (uint32_t)b;
-#endif
+   return (static_cast<uint32_t>(a) << 16) | b;
 }
 
-
-// ###### Get double random value ###########################################
 double randomDouble()
 {
-   // Resulting range: [0, 1)
-   return (double)random32() / (double)0x100000000;
+   return static_cast<double>(random32()) / static_cast<double>(0x100000000ULL);
 }
 
-
-// ###### Get exponential-distributed double random value ###################
 double randomExpDouble(const double mean)
 {
-   // randomDouble() returns value in [0, 1), i.e. 0 is included. log(0) = -∞.
-   // => Using 1.0 - randomDouble() to prevent this issue:
    return -mean * log(1.0 - randomDouble());
 }
 
-
-// ###### Get normal-distributed double random value ########################
 double randomNormal(const double mean, const double stddev)
 {
-    const double u = randomDouble();
-    const double v = randomDouble();
-    return mean + stddev * sqrt(-2.0*log(u)) * cos(M_PI*2.0*v);
+   const double u = randomDouble();
+   const double v = randomDouble();
+   return mean + stddev * sqrt(-2.0 * log(u)) * cos(M_PI * 2.0 * v);
 }
 
-
-// ###### Get truncated-normal-distributed double random value ##############
 double randomTruncNormal(const double mean, const double stddev)
 {
    double result;
    do {
-       result = randomNormal(mean, stddev);
-   } while(result < 0);
+      result = randomNormal(mean, stddev);
+   } while(result < 0.0);
    return result;
 }
 
-
-// ###### Get pareto-distributed double random value ########################
-// Parameters:
-// location = the location parameter (also: scale parameter): x_m, x_min or m
-// shape    = the shape parameter: alpha or k
-//
-// Based on rpareto from GNU R's VGAM package
-// (http://cran.r-project.org/web/packages/VGAM/index.html):
-// rpareto <- function (n, location, shape)
-// {
-//     ans <- location/runif(n)^(1/shape)
-//     ans[location <= 0] <- NaN
-//     ans[shape <= 0] <- NaN
-//     ans
-// }
-//
-// Some description:
-// https://www.geeksforgeeks.org/engineering-mathematics/pareto-distribution/
-//
-// Mean: E(X) = shape*location / (shape - 1) for alpha > 1
-// => location = E(X)*(shape - 1) / shape
-//
 double randomParetoDouble(const double location, const double shape)
 {
    assert(shape > 0.0);
-
    double r = randomDouble();
-   while ((r <= 0.0) || (r >= 1.0)) {
+   while((r <= 0.0) || (r >= 1.0)) {
       r = randomDouble();
    }
    return location / pow(r, 1.0 / shape);
 }
-
-
-// ###### poll() to select() wrapper to work around broken Apple poll() #####
-#if defined(__APPLE__)
-#warning Using poll() to select() wrapper to work around broken Apple poll().
-int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
-{
-   // ====== Prepare timeout setting ========================================
-   struct       timeval  timeout;
-   struct       timeval* to;
-   int          n;
-   int          result;
-   unsigned int i;
-
-   if(time < 0)
-      to = nullptr;
-   else {
-      to = &timeout;
-      timeout.tv_sec  = time / 1000;
-      timeout.tv_usec = (time % 1000) * 1000;
-   }
-
-   // ====== Prepare FD settings ============================================
-   fd_set readfdset;
-   fd_set writefdset;
-   fd_set exceptfdset;
-   FD_ZERO(&readfdset);
-   FD_ZERO(&writefdset);
-   FD_ZERO(&exceptfdset);
-   n = 0;
-   for(i = 0; i < count; i++) {
-      if(fdlist[i].fd < 0) {
-         continue;
-      }
-      if(fdlist[i].events & POLLIN) {
-         FD_SET(fdlist[i].fd, &readfdset);
-      }
-      if(fdlist[i].events & POLLOUT) {
-         FD_SET(fdlist[i].fd, &writefdset);
-      }
-      FD_SET(fdlist[i].fd, &exceptfdset);
-      n = std::max(n, fdlist[i].fd);
-   }
-   for(i = 0;i < count;i++) {
-      fdlist[i].revents = 0;
-   }
-
-   // ====== Do ext_select() ================================================
-   result = ext_select(n + 1, &readfdset, &writefdset ,&exceptfdset, to);
-   if(result < 0) {
-      return result;
-   }
-
-   // ====== Set result flags ===============================================
-   for(i = 0;i < count;i++) {
-      if(FD_ISSET(fdlist[i].fd,&readfdset) && (fdlist[i].events & POLLIN)) {
-         fdlist[i].revents |= POLLIN;
-      }
-      if(FD_ISSET(fdlist[i].fd,&writefdset) && (fdlist[i].events & POLLOUT)) {
-         fdlist[i].revents |= POLLOUT;
-      }
-      if(FD_ISSET(fdlist[i].fd,&exceptfdset)) {
-         fdlist[i].revents |= POLLERR;
-      }
-   }
-   return result;
-}
-#endif

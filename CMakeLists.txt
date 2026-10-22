@@ -33,6 +33,10 @@ SET(BUILD_MINOR "0")
 SET(BUILD_PATCH "12")
 SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
+SET(CMAKE_CXX_STANDARD          20)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_CXX_EXTENSIONS        OFF)
+
 
 #############################################################################
 #### CMAKE INCLUDES                                                      ####
@@ -43,6 +47,7 @@ INCLUDE(CheckCSourceCompiles)
 INCLUDE(CheckCSourceRuns)
 INCLUDE(CheckIncludeFile)
 INCLUDE(CheckStructHasMember)
+INCLUDE(CheckSymbolExists)
 INCLUDE(GNUInstallDirs)
 
 
@@ -113,11 +118,28 @@ ENDIF()
 #### OPTIONS                                                             ####
 #############################################################################
 
-OPTION(WITH_KERNEL_SCTP       "Use Kernel SCTP"                           1)
-OPTION(WITH_ICONS             "Build NetPerfMeter icons and logo files"   1)
-OPTION(WITH_PLOT_PROGRAMS     "Include plot programs"                     1)
-OPTION(WITH_EXAMPLE_SCRIPTS   "Include example scripts"                   1)
-OPTION(WITH_EXAMPLE_RESULTS   "Include example results"                   1)
+OPTION(WITH_I18N "Build with Internationalization (i18n) support"         ON)
+
+OPTION(WITH_KERNEL_SCTP       "Use Kernel SCTP"                           ON)
+OPTION(WITH_ICONS             "Build NetPerfMeter icons and logo files"   ON)
+OPTION(WITH_PLOT_PROGRAMS     "Include plot programs"                     ON)
+OPTION(WITH_EXAMPLE_SCRIPTS   "Include example scripts"                   ON)
+OPTION(WITH_EXAMPLE_RESULTS   "Include example results"                   ON)
+
+
+#############################################################################
+#### CHECKS                                                              ####
+#############################################################################
+
+CHECK_SYMBOL_EXISTS(strlcat "string.h" HAVE_STRLCAT)
+IF (HAVE_STRLCAT)
+   ADD_DEFINITIONS(-DHAVE_STRLCAT)
+ENDIF()
+
+CHECK_SYMBOL_EXISTS(strlcpy "string.h" HAVE_STRLCPY)
+IF (HAVE_STRLCPY)
+   ADD_DEFINITIONS(-DHAVE_STRLCPY)
+ENDIF()
 
 
 #############################################################################
@@ -476,7 +498,87 @@ ENDIF()
 
 
 #############################################################################
+#### INTERNATIONALISATION (I18N)                                         ####
+#############################################################################
+
+IF (WITH_I18N)
+   FIND_PACKAGE(Intl)
+   IF (Intl_FOUND)
+      MESSAGE(STATUS "Internationalization (i18n) support found:")
+      MESSAGE(STATUS " Intl_INCLUDE_DIRS: ${Intl_INCLUDE_DIRS}")
+      MESSAGE(STATUS " Intl_LIBRARIES:    ${Intl_LIBRARIES}")
+      MESSAGE(STATUS " Version:           ${Intl_VERSION}")
+   ELSE()
+      MESSAGE(FATAL_ERROR
+            "Cannot find Internationalization (i18n) support! Try:\n"
+            " * Ubuntu/Debian: sudo apt install -y gettext libc6-dev\n"
+            " * Fedora:        sudo dnf install -y gettext-devel\n"
+            " * OpenSUSE:      sudo zypper install -y gettext-devel\n"
+            " * Alpine:        sudo apk add gettext-dev\n"
+            " * FreeBSD:       sudo pkg install -y gettext\n"
+            " * NetBSD:        sudo pkgin -y install gettext\n"
+            " * OpenBSD:       sudo pkg_add gettext-runtime gettext-tools\n"
+            " * Solaris:       sudo pkg install gnu-gettext\n"
+            " * Apple:         brew install gettext"
+            " * Windows:       vcpkg install gettext[core,tools]:x64-windows\n")
+   ENDIF()
+
+   FIND_PROGRAM(XGETTEXT xgettext HINTS /usr/pkg/bin /usr/gnu/bin /opt/homebrew/opt/gettext/bin /usr/local/opt/gettext/bin)
+   FIND_PROGRAM(MSGMERGE msgmerge HINTS /usr/pkg/bin /usr/gnu/bin /opt/homebrew/opt/gettext/bin /usr/local/opt/gettext/bin)
+   FIND_PROGRAM(MSGFMT   msgfmt   HINTS /usr/pkg/bin /usr/gnu/bin /opt/homebrew/opt/gettext/bin /usr/local/opt/gettext/bin)
+
+   IF (XGETTEXT AND MSGMERGE AND MSGFMT)
+      MESSAGE(STATUS "GNU gettext support found:")
+
+      EXECUTE_PROCESS(COMMAND ${XGETTEXT} --version
+                      OUTPUT_VARIABLE XGETTEXT_OUTPUT
+                      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+      STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" XGETTEXT_VERSION "${XGETTEXT_OUTPUT}")
+
+      EXECUTE_PROCESS(COMMAND ${MSGMERGE} --version
+                      OUTPUT_VARIABLE MSGMERGE_OUTPUT
+                      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+      STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" MSGMERGE_VERSION "${MSGMERGE_OUTPUT}")
+
+      EXECUTE_PROCESS(COMMAND ${MSGFMT} --version
+                      OUTPUT_VARIABLE MSGFMT_OUTPUT
+                      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+      STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" MSGFMT_VERSION "${MSGFMT_OUTPUT}")
+
+      MESSAGE(STATUS " xgettext: ${XGETTEXT} (version ${XGETTEXT_VERSION})")
+      MESSAGE(STATUS " msgmerge: ${MSGMERGE} (version ${MSGMERGE_VERSION})")
+      MESSAGE(STATUS " msgfmt:   ${MSGFMT} (version ${MSGFMT_VERSION})")
+   ENDIF()
+
+   SET(GETTEXT_MIN_VERSION 0.19)
+   IF ((NOT XGETTEXT) OR (NOT MSGMERGE) OR (NOT MSGFMT)       OR
+       (XGETTEXT_VERSION VERSION_LESS ${GETTEXT_MIN_VERSION}) OR
+       (MSGMERGE_VERSION VERSION_LESS ${GETTEXT_MIN_VERSION}) OR
+       (MSGFMT_VERSION   VERSION_LESS ${GETTEXT_MIN_VERSION}))
+      MESSAGE(FATAL_ERROR
+              "Cannot find gettext tools >= ${GETTEXT_MIN_VERSION}! Try:\n"
+              " * Ubuntu/Debian: sudo apt install -y gettext libc6-dev\n"
+              " * Fedora:        sudo dnf install -y gettext-devel\n"
+              " * OpenSUSE:      sudo zypper install -y gettext-devel\n"
+              " * Alpine:        sudo apk add gettext-dev\n"
+              " * FreeBSD:       sudo pkg install -y gettext\n"
+              " * NetBSD:        sudo pkgin -y install gettext\n"
+              " * OpenBSD:       sudo pkg_add gettext-runtime gettext-tools\n"
+              " * Solaris:       sudo pkg install gnu-gettext\n"
+              " * Apple:         brew install gettext\n"
+              " * Windows:       vcpkg install gettext[core,tools]:x64-windows\n")
+   ENDIF()
+
+   ADD_DEFINITIONS(-DENABLE_NLS)
+ENDIF()
+
+
+#############################################################################
 #### SUBDIRECTORIES                                                      ####
 #############################################################################
 
 ADD_SUBDIRECTORY(src)
+
+# IF (WITH_I18N)
+#    ADD_SUBDIRECTORY(po)
+# ENDIF()
