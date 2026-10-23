@@ -49,9 +49,41 @@ _createsummary()
    fi
 
    case "${prev}" in
+      -F | --format)
+         local formats="plain bz2 gzip xz lzma zstd"
+         mapfile -t COMPREPLY < <(compgen -W "${formats}" -- "${cur}")
+         return
+         ;;
       -c | --compress)
          compopt -o nosort 2>/dev/null || true   # No sorting (Bash >= 4.4)
-         mapfile -t COMPREPLY < <(compgen -W "{1..9}" -- "${cur}")
+         local format=""
+         local i
+         for ((i = 1; i < cword; i++)); do
+            if [[ "${words[i]}" == "-F" || "${words[i]}" == "--format" ]]; then
+               format="${words[i+1]}"
+            fi
+         done
+
+         local levels
+         case "${format}" in
+            plain)
+               levels="0"
+               ;;
+            bz2 | bzip2)
+               levels="$(echo {1..9})"
+               ;;
+            gzip | gz | xz | lzma)
+               levels="$(echo {0..9})"
+               ;;
+            zstd | zst | zstandard)
+               levels="$(echo {1..22})"
+               ;;
+            *)
+               levels="$(echo {0..22})"
+               ;;
+         esac
+
+         mapfile -t COMPREPLY < <(compgen -W "${levels}" -- "${cur}")
          return
          ;;
       -s | --separator)
@@ -65,6 +97,8 @@ _createsummary()
 --batch
 -i
 --interactive
+-F
+--format
 -c
 --compress
 -s
