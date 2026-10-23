@@ -25,15 +25,15 @@
 .\" Contact:  dreibh@simula.no
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
-." ###### Setup ############################################################
+.\" ###### Setup ############################################################
 .Dd October 22, 2026
 .Dt NetPerfMeter 1
 .Os netperfmeter
-." ###### Name #############################################################
+.\" ###### Name #############################################################
 .Sh NAME
 .Nm netperfmeter
 .Nd Network Performance Meter
-." ###### Synopsis #########################################################
+.\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm netperfmeter Ar local\_port
 .br
@@ -138,12 +138,12 @@
 .Sy FLOWSPEC:
 .br
 .Ar out\%go\%ing\_\%fra\%me\_\%rate:\%out\%go\%ing\_\%fra\%me\_\%size:\%in\%com\%ing\_\%fra\%me\_\%rate:\%in\%com\%ing\_\%fra\%me\_\%size:\%opt\%ion:\%...
-." ###### Description ######################################################
+.\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm netperfmeter
 is a network performance meter for the TCP, MPTCP, UDP, DCCP, SCTP and QUIC transport protocols over IPv4 and IPv6. It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. The results can be written as scalar files (summary of the run) and vector files (details per frame). These files can be processed further, e.g. for analysis and plotting of the results.
 .Pp
-." ###### Arguments ########################################################
+.\" ###### Arguments ########################################################
 .Sh ARGUMENTS
 The following arguments can be provided:
 .Bl -tag -width indent
@@ -321,12 +321,12 @@ Prints command help.
 .It Fl v | Fl \-version
 Prints program version.
 .El
-." ###### Exit status ######################################################
+.\" ###### Exit status ######################################################
 .Sh EXIT STATUS
 The
 .Nm
 tool exits with 0 on success, and >0 in case of an error.
-." ###### Examples #########################################################
+.\" ###### Examples #########################################################
 .Sh EXAMPLES
 Some netperfmeter usage examples:
 .Bl -tag -width indent
@@ -359,17 +359,17 @@ Shows the version.
 .It netperfmeter \-help
 Shows usage help.
 .El
-." ###### See also #########################################################
+.\" ###### See also #########################################################
 .Sh SEE ALSO
 .Xr combinesummaries 1 ,
 .Xr createsummary 1 ,
 .Xr plot-netperfmeter-results 1 ,
 .Xr runtimeestimator 1
-." ###### Notes ############################################################
+.\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
 .Lk https://www.nntb.no/\(tidreibh/netperfmeter/ "NetPerfMeter Homepage" .
-." ###### Authors ##########################################################
+.\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz,
 .Lk https://www.nntb.no/\(tidreibh "Homepage"
