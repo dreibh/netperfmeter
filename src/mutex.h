@@ -60,4 +60,4 @@ class Mutex
    std::recursive_mutex MyMutex;
 };
 
-#endif
+#endif // MUTEX_H

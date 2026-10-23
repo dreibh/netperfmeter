@@ -235,4 +235,4 @@ inline int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int 
 }
 #endif
 
-#endif
+#endif // TOOLS_H

@@ -98,4 +98,4 @@ bool sendNetPerfMeterAcknowledge(int            controlSocket,
 
 void handleControlAssocShutdown(int controlSocket);
 
-#endif
+#endif // CONTROL_H

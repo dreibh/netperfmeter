@@ -68,7 +68,7 @@ inline constexpr FileFormat IFF_XZ    = FileFormat::XZ;
 inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 
 
-// ###### Detect format from file path ======================================
+// ###### Detect format from file path ######################################
 [[nodiscard]] inline FileFormat detectFormat(const std::filesystem::path& path)
 {
    std::string ext = path.extension().string();
@@ -94,7 +94,7 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 }
 
 
-// ###### Parse format name string ==========================================
+// ###### Parse format name string ##########################################
 [[nodiscard]] inline FileFormat parseFormat(std::string_view str)
 {
    std::string lower(str);
@@ -123,7 +123,7 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 }
 
 
-// ###### Get default file extension for format =============================
+// ###### Get default file extension for format #############################
 [[nodiscard]] constexpr std::string_view getFormatExtension(const FileFormat format) noexcept
 {
    switch(format) {
@@ -143,7 +143,7 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 }
 
 
-// ###### Get textual name of format ========================================
+// ###### Get textual name of format ########################################
 [[nodiscard]] constexpr std::string_view getFormatName(const FileFormat format) noexcept
 {
    switch(format) {
@@ -164,7 +164,7 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 }
 
 
-// ###### Get default compression level for format ==========================
+// ###### Get default compression level for format ##########################
 [[nodiscard]] constexpr unsigned int getDefaultCompressionLevel(const FileFormat format) noexcept
 {
    switch(format) {
@@ -183,7 +183,7 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 }
 
 
-// ###### Get minimum compression level for format ==========================
+// ###### Get minimum compression level for format ##########################
 [[nodiscard]] constexpr unsigned int getMinCompressionLevel(const FileFormat format) noexcept
 {
    switch(format) {
@@ -200,7 +200,7 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 }
 
 
-// ###### Get maximum compression level for format ==========================
+// ###### Get maximum compression level for format ##########################
 [[nodiscard]] inline unsigned int getMaxCompressionLevel(const FileFormat format) noexcept
 {
    switch(format) {
@@ -209,11 +209,7 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
       case FileFormat::XZ:
          return 9;
       case FileFormat::ZSTD:
-#if defined(ZSTD_CLEVEL_DEFAULT)
          return static_cast<unsigned int>(ZSTD_maxCLevel());
-#else
-         return 22;
-#endif
       case FileFormat::Plain:
       case FileFormat::None:
       default:
@@ -222,7 +218,7 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 }
 
 
-// ###### Validate compression level for format =============================
+// ###### Validate compression level for format #############################
 [[nodiscard]] inline bool isValidCompressionLevel(const FileFormat format, const int level) noexcept
 {
    if(level < 0) {

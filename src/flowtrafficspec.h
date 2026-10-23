@@ -107,4 +107,5 @@ class FlowTrafficSpec
    std::vector<OnOffEvent> OnOffEvents;
 };
 
-#endif
+#endif // FLOWTRAFFICSPEC_H
+

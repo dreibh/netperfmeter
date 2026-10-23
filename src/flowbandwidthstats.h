@@ -75,4 +75,4 @@ class FlowBandwidthStats
 FlowBandwidthStats operator+(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2);
 FlowBandwidthStats operator-(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2);
 
-#endif
+#endif // FLOWBANDWIDTHSTATS_H

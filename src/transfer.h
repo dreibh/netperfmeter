@@ -44,4 +44,4 @@ bool handleNetPerfMeterData(const bool     isActiveMode,
                             const int      protocol,
                             const int      sd);
 
-#endif
+#endif // TRANSFER_H

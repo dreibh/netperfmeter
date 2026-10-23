@@ -31,7 +31,8 @@
 #include <string_view>
 #include <sys/types.h>
 
-// ====== Input File Exception ==============================================
+
+// ###### Input File Exception ##############################################
 class InputFileException : public std::runtime_error
 {
    public:
@@ -78,7 +79,8 @@ class InputFileException : public std::runtime_error
    int         ErrorCode { 0 };
 };
 
-// ====== Input File Class ==================================================
+
+// ###### Input File Class ##################################################
 class InputFile
 {
    public:

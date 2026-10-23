@@ -54,7 +54,7 @@
 #endif
 
 
-// ====== Output File Exception =============================================
+// ###### Output File Exception #############################################
 class OutputFileException : public std::runtime_error
 {
    public:
@@ -102,7 +102,7 @@ class OutputFileException : public std::runtime_error
 };
 
 
-// ====== Output File Class =================================================
+// ###### Output File Class #################################################
 class OutputFile
 {
    public:

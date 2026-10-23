@@ -103,4 +103,4 @@ class MessageReader
    std::map<int, Socket*> SocketMap;
 };
 
-#endif
+#endif // MESSAGEREADER_H

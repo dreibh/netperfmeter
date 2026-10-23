@@ -102,4 +102,4 @@ class Measurement : public Mutex
    uint64_t    FirstReception;
 };
 
-#endif
+#endif // MEASUREMENT_H

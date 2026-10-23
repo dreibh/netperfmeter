@@ -107,4 +107,4 @@ inline void loggingMutexUnlock() {
    gLogMutex.unlock();
 }
 
-#endif
+#endif // LOGLEVEL_H

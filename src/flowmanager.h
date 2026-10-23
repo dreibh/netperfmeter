@@ -180,4 +180,4 @@ int createAndBindSocket(const int             family,
                         const bool            bindV6Only);
 bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize);
 
-#endif
+#endif // FLOWMANAGER_H

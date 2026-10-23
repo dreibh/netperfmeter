@@ -72,4 +72,4 @@ class Thread : public Mutex
    std::atomic<bool> Stopping;
 };
 
-#endif
+#endif // THREAD_H

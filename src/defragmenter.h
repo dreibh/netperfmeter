@@ -87,4 +87,4 @@ class Defragmenter
    uint32_t                                NextFrameID;
 };
 
-#endif
+#endif // DEFRAGMENTER_H

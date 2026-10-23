@@ -252,4 +252,4 @@ class Flow : public Thread
    Defragmenter       MyDefragmenter;
 };
 
-#endif
+#endif // FLOW_H
