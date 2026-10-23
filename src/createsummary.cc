@@ -637,7 +637,7 @@ static void dumpScalars(const std::string& resultsDirectory,
 
 
 // ------ BEGIN-OF-USAGE-BLOCK ------
-// ###### Usage #============================================================
+// ###### Usage #############################################################
 #define HEADER(s)    "\x1b[4m" << (s) << "\x1b[0m"
 #define CMD(s)       "\x1b[1m" << (s) << "\x1b[0m"
 #define OPT(s)       "\x1b[1m" s "\x1b[0m"

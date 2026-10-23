@@ -123,13 +123,13 @@ class InputFile
    bool               LZMAInitialized { false };
    ZSTD_DStream*      ZSTDDStream     { nullptr };
 
-   // Unified raw compressed input buffer (shared by XZ and ZSTD)
    uint8_t            RawBuffer[16384];
    size_t             RawBufferPos    { 0 };
    size_t             RawBufferSize   { 0 };
    bool               RawFileEof      { false };
+   bool               StreamEof       { false };   // Track logical end-of-stream
 
-   // Decompressed line-assembly buffer
+   // Stored leftover uncompressed text
    size_t             StoragePos      { 0 };
    char               Storage[16384];
 };

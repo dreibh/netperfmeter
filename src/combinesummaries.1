@@ -54,7 +54,9 @@
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm combinesummaries
-is a combination tool for CSV/GNU R data files: it creates a single data table from multiple input files. CombineSummaries supports on\-the\-fly BZip2 compression. After startup, the program accepts the following commands from standard input
+is a combination tool for CSV/GNU R data files: it creates a single data table from multiple input files.
+.Nm
+supports on\-the\-fly compression with BZip2, GZip, XZ, and Zstandard. The format of the output file and input files is detected automatically from file extensions. After startup, the program accepts the following commands from standard input
 .Pq Em not as command\-line arguments! :
 .Bl -tag -width indent
 .It Cm \-\-varnames= Ns Ar variables
@@ -72,11 +74,11 @@ Sets the directory where to find the input files.
 The following arguments and options may be provided:
 .Bl -tag -width indent
 .It Ar output_file
-The name of the output file to be created.
+The name of the output file to be created. The compression format is detected automatically from the file extension (e.g. .bz2, .gz, .xz, or .zst).
 .It Ar variable_names
 A space\-separated list of output variable names to be added to the output data tables.
 .It Fl c Ar level | Fl \-compress Ar level
-Sets the BZip2 compression level; 1=fastest (lowest), 9=highest (default).
+Sets the compression level. The valid range depends on the output format (e.g. 1\-9 for BZip2, 1\-22 for Zstandard, 0 for Plain). If not specified, the format's default compression level is used.
 .It Fl s Ar separator | Fl \-separator Ar separator
 Sets the separator for the tables. Default: tabulator character (i.e., $'\et').
 .It Fl l | Fl \-line\-numbers
@@ -86,7 +88,7 @@ Do not add line numbers into the output table files, as usual for CSV (default).
 .It Fl q | Fl \-quiet
 Do not print verbose status information.
 .It Fl h | Fl \-help
-Prints command help.
+Prints command\-line help.
 .It Fl v | Fl \-version
 Prints program version.
 .El
@@ -103,12 +105,23 @@ Consider two data tables:
 .Pa v2.data.bz2
 (created with ParameterY=Beta).
 The output data table should be written to
-.Pa output.data.bz2 :
+.Pa output.data.zst
+using Zstandard compression with compression level 5:
 .Bd -literal
 ( echo \-e "\-\-values=\e\[dq]Alpha\e\[dq]\et\e\[dq]Test 1\e\[dq]" && \\
   echo "\-\-input=v1.data.bz2"               && \\
   echo \-e "\-\-values=\e\[dq]Beta\e\[dq]\et\e\[dq]Test 2\e\[dq]"  && \\
-  echo "\-\-input=v2.data.bz2" ) | combinesummaries output.data.bz2 $'ParameterX\etParameterY'
+  echo "\-\-input=v2.data.bz2" ) | combinesummaries \-\-compress 5 output.data.zst $'ParameterX\etParameterY'
+.Ed
+.Pp
+Print command\-line help:
+.Bd -literal
+combinesummaries \-\-help
+.Ed
+.Pp
+Print program version:
+.Bd -literal
+combinesummaries \-\-version
 .Ed
 .\" ###### See also #########################################################
 .Sh SEE ALSO

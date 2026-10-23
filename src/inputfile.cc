@@ -329,7 +329,7 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
       const size_t bytesToRead = std::min(sizeof(Storage), bufferSize - currentLen);
       ssize_t bytesRead = 0;
 
-      if(Format == InputFileFormat::ZSTD) {
+if(Format == InputFileFormat::ZSTD) {
          ZSTD_outBuffer out = { buffer + currentLen, bytesToRead, 0 };
          while(out.pos < out.size) {
             if(RawBufferPos >= RawBufferSize && !RawFileEof) {
@@ -356,34 +356,40 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
          bytesRead = static_cast<ssize_t>(out.pos);
       }
       else if(Format == InputFileFormat::XZ) {
-         LZMAStream.next_out  = reinterpret_cast<uint8_t*>(buffer + currentLen);
-         LZMAStream.avail_out = bytesToRead;
-
-         while(LZMAStream.avail_out > 0) {
-            if(LZMAStream.avail_in == 0 && !RawFileEof) {
-               const size_t n = std::fread(RawBuffer, 1, sizeof(RawBuffer), File);
-               if(n == 0) {
-                  RawFileEof = true;
-               }
-               LZMAStream.next_in  = RawBuffer;
-               LZMAStream.avail_in = n;
-            }
-
-            const lzma_action action = RawFileEof ? LZMA_FINISH : LZMA_RUN;
-            const lzma_ret ret = lzma_code(&LZMAStream, action);
-
-            if(ret == LZMA_STREAM_END) {
-               break;
-            }
-            else if(ret != LZMA_OK) {
-               throw InputFileException("Failed to decompress XZ data",
-                                        Name, static_cast<int>(ret), lzmaErrorToString(ret));
-            }
-            else if(LZMAStream.avail_in == 0 && RawFileEof) {
-               break;
-            }
+         if(StreamEof) {
+            bytesRead = 0;
          }
-         bytesRead = static_cast<ssize_t>(bytesToRead - LZMAStream.avail_out);
+         else {
+            LZMAStream.next_out  = reinterpret_cast<uint8_t*>(buffer + currentLen);
+            LZMAStream.avail_out = bytesToRead;
+
+            while(LZMAStream.avail_out > 0) {
+               if(LZMAStream.avail_in == 0 && !RawFileEof) {
+                  const size_t n = std::fread(RawBuffer, 1, sizeof(RawBuffer), File);
+                  if(n == 0) {
+                     RawFileEof = true;
+                  }
+                  LZMAStream.next_in  = RawBuffer;
+                  LZMAStream.avail_in = n;
+               }
+
+               const lzma_action action = RawFileEof ? LZMA_FINISH : LZMA_RUN;
+               const lzma_ret ret = lzma_code(&LZMAStream, action);
+
+               if(ret == LZMA_STREAM_END) {
+                  StreamEof = true;
+                  break;
+               }
+               else if(ret != LZMA_OK) {
+                  throw InputFileException("Failed to decompress XZ data",
+                                           Name, static_cast<int>(ret), lzmaErrorToString(ret));
+               }
+               else if(LZMAStream.avail_in == 0 && RawFileEof) {
+                  break;
+               }
+            }
+            bytesRead = static_cast<ssize_t>(bytesToRead - LZMAStream.avail_out);
+         }
       }
       else if(Format == InputFileFormat::GZip) {
          const int count = gzread(GZFile, buffer + currentLen, static_cast<unsigned int>(bytesToRead));
@@ -395,12 +401,20 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
          bytesRead = static_cast<ssize_t>(count);
       }
       else if(Format == InputFileFormat::BZip2) {
-         int bzerror = BZ_OK;
-         bytesRead = BZ2_bzRead(&bzerror, BZFile, buffer + currentLen, static_cast<int>(bytesToRead));
-         if(bzerror != BZ_OK && bzerror != BZ_STREAM_END) {
-            const char* reason = BZ2_bzerror(BZFile, &bzerror);
-            throw InputFileException("Failed to read from BZip2 file",
-                                     Name, bzerror, reason ? reason : "BZip2 error");
+         if(StreamEof) {
+            bytesRead = 0;
+         }
+         else {
+            int bzerror = BZ_OK;
+            bytesRead = BZ2_bzRead(&bzerror, BZFile, buffer + currentLen, static_cast<int>(bytesToRead));
+            if(bzerror == BZ_STREAM_END) {
+               StreamEof = true;
+            }
+            else if(bzerror != BZ_OK) {
+               const char* reason = BZ2_bzerror(BZFile, &bzerror);
+               throw InputFileException("Failed to read from BZip2 file",
+                                        Name, bzerror, reason ? reason : "BZip2 error");
+            }
          }
       }
       else if(Format == InputFileFormat::Plain) {
