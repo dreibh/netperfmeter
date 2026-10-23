@@ -56,20 +56,22 @@
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm extractvectors
-is an extraction tool for vectors written by OMNeT++ to a data table. ExtractVectors supports on\-the\-fly BZip2 decompression and compression.
+is an extraction tool for vectors written by OMNeT++ to a data table.
+.Nm
+supports on\-the\-fly decompression and compression with BZip2, GZip, XZ, and Zstandard. The format of the input vector file and output data table is detected automatically from file extensions.
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
 The following arguments and options may be provided:
 .Bl -tag -width indent
 .It Ar input_file
-The name of the input vector file.
+The name of the input vector file. The compression format is detected automatically from the file extension (e.g. .bz2, .gz, .xz, or .zst).
 .It Ar output_file
-The name of the output data table to be created.
+The name of the output data table to be created. The compression format is detected automatically from the file extension (e.g. .bz2, .gz, .xz, or .zst).
 .It Ar [!]vector_name_prefix
 Name prefix of vectors to be extracted. Multiple vector name prefixes may be specified. If no name prefix is given, all vectors will be extracted. A "!" in front of the name turns vector splitting for this prefix on (see \-\-split option below).
 .It Fl c Ar level | Fl \-compress Ar level
-Sets the BZip2 compression level; 1=fastest (lowest), 9=highest (default).
+Sets the compression level. The valid range depends on the output format (e.g. 1\-9 for BZip2, 1\-22 for Zstandard, 0 for Plain). If not specified, the format's default compression level is used.
 .It Fl s Ar separator | Fl \-separator Ar separator
 Sets the separator for the tables. Default: tabulator character (i.e., $'\et').
 .It Fl l | Fl \-line\-numbers
@@ -84,7 +86,7 @@ Turns vector splitting off (default).
 .It Fl q | Fl \-quiet
 Do not print verbose status information.
 .It Fl h | Fl \-help
-Prints command help.
+Prints command\-line help.
 .It Fl v | Fl \-version
 Prints program version.
 .El
@@ -98,14 +100,14 @@ tool exits with 0 on success, and >0 in case of an error.
 Consider an OMNeT++ vector file containing the vectors
 "Slow Start Threshold <assoc>:<path>" and
 "Congestion Window <assoc>:<path>",
-contained with a lot of other vectors in the BZip2\-compressed vector file
+contained with a lot of other vectors in the vector file
 .Pa results.vec.bz2.
-ExtractVectors can be used to extract all vectors beginning with "Slow Start Threshold" or "Congestion Window" into a BZip2\-compressed data
+ExtractVectors can be used to extract all vectors beginning with "Slow Start Threshold" or "Congestion Window" into a Zstandard\-compressed data
 table
-.Pa results.data.bz2
-by the following command:
+.Pa results.data.zst
+using compression level 5 by the following command:
 .Bd -literal
-extractvectors results.vec.bz2 results.data.bz2 \\
+extractvectors \-\-compress 5 results.vec.bz2 results.data.zst \\
    "Slow Start Threshold" \\
    "Congestion Window"
 .Ed
@@ -128,6 +130,16 @@ Time     Event               Object Vector                          Split Value
 0.003913   238 "net.server[0].sctp" "Slow Start Threshold 4:Total"  ""    10000000
 0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     ""    3000
 0.003913   238 "net.server[0].sctp" "Congestion Window 4:Total"     ""    6000
+.Ed
+.Pp
+Print command\-line help:
+.Bd -literal
+extractvectors \-\-help
+.Ed
+.Pp
+Print program version:
+.Bd -literal
+extractvectors \-\-version
 .Ed
 .\" ###### See also #########################################################
 .Sh SEE ALSO

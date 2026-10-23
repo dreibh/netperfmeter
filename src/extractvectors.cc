@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -34,7 +34,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
-#include <format>
 #include <iostream>
 #include <map>
 #include <string>
@@ -51,6 +50,27 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 }
 #endif
 
+#if __has_include(<format>)
+#include <format>
+template<typename... Args>
+static inline std::string formatText(const std::string_view fmt, const Args&... args)
+{
+   try {
+      return std::vformat(fmt, std::make_format_args(args...));
+   }
+   catch(const std::format_error&) {
+      return std::string(fmt);
+   }
+}
+#else
+template<typename... Args>
+static inline std::string formatText(const std::string_view fmt, const Args&...)
+{
+   return std::string(fmt);
+}
+#endif
+
+#include "ioformat.h"
 #include "inputfile.h"
 #include "outputfile.h"
 #include "package-version.h"
@@ -69,19 +89,6 @@ struct VectorMetadata
    std::string split;
    std::string object;
 };
-
-
-// ###### Modern C++20 string formatting ###################################
-template<typename... Args>
-static inline std::string formatText(const std::string_view fmt, const Args&... args)
-{
-   try {
-      return std::vformat(fmt, std::make_format_args(args...));
-   }
-   catch(const std::format_error&) {
-      return std::string(fmt);
-   }
-}
 
 
 // ###### Read and process data file ########################################
@@ -118,14 +125,12 @@ static unsigned long long extractVectors(InputFile&               inputFile,
          if((inputFile.getLine() == 1) &&
             (std::sscanf(inBuffer, "version %u", &version) == 1)) {
             if(version != 2) {
-               std::cerr << std::format("ERROR: Got unknown version number {} (expected 2)\n", version);
+               std::cerr << "ERROR: Got unknown version number " << version << " (expected 2)\n";
                std::exit(1);
             }
             versionOkay = true;
-            if(!outputFile.printf("Time%sEvent%sObject%sVector%sSplit%sValue\n",
-                                  separator, separator, separator, separator, separator)) {
-               std::exit(1);
-            }
+            outputFile.printf("Time%sEvent%sObject%sVector%sSplit%sValue\n",
+                              separator, separator, separator, separator, separator);
             outputLine++;
          }
          else {
@@ -145,27 +150,23 @@ static unsigned long long extractVectors(InputFile&               inputFile,
             const auto found = vectorMap.find(vectorID);
             if(found != vectorMap.end()) {
                if(addLineNumbers) {
-                  if(!outputFile.printf("%llu%s%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
-                                        outputLine,                  separator,
-                                        simTime,                     separator,
-                                        event,                       separator,
-                                        found->second.object.c_str(), separator,
-                                        found->second.name.c_str(),   separator,
-                                        found->second.split.c_str(),  separator,
-                                        value)) {
-                     std::exit(1);
-                  }
+                  outputFile.printf("%llu%s%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
+                                    outputLine,                   separator,
+                                    simTime,                      separator,
+                                    event,                        separator,
+                                    found->second.object.c_str(), separator,
+                                    found->second.name.c_str(),   separator,
+                                    found->second.split.c_str(),  separator,
+                                    value);
                }
                else {
-                  if(!outputFile.printf("%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
-                                        simTime,                     separator,
-                                        event,                       separator,
-                                        found->second.object.c_str(), separator,
-                                        found->second.name.c_str(),   separator,
-                                        found->second.split.c_str(),  separator,
-                                        value)) {
-                     std::exit(1);
-                  }
+                  outputFile.printf("%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
+                                    simTime,                      separator,
+                                    event,                        separator,
+                                    found->second.object.c_str(), separator,
+                                    found->second.name.c_str(),   separator,
+                                    found->second.split.c_str(),  separator,
+                                    value);
                }
                outputLine++;
             }
@@ -240,7 +241,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
 }
 
 
-// ###### Version ###########################################################
+// ###### Version #==========================================================
 [[noreturn]] static void version()
 {
    std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n";
@@ -249,7 +250,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
 
 
 // ------ BEGIN-OF-USAGE-BLOCK ------
-// ###### Usage #############################################################
+// ###### Usage #============================================================
 #define HEADER(s)    "\x1b[4m" << (s) << "\x1b[0m"
 #define CMD(s)       "\x1b[1m" << (s) << "\x1b[0m"
 #define OPT(s)       "\x1b[1m" s "\x1b[0m"
@@ -294,11 +295,11 @@ static void usage(const char* program, const int exitCode)
 // ------ END-OF-USAGE-BLOCK ------
 
 
-// ###### Main program ######################################################
+// ###### Main program ======================================================
 int main(int argc, char** argv)
 {
    bool                    addLineNumbers      = false;
-   unsigned int            compressionLevel    = 9;
+   int                     explicitLevel       = -1;
    const char*             separator           = "\t";
    bool                    vectorSplittingMode = false;
    bool                    quietMode           = false;
@@ -324,7 +325,7 @@ int main(int argc, char** argv)
    while((option = getopt_long_only(argc, argv, "c:s:lnpaqhv", long_options, &longIndex)) != -1) {
       switch(option) {
          case 'c':
-            compressionLevel = static_cast<unsigned int>(std::clamp(std::atoi(optarg), 1, 9));
+            explicitLevel = std::atoi(optarg);
             break;
          case 's':
             separator = optarg;
@@ -354,8 +355,7 @@ int main(int argc, char** argv)
          case '-':
             break;
          default:
-            std::cerr << std::format("INTERNAL ERROR: Unhandled option c={} code={:#x}!\n",
-                                     (std::isprint(option) ? static_cast<char>(option) : ' '), option);
+            std::cerr << "INTERNAL ERROR: Unhandled option code=" << option << "!\n";
             return 1;
       }
    }
@@ -366,40 +366,41 @@ int main(int argc, char** argv)
    const std::string inputFileName(argv[optind++]);
    const std::string outputFileName(argv[optind++]);
 
+   // ====== Detect formats & validate compression level ====================
+   const InputFileFormat  inputFileFormat  = detectFormat(inputFileName);
+   const OutputFileFormat outputFileFormat = detectFormat(outputFileName);
+
+   unsigned int compressionLevel = 0;
+   if(explicitLevel >= 0) {
+      if(!isValidCompressionLevel(outputFileFormat, explicitLevel)) {
+         std::cerr << "ERROR: Compression level " << explicitLevel
+                   << " is invalid for format " << getFormatName(outputFileFormat) << "!\n";
+         if(outputFileFormat == FileFormat::Plain) {
+            std::cerr << "Compression level for Plain format must be 0.\n";
+         }
+         else {
+            std::cerr << "Allowed range: " << getMinCompressionLevel(outputFileFormat)
+                      << " to " << getMaxCompressionLevel(outputFileFormat) << "\n";
+         }
+         std::exit(1);
+      }
+      compressionLevel = static_cast<unsigned int>(explicitLevel);
+   }
+   else {
+      compressionLevel = getDefaultCompressionLevel(outputFileFormat);
+   }
+
    // ====== Print information ==============================================
    if(!quietMode) {
       std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n"
                 << "* Vector Splitting:  " << (vectorSplittingMode ? "on" : "off") << "\n"
+                << "* Input Format:      " << getFormatName(inputFileFormat) << "\n"
+                << "* Output Format:     " << getFormatName(outputFileFormat) << "\n"
                 << "* Compression Level: " << compressionLevel << "\n"
                 << "\n";
    }
 
-   // ====== Open files =====================================================
-   InputFile       inputFile;
-   InputFileFormat inputFileFormat = IFF_Plain;
-   if(inputFileName.size() >= 4) {
-      const std::string ext = inputFileName.substr(inputFileName.size() - 4);
-      if(ext == ".bz2" || ext == ".BZ2") {
-         inputFileFormat = IFF_BZip2;
-      }
-   }
-   if(!inputFile.initialize(inputFileName.c_str(), inputFileFormat)) {
-      std::exit(1);
-   }
-
-   OutputFile       outputFile;
-   OutputFileFormat outputFileFormat = OFF_Plain;
-   if(outputFileName.size() >= 4) {
-      const std::string ext = outputFileName.substr(outputFileName.size() - 4);
-      if(ext == ".bz2" || ext == ".BZ2") {
-         outputFileFormat = OFF_BZip2;
-      }
-   }
-   if(!outputFile.initialize(outputFileName.c_str(), outputFileFormat, compressionLevel)) {
-      std::exit(1);
-   }
-
-   // ====== Extract vectors ================================================
+   // ====== Parse vector name prefixes =====================================
    for(int i = optind; i < argc; i++) {
       const std::string_view arg(argv[i]);
       if(!arg.empty() && arg.front() == '!') {
@@ -418,26 +419,44 @@ int main(int argc, char** argv)
       }
    }
 
-   const unsigned long long lines = extractVectors(inputFile, outputFile,
-                                                   vectorSplittingMode, vectorsToExtract,
-                                                   addLineNumbers, separator);
+   // ====== Process files ==================================================
+   try {
+      InputFile inputFile;
+      inputFile.initialize(inputFileName, inputFileFormat);
 
-   // ====== Close files ====================================================
-   inputFile.finish();
+      OutputFile outputFile;
+      outputFile.initialize(outputFileName, outputFileFormat, compressionLevel);
 
-   unsigned long long in  = 0;
-   unsigned long long out = 0;
-   if(!outputFile.finish(true, &in, &out)) {
+      const unsigned long long lines = extractVectors(inputFile, outputFile,
+                                                      vectorSplittingMode, vectorsToExtract,
+                                                      addLineNumbers, separator);
+
+      inputFile.finish();
+
+      unsigned long long in  = 0;
+      unsigned long long out = 0;
+      outputFile.finish(true, &in, &out);
+
+      if(!quietMode) {
+         std::cout << "Wrote " << lines << " lines";
+         if(in > 0) {
+            std::cout << " (" << in << " -> " << out << " - "
+                      << (static_cast<double>(out) * 100.0 / static_cast<double>(in)) << "%)";
+         }
+         std::cout << "\n";
+      }
+   }
+   catch(const InputFileException& ex) {
+      std::cerr << "ERROR: " << ex.what() << "\n";
       std::exit(1);
    }
-
-   if(!quietMode) {
-      std::cout << "Wrote " << lines << " lines";
-      if(in > 0) {
-         std::cout << " (" << in << " -> " << out << " - "
-                   << (static_cast<double>(out) * 100.0 / static_cast<double>(in)) << "%)";
-      }
-      std::cout << "\n";
+   catch(const OutputFileException& ex) {
+      std::cerr << "ERROR: " << ex.what() << "\n";
+      std::exit(1);
+   }
+   catch(const std::exception& ex) {
+      std::cerr << "ERROR: " << ex.what() << "\n";
+      std::exit(1);
    }
 
    return 0;
