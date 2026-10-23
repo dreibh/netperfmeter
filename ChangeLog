@@ -1,3 +1,240 @@
+commit c874e3465df1161cc26955f05855f12b288c8d3b
+Merge: 39de066 7ed76f6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 10:26:43 2026 +0200
+
+    Merge branch 'dreibh/tcp-heartbeats' of github.com:dreibh/netperfmeter into dreibh/tcp-heartbeats
+
+commit 39de0661e2f0542ff916ddf8c3c4cc5a85ebea17
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 10:21:54 2026 +0200
+
+    Fixed hyphenation hint issue in manpage.
+
+commit f9807844101c9b794b8033cef926ae894bc5de60
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 09:49:47 2026 +0200
+
+    Packaging update.
+
+commit a70c55f0f93d85fe6fc2da08922d3fb0a0764405
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 09:49:41 2026 +0200
+
+    Updated manpage.
+
+commit 7ed76f63c91cdb764e71d1bc83bd718fd564c960
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 20:58:45 2026 +0200
+
+    Improved script.
+
+commit 1e833dd4285a4feb138f0f7b5b296e09b305dc95
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 18:58:28 2026 +0200
+
+    Updated usage() function.
+
+commit 787eedd40bd2b14acb5d17362624be8bab7849e3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 18:57:10 2026 +0200
+
+    Improved script.
+
+commit b94cf1cc88199e2a8404f930eeb6c16f492e45bc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 18:47:43 2026 +0200
+
+    Some clean-ups.
+
+commit adac841943d5779e66bfd3b228a8e6c92a693268
+Merge: b80ef9e ff21593
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 15:54:20 2026 +0200
+
+    Merge branch 'dreibh/tcp-heartbeats' of github.com:dreibh/netperfmeter into dreibh/tcp-heartbeats
+
+commit b80ef9ee5409fefa590fc78423ebf6b389e1198e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 15:52:28 2026 +0200
+
+    Updated CMakeLists.txt.
+
+commit ff215932c3ab882a5eafbfd087d7442205ee628a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 15:43:25 2026 +0200
+
+    Compiler compatibility fix.
+
+commit 96790f4d3e4dbcd0ed3ef1962f345e55a8015318
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 15:41:20 2026 +0200
+
+    Option handling update: using IPPROTO_* instead of SOL_* for the options handling. This also works on *BSD.
+
+commit e467c1a7c7735590798eb9fe343e0477400f295c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 15:39:13 2026 +0200
+
+    Improved CMakeLists.txt.
+
+commit 84fb8b64f536809b846a277ee688527a52e60af4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 15:22:06 2026 +0200
+
+    Improved manpage.
+
+commit 96b04460500a69664252f4d98b8ba6d6b7219e7f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 15:05:36 2026 +0200
+
+    Improved heartbeat configuration.
+
+commit 5ef96c861c372806d844cb95731477f975dfad88
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 15:05:28 2026 +0200
+
+    Minor manpage clean-up.
+
+commit 29f20a7446aaf93e7512212fd90a62d8d1939d65
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 15:04:54 2026 +0200
+
+    Improved shell completion.
+
+commit bcfb88438733da22bfae438b2e74a5963c146d7f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 14:38:45 2026 +0200
+
+    Some clean-ups.
+
+commit 4e490c5eecc86ea3466cba9e49716947ff0ef773
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 14:22:55 2026 +0200
+
+    Updated runtimeestimator as well.
+
+commit 5aff156e75694c001a0919ea502b7a03c44afc8e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 14:12:00 2026 +0200
+
+    Some clean-ups and transformation to modern C++.
+
+commit a0ec1273fc49ef18bfd4c5337278f12797841eb4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 13:50:04 2026 +0200
+
+    Further improvements.
+
+commit 9ab5e233a2af63e52d0db8738f59d808a906139d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 13:49:36 2026 +0200
+
+    Further improvements and clean-ups.
+
+commit 3da418e7907e4344a86bb6a84eaafafedd15c8f1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 13:49:19 2026 +0200
+
+    Some improvements and clean-ups.
+
+commit 8f3bfc8f5767b0e179f03d8c59103ee9ea2eae9b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 12:19:55 2026 +0200
+
+    Improved options handling.
+
+commit 474e698846b78c80b0882327d8188f3c6e8d834c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 12:08:28 2026 +0200
+
+    Some fixes and improvements.
+
+commit 5fb02cc5c6a0b9c3552460c333780c6c2409613b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 11:49:40 2026 +0200
+
+    Improved usage() function.
+
+commit a2de92ca1a9a0e368f8a7893c0f9f620b4252e21
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 11:48:42 2026 +0200
+
+    Improved manpages.
+
+commit 2c992b14becca5e6e8789d1b47634df876ee7cd5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 11:06:29 2026 +0200
+
+    Improved manpage.
+
+commit 96ac249345ec28233e7da712d2944ef84dcc8e4e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 10:48:03 2026 +0200
+
+    Further improvements of the heartbeat configuration.
+
+commit 7ca46b8cfe5b2e75d5ae729bf1243ae39f943765
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 10:37:54 2026 +0200
+
+    Improved heartbeats handling, and added configuration options.
+
+commit 3d3c2758c436f502793318f5fd75eaa5c77aad7b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 09:53:48 2026 +0200
+
+    Added TCP keep-alive on TCP control socket.
+
+commit 75d95f25317b06d4ff3624871eba277d4955e007
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 22 09:35:59 2026 +0200
+
+    Added test script.
+
+commit 4c0d4a116c51f90a2a9370b667dfad86436793cd
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 12 14:55:44 2026 +0200
+
+    Updated workflows.
+
+commit cd56f567b48e205a7ba8d1a36502bedb3ebcce8b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Oct 8 15:39:09 2026 +0200
+
+    Updated GitHub workflows.
+
+commit ca74bd934a611a6dde2e8752495b3bbaf45c9ef5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Oct 7 11:14:27 2026 +0200
+
+    Updated Homebrew formula.
+
+commit d1a36f3d7e29e0aec2be8f6c0da2a92be1ef28ce
+Merge: 01b8c7d aa18e3d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 6 18:30:18 2026 +0200
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 01b8c7de722f382d4da57bdf4486b2312222e441
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 6 18:30:13 2026 +0200
+
+    Updated APKBUILD file.
+
+commit aa18e3d7cc7a667197eda10396c45e33c8d421d0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 6 18:29:34 2026 +0200
+
+    Updated FreeBSD port.
+
+commit a0d603121f3cee97337084c5094440696d217ad9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 6 17:02:46 2026 +0200
+
+    New release netperfmeter-2.0.12.
+
 commit 97274613e6420aec1a0ca35ac6307d752b88c046
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Tue Oct 6 13:26:17 2026 +0200
