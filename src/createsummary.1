@@ -38,6 +38,8 @@
 .Nm createsummary
 .Op Fl b | Fl \-batch | Fl i | Fl \-interactive
 .br
+.Op Fl F Ar format | Fl \-format Ar format
+.br
 .Op Fl c Ar level | Fl \-compress Ar level
 .br
 .Op Fl s Ar separator | Fl \-separator Ar separator
@@ -58,7 +60,9 @@
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm createsummary
-is a summarisation tool for scalar files: it creates one CSV/GNU R data table file (using tabulator as column separator) for each scalar. CreateSummary supports on\-the\-fly BZip2 compression. After startup, the program accepts the following commands from standard input
+is a summarisation tool for scalar files: it creates one CSV/GNU R data table file (using tabulator as column separator) for each scalar.
+.Nm
+supports on\-the\-fly compression with BZip2, GZip, XZ, and Zstandard. The format of input scalar files is detected automatically. After startup, the program accepts the following commands from standard input
 .Pq Em not as command\-line arguments! :
 .Bl -tag -width indent
 .It Cm \-\-varnames= Ns Ar variables
@@ -93,8 +97,19 @@ A space\-separated list of output variable names to be added to the output data 
 Run in batch mode. The program is aborted on errors.
 .It Fl i | Fl \-interactive
 Run in interactive mode (default). On errors, the program is continued.
+.It Fl F Ar format | Fl \-format Ar format
+Sets the output compression format. Allowed values are:
+.Cm plain ,
+.Cm bz2 ,
+.Cm gzip ,
+.Cm xz ,
+.Cm lzma ,
+and
+.Cm zstd .
+Default:
+.Cm bz2 .
 .It Fl c Ar level | Fl \-compress Ar level
-Sets the compression level; 0=none, 1=fastest (lowest), 9=highest (default).
+Sets the compression level. The valid range depends on the chosen compression format (e.g. 1\-9 for BZip2, 1\-22 for Zstandard). Default is dependent on the format.
 .It Fl s Ar separator | Fl \-separator Ar separator
 Sets the separator for the tables. Default: tabulator character (i.e., $'\et').
 .It Fl l | Fl \-line\-numbers
@@ -110,7 +125,7 @@ Ignore scalar file errors (that is, missing input files) instead of aborting.
 .It Fl q | Fl \-quiet
 Do not print verbose status information.
 .It Fl h | Fl \-help
-Prints command help.
+Prints command\-line help.
 .It Fl v | Fl \-version
 Prints program version.
 .El
@@ -128,14 +143,25 @@ Consider two simulation results
 (created with ParameterX=Two). The scalar files are located in
 the current directory, the output tables should be written to
 .Pa /tmp
-with compression level 5:
-.br
+using Zstandard compression (level 5):
+.Bd -literal
 ( echo "\-\-simulationsdirectory=."  && \\
   echo "\-\-resultsdirectory=/tmp"   && \\
   echo "\-\-values=One"              && \\
   echo "\-\-input=test1.sca.bz2"     && \\
   echo "\-\-values=Two"              && \\
-  echo "\-\-input=test2.sca.bz2" ) | createsummary "ParameterX" \-\-batch \-\-compress 5
+  echo "\-\-input=test2.sca.bz2" ) | createsummary "ParameterX" \-\-batch \-\-format zstd \-\-compress 5
+.Ed
+.Pp
+Print command\-line help:
+.Bd -literal
+createsummary \-\-help
+.Ed
+.Pp
+Print program version:
+.Bd -literal
+createsummary \-\-version
+.Ed
 .\" ###### See also #########################################################
 .Sh SEE ALSO
 .Xr combinesummaries 1 ,
