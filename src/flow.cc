@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -85,7 +85,11 @@ Flow::~Flow()
 {
    FlowManager::getFlowManager()->removeFlow(this);
    deactivate();
-   VectorFile.finish(true);
+   try {
+      VectorFile.finish(true);
+   }
+   catch(...) {
+   }
    if((SocketDescriptor >= 0) && (OriginalSocketDescriptor)) {
       if(DeleteWhenFinished) {
          FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
@@ -184,30 +188,31 @@ void Flow::setSocketDescriptor(const int  socketDescriptor,
 
 
 // ###### Initialize flow's vector file #####################################
-bool Flow::initializeVectorFile(const char* name, const OutputFileFormat format)
+void Flow::initializeVectorFile(const char* name, const OutputFileFormat format)
 {
-   bool success = false;
-
    lock();
-   if(VectorFile.initialize(name, format)) {
-      success = VectorFile.printf(
-                   "AbsTime\tRelTime\tSeqNumber\t"
-                   "AbsBytes\tAbsPackets\tAbsFrames\t"
-                   "RelBytes\tRelPackets\tRelFrames\t"
-                   "Delay\tPrevPacketDelayDiff\tJitter\n");
+   try {
+      VectorFile.initialize(name, format);
+      VectorFile.printf(
+         "AbsTime\tRelTime\tSeqNumber\t"
+         "AbsBytes\tAbsPackets\tAbsFrames\t"
+         "RelBytes\tRelPackets\tRelFrames\t"
+         "Delay\tPrevPacketDelayDiff\tJitter\n");
       VectorFile.nextLine();
    }
+   catch(...) {
+      unlock();
+      throw;
+   }
    unlock();
-
-   return success;
 }
 
 
 // ###### Update transmission statistics ####################################
-void Flow::updateTransmissionStatistics(const uint64_t now,
-                                        const size_t   addedFrames,
-                                        const size_t   addedPackets,
-                                        const size_t   addedBytes)
+void Flow::updateTransmissionStatistics(const uint64_t          now,
+                                        const unsigned long long addedFrames,
+                                        const unsigned long long addedPackets,
+                                        const unsigned long long addedBytes)
 {
    lock();
 
@@ -225,16 +230,16 @@ void Flow::updateTransmissionStatistics(const uint64_t now,
 
 
 // ###### Update reception statistics #######################################
-void Flow::updateReceptionStatistics(const uint64_t now,
-                                     const size_t   addedFrames,
-                                     const size_t   addedBytes,
-                                     const size_t   lostFrames,
-                                     const size_t   lostPackets,
-                                     const size_t   lostBytes,
-                                     const uint64_t seqNumber,
-                                     const double   delay,
-                                     const double   delayDiff,
-                                     const double   jitter)
+void Flow::updateReceptionStatistics(const uint64_t          now,
+                                     const unsigned long long addedFrames,
+                                     const unsigned long long addedBytes,
+                                     const unsigned long long lostFrames,
+                                     const unsigned long long lostPackets,
+                                     const unsigned long long lostBytes,
+                                     const uint64_t          seqNumber,
+                                     const double            delay,
+                                     const double            delayDiff,
+                                     const double            jitter)
 {
    lock();
 
@@ -257,13 +262,16 @@ void Flow::updateReceptionStatistics(const uint64_t now,
       VectorFile.printf(
          "%06llu\t%llu\t%1.6f\t%llu\t"
          "%llu\t%llu\t%llu\t"
-         "%u\t%u\t%u\t"
+         "%llu\t%u\t%llu\t"
          "%1.3f\t%1.3f\t%1.3f\n",
-         VectorFile.nextLine(), now,
+         VectorFile.nextLine(),
+         static_cast<unsigned long long>(now),
          std::chrono::duration<double>(std::chrono::microseconds(now - MyMeasurement->getFirstStatisticsEvent())).count(),
-         seqNumber,
-         CurrentBandwidthStats.ReceivedBytes, CurrentBandwidthStats.ReceivedPackets, CurrentBandwidthStats.ReceivedFrames,
-         addedBytes, 1, addedFrames,
+         static_cast<unsigned long long>(seqNumber),
+         static_cast<unsigned long long>(CurrentBandwidthStats.ReceivedBytes),
+         static_cast<unsigned long long>(CurrentBandwidthStats.ReceivedPackets),
+         static_cast<unsigned long long>(CurrentBandwidthStats.ReceivedFrames),
+         addedBytes, 1u, addedFrames,
          delay, delayDiff, jitter);
    }
 

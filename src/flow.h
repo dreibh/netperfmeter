@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -173,22 +173,22 @@ class Flow : public Thread
       return std::format("{}-{}{}{}", prefix, type, extension, suffix);
    }
 
-   bool initializeVectorFile(const char* name, const OutputFileFormat format);
-   void updateTransmissionStatistics(const uint64_t now,
-                                     const size_t   addedFrames,
-                                     const size_t   addedPackets,
-                                     const size_t   addedBytes);
-   void updateReceptionStatistics(const uint64_t now,
-                                  const size_t   addedFrames,
-                                  const size_t   addedBytes,
-                                  const size_t   lostFrames,
-                                  const size_t   lostPackets,
-                                  const size_t   lostBytes,
-                                  const uint64_t seqNumber,
-                                  const double   delay,
-                                  const double   delayDiff,
-                                  const double   jitter);
+   void initializeVectorFile(const char* name, const OutputFileFormat format);
+   void updateTransmissionStatistics(const uint64_t          now,
+                                     const unsigned long long addedFrames,
+                                     const unsigned long long addedPackets,
+                                     const unsigned long long addedBytes);
 
+   void updateReceptionStatistics(const uint64_t          now,
+                                  const unsigned long long addedFrames,
+                                  const unsigned long long addedBytes,
+                                  const unsigned long long lostFrames,
+                                  const unsigned long long lostPackets,
+                                  const unsigned long long lostBytes,
+                                  const uint64_t          seqNumber,
+                                  const double            delay,
+                                  const double            delayDiff,
+                                  const double            jitter);
 
    void print(std::ostream& os, const bool printStatistics = false);
    void resetStatistics();
