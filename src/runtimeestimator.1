@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 22, 2026
+.Dd October 23, 2026
 .Dt runtimeestimator 1
 .Os runtimeestimator
 .\" ###### Name #############################################################
@@ -36,11 +36,7 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm runtimeestimator
-.Ar start\_file
-.br
-.Ar total\_runs
-.br
-.Ar current\_run
+.Ar start_file total_runs current_run
 .Nm runtimeestimator
 .Op Fl h | Fl \-help
 .Nm runtimeestimator
@@ -54,14 +50,14 @@ is a simple program to estimate the total runtime of a batch job consisting of m
 .Sh ARGUMENTS
 The following arguments and options may be provided:
 .Bl -tag -width indent
-.It Ar start\_file
+.It Ar start_file
 The name of the start file.
-.It Ar total\_runs
+.It Ar total_runs
 The total number of runs.
-.It Ar current\_run
+.It Ar current_run
 The current run number that has just been completed.
 .It Fl h | Fl \-help
-Prints command help.
+Prints command\-line help.
 .It Fl v | Fl \-version
 Prints program version.
 .El
@@ -72,19 +68,29 @@ The
 tool exits with 0 on success, and >0 in case of an error.
 .\" ###### Examples #########################################################
 .Sh EXAMPLES
-Some runtimeestimator usage examples:
-.Bl -tag -width indent
-.It runtimeestimator runtime.dat 100 0
-Initialize runtime estimation (i.e., before the first run). The start file
+Initialize runtime estimation (i.e. before the first run):
+.Bd -literal
+runtimeestimator runtime.dat 100 0
+.Ed
+.Pp
+The start file
 .Pa runtime.dat
 is created.
-.It runtimeestimator runtime.dat 100 1
-Completed run 1 of 100 (i.e. the first run).
-.It runtimeestimator runtime.dat 100 5
-Completed run 5 of 100.
-.It runtimeestimator runtime.dat 100 100
-Completed run 100 of 100 (i.e. all runs are complete).
-.El
+.Pp
+Record completion of run 1 of 100 (i.e. the first run):
+.Bd -literal
+runtimeestimator runtime.dat 100 1
+.Ed
+.Pp
+Record completion of run 5 of 100:
+.Bd -literal
+runtimeestimator runtime.dat 100 5
+.Ed
+.Pp
+Record completion of run 100 of 100 (i.e. all runs complete):
+.Bd -literal
+runtimeestimator runtime.dat 100 100
+.Ed
 .\" ###### See also #########################################################
 .Sh SEE ALSO
 .Xr getabstime 1 ,
