@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.12
+Version: 2.0.13
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -82,7 +82,10 @@ done
 %{_datadir}/bash-completion/completions/combinesummaries
 %{_datadir}/bash-completion/completions/createsummary
 %{_datadir}/bash-completion/completions/extractvectors
+%{_datadir}/bash-completion/completions/getabstime
 %{_datadir}/bash-completion/completions/netperfmeter
+%{_datadir}/bash-completion/completions/netperfmeter-module-loader
+%{_datadir}/bash-completion/completions/runtimeestimator
 %{_mandir}/man1/combinesummaries.1.gz
 %{_mandir}/man1/createsummary.1.gz
 %{_mandir}/man1/extractvectors.1.gz
@@ -305,6 +308,8 @@ This metapackage installs all sub-packages of NetPerfMeter.
 
 
 %changelog
+* Fri Oct 23 2026 Thomas Dreibholz <dreibh@simula.no> - 2.0.13-1
+- New upstream release.
 * Tue Oct 06 2026 Thomas Dreibholz <dreibh@simula.no> - 2.0.12-1
 - New upstream release.
 * Thu Sep 10 2026 Thomas Dreibholz <dreibh@simula.no> - 2.0.11-1

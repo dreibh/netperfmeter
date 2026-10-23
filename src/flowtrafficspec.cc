@@ -212,8 +212,9 @@ void FlowTrafficSpec::reset()
 {
    MaxMsgSize               = 16000;
    DefragmentTimeout        = 5000000ULL;
-   SndBufferSize            = 233016;   // Upper limit for FreeBSD
-   RcvBufferSize            = 233016;   // Upper limit for FreeBSD
+   // 209712 is the upper limit for NetBSD (with default kernel settings):
+   SndBufferSize            = 209712;
+   RcvBufferSize            = 209712;
    OrderedMode              = 1.0;
    ReliableMode             = 1.0;
    RetransmissionTrials     = static_cast<uint32_t>(-1);

@@ -31,6 +31,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
+#include <filesystem>
+#include <format>
 #include <getopt.h>
 #include <iostream>
 #include <map>
@@ -60,6 +62,14 @@ class VectorInfo
    bool        SplitMode;
    bool        Found;
 };
+
+
+// ###### Modern C++20 string formatting ###################################
+template<typename... Args>
+inline std::string formatText(const std::string_view fmt, Args&&... args)
+{
+   return std::vformat(fmt, std::make_format_args(args...));
+}
 
 
 // ###### Read and process data file ########################################
@@ -253,6 +263,18 @@ static unsigned long long extractVectors(InputFile&               inputFile,
 [[ noreturn ]]
 static void usage(const char* program, const int exitCode)
 {
+   const std::string manpage(std::string("\x1b[1m") +
+                             std::filesystem::path(program).stem().string() +
+                             std::string("\x1b[0m"));
+   const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
+                              std::string(PROJECT_HOMEPAGE_URL) +
+                              "\a" + std::string(PROJECT_HOMEPAGE_URL) + "\a" +
+                              std::string("\x1b]8;;\a\x1b[0m"));
+   const std::string repository(std::string("\x1b[1m\x1b]8;;") +
+                                std::string(PROJECT_SOURCE_URL) +
+                                "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
+                                std::string("\x1b]8;;\a\x1b[0m"));
+
    std::cerr << HEADER("Usage:") << "\n"
              << CMD(program) << "\n"
                    ENTRY(ARG("input_file"))
@@ -267,7 +289,10 @@ static void usage(const char* program, const int exitCode)
              << CMD(program) << "\n"
                    ENTRY(OPT("-h") PIPE OPT("--help"))
              << CMD(program) << "\n"
-                   ENTRY(OPT("-v") PIPE OPT("--version"));
+                   ENTRY(OPT("-v") PIPE OPT("--version"))
+             << "\n"
+             << formatText("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM.",
+                           manpage, homepage, repository) << "\n";
    exit(exitCode);
 }
 // ------ END-OF-USAGE-BLOCK ------

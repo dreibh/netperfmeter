@@ -101,7 +101,6 @@ ENDIF()
 
 CONFIGURE_FILE(netperfmeter-module-loader netperfmeter-module-loader.versioned @ONLY)
 SET_PROPERTY(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES netperfmeter-module-loader.versioned)
-INSTALL(PROGRAMS netperfmeter-module-loader.versioned DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(PROGRAMS    ${CMAKE_CURRENT_BINARY_DIR}/netperfmeter-module-loader.versioned
         DESTINATION ${CMAKE_INSTALL_BINDIR}
         RENAME      netperfmeter-module-loader)

@@ -151,7 +151,7 @@ static MessageReader gMessageReader;
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cerr << "NetPerfMeter " << NETPERFMETER_VERSION << "\n";
+   std::cerr << "NetPerfMeter " << PROJECT_VERSION << "\n";
    exit(0);
 }
 
@@ -173,15 +173,16 @@ static void usage(const char* program, const int exitCode)
                              std::filesystem::path(program).stem().string() +
                              std::string("\x1b[0m"));
    const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
-                              std::string(PACKAGE_HOMEPAGE) +
-                              "\a" + std::string(PACKAGE_HOMEPAGE) + "\a" +
+                              std::string(PROJECT_HOMEPAGE_URL) +
+                              "\a" + std::string(PROJECT_HOMEPAGE_URL) + "\a" +
                               std::string("\x1b]8;;\a\x1b[0m"));
    const std::string repository(std::string("\x1b[1m\x1b]8;;") +
-                                std::string(PACKAGE_SOURCEREPO) +
-                                "\a" + std::string(PACKAGE_SOURCEREPO) + "\a" +
+                                std::string(PROJECT_SOURCE_URL) +
+                                "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
                                 std::string("\x1b]8;;\a\x1b[0m"));
 
-   // TRANSLATORS: Command-line syntax message prefix: "Usage: <program> [options]".
+   // TRANSLATORS: Command-line syntax message prefix:
+   // "Usage: <program> [options]".
    std::cerr << HEADER(gettext("Usage:")) << "\n"
              << CMD(program) << " "
                 ARG("local_port") "\n"
@@ -240,10 +241,11 @@ static void usage(const char* program, const int exitCode)
              << CMD(program) << "\n"
                    ENTRY(OPT("-v") PIPE OPT("--version"))
              << CMD("FLOWSPEC:") << " "
-                ARG("outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option:...") "\n"
+                ARG("outgoing_frame_rateoutgoing_frame_sizeincoming_frame_rateincoming_frame_sizeoption...") "\n"
              << "\n"
-             // TRANSLATORS: Placeholders: {} 1: manpage name, 2: package homepage URL, 3: source code repository URL.
-             << formatText(gettext("For further information, see the man page for {}, read the documentation at {}, examine the source code at {}, or consult your favourite LLM."),
+             // TRANSLATORS: Informational message at the end of usage:
+             // "For further information, see the man page for <manpage>, read the documentation at [<url>], examine the source code at [<url>], or consult your favourite LLM.".
+             << formatText(gettext("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM."),
                            manpage, homepage, repository) << "\n";
    exit(exitCode);
 }
@@ -1827,7 +1829,7 @@ static void passiveMode(const uint16_t localPort)
          stdlog << formatText(gettext("Unable to set SO_KEEPALIVE on TCP control socket: {}!"), strerror(errno)) << "\n";
          LOG_END_FATAL
       }
-#if defined(TCP_KEEPIDLE)
+#if defined(TCP_KEEPIDLE) && !defined(__GNU__)
       const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPIDLE,
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
@@ -1839,7 +1841,7 @@ static void passiveMode(const uint16_t localPort)
 #else
 #warning No TCP_KEEPIDLE option available!
 #endif
-#if defined(TCP_KEEPINTVL)
+#if defined(TCP_KEEPINTVL) && !defined(__GNU__)
       const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPINTVL,
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
@@ -1851,7 +1853,7 @@ static void passiveMode(const uint16_t localPort)
 #else
 #warning No TCP_KEEPINTVL option available!
 #endif
-#if defined(TCP_KEEPCNT)
+#if defined(TCP_KEEPCNT) && !defined(__GNU__)
       const int keepCountOption = (int)gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
@@ -2401,7 +2403,7 @@ static void activeMode(const char* remoteEndpoint)
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
-#if defined(TCP_KEEPIDLE)
+#if defined(TCP_KEEPIDLE) && !defined(__GNU__)
       const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPIDLE,
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
@@ -2414,7 +2416,7 @@ static void activeMode(const char* remoteEndpoint)
 #else
 #warning No TCP_KEEPIDLE option available!
 #endif
-#if defined(TCP_KEEPINTVL)
+#if defined(TCP_KEEPINTVL) && !defined(__GNU__)
       const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPINTVL,
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
@@ -2427,7 +2429,7 @@ static void activeMode(const char* remoteEndpoint)
 #else
 #warning No TCP_KEEPINTVL option available!
 #endif
-#if defined(TCP_KEEPCNT)
+#if defined(TCP_KEEPCNT) && !defined(__GNU__)
       const int keepCountOption = (int)gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
@@ -2548,7 +2550,7 @@ int main(int argc, char** argv)
 #endif
    bindtextdomain("netperfmeter",
                   ( ((textdomaindir) && (textdomaindir[0] != 0x00)) ?
-                       textdomaindir : NETPERFMETER_LOCALEDIR ));
+                       textdomaindir : PROJECT_LOCALEDIR ));
 #if defined(_WIN32)
    if(textdomaindir) {
        free(textdomaindir);
@@ -2577,7 +2579,7 @@ int main(int argc, char** argv)
    LOG_INFO
    // TRANSLATORS: Main startup banner. Placeholders: {} 1: package version, 2: operational mode ("Active Mode" or "Passive Mode").
    stdlog << formatText(gettext("Network Performance Meter {} in {}"),
-                        NETPERFMETER_VERSION,
+                        PROJECT_VERSION,
                         // TRANSLATORS: Operational mode label for receiver/server instance.
                         // TRANSLATORS: Operational mode label for sender/client instance.
                         inPassiveMode ? gettext("Passive Mode") : gettext("Active Mode")) << "\n";

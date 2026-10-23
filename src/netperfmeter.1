@@ -25,25 +25,25 @@
 .\" Contact:  dreibh@simula.no
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
-." ###### Setup ############################################################
-.Dd October 22, 2026
+.\" ###### Setup ############################################################
+.Dd October 23, 2026
 .Dt NetPerfMeter 1
 .Os netperfmeter
-." ###### Name #############################################################
+.\" ###### Name #############################################################
 .Sh NAME
 .Nm netperfmeter
 .Nd Network Performance Meter
-." ###### Synopsis #########################################################
+.\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm netperfmeter Ar local\_port
 .br
-.Op Fl x | Fl \-control\-over\-sctp | Fl X | Fl \-no\-control\-over\-sctp
+.Op Fl x | Fl \-control\:\-over\:\-sctp | Fl X | Fl \-no\:\-control\:\-over\:\-sctp
 .br
-.Op Fl y | Fl \-control\-over\-tcp | Fl Y | Fl \-no\-control\-over\-tcp | Fl w | Fl \-control\-over\-mptcp | Fl W | Fl \-no\-control\-over\-mptcp
+.Op Fl y | Fl \-control\:\-over\:\-tcp | Fl Y | Fl \-no\:\-control\:\-over\:\-tcp | Fl w | Fl \-control\:\-over\:\-mptcp | Fl W | Fl \-no\:\-control\:\-over\:\-mptcp
 .br
-.Op Fl L Ar address[,address,...] | Fl \-local Ar address[,address,...]
+.Op Fl L Ar address[\:,address,...] | Fl \-local Ar address[\:,address,...]
 .br
-.Op Fl l Ar address[,address,...] | Fl \-control-local Ar address[,address,...]
+.Op Fl l Ar address[\:,address,...] | Fl \-control\:\-local Ar address[\:,address,...]
 .br
 .Op Fl K Ar key\_file | Fl \-tls\-key Ar key\_file
 .br
@@ -51,11 +51,11 @@
 .br
 .Op Fl I Ar ca\_certificate\_file | Fl \-tls\-ca Ar ca\_certificate\_file
 .br
-.Op Fl \-control-hbinterval Ar milliseconds
+.Op Fl \-control\:\-hbinterval Ar milliseconds
 .br
-.Op Fl \-control-hbpathmaxrtx Ar count
+.Op Fl \-control\:\-hbpathmaxrtx Ar count
 .br
-.Op Fl \-control-hbassocmaxrtx Ar count
+.Op Fl \-control\:\-hbassocmaxrtx Ar count
 .br
 .Op Fl 6 | Fl \-v6only
 .br
@@ -73,19 +73,19 @@
 .Op Fl ! | Fl \-verbose
 .Nm netperfmeter Ar remote\_endpoint:remote\_port
 .br
-.Op Fl x | Fl \-control\-over\-sctp | Fl y | Fl \-control\-over\-tcp | Fl w | Fl \-control\-over\-mptcp
+.Op Fl x | Fl \-control\:\-over\:\-sctp | Fl y | Fl \-control\:\-over\:\-tcp | Fl w | Fl \-control\:\-over\:\-mptcp
 .br
-.Op Fl L Ar address[,address,...] | Fl \-local Ar address[,address,...]
+.Op Fl L Ar address[\:,address,...] | Fl \-local Ar address[\:,address,...]
 .br
-.Op Fl l Ar address[,address,...] | Fl \-control-local Ar address[,address,...]
+.Op Fl l Ar address[\:,address,...] | Fl \-control\:\-local Ar address[\:,address,...]
 .br
 .Op Fl H Ar hostname | Fl \-tls\-hostname Ar hostname
 .br
-.Op Fl \-control-hbinterval Ar milliseconds
+.Op Fl \-control\:\-hbinterval Ar milliseconds
 .br
-.Op Fl \-control-hbpathmaxrtx Ar count
+.Op Fl \-control\:\-hbpathmaxrtx Ar count
 .br
-.Op Fl \-control-hbassocmaxrtx Ar count
+.Op Fl \-control\:\-hbassocmaxrtx Ar count
 .br
 .Op Fl 6 | Fl \-v6only
 .Op Fl \-display | Fl \-nodisplay
@@ -137,13 +137,15 @@
 .Pp
 .Sy FLOWSPEC:
 .br
-.Ar out\%go\%ing\_\%fra\%me\_\%rate:\%out\%go\%ing\_\%fra\%me\_\%size:\%in\%com\%ing\_\%fra\%me\_\%rate:\%in\%com\%ing\_\%fra\%me\_\%size:\%opt\%ion:\%...
-." ###### Description ######################################################
+.na
+.Ar outgoing_frame_rate\:outgoing_frame_size\:incoming_frame_rate\:incoming_frame_size\:option\:...
+.ad b
+.\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm netperfmeter
 is a network performance meter for the TCP, MPTCP, UDP, DCCP, SCTP and QUIC transport protocols over IPv4 and IPv6. It simultaneously transmits bidirectional flows to an endpoint and measures the resulting flow bandwidths and QoS. The results can be written as scalar files (summary of the run) and vector files (details per frame). These files can be processed further, e.g. for analysis and plotting of the results.
 .Pp
-." ###### Arguments ########################################################
+.\" ###### Arguments ########################################################
 .Sh ARGUMENTS
 The following arguments can be provided:
 .Bl -tag -width indent
@@ -153,25 +155,25 @@ Specifying a port number turns NetPerfMeter into passive mode, i.e. it will wait
 .It Ar remote\_endpoint:remote\_port
 Specifies the passive endpoint to connect to (number as given for local\_port on the passive instance).
 Specifying remote\_endpoint:remote\_port turns NetPerfMeter into active mode, i.e. it will connect to the specified remote endpoint.
-.It Fl x | Fl \-control\-over\-sctp
+.It Fl x | Fl \-control\:\-over\:\-sctp
 On the passive side, this option enables accepting control connections via SCTP (default). It enables SCTP in addition to other protocols for the control transport.
 On the active side, this option uses SCTP for the control connection to the passive side. This is the default, but may cause connection problems in restricted networks or due to NAT traversal.
-.It Fl X | Fl \-no\-control\-over\-sctp
+.It Fl X | Fl \-no\:\-control\:\-over\:\-sctp
 On the passive side, this option disables incoming control connections via SCTP.
-.It Fl y | Fl \-control\-over\-tcp
+.It Fl y | Fl \-control\:\-over\:\-tcp
 On the passive side, this option enables accepting control connections via TCP (default). It enables TCP in addition to other protocols for the control transport. Note: By default, both \-\- SCTP and TCP \-\- are enabled on the passive side.
 On the active side, this option uses TCP for the control connection to the passive side. This may be necessary for NAT traversal or due to restrictive firewalls.
-.It Fl Y | Fl \-no\-control\-over\-tcp
+.It Fl Y | Fl \-no\:\-control\:\-over\:\-tcp
 On the passive side, this option disables incoming control connections via TCP. This implicitly also disables control connections over MPTCP.
-.It Fl w | Fl \-control\-over\-mptcp
+.It Fl w | Fl \-control\:\-over\:\-mptcp
 On the passive side, this option enables accepting control connections via MPTCP. This implicitly also enables control connections over TCP!
 On the active side, this option uses MPTCP for the control connection to the passive side.
-.It Fl W | Fl \-no\-control\-over\-mptcp
+.It Fl W | Fl \-no\:\-control\:\-over\:\-mptcp
 On the passive side, this option disables incoming control connections via MPTCP. However, it does not deactivate TCP!
-.It Fl L Ar address[,address,...] | Fl \-local Ar address[,address,...]
+.It Fl L Ar address[\:,address,...] | Fl \-local Ar address[\:,address,...]
 Specifies address(es) of the local data endpoint. For TCP, UDP and DCCP, only the first address is used!
 On an active node, this option applies to the following flows, i.e. it must be set before specifying a flow!
-.It Fl l Ar address[,address,...] | Fl \-control-local Ar address[,address,...]
+.It Fl l Ar address[\:,address,...] | Fl \-control\:\-local Ar address[\:,address,...]
 Specifies address(es) of the local control endpoint (SCTP or TCP). For TCP, only the first address is used!
 .It Fl K Ar key\_file | Fl \-tls\-key Ar key\_file
 Specifies the TLS key file for QUIC authentication. This option is used by the passive side.
@@ -183,11 +185,11 @@ Specifies the TLS root CA certificate file for QUIC authentication.
 .It Fl H Ar hostname | Fl \-tls\-hostname Ar hostname
 Specifies the TLS certificate hostname for QUIC authentication. It is used by the active side.
 The hostname must match the remote (i.e. passive side's) hostname, as provided by the passive side's TLS certificate, to allow for hostname verification. As alternative, it is possible to add the IP addresses into the X.509 SubjectAltName of its certificate.
-.It Fl \-control-hbinterval Ar milliseconds
+.It Fl \-control\:\-hbinterval Ar milliseconds
 Sets the heartbeat interval (in ms) for the control connection. Minimum: 1000; Maximum: 86400000 (1 day); Default: 15000.
-.It Fl \-control-hbpathmaxrtx Ar count
+.It Fl \-control\:\-hbpathmaxrtx Ar count
 Sets the per-path heartbeat retransmission limit for the control connection. Minimum: 1; Maximum: 1000000; Default: 3.
-.It Fl \-control-hbassocmaxrtx Ar count
+.It Fl \-control\:\-hbassocmaxrtx Ar count
 Sets the per-association heartbeat retransmission limit for the control connection. It only applied to control connections over SCTP. Minimum: 1; Maximum: 1000000; Default: 3.
 .It Fl 6 | Fl \-v6only
 Use sockets with IPv6 only (by setting IPV6\_V6ONLY socket option).
@@ -247,8 +249,14 @@ Establish a new SCTP association. The streams of this association must be specif
 .It Fl k Ar FLOWSPEC | Fl \-quic Ar FLOWSPEC Ar [FLOWSPEC ...]
 Establish a new QUIC connection. The streams of this connection must be specified by one or more FLOWSPEC specifications as following parameters.
 .It FLOWSPEC
-Specifies a new flow. The format is: out\%go\%ing\_\%fra\%me\_\%rate:\%out\%go\%ing\_\%fra\%me\_\%size:\%in\%com\%ing\_\%fra\%me\_\%rate:\%in\%com\%ing\_\%fra\%me\_\%size:\%opt\%ion:\%...
-The first four parameters (out\%go\%ing\_\%fra\%me\_\%rate:\%out\%go\%ing\_\%fra\%me\_\%size:\%in\%com\%ing\_\%fra\%me\_\%rate:\%in\%com\%ing\_\%fra\%me\_\%size) may be substituted by the option "default", creating a flow with some more or less useful default parameters.
+Specifies a new flow. The format is:
+.na
+.Ar outgoing_frame_rate\:outgoing_frame_size\:incoming_frame_rate\:incoming_frame_size\:option\:...
+.ad b
+.Pp
+The first four parameters
+.Pq Ar outgoing_frame_rate\:outgoing_frame_size\:incoming_frame_rate\:incoming_frame_size
+may be substituted by the option "default", creating a flow with some more or less useful default parameters.
 .Bl -tag -width indent
 .It outgoing\_frame\_rate
 The frame rate of the outgoing transfer (i.e. active node to passive node). If set to const0, the sender will be saturated, i.e. it will try to send as much as possible.
@@ -311,7 +319,7 @@ Set debug mode for flow (default: off). Note: this is for debugging and testing 
 Use socket with IPv6 only (by setting IPV6\_V6ONLY socket option).
 .It cc=name
 Set congestion control name (TCP and MPTCP for Linux only).
-.It cmt=off|cmt|cmtrpv1|cmtrpv2|like\-mptcp|mptcp\-like|mptcp
+.It cmt=off | cmt | cmtrpv1 | cmtrpv2 | like\-mptcp | mptcp\-like | mptcp
 Configures usage of Concurrent Multipath Transfer (CMT): off (turned off; default), cmt (independent paths), cmtrpv1 (CMT/RPv1), cmtrpv2 (CMT/RPv2), mptcp/like\-mptcp/mptcp\-like (MPTCP), 0\-255 (custom value).
 Currently only supported by CMT\-SCTP on FreeBSD systems and MPTCP on Linux systems. Note: CMT for MPTCP always uses MPTCP congestion control.
 .El
@@ -321,18 +329,18 @@ Prints command help.
 .It Fl v | Fl \-version
 Prints program version.
 .El
-." ###### Exit status ######################################################
+.\" ###### Exit status ######################################################
 .Sh EXIT STATUS
 The
 .Nm
 tool exits with 0 on success, and >0 in case of an error.
-." ###### Examples #########################################################
+.\" ###### Examples #########################################################
 .Sh EXAMPLES
 Some netperfmeter usage examples:
 .Bl -tag -width indent
 .It netperfmeter 9000
 Start in passive mode, i.e. accepting connections, on port 9000.
-.It netperfmeter 172.31.33.2:9000 \-config=output.config \-vector=output\-*.vec.bz2 \-scalar=output\-*.sca.bz2 \-sctp const5:exp1000:const3:exp500:description="Alpha":onoff=+10 const5:exp1000:const3:exp500:description="Beta":onoff=+30 \-tcp const5:exp1000:const3:exp500:description="Gamma":onoff=+60 \-runtime=300
+.It netperfmeter 172.31.33.2:9000 \-config=output.config \-vector=output\-*.vec.bz2 \-scalar=output\-*.sca.bz2 \-sctp const5\:exp1000\:const3\:exp500\:description="Alpha"\:onoff=+10 const5\:exp1000\:const3\:exp500\:description="Beta"\:onoff=+30 \-tcp const5\:exp1000\:const3\:exp500\:description="Gamma"\:onoff=+60 \-runtime=300
 Start in active mode, i.e. establish connection to 172.31.33.2, port 9000.
 Frames will be segmented into messages of up to 4096 bytes.
 Write configuration to output\-*.config.
@@ -344,32 +352,38 @@ At t=30s, start flow "Beta" as second stream on the SCTP association (same param
 Start TCP connection.
 At t=60s, start flow "Gamma" over the TCP connection (same parameters as flow "Alpha").
 At t=300s, stop the measurement.
-.It netperfmeter 172.31.33.2:9000 \-control\-over\-tcp \-tcp const2:const1000
+.It netperfmeter 172.31.33.2:9000 \-control\:\-over\:\-tcp \-tcp const2:const1000
 Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. The control connection uses TCP instead of SCTP.
 .It netperfmeter 172.31.33.2:9000 \-sctp const0:const0:uniform20,30:uniform900,1100
 SCTP traffic with some variation.
-.It netperfmeter 172.31.33.2:9000 \-udp const0:const0:const25:const2500:onoff=+pareto0.166667,1.5,+pareto0.166667,1.5,repeat
+.It netperfmeter 172.31.33.2:9000 \-udp const0\:const0\:const25\:const2500\:onoff=+pareto0.166667,\:1.5,\:+pareto0.166667,\:1.5,\:repeat
 Some on-off background traffic with Pareto distribution.
 .It netperfmeter 9000 \-tls\-key my\-server.key \-tls\-cert my\-server.crt \-tls\-ca my\-ca.crt
-Start in passive mode, with TLS setup for QUIC. See https://www.nntb.no/\(tidreibh/netperfmeter/#quic-communication for details about QUIC usage!
+Start in passive mode, with TLS setup for QUIC.
+See
+.Lk https:\://\:www.nntb.no/\:\(tidreibh/\:netperfmeter/\:#quic-communication "QUIC Communication on the NetPerfMeter Homepage"
+for details about QUIC usage!
 .It netperfmeter 172.31.33.2:9000 \-tls\-hostname my\-server.domain \-tls\-ca my\-ca.crt \-quic const10:const128:const25:const1200
-Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. Set TLS server name of 172.31.33.2 for QUIC to my-server.domain. See https://www.nntb.no/\(tidreibh/netperfmeter/#quic-communication for details about QUIC usage!
+Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. Set TLS server name of 172.31.33.2 for QUIC to my-server.domain.
+See
+.Lk https:\://\:www.nntb.no/\:\(tidreibh/\:netperfmeter/\:#quic-communication "QUIC Communication on the NetPerfMeter Homepage"
+for details about QUIC usage!
 .It netperfmeter \-version
 Shows the version.
 .It netperfmeter \-help
 Shows usage help.
 .El
-." ###### See also #########################################################
+.\" ###### See also #########################################################
 .Sh SEE ALSO
 .Xr combinesummaries 1 ,
 .Xr createsummary 1 ,
 .Xr plot-netperfmeter-results 1 ,
 .Xr runtimeestimator 1
-." ###### Notes ############################################################
+.\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
 .Lk https://www.nntb.no/\(tidreibh/netperfmeter/ "NetPerfMeter Homepage" .
-." ###### Authors ##########################################################
+.\" ###### Authors ##########################################################
 .Sh AUTHORS
 Thomas Dreibholz,
 .Lk https://www.nntb.no/\(tidreibh "Homepage"

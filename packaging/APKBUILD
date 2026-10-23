@@ -1,6 +1,6 @@
 # Maintainer: Thomas Dreibholz <dreibh@simula.no>
 pkgname=netperfmeter
-pkgver=2.0.12
+pkgver=2.0.13
 pkgrel=1
 pkgdesc="Network performance meter for UDP, TCP, MPTCP, SCTP, DCCP and QUIC protocols"
 url="https://www.nntb.no/~dreibh/netperfmeter/"
@@ -130,5 +130,5 @@ _all() {
 }
 
 sha512sums="
-4993c1b72bf55b4c068ce33f9f20dd1cec1142ad8838b0e964eff6b85bdf5e1fa3ad17d0f7566d474bcb98630df570f7cbd0e72008073a824a51528e83c6ac33  netperfmeter-2.0.12.tar.xz
+b72e53b9f43eab32e6511fc71fb9bd8edf8bf3b73aa2cda610d0b58cd473200d53b1d130ff5a2dc6a06da8ef976bb47bf689de5e2afd98051acce43a2e718ff0  netperfmeter-2.0.13.tar.xz
 "

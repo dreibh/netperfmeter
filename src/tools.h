@@ -108,13 +108,6 @@ inline std::string formatText(const std::string_view fmt, Args&&... args)
    return std::vformat(fmt, std::make_format_args(args...));
 }
 
-// Backward compatibility alias for format() using C++20 formatting
-template<typename... Args>
-inline std::string format(const std::string_view fmt, Args&&... args)
-{
-   return std::vformat(fmt, std::make_format_args(args...));
-}
-
 
 // ###### Chrono-based time helpers #########################################
 inline uint64_t getMicroTime()
