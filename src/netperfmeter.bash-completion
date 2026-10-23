@@ -206,38 +206,67 @@ _netperfmeter()
    if [ "${cword}" -ge 2 ] && [[ ! "${words[1]}" =~ ^[0-9]+$ ]] ; then
       if [ ${flowSpec} -eq 0 ] ; then
          opts="
--x | --control-over-sctp | -y | --control-over-tcp | -w | --control-over-mptcp
--L | --local
--l | --control-local
--H | --tls-hostname
+-x
+--control-over-sctp
+-y
+--control-over-tcp
+-w
+--control-over-mptcp
+-L
+--local
+-l
+--control-local
+-H
+--tls-hostname
 --control-hbinterval
 --control-hbpathmaxrtx
 --control-hbassocmaxrtx
--6 | --v6only
---display | --nodisplay
--o | --sndbuf
--i | --rcvbuf
--N | --count
--T | --runtime
--C | --config
--S | --scalar
--V | --vector
--A | --activenodename
--P | --passivenodename
+-6
+--v6only
+--display
+--nodisplay
+-o
+--sndbuf
+-i
+--rcvbuf
+-N
+--count
+-T
+--runtime
+-C
+--config
+-S
+--scalar
+-V
+--vector
+-A
+--activenodename
+-P
+--passivenodename
 --loglevel
 --logcolor
 --logfile
 --logappend
--t | --tcp
--m | --mptcp
--u | --udp
--d | --dccp
--s | --sctp
--k | --quic
--q | --quiet
--! | --verbose
--h | --help
--v | --version
+-t
+--tcp
+-m
+--mptcp
+-u
+--udp
+-d
+--dccp
+-s
+--sctp
+-k
+--quic
+-q
+--quiet
+-!
+--verbose
+-h
+--help
+-v
+--version
 "
       else
          opts="const exp pareto uniform"
@@ -246,24 +275,47 @@ _netperfmeter()
    # ------ Passive side ----------------------------------------------------
    else
       opts="
--x | --control-over-sctp | -X | --no-control-over-sctp
--y | --control-over-tcp | -Y | --no-control-over-tcp | -w | --control-over-mptcp | -W | --no-control-over-mptcp
--L | --local
--l | --control-local
--K | --tls-key
--J | --tls-cert
--I | --tls-ca
+-x
+--control-over-sctp
+-X
+--no-control-over-sctp
+-y
+--control-over-tcp
+-Y
+--no-control-over-tcp
+-w
+--control-over-mptcp
+-W
+--no-control-over-mptcp
+-L
+--local
+-l
+--control-local
+-K
+--tls-key
+-J
+--tls-cert
+-I
+--tls-ca
 --control-hbinterval
 --control-hbpathmaxrtx
 --control-hbassocmaxrtx
--6 | --v6only
---display | --nodisplay
+-6
+--v6only
+--display
+--nodisplay
 --loglevel
 --logcolor
 --logfile
 --logappend
--q | --quiet
--! | --verbose
+-q
+--quiet
+-!
+--verbose
+-h
+--help
+-v
+--version
 "
    fi
 
