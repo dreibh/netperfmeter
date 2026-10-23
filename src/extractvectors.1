@@ -26,9 +26,9 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 22, 2026
+.Dd October 23, 2026
 .Dt extractvectors 1
-.Os ExtractVectors
+.Os extractvectors
 .\" ###### Name #############################################################
 .Sh NAME
 .Nm extractvectors
@@ -36,12 +36,7 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm extractvectors
-.Op Ar input\_file
-.br
-.Op Ar output\_file
-.br
-.Op Ar [!]vector\_name\_prefix
-.Op ...
+.Ar input_file output_file
 .br
 .Op Fl c Ar level | Fl \-compress Ar level
 .br
@@ -52,6 +47,8 @@
 .Op Fl p | Fl \-split | Fl a | Fl \-no\-split
 .br
 .Op Fl q | Fl \-quiet
+.br
+.Op Ar [!]vector_name_prefix Op Ar ...
 .Nm extractvectors
 .Op Fl h | Fl \-help
 .Nm extractvectors
@@ -63,16 +60,16 @@ is an extraction tool for vectors written by OMNeT++ to a data table. ExtractVec
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
-The following arguments may be provided:
+The following arguments and options may be provided:
 .Bl -tag -width indent
-.It Op Ar input\_file
+.It Ar input_file
 The name of the input vector file.
-.It Op Ar output\_file
+.It Ar output_file
 The name of the output data table to be created.
-.It Op Ar [!]vector\_name\_prefix
+.It Ar [!]vector_name_prefix
 Name prefix of vectors to be extracted. Multiple vector name prefixes may be specified. If no name prefix is given, all vectors will be extracted. A "!" in front of the name turns vector splitting for this prefix on (see \-\-split option below).
 .It Fl c Ar level | Fl \-compress Ar level
-Sets the compression level; 0=none, 1=fastest (lowest), 9=highest (default).
+Sets the BZip2 compression level; 1=fastest (lowest), 9=highest (default).
 .It Fl s Ar separator | Fl \-separator Ar separator
 Sets the separator for the tables. Default: tabulator character (i.e., $'\et').
 .It Fl l | Fl \-line\-numbers
@@ -102,7 +99,7 @@ Consider an OMNeT++ vector file containing the vectors
 "Slow Start Threshold <assoc>:<path>" and
 "Congestion Window <assoc>:<path>",
 contained with a lot of other vectors in the BZip2\-compressed vector file
-.Pa results.vec.bz2 .
+.Pa results.vec.bz2.
 ExtractVectors can be used to extract all vectors beginning with "Slow Start Threshold" or "Congestion Window" into a BZip2\-compressed data
 table
 .Pa results.data.bz2
