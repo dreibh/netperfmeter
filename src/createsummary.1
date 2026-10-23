@@ -26,9 +26,9 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 22, 2026
+.Dd October 23, 2026
 .Dt createsummary 1
-.Os CreateSummary
+.Os createsummary
 .\" ###### Name #############################################################
 .Sh NAME
 .Nm createsummary
@@ -36,8 +36,6 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm createsummary
-.Op Ar variable\_names
-.br
 .Op Fl b | Fl \-batch | Fl i | Fl \-interactive
 .br
 .Op Fl c Ar level | Fl \-compress Ar level
@@ -51,6 +49,8 @@
 .Op Fl r | Fl \-ignore\-scalar\-file\-errors
 .br
 .Op Fl q | Fl \-quiet
+.br
+.Op Ar variable_names
 .Nm createsummary
 .Op Fl h | Fl \-help
 .Nm createsummary
@@ -58,35 +58,36 @@
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
 .Nm createsummary
-is a summarisation tool for scalar files: it creates one CSV/GNU R data table file (using tabulator as column separator) for each scalar. CreateSummary supports on\-the\-fly BZip2 compression. After startup, the program accepts the following commands from standard input (*not* as command\-line arguments!):
+is a summarisation tool for scalar files: it creates one CSV/GNU R data table file (using tabulator as column separator) for each scalar. CreateSummary supports on\-the\-fly BZip2 compression. After startup, the program accepts the following commands from standard input
+.Pq Em not as command\-line arguments! :
 .Bl -tag -width indent
-.It Fl \-varnames=variables
+.It Cm \-\-varnames= Ns Ar variables
 A space\-separated list of output variable names to be added to the output data tables.
-.It Fl \-values=values
+.It Cm \-\-values= Ns Ar values
 Sets the values of the output variables for the next scalar file to the provided space\-separated values. One value for each variable has to be provided.
-.It Fl \-input=filename
+.It Cm \-\-input= Ns Ar filename
 Process the given scalar file.
-.It Fl \-logfile=name
-Sets the log file for the next scalar file. On an error related to this scalar file, the log file's name is displayed. This option can be used to identify bad simulation/measurement runs by pointing to the log file being created for the simulation/measurement.
-.It Fl \-statusfile=name
-Sets the status file for the next scalar file. On an error related to this scalar file, the status file is deleted. This option can be used to repeat bad simulation/measurement runs by re\-running the simulation/measurement on missing status files.
-.It Fl \-skip=prefix
-All scalars beginning with the given prefix are not written to output tables. This option can be used to filter out unnecessary results.
-.It Fl \-simulationsdirectory=directory
+.It Cm \-\-logfile= Ns Ar name
+Sets the log file for the next scalar file. On an error related to this scalar file, the log file's name is displayed. This command can be used to identify bad simulation/measurement runs by pointing to the log file being created for the simulation/measurement.
+.It Cm \-\-statusfile= Ns Ar name
+Sets the status file for the next scalar file. On an error related to this scalar file, the status file is deleted. This command can be used to repeat bad simulation/measurement runs by re\-running the simulation/measurement on missing status files.
+.It Cm \-\-skip= Ns Ar prefix
+All scalars beginning with the given prefix are not written to output tables. This command can be used to filter out unnecessary results.
+.It Cm \-\-simulationsdirectory= Ns Ar directory
 Sets the directory where to find the scalar files.
-.It Fl \-resultsdirectory=directory
+.It Cm \-\-resultsdirectory= Ns Ar directory
 Sets the directory where to write the summary tables to.
-.It Fl \-splitall
+.It Cm \-\-splitall
 Enables scalar splitting mode for all following scalar files.
-.It Fl \-ignore\-scalar\-file\-errors
+.It Cm \-\-ignore\-scalar\-file\-errors
 Ignore scalar file errors (that is, missing input files) instead of aborting.
 .El
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
-The following arguments may be provided:
+The following arguments and options may be provided:
 .Bl -tag -width indent
-.It Op Ar variable\_names
+.It Ar variable_names
 A space\-separated list of output variable names to be added to the output data tables.
 .It Fl b | Fl \-batch
 Run in batch mode. The program is aborted on errors.
