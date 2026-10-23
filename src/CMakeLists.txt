@@ -81,8 +81,22 @@ ADD_EXECUTABLE(netperfmeter
    transfer.cc
    transfer.h
 )
-TARGET_INCLUDE_DIRECTORIES(netperfmeter PRIVATE ${BZ2_INCLUDE_DIR} ${SCTP_INCLUDE_DIR} ${QUIC_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(netperfmeter PRIVATE ${BZ2_LIBRARY} ${SCTP_LIBRARY} ${QUIC_LIBRARY} ${LIBIBERTY_LIBRARY} ${KSTAT_LIBRARY} ${SOCKET_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+TARGET_INCLUDE_DIRECTORIES(netperfmeter
+                           PRIVATE ${ZSTD_INCLUDE_DIR}
+                                   ${LZMA_INCLUDE_DIR}
+                                   ${BZ2_INCLUDE_DIR}
+                                   ${Z_INCLUDE_DIR}
+                                   ${SCTP_INCLUDE_DIR}
+                                   ${QUIC_INCLUDE_DIR}
+                                   ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(netperfmeter
+                      PRIVATE ${ZSTD_LIBRARY}
+                              ${LZMA_LIBRARY}
+                              ${BZ2_LIBRARY}
+                              ${Z_LIBRARY}
+                              ${SCTP_LIBRARY} ${QUIC_LIBRARY}
+                              ${LIBIBERTY_LIBRARY} ${KSTAT_LIBRARY}
+                              ${SOCKET_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
 INSTALL(TARGETS netperfmeter     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   netperfmeter.1   DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES   netperfmeter.xml DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)
@@ -124,13 +138,19 @@ ADD_EXECUTABLE(createsummary
    inputfile.h
    outputfile.cc
    outputfile.h
-   redblacktree.h
-   redblacktree_impl.h
-   simpleredblacktree.c
-   simpleredblacktree.h
 )
-TARGET_INCLUDE_DIRECTORIES(createsummary PRIVATE ${BZ2_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(createsummary PRIVATE ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY})
+TARGET_INCLUDE_DIRECTORIES(createsummary
+                           PRIVATE ${ZSTD_INCLUDE_DIR}
+                                   ${LZMA_INCLUDE_DIR}
+                                   ${BZ2_INCLUDE_DIR}
+                                   ${Z_INCLUDE_DIR}
+                                   ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(createsummary
+                      PRIVATE ${ZSTD_LIBRARY}
+                              ${LZMA_LIBRARY}
+                              ${BZ2_LIBRARY}
+                              ${Z_LIBRARY}
+                              ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     createsummary   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       createsummary.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       createsummary.bash-completion
@@ -145,8 +165,18 @@ ADD_EXECUTABLE(combinesummaries
    outputfile.h
    outputfile.cc
 )
-TARGET_INCLUDE_DIRECTORIES(combinesummaries PRIVATE ${BZ2_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(combinesummaries PRIVATE ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY} ${LIBIBERTY_LIBRARY})
+TARGET_INCLUDE_DIRECTORIES(combinesummaries
+                           PRIVATE ${ZSTD_INCLUDE_DIR}
+                                   ${LZMA_INCLUDE_DIR}
+                                   ${BZ2_INCLUDE_DIR}
+                                   ${Z_INCLUDE_DIR}
+                                   ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(combinesummaries
+                      PRIVATE ${ZSTD_LIBRARY}
+                              ${LZMA_LIBRARY}
+                              ${BZ2_LIBRARY}
+                              ${Z_LIBRARY}
+                              ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     combinesummaries   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       combinesummaries.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       combinesummaries.bash-completion
@@ -161,8 +191,18 @@ ADD_EXECUTABLE(extractvectors
    outputfile.h
    outputfile.cc
 )
-TARGET_INCLUDE_DIRECTORIES(extractvectors PRIVATE ${BZ2_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(extractvectors PRIVATE ${BZ2_LIBRARY} ${LIBIBERTY_LIBRARY})
+TARGET_INCLUDE_DIRECTORIES(extractvectors
+                           PRIVATE ${ZSTD_INCLUDE_DIR}
+                                   ${LZMA_INCLUDE_DIR}
+                                   ${BZ2_INCLUDE_DIR}
+                                   ${Z_INCLUDE_DIR}
+                                   ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(extractvectors
+                      PRIVATE ${ZSTD_LIBRARY}
+                              ${LZMA_LIBRARY}
+                              ${BZ2_LIBRARY}
+                              ${Z_LIBRARY}
+                              ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     extractvectors  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       extractvectors.1 DESTINATION        ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       extractvectors.bash-completion
@@ -244,3 +284,12 @@ ENDIF()
 ADD_SUBDIRECTORY(examples)
 ADD_SUBDIRECTORY(logo)
 ADD_SUBDIRECTORY(results-examples)
+
+
+#############################################################################
+#### TESTING                                                             ####
+#############################################################################
+
+IF (BUILD_TESTING)
+   ADD_SUBDIRECTORY(tests)
+ENDIF()

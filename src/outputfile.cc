@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -29,96 +29,168 @@
 
 #include "outputfile.h"
 
+#include <cerrno>
 #include <cstdarg>
-#include <unistd.h>
-
-
-// ###### Constructor #######################################################
-OutputFile::OutputFile()
-{
-   File       = nullptr;
-   BZFile     = nullptr;
-   WriteError = false;
-   Line       = 0;
-}
+#include <cstdio>
+#include <cstring>
+#include <filesystem>
+#include <system_error>
+#include <utility>
+#include <vector>
 
 
 // ###### Destructor ########################################################
 OutputFile::~OutputFile()
 {
-   finish();
+   try {
+      finish();
+   }
+   catch(...) {
+      // Destructors must remain noexcept
+   }
 }
 
 
-// ###### Initialize output file ############################################
-bool OutputFile::initialize(const char*            name,
+// ###### Move Constructor ##################################################
+OutputFile::OutputFile(OutputFile&& other) noexcept
+   : Format(other.Format),
+     Name(std::move(other.Name)),
+     Line(other.Line),
+     File(other.File),
+     BZFile(other.BZFile),
+     WriteError(other.WriteError)
+{
+   other.Format     = OutputFileFormat::None;
+   other.Line       = 0;
+   other.File       = nullptr;
+   other.BZFile     = nullptr;
+   other.WriteError = false;
+}
+
+
+// ###### Move Assignment Operator ##########################################
+OutputFile& OutputFile::operator=(OutputFile&& other) noexcept
+{
+   if(this != &other) {
+      try {
+         finish();
+      }
+      catch(...) {
+      }
+
+      Format     = other.Format;
+      Name       = std::move(other.Name);
+      Line       = other.Line;
+      File       = other.File;
+      BZFile     = other.BZFile;
+      WriteError = other.WriteError;
+
+      other.Format     = OutputFileFormat::None;
+      other.Line       = 0;
+      other.File       = nullptr;
+      other.BZFile     = nullptr;
+      other.WriteError = false;
+   }
+   return *this;
+}
+
+
+// ###### Initialize output file (const char*) ##############################
+void OutputFile::initialize(const char*            name,
                             const OutputFileFormat format,
                             const unsigned int     compressionLevel)
 {
-   // ====== Initialize object ==============================================
+   if(name != nullptr) {
+      initialize(std::filesystem::path(name), format, compressionLevel);
+   }
+   else {
+      initialize(std::filesystem::path{}, format, compressionLevel);
+   }
+}
+
+
+// ###### Initialize output file (std::filesystem::path) ####################
+void OutputFile::initialize(const std::filesystem::path& name,
+                            const OutputFileFormat       format,
+                            const unsigned int           compressionLevel)
+{
    finish();
 
    Line   = 0;
    Format = format;
-   if(name != nullptr) {
-      Name = std::string(name);
-   }
-   else {
-      Name = std::string();
-   }
+   Name   = name.string();
 
-   // ====== Initialize file ================================================
    File   = nullptr;
    BZFile = nullptr;
-   if(format != OFF_None) {
-      File = (name != nullptr) ? fopen(name, "w+") : tmpfile();
-      if(File == nullptr) {
-         std::cerr << "ERROR: Unable to create output file <" << Name << ">!\n";
-         WriteError = true;
-         return false;
+
+   if(format != OutputFileFormat::None) {
+      if(!Name.empty()) {
+         File = std::fopen(Name.c_str(), "w+");
+      }
+      else {
+         File = std::tmpfile();
       }
 
-      // ====== Initialize BZip2 compressor ====================================
-      if(format == OFF_BZip2) {
-         int bzerror;
-         BZFile = BZ2_bzWriteOpen(&bzerror, File, (int)compressionLevel, 0, 30);
-         if(bzerror != BZ_OK) {
-            std::cerr << "ERROR: Unable to initialize BZip2 compression on file <" << Name << ">!\n"
-                      << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
+      if(File == nullptr) {
+         WriteError = true;
+         throw OutputFileException("Unable to create output file", Name, errno);
+      }
+
+      // ====== Initialize BZip2 compressor =================================
+      if(format == OutputFileFormat::BZip2) {
+         int bzerror = BZ_OK;
+         BZFile = BZ2_bzWriteOpen(&bzerror, File, static_cast<int>(compressionLevel), 0, 30);
+         if(bzerror != BZ_OK || BZFile == nullptr) {
+            const int err = bzerror;
+            const char* reason = BZ2_bzerror(BZFile, &bzerror);
             BZ2_bzWriteClose(&bzerror, BZFile, 0, nullptr, nullptr);
+            BZFile = nullptr;
+            std::fclose(File);
+            File = nullptr;
             WriteError = true;
-            finish();
-            return false;
+            if(!Name.empty()) {
+               std::error_code ec;
+               std::filesystem::remove(Name, ec);
+            }
+            throw OutputFileException("Unable to initialize BZip2 compression on file",
+                                      Name, err, reason ? reason : "Unknown BZip2 error");
          }
       }
       WriteError = false;
    }
-   return true;
 }
 
 
 // ###### Finish output file ################################################
-bool OutputFile::finish(const bool          closeFile,
+void OutputFile::finish(const bool          closeFile,
                         unsigned long long* bytesIn,
                         unsigned long long* bytesOut)
 {
+   std::exception_ptr errorToThrow = nullptr;
+
    // ====== Finish BZip2 compression =======================================
    if(BZFile) {
-      int          bzerror;
-      unsigned int inLow, inHigh, outLow, outHigh;
+      int          bzerror = BZ_OK;
+      unsigned int inLow = 0;
+      unsigned int inHigh = 0;
+      unsigned int outLow = 0;
+      unsigned int outHigh = 0;
       BZ2_bzWriteClose64(&bzerror, BZFile, 0, &inLow, &inHigh, &outLow, &outHigh);
       if(bzerror == BZ_OK) {
          if(bytesIn) {
-            *bytesIn = ((unsigned long long)inHigh << 32) + inLow;
+            *bytesIn = (static_cast<unsigned long long>(inHigh) << 32) + inLow;
          }
          if(bytesOut) {
-            *bytesOut = ((unsigned long long)outHigh << 32) + outLow;
+            *bytesOut = (static_cast<unsigned long long>(outHigh) << 32) + outLow;
          }
       }
       else {
-         std::cerr << "ERROR: Unable to finish BZip2 compression on file <" << Name << ">!\n"
-                   << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
+         const char* reason = BZ2_bzerror(BZFile, &bzerror);
          WriteError = true;
+         errorToThrow = std::make_exception_ptr(
+            OutputFileException("Unable to finish BZip2 compression on file",
+                                Name, bzerror, reason ? reason : "Unknown BZip2 error")
+         );
       }
       BZFile = nullptr;
    }
@@ -134,65 +206,98 @@ bool OutputFile::finish(const bool          closeFile,
    // ====== Close or rewind file ===========================================
    if(File) {
       if(closeFile) {
-         if(fclose(File) != 0) {
-            std::cerr << "ERROR: Unable to close output file <" << Name << ">!\n";
+         if(std::fclose(File) != 0) {
             WriteError = true;
+            if(!errorToThrow) {
+               errorToThrow = std::make_exception_ptr(
+                  OutputFileException("Unable to close output file", Name, errno)
+               );
+            }
          }
          File = nullptr;
       }
       else {
-         rewind(File);
+         std::rewind(File);
       }
    }
 
    // ====== Delete file in case of write error =============================
-   if(WriteError) {
-      unlink(Name.c_str());
+   if(WriteError && !Name.empty()) {
+      std::error_code ec;
+      std::filesystem::remove(Name, ec);
    }
-   return !WriteError;
+
+   if(errorToThrow) {
+      std::rethrow_exception(errorToThrow);
+   }
 }
 
 
-// ###### Write string into output file #####################################
-bool OutputFile::printf(const char* str, ...)
+// ###### Write string into output file (printf-style) ######################
+void OutputFile::printf(const char* str, ...)
 {
-   if(exists()) {
-      char buffer[16384];
-
-      va_list va;
-      va_start(va, str);
-      int bufferLength = vsnprintf(buffer, sizeof(buffer), str, va);
-      buffer[sizeof(buffer) - 1] = 0x00;   // Just to be really sure ...
-      va_end(va);
-
-      return write((const char*)&buffer, (size_t)bufferLength);
+   if(!exists()) {
+      return;
    }
-   return true;
+
+   char stackBuffer[16384];
+   va_list va;
+   va_start(va, str);
+   va_list vaCopy;
+   va_copy(vaCopy, va);
+
+   const int bufferLength = std::vsnprintf(stackBuffer, sizeof(stackBuffer), str, va);
+   va_end(va);
+
+   if(bufferLength < 0) {
+      va_end(vaCopy);
+      throw OutputFileException("String formatting error in printf()", Name);
+   }
+
+   if(static_cast<size_t>(bufferLength) < sizeof(stackBuffer)) {
+      va_end(vaCopy);
+      write(stackBuffer, static_cast<size_t>(bufferLength));
+      return;
+   }
+
+   // Buffer exceeded stack allocation; dynamically resize
+   std::vector<char> dynamicBuffer(static_cast<size_t>(bufferLength) + 1);
+   std::vsnprintf(dynamicBuffer.data(), dynamicBuffer.size(), str, vaCopy);
+   va_end(vaCopy);
+
+   write(dynamicBuffer.data(), static_cast<size_t>(bufferLength));
 }
 
 
-// ###### Write data into output file #######################################
-bool OutputFile::write(const char* buffer, const size_t bufferLength)
+// ###### Write string_view into output file ################################
+void OutputFile::write(std::string_view data)
 {
-   if(exists()) {
-      // ====== Compress string and write data ==============================
+   write(data.data(), data.size());
+}
+
+
+// ###### Write raw buffer into output file #################################
+void OutputFile::write(const char* buffer, const size_t bufferLength)
+{
+   if(exists() && bufferLength > 0) {
+      // ====== Compress data and write to file =============================
       if(BZFile) {
-         int bzerror;
-         BZ2_bzWrite(&bzerror, BZFile, (void*)buffer, bufferLength);
+         int bzerror = BZ_OK;
+         BZ2_bzWrite(&bzerror, BZFile, const_cast<char*>(buffer), static_cast<int>(bufferLength));
          if(bzerror != BZ_OK) {
-            std::cerr << "\nERROR: libbz2 failed to write into file <" << Name << ">!\n"
-                      << "Reason: " << BZ2_bzerror(BZFile, &bzerror) << "\n";
-            return false;
+            WriteError = true;
+            const char* reason = BZ2_bzerror(BZFile, &bzerror);
+            throw OutputFileException("libbz2 failed to write into file",
+                                      Name, bzerror, reason ? reason : "Unknown BZip2 error");
          }
       }
 
-      // ====== Write string as plain text ==================================
+      // ====== Write data as plain text ====================================
       else if(File) {
-         if(fwrite(buffer, bufferLength, 1, File) != 1) {
-            std::cerr << "ERROR: Unable to write into file <" << Name << ">!\n";
-            return false;
+         if(std::fwrite(buffer, bufferLength, 1, File) != 1) {
+            WriteError = true;
+            throw OutputFileException("Unable to write into file", Name, errno);
          }
       }
    }
-   return true;
 }

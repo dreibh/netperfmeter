@@ -54,6 +54,13 @@ INCLUDE(GNUInstallDirs)
 
 
 #############################################################################
+#### TESTING                                                             ####
+#############################################################################
+
+INCLUDE(CTest)
+
+
+#############################################################################
 #### PACKAGING                                                           ####
 #############################################################################
 
@@ -256,6 +263,27 @@ IF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
    ENDIF()
 ENDIF()
 
+# ====== libz ===============================================================
+FIND_LIBRARY(Z_LIBRARY NAMES z)
+FIND_PATH(Z_INCLUDE_DIR NAMES zlib.h)
+IF (Z_LIBRARY AND Z_INCLUDE_DIR)
+   MESSAGE(STATUS "GZip library found:")
+   MESSAGE(STATUS " Z_LIBRARY:     ${Z_LIBRARY}")
+   MESSAGE(STATUS " Z_INCLUDE_DIR: ${Z_INCLUDE_DIR}")
+ELSE()
+   MESSAGE(FATAL_ERROR
+           "Cannot find Z library! Try:\n"
+           " * Ubuntu/Debian: sudo apt install -y zlib1g-dev\n"
+           " * Fedora:        sudo dnf install -y zlib-ng-compat-devel\n"
+           " * OpenSUSE:      sudo zypper install -y zlib-devel\n"
+           " * Alpine:        sudo apk add zlib-ng-dev\n"
+           " * FreeBSD:       (should be installed by default)\n"
+           " * NetBSD:        (should be installed by default)\n"
+           " * OpenBSD:       (should be installed by default)\n"
+           " * Solaris:       sudo pkg install zlib\n"
+           " * Apple:         brew install zlib")
+ENDIF()
+
 # ====== libbz2 =============================================================
 FIND_LIBRARY(BZ2_LIBRARY NAMES bz2)
 FIND_PATH(BZ2_INCLUDE_DIR NAMES bzlib.h)
@@ -268,13 +296,55 @@ ELSE()
            "Cannot find BZip2 library! Try:\n"
            " * Ubuntu/Debian: sudo apt install -y libbz2-dev\n"
            " * Fedora:        sudo dnf install -y bzip2-devel\n"
-           " * SuSE:          sudo zypper install -y libbz2-devel\n"
+           " * OpenSUSE:      sudo zypper install -y libbz2-devel\n"
            " * Alpine:        sudo apk add bzip2-dev\n"
            " * FreeBSD:       sudo pkg install -y bzip2\n"
            " * NetBSD:        (should be installed by default)\n"
            " * OpenBSD:       (should be installed by default)\n"
            " * Solaris:       sudo pkg install bzip2\n"
            " * Apple:         brew install bzip2")
+ENDIF()
+
+# ====== liblzma ============================================================
+FIND_LIBRARY(LZMA_LIBRARY NAMES lzma)
+FIND_PATH(LZMA_INCLUDE_DIR NAMES lzma.h)
+IF (LZMA_LIBRARY AND LZMA_INCLUDE_DIR)
+   MESSAGE(STATUS "LZMA library found:")
+   MESSAGE(STATUS " LZMA_LIBRARY:     ${LZMA_LIBRARY}")
+   MESSAGE(STATUS " LZMA_INCLUDE_DIR: ${LZMA_INCLUDE_DIR}")
+ELSE()
+   MESSAGE(FATAL_ERROR
+           "Cannot find LZMA library! Try:\n"
+           " * Ubuntu/Debian: sudo apt install -y liblzma-dev\n"
+           " * Fedora:        sudo dnf install -y xz-devel\n"
+           " * OpenSUSE:      sudo zypper install -y xz-devel\n"
+           " * Alpine:        sudo apk add xz-dev\n"
+           " * FreeBSD:       sudo pkg install -y lzmalib\n"
+           " * NetBSD:        sudo pkgin -y install lzmalib\n"
+           " * OpenBSD:       sudo pkg_add xz\n"
+           " * Solaris:       sudo pkg install compress/xz\n"
+           " * Apple:         brew install xz")
+ENDIF()
+
+# ====== libzstd ============================================================
+FIND_LIBRARY(ZSTD_LIBRARY NAMES zstd)
+FIND_PATH(ZSTD_INCLUDE_DIR NAMES zstd.h)
+IF (ZSTD_LIBRARY AND ZSTD_INCLUDE_DIR)
+   MESSAGE(STATUS "ZSTD library found:")
+   MESSAGE(STATUS " ZSTD_LIBRARY:     ${ZSTD_LIBRARY}")
+   MESSAGE(STATUS " ZSTD_INCLUDE_DIR: ${ZSTD_INCLUDE_DIR}")
+ELSE()
+   MESSAGE(FATAL_ERROR
+           "Cannot find ZSTD library! Try:\n"
+           " * Ubuntu/Debian: sudo apt install -y libzstd-dev\n"
+           " * Fedora:        sudo dnf install -y libzstd-devel\n"
+           " * OpenSUSE:      sudo zypper install -y libzstd-devel\n"
+           " * Alpine:        sudo apk add libzstd-devel\n"
+           " * FreeBSD:       sudo pkg install -y zstd\n"
+           " * NetBSD:        sudo pkgin -y install zstd\n"
+           " * OpenBSD:       sudo pkg_add zstd\n"
+           " * Solaris:       sudo pkg install compress/zstd\n"
+           " * Apple:         brew install zsdt")
 ENDIF()
 
 # ====== SCTP support =======================================================
