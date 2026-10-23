@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -34,6 +34,8 @@
 #include "transfer.h"
 #include "package-version.h"
 #include "tools.h"
+#include "ioformat.h"
+#include "outputfile.h"
 
 #include <cerrno>
 #include <clocale>
@@ -308,7 +310,7 @@ static bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
+   while((option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1) {
       switch(option) {
          case 'x':
 #if defined(HAVE_SCTP)
@@ -432,24 +434,20 @@ static bool handleGlobalParameters(int argc, char** argv)
           break;
          case 'S':
             gScalarNamePattern = optarg;
-            if(gScalarNamePattern[0] == 0x00)
+            if(gScalarNamePattern[0] == 0x00) {
                gScalarFileFormat = OFF_None;
-            else if(hasSuffix(gScalarNamePattern, ".bz2")) {
-               gScalarFileFormat = OFF_BZip2;
             }
             else {
-               gScalarFileFormat = OFF_Plain;
+               gScalarFileFormat = detectFormat(gScalarNamePattern);
             }
           break;
          case 'V':
             gVectorNamePattern = optarg;
-            if(gVectorNamePattern[0] == 0x00)
+            if(gVectorNamePattern[0] == 0x00) {
                gVectorFileFormat = OFF_None;
-            else if(hasSuffix(gVectorNamePattern, ".bz2")) {
-               gVectorFileFormat = OFF_BZip2;
             }
             else {
-               gScalarFileFormat = OFF_Plain;
+               gVectorFileFormat = detectFormat(gVectorNamePattern);
             }
           break;
          case 'A':
@@ -1217,9 +1215,12 @@ static Flow* createFlow(Flow*                  previousFlow,
    const std::string vectorName = flow->getNodeOutputName(gVectorNamePattern,
                                                           "active",
                                                           formatText("-{:08x}-{:04x}", flowID, streamID));
-   if(!flow->initializeVectorFile(vectorName.c_str(), gVectorFileFormat)) {
-      // TRANSLATORS: Error message when vector output file cannot be opened. {} is the file path.
-      std::cerr << formatText(gettext("ERROR: Unable to create vector file <{}>!"), vectorName) << "\n";
+   try {
+      flow->initializeVectorFile(vectorName.c_str(), gVectorFileFormat);
+   }
+   catch(const OutputFileException& ex) {
+      // TRANSLATORS: Error message when vector output file cannot be opened. Placeholders: {} 1: file path, 2: failure reason.
+      std::cerr << formatText(gettext("ERROR: Unable to create vector file <{}>: {}!"), vectorName, ex.getReason()) << "\n";
       exit(1);
    }
 
