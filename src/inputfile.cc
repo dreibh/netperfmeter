@@ -36,9 +36,11 @@
 #include <filesystem>
 #include <utility>
 
-static const char* lzmaErrorToString(const lzma_ret ret)
+
+// ###### Get LZMA error string #############################################
+static const char* lzmaErrorToString(const lzma_ret returnCode)
 {
-   switch(ret) {
+   switch(returnCode) {
       case LZMA_OK:                return "Operation completed successfully";
       case LZMA_STREAM_END:        return "End of stream reached";
       case LZMA_MEM_ERROR:         return "Cannot allocate memory";
@@ -329,7 +331,7 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
       const size_t bytesToRead = std::min(sizeof(Storage), bufferSize - currentLen);
       ssize_t bytesRead = 0;
 
-if(Format == InputFileFormat::ZSTD) {
+      if(Format == InputFileFormat::ZSTD) {
          ZSTD_outBuffer out = { buffer + currentLen, bytesToRead, 0 };
          while(out.pos < out.size) {
             if(RawBufferPos >= RawBufferSize && !RawFileEof) {

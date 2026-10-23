@@ -39,9 +39,11 @@
 #include <utility>
 #include <vector>
 
-static const char* lzmaErrorToString(const lzma_ret ret)
+
+// ###### Get LZMA error string #############################################
+static const char* lzmaErrorToString(const lzma_ret returnCode)
 {
-   switch(ret) {
+   switch(returnCode) {
       case LZMA_OK:                return "Operation completed successfully";
       case LZMA_STREAM_END:        return "End of stream reached";
       case LZMA_MEM_ERROR:         return "Cannot allocate memory";
