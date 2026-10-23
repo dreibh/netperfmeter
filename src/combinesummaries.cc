@@ -107,8 +107,8 @@ static void addDataFile(OutputFile&         outputFile,
    try {
       inputFile.initialize(inputFileName, detectFormat(inputFileName));
    }
-   catch(const InputFileException& ex) {
-      std::cerr << "ERROR: " << ex.what() << "\n";
+   catch(const InputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
       std::exit(1);
    }
 
@@ -163,8 +163,8 @@ static void addDataFile(OutputFile&         outputFile,
 
       inputFile.finish();
    }
-   catch(const InputFileException& ex) {
-      std::cerr << "ERROR: " << ex.what() << "\n";
+   catch(const InputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
       std::exit(1);
    }
 }

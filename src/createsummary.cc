@@ -366,8 +366,8 @@ static bool handleScalarFile(const std::string& varValues,
    try {
       inputFile.initialize(fileName, detectFormat(fileName));
    }
-   catch(const InputFileException& ex) {
-      std::cerr << "ERROR: " << ex.what() << "\n";
+   catch(const InputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
       return false;
    }
 
@@ -512,8 +512,8 @@ static bool handleScalarFile(const std::string& varValues,
 
       inputFile.finish();
    }
-   catch(const InputFileException& ex) {
-      std::cerr << "ERROR: " << ex.what() << "\n";
+   catch(const InputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
       return false;
    }
 
@@ -950,12 +950,12 @@ int main(int argc, char** argv)
       dumpScalars(resultsDirectory, varNames, outputFormat,
                   compressionLevel, interactiveMode, separator, addLineNumbers);
    }
-   catch(const OutputFileException& ex) {
-      std::cerr << "ERROR: " << ex.what() << "\n";
+   catch(const OutputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
       std::exit(1);
    }
-   catch(const std::exception& ex) {
-      std::cerr << "ERROR: " << ex.what() << "\n";
+   catch(const std::exception& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
       std::exit(1);
    }
 

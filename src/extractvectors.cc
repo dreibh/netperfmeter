@@ -446,16 +446,16 @@ int main(int argc, char** argv)
          std::cout << "\n";
       }
    }
-   catch(const InputFileException& ex) {
-      std::cerr << "ERROR: " << ex.what() << "\n";
+   catch(const InputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
       std::exit(1);
    }
-   catch(const OutputFileException& ex) {
-      std::cerr << "ERROR: " << ex.what() << "\n";
+   catch(const OutputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
       std::exit(1);
    }
-   catch(const std::exception& ex) {
-      std::cerr << "ERROR: " << ex.what() << "\n";
+   catch(const std::exception& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
       std::exit(1);
    }
 
