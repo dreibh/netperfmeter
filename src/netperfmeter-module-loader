@@ -146,9 +146,7 @@ usage () {
    local repository=$'\x1b[1m\x1b]8;;@PROJECT_SOURCE_URL@\a@PROJECT_SOURCE_URL@\a\x1b]8;;\a\x1b[0m'
    cat >&2 <<EOF
 ${header}Usage:${reset}
-${cmd}${program}${reset} ${syn}start${reset}
-${cmd}${program}${reset} ${syn}stop${reset}
-${cmd}${program}${reset} ${syn}status${reset}
+${cmd}${program}${reset} ${syn}{${reset}${syn}start${reset} ${syn}|${reset} ${syn}stop${reset} ${syn}|${reset} ${syn}status${reset}${syn}}${reset}
 ${cmd}${program}${reset}
 	${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}
 ${cmd}${program}${reset}

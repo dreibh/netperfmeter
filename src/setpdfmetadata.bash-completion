@@ -86,8 +86,10 @@ _setpdfmetadata()
 
    # ====== All options =====================================================
    local opts="
--h --help
--v --version
+-h
+--help
+-v
+--version
 "
    mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}")
    return 0
