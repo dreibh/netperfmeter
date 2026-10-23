@@ -35,10 +35,7 @@
 #include <filesystem>
 #include <string>
 #include <string_view>
-
-#if __has_include(<zstd.h>)
 #include <zstd.h>
-#endif
 
 
 // ====== I/O File Formats ==================================================

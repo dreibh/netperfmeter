@@ -29,6 +29,7 @@
 
 #include "outputfile.h"
 
+#include <algorithm>
 #include <cerrno>
 #include <cstdarg>
 #include <cstdio>
@@ -37,6 +38,22 @@
 #include <system_error>
 #include <utility>
 #include <vector>
+
+static const char* lzmaErrorToString(const lzma_ret ret)
+{
+   switch(ret) {
+      case LZMA_OK:                return "Operation completed successfully";
+      case LZMA_STREAM_END:        return "End of stream reached";
+      case LZMA_MEM_ERROR:         return "Cannot allocate memory";
+      case LZMA_MEMLIMIT_ERROR:    return "Memory limit reached";
+      case LZMA_FORMAT_ERROR:      return "Format not recognized";
+      case LZMA_OPTIONS_ERROR:     return "Invalid compression options";
+      case LZMA_DATA_ERROR:        return "Data is corrupt";
+      case LZMA_BUF_ERROR:         return "Buffer error";
+      case LZMA_PROG_ERROR:        return "Internal programming error";
+      default:                     return "Unknown liblzma error";
+   }
+}
 
 
 // ###### Destructor ########################################################
@@ -58,13 +75,25 @@ OutputFile::OutputFile(OutputFile&& other) noexcept
      Line(other.Line),
      File(other.File),
      BZFile(other.BZFile),
+     GZFile(other.GZFile),
+     LZMAStream(other.LZMAStream),
+     LZMAInitialized(other.LZMAInitialized),
+     ZSTDCStream(other.ZSTDCStream),
+     PlainBytesIn(other.PlainBytesIn),
+     CompressedBytesOut(other.CompressedBytesOut),
      WriteError(other.WriteError)
 {
-   other.Format     = OutputFileFormat::None;
-   other.Line       = 0;
-   other.File       = nullptr;
-   other.BZFile     = nullptr;
-   other.WriteError = false;
+   other.Format             = OutputFileFormat::None;
+   other.Line               = 0;
+   other.File               = nullptr;
+   other.BZFile             = nullptr;
+   other.GZFile             = nullptr;
+   std::memset(&other.LZMAStream, 0, sizeof(lzma_stream));
+   other.LZMAInitialized    = false;
+   other.ZSTDCStream        = nullptr;
+   other.PlainBytesIn       = 0;
+   other.CompressedBytesOut = 0;
+   other.WriteError         = false;
 }
 
 
@@ -78,34 +107,41 @@ OutputFile& OutputFile::operator=(OutputFile&& other) noexcept
       catch(...) {
       }
 
-      Format     = other.Format;
-      Name       = std::move(other.Name);
-      Line       = other.Line;
-      File       = other.File;
-      BZFile     = other.BZFile;
-      WriteError = other.WriteError;
+      Format             = other.Format;
+      Name               = std::move(other.Name);
+      Line               = other.Line;
+      File               = other.File;
+      BZFile             = other.BZFile;
+      GZFile             = other.GZFile;
+      LZMAStream         = other.LZMAStream;
+      LZMAInitialized    = other.LZMAInitialized;
+      ZSTDCStream        = other.ZSTDCStream;
+      PlainBytesIn       = other.PlainBytesIn;
+      CompressedBytesOut = other.CompressedBytesOut;
+      WriteError         = other.WriteError;
 
-      other.Format     = OutputFileFormat::None;
-      other.Line       = 0;
-      other.File       = nullptr;
-      other.BZFile     = nullptr;
-      other.WriteError = false;
+      other.Format             = OutputFileFormat::None;
+      other.Line               = 0;
+      other.File               = nullptr;
+      other.BZFile             = nullptr;
+      other.GZFile             = nullptr;
+      std::memset(&other.LZMAStream, 0, sizeof(lzma_stream));
+      other.LZMAInitialized    = false;
+      other.ZSTDCStream        = nullptr;
+      other.PlainBytesIn       = 0;
+      other.CompressedBytesOut = 0;
+      other.WriteError         = false;
    }
    return *this;
 }
 
 
 // ###### Initialize output file (const char*) ##############################
-void OutputFile::initialize(const char*            name,
+void OutputFile::initialize(const char* const     name,
                             const OutputFileFormat format,
                             const unsigned int     compressionLevel)
 {
-   if(name != nullptr) {
-      initialize(std::filesystem::path(name), format, compressionLevel);
-   }
-   else {
-      initialize(std::filesystem::path{}, format, compressionLevel);
-   }
+   initialize(name ? std::filesystem::path(name) : std::filesystem::path{}, format, compressionLevel);
 }
 
 
@@ -116,21 +152,35 @@ void OutputFile::initialize(const std::filesystem::path& name,
 {
    finish();
 
-   Line   = 0;
-   Format = format;
-   Name   = name.string();
+   Line               = 0;
+   Format             = format;
+   Name               = name.string();
+   PlainBytesIn       = 0;
+   CompressedBytesOut = 0;
+   File               = nullptr;
+   BZFile             = nullptr;
+   GZFile             = nullptr;
+   std::memset(&LZMAStream, 0, sizeof(lzma_stream));
+   LZMAInitialized    = false;
+   ZSTDCStream        = nullptr;
 
-   File   = nullptr;
-   BZFile = nullptr;
+   if(format == OutputFileFormat::None) {
+      return;
+   }
 
-   if(format != OutputFileFormat::None) {
+   // ====== Open GZip output file ==========================================
+   if(format == OutputFileFormat::GZip) {
       if(!Name.empty()) {
-         File = std::fopen(Name.c_str(), "w+");
+         const std::string mode = "wb" + std::to_string(std::clamp(compressionLevel, 1u, 9u));
+         GZFile = gzopen(Name.c_str(), mode.c_str());
       }
-      else {
-         File = std::tmpfile();
+      if(GZFile == nullptr) {
+         WriteError = true;
+         throw OutputFileException("Unable to create GZip output file", Name, errno);
       }
-
+   }
+   else {
+      File = !Name.empty() ? std::fopen(Name.c_str(), "w+") : std::tmpfile();
       if(File == nullptr) {
          WriteError = true;
          throw OutputFileException("Unable to create output file", Name, errno);
@@ -139,7 +189,7 @@ void OutputFile::initialize(const std::filesystem::path& name,
       // ====== Initialize BZip2 compressor =================================
       if(format == OutputFileFormat::BZip2) {
          int bzerror = BZ_OK;
-         BZFile = BZ2_bzWriteOpen(&bzerror, File, static_cast<int>(compressionLevel), 0, 30);
+         BZFile = BZ2_bzWriteOpen(&bzerror, File, static_cast<int>(std::clamp(compressionLevel, 1u, 9u)), 0, 30);
          if(bzerror != BZ_OK || BZFile == nullptr) {
             const int err = bzerror;
             const char* reason = BZ2_bzerror(BZFile, &bzerror);
@@ -156,62 +206,178 @@ void OutputFile::initialize(const std::filesystem::path& name,
                                       Name, err, reason ? reason : "Unknown BZip2 error");
          }
       }
-      WriteError = false;
+
+      // ====== Initialize XZ compressor ====================================
+      else if(format == OutputFileFormat::XZ) {
+         const lzma_ret ret = lzma_easy_encoder(&LZMAStream, std::min(compressionLevel, 9u), LZMA_CHECK_CRC64);
+         if(ret != LZMA_OK) {
+            std::fclose(File);
+            File = nullptr;
+            WriteError = true;
+            if(!Name.empty()) {
+               std::error_code ec;
+               std::filesystem::remove(Name, ec);
+            }
+            throw OutputFileException("Unable to initialize XZ compression on file",
+                                      Name, static_cast<int>(ret), lzmaErrorToString(ret));
+         }
+         LZMAInitialized = true;
+      }
+
+      // ====== Initialize Zstandard compressor ==============================
+      else if(format == OutputFileFormat::ZSTD) {
+         ZSTDCStream = ZSTD_createCStream();
+         if(ZSTDCStream == nullptr) {
+            std::fclose(File);
+            File = nullptr;
+            WriteError = true;
+            if(!Name.empty()) {
+               std::error_code ec;
+               std::filesystem::remove(Name, ec);
+            }
+            throw OutputFileException("Unable to create Zstandard compression stream", Name);
+         }
+         const int zLevel = (compressionLevel == 0) ? ZSTD_defaultCLevel() : static_cast<int>(compressionLevel);
+         const size_t ret = ZSTD_initCStream(ZSTDCStream, zLevel);
+         if(ZSTD_isError(ret)) {
+            ZSTD_freeCStream(ZSTDCStream);
+            ZSTDCStream = nullptr;
+            std::fclose(File);
+            File = nullptr;
+            WriteError = true;
+            if(!Name.empty()) {
+               std::error_code ec;
+               std::filesystem::remove(Name, ec);
+            }
+            throw OutputFileException("Unable to initialize Zstandard compression",
+                                      Name, static_cast<int>(ret), ZSTD_getErrorName(ret));
+         }
+      }
    }
+   WriteError = false;
 }
 
 
-// ###### Finish output file ################################################
+// ###### Finish output file ================================================
 void OutputFile::finish(const bool          closeFile,
                         unsigned long long* bytesIn,
                         unsigned long long* bytesOut)
 {
    std::exception_ptr errorToThrow = nullptr;
 
+   // ====== Finish Zstandard compression ===================================
+   if(ZSTDCStream) {
+      ZSTD_inBuffer in = { nullptr, 0, 0 };
+      uint8_t outBuf[16384];
+      size_t remaining = 1;
+      while(remaining > 0) {
+         ZSTD_outBuffer out = { outBuf, sizeof(outBuf), 0 };
+         remaining = ZSTD_compressStream2(ZSTDCStream, &out, &in, ZSTD_e_end);
+         if(ZSTD_isError(remaining)) {
+            WriteError = true;
+            errorToThrow = std::make_exception_ptr(
+               OutputFileException("Failed to finish Zstandard compression",
+                                   Name, static_cast<int>(remaining), ZSTD_getErrorName(remaining)));
+            break;
+         }
+         if(out.pos > 0 && File != nullptr) {
+            if(std::fwrite(outBuf, 1, out.pos, File) != out.pos) {
+               WriteError = true;
+               errorToThrow = std::make_exception_ptr(
+                  OutputFileException("Failed to write Zstandard compressed data", Name, errno));
+               break;
+            }
+            CompressedBytesOut += out.pos;
+         }
+      }
+      ZSTD_freeCStream(ZSTDCStream);
+      ZSTDCStream = nullptr;
+      if(bytesIn)  { *bytesIn  = PlainBytesIn; }
+      if(bytesOut) { *bytesOut = CompressedBytesOut; }
+   }
+
+   // ====== Finish XZ compression ==========================================
+   else if(LZMAInitialized) {
+      if(bytesIn)  { *bytesIn  = LZMAStream.total_in; }
+      lzma_ret ret = LZMA_OK;
+      uint8_t outBuf[16384];
+      do {
+         LZMAStream.next_out  = outBuf;
+         LZMAStream.avail_out = sizeof(outBuf);
+         ret = lzma_code(&LZMAStream, LZMA_FINISH);
+         if(ret != LZMA_OK && ret != LZMA_STREAM_END) {
+            WriteError = true;
+            errorToThrow = std::make_exception_ptr(
+               OutputFileException("Failed to finish XZ compression",
+                                   Name, static_cast<int>(ret), lzmaErrorToString(ret)));
+            break;
+         }
+         const size_t writeBytes = sizeof(outBuf) - LZMAStream.avail_out;
+         if(writeBytes > 0 && File != nullptr) {
+            if(std::fwrite(outBuf, 1, writeBytes, File) != writeBytes) {
+               WriteError = true;
+               errorToThrow = std::make_exception_ptr(
+                  OutputFileException("Failed to write XZ compressed data", Name, errno));
+               break;
+            }
+            CompressedBytesOut += writeBytes;
+         }
+      } while(ret != LZMA_STREAM_END);
+
+      if(bytesOut) { *bytesOut = LZMAStream.total_out; }
+      lzma_end(&LZMAStream);
+      std::memset(&LZMAStream, 0, sizeof(lzma_stream));
+      LZMAInitialized = false;
+   }
+
+   // ====== Finish GZip compression ========================================
+   else if(GZFile) {
+      if(bytesIn) { *bytesIn = PlainBytesIn; }
+      const int gzerr = gzclose(GZFile);
+      GZFile = nullptr;
+      if(gzerr != Z_OK) {
+         WriteError = true;
+         errorToThrow = std::make_exception_ptr(
+            OutputFileException("Failed to close GZip output file", Name, gzerr));
+      }
+      if(bytesOut) {
+         std::error_code ec;
+         const auto sz = std::filesystem::file_size(Name, ec);
+         *bytesOut = !ec ? static_cast<unsigned long long>(sz) : PlainBytesIn;
+      }
+   }
+
    // ====== Finish BZip2 compression =======================================
-   if(BZFile) {
+   else if(BZFile) {
       int          bzerror = BZ_OK;
-      unsigned int inLow = 0;
-      unsigned int inHigh = 0;
-      unsigned int outLow = 0;
-      unsigned int outHigh = 0;
+      unsigned int inLow = 0, inHigh = 0, outLow = 0, outHigh = 0;
       BZ2_bzWriteClose64(&bzerror, BZFile, 0, &inLow, &inHigh, &outLow, &outHigh);
       if(bzerror == BZ_OK) {
-         if(bytesIn) {
-            *bytesIn = (static_cast<unsigned long long>(inHigh) << 32) + inLow;
-         }
-         if(bytesOut) {
-            *bytesOut = (static_cast<unsigned long long>(outHigh) << 32) + outLow;
-         }
+         if(bytesIn)  { *bytesIn  = (static_cast<unsigned long long>(inHigh) << 32) + inLow; }
+         if(bytesOut) { *bytesOut = (static_cast<unsigned long long>(outHigh) << 32) + outLow; }
       }
       else {
          const char* reason = BZ2_bzerror(BZFile, &bzerror);
          WriteError = true;
          errorToThrow = std::make_exception_ptr(
-            OutputFileException("Unable to finish BZip2 compression on file",
-                                Name, bzerror, reason ? reason : "Unknown BZip2 error")
-         );
+            OutputFileException("Failed to finish BZip2 compression",
+                                Name, bzerror, reason ? reason : "Unknown BZip2 error"));
       }
       BZFile = nullptr;
    }
    else {
-      if(bytesIn) {
-         *bytesIn = 0;
-      }
-      if(bytesOut) {
-         *bytesOut = 0;
-      }
+      if(bytesIn)  { *bytesIn  = PlainBytesIn; }
+      if(bytesOut) { *bytesOut = PlainBytesIn; }
    }
 
-   // ====== Close or rewind file ===========================================
+   // ====== Close underlying FILE* (for Plain, BZ2, XZ, ZSTD) ==============
    if(File) {
       if(closeFile) {
          if(std::fclose(File) != 0) {
             WriteError = true;
             if(!errorToThrow) {
                errorToThrow = std::make_exception_ptr(
-                  OutputFileException("Unable to close output file", Name, errno)
-               );
+                  OutputFileException("Unable to close output file", Name, errno));
             }
          }
          File = nullptr;
@@ -221,7 +387,7 @@ void OutputFile::finish(const bool          closeFile,
       }
    }
 
-   // ====== Delete file in case of write error =============================
+   // ====== Remove file on error ===========================================
    if(WriteError && !Name.empty()) {
       std::error_code ec;
       std::filesystem::remove(Name, ec);
@@ -279,25 +445,87 @@ void OutputFile::write(std::string_view data)
 // ###### Write raw buffer into output file #################################
 void OutputFile::write(const char* buffer, const size_t bufferLength)
 {
-   if(exists() && bufferLength > 0) {
-      // ====== Compress data and write to file =============================
-      if(BZFile) {
-         int bzerror = BZ_OK;
-         BZ2_bzWrite(&bzerror, BZFile, const_cast<char*>(buffer), static_cast<int>(bufferLength));
-         if(bzerror != BZ_OK) {
+   if(!exists() || bufferLength == 0) {
+      return;
+   }
+
+   PlainBytesIn += bufferLength;
+
+   // ====== Zstandard ======================================================
+   if(ZSTDCStream) {
+      ZSTD_inBuffer in = { buffer, bufferLength, 0 };
+      uint8_t outBuf[16384];
+      while(in.pos < in.size) {
+         ZSTD_outBuffer out = { outBuf, sizeof(outBuf), 0 };
+         const size_t ret = ZSTD_compressStream2(ZSTDCStream, &out, &in, ZSTD_e_continue);
+         if(ZSTD_isError(ret)) {
             WriteError = true;
-            const char* reason = BZ2_bzerror(BZFile, &bzerror);
-            throw OutputFileException("libbz2 failed to write into file",
-                                      Name, bzerror, reason ? reason : "Unknown BZip2 error");
+            throw OutputFileException("libzstd failed to compress data",
+                                      Name, static_cast<int>(ret), ZSTD_getErrorName(ret));
+         }
+         if(out.pos > 0) {
+            if(std::fwrite(outBuf, 1, out.pos, File) != out.pos) {
+               WriteError = true;
+               throw OutputFileException("Failed to write Zstandard data", Name, errno);
+            }
+            CompressedBytesOut += out.pos;
          }
       }
+   }
 
-      // ====== Write data as plain text ====================================
-      else if(File) {
-         if(std::fwrite(buffer, bufferLength, 1, File) != 1) {
+   // ====== XZ =============================================================
+   else if(LZMAInitialized) {
+      LZMAStream.next_in  = reinterpret_cast<const uint8_t*>(buffer);
+      LZMAStream.avail_in = bufferLength;
+
+      uint8_t outBuf[16384];
+      while(LZMAStream.avail_in > 0) {
+         LZMAStream.next_out  = outBuf;
+         LZMAStream.avail_out = sizeof(outBuf);
+         const lzma_ret ret = lzma_code(&LZMAStream, LZMA_RUN);
+         if(ret != LZMA_OK) {
             WriteError = true;
-            throw OutputFileException("Unable to write into file", Name, errno);
+            throw OutputFileException("liblzma failed to compress data",
+                                      Name, static_cast<int>(ret), lzmaErrorToString(ret));
          }
+         const size_t writeBytes = sizeof(outBuf) - LZMAStream.avail_out;
+         if(writeBytes > 0) {
+            if(std::fwrite(outBuf, 1, writeBytes, File) != writeBytes) {
+               WriteError = true;
+               throw OutputFileException("Failed to write XZ data into file", Name, errno);
+            }
+            CompressedBytesOut += writeBytes;
+         }
+      }
+   }
+
+   // ====== GZip ===========================================================
+   else if(GZFile) {
+      const int bytesWritten = gzwrite(GZFile, buffer, static_cast<unsigned int>(bufferLength));
+      if(bytesWritten <= 0) {
+         WriteError = true;
+         int errnum = 0;
+         const char* reason = gzerror(GZFile, &errnum);
+         throw OutputFileException("zlib failed to write data", Name, errnum, reason ? reason : "GZip error");
+      }
+   }
+
+   // ====== BZip2 ==========================================================
+   else if(BZFile) {
+      int bzerror = BZ_OK;
+      BZ2_bzWrite(&bzerror, BZFile, const_cast<char*>(buffer), static_cast<int>(bufferLength));
+      if(bzerror != BZ_OK) {
+         WriteError = true;
+         const char* reason = BZ2_bzerror(BZFile, &bzerror);
+         throw OutputFileException("libbz2 failed to write data", Name, bzerror, reason ? reason : "BZip2 error");
+      }
+   }
+
+   // ====== Plain text ======
+   else if(File) {
+      if(std::fwrite(buffer, bufferLength, 1, File) != 1) {
+         WriteError = true;
+         throw OutputFileException("Failed to write to file", Name, errno);
       }
    }
 }
