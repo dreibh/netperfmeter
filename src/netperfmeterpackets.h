@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -27,39 +27,79 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
-#ifndef NETMETERPACKETS_H
-#define NETMETERPACKETS_H
+#ifndef NETPERFMETERPACKETS_H
+#define NETPERFMETERPACKETS_H
 
 #include "tools.h"
 
-#include <sys/types.h>
+#include <cstddef>
+#include <cstdint>
+#include <string_view>
+#include <type_traits>
+
+#if defined(__GNUC__) || defined(__clang__)
+#define NPM_PACKED [[gnu::packed]]
+#elif defined(_MSC_VER)
+#define NPM_PACKED
+#pragma pack(push, 1)
+#else
+#define NPM_PACKED
+#endif
+
+// ====== Protocol IDs and ALPN Identifiers =================================
+inline constexpr uint32_t PPID_NETPERFMETER_CONTROL = 36;          /* Old value: 0x29097605 */
+inline constexpr uint32_t PPID_NETPERFMETER_DATA    = 37;          /* Old value: 0x29097606 */
+inline constexpr uint32_t SC_NETPERFMETER_DATA      = 1852861808;  /* Old value: 0x29097606 */
+
+inline constexpr std::string_view ALPN_NETPERFMETER_CONTROL_VIEW = "netperfmeter/control";
+inline constexpr std::string_view ALPN_NETPERFMETER_DATA_VIEW    = "netperfmeter/data";
+
+#define ALPN_NETPERFMETER_CONTROL   "netperfmeter/control"
+#define ALPN_NETPERFMETER_DATA      "netperfmeter/data"
+
+// ====== Message Types =====================================================
+enum class NetPerfMeterMessageType : uint8_t
+{
+   Acknowledge  = 0x01,
+   AddFlow      = 0x02,
+   RemoveFlow   = 0x03,
+   IdentifyFlow = 0x04,
+   Data         = 0x05,
+   Start        = 0x06,
+   Stop         = 0x07,
+   Results      = 0x08
+};
+
+inline constexpr uint8_t NETPERFMETER_ACKNOWLEDGE   = static_cast<uint8_t>(NetPerfMeterMessageType::Acknowledge);
+inline constexpr uint8_t NETPERFMETER_ADD_FLOW      = static_cast<uint8_t>(NetPerfMeterMessageType::AddFlow);
+inline constexpr uint8_t NETPERFMETER_REMOVE_FLOW   = static_cast<uint8_t>(NetPerfMeterMessageType::RemoveFlow);
+inline constexpr uint8_t NETPERFMETER_IDENTIFY_FLOW = static_cast<uint8_t>(NetPerfMeterMessageType::IdentifyFlow);
+inline constexpr uint8_t NETPERFMETER_DATA          = static_cast<uint8_t>(NetPerfMeterMessageType::Data);
+inline constexpr uint8_t NETPERFMETER_START         = static_cast<uint8_t>(NetPerfMeterMessageType::Start);
+inline constexpr uint8_t NETPERFMETER_STOP          = static_cast<uint8_t>(NetPerfMeterMessageType::Stop);
+inline constexpr uint8_t NETPERFMETER_RESULTS       = static_cast<uint8_t>(NetPerfMeterMessageType::Results);
 
 
-struct NetPerfMeterHeader
+// ====== Common Message Header =============================================
+struct NPM_PACKED NetPerfMeterHeader
 {
    uint8_t  Type;
    uint8_t  Flags;
    uint16_t Length;
-} __attribute__((packed));
-
-#define PPID_NETPERFMETER_CONTROL   36           /* Old value: 0x29097605 */
-#define PPID_NETPERFMETER_DATA      37           /* Old value: 0x29097606 */
-#define SC_NETPERFMETER_DATA        1852861808   /* Old value: 0x29097606 */
-#define ALPN_NETPERFMETER_CONTROL   "netperfmeter/control"
-#define ALPN_NETPERFMETER_DATA      "netperfmeter/data"
+};
 
 
-#define NETPERFMETER_ACKNOWLEDGE    0x01
-#define NETPERFMETER_ADD_FLOW       0x02
-#define NETPERFMETER_REMOVE_FLOW    0x03
-#define NETPERFMETER_IDENTIFY_FLOW  0x04
-#define NETPERFMETER_DATA           0x05
-#define NETPERFMETER_START          0x06
-#define NETPERFMETER_STOP           0x07
-#define NETPERFMETER_RESULTS        0x08
+// ====== Acknowledge Message ===============================================
+enum class NetPerfMeterStatus : uint32_t
+{
+   Okay  = 0,
+   Error = 1
+};
 
+inline constexpr uint32_t NETPERFMETER_STATUS_OKAY  = static_cast<uint32_t>(NetPerfMeterStatus::Okay);
+inline constexpr uint32_t NETPERFMETER_STATUS_ERROR = static_cast<uint32_t>(NetPerfMeterStatus::Error);
 
-struct NetPerfMeterAcknowledgeMessage
+struct NPM_PACKED NetPerfMeterAcknowledgeMessage
 {
    NetPerfMeterHeader Header;
 
@@ -69,30 +109,43 @@ struct NetPerfMeterAcknowledgeMessage
    uint16_t           Padding;
 
    uint32_t           Status;
-} __attribute__((packed));
-
-#define NETPERFMETER_STATUS_OKAY  0
-#define NETPERFMETER_STATUS_ERROR 1
+};
 
 
-#define NETPERFMETER_DESCRIPTION_SIZE     32
-#define NETPERFMETER_RNG_INPUT_PARAMETERS  4
+// ====== On/Off Pattern Event ==============================================
+inline constexpr size_t NETPERFMETER_RNG_INPUT_PARAMETERS = 4;
+inline constexpr uint8_t NPOOEF_RELTIME                   = (1 << 0);
 
-#define NETPERFMETER_PATHMGR_LENGTH       16
-#define NETPERFMETER_CC_LENGTH            16
-#define NETPERFMETER_SCHEDULER_LENGTH     16
-
-struct NetPerfMeterOnOffEvent
+struct NPM_PACKED NetPerfMeterOnOffEvent
 {
    uint8_t          RandNumGen;
    uint8_t          Flags;
    uint16_t         pad;
    network_double_t ValueArray[NETPERFMETER_RNG_INPUT_PARAMETERS];
-} __attribute__((packed));
+};
 
-#define NPOOEF_RELTIME (1 << 0)
 
-struct NetPerfMeterAddFlowMessage
+// ====== Add Flow Message ==================================================
+inline constexpr size_t NETPERFMETER_DESCRIPTION_SIZE = 32;
+inline constexpr size_t NETPERFMETER_PATHMGR_LENGTH   = 16;
+inline constexpr size_t NETPERFMETER_CC_LENGTH        = 16;
+inline constexpr size_t NETPERFMETER_SCHEDULER_LENGTH = 16;
+
+inline constexpr uint8_t NPMAFF_DEBUG       = (1 << 0);
+inline constexpr uint8_t NPMAFF_NODELAY     = (1 << 1);
+inline constexpr uint8_t NPMAFF_REPEATONOFF = (1 << 2);
+
+// RetransmissionTrials in milliseconds (highest bit of 32-bit value set)
+inline constexpr uint32_t NPMAF_RTX_TRIALS_IN_MILLISECONDS = (1U << 31);   // Use ms instead of number of trials
+inline constexpr uint32_t NPMAF_RTX_DEFAULT                = 0x7fffffffU;  // Use protocol default
+
+inline constexpr uint8_t NPAF_PRIMARY_PATH = 0x00;
+inline constexpr uint8_t NPAF_CMT          = 0x01;
+inline constexpr uint8_t NPAF_CMTRPv1      = 0x02;
+inline constexpr uint8_t NPAF_CMTRPv2      = 0x03;
+inline constexpr uint8_t NPAF_LikeMPTCP    = 0x04;
+
+struct NPM_PACKED NetPerfMeterAddFlowMessage
 {
    NetPerfMeterHeader     Header;
 
@@ -125,50 +178,42 @@ struct NetPerfMeterAddFlowMessage
    char                   Scheduler[NETPERFMETER_SCHEDULER_LENGTH];   // obsolete!
 
    uint16_t               OnOffEvents;
-   NetPerfMeterOnOffEvent OnOffEvent[0];
-} __attribute__((packed));
-
-#define NPMAFF_DEBUG         (1 << 0)
-#define NPMAFF_NODELAY       (1 << 1)
-#define NPMAFF_REPEATONOFF   (1 << 2)
-
-// RetransmissionTrials in milliseconds (highest bit of 32-bit value set)
-#define NPMAF_RTX_TRIALS_IN_MILLISECONDS (1U << 31)    // Use ms instead of number of trials
-#define NPMAF_RTX_DEFAULT                0x7fffffffU   // Use protocol default
-
-#define NPAF_PRIMARY_PATH 0x00
-#define NPAF_CMT          0x01
-#define NPAF_CMTRPv1      0x02
-#define NPAF_CMTRPv2      0x03
-#define NPAF_LikeMPTCP    0x04
+   NetPerfMeterOnOffEvent OnOffEvent[];
+};
 
 
-struct NetPerfMeterRemoveFlowMessage
+// ====== Remove Flow Message ===============================================
+struct NPM_PACKED NetPerfMeterRemoveFlowMessage
 {
    NetPerfMeterHeader Header;
 
    uint32_t           FlowID;
    uint64_t           MeasurementID;
    uint16_t           StreamID;
-} __attribute__((packed));
+};
 
 
-struct NetPerfMeterIdentifyMessage
+// ====== Identify Message ==================================================
+inline constexpr uint64_t NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER = 0x4bcdf3aa303c6774ULL;
+
+inline constexpr uint8_t NPMIF_COMPRESS_VECTORS = (1 << 0);
+inline constexpr uint8_t NPMIF_NO_VECTORS       = (1 << 1);
+
+struct NPM_PACKED NetPerfMeterIdentifyMessage
 {
    NetPerfMeterHeader Header;
    uint32_t           FlowID;
    uint64_t           MagicNumber;
    uint64_t           MeasurementID;
    uint16_t           StreamID;
-} __attribute__((packed));
-
-#define NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER 0x4bcdf3aa303c6774ULL
-
-#define NPMIF_COMPRESS_VECTORS (1 << 0)
-#define NPMIF_NO_VECTORS       (1 << 1)
+};
 
 
-struct NetPerfMeterDataMessage
+// ====== Data Message ======================================================
+inline constexpr uint8_t NPMDF_FRAME_BEGIN = (1 << 0);
+inline constexpr uint8_t NPMDF_FRAME_END   = (1 << 1);
+
+struct NPM_PACKED NetPerfMeterDataMessage
 {
    NetPerfMeterHeader Header;
 
@@ -182,43 +227,90 @@ struct NetPerfMeterDataMessage
    uint64_t           ByteSeqNumber;
    uint64_t           TimeStamp;
 
-   unsigned char      Payload[0];
-} __attribute__((packed));
-
-#define NPMDF_FRAME_BEGIN (1 << 0)
-#define NPMDF_FRAME_END   (1 << 1)
+   uint8_t            Payload[];
+};
 
 
-struct NetPerfMeterStartMessage
+// ====== Start Message =====================================================
+inline constexpr uint8_t NPMSF_COMPRESS_VECTORS = (1 << 0);
+inline constexpr uint8_t NPMSF_COMPRESS_SCALARS = (1 << 1);
+inline constexpr uint8_t NPMSF_NO_VECTORS       = (1 << 2);
+inline constexpr uint8_t NPMSF_NO_SCALARS       = (1 << 3);
+
+struct NPM_PACKED NetPerfMeterStartMessage
 {
    NetPerfMeterHeader Header;
 
    uint32_t           Padding;
    uint64_t           MeasurementID;
-} __attribute__((packed));
-
-#define NPMSF_COMPRESS_VECTORS (1 << 0)
-#define NPMSF_COMPRESS_SCALARS (1 << 1)
-#define NPMSF_NO_VECTORS       (1 << 2)
-#define NPMSF_NO_SCALARS       (1 << 3)
+};
 
 
-struct NetPerfMeterStopMessage
+// ====== Stop Message ======================================================
+struct NPM_PACKED NetPerfMeterStopMessage
 {
    NetPerfMeterHeader Header;
 
    uint32_t           Padding;
    uint64_t           MeasurementID;
-} __attribute__((packed));
+};
 
 
-struct NetPerfMeterResults
+// ====== Results Message ===================================================
+inline constexpr uint8_t NPMRF_EOF                            = (1 << 0);
+inline constexpr size_t  NETPERFMETER_RESULTS_MAX_DATA_LENGTH = 1400;
+
+struct NPM_PACKED NetPerfMeterResults
 {
    NetPerfMeterHeader Header;
-   char               Data[0];
-} __attribute__((packed));
+   char               Data[];
+};
 
-#define NPMRF_EOF                            (1 << 0)
-#define NETPERFMETER_RESULTS_MAX_DATA_LENGTH 1400
+#if defined(_MSC_VER)
+#pragma pack(pop)
+#endif
+#undef NPM_PACKED
+
+
+// ====== Static Assertions for Protocol Wire Sizes =========================
+static_assert(std::is_standard_layout_v<NetPerfMeterHeader>);
+static_assert(std::is_trivially_copyable_v<NetPerfMeterHeader>);
+static_assert(sizeof(NetPerfMeterHeader) == 4);
+
+static_assert(std::is_standard_layout_v<NetPerfMeterAcknowledgeMessage>);
+static_assert(std::is_trivially_copyable_v<NetPerfMeterAcknowledgeMessage>);
+static_assert(sizeof(NetPerfMeterAcknowledgeMessage) == 24);
+
+static_assert(std::is_standard_layout_v<NetPerfMeterOnOffEvent>);
+static_assert(std::is_trivially_copyable_v<NetPerfMeterOnOffEvent>);
+static_assert(sizeof(NetPerfMeterOnOffEvent) == 36);
+
+static_assert(std::is_standard_layout_v<NetPerfMeterAddFlowMessage>);
+static_assert(std::is_trivially_copyable_v<NetPerfMeterAddFlowMessage>);
+static_assert(sizeof(NetPerfMeterAddFlowMessage) == 194);
+
+static_assert(std::is_standard_layout_v<NetPerfMeterRemoveFlowMessage>);
+static_assert(std::is_trivially_copyable_v<NetPerfMeterRemoveFlowMessage>);
+static_assert(sizeof(NetPerfMeterRemoveFlowMessage) == 18);
+
+static_assert(std::is_standard_layout_v<NetPerfMeterIdentifyMessage>);
+static_assert(std::is_trivially_copyable_v<NetPerfMeterIdentifyMessage>);
+static_assert(sizeof(NetPerfMeterIdentifyMessage) == 26);
+
+static_assert(std::is_standard_layout_v<NetPerfMeterDataMessage>);
+static_assert(std::is_trivially_copyable_v<NetPerfMeterDataMessage>);
+static_assert(sizeof(NetPerfMeterDataMessage) == 48);
+
+static_assert(std::is_standard_layout_v<NetPerfMeterStartMessage>);
+static_assert(std::is_trivially_copyable_v<NetPerfMeterStartMessage>);
+static_assert(sizeof(NetPerfMeterStartMessage) == 16);
+
+static_assert(std::is_standard_layout_v<NetPerfMeterStopMessage>);
+static_assert(std::is_trivially_copyable_v<NetPerfMeterStopMessage>);
+static_assert(sizeof(NetPerfMeterStopMessage) == 16);
+
+static_assert(std::is_standard_layout_v<NetPerfMeterResults>);
+static_assert(std::is_trivially_copyable_v<NetPerfMeterResults>);
+static_assert(sizeof(NetPerfMeterResults) == 4);
 
 #endif
