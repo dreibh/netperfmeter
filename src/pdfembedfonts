@@ -36,8 +36,8 @@ usage () {
    local reset=$'\x1b[0m'
    local progname="${program##*/}"
    local manpage="${cmd}${progname%.*}${reset}"
-   local homepage="${cmd}"$'\x1b]8;;@PROJECT_HOMEPAGE_URL@\a@PROJECT_HOMEPAGE_URL@\a\x1b]8;;\a'"${reset}"
-   local repository="${cmd}"$'\x1b]8;;@PROJECT_SOURCE_URL@\a@PROJECT_SOURCE_URL@\a\x1b]8;;\a'"${reset}"
+   local homepage=$'\x1b[1m\x1b]8;;@PROJECT_HOMEPAGE_URL@\a@PROJECT_HOMEPAGE_URL@\a\x1b]8;;\a\x1b[0m'
+   local repository=$'\x1b[1m\x1b]8;;@PROJECT_SOURCE_URL@\a@PROJECT_SOURCE_URL@\a\x1b]8;;\a\x1b[0m'
    cat >&2 <<EOF
 ${header}Usage:${reset}
 ${cmd}${program}${reset} ${arg}input_pdf${reset} ${arg}output_pdf${reset}
