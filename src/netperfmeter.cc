@@ -1770,7 +1770,7 @@ static void passiveMode(const uint16_t localPort)
                            strerror(errno)) << "\n";
          LOG_END_FATAL
       }
-#if defined(TCP_KEEPIDLE)
+#if defined(TCP_KEEPIDLE) && !defined(__GNU__)
       const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPIDLE,
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
@@ -1782,7 +1782,7 @@ static void passiveMode(const uint16_t localPort)
 #else
 #warning No TCP_KEEPIDLE option available!
 #endif
-#if defined(TCP_KEEPINTVL)
+#if defined(TCP_KEEPINTVL) && !defined(__GNU__)
       const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPINTVL,
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
@@ -1794,7 +1794,7 @@ static void passiveMode(const uint16_t localPort)
 #else
 #warning No TCP_KEEPINTVL option available!
 #endif
-#if defined(TCP_KEEPCNT)
+#if defined(TCP_KEEPCNT) && !defined(__GNU__)
       const int keepCountOption = (int)gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
@@ -2331,7 +2331,7 @@ static void activeMode(const char* remoteEndpoint)
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
-#if defined(TCP_KEEPIDLE)
+#if defined(TCP_KEEPIDLE) && !defined(__GNU__)
       const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPIDLE,
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
@@ -2343,7 +2343,7 @@ static void activeMode(const char* remoteEndpoint)
 #else
 #warning No TCP_KEEPIDLE option available!
 #endif
-#if defined(TCP_KEEPINTVL)
+#if defined(TCP_KEEPINTVL) && !defined(__GNU__)
       const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPINTVL,
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
@@ -2355,7 +2355,7 @@ static void activeMode(const char* remoteEndpoint)
 #else
 #warning No TCP_KEEPINTVL option available!
 #endif
-#if defined(TCP_KEEPCNT)
+#if defined(TCP_KEEPCNT) && !defined(__GNU__)
       const int keepCountOption = (int)gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
