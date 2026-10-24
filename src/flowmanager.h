@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -103,13 +103,13 @@ class FlowManager : public Thread
                               const uint64_t now,
                               OutputFile&    scalarFile,
                               const uint64_t firstStatisticsEvent);
-   void writeVectorStatistics(const uint64_t     measurementID,
-                              const uint64_t     now,
-                              OutputFile&        vectorFile,
+   void writeVectorStatistics(const uint64_t      measurementID,
+                              const uint64_t      now,
+                              OutputFile&         vectorFile,
                               FlowBandwidthStats& globalStats,
                               FlowBandwidthStats& relGlobalStats,
-                              const uint64_t     firstStatisticsEvent,
-                              const uint64_t     lastStatisticsEvent);
+                              const uint64_t      firstStatisticsEvent,
+                              const uint64_t      lastStatisticsEvent);
 
    Flow* findFlow(const uint64_t measurementID,
                   const uint32_t flowID,

@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -240,9 +240,10 @@ bool FlowManager::beginMeasurement(const int              controlSocket,
    lock();
    Measurement* measurement = new Measurement;
    if(measurement != nullptr) {
-      if(measurement->initialize(now, controlSocket, measurementID,
+      try {
+         measurement->initialize(now, controlSocket, measurementID,
                                  vectorNamePattern, vectorFileFormat,
-                                 scalarNamePattern, scalarFileFormat)) {
+                                 scalarNamePattern, scalarFileFormat);
          success = true;
          for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
             iterator != FlowSet.end(); iterator++) {
@@ -269,8 +270,23 @@ bool FlowManager::beginMeasurement(const int              controlSocket,
             }
          }
       }
-      else {
+      catch(const OutputFileException& ex) {
+         LOG_ERROR
+         stdlog << formatText("ERROR: Failed to prepare measurement output files for measurement ${:x}: {}!\n",
+                              measurementID, ex.what());
+         LOG_END
          delete measurement;
+         measurement = nullptr;
+         success = false;
+      }
+      catch(const std::exception& ex) {
+         LOG_ERROR
+         stdlog << formatText("ERROR: Failed to prepare measurement ${:x}: {}!\n",
+                              measurementID, ex.what());
+         LOG_END
+         delete measurement;
+         measurement = nullptr;
+         success = false;
       }
    }
    unlock();
@@ -615,26 +631,26 @@ void FlowManager::writeScalarStatistics(const uint64_t measurementID,
             "scalar \"%s.flow[%u]\" \"Received Packet Rate\"    %1.6f\n"
             "scalar \"%s.flow[%u]\" \"Received Frame Rate\"     %1.6f\n"
             ,
-            objectName.c_str(), flow->FlowID, flow->FirstTransmission,
-            objectName.c_str(), flow->FlowID, flow->LastTransmission,
-            objectName.c_str(), flow->FlowID, flow->FirstReception,
-            objectName.c_str(), flow->FlowID, flow->LastReception,
+            objectName.c_str(), flow->FlowID, static_cast<unsigned long long>(flow->FirstTransmission),
+            objectName.c_str(), flow->FlowID, static_cast<unsigned long long>(flow->LastTransmission),
+            objectName.c_str(), flow->FlowID, static_cast<unsigned long long>(flow->FirstReception),
+            objectName.c_str(), flow->FlowID, static_cast<unsigned long long>(flow->LastReception),
 
-            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedBytes,
-            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedPackets,
-            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.TransmittedFrames,
-            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? 8ULL * flow->CurrentBandwidthStats.TransmittedBytes / transmissionDuration : 0.0,
-            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedBytes   / transmissionDuration : 0.0,
-            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedPackets / transmissionDuration : 0.0,
-            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? flow->CurrentBandwidthStats.TransmittedFrames  / transmissionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, static_cast<unsigned long long>(flow->CurrentBandwidthStats.TransmittedBytes),
+            objectName.c_str(), flow->FlowID, static_cast<unsigned long long>(flow->CurrentBandwidthStats.TransmittedPackets),
+            objectName.c_str(), flow->FlowID, static_cast<unsigned long long>(flow->CurrentBandwidthStats.TransmittedFrames),
+            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? 8ULL * static_cast<unsigned long long>(flow->CurrentBandwidthStats.TransmittedBytes) / transmissionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? static_cast<double>(flow->CurrentBandwidthStats.TransmittedBytes)   / transmissionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? static_cast<double>(flow->CurrentBandwidthStats.TransmittedPackets) / transmissionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, (transmissionDuration > 0.0) ? static_cast<double>(flow->CurrentBandwidthStats.TransmittedFrames)  / transmissionDuration : 0.0,
 
-            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedBytes,
-            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedPackets,
-            objectName.c_str(), flow->FlowID, flow->CurrentBandwidthStats.ReceivedFrames,
-            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? 8ULL * flow->CurrentBandwidthStats.ReceivedBytes / receptionDuration : 0.0,
-            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? flow->CurrentBandwidthStats.ReceivedBytes   / receptionDuration : 0.0,
-            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? flow->CurrentBandwidthStats.ReceivedPackets / receptionDuration : 0.0,
-            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? flow->CurrentBandwidthStats.ReceivedFrames  / receptionDuration : 0.0
+            objectName.c_str(), flow->FlowID, static_cast<unsigned long long>(flow->CurrentBandwidthStats.ReceivedBytes),
+            objectName.c_str(), flow->FlowID, static_cast<unsigned long long>(flow->CurrentBandwidthStats.ReceivedPackets),
+            objectName.c_str(), flow->FlowID, static_cast<unsigned long long>(flow->CurrentBandwidthStats.ReceivedFrames),
+            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? 8ULL * static_cast<unsigned long long>(flow->CurrentBandwidthStats.ReceivedBytes) / receptionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? static_cast<double>(flow->CurrentBandwidthStats.ReceivedBytes)   / receptionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? static_cast<double>(flow->CurrentBandwidthStats.ReceivedPackets) / receptionDuration : 0.0,
+            objectName.c_str(), flow->FlowID, (receptionDuration > 0.0) ? static_cast<double>(flow->CurrentBandwidthStats.ReceivedFrames)  / receptionDuration : 0.0
             );
          totalBandwidthStats = totalBandwidthStats + flow->CurrentBandwidthStats;
       }
@@ -665,29 +681,29 @@ void FlowManager::writeScalarStatistics(const uint64_t measurementID,
       "scalar \"%s.total\" \"Lost Packet Rate\"        %1.6f\n"
       "scalar \"%s.total\" \"Lost Frame Rate\"         %1.6f\n"
       ,
-      objectName.c_str(), firstStatisticsEvent,
-      objectName.c_str(), now,
+      objectName.c_str(), static_cast<unsigned long long>(firstStatisticsEvent),
+      objectName.c_str(), static_cast<unsigned long long>(now),
 
-      objectName.c_str(), totalBandwidthStats.TransmittedBytes,
-      objectName.c_str(), totalBandwidthStats.TransmittedPackets,
-      objectName.c_str(), totalBandwidthStats.TransmittedFrames,
-      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.TransmittedBytes   / totalDuration : 0.0,
-      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.TransmittedPackets / totalDuration : 0.0,
-      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.TransmittedFrames  / totalDuration : 0.0,
+      objectName.c_str(), static_cast<unsigned long long>(totalBandwidthStats.TransmittedBytes),
+      objectName.c_str(), static_cast<unsigned long long>(totalBandwidthStats.TransmittedPackets),
+      objectName.c_str(), static_cast<unsigned long long>(totalBandwidthStats.TransmittedFrames),
+      objectName.c_str(), (totalDuration > 0.0) ? static_cast<double>(totalBandwidthStats.TransmittedBytes)   / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? static_cast<double>(totalBandwidthStats.TransmittedPackets) / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? static_cast<double>(totalBandwidthStats.TransmittedFrames)  / totalDuration : 0.0,
 
-      objectName.c_str(), totalBandwidthStats.ReceivedBytes,
-      objectName.c_str(), totalBandwidthStats.ReceivedPackets,
-      objectName.c_str(), totalBandwidthStats.ReceivedFrames,
-      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.ReceivedBytes   / totalDuration : 0.0,
-      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.ReceivedPackets / totalDuration : 0.0,
-      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.ReceivedFrames  / totalDuration : 0.0,
+      objectName.c_str(), static_cast<unsigned long long>(totalBandwidthStats.ReceivedBytes),
+      objectName.c_str(), static_cast<unsigned long long>(totalBandwidthStats.ReceivedPackets),
+      objectName.c_str(), static_cast<unsigned long long>(totalBandwidthStats.ReceivedFrames),
+      objectName.c_str(), (totalDuration > 0.0) ? static_cast<double>(totalBandwidthStats.ReceivedBytes)   / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? static_cast<double>(totalBandwidthStats.ReceivedPackets) / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? static_cast<double>(totalBandwidthStats.ReceivedFrames)  / totalDuration : 0.0,
 
-      objectName.c_str(), totalBandwidthStats.LostBytes,
-      objectName.c_str(), totalBandwidthStats.LostPackets,
-      objectName.c_str(), totalBandwidthStats.LostFrames,
-      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.LostBytes   / totalDuration : 0.0,
-      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.LostPackets / totalDuration : 0.0,
-      objectName.c_str(), (totalDuration > 0.0) ? totalBandwidthStats.LostFrames  / totalDuration : 0.0
+      objectName.c_str(), static_cast<unsigned long long>(totalBandwidthStats.LostBytes),
+      objectName.c_str(), static_cast<unsigned long long>(totalBandwidthStats.LostPackets),
+      objectName.c_str(), static_cast<unsigned long long>(totalBandwidthStats.LostFrames),
+      objectName.c_str(), (totalDuration > 0.0) ? static_cast<double>(totalBandwidthStats.LostBytes)   / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? static_cast<double>(totalBandwidthStats.LostPackets) / totalDuration : 0.0,
+      objectName.c_str(), (totalDuration > 0.0) ? static_cast<double>(totalBandwidthStats.LostFrames)  / totalDuration : 0.0
       );
    unlock();
 
@@ -710,13 +726,13 @@ void FlowManager::writeScalarStatistics(const uint64_t measurementID,
 
 
 // ###### Write vectors #####################################################
-void FlowManager::writeVectorStatistics(const uint64_t     measurementID,
-                                        const uint64_t     now,
-                                        OutputFile&        vectorFile,
+void FlowManager::writeVectorStatistics(const uint64_t      measurementID,
+                                        const uint64_t      now,
+                                        OutputFile&         vectorFile,
                                         FlowBandwidthStats& globalStats,
                                         FlowBandwidthStats& relGlobalStats,
-                                        const uint64_t     firstStatisticsEvent,
-                                        const uint64_t     lastStatisticsEvent)
+                                        const uint64_t      firstStatisticsEvent,
+                                        const uint64_t      lastStatisticsEvent)
 {
    // ====== Write vector statistics header =================================
    if(vectorFile.getLine() == 0) {
@@ -744,7 +760,7 @@ void FlowManager::writeVectorStatistics(const uint64_t     measurementID,
           currentTotalStats  = currentTotalStats + flow->CurrentBandwidthStats;
           CurrentGlobalStats = CurrentGlobalStats + relStats;
 
-          const uint64_t line = vectorFile.getLine();
+          const unsigned long long line = vectorFile.getLine();
           vectorFile.printf(
             "%06llu\t%llu\t%1.6f\t%1.6f\t%u\t\"%s\"\t%1.3f\t"
                "\"Sent\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
@@ -753,20 +769,32 @@ void FlowManager::writeVectorStatistics(const uint64_t     measurementID,
             "%06llu\t%llu\t%1.6f\t%1.6f\t%u\t\"%s\"\t%1.3f\t"
                "\"Lost\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n",
 
-            line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            line + 1, static_cast<unsigned long long>(now), (double)(now - firstStatisticsEvent) / 1000000.0, duration,
                flow->FlowID, flow->TrafficSpec.Description.c_str(), flow->Jitter,
-               flow->CurrentBandwidthStats.TransmittedBytes, flow->CurrentBandwidthStats.TransmittedPackets, flow->CurrentBandwidthStats.TransmittedFrames,
-               relStats.TransmittedBytes, relStats.TransmittedPackets, relStats.TransmittedFrames,
+               static_cast<unsigned long long>(flow->CurrentBandwidthStats.TransmittedBytes),
+               static_cast<unsigned long long>(flow->CurrentBandwidthStats.TransmittedPackets),
+               static_cast<unsigned long long>(flow->CurrentBandwidthStats.TransmittedFrames),
+               static_cast<unsigned long long>(relStats.TransmittedBytes),
+               static_cast<unsigned long long>(relStats.TransmittedPackets),
+               static_cast<unsigned long long>(relStats.TransmittedFrames),
 
-            line + 2, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            line + 2, static_cast<unsigned long long>(now), (double)(now - firstStatisticsEvent) / 1000000.0, duration,
                flow->FlowID, flow->TrafficSpec.Description.c_str(), flow->Jitter,
-               flow->CurrentBandwidthStats.ReceivedBytes, flow->CurrentBandwidthStats.ReceivedPackets, flow->CurrentBandwidthStats.ReceivedFrames,
-               relStats.ReceivedBytes, relStats.ReceivedPackets, relStats.ReceivedFrames,
+               static_cast<unsigned long long>(flow->CurrentBandwidthStats.ReceivedBytes),
+               static_cast<unsigned long long>(flow->CurrentBandwidthStats.ReceivedPackets),
+               static_cast<unsigned long long>(flow->CurrentBandwidthStats.ReceivedFrames),
+               static_cast<unsigned long long>(relStats.ReceivedBytes),
+               static_cast<unsigned long long>(relStats.ReceivedPackets),
+               static_cast<unsigned long long>(relStats.ReceivedFrames),
 
-            line + 3, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            line + 3, static_cast<unsigned long long>(now), (double)(now - firstStatisticsEvent) / 1000000.0, duration,
                flow->FlowID, flow->TrafficSpec.Description.c_str(), flow->Jitter,
-               flow->CurrentBandwidthStats.LostBytes, flow->CurrentBandwidthStats.LostPackets, flow->CurrentBandwidthStats.LostFrames,
-               relStats.LostBytes, relStats.LostPackets, relStats.LostFrames);
+               static_cast<unsigned long long>(flow->CurrentBandwidthStats.LostBytes),
+               static_cast<unsigned long long>(flow->CurrentBandwidthStats.LostPackets),
+               static_cast<unsigned long long>(flow->CurrentBandwidthStats.LostFrames),
+               static_cast<unsigned long long>(relStats.LostBytes),
+               static_cast<unsigned long long>(relStats.LostPackets),
+               static_cast<unsigned long long>(relStats.LostFrames));
 
           vectorFile.nextLine(); vectorFile.nextLine(); vectorFile.nextLine();
 
@@ -776,29 +804,41 @@ void FlowManager::writeVectorStatistics(const uint64_t     measurementID,
    }
 
    // ====== Write total statistics =========================================
-   const uint64_t line = vectorFile.getLine();
+   const unsigned long long line = vectorFile.getLine();
    const FlowBandwidthStats relTotalStats = currentTotalStats - lastTotalStats;
-      vectorFile.printf(
-         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
-            "\"Sent\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
-         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
-            "\"Received\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
-         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
-            "\"Lost\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n",
+   vectorFile.printf(
+      "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+         "\"Sent\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
+      "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+         "\"Received\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
+      "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+         "\"Lost\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n",
 
-         line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-            currentTotalStats.TransmittedBytes, currentTotalStats.TransmittedPackets, currentTotalStats.TransmittedFrames,
-            relTotalStats.TransmittedBytes, relTotalStats.TransmittedPackets, relTotalStats.TransmittedFrames,
+      line + 1, static_cast<unsigned long long>(now), (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+         static_cast<unsigned long long>(currentTotalStats.TransmittedBytes),
+         static_cast<unsigned long long>(currentTotalStats.TransmittedPackets),
+         static_cast<unsigned long long>(currentTotalStats.TransmittedFrames),
+         static_cast<unsigned long long>(relTotalStats.TransmittedBytes),
+         static_cast<unsigned long long>(relTotalStats.TransmittedPackets),
+         static_cast<unsigned long long>(relTotalStats.TransmittedFrames),
 
-         line + 2, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-            currentTotalStats.ReceivedBytes, currentTotalStats.ReceivedPackets, currentTotalStats.ReceivedFrames,
-            relTotalStats.ReceivedBytes, relTotalStats.ReceivedPackets, relTotalStats.ReceivedFrames,
+      line + 2, static_cast<unsigned long long>(now), (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+         static_cast<unsigned long long>(currentTotalStats.ReceivedBytes),
+         static_cast<unsigned long long>(currentTotalStats.ReceivedPackets),
+         static_cast<unsigned long long>(currentTotalStats.ReceivedFrames),
+         static_cast<unsigned long long>(relTotalStats.ReceivedBytes),
+         static_cast<unsigned long long>(relTotalStats.ReceivedPackets),
+         static_cast<unsigned long long>(relTotalStats.ReceivedFrames),
 
-         line + 3, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-            currentTotalStats.LostBytes, currentTotalStats.LostPackets, currentTotalStats.LostFrames,
-            relTotalStats.LostBytes, relTotalStats.LostPackets, relTotalStats.LostFrames);
+      line + 3, static_cast<unsigned long long>(now), (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+         static_cast<unsigned long long>(currentTotalStats.LostBytes),
+         static_cast<unsigned long long>(currentTotalStats.LostPackets),
+         static_cast<unsigned long long>(currentTotalStats.LostFrames),
+         static_cast<unsigned long long>(relTotalStats.LostBytes),
+         static_cast<unsigned long long>(relTotalStats.LostPackets),
+         static_cast<unsigned long long>(relTotalStats.LostFrames));
 
-    vectorFile.nextLine(); vectorFile.nextLine(); vectorFile.nextLine();
+   vectorFile.nextLine(); vectorFile.nextLine(); vectorFile.nextLine();
 
    // ====== Return global values (all measurements) for displaying =========
    globalStats     = CurrentGlobalStats;

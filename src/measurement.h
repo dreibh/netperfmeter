@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -48,58 +48,64 @@ class Measurement : public Mutex
    Measurement();
    ~Measurement();
 
-   uint64_t getMeasurementID() const {
+   [[nodiscard]] inline uint64_t getMeasurementID() const noexcept {
       return MeasurementID;
    }
-   const std::string& getVectorNamePattern() const {
+   [[nodiscard]] inline const std::string& getVectorNamePattern() const noexcept {
       return VectorNamePattern;
    }
-   const OutputFile& getVectorFile() const {
+   [[nodiscard]] inline const OutputFile& getVectorFile() const noexcept {
       return VectorFile;
    }
-   const std::string& getScalarNamePattern() const {
+   [[nodiscard]] inline OutputFile& getVectorFile() noexcept {
+      return VectorFile;
+   }
+   [[nodiscard]] inline const std::string& getScalarNamePattern() const noexcept {
       return ScalarNamePattern;
    }
-   const OutputFile& getScalarFile() const {
+   [[nodiscard]] inline const OutputFile& getScalarFile() const noexcept {
       return ScalarFile;
    }
-   inline uint64_t getFirstStatisticsEvent() const {
+   [[nodiscard]] inline OutputFile& getScalarFile() noexcept {
+      return ScalarFile;
+   }
+   [[nodiscard]] inline uint64_t getFirstStatisticsEvent() const noexcept {
       return FirstStatisticsEvent;
    }
 
-   bool initialize(const uint64_t         now,
+   void initialize(const uint64_t         now,
                    const int              controlSocketDescriptor,
                    const uint64_t         measurementID,
                    const char*            vectorNamePattern,
                    const OutputFileFormat vectorFileFormat,
                    const char*            scalarNamePattern,
                    const OutputFileFormat scalarFileFormat);
-   bool finish(const bool closeFiles);
+   void finish(const bool closeFiles = true);
 
    void writeScalarStatistics(const uint64_t now);
-   void writeVectorStatistics(const uint64_t     now,
+   void writeVectorStatistics(const uint64_t      now,
                               FlowBandwidthStats& globalStats,
                               FlowBandwidthStats& relGlobalStats);
 
 
    // ====== Private Data ===================================================
    private:
-   int         ControlSocketDescriptor;
-   uint64_t    MeasurementID;
-   uint64_t    StatisticsInterval;
-   uint64_t    FirstStatisticsEvent;
-   uint64_t    LastStatisticsEvent;
-   uint64_t    NextStatisticsEvent;
+   int         ControlSocketDescriptor { -1 };
+   uint64_t    MeasurementID           { 0 };
+   uint64_t    StatisticsInterval      { 1000000ULL };
+   uint64_t    FirstStatisticsEvent    { 0 };
+   uint64_t    LastStatisticsEvent     { 0 };
+   uint64_t    NextStatisticsEvent     { 0 };
 
    std::string VectorNamePattern;
    std::string ScalarNamePattern;
    OutputFile  VectorFile;
    OutputFile  ScalarFile;
 
-   uint64_t    LastTransmission;
-   uint64_t    FirstTransmission;
-   uint64_t    LastReception;
-   uint64_t    FirstReception;
+   uint64_t    LastTransmission        { 0 };
+   uint64_t    FirstTransmission       { 0 };
+   uint64_t    LastReception           { 0 };
+   uint64_t    FirstReception          { 0 };
 };
 
 #endif // MEASUREMENT_H
