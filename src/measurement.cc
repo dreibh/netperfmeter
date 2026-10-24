@@ -14,12 +14,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -85,10 +85,16 @@ void Measurement::initialize([[maybe_unused]] const uint64_t now,
    try {
       VectorNamePattern = (vectorNamePattern != nullptr) ?
                              std::string(vectorNamePattern) : std::string();
-      if((vectorFileFormat != OutputFileFormat::None) && (!VectorNamePattern.empty())) {
-         VectorFile.initialize(
-            Flow::getNodeOutputName(VectorNamePattern, "active"),
-            vectorFileFormat);
+      if(vectorFileFormat != OutputFileFormat::None) {
+         if(!VectorNamePattern.empty()) {
+            VectorFile.initialize(
+               Flow::getNodeOutputName(VectorNamePattern, "active"),
+               vectorFileFormat);
+         }
+         else {
+            // Passive instance: buffer output in a temporary file for subsequent upload
+            VectorFile.initialize(std::filesystem::path{}, vectorFileFormat);
+         }
       }
       else {
          VectorFile.initialize(std::filesystem::path{}, OutputFileFormat::None);
@@ -96,10 +102,16 @@ void Measurement::initialize([[maybe_unused]] const uint64_t now,
 
       ScalarNamePattern = (scalarNamePattern != nullptr) ?
                              std::string(scalarNamePattern) : std::string();
-      if((scalarFileFormat != OutputFileFormat::None) && (!ScalarNamePattern.empty())) {
-         ScalarFile.initialize(
-            Flow::getNodeOutputName(ScalarNamePattern, "active"),
-            scalarFileFormat);
+      if(scalarFileFormat != OutputFileFormat::None) {
+         if(!ScalarNamePattern.empty()) {
+            ScalarFile.initialize(
+               Flow::getNodeOutputName(ScalarNamePattern, "active"),
+               scalarFileFormat);
+         }
+         else {
+            // Passive instance: buffer output in a temporary file for subsequent upload
+            ScalarFile.initialize(std::filesystem::path{}, scalarFileFormat);
+         }
       }
       else {
          ScalarFile.initialize(std::filesystem::path{}, OutputFileFormat::None);
