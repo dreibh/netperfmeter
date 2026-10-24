@@ -31,12 +31,8 @@
 #include "tools.h"
 
 #include <algorithm>
-#include <cstring>
 #include <fstream>
 #include <iostream>
-#include <limits.h>
-#include <sys/utsname.h>
-#include <unistd.h>
 
 
 std::ostream* gStdLog        = &std::cerr;
@@ -54,13 +50,12 @@ bool initLogFile(const unsigned int logLevel,
    finishLogging();
    if(fileName != nullptr) {
       std::ofstream* newLogFile =
-         new std::ofstream(fileName, (appendMode == true) ?
-                                        std::ios_base::app : std::ios_base::trunc);
+         new std::ofstream(fileName, appendMode ? std::ios_base::app : std::ios_base::trunc);
       if(newLogFile != nullptr) {
          if(newLogFile->good()) {
-            gStdLog = newLogFile;
+            gStdLog      = newLogFile;
             gCloseStdLog = true;
-            gLogLevel    = std::min(std::max(logLevel, MIN_LOGLEVEL), MAX_LOGLEVEL);
+            gLogLevel    = std::clamp(logLevel, MIN_LOGLEVEL, MAX_LOGLEVEL);
             return true;
          }
          delete newLogFile;

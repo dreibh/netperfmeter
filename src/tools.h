@@ -103,14 +103,19 @@ extern "C" {
 
 // ###### Modern C++20 string formatting ###################################
 template<typename... Args>
-inline std::string formatText(const std::string_view fmt, Args&&... args)
+inline std::string formatText(const std::string_view fmt, const Args&... args)
 {
-   return std::vformat(fmt, std::make_format_args(args...));
+   try {
+      return std::vformat(fmt, std::make_format_args(args...));
+   }
+   catch(const std::format_error&) {
+      return std::string(fmt);
+   }
 }
 
 
 // ###### Chrono-based time helpers #########################################
-inline uint64_t getMicroTime()
+[[nodiscard]] inline uint64_t getMicroTime() noexcept
 {
    return static_cast<uint64_t>(
       std::chrono::duration_cast<std::chrono::microseconds>(
@@ -142,7 +147,7 @@ inline int safestrcat(char* dest, const char* src, const size_t size)
    return strlcat(dest, src, size) < size;
 }
 
-bool hasSuffix(const std::string& name, const std::string& suffix);
+[[nodiscard]] bool hasSuffix(const std::string& name, const std::string& suffix);
 void dissectName(const std::string& name,
                  std::string&       prefix,
                  std::string&       suffix);
@@ -154,11 +159,11 @@ union sockaddr_union {
    struct sockaddr_in6 in6;
 };
 
-bool checkIPv6();
-size_t getSocklen(const struct sockaddr* address);
-int addresscmp(const struct sockaddr* a1,
-               const struct sockaddr* a2,
-               const bool             port);
+[[nodiscard]] bool checkIPv6();
+[[nodiscard]] size_t getSocklen(const struct sockaddr* address);
+[[nodiscard]] int addresscmp(const struct sockaddr* a1,
+                             const struct sockaddr* a2,
+                             const bool             port);
 bool address2string(const struct sockaddr* address,
                     char*                  buffer,
                     const size_t           length,
@@ -173,8 +178,8 @@ void printAddress(std::ostream&          os,
                   const bool             port      = true,
                   const bool             hideScope = false);
 
-const char* getProtocolName(const int protocol);
-uint16_t getPort(const struct sockaddr* address);
+[[nodiscard]] const char* getProtocolName(const int protocol);
+[[nodiscard]] uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
 #if defined(HAVE_SCTP)
 bool sendAbort(int sd, sctp_assoc_t assocID = 0);
@@ -197,13 +202,13 @@ int bindSocket(const int             sd,
 
 typedef unsigned long long network_double_t;
 
-network_double_t doubleToNetwork(double value);
-double networkToDouble(const network_double_t value);
+[[nodiscard]] network_double_t doubleToNetwork(double value);
+[[nodiscard]] double networkToDouble(const network_double_t value);
 
 
 void installBreakDetector();
 void uninstallBreakDetector();
-bool breakDetected();
+[[nodiscard]] bool breakDetected();
 void sendBreak(const bool quiet);
 
 
@@ -214,17 +219,17 @@ void sendBreak(const bool quiet);
 #define RANDOM_NORMAL           4
 #define RANDOM_TRUNCATED_NORMAL 5
 
-const char* getRandomGeneratorName(const uint8_t rng);
-double getRandomValue(const double* valueArray, const uint8_t rng);
-uint8_t random8();
-uint16_t random16();
-uint64_t random64();
-uint32_t random32();
-double randomDouble();
-double randomExpDouble(const double mean);
-double randomNormal(const double mean, const double stddev);
-double randomTruncNormal(const double mean, const double stddev);
-double randomParetoDouble(const double location, const double shape);
+[[nodiscard]] const char* getRandomGeneratorName(const uint8_t rng);
+[[nodiscard]] double getRandomValue(const double* valueArray, const uint8_t rng);
+[[nodiscard]] uint8_t random8();
+[[nodiscard]] uint16_t random16();
+[[nodiscard]] uint64_t random64();
+[[nodiscard]] uint32_t random32();
+[[nodiscard]] double randomDouble();
+[[nodiscard]] double randomExpDouble(const double mean);
+[[nodiscard]] double randomNormal(const double mean, const double stddev);
+[[nodiscard]] double randomTruncNormal(const double mean, const double stddev);
+[[nodiscard]] double randomParetoDouble(const double location, const double shape);
 
 #if defined(__APPLE__)
 int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time);

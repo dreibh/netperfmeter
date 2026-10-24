@@ -99,11 +99,11 @@ bool initLogFile(const unsigned int logLevel,
 void beginLogging();
 void finishLogging();
 
-inline void loggingMutexLock() {
+inline void loggingMutexLock() noexcept {
    gLogMutex.lock();
 }
 
-inline void loggingMutexUnlock() {
+inline void loggingMutexUnlock() noexcept {
    gLogMutex.unlock();
 }
 

@@ -170,7 +170,14 @@ void dissectName(const std::string& name,
    size_t dot         = name.find_last_of('.');
    if((dot != std::string::npos) &&
       ((slash == std::string::npos) || (slash < dot))) {
-      if(std::string(name, dot) == ".bz2") {
+      std::string ext = std::string(name, dot);
+      for(char& c : ext) {
+         c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+      }
+      if((ext == ".bz2")  ||
+         (ext == ".gz")   ||
+         (ext == ".xz")   || (ext == ".lzma") ||
+         (ext == ".zst")  || (ext == ".zstd")) {
          const size_t dot2 = name.find_last_of('.', dot - 1);
          if((dot2 != std::string::npos) &&
             ((slash == std::string::npos) || (slash < dot2))) {
@@ -652,6 +659,8 @@ union DoubleIntUnion
    unsigned long long Integer;
 };
 
+
+// ###### Convert double to network format (64-bit integer) #################
 network_double_t doubleToNetwork(const double d)
 {
    union DoubleIntUnion valueUnion;
@@ -659,6 +668,8 @@ network_double_t doubleToNetwork(const double d)
    return htobe64(valueUnion.Integer);
 }
 
+
+// ###### Convert network format (64-bit integer) to double #################
 double networkToDouble(network_double_t value)
 {
    union DoubleIntUnion valueUnion;
@@ -668,13 +679,15 @@ double networkToDouble(network_double_t value)
 
 
 // ###### Break and Termination Handling ####################################
-static bool   DetectedBreak = false;
-static bool   PrintedBreak  = false;
-static bool   Quiet         = false;
-static pid_t  MainThreadPID = 0;
-static bool   PrintedKill   = false;
+static bool     DetectedBreak = false;
+static bool     PrintedBreak  = false;
+static bool     Quiet         = false;
+static pid_t    MainThreadPID = 0;
+static bool     PrintedKill   = false;
 static uint64_t LastDetection = static_cast<uint64_t>(-1);
 
+
+// ###### Break detector signal handler #####################################
 void breakDetector(int)
 {
    DetectedBreak = true;
@@ -692,6 +705,8 @@ void breakDetector(int)
    }
 }
 
+
+// ###### Install break detector ############################################
 void installBreakDetector()
 {
    DetectedBreak = false;
@@ -703,6 +718,8 @@ void installBreakDetector()
    signal(SIGINT, &breakDetector);
 }
 
+
+// ###### Uninstall break detector ##########################################
 void uninstallBreakDetector()
 {
    signal(SIGINT, SIG_DFL);
@@ -711,6 +728,8 @@ void uninstallBreakDetector()
    Quiet         = false;
 }
 
+
+// ###### Check whether break has been detected #############################
 bool breakDetected()
 {
    if(DetectedBreak && !PrintedBreak) {
@@ -723,6 +742,8 @@ bool breakDetected()
    return DetectedBreak;
 }
 
+
+// ###### Send break signal to main thread ##################################
 void sendBreak(const bool quiet)
 {
    Quiet = quiet;
@@ -730,7 +751,7 @@ void sendBreak(const bool quiet)
 }
 
 
-// ###### Random Number Generation ##########################################
+// ###### Get random value for given distribution ###########################
 double getRandomValue(const double* valueArray, const uint8_t rng)
 {
    switch(rng) {
@@ -744,6 +765,8 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
    }
 }
 
+
+// ###### Get name of random number generator ###############################
 const char* getRandomGeneratorName(const uint8_t rng)
 {
    switch(rng) {
@@ -757,10 +780,29 @@ const char* getRandomGeneratorName(const uint8_t rng)
 
 static FILE* RandomDevice = nullptr;
 
-uint8_t random8()   { return static_cast<uint8_t>(random32()); }
-uint16_t random16() { return static_cast<uint16_t>(random32()); }
-uint64_t random64() { return (static_cast<uint64_t>(random32()) << 32) | random32(); }
 
+// ###### Generate 8-bit random integer #####################################
+uint8_t random8()
+{
+   return static_cast<uint8_t>(random32());
+}
+
+
+// ###### Generate 16-bit random integer ####################################
+uint16_t random16()
+{
+   return static_cast<uint16_t>(random32());
+}
+
+
+// ###### Generate 64-bit random integer ####################################
+uint64_t random64()
+{
+   return (static_cast<uint64_t>(random32()) << 32) | random32();
+}
+
+
+// ###### Generate 32-bit random integer ####################################
 uint32_t random32()
 {
    uint32_t number;
@@ -776,16 +818,22 @@ uint32_t random32()
    return (static_cast<uint32_t>(a) << 16) | b;
 }
 
+
+// ###### Generate random double in [0.0, 1.0) ##############################
 double randomDouble()
 {
    return static_cast<double>(random32()) / static_cast<double>(0x100000000ULL);
 }
 
+
+// ###### Generate negative exponential random double #######################
 double randomExpDouble(const double mean)
 {
    return -mean * log(1.0 - randomDouble());
 }
 
+
+// ###### Generate normal distributed random double #########################
 double randomNormal(const double mean, const double stddev)
 {
    const double u = randomDouble();
@@ -793,6 +841,8 @@ double randomNormal(const double mean, const double stddev)
    return mean + stddev * sqrt(-2.0 * log(u)) * cos(M_PI * 2.0 * v);
 }
 
+
+// ###### Generate truncated normal distributed random double ###############
 double randomTruncNormal(const double mean, const double stddev)
 {
    double result;
@@ -802,6 +852,8 @@ double randomTruncNormal(const double mean, const double stddev)
    return result;
 }
 
+
+// ###### Generate Pareto distributed random double #########################
 double randomParetoDouble(const double location, const double shape)
 {
    assert(shape > 0.0);
