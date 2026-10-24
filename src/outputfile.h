@@ -30,7 +30,7 @@
 #ifndef OUTPUTFILE_H
 #define OUTPUTFILE_H
 
-#include "ioformat.h"
+#include "fileio.h"
 
 #include <bzlib.h>
 #include <lzma.h>
@@ -117,11 +117,11 @@ class OutputFile
 
    void initialize(const std::filesystem::path& name,
                    OutputFileFormat             format           = OutputFileFormat::Plain,
-                   unsigned int                 compressionLevel = 3);
+                   unsigned int                 compressionLevel = 0);
 
    void initialize(const char*      name,
                    OutputFileFormat format           = OutputFileFormat::Plain,
-                   unsigned int     compressionLevel = 3);
+                   unsigned int     compressionLevel = 0);
 
    void finish(bool                closeFile = true,
                unsigned long long* bytesIn   = nullptr,
@@ -130,6 +130,7 @@ class OutputFile
    void printf(const char* str, ...) NPM_PRINTF_FORMAT(2, 3);
    void write(const char* buffer, size_t bufferLength);
    void write(std::string_view data);
+   void writeLine(std::string_view line);
 
    [[nodiscard]] inline bool exists() const noexcept {
       return File != nullptr || BZFile != nullptr || GZFile != nullptr ||

@@ -14,12 +14,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -27,16 +27,17 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
-#ifndef IOFORMAT_H
-#define IOFORMAT_H
+#ifndef FILEIO_H
+#define FILEIO_H
 
 #include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <lzma.h>
 #include <string>
 #include <string_view>
 #include <zstd.h>
-
 
 // ====== I/O File Formats ==================================================
 enum class FileFormat : uint8_t
@@ -49,7 +50,6 @@ enum class FileFormat : uint8_t
    ZSTD  = 5
 };
 
-// Aliases for unified input and output handling
 using OutputFileFormat = FileFormat;
 using InputFileFormat  = FileFormat;
 
@@ -67,8 +67,10 @@ inline constexpr FileFormat IFF_GZip  = FileFormat::GZip;
 inline constexpr FileFormat IFF_XZ    = FileFormat::XZ;
 inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 
+// ====== Shared Error String Helpers =======================================
+[[nodiscard]] const char* lzmaErrorToString(lzma_ret ret) noexcept;
 
-// ###### Detect format from file path ######################################
+// ====== Format Detection ==================================================
 [[nodiscard]] inline FileFormat detectFormat(const std::filesystem::path& path)
 {
    std::string ext = path.extension().string();
@@ -93,8 +95,9 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
    }
 }
 
+[[nodiscard]] FileFormat detectFormatFromHeader(const void* data, size_t size) noexcept;
+[[nodiscard]] FileFormat detectFormatFromContent(const std::filesystem::path& path);
 
-// ###### Parse format name string ##########################################
 [[nodiscard]] inline FileFormat parseFormat(std::string_view str)
 {
    std::string lower(str);
@@ -122,103 +125,71 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
    }
 }
 
-
-// ###### Get default file extension for format #############################
 [[nodiscard]] constexpr std::string_view getFormatExtension(const FileFormat format) noexcept
 {
    switch(format) {
-      case FileFormat::BZip2:
-         return ".bz2";
-      case FileFormat::GZip:
-         return ".gz";
-      case FileFormat::XZ:
-         return ".xz";
-      case FileFormat::ZSTD:
-         return ".zst";
+      case FileFormat::BZip2: return ".bz2";
+      case FileFormat::GZip:  return ".gz";
+      case FileFormat::XZ:    return ".xz";
+      case FileFormat::ZSTD:  return ".zst";
       case FileFormat::Plain:
       case FileFormat::None:
-      default:
-         return "";
+      default:                return "";
    }
 }
 
-
-// ###### Get textual name of format ########################################
 [[nodiscard]] constexpr std::string_view getFormatName(const FileFormat format) noexcept
 {
    switch(format) {
-      case FileFormat::BZip2:
-         return "BZip2";
-      case FileFormat::GZip:
-         return "GZip";
-      case FileFormat::XZ:
-         return "XZ";
-      case FileFormat::ZSTD:
-         return "Zstandard";
-      case FileFormat::Plain:
-         return "Plain";
+      case FileFormat::BZip2: return "BZip2";
+      case FileFormat::GZip:  return "GZip";
+      case FileFormat::XZ:    return "XZ";
+      case FileFormat::ZSTD:  return "Zstandard";
+      case FileFormat::Plain: return "Plain";
       case FileFormat::None:
-      default:
-         return "None";
+      default:                return "None";
    }
 }
 
-
-// ###### Get default compression level for format ##########################
 [[nodiscard]] constexpr unsigned int getDefaultCompressionLevel(const FileFormat format) noexcept
 {
    switch(format) {
-      case FileFormat::BZip2:
-         return 9;
+      case FileFormat::BZip2: return 9;
       case FileFormat::GZip:
-      case FileFormat::XZ:
-         return 6;
-      case FileFormat::ZSTD:
-         return 3;
+      case FileFormat::XZ:    return 6;
+      case FileFormat::ZSTD:  return 3;
       case FileFormat::Plain:
       case FileFormat::None:
-      default:
-         return 0;
+      default:                return 0;
    }
 }
 
-
-// ###### Get minimum compression level for format ##########################
 [[nodiscard]] constexpr unsigned int getMinCompressionLevel(const FileFormat format) noexcept
 {
    switch(format) {
       case FileFormat::BZip2:
-      case FileFormat::ZSTD:
-         return 1;
+      case FileFormat::ZSTD:  return 1;
       case FileFormat::GZip:
       case FileFormat::XZ:
       case FileFormat::Plain:
       case FileFormat::None:
-      default:
-         return 0;
+      default:                return 0;
    }
 }
 
-
-// ###### Get maximum compression level for format ##########################
 [[nodiscard]] inline unsigned int getMaxCompressionLevel(const FileFormat format) noexcept
 {
    switch(format) {
       case FileFormat::BZip2:
       case FileFormat::GZip:
-      case FileFormat::XZ:
-         return 9;
-      case FileFormat::ZSTD:
-         return static_cast<unsigned int>(ZSTD_maxCLevel());
+      case FileFormat::XZ:    return 9;
+      case FileFormat::ZSTD:  return static_cast<unsigned int>(ZSTD_maxCLevel());
       case FileFormat::Plain:
       case FileFormat::None:
-      default:
-         return 0;
+      default:                return 0;
    }
 }
 
-
-// ###### Validate compression level for format #############################
 [[nodiscard]] inline bool isValidCompressionLevel(const FileFormat format, const int level) noexcept
 {
    if(level < 0) {
@@ -228,4 +199,16 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
    return uLevel >= getMinCompressionLevel(format) && uLevel <= getMaxCompressionLevel(format);
 }
 
-#endif // IOFORMAT_H
+// ====== File Transformation ===============================================
+void transformFile(const std::filesystem::path& sourcePath,
+                   FileFormat                   sourceFormat,
+                   const std::filesystem::path& destinationPath,
+                   FileFormat                   destinationFormat,
+                   unsigned int                 compressionLevel = 0);
+
+void transformFile(const std::filesystem::path& sourcePath,
+                   const std::filesystem::path& destinationPath,
+                   FileFormat                   destinationFormat,
+                   unsigned int                 compressionLevel = 0);
+
+#endif // FILEIO_H

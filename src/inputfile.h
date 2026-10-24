@@ -14,12 +14,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -30,7 +30,7 @@
 #ifndef INPUTFILE_H
 #define INPUTFILE_H
 
-#include "ioformat.h"
+#include "fileio.h"
 
 #include <bzlib.h>
 #include <lzma.h>
@@ -53,9 +53,9 @@ class InputFileException : public std::runtime_error
 {
    public:
    InputFileException(std::string_view message,
-                       std::string_view filename  = {},
-                       int              errorCode = 0,
-                       std::string_view reason    = {})
+                      std::string_view filename  = {},
+                      int              errorCode = 0,
+                      std::string_view reason    = {})
       : std::runtime_error(formatErrorMessage(message, filename, errorCode, reason)),
         Filename(filename),
         Reason(!reason.empty() ? std::string(reason) : (errorCode != 0 ? std::string(std::strerror(errorCode)) : std::string())),
@@ -117,6 +117,11 @@ class InputFile
 
    void finish(bool closeFile = true);
 
+   size_t read(char* buffer, size_t bufferSize);
+   inline size_t read(void* buffer, size_t bufferSize) {
+      return read(static_cast<char*>(buffer), bufferSize);
+   }
+
    ssize_t readLine(char* buffer, size_t bufferSize, bool& eof);
    bool readLine(std::string& line);
 
@@ -145,9 +150,9 @@ class InputFile
    size_t             RawBufferPos    { 0 };
    size_t             RawBufferSize   { 0 };
    bool               RawFileEof      { false };
-   bool               StreamEof       { false };   // Track logical end-of-stream
+   bool               StreamEof       { false };
 
-   // Stored leftover uncompressed text
+   // Stored leftover uncompressed text from line reading
    size_t             StoragePos      { 0 };
    char               Storage[16384];
 };

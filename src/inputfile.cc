@@ -14,12 +14,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -35,24 +35,6 @@
 #include <cstring>
 #include <filesystem>
 #include <utility>
-
-
-// ###### Get LZMA error string #############################################
-static const char* lzmaErrorToString(const lzma_ret returnCode)
-{
-   switch(returnCode) {
-      case LZMA_OK:                return "Operation completed successfully";
-      case LZMA_STREAM_END:        return "End of stream reached";
-      case LZMA_MEM_ERROR:         return "Cannot allocate memory";
-      case LZMA_MEMLIMIT_ERROR:    return "Memory limit reached";
-      case LZMA_FORMAT_ERROR:      return "Format not recognized";
-      case LZMA_OPTIONS_ERROR:     return "Invalid compression options";
-      case LZMA_DATA_ERROR:        return "Data is corrupt";
-      case LZMA_BUF_ERROR:         return "Buffer error";
-      case LZMA_PROG_ERROR:        return "Internal programming error";
-      default:                     return "Unknown liblzma error";
-   }
-}
 
 
 // ###### Destructor ########################################################
@@ -81,6 +63,7 @@ InputFile::InputFile(InputFile&& other) noexcept
      RawBufferPos(other.RawBufferPos),
      RawBufferSize(other.RawBufferSize),
      RawFileEof(other.RawFileEof),
+     StreamEof(other.StreamEof),
      StoragePos(other.StoragePos)
 {
    if(other.RawBufferSize > 0) {
@@ -101,6 +84,7 @@ InputFile::InputFile(InputFile&& other) noexcept
    other.RawBufferPos    = 0;
    other.RawBufferSize   = 0;
    other.RawFileEof      = false;
+   other.StreamEof       = false;
    other.StoragePos      = 0;
 }
 
@@ -127,6 +111,7 @@ InputFile& InputFile::operator=(InputFile&& other) noexcept
       RawBufferPos    = other.RawBufferPos;
       RawBufferSize   = other.RawBufferSize;
       RawFileEof      = other.RawFileEof;
+      StreamEof       = other.StreamEof;
       StoragePos      = other.StoragePos;
 
       if(other.RawBufferSize > 0) {
@@ -147,6 +132,7 @@ InputFile& InputFile::operator=(InputFile&& other) noexcept
       other.RawBufferPos    = 0;
       other.RawBufferSize   = 0;
       other.RawFileEof      = false;
+      other.StreamEof       = false;
       other.StoragePos      = 0;
    }
    return *this;
@@ -180,6 +166,7 @@ void InputFile::initialize(const std::filesystem::path& name,
    RawBufferPos    = 0;
    RawBufferSize   = 0;
    RawFileEof      = false;
+   StreamEof       = false;
 
    if(format == InputFileFormat::None) {
       return;
@@ -193,7 +180,7 @@ void InputFile::initialize(const std::filesystem::path& name,
       }
    }
    else {
-      File = !Name.empty() ? std::fopen(Name.c_str(), "r") : std::tmpfile();
+      File = !Name.empty() ? std::fopen(Name.c_str(), "rb") : std::tmpfile();
       if(File == nullptr) {
          throw InputFileException("Unable to open input file", Name, errno);
       }
@@ -286,6 +273,145 @@ void InputFile::finish(const bool closeFile)
    RawBufferPos  = 0;
    RawBufferSize = 0;
    RawFileEof    = false;
+   StreamEof     = false;
+}
+
+
+// ###### Bulk read from file ###############################################
+size_t InputFile::read(char* const buffer, const size_t bufferSize)
+{
+   if(!exists() || bufferSize == 0) {
+      return 0;
+   }
+
+   size_t delivered = 0;
+
+   // 1. Drain any leftover data in Storage
+   if(StoragePos > 0) {
+      const size_t toCopy = std::min(bufferSize, StoragePos);
+      std::memcpy(buffer, Storage, toCopy);
+      delivered += toCopy;
+      if(toCopy < StoragePos) {
+         std::memmove(Storage, Storage + toCopy, StoragePos - toCopy);
+         StoragePos -= toCopy;
+         return delivered;
+      }
+      StoragePos = 0;
+      if(delivered == bufferSize) {
+         return delivered;
+      }
+   }
+
+   // 2. Read directly from the decompressor into destination buffer
+   const size_t bytesToRead = bufferSize - delivered;
+   char* const  dest        = buffer + delivered;
+
+   // ====== Zstandard ======================================================
+   if(Format == InputFileFormat::ZSTD) {
+      ZSTD_outBuffer out = { dest, bytesToRead, 0 };
+      while(out.pos < out.size) {
+         if(RawBufferPos >= RawBufferSize && !RawFileEof) {
+            const size_t n = std::fread(RawBuffer, 1, sizeof(RawBuffer), File);
+            if(n == 0) {
+               RawFileEof = true;
+            }
+            RawBufferPos  = 0;
+            RawBufferSize = n;
+         }
+         if(RawBufferPos >= RawBufferSize && RawFileEof) {
+            break;
+         }
+
+         ZSTD_inBuffer in = { RawBuffer, RawBufferSize, RawBufferPos };
+         const size_t ret = ZSTD_decompressStream(ZSTDDStream, &out, &in);
+         RawBufferPos = in.pos;
+
+         if(ZSTD_isError(ret)) {
+            throw InputFileException("Failed to decompress Zstandard data",
+                                     Name, static_cast<int>(ret), ZSTD_getErrorName(ret));
+         }
+         if(ret == 0) {
+            break;
+         }
+      }
+      return delivered + out.pos;
+   }
+
+   // ====== XZ =============================================================
+   else if(Format == InputFileFormat::XZ) {
+      if(StreamEof) {
+         return delivered;
+      }
+      LZMAStream.next_out  = reinterpret_cast<uint8_t*>(dest);
+      LZMAStream.avail_out = bytesToRead;
+
+      while(LZMAStream.avail_out > 0) {
+         if(LZMAStream.avail_in == 0 && !RawFileEof) {
+            const size_t n = std::fread(RawBuffer, 1, sizeof(RawBuffer), File);
+            if(n == 0) {
+               RawFileEof = true;
+            }
+            LZMAStream.next_in  = RawBuffer;
+            LZMAStream.avail_in = n;
+         }
+
+         const lzma_action action = RawFileEof ? LZMA_FINISH : LZMA_RUN;
+         const lzma_ret ret = lzma_code(&LZMAStream, action);
+
+         if(ret == LZMA_STREAM_END) {
+            StreamEof = true;
+            break;
+         }
+         else if(ret != LZMA_OK) {
+            throw InputFileException("Failed to decompress XZ data",
+                                     Name, static_cast<int>(ret), lzmaErrorToString(ret));
+         }
+         else if(LZMAStream.avail_in == 0 && RawFileEof) {
+            break;
+         }
+      }
+      return delivered + (bytesToRead - LZMAStream.avail_out);
+   }
+
+   // ====== GZip ===========================================================
+   else if(Format == InputFileFormat::GZip) {
+      const int count = gzread(GZFile, dest, static_cast<unsigned int>(bytesToRead));
+      if(count < 0) {
+         int errnum = 0;
+         const char* reason = gzerror(GZFile, &errnum);
+         throw InputFileException("Failed to read from GZip file", Name, errnum, reason ? reason : "zlib error");
+      }
+      return delivered + static_cast<size_t>(count);
+   }
+
+   // ====== BZip2 ==========================================================
+   else if(Format == InputFileFormat::BZip2) {
+      if(StreamEof) {
+         return delivered;
+      }
+      int bzerror = BZ_OK;
+      const int count = BZ2_bzRead(&bzerror, BZFile, dest, static_cast<int>(bytesToRead));
+      if(bzerror == BZ_STREAM_END) {
+         StreamEof = true;
+      }
+      else if(bzerror != BZ_OK) {
+         const char* reason = BZ2_bzerror(BZFile, &bzerror);
+         throw InputFileException("Failed to read from BZip2 file",
+                                  Name, bzerror, reason ? reason : "BZip2 error");
+      }
+      return delivered + (count > 0 ? static_cast<size_t>(count) : 0);
+   }
+
+   // ====== Plain text =====================================================
+   else if(Format == InputFileFormat::Plain) {
+      const size_t count = std::fread(dest, 1, bytesToRead, File);
+      if(count == 0 && std::ferror(File)) {
+         throw InputFileException("Failed to read from file", Name, errno);
+      }
+      return delivered + count;
+   }
+
+   return delivered;
 }
 
 
@@ -297,26 +423,22 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
    if(bufferSize < 1) {
       return -1;
    }
-   bufferSize--; // Reserve space for the terminating null character
+   bufferSize--; // Reserve space for terminating null character
 
-   size_t currentLen = StoragePos;
-   if(StoragePos > 0) {
-      std::memcpy(buffer, Storage, StoragePos);
-      StoragePos = 0;
-   }
-
+   size_t currentLen = 0;
    for(;;) {
       // Check if accumulated buffer already contains a newline character
       for(size_t i = 0; i < currentLen; ++i) {
          if(buffer[i] == '\n') {
-            StoragePos = currentLen - i - 1;
-            if(StoragePos > sizeof(Storage)) {
+            const size_t remaining = currentLen - i - 1;
+            if(remaining > sizeof(Storage)) {
                throw InputFileException("Buffer overflow while storing remaining line data", Name);
             }
-            if(StoragePos > 0) {
-               std::memcpy(Storage, buffer + i + 1, StoragePos);
+            if(remaining > 0) {
+               std::memcpy(Storage, buffer + i + 1, remaining);
             }
-            buffer[i] = 0x00;
+            StoragePos = remaining;
+            buffer[i]  = 0x00;
             Line++;
             return static_cast<ssize_t>(i);
          }
@@ -329,116 +451,8 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
       }
 
       const size_t bytesToRead = std::min(sizeof(Storage), bufferSize - currentLen);
-      ssize_t bytesRead = 0;
-
-      // ====== Zstandard ===================================================
-      if(Format == InputFileFormat::ZSTD) {
-         ZSTD_outBuffer out = { buffer + currentLen, bytesToRead, 0 };
-         while(out.pos < out.size) {
-            if(RawBufferPos >= RawBufferSize && !RawFileEof) {
-               const size_t n = std::fread(RawBuffer, 1, sizeof(RawBuffer), File);
-               if(n == 0) {
-                  RawFileEof = true;
-               }
-               RawBufferPos  = 0;
-               RawBufferSize = n;
-            }
-            if(RawBufferPos >= RawBufferSize && RawFileEof) {
-               break;
-            }
-
-            ZSTD_inBuffer in = { RawBuffer, RawBufferSize, RawBufferPos };
-            const size_t ret = ZSTD_decompressStream(ZSTDDStream, &out, &in);
-            RawBufferPos = in.pos;
-
-            if(ZSTD_isError(ret)) {
-               throw InputFileException("Failed to decompress Zstandard data",
-                                        Name, static_cast<int>(ret), ZSTD_getErrorName(ret));
-            }
-         }
-         bytesRead = static_cast<ssize_t>(out.pos);
-      }
-
-      // ====== XZ ==========================================================
-      else if(Format == InputFileFormat::XZ) {
-         if(StreamEof) {
-            bytesRead = 0;
-         }
-         else {
-            LZMAStream.next_out  = reinterpret_cast<uint8_t*>(buffer + currentLen);
-            LZMAStream.avail_out = bytesToRead;
-
-            while(LZMAStream.avail_out > 0) {
-               if(LZMAStream.avail_in == 0 && !RawFileEof) {
-                  const size_t n = std::fread(RawBuffer, 1, sizeof(RawBuffer), File);
-                  if(n == 0) {
-                     RawFileEof = true;
-                  }
-                  LZMAStream.next_in  = RawBuffer;
-                  LZMAStream.avail_in = n;
-               }
-
-               const lzma_action action = RawFileEof ? LZMA_FINISH : LZMA_RUN;
-               const lzma_ret ret = lzma_code(&LZMAStream, action);
-
-               if(ret == LZMA_STREAM_END) {
-                  StreamEof = true;
-                  break;
-               }
-               else if(ret != LZMA_OK) {
-                  throw InputFileException("Failed to decompress XZ data",
-                                           Name, static_cast<int>(ret), lzmaErrorToString(ret));
-               }
-               else if(LZMAStream.avail_in == 0 && RawFileEof) {
-                  break;
-               }
-            }
-            bytesRead = static_cast<ssize_t>(bytesToRead - LZMAStream.avail_out);
-         }
-      }
-
-      // ====== GZip ========================================================
-      else if(Format == InputFileFormat::GZip) {
-         const int count = gzread(GZFile, buffer + currentLen, static_cast<unsigned int>(bytesToRead));
-         if(count < 0) {
-            int errnum = 0;
-            const char* reason = gzerror(GZFile, &errnum);
-            throw InputFileException("Failed to read from GZip file", Name, errnum, reason ? reason : "zlib error");
-         }
-         bytesRead = static_cast<ssize_t>(count);
-      }
-
-      // ====== BZip2 =======================================================
-      else if(Format == InputFileFormat::BZip2) {
-         if(StreamEof) {
-            bytesRead = 0;
-         }
-         else {
-            int bzerror = BZ_OK;
-            bytesRead = BZ2_bzRead(&bzerror, BZFile, buffer + currentLen, static_cast<int>(bytesToRead));
-            if(bzerror == BZ_STREAM_END) {
-               StreamEof = true;
-            }
-            else if(bzerror != BZ_OK) {
-               const char* reason = BZ2_bzerror(BZFile, &bzerror);
-               throw InputFileException("Failed to read from BZip2 file",
-                                        Name, bzerror, reason ? reason : "BZip2 error");
-            }
-         }
-      }
-
-      // ====== Plain text ==================================================
-      else if(Format == InputFileFormat::Plain) {
-         bytesRead = static_cast<ssize_t>(std::fread(buffer + currentLen, 1, bytesToRead, File));
-         if(bytesRead == 0 && std::ferror(File)) {
-            throw InputFileException("Failed to read from file", Name, errno);
-         }
-      }
-      else {
-         return -1;
-      }
-
-      if(bytesRead == 0) {
+      const size_t n = read(buffer + currentLen, bytesToRead);
+      if(n == 0) {
          if(currentLen == 0) {
             eof = true;
             buffer[0] = 0x00;
@@ -451,8 +465,7 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
          return static_cast<ssize_t>(currentLen);
       }
 
-      currentLen += static_cast<size_t>(bytesRead);
-      buffer[currentLen] = 0x00;
+      currentLen += n;
    }
 }
 

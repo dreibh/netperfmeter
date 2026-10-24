@@ -41,24 +41,6 @@
 #include <vector>
 
 
-// ###### Get LZMA error string #############################################
-static const char* lzmaErrorToString(const lzma_ret ret)
-{
-   switch(ret) {
-      case LZMA_OK:                return "Operation completed successfully";
-      case LZMA_STREAM_END:        return "End of stream reached";
-      case LZMA_MEM_ERROR:         return "Cannot allocate memory";
-      case LZMA_MEMLIMIT_ERROR:    return "Memory limit reached";
-      case LZMA_FORMAT_ERROR:      return "Format not recognized";
-      case LZMA_OPTIONS_ERROR:     return "Invalid compression options";
-      case LZMA_DATA_ERROR:        return "Data is corrupt";
-      case LZMA_BUF_ERROR:         return "Buffer error";
-      case LZMA_PROG_ERROR:        return "Internal programming error";
-      default:                     return "Unknown liblzma error";
-   }
-}
-
-
 // ###### Destructor ########################################################
 OutputFile::~OutputFile()
 {
@@ -489,6 +471,15 @@ void OutputFile::printf(const char* str, ...)
 void OutputFile::write(std::string_view data)
 {
    write(data.data(), data.size());
+}
+
+
+// ###### Write line into output file #######################################
+void OutputFile::writeLine(std::string_view line)
+{
+   write(line);
+   write("\n");
+   Line++;
 }
 
 
