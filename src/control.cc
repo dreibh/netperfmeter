@@ -29,6 +29,7 @@
 
 #include "assure.h"
 #include "control.h"
+#include "fileio.h"
 #include "loglevel.h"
 #include "tools.h"
 #include "outputfile.h"
@@ -127,6 +128,26 @@ static bool downloadOutputFile(MessageReader* messageReader,
       LOG_END
    }
    fclose(fh);
+
+   // ====== Transform format if older instance returned BZip2 =============
+   if(success) {
+      const FileFormat actualFormat = detectFormatFromContent(fileName);
+      const FileFormat targetFormat = detectFormat(fileName);
+
+      if((actualFormat == FileFormat::BZip2) && (targetFormat != FileFormat::BZip2)) {
+         try {
+            transformFile(fileName, actualFormat, fileName, targetFormat);
+         }
+         catch(const std::exception& ex) {
+            LOG_ERROR
+            stdlog << formatText("ERROR: Failed to transform downloaded BZip2 file <{}> to target format: {}!\n",
+                                 fileName, ex.what());
+            LOG_END
+            return false;
+         }
+      }
+   }
+
    return success;
 }
 
@@ -456,13 +477,13 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       if(scalarFileFormat == OFF_None) {
          startMsg.Header.Flags |= NPMSF_NO_SCALARS;
       }
-      else if(scalarFileFormat == OFF_BZip2) {
+      else if(scalarFileFormat != OFF_Plain) {
          startMsg.Header.Flags |= NPMSF_COMPRESS_SCALARS;
       }
       if(vectorFileFormat == OFF_None) {
          startMsg.Header.Flags |= NPMSF_NO_VECTORS;
       }
-      else if(vectorFileFormat == OFF_BZip2) {
+      else if(vectorFileFormat != OFF_Plain) {
          startMsg.Header.Flags |= NPMSF_COMPRESS_VECTORS;
       }
 
