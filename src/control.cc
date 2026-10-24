@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -31,6 +31,7 @@
 #include "control.h"
 #include "loglevel.h"
 #include "tools.h"
+#include "outputfile.h"
 
 #include <cmath>
 #include <cstdint>
@@ -484,7 +485,17 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
                                        Measurement*   measurement,
                                        Flow*          flow)
 {
-   flow->getVectorFile().finish(true);
+   try {
+      flow->getVectorFile().finish(true);
+   }
+   catch(const OutputFileException& ex) {
+      LOG_ERROR
+      stdlog << formatText(gettext("ERROR: Failed to finish vector file <{}>: {}!"),
+                           flow->getVectorFile().getName(), ex.getReason()) << "\n";
+      LOG_END
+   }
+   catch(...) {
+   }
 
    NetPerfMeterRemoveFlowMessage removeFlowMsg;
    removeFlowMsg.Header.Type   = NETPERFMETER_REMOVE_FLOW;
@@ -767,20 +778,45 @@ static bool uploadOutputFile(const int         controlSocket,
 static bool uploadResults(const int controlSocket,
                           Flow*     flow)
 {
-   bool success = flow->getVectorFile().finish(false);
+   bool success = false;
+   try {
+      flow->getVectorFile().finish(false);
+      success = true;
+   }
+   catch(const OutputFileException& ex) {
+      LOG_ERROR
+      stdlog << formatText(gettext("ERROR: Failed to finish vector file <{}>: {}!"),
+                           flow->getVectorFile().getName(), ex.getReason()) << "\n";
+      LOG_END
+      success = false;
+   }
+   catch(...) {
+      success = false;
+   }
+
    if(success) {
       success = sendNetPerfMeterAcknowledge(
                    controlSocket,
                    flow->getMeasurementID(), flow->getFlowID(), flow->getStreamID(),
-                   (success == true) ? NETPERFMETER_STATUS_OKAY :
-                                       NETPERFMETER_STATUS_ERROR);
+                   NETPERFMETER_STATUS_OKAY);
       if(success) {
          if(flow->getVectorFile().exists()) {
             success = uploadOutputFile(controlSocket, flow->getVectorFile());
          }
       }
    }
-   flow->getVectorFile().finish(true);
+   else {
+      sendNetPerfMeterAcknowledge(
+         controlSocket,
+         flow->getMeasurementID(), flow->getFlowID(), flow->getStreamID(),
+         NETPERFMETER_STATUS_ERROR);
+   }
+
+   try {
+      flow->getVectorFile().finish(true);
+   }
+   catch(...) {
+   }
    return success;
 }
 
@@ -914,7 +950,17 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
       // ------ Remove Flow from Flow Manager -------------------------
       FlowManager::getFlowManager()->removeFlow(flow);
       // ------ Upload statistics file --------------------------------
-      flow->getVectorFile().finish(false);
+      try {
+         flow->getVectorFile().finish(false);
+      }
+      catch(const OutputFileException& ex) {
+         LOG_ERROR
+         stdlog << formatText(gettext("ERROR: Failed to finish vector file <{}>: {}!"),
+                              flow->getVectorFile().getName(), ex.getReason()) << "\n";
+         LOG_END
+      }
+      catch(...) {
+      }
       if(flow->getVectorFile().exists()) {
          uploadResults(controlSocket, flow);
       }
@@ -1006,7 +1052,20 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
    if(measurement) {
       measurement->lock();
       measurement->writeScalarStatistics(getMicroTime());
-      success = measurement->finish(false);
+      try {
+         measurement->finish(false);
+         success = true;
+      }
+      catch(const OutputFileException& ex) {
+         LOG_ERROR
+         stdlog << formatText(gettext("ERROR: Failed to finish measurement output files: {}!"),
+                              ex.getReason()) << "\n";
+         LOG_END
+         success = false;
+      }
+      catch(...) {
+         success = false;
+      }
       measurement->unlock();
    }
 
@@ -1159,7 +1218,22 @@ bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
          }
          flow->lock();
          const int  controlSocketDescriptor = flow->getControlSocketDescriptor();
-         const bool vectorFileOkay          = flow->initializeVectorFile(nullptr, vectorFileFormat);
+         bool       vectorFileOkay          = false;
+         try {
+            flow->initializeVectorFile(nullptr, vectorFileFormat);
+            vectorFileOkay = true;
+         }
+         catch(const OutputFileException& ex) {
+            LOG_ERROR
+            // TRANSLATORS: Error message when vector output file cannot be opened. Placeholders: {} 1: file path, 2: failure reason.
+            stdlog << formatText(gettext("ERROR: Unable to create vector file <{}>: {}!"),
+                                 flow->getVectorFile().getName(), ex.getReason()) << "\n";
+            LOG_END
+            vectorFileOkay = false;
+         }
+         catch(...) {
+            vectorFileOkay = false;
+         }
          const bool socketConfigured        = flow->configureSocket(sd);
          const bool success                 = (vectorFileOkay && socketConfigured);
          flow->unlock();
