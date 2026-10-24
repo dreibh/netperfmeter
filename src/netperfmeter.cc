@@ -2449,7 +2449,7 @@ static void activeMode(const char* remoteEndpoint)
             const char* flowSpec = *flowIterator;
             lastFlow = createFlow(lastFlow, flowSpec, measurementID,
                                   assocSpec.Protocol, remoteAddress);
-            if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
+            if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow, gVectorFileFormat)) {
                LOG_FATAL
                // TRANSLATORS: Fatal error when sending ADD_FLOW command to passive peer over control channel.
                stdlog << gettext("ERROR: Unable to add flow to remote node!") << "\n";

@@ -51,12 +51,14 @@ extern unsigned int gOutputVerbosity;
 // #### Active Side Control                                              ####
 // ##########################################################################
 
-bool performNetPerfMeterAddFlow(MessageReader* messageReader,
-                                int            controlSocket,
-                                const Flow*    flow);
-bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
-                                     int            controlSocket,
-                                     const Flow*    flow);
+bool performNetPerfMeterAddFlow(MessageReader*         messageReader,
+                                int                    controlSocket,
+                                const Flow*            flow,
+                                const OutputFileFormat vectorFileFormat = OFF_None);
+bool performNetPerfMeterIdentifyFlow(MessageReader*         messageReader,
+                                     int                    controlSocket,
+                                     const Flow*            flow,
+                                     const OutputFileFormat vectorFileFormat = OFF_None);
 bool performNetPerfMeterStart(MessageReader*         messageReader,
                               int                    controlSocket,
                               const uint64_t         measurementID,

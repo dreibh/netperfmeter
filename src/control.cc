@@ -166,9 +166,10 @@ static bool downloadResults(MessageReader*     messageReader,
 
 
 // ###### Tell remote node to add new flow ##################################
-bool performNetPerfMeterAddFlow(MessageReader* messageReader,
-                                int            controlSocket,
-                                const Flow*    flow)
+bool performNetPerfMeterAddFlow(MessageReader*         messageReader,
+                                int                    controlSocket,
+                                const Flow*            flow,
+                                const OutputFileFormat vectorFileFormat)
 {
    // ====== Sent NETPERFMETER_ADD_FLOW to remote node ======================
    const size_t                addFlowMsgSize = sizeof(NetPerfMeterAddFlowMessage) +
@@ -264,14 +265,16 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    }
 
    // ======  Let passive side identify the new flow ========================
-   return performNetPerfMeterIdentifyFlow(messageReader, controlSocket, flow);
+   return performNetPerfMeterIdentifyFlow(messageReader, controlSocket, flow,
+                                          vectorFileFormat);
 }
 
 
 // ###### Let remote identify a new flow ####################################
-bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
-                                     int            controlSocket,
-                                     const Flow*    flow)
+bool performNetPerfMeterIdentifyFlow(MessageReader*         messageReader,
+                                     int                    controlSocket,
+                                     const Flow*            flow,
+                                     const OutputFileFormat vectorFileFormat)
 {
    // ====== Sent NETPERFMETER_IDENTIFY_FLOW to remote node =================
    unsigned int maxTrials;
@@ -300,6 +303,15 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       identifyMsg.MeasurementID = htobe64(flow->getMeasurementID());
       identifyMsg.FlowID        = htobe32(flow->getFlowID());
       identifyMsg.StreamID      = htobe16(flow->getStreamID());
+
+      // ====== Backwards compatibility flags for older passive instances ===
+      if(vectorFileFormat == OFF_None) {
+         identifyMsg.Header.Flags |= NPMIF_NO_VECTORS;
+      }
+      else if((vectorFileFormat == OFF_BZip2) || (vectorFileFormat != OFF_Plain)) {
+         // Older passive peers only support BZip2 compression:
+         identifyMsg.Header.Flags |= NPMIF_COMPRESS_VECTORS;
+      }
 
       LOG_TRACE
       stdlog << formatText("<R3 sd={} trial={}/{}>\n", controlSocket, trial, maxTrials);
