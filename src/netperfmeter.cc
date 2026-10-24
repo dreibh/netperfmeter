@@ -1391,8 +1391,8 @@ static void addToPollFDs(pollfd* pollFDs, const int fd, nfds_t& n, int* index = 
 
 
 // ###### Main loop #########################################################
-static bool mainLoop(const bool               isActiveMode,
-                     const unsigned long long stopAt)
+static bool mainLoop(const bool     isActiveMode,
+                     const uint64_t stopAt)
 {
    pollfd             fds[5 + gMessageReader.size()];
    nfds_t             n       = 0;
@@ -1416,7 +1416,7 @@ static bool mainLoop(const bool               isActiveMode,
 #if defined(HAVE_QUIC)
    int                quicID  = -1;
 #endif
-   unsigned long long now     = getMicroTime();
+   uint64_t           nowMonotonic = getMonotonicMicroTime();
    std::map<int, pollfd*> pollFDIndex;
 
 
@@ -1451,9 +1451,9 @@ static bool mainLoop(const bool               isActiveMode,
 
 
    // ====== Use poll() to wait for events ==================================
-   const int timeout = pollTimeout(now, 2,
+   const int timeout = pollTimeout(nowMonotonic, 2,
                                    stopAt,
-                                   now + 1000000);
+                                   nowMonotonic + 1000000);
 
    // printf("timeout=%d\n",timeout);
    const int result = ext_poll((pollfd*)&fds, n, timeout);
@@ -1461,7 +1461,8 @@ static bool mainLoop(const bool               isActiveMode,
 
 
    // ====== Handle socket events ===========================================
-   now = getMicroTime();   // Get current time.
+   nowMonotonic             = getMonotonicMicroTime();   // Get current time.
+   const uint64_t nowSystem = getSystemMicroTime();
    if(result > 0) {
 
       // ====== Incoming control message ====================================
@@ -1575,13 +1576,13 @@ static bool mainLoop(const bool               isActiveMode,
 #endif
       if( (udpID >= 0) && (fds[udpID].revents & (POLLIN|POLLERR)) ) {
          FlowManager::getFlowManager()->lock();
-         handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDPSocket);
+         handleNetPerfMeterData(isActiveMode, nowMonotonic, nowSystem, IPPROTO_UDP, gUDPSocket);
          FlowManager::getFlowManager()->unlock();
       }
 #if defined(__OpenBSD__)
       if( (udp6ID >= 0) && (fds[udp6ID].revents & (POLLIN|POLLERR)) ) {
          FlowManager::getFlowManager()->lock();
-         handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDP6Socket);
+         handleNetPerfMeterData(isActiveMode, nowMonotonic, nowSystem, IPPROTO_UDP, gUDP6Socket);
          FlowManager::getFlowManager()->unlock();
       }
 #endif
@@ -1657,7 +1658,7 @@ static bool mainLoop(const bool               isActiveMode,
    }
 
    // ====== Stop-time reached ==============================================
-   if(now >= stopAt) {
+   if(nowMonotonic >= stopAt) {
       gStopTimeReached = true;
    }
    return true;
@@ -2194,8 +2195,8 @@ static void passiveMode(const uint16_t localPort)
 
    FlowManager::getFlowManager()->configureDisplay(gDisplayEnabled);
 
-   const unsigned long long stopAt = (gRuntime > 0) ?
-      (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
+   const uint64_t stopAt = (gRuntime > 0) ?
+      (getMonotonicMicroTime() + static_cast<uint64_t>(rint(gRuntime * 1000000.0))) : ~0ULL;
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       mainLoop(false, stopAt);
    }
@@ -2480,8 +2481,8 @@ static void activeMode(const char* remoteEndpoint)
 
 
    // ====== Main loop ======================================================
-   const unsigned long long stopAt = (gRuntime > 0) ?
-      (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
+   const uint64_t stopAt = (gRuntime > 0) ?
+      (getMonotonicMicroTime() + static_cast<uint64_t>(rint(gRuntime * 1000000.0))) : ~0ULL;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
 

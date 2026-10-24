@@ -928,9 +928,9 @@ void FlowManager::run()
 
 
       // ====== Wait for events =============================================
-      uint64_t now = getMicroTime();
-      const int timeout = pollTimeout(getMicroTime(), 2,
-                                      now + 2500000ULL,
+      uint64_t nowMonotonic = getMonotonicMicroTime();
+      const int timeout = pollTimeout(nowMonotonic, 2,
+                                      nowMonotonic + 2500000ULL,
                                       nextEvent);
 #if defined(DEBUG_POLL)
       std::cerr << "poll with timeout=" << timeout << " ms\n";
@@ -944,7 +944,8 @@ void FlowManager::run()
       // ====== Handle events ===============================================
       lock();
 
-      now = getMicroTime();
+      nowMonotonic             = getMonotonicMicroTime();
+      uint64_t const nowSystem = getSystemMicroTime();
       if(result > 0) {
          // ====== Handle read events of flows ==============================
          for(unsigned int i = 0; i < FlowSet.size(); i++) {
@@ -961,7 +962,7 @@ void FlowManager::run()
 #endif
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
-                  const bool dataOkay = handleNetPerfMeterData(true, now,
+                  const bool dataOkay = handleNetPerfMeterData(true, nowMonotonic, nowSystem,
                                                                protocol, entry->fd);
                   if(!dataOkay) {
                      // Close the broken connection!
@@ -1009,7 +1010,7 @@ void FlowManager::run()
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                  << " protocol " << ud->Protocol << "\n";
 #endif
-                     const bool dataOkay = handleNetPerfMeterData(true, now,
+                     const bool dataOkay = handleNetPerfMeterData(true, nowMonotonic, nowSystem,
                                                                   ud->Protocol,
                                                                   ud->SocketDescriptor);
                      if(!dataOkay) {
@@ -1047,8 +1048,8 @@ void FlowManager::run()
       }
 
       // ====== Handle statistics timer =====================================
-      if(getNextEvent() <= now) {
-         handleEvents(now);
+      if(getNextEvent() <= nowMonotonic) {
+         handleEvents(nowMonotonic);
       }
 
       unlock();

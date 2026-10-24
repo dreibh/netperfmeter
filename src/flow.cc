@@ -63,7 +63,7 @@ Flow::Flow(const uint64_t         measurementID,
 
    InputStatus              = WaitingForStartup;
    OutputStatus             = WaitingForStartup;
-   TimeBase                 = getMicroTime();
+   TimeBase                 = getMonotonicMicroTime();
 
    TrafficSpec              = trafficSpec;
 
@@ -211,7 +211,7 @@ void Flow::initializeVectorFile(const char* name, const FileFormat format)
 
 
 // ###### Update transmission statistics ####################################
-void Flow::updateTransmissionStatistics(const uint64_t now,
+void Flow::updateTransmissionStatistics(const uint64_t nowMonotonic,
                                         const uint64_t addedFrames,
                                         const uint64_t addedPackets,
                                         const uint64_t addedBytes)
@@ -219,9 +219,9 @@ void Flow::updateTransmissionStatistics(const uint64_t now,
    lock();
 
    // ====== Update statistics ==============================================
-   LastTransmission = now;
+   LastTransmission = nowMonotonic;
    if(FirstTransmission == 0) {
-      FirstTransmission = now;
+      FirstTransmission = nowMonotonic;
    }
    CurrentBandwidthStats.TransmittedFrames  += addedFrames;
    CurrentBandwidthStats.TransmittedPackets += addedPackets;
@@ -232,7 +232,8 @@ void Flow::updateTransmissionStatistics(const uint64_t now,
 
 
 // ###### Update reception statistics #######################################
-void Flow::updateReceptionStatistics(const uint64_t now,
+void Flow::updateReceptionStatistics(const uint64_t nowMonotonic,
+                                     const uint64_t nowSystem,
                                      const uint64_t addedFrames,
                                      const uint64_t addedBytes,
                                      const uint64_t lostFrames,
@@ -246,9 +247,9 @@ void Flow::updateReceptionStatistics(const uint64_t now,
    lock();
 
    // ====== Update statistics ==============================================
-   LastReception = now;
+   LastReception = nowMonotonic;
    if(FirstReception == 0) {
-      FirstReception = now;
+      FirstReception = nowMonotonic;
    }
    CurrentBandwidthStats.ReceivedFrames  += addedFrames;
    CurrentBandwidthStats.ReceivedPackets++;
@@ -267,8 +268,8 @@ void Flow::updateReceptionStatistics(const uint64_t now,
          "%" PRIu64 "\t%u\t%" PRIu64 "\t"
          "%1.3f\t%1.3f\t%1.3f\n",
          static_cast<uint64_t>(VectorFile.nextLine()),
-         now,
-         std::chrono::duration<double>(std::chrono::microseconds(now - MyMeasurement->getFirstStatisticsEvent())).count(),
+         nowSystem,
+         std::chrono::duration<double>(std::chrono::microseconds(nowMonotonic - MyMeasurement->getFirstStatisticsEvent())).count(),
          seqNumber,
          CurrentBandwidthStats.ReceivedBytes,
          CurrentBandwidthStats.ReceivedPackets,
@@ -404,12 +405,12 @@ void Flow::run()
 {
    signal(SIGPIPE, SIG_IGN);
 
-   scheduleNextStatusChangeEvent(getMicroTime());
+   scheduleNextStatusChangeEvent(getMonotonicMicroTime());
 
    bool result = true;
    do {
       // ====== Schedule next status change event ===========================
-      uint64_t       now              = getMicroTime();
+      uint64_t       now              = getMonotonicMicroTime();
       const uint64_t nextTransmission = scheduleNextTransmissionEvent();
       uint64_t       nextEvent        = std::min(NextStatusChangeEvent, nextTransmission);
 
@@ -418,7 +419,7 @@ void Flow::run()
          const auto waitTime = std::min(std::chrono::microseconds(nextEvent - now),
                                         std::chrono::microseconds(1000000));
          std::this_thread::sleep_for(waitTime);
-         now = getMicroTime();
+         now = getMonotonicMicroTime();
       }
 
       // ====== Send outgoing data ==========================================

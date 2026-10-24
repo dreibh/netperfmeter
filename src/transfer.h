@@ -40,7 +40,8 @@ bool transmitFrame(Flow*          flow,
                    const uint64_t now);
 
 bool handleNetPerfMeterData(const bool     isActiveMode,
-                            const uint64_t now,
+                            const uint64_t nowMonotonic,
+                            const uint64_t nowSystem,
                             const int      protocol,
                             const int      sd);
 

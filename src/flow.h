@@ -174,12 +174,13 @@ class Flow : public Thread
    }
 
    void initializeVectorFile(const char* name, const FileFormat format);
-   void updateTransmissionStatistics(const uint64_t now,
+   void updateTransmissionStatistics(const uint64_t nowMonotonic,
                                      const uint64_t addedFrames,
                                      const uint64_t addedPackets,
                                      const uint64_t addedBytes);
 
-   void updateReceptionStatistics(const uint64_t now,
+   void updateReceptionStatistics(const uint64_t nowMonotonic,
+                                  const uint64_t nowSystem,
                                   const uint64_t addedFrames,
                                   const uint64_t addedBytes,
                                   const uint64_t lostFrames,

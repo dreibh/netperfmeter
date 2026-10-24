@@ -692,7 +692,7 @@ void breakDetector(int)
 {
    DetectedBreak = true;
    if(!PrintedKill) {
-      const uint64_t now = getMicroTime();
+      const uint64_t now = getMonotonicMicroTime();
       if(LastDetection == static_cast<uint64_t>(-1)) {
          LastDetection = now;
       }
@@ -812,7 +812,7 @@ uint32_t random32()
    if((RandomDevice != nullptr) && (fread(&number, sizeof(number), 1, RandomDevice) == 1)) {
       return number;
    }
-   srandom(static_cast<unsigned int>(getMicroTime() & 0xffffffff));
+   srandom(static_cast<unsigned int>(getSystemMicroTime() & 0xffffffff));
    const uint16_t a = random() & 0xffff;
    const uint16_t b = random() & 0xffff;
    return (static_cast<uint32_t>(a) << 16) | b;

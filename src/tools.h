@@ -115,7 +115,16 @@ inline std::string formatText(const std::string_view fmt, const Args&... args)
 
 
 // ###### Chrono-based time helpers #########################################
-[[nodiscard]] inline uint64_t getMicroTime() noexcept
+[[nodiscard]] inline uint64_t getMonotonicMicroTime() noexcept
+{
+   return static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(
+         std::chrono::steady_clock::now().time_since_epoch()
+      ).count()
+   );
+}
+
+[[nodiscard]] inline uint64_t getSystemMicroTime() noexcept
 {
    return static_cast<uint64_t>(
       std::chrono::duration_cast<std::chrono::microseconds>(
@@ -125,6 +134,8 @@ inline std::string formatText(const std::string_view fmt, const Args&... args)
 }
 
 void printTimeStamp(std::ostream& os);
+
+
 int pollTimeout(const unsigned long long now, const size_t n, ...);
 
 

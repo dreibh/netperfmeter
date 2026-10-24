@@ -459,7 +459,7 @@ bool performNetPerfMeterStart(MessageReader*   messageReader,
 
    // ====== Start flows ====================================================
    const bool success = FlowManager::getFlowManager()->beginMeasurement(
-                           controlSocket, measurementID, getMicroTime(),
+                           controlSocket, measurementID, getMonotonicMicroTime(),
                            vectorNamePattern, vectorFileFormat,
                            scalarNamePattern, scalarFileFormat);
    if(success) {
@@ -567,7 +567,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(controlSocket,
                                                                              measurementID);
    assure(measurement != nullptr);
-   measurement->writeScalarStatistics(getMicroTime());
+   measurement->writeScalarStatistics(getMonotonicMicroTime());
    FlowManager::getFlowManager()->unlock();
 
    // ====== Tell passive node to stop measurement ==========================
@@ -949,7 +949,7 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
 }
 
 
-// ###### Handle NETPERFMETER_REMOVE_FLOW #####################################
+// ###### Handle NETPERFMETER_REMOVE_FLOW ###################################
 static bool handleNetPerfMeterRemoveFlow(MessageReader*                       messageReader,
                                          const int                            controlSocket,
                                          const NetPerfMeterRemoveFlowMessage* removeFlowMsg,
@@ -1053,7 +1053,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
       }
    }
 
-   const uint64_t now = getMicroTime();
+   const uint64_t now = getMonotonicMicroTime();
    bool success = FlowManager::getFlowManager()->beginMeasurement(
       controlSocket, measurementID, now,
       nullptr, vectorFileFormat,
@@ -1066,7 +1066,7 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
 }
 
 
-// ###### Handle NETPERFMETER_STOP #########################################
+// ###### Handle NETPERFMETER_STOP ##########################################
 static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
                                    const int                      controlSocket,
                                    const NetPerfMeterStopMessage* stopMsg,
@@ -1096,7 +1096,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       FlowManager::getFlowManager()->findMeasurement(controlSocket, measurementID);
    if(measurement) {
       measurement->lock();
-      measurement->writeScalarStatistics(getMicroTime());
+      measurement->writeScalarStatistics(getMonotonicMicroTime());
       try {
          measurement->finish(false);
          success = true;
