@@ -70,7 +70,7 @@ static inline std::string formatText(const std::string_view fmt, const Args&...)
 }
 #endif
 
-#include "ioformat.h"
+#include "fileio.h"
 #include "inputfile.h"
 #include "outputfile.h"
 #include "package-version.h"

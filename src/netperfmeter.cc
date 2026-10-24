@@ -34,7 +34,7 @@
 #include "transfer.h"
 #include "package-version.h"
 #include "tools.h"
-#include "ioformat.h"
+#include "fileio.h"
 #include "outputfile.h"
 
 #include <cerrno>

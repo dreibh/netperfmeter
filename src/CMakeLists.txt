@@ -40,8 +40,94 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 
 #############################################################################
+#### LIBRARIES                                                           ####
+#############################################################################
+
+# ====== libfileio ==========================================================
+LIST(APPEND libfileio_headers
+   fileio.h
+   inputfile.h
+   outputfile.h
+)
+LIST(APPEND libfileio_sources
+   fileio.cc
+   inputfile.cc
+   outputfile.cc
+)
+INSTALL(FILES       ${libfileio_headers}
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/netperfmeter)
+
+# --- Assemble library dependencies --------------------------------------
+SET(libfileio_dependencies
+   ${ZSTD_LIBRARY}
+   ${LZMA_LIBRARY}
+   ${BZ2_LIBRARY}
+   ${Z_LIBRARY}
+)
+
+# --- Library targets ----------------------------------------------------
+IF (WITH_STATIC_LIBRARIES)
+   ADD_LIBRARY(libfileio-static STATIC ${libfileio_sources})
+ENDIF()
+IF (WITH_SHARED_LIBRARIES)
+   ADD_LIBRARY(libfileio-shared SHARED ${libfileio_sources})
+ENDIF()
+
+FOREACH(TYPE shared;static)
+   IF ( (("${TYPE}" STREQUAL "static") AND (WITH_STATIC_LIBRARIES)) OR
+        (("${TYPE}" STREQUAL "shared") AND (WITH_SHARED_LIBRARIES)) )
+      SET_TARGET_PROPERTIES(libfileio-${TYPE} PROPERTIES
+         OUTPUT_NAME                fileio
+         CLEAN_DIRECT_OUTPUT        1
+         VERSION                    ${PROJECT_VERSION}
+         SOVERSION                  ${PROJECT_VERSION_MAJOR}
+         WINDOWS_EXPORT_ALL_SYMBOLS ON
+      )
+      TARGET_INCLUDE_DIRECTORIES(libfileio-${TYPE}
+                                 PUBLIC  ${ZSTD_INCLUDE_DIR}
+                                         ${LZMA_INCLUDE_DIR}
+                                         ${BZ2_INCLUDE_DIR}
+                                         ${Z_INCLUDE_DIR})
+      TARGET_LINK_LIBRARIES(libfileio-${TYPE}
+                            PUBLIC ${libfileio_dependencies})
+      INSTALL(TARGETS             libfileio-${TYPE}
+              RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+              ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+              LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+   ENDIF()
+ENDFOREACH()
+
+# --- Generate pkg-config metadata ------------------------------------------
+SET(PC_LIBS_PRIVATE "")
+FOREACH(dependency ${libfileio_dependencies})
+   IF (dependency MATCHES "^-")
+      STRING(APPEND PC_LIBS_PRIVATE " ${dependency}")
+   ELSEIF (IS_ABSOLUTE "${dependency}")
+      STRING(APPEND PC_LIBS_PRIVATE " ${dependency}")
+   ELSE()
+      STRING(APPEND PC_LIBS_PRIVATE " -l${dependency}")
+   ENDIF()
+ENDFOREACH()
+STRING(STRIP "${PC_LIBS_PRIVATE}" PC_LIBS_PRIVATE)
+
+CONFIGURE_FILE(
+   ${CMAKE_CURRENT_SOURCE_DIR}/libfileio.pc.in
+   ${CMAKE_CURRENT_BINARY_DIR}/libfileio.pc
+   @ONLY
+)
+INSTALL(FILES       ${CMAKE_CURRENT_BINARY_DIR}/libfileio.pc
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+
+#############################################################################
 #### PROGRAMS                                                            ####
 #############################################################################
+
+IF (STATIC_BUILD)
+   SET(libraryType static)
+ELSE()
+   SET(libraryType shared)
+ENDIF()
 
 # ====== NetPerfMeter =======================================================
 ADD_EXECUTABLE(netperfmeter
@@ -72,8 +158,6 @@ ADD_EXECUTABLE(netperfmeter
    mutex.h
    netperfmeter.cc
    netperfmeterpackets.h
-   outputfile.cc
-   outputfile.h
    thread.cc
    thread.h
    tools.cc
@@ -82,18 +166,11 @@ ADD_EXECUTABLE(netperfmeter
    transfer.h
 )
 TARGET_INCLUDE_DIRECTORIES(netperfmeter
-                           PRIVATE ${ZSTD_INCLUDE_DIR}
-                                   ${LZMA_INCLUDE_DIR}
-                                   ${BZ2_INCLUDE_DIR}
-                                   ${Z_INCLUDE_DIR}
-                                   ${SCTP_INCLUDE_DIR}
+                           PRIVATE ${SCTP_INCLUDE_DIR}
                                    ${QUIC_INCLUDE_DIR}
                                    ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(netperfmeter
-                      PRIVATE ${ZSTD_LIBRARY}
-                              ${LZMA_LIBRARY}
-                              ${BZ2_LIBRARY}
-                              ${Z_LIBRARY}
+                      PRIVATE libfileio-${libraryType}
                               ${SCTP_LIBRARY} ${QUIC_LIBRARY}
                               ${LIBIBERTY_LIBRARY} ${KSTAT_LIBRARY}
                               ${SOCKET_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
@@ -134,22 +211,11 @@ ENDIF()
 ADD_EXECUTABLE(createsummary
    createsummary.cc
    debug.h
-   inputfile.cc
-   inputfile.h
-   outputfile.cc
-   outputfile.h
 )
 TARGET_INCLUDE_DIRECTORIES(createsummary
-                           PRIVATE ${ZSTD_INCLUDE_DIR}
-                                   ${LZMA_INCLUDE_DIR}
-                                   ${BZ2_INCLUDE_DIR}
-                                   ${Z_INCLUDE_DIR}
-                                   ${LIBIBERTY_INCLUDE_DIR})
+                           PRIVATE ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(createsummary
-                      PRIVATE ${ZSTD_LIBRARY}
-                              ${LZMA_LIBRARY}
-                              ${BZ2_LIBRARY}
-                              ${Z_LIBRARY}
+                      PRIVATE libfileio-${libraryType}
                               ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     createsummary   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       createsummary.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
@@ -160,22 +226,11 @@ INSTALL(FILES       createsummary.bash-completion
 # ====== Combine Summaries Tool =============================================
 ADD_EXECUTABLE(combinesummaries
    combinesummaries.cc
-   inputfile.h
-   inputfile.cc
-   outputfile.h
-   outputfile.cc
 )
 TARGET_INCLUDE_DIRECTORIES(combinesummaries
-                           PRIVATE ${ZSTD_INCLUDE_DIR}
-                                   ${LZMA_INCLUDE_DIR}
-                                   ${BZ2_INCLUDE_DIR}
-                                   ${Z_INCLUDE_DIR}
-                                   ${LIBIBERTY_INCLUDE_DIR})
+                           PRIVATE ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(combinesummaries
-                      PRIVATE ${ZSTD_LIBRARY}
-                              ${LZMA_LIBRARY}
-                              ${BZ2_LIBRARY}
-                              ${Z_LIBRARY}
+                      PRIVATE libfileio-${libraryType}
                               ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     combinesummaries   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       combinesummaries.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
@@ -186,22 +241,11 @@ INSTALL(FILES       combinesummaries.bash-completion
 # ====== Extract Vectors Tool ===============================================
 ADD_EXECUTABLE(extractvectors
    extractvectors.cc
-   inputfile.h
-   inputfile.cc
-   outputfile.h
-   outputfile.cc
 )
 TARGET_INCLUDE_DIRECTORIES(extractvectors
-                           PRIVATE ${ZSTD_INCLUDE_DIR}
-                                   ${LZMA_INCLUDE_DIR}
-                                   ${BZ2_INCLUDE_DIR}
-                                   ${Z_INCLUDE_DIR}
-                                   ${LIBIBERTY_INCLUDE_DIR})
+                           PRIVATE ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(extractvectors
-                      PRIVATE ${ZSTD_LIBRARY}
-                              ${LZMA_LIBRARY}
-                              ${BZ2_LIBRARY}
-                              ${Z_LIBRARY}
+                      PRIVATE libfileio-${libraryType}
                               ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     extractvectors  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       extractvectors.1 DESTINATION        ${CMAKE_INSTALL_MANDIR}/man1)
@@ -267,14 +311,6 @@ IF (WITH_PLOT_PROGRAMS)
    INSTALL(FILES plotter.R
            DESTINATION ${CMAKE_INSTALL_DATADIR}/netperfmeter)
 ENDIF()
-
-# ====== Test Programs ======================================================
-# ADD_EXECUTABLE(t1 t1.cc assure.cc cpustatus.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(t1 PRIVATE ${SCTP_LIBRARY} ${KSTAT_LIBRARY} ${SOCKET_LIBRARY})
-# ADD_EXECUTABLE(qs qs.cc assure.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(qs PRIVATE ${SCTP_LIBRARY} ${QUIC_LIBRARY})
-# ADD_EXECUTABLE(qc qc.cc assure.cc loglevel.cc tools.cc mutex.cc)
-# TARGET_LINK_LIBRARIES(qc PRIVATE ${SCTP_LIBRARY} ${QUIC_LIBRARY})
 
 
 #############################################################################

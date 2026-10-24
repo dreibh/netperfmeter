@@ -127,13 +127,17 @@ ENDIF()
 #### OPTIONS                                                             ####
 #############################################################################
 
-OPTION(WITH_I18N "Build with Internationalization (i18n) support"         ON)
+OPTION(WITH_STATIC_LIBRARIES  "Build static libraries"                  OFF)
+OPTION(WITH_SHARED_LIBRARIES  "Build shared libraries"                  ON)
+OPTION(STATIC_BUILD           "Build statically-linked executables"     OFF)
 
-OPTION(WITH_KERNEL_SCTP       "Use Kernel SCTP"                           ON)
-OPTION(WITH_ICONS             "Build NetPerfMeter icons and logo files"   ON)
-OPTION(WITH_PLOT_PROGRAMS     "Include plot programs"                     ON)
-OPTION(WITH_EXAMPLE_SCRIPTS   "Include example scripts"                   ON)
-OPTION(WITH_EXAMPLE_RESULTS   "Include example results"                   ON)
+OPTION(WITH_I18N "Build with Internationalization (i18n) support"       ON)
+
+OPTION(WITH_KERNEL_SCTP       "Use Kernel SCTP"                         ON)
+OPTION(WITH_ICONS             "Build NetPerfMeter icons and logo files" ON)
+OPTION(WITH_PLOT_PROGRAMS     "Include plot programs"                   ON)
+OPTION(WITH_EXAMPLE_SCRIPTS   "Include example scripts"                 ON)
+OPTION(WITH_EXAMPLE_RESULTS   "Include example results"                 ON)
 
 
 #############################################################################
