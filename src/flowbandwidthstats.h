@@ -40,39 +40,41 @@ class FlowBandwidthStats
 {
    // ====== Methods ========================================================
    public:
-   FlowBandwidthStats();
-   ~FlowBandwidthStats();
+   FlowBandwidthStats() = default;
+   ~FlowBandwidthStats() = default;
 
    void print(std::ostream& os,
               const double  transmissionDuration,
               const double  receptionDuration) const;
    void reset();
 
-   inline static uint64_t calculateRate(const uint64_t value,
-                                        const double   duration) {
+   [[nodiscard]] inline static constexpr uint64_t calculateRate(const uint64_t value,
+                                                                const double   duration) noexcept {
       if(duration < 0.000001) {
          return 0;
       }
-      return static_cast<uint64_t>(rint(static_cast<double>(value) / duration));
+      return static_cast<uint64_t>(std::rint(static_cast<double>(value) / duration));
    }
 
    // ====== Public Data ====================================================
    public:
-   uint64_t TransmittedBytes;
-   uint64_t TransmittedPackets;
-   uint64_t TransmittedFrames;
+   uint64_t TransmittedBytes   { 0 };
+   uint64_t TransmittedPackets { 0 };
+   uint64_t TransmittedFrames  { 0 };
 
-   uint64_t ReceivedBytes;
-   uint64_t ReceivedPackets;
-   uint64_t ReceivedFrames;
+   uint64_t ReceivedBytes      { 0 };
+   uint64_t ReceivedPackets    { 0 };
+   uint64_t ReceivedFrames     { 0 };
 
-   uint64_t LostBytes;
-   uint64_t LostPackets;
-   uint64_t LostFrames;
+   uint64_t LostBytes          { 0 };
+   uint64_t LostPackets        { 0 };
+   uint64_t LostFrames         { 0 };
 };
 
 
-FlowBandwidthStats operator+(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2);
-FlowBandwidthStats operator-(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2);
+[[nodiscard]] FlowBandwidthStats operator+(const FlowBandwidthStats& s1,
+                                           const FlowBandwidthStats& s2) noexcept;
+[[nodiscard]] FlowBandwidthStats operator-(const FlowBandwidthStats& s1,
+                                           const FlowBandwidthStats& s2) noexcept;
 
 #endif // FLOWBANDWIDTHSTATS_H

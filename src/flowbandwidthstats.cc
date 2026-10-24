@@ -31,22 +31,9 @@
 #include "tools.h"
 
 
-// ###### Constructor #######################################################
-FlowBandwidthStats::FlowBandwidthStats()
-{
-   reset();
-}
-
-
-// ###### Destructor ########################################################
-FlowBandwidthStats::~FlowBandwidthStats()
-{
-}
-
-
 // ###### "+" operator ######################################################
 FlowBandwidthStats operator+(const FlowBandwidthStats& s1,
-                             const FlowBandwidthStats& s2)
+                             const FlowBandwidthStats& s2) noexcept
 {
    FlowBandwidthStats result;
    result.TransmittedBytes   = s1.TransmittedBytes + s2.TransmittedBytes;
@@ -66,7 +53,7 @@ FlowBandwidthStats operator+(const FlowBandwidthStats& s1,
 
 // ###### "-" operator ######################################################
 FlowBandwidthStats operator-(const FlowBandwidthStats& s1,
-                             const FlowBandwidthStats& s2)
+                             const FlowBandwidthStats& s2) noexcept
 {
    FlowBandwidthStats result;
    result.TransmittedBytes   = s1.TransmittedBytes - s2.TransmittedBytes;

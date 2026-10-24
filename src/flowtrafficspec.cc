@@ -31,19 +31,6 @@
 #include "tools.h"
 
 
-// ###### Constructor #######################################################
-FlowTrafficSpec::FlowTrafficSpec()
-{
-   reset();
-}
-
-
-// ###### Destructor ########################################################
-FlowTrafficSpec::~FlowTrafficSpec()
-{
-}
-
-
 // ###### Show configuration entry (value + random number generator) ########
 void FlowTrafficSpec::showEntry(std::ostream& os,
                                 const double* valueArray,
@@ -210,31 +197,5 @@ void FlowTrafficSpec::print(std::ostream& os) const
 // ###### Reset FlowTrafficSpec #############################################
 void FlowTrafficSpec::reset()
 {
-   MaxMsgSize               = 16000;
-   DefragmentTimeout        = 5000000ULL;
-   // 209712 is the upper limit for NetBSD (with default kernel settings):
-   SndBufferSize            = 209712;
-   RcvBufferSize            = 209712;
-   OrderedMode              = 1.0;
-   ReliableMode             = 1.0;
-   RetransmissionTrials     = static_cast<uint32_t>(-1);
-   RetransmissionTrialsInMS = true;
-   ErrorOnAbort             = true;
-   Debug                    = false;
-   NoDelay                  = false;
-   BindV6Only               = false;
-   RepeatOnOff              = false;
-   CongestionControl        = "default";
-   CMT                      = 0x00;
-   CCID                     = 0x00;
-   for(size_t i = 0; i < NETPERFMETER_RNG_INPUT_PARAMETERS; i++) {
-      OutboundFrameRate[i] = 0.0;
-      OutboundFrameSize[i] = 0.0;
-      InboundFrameRate[i]  = 0.0;
-      InboundFrameSize[i]  = 0.0;
-   }
-   OutboundFrameRateRng = RANDOM_CONSTANT;
-   OutboundFrameSizeRng = RANDOM_CONSTANT;
-   InboundFrameRateRng  = RANDOM_CONSTANT;
-   InboundFrameSizeRng  = RANDOM_CONSTANT;
+   *this = FlowTrafficSpec{};
 }
