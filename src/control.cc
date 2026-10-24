@@ -459,7 +459,7 @@ bool performNetPerfMeterStart(MessageReader*   messageReader,
 
    // ====== Start flows ====================================================
    const bool success = FlowManager::getFlowManager()->beginMeasurement(
-                           controlSocket, measurementID, getMonotonicMicroTime(),
+                           controlSocket, measurementID, getMonotonicMicroTime().value,
                            vectorNamePattern, vectorFileFormat,
                            scalarNamePattern, scalarFileFormat);
    if(success) {
@@ -567,7 +567,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(controlSocket,
                                                                              measurementID);
    assure(measurement != nullptr);
-   measurement->writeScalarStatistics(getMonotonicMicroTime());
+   measurement->writeScalarStatistics(getMonotonicMicroTime().value);
    FlowManager::getFlowManager()->unlock();
 
    // ====== Tell passive node to stop measurement ==========================
@@ -1053,9 +1053,9 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
       }
    }
 
-   const uint64_t now = getMonotonicMicroTime();
+   const uint64_t nowMonotonic = getMonotonicMicroTime().value;
    bool success = FlowManager::getFlowManager()->beginMeasurement(
-      controlSocket, measurementID, now,
+      controlSocket, measurementID, nowMonotonic,
       nullptr, vectorFileFormat,
       nullptr, scalarFileFormat);
 
@@ -1096,7 +1096,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       FlowManager::getFlowManager()->findMeasurement(controlSocket, measurementID);
    if(measurement) {
       measurement->lock();
-      measurement->writeScalarStatistics(getMonotonicMicroTime());
+      measurement->writeScalarStatistics(getMonotonicMicroTime().value);
       try {
          measurement->finish(false);
          success = true;

@@ -43,8 +43,8 @@
 
 
 static void updateStatistics(Flow*                          flowSpec,
-                             const uint64_t                 nowMonotonic,
-                             const uint64_t                 nowSystem,
+                             const MonotonicMicroTime       nowMonotonic,
+                             const SystemMicroTime          nowSystem,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   received);
 
@@ -79,12 +79,12 @@ static void fillPayload(unsigned char* payload,
 
 
 // ###### Send NETPERFMETER_DATA message ####################################
-ssize_t sendNetPerfMeterData(Flow*          flow,
-                             const uint32_t frameID,
-                             const bool     isFrameBegin,
-                             const bool     isFrameEnd,
-                             const uint64_t now,
-                             size_t         bytesToSend)
+ssize_t sendNetPerfMeterData(Flow*                   flow,
+                             const uint32_t          frameID,
+                             const bool              isFrameBegin,
+                             const bool              isFrameEnd,
+                             const MonotonicMicroTime now,
+                             size_t                  bytesToSend)
 {
    char  outputBuffer[MAXIMUM_MESSAGE_SIZE];
    auto* dataMsg = reinterpret_cast<NetPerfMeterDataMessage*>(&outputBuffer);
@@ -111,7 +111,7 @@ ssize_t sendNetPerfMeterData(Flow*          flow,
    dataMsg->FrameID       = htobe32(frameID);
    dataMsg->SeqNumber     = htobe64(flow->nextOutboundSeqNumber());
    dataMsg->ByteSeqNumber = htobe64(flow->getCurrentBandwidthStats().TransmittedBytes);
-   dataMsg->TimeStamp     = htobe64(now);
+   dataMsg->TimeStamp     = htobe64(now.value);
 
    // ------ Create payload data pattern ------------------
    fillPayload(reinterpret_cast<unsigned char*>(&dataMsg->Payload),
@@ -204,8 +204,8 @@ ssize_t sendNetPerfMeterData(Flow*          flow,
 
 
 // ###### Transmit data frame ###############################################
-bool transmitFrame(Flow*          flow,
-                   const uint64_t now)
+bool transmitFrame(Flow*                    flow,
+                   const MonotonicMicroTime now)
 {
    // ====== Obtain length of data to send ==================================
    ssize_t bytesToSend =
@@ -250,11 +250,11 @@ bool transmitFrame(Flow*          flow,
 
 
 // ###### Handle data message ###############################################
-bool handleNetPerfMeterData(const bool     isActiveMode,
-                            const uint64_t nowMonotonic,
-                            const uint64_t nowSystem,
-                            const int      protocol,
-                            const int      sd)
+bool handleNetPerfMeterData(const bool               isActiveMode,
+                            const MonotonicMicroTime nowMonotonic,
+                            const SystemMicroTime    nowSystem,
+                            const int                protocol,
+                            const int                sd)
 {
    char            inputBuffer[65536];
    sockaddr_union  from;
@@ -394,15 +394,15 @@ bool handleNetPerfMeterData(const bool     isActiveMode,
 
 // ###### Update flow statistics with incoming NETPERFMETER_DATA message ####
 static void updateStatistics(Flow*                          flow,
-                             const uint64_t                 nowMonotonic,
-                             const uint64_t                 nowSystem,
+                             const MonotonicMicroTime       nowMonotonic,
+                             const SystemMicroTime          nowSystem,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   receivedBytes)
 {
    // ====== Update QoS statistics ==========================================
    const uint64_t seqNumber   = be64toh(dataMsg->SeqNumber);
    const uint64_t timeStamp   = be64toh(dataMsg->TimeStamp);
-   const double   transitTime = (static_cast<double>(nowMonotonic) - static_cast<double>(timeStamp)) / 1000.0;
+   const double   transitTime = (static_cast<double>(nowMonotonic.value) - static_cast<double>(timeStamp)) / 1000.0;
 
    // ------ Jitter calculation according to RFC 3550 -----------------------
    /* From RFC 3550:
@@ -416,12 +416,12 @@ static void updateStatistics(Flow*                          flow,
    const double jitter = flow->getJitter() + (1.0 / 16.0) * (fabs(diff) - flow->getJitter());
 
    // ------ Loss calculation -----------------------------------------------
-   flow->getDefragmenter()->addFragment(nowMonotonic, dataMsg);
+   flow->getDefragmenter()->addFragment(nowMonotonic.value, dataMsg);
    size_t receivedFrames;
    size_t lostFrames;
    size_t lostPackets;
    size_t lostBytes;
-   flow->getDefragmenter()->purge(nowMonotonic, flow->getTrafficSpec().DefragmentTimeout,
+   flow->getDefragmenter()->purge(nowMonotonic.value, flow->getTrafficSpec().DefragmentTimeout,
                                   receivedFrames, lostFrames, lostPackets, lostBytes);
 
    flow->updateReceptionStatistics(

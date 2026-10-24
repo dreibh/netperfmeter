@@ -115,27 +115,57 @@ inline std::string formatText(const std::string_view fmt, const Args&... args)
 
 
 // ###### Chrono-based time helpers #########################################
-[[nodiscard]] inline uint64_t getMonotonicMicroTime() noexcept
+struct MonotonicMicroTime
 {
-   return static_cast<uint64_t>(
+   uint64_t value{0};
+
+   constexpr MonotonicMicroTime() noexcept = default;
+   constexpr explicit MonotonicMicroTime(uint64_t v) noexcept : value(v) {}
+
+   constexpr auto operator<=>(const MonotonicMicroTime&) const noexcept = default;
+
+   // Duration between two monotonic timepoints is uint64_t microseconds:
+   constexpr uint64_t operator-(const MonotonicMicroTime& other) const noexcept {
+      return value - other.value;
+   }
+   constexpr MonotonicMicroTime operator+(uint64_t us) const noexcept {
+      return MonotonicMicroTime(value + us);
+   }
+   constexpr MonotonicMicroTime operator-(uint64_t us) const noexcept {
+      return MonotonicMicroTime(value - us);
+   }
+};
+
+struct SystemMicroTime
+{
+   uint64_t value{0};
+
+   constexpr SystemMicroTime() noexcept = default;
+   constexpr explicit SystemMicroTime(uint64_t v) noexcept : value(v) {}
+
+   constexpr auto operator<=>(const SystemMicroTime&) const noexcept = default;
+};
+
+[[nodiscard]] inline MonotonicMicroTime getMonotonicMicroTime() noexcept
+{
+   return MonotonicMicroTime(static_cast<uint64_t>(
       std::chrono::duration_cast<std::chrono::microseconds>(
          std::chrono::steady_clock::now().time_since_epoch()
       ).count()
-   );
+   ));
 }
 
-[[nodiscard]] inline uint64_t getSystemMicroTime() noexcept
+[[nodiscard]] inline SystemMicroTime getSystemMicroTime() noexcept
 {
-   return static_cast<uint64_t>(
+   return SystemMicroTime(static_cast<uint64_t>(
       std::chrono::duration_cast<std::chrono::microseconds>(
          std::chrono::system_clock::now().time_since_epoch()
       ).count()
-   );
+   ));
 }
 
+
 void printTimeStamp(std::ostream& os);
-
-
 int pollTimeout(const unsigned long long now, const size_t n, ...);
 
 

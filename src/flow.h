@@ -174,22 +174,22 @@ class Flow : public Thread
    }
 
    void initializeVectorFile(const char* name, const FileFormat format);
-   void updateTransmissionStatistics(const uint64_t nowMonotonic,
-                                     const uint64_t addedFrames,
-                                     const uint64_t addedPackets,
-                                     const uint64_t addedBytes);
+   void updateTransmissionStatistics(const MonotonicMicroTime nowMonotonic,
+                                     const uint64_t           addedFrames,
+                                     const uint64_t           addedPackets,
+                                     const uint64_t           addedBytes);
 
-   void updateReceptionStatistics(const uint64_t nowMonotonic,
-                                  const uint64_t nowSystem,
-                                  const uint64_t addedFrames,
-                                  const uint64_t addedBytes,
-                                  const uint64_t lostFrames,
-                                  const uint64_t lostPackets,
-                                  const uint64_t lostBytes,
-                                  const uint64_t seqNumber,
-                                  const double   delay,
-                                  const double   delayDiff,
-                                  const double   jitter);
+   void updateReceptionStatistics(const MonotonicMicroTime nowMonotonic,
+                                  const SystemMicroTime    nowSystem,
+                                  const uint64_t           addedFrames,
+                                  const uint64_t           addedBytes,
+                                  const uint64_t           lostFrames,
+                                  const uint64_t           lostPackets,
+                                  const uint64_t           lostBytes,
+                                  const uint64_t           seqNumber,
+                                  const double             delay,
+                                  const double             delayDiff,
+                                  const double             jitter);
 
    void print(std::ostream& os, const bool printStatistics = false);
    void resetStatistics();

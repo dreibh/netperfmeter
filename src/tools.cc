@@ -679,12 +679,12 @@ double networkToDouble(network_double_t value)
 
 
 // ###### Break and Termination Handling ####################################
-static bool     DetectedBreak = false;
-static bool     PrintedBreak  = false;
-static bool     Quiet         = false;
-static pid_t    MainThreadPID = 0;
-static bool     PrintedKill   = false;
-static uint64_t LastDetection = static_cast<uint64_t>(-1);
+static bool               DetectedBreak = false;
+static bool               PrintedBreak  = false;
+static bool               Quiet         = false;
+static pid_t              MainThreadPID = 0;
+static bool               PrintedKill   = false;
+static MonotonicMicroTime LastDetection = MonotonicMicroTime(static_cast<uint64_t>(-1));
 
 
 // ###### Break detector signal handler #####################################
@@ -692,8 +692,8 @@ void breakDetector(int)
 {
    DetectedBreak = true;
    if(!PrintedKill) {
-      const uint64_t now = getMonotonicMicroTime();
-      if(LastDetection == static_cast<uint64_t>(-1)) {
+      const MonotonicMicroTime now = getMonotonicMicroTime();
+      if(LastDetection.value == static_cast<uint64_t>(-1)) {
          LastDetection = now;
       }
       else if(now - LastDetection >= 2000000ULL) {
@@ -714,7 +714,7 @@ void installBreakDetector()
    Quiet         = false;
    MainThreadPID = getpid();
    PrintedKill   = false;
-   LastDetection = static_cast<uint64_t>(-1);
+   LastDetection = MonotonicMicroTime(static_cast<uint64_t>(-1));
    signal(SIGINT, &breakDetector);
 }
 
@@ -724,7 +724,7 @@ void uninstallBreakDetector()
 {
    signal(SIGINT, SIG_DFL);
    PrintedKill   = false;
-   LastDetection = static_cast<uint64_t>(-1);
+   LastDetection = MonotonicMicroTime(static_cast<uint64_t>(-1));
    Quiet         = false;
 }
 
@@ -812,7 +812,7 @@ uint32_t random32()
    if((RandomDevice != nullptr) && (fread(&number, sizeof(number), 1, RandomDevice) == 1)) {
       return number;
    }
-   srandom(static_cast<unsigned int>(getSystemMicroTime() & 0xffffffff));
+   srandom(static_cast<unsigned int>(getSystemMicroTime().value & 0xffffffff));
    const uint16_t a = random() & 0xffff;
    const uint16_t b = random() & 0xffff;
    return (static_cast<uint32_t>(a) << 16) | b;

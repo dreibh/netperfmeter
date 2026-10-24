@@ -91,7 +91,7 @@ class FlowManager : public Thread
 
    bool beginMeasurement(const int        controlSocket,
                          const uint64_t   measurementID,
-                         const uint64_t   now,
+                         const uint64_t   nowMonotonic,
                          const char*      vectorNamePattern,
                          const FileFormat vectorFileFormat,
                          const char*      scalarNamePattern,
@@ -100,11 +100,11 @@ class FlowManager : public Thread
                           const uint64_t measurementID);
 
    void writeScalarStatistics(const uint64_t measurementID,
-                              const uint64_t now,
+                              const uint64_t nowMonotonic,
                               OutputFile&    scalarFile,
                               const uint64_t firstStatisticsEvent);
    void writeVectorStatistics(const uint64_t      measurementID,
-                              const uint64_t      now,
+                              const uint64_t      nowMonotonic,
                               OutputFile&         vectorFile,
                               FlowBandwidthStats& globalStats,
                               FlowBandwidthStats& relGlobalStats,
@@ -133,7 +133,7 @@ class FlowManager : public Thread
 
    // ====== Private Methods ================================================
    uint64_t getNextEvent();
-   void handleEvents(const uint64_t now);
+   void handleEvents(const uint64_t nowMonotonic);
 
 
    // ====== Private Data ===================================================

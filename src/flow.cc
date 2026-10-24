@@ -63,7 +63,7 @@ Flow::Flow(const uint64_t         measurementID,
 
    InputStatus              = WaitingForStartup;
    OutputStatus             = WaitingForStartup;
-   TimeBase                 = getMonotonicMicroTime();
+   TimeBase                 = getMonotonicMicroTime().value;
 
    TrafficSpec              = trafficSpec;
 
@@ -211,17 +211,17 @@ void Flow::initializeVectorFile(const char* name, const FileFormat format)
 
 
 // ###### Update transmission statistics ####################################
-void Flow::updateTransmissionStatistics(const uint64_t nowMonotonic,
-                                        const uint64_t addedFrames,
-                                        const uint64_t addedPackets,
-                                        const uint64_t addedBytes)
+void Flow::updateTransmissionStatistics(const MonotonicMicroTime nowMonotonic,
+                                        const uint64_t           addedFrames,
+                                        const uint64_t           addedPackets,
+                                        const uint64_t           addedBytes)
 {
    lock();
 
    // ====== Update statistics ==============================================
-   LastTransmission = nowMonotonic;
+   LastTransmission = nowMonotonic.value;
    if(FirstTransmission == 0) {
-      FirstTransmission = nowMonotonic;
+      FirstTransmission = nowMonotonic.value;
    }
    CurrentBandwidthStats.TransmittedFrames  += addedFrames;
    CurrentBandwidthStats.TransmittedPackets += addedPackets;
@@ -232,24 +232,24 @@ void Flow::updateTransmissionStatistics(const uint64_t nowMonotonic,
 
 
 // ###### Update reception statistics #######################################
-void Flow::updateReceptionStatistics(const uint64_t nowMonotonic,
-                                     const uint64_t nowSystem,
-                                     const uint64_t addedFrames,
-                                     const uint64_t addedBytes,
-                                     const uint64_t lostFrames,
-                                     const uint64_t lostPackets,
-                                     const uint64_t lostBytes,
-                                     const uint64_t seqNumber,
-                                     const double   delay,
-                                     const double   delayDiff,
-                                     const double   jitter)
+void Flow::updateReceptionStatistics(const MonotonicMicroTime nowMonotonic,
+                                     const SystemMicroTime    nowSystem,
+                                     const uint64_t           addedFrames,
+                                     const uint64_t           addedBytes,
+                                     const uint64_t           lostFrames,
+                                     const uint64_t           lostPackets,
+                                     const uint64_t           lostBytes,
+                                     const uint64_t           seqNumber,
+                                     const double             delay,
+                                     const double             delayDiff,
+                                     const double             jitter)
 {
    lock();
 
    // ====== Update statistics ==============================================
-   LastReception = nowMonotonic;
+   LastReception = nowMonotonic.value;
    if(FirstReception == 0) {
-      FirstReception = nowMonotonic;
+      FirstReception = nowMonotonic.value;
    }
    CurrentBandwidthStats.ReceivedFrames  += addedFrames;
    CurrentBandwidthStats.ReceivedPackets++;
@@ -268,8 +268,8 @@ void Flow::updateReceptionStatistics(const uint64_t nowMonotonic,
          "%" PRIu64 "\t%u\t%" PRIu64 "\t"
          "%1.3f\t%1.3f\t%1.3f\n",
          static_cast<uint64_t>(VectorFile.nextLine()),
-         nowSystem,
-         std::chrono::duration<double>(std::chrono::microseconds(nowMonotonic - MyMeasurement->getFirstStatisticsEvent())).count(),
+         nowSystem.value,
+         std::chrono::duration<double>(std::chrono::microseconds(nowMonotonic.value - MyMeasurement->getFirstStatisticsEvent())).count(),
          seqNumber,
          CurrentBandwidthStats.ReceivedBytes,
          CurrentBandwidthStats.ReceivedPackets,
@@ -405,18 +405,18 @@ void Flow::run()
 {
    signal(SIGPIPE, SIG_IGN);
 
-   scheduleNextStatusChangeEvent(getMonotonicMicroTime());
+   scheduleNextStatusChangeEvent(getMonotonicMicroTime().value);
 
    bool result = true;
    do {
       // ====== Schedule next status change event ===========================
-      uint64_t       now              = getMonotonicMicroTime();
-      const uint64_t nextTransmission = scheduleNextTransmissionEvent();
-      uint64_t       nextEvent        = std::min(NextStatusChangeEvent, nextTransmission);
+      MonotonicMicroTime now              = getMonotonicMicroTime();
+      const uint64_t     nextTransmission = scheduleNextTransmissionEvent();
+      uint64_t           nextEvent        = std::min(NextStatusChangeEvent, nextTransmission);
 
       // ====== Wait until there is something to do =========================
-      if(nextEvent > now) {
-         const auto waitTime = std::min(std::chrono::microseconds(nextEvent - now),
+      if(nextEvent > now.value) {
+         const auto waitTime = std::min(std::chrono::microseconds(nextEvent - now.value),
                                         std::chrono::microseconds(1000000));
          std::this_thread::sleep_for(waitTime);
          now = getMonotonicMicroTime();
@@ -435,16 +435,16 @@ void Flow::run()
          // ====== Outgoing data (non-saturated sender) =====================
          else if(TrafficSpec.outgoingFlowIsNotSaturated()) {
             const uint64_t lastEvent = LastTransmission;
-            if(nextTransmission <= now) {
+            if(nextTransmission <= now.value) {
                do {
                   result = transmitFrame(this, now);
-                  if(now - lastEvent > 1000000ULL) {
+                  if(now.value - lastEvent > 1000000ULL) {
                      // Time gap of more than 1s -> do not try to correct.
                      // But the next transmission needs to be scheduled!
                      scheduleNextTransmissionEvent();
                      break;
                   }
-               } while(scheduleNextTransmissionEvent() <= now);
+               } while(scheduleNextTransmissionEvent() <= now.value);
 
                if(TrafficSpec.Protocol == IPPROTO_UDP) {
                   // Keep sending, even if there is a temporary failure.
@@ -455,8 +455,8 @@ void Flow::run()
       }
 
       // ====== Handle status changes =======================================
-      if(NextStatusChangeEvent <= now) {
-         handleStatusChangeEvent(now);
+      if(NextStatusChangeEvent <= now.value) {
+         handleStatusChangeEvent(now.value);
       }
    } while((result == true) && (!isStopping()));
 }

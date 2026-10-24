@@ -229,7 +229,7 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
 // ###### Begin measurement #################################################
 bool FlowManager::beginMeasurement(const int        controlSocket,
                                    const uint64_t   measurementID,
-                                   const uint64_t   now,
+                                   const uint64_t   nowMonotonic,
                                    const char*      vectorNamePattern,
                                    const FileFormat vectorFileFormat,
                                    const char*      scalarNamePattern,
@@ -243,7 +243,7 @@ bool FlowManager::beginMeasurement(const int        controlSocket,
    if(measurement != nullptr) {
       try {
          // 1. Initialize measurement-wide scalar and vector files
-         measurement->initialize(now, controlSocket, measurementID,
+         measurement->initialize(nowMonotonic, controlSocket, measurementID,
                                  vectorNamePattern, vectorFileFormat,
                                  scalarNamePattern, scalarFileFormat);
 
@@ -266,7 +266,7 @@ bool FlowManager::beginMeasurement(const int        controlSocket,
                   }
 
                   if(flow->SocketDescriptor >= 0) {
-                     flow->TimeBase     = now;
+                     flow->TimeBase     = nowMonotonic;
                      flow->TimeOffset   = 0;
                      flow->InputStatus  = Flow::On;
                      flow->OutputStatus = (flow->TrafficSpec.OnOffEvents.size() > 0) ?
@@ -504,7 +504,7 @@ uint64_t FlowManager::getNextEvent()
 
 
 // ###### Handle statistics and display events ##############################
-void FlowManager::handleEvents(const uint64_t now)
+void FlowManager::handleEvents(const uint64_t nowMonotonic)
 {
    lock();
 
@@ -512,21 +512,21 @@ void FlowManager::handleEvents(const uint64_t now)
    for(std::map<std::pair<int, uint64_t>, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
        Measurement* measurement = iterator->second;
-       if(measurement->NextStatisticsEvent <= now) {
-          measurement->writeVectorStatistics(now, GlobalStats, RelGlobalStats);
+       if(measurement->NextStatisticsEvent <= nowMonotonic) {
+          measurement->writeVectorStatistics(nowMonotonic, GlobalStats, RelGlobalStats);
        }
    }
 
    // ====== Display status =================================================
-   if(NextDisplayEvent <= now) {
+   if(NextDisplayEvent <= nowMonotonic) {
       // ====== Timer management ============================================
       NextDisplayEvent += DisplayInterval;
-      if(NextDisplayEvent <= now) {   // Initialization!
-         NextDisplayEvent = now + DisplayInterval;
+      if(NextDisplayEvent <= nowMonotonic) {   // Initialization!
+         NextDisplayEvent = nowMonotonic + DisplayInterval;
       }
       if(FirstDisplayEvent == 0) {
-         FirstDisplayEvent = now;
-         LastDisplayEvent  = now;
+         FirstDisplayEvent = nowMonotonic;
+         LastDisplayEvent  = nowMonotonic;
       }
 
       // ====== Print bandwidth/CPU information line ========================
@@ -539,8 +539,8 @@ void FlowManager::handleEvents(const uint64_t now)
          static const char* colorReceived    = "\x1b[36m";
          static const char* colorCPU         = "\x1b[0m\x1b[31m";
          static const char* colorCPUHighLoad = "\x1b[31;47;21m";
-         const double       duration         = (now - LastDisplayEvent) / 1000000.0;
-         const unsigned int totalDuration    = static_cast<unsigned int>((now - FirstDisplayEvent) / 1000000ULL);
+         const double       duration         = (nowMonotonic - LastDisplayEvent) / 1000000.0;
+         const unsigned int totalDuration    = static_cast<unsigned int>((nowMonotonic - FirstDisplayEvent) / 1000000ULL);
 
          char cpuUtilization[160];
          cpuUtilization[0] = '\0';
@@ -593,7 +593,7 @@ void FlowManager::handleEvents(const uint64_t now)
          fflush(stdout);
       }
 
-      LastDisplayEvent = now;
+      LastDisplayEvent = nowMonotonic;
       RelGlobalStats.reset();
    }
 
@@ -603,7 +603,7 @@ void FlowManager::handleEvents(const uint64_t now)
 
 // ###### Write scalars #####################################################
 void FlowManager::writeScalarStatistics(const uint64_t measurementID,
-                                        const uint64_t now,
+                                        const uint64_t nowMonotonic,
                                         OutputFile&    scalarFile,
                                         const uint64_t firstStatisticsEvent)
 {
@@ -667,7 +667,7 @@ void FlowManager::writeScalarStatistics(const uint64_t measurementID,
    }
 
    // ====== Write total statistics =========================================
-   const double totalDuration = (now - firstStatisticsEvent) / 1000000.0;
+   const double totalDuration = (nowMonotonic - firstStatisticsEvent) / 1000000.0;
    scalarFile.printf(
       "scalar \"%s.total\" \"First Statistics Event\"  %" PRIu64 "\n"
       "scalar \"%s.total\" \"Last Statistics Event\"   %" PRIu64 "\n"
@@ -691,7 +691,7 @@ void FlowManager::writeScalarStatistics(const uint64_t measurementID,
       "scalar \"%s.total\" \"Lost Frame Rate\"         %1.6f\n"
       ,
       objectName.c_str(), firstStatisticsEvent,
-      objectName.c_str(), now,
+      objectName.c_str(), nowMonotonic,
 
       objectName.c_str(), totalBandwidthStats.TransmittedBytes,
       objectName.c_str(), totalBandwidthStats.TransmittedPackets,
@@ -736,7 +736,7 @@ void FlowManager::writeScalarStatistics(const uint64_t measurementID,
 
 // ###### Write vectors #####################################################
 void FlowManager::writeVectorStatistics(const uint64_t      measurementID,
-                                        const uint64_t      now,
+                                        const uint64_t      nowMonotonic,
                                         OutputFile&         vectorFile,
                                         FlowBandwidthStats& globalStats,
                                         FlowBandwidthStats& relGlobalStats,
@@ -757,7 +757,7 @@ void FlowManager::writeVectorStatistics(const uint64_t      measurementID,
    // ====== Write flow statistics ==========================================
    FlowBandwidthStats lastTotalStats;
    FlowBandwidthStats currentTotalStats;
-   const double duration = (now - lastStatisticsEvent) / 1000000.0;
+   const double duration = (nowMonotonic - lastStatisticsEvent) / 1000000.0;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end(); iterator++) {
        Flow* flow = *iterator;
@@ -778,7 +778,7 @@ void FlowManager::writeVectorStatistics(const uint64_t      measurementID,
             "%06" PRIu64 "\t%" PRIu64 "\t%1.6f\t%1.6f\t%u\t\"%s\"\t%1.3f\t"
                "\"Lost\"\t%" PRIu64 "\t%" PRIu64 "\t%" PRIu64 "\t%" PRIu64 "\t%" PRIu64 "\t%" PRIu64 "\n",
 
-            line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            line + 1, nowMonotonic, (double)(nowMonotonic - firstStatisticsEvent) / 1000000.0, duration,
                flow->FlowID, flow->TrafficSpec.Description.c_str(), flow->Jitter,
                flow->CurrentBandwidthStats.TransmittedBytes,
                flow->CurrentBandwidthStats.TransmittedPackets,
@@ -787,7 +787,7 @@ void FlowManager::writeVectorStatistics(const uint64_t      measurementID,
                relStats.TransmittedPackets,
                relStats.TransmittedFrames,
 
-            line + 2, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            line + 2, nowMonotonic, (double)(nowMonotonic - firstStatisticsEvent) / 1000000.0, duration,
                flow->FlowID, flow->TrafficSpec.Description.c_str(), flow->Jitter,
                flow->CurrentBandwidthStats.ReceivedBytes,
                flow->CurrentBandwidthStats.ReceivedPackets,
@@ -796,7 +796,7 @@ void FlowManager::writeVectorStatistics(const uint64_t      measurementID,
                relStats.ReceivedPackets,
                relStats.ReceivedFrames,
 
-            line + 3, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            line + 3, nowMonotonic, (double)(nowMonotonic - firstStatisticsEvent) / 1000000.0, duration,
                flow->FlowID, flow->TrafficSpec.Description.c_str(), flow->Jitter,
                flow->CurrentBandwidthStats.LostBytes,
                flow->CurrentBandwidthStats.LostPackets,
@@ -823,7 +823,7 @@ void FlowManager::writeVectorStatistics(const uint64_t      measurementID,
       "%06" PRIu64 "\t%" PRIu64 "\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
          "\"Lost\"\t%" PRIu64 "\t%" PRIu64 "\t%" PRIu64 "\t%" PRIu64 "\t%" PRIu64 "\t%" PRIu64 "\n",
 
-      line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+      line + 1, nowMonotonic, (double)(nowMonotonic - firstStatisticsEvent) / 1000000.0, duration,
          currentTotalStats.TransmittedBytes,
          currentTotalStats.TransmittedPackets,
          currentTotalStats.TransmittedFrames,
@@ -831,7 +831,7 @@ void FlowManager::writeVectorStatistics(const uint64_t      measurementID,
          relTotalStats.TransmittedPackets,
          relTotalStats.TransmittedFrames,
 
-      line + 2, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+      line + 2, nowMonotonic, (double)(nowMonotonic - firstStatisticsEvent) / 1000000.0, duration,
          currentTotalStats.ReceivedBytes,
          currentTotalStats.ReceivedPackets,
          currentTotalStats.ReceivedFrames,
@@ -839,7 +839,7 @@ void FlowManager::writeVectorStatistics(const uint64_t      measurementID,
          relTotalStats.ReceivedPackets,
          relTotalStats.ReceivedFrames,
 
-      line + 3, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+      line + 3, nowMonotonic, (double)(nowMonotonic - firstStatisticsEvent) / 1000000.0, duration,
          currentTotalStats.LostBytes,
          currentTotalStats.LostPackets,
          currentTotalStats.LostFrames,
@@ -928,9 +928,9 @@ void FlowManager::run()
 
 
       // ====== Wait for events =============================================
-      uint64_t nowMonotonic = getMonotonicMicroTime();
-      const int timeout = pollTimeout(nowMonotonic, 2,
-                                      nowMonotonic + 2500000ULL,
+      MonotonicMicroTime nowMonotonic = getMonotonicMicroTime();
+      const int timeout = pollTimeout(nowMonotonic.value, 2,
+                                      (nowMonotonic + 2500000ULL).value,
                                       nextEvent);
 #if defined(DEBUG_POLL)
       std::cerr << "poll with timeout=" << timeout << " ms\n";
@@ -944,8 +944,8 @@ void FlowManager::run()
       // ====== Handle events ===============================================
       lock();
 
-      nowMonotonic             = getMonotonicMicroTime();
-      uint64_t const nowSystem = getSystemMicroTime();
+      nowMonotonic                    = getMonotonicMicroTime();
+      const SystemMicroTime nowSystem = getSystemMicroTime();
       if(result > 0) {
          // ====== Handle read events of flows ==============================
          for(unsigned int i = 0; i < FlowSet.size(); i++) {
@@ -1048,8 +1048,8 @@ void FlowManager::run()
       }
 
       // ====== Handle statistics timer =====================================
-      if(getNextEvent() <= nowMonotonic) {
-         handleEvents(nowMonotonic);
+      if(getNextEvent() <= nowMonotonic.value) {
+         handleEvents(nowMonotonic.value);
       }
 
       unlock();

@@ -31,18 +31,19 @@
 #define TRANSFER_H
 
 #include "flow.h"
+#include "tools.h"
 
 #include <cstdint>
 #include <sys/types.h>
 
 
-bool transmitFrame(Flow*          flow,
-                   const uint64_t now);
+bool transmitFrame(Flow*                   flow,
+                   const MonotonicMicroTime now);
 
-bool handleNetPerfMeterData(const bool     isActiveMode,
-                            const uint64_t nowMonotonic,
-                            const uint64_t nowSystem,
-                            const int      protocol,
-                            const int      sd);
+bool handleNetPerfMeterData(const bool               isActiveMode,
+                            const MonotonicMicroTime nowMonotonic,
+                            const SystemMicroTime    nowSystem,
+                            const int                protocol,
+                            const int                sd);
 
 #endif // TRANSFER_H

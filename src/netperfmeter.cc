@@ -1416,7 +1416,7 @@ static bool mainLoop(const bool     isActiveMode,
 #if defined(HAVE_QUIC)
    int                quicID  = -1;
 #endif
-   uint64_t           nowMonotonic = getMonotonicMicroTime();
+   MonotonicMicroTime nowMonotonic = getMonotonicMicroTime();
    std::map<int, pollfd*> pollFDIndex;
 
 
@@ -1451,9 +1451,9 @@ static bool mainLoop(const bool     isActiveMode,
 
 
    // ====== Use poll() to wait for events ==================================
-   const int timeout = pollTimeout(nowMonotonic, 2,
+   const int timeout = pollTimeout(nowMonotonic.value, 2,
                                    stopAt,
-                                   nowMonotonic + 1000000);
+                                   nowMonotonic.value + 1000000);
 
    // printf("timeout=%d\n",timeout);
    const int result = ext_poll((pollfd*)&fds, n, timeout);
@@ -1461,8 +1461,8 @@ static bool mainLoop(const bool     isActiveMode,
 
 
    // ====== Handle socket events ===========================================
-   nowMonotonic             = getMonotonicMicroTime();   // Get current time.
-   const uint64_t nowSystem = getSystemMicroTime();
+   nowMonotonic                    = getMonotonicMicroTime();   // Get current time.
+   const SystemMicroTime nowSystem = getSystemMicroTime();
    if(result > 0) {
 
       // ====== Incoming control message ====================================
@@ -1658,7 +1658,7 @@ static bool mainLoop(const bool     isActiveMode,
    }
 
    // ====== Stop-time reached ==============================================
-   if(nowMonotonic >= stopAt) {
+   if(nowMonotonic.value >= stopAt) {
       gStopTimeReached = true;
    }
    return true;
@@ -2196,7 +2196,7 @@ static void passiveMode(const uint16_t localPort)
    FlowManager::getFlowManager()->configureDisplay(gDisplayEnabled);
 
    const uint64_t stopAt = (gRuntime > 0) ?
-      (getMonotonicMicroTime() + static_cast<uint64_t>(rint(gRuntime * 1000000.0))) : ~0ULL;
+      (getMonotonicMicroTime().value + static_cast<uint64_t>(rint(gRuntime * 1000000.0))) : ~0ULL;
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       mainLoop(false, stopAt);
    }
@@ -2482,7 +2482,7 @@ static void activeMode(const char* remoteEndpoint)
 
    // ====== Main loop ======================================================
    const uint64_t stopAt = (gRuntime > 0) ?
-      (getMonotonicMicroTime() + static_cast<uint64_t>(rint(gRuntime * 1000000.0))) : ~0ULL;
+      (getMonotonicMicroTime().value + static_cast<uint64_t>(rint(gRuntime * 1000000.0))) : ~0ULL;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
 
