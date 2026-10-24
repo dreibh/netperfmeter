@@ -32,17 +32,13 @@
 
 #include "fileio.h"
 
-#include <bzlib.h>
-#include <lzma.h>
-#include <zlib.h>
-#include <zstd.h>
-
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -106,7 +102,7 @@ class OutputFileException : public std::runtime_error
 class OutputFile
 {
    public:
-   OutputFile() = default;
+   OutputFile();
    ~OutputFile();
 
    OutputFile(const OutputFile&) = delete;
@@ -132,27 +128,20 @@ class OutputFile
    void write(std::string_view data);
    void writeLine(std::string_view line);
 
-   [[nodiscard]] inline bool exists() const noexcept {
-      return File != nullptr || BZFile != nullptr || GZFile != nullptr ||
-             LZMAInitialized || ZSTDCStream != nullptr;
-   }
-
+   [[nodiscard]] bool exists() const noexcept;
    [[nodiscard]] inline OutputFileFormat getFormat() const noexcept { return Format; }
-   [[nodiscard]] inline FILE* getFile() const noexcept              { return File;   }
-   [[nodiscard]] inline const std::string& getName() const noexcept { return Name;   }
-   [[nodiscard]] inline unsigned long long getLine() const noexcept { return Line;   }
+   [[nodiscard]] FILE* getFile() const noexcept;
+   [[nodiscard]] inline const std::string& getName() const noexcept { return Name; }
+   [[nodiscard]] inline unsigned long long getLine() const noexcept { return Line; }
    inline unsigned long long nextLine() noexcept                    { return Line++; }
 
    private:
+   struct Impl;
+   std::unique_ptr<Impl> Pimpl;
+
    OutputFileFormat   Format             { OutputFileFormat::None };
    std::string        Name;
    unsigned long long Line               { 0 };
-   FILE*              File               { nullptr };
-   BZFILE*            BZFile             { nullptr };
-   gzFile             GZFile             { nullptr };
-   lzma_stream        LZMAStream         {};
-   bool               LZMAInitialized    { false };
-   ZSTD_CStream*      ZSTDCStream        { nullptr };
    unsigned long long PlainBytesIn       { 0 };
    unsigned long long CompressedBytesOut { 0 };
    bool               WriteError         { false };

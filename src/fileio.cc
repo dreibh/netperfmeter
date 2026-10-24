@@ -32,12 +32,18 @@
 #include "outputfile.h"
 
 #include <cstring>
+#include <filesystem>
 #include <fstream>
+#include <lzma.h>
+#include <system_error>
 #include <unistd.h>
+#include <zstd.h>
 
-const char* lzmaErrorToString(const lzma_ret ret) noexcept
+
+// ###### Get LZMA error string #############################################
+const char* lzmaErrorToString(const int ret) noexcept
 {
-   switch(ret) {
+   switch(static_cast<lzma_ret>(ret)) {
       case LZMA_OK:             return "Operation completed successfully";
       case LZMA_STREAM_END:     return "End of stream reached";
       case LZMA_MEM_ERROR:      return "Cannot allocate memory";
@@ -51,6 +57,8 @@ const char* lzmaErrorToString(const lzma_ret ret) noexcept
    }
 }
 
+
+// ###### Detect format from buffer header ##################################
 FileFormat detectFormatFromHeader(const void* data, const size_t size) noexcept
 {
    if(size >= 3 && std::memcmp(data, "BZh", 3) == 0) {
@@ -72,6 +80,8 @@ FileFormat detectFormatFromHeader(const void* data, const size_t size) noexcept
    return FileFormat::Plain;
 }
 
+
+// ###### Detect format from file content ###################################
 FileFormat detectFormatFromContent(const std::filesystem::path& path)
 {
    std::ifstream f(path, std::ios::binary);
@@ -84,6 +94,37 @@ FileFormat detectFormatFromContent(const std::filesystem::path& path)
    return detectFormatFromHeader(header, bytesRead);
 }
 
+
+// ###### Get maximum compression level for format ##########################
+unsigned int getMaxCompressionLevel(const FileFormat format) noexcept
+{
+   switch(format) {
+      case FileFormat::BZip2:
+      case FileFormat::GZip:
+      case FileFormat::XZ:
+         return 9;
+      case FileFormat::ZSTD:
+         return static_cast<unsigned int>(ZSTD_maxCLevel());
+      case FileFormat::Plain:
+      case FileFormat::None:
+      default:
+         return 0;
+   }
+}
+
+
+// ###### Validate compression level for format #############################
+bool isValidCompressionLevel(const FileFormat format, const int level) noexcept
+{
+   if(level < 0) {
+      return false;
+   }
+   const unsigned int uLevel = static_cast<unsigned int>(level);
+   return uLevel >= getMinCompressionLevel(format) && uLevel <= getMaxCompressionLevel(format);
+}
+
+
+// ###### Transform file (explicit formats) #################################
 void transformFile(const std::filesystem::path& sourcePath,
                    const FileFormat             sourceFormat,
                    const std::filesystem::path& destinationPath,
@@ -139,6 +180,8 @@ void transformFile(const std::filesystem::path& sourcePath,
    }
 }
 
+
+// ###### Transform file (auto-detect source format) #########################
 void transformFile(const std::filesystem::path& sourcePath,
                    const std::filesystem::path& destinationPath,
                    const FileFormat             destinationFormat,
@@ -147,4 +190,3 @@ void transformFile(const std::filesystem::path& sourcePath,
    const FileFormat sourceFormat = detectFormatFromContent(sourcePath);
    transformFile(sourcePath, sourceFormat, destinationPath, destinationFormat, compressionLevel);
 }
-

@@ -5,8 +5,8 @@ includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 
 Name: libfileio
 Description: Cross-platform C++ system for reading/writing compressed files
-Version: @BUILD_VERSION@
+Version: @PROJECT_VERSION@
 
 Libs: -L${libdir} -lfileio
 Libs.private: @PC_LIBS_PRIVATE@
-Cflags: -I${includedir}
+Cflags: -I${includedir} -I${includedir}/fileio @PC_CFLAGS@

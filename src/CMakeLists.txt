@@ -55,7 +55,7 @@ LIST(APPEND libfileio_sources
    outputfile.cc
 )
 INSTALL(FILES       ${libfileio_headers}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/netperfmeter)
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/fileio)
 
 # --- Assemble library dependencies --------------------------------------
 SET(libfileio_dependencies
@@ -84,13 +84,13 @@ FOREACH(TYPE shared;static)
          WINDOWS_EXPORT_ALL_SYMBOLS ON
       )
       TARGET_INCLUDE_DIRECTORIES(libfileio-${TYPE}
-                                 PUBLIC  ${ZSTD_INCLUDE_DIR}
+                                 PRIVATE ${ZSTD_INCLUDE_DIR}
                                          ${LZMA_INCLUDE_DIR}
                                          ${BZ2_INCLUDE_DIR}
                                          ${Z_INCLUDE_DIR})
       TARGET_LINK_LIBRARIES(libfileio-${TYPE}
-                            PUBLIC ${libfileio_dependencies})
-      INSTALL(TARGETS             libfileio-${TYPE}
+                            PRIVATE ${libfileio_dependencies})
+      INSTALL(TARGETS               libfileio-${TYPE}
               RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
               ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
               LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -103,7 +103,10 @@ FOREACH(dependency ${libfileio_dependencies})
    IF (dependency MATCHES "^-")
       STRING(APPEND PC_LIBS_PRIVATE " ${dependency}")
    ELSEIF (IS_ABSOLUTE "${dependency}")
-      STRING(APPEND PC_LIBS_PRIVATE " ${dependency}")
+      # Strip path, extension (.so, .a, .dylib), and leading "lib" to yield -l<name>
+      GET_FILENAME_COMPONENT(dep_name "${dependency}" NAME_WE)
+      STRING(REGEX REPLACE "^lib" "" dep_name "${dep_name}")
+      STRING(APPEND PC_LIBS_PRIVATE " -l${dep_name}")
    ELSE()
       STRING(APPEND PC_LIBS_PRIVATE " -l${dependency}")
    ENDIF()

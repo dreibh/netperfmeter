@@ -14,12 +14,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -30,11 +30,49 @@
 #include "inputfile.h"
 
 #include <algorithm>
+#include <bzlib.h>
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
+#include <lzma.h>
 #include <utility>
+#include <zlib.h>
+#include <zstd.h>
+
+
+// ###### Private Implementation Structure ##################################
+struct InputFile::Impl
+{
+   FILE*         File            { nullptr };
+   BZFILE*       BZFile          { nullptr };
+   gzFile        GZFile          { nullptr };
+   lzma_stream   LZMAStream      {};
+   bool          LZMAInitialized { false };
+   ZSTD_DStream* ZSTDDStream     { nullptr };
+
+   uint8_t       RawBuffer[16384];
+   size_t        RawBufferPos    { 0 };
+   size_t        RawBufferSize   { 0 };
+   bool          RawFileEof      { false };
+   bool          StreamEof       { false };   // Track logical end-of-stream
+
+   // Stored leftover uncompressed text from line reading
+   size_t        StoragePos      { 0 };
+   char          Storage[16384];
+
+   [[nodiscard]] bool exists() const noexcept {
+      return File != nullptr || BZFile != nullptr || GZFile != nullptr ||
+             LZMAInitialized || ZSTDDStream != nullptr;
+   }
+};
+
+
+// ###### Constructor #######################################################
+InputFile::InputFile()
+   : Pimpl(std::make_unique<Impl>())
+{
+}
 
 
 // ###### Destructor ########################################################
@@ -51,41 +89,16 @@ InputFile::~InputFile()
 
 // ###### Move Constructor ##################################################
 InputFile::InputFile(InputFile&& other) noexcept
-   : Format(other.Format),
+   : Pimpl(std::move(other.Pimpl)),
+     Format(other.Format),
      Name(std::move(other.Name)),
-     Line(other.Line),
-     File(other.File),
-     BZFile(other.BZFile),
-     GZFile(other.GZFile),
-     LZMAStream(other.LZMAStream),
-     LZMAInitialized(other.LZMAInitialized),
-     ZSTDDStream(other.ZSTDDStream),
-     RawBufferPos(other.RawBufferPos),
-     RawBufferSize(other.RawBufferSize),
-     RawFileEof(other.RawFileEof),
-     StreamEof(other.StreamEof),
-     StoragePos(other.StoragePos)
+     Line(other.Line)
 {
-   if(other.RawBufferSize > 0) {
-      std::memcpy(RawBuffer, other.RawBuffer, other.RawBufferSize);
+   other.Format = InputFileFormat::None;
+   other.Line   = 0;
+   if(!other.Pimpl) {
+      other.Pimpl = std::make_unique<Impl>();
    }
-   if(other.StoragePos > 0) {
-      std::memcpy(Storage, other.Storage, other.StoragePos);
-   }
-
-   other.Format          = InputFileFormat::None;
-   other.Line            = 0;
-   other.File            = nullptr;
-   other.BZFile          = nullptr;
-   other.GZFile          = nullptr;
-   std::memset(&other.LZMAStream, 0, sizeof(lzma_stream));
-   other.LZMAInitialized = false;
-   other.ZSTDDStream     = nullptr;
-   other.RawBufferPos    = 0;
-   other.RawBufferSize   = 0;
-   other.RawFileEof      = false;
-   other.StreamEof       = false;
-   other.StoragePos      = 0;
 }
 
 
@@ -99,43 +112,32 @@ InputFile& InputFile::operator=(InputFile&& other) noexcept
       catch(...) {
       }
 
-      Format          = other.Format;
-      Name            = std::move(other.Name);
-      Line            = other.Line;
-      File            = other.File;
-      BZFile          = other.BZFile;
-      GZFile          = other.GZFile;
-      LZMAStream      = other.LZMAStream;
-      LZMAInitialized = other.LZMAInitialized;
-      ZSTDDStream     = other.ZSTDDStream;
-      RawBufferPos    = other.RawBufferPos;
-      RawBufferSize   = other.RawBufferSize;
-      RawFileEof      = other.RawFileEof;
-      StreamEof       = other.StreamEof;
-      StoragePos      = other.StoragePos;
+      Pimpl  = std::move(other.Pimpl);
+      Format = other.Format;
+      Name   = std::move(other.Name);
+      Line   = other.Line;
 
-      if(other.RawBufferSize > 0) {
-         std::memcpy(RawBuffer, other.RawBuffer, other.RawBufferSize);
+      other.Format = InputFileFormat::None;
+      other.Line   = 0;
+      if(!other.Pimpl) {
+         other.Pimpl = std::make_unique<Impl>();
       }
-      if(other.StoragePos > 0) {
-         std::memcpy(Storage, other.Storage, other.StoragePos);
-      }
-
-      other.Format          = InputFileFormat::None;
-      other.Line            = 0;
-      other.File            = nullptr;
-      other.BZFile          = nullptr;
-      other.GZFile          = nullptr;
-      std::memset(&other.LZMAStream, 0, sizeof(lzma_stream));
-      other.LZMAInitialized = false;
-      other.ZSTDDStream     = nullptr;
-      other.RawBufferPos    = 0;
-      other.RawBufferSize   = 0;
-      other.RawFileEof      = false;
-      other.StreamEof       = false;
-      other.StoragePos      = 0;
    }
    return *this;
+}
+
+
+// ###### Check whether file exists/is open #################################
+bool InputFile::exists() const noexcept
+{
+   return Pimpl && Pimpl->exists();
+}
+
+
+// ###### Get underlying FILE* ##############################################
+FILE* InputFile::getFile() const noexcept
+{
+   return Pimpl ? Pimpl->File : nullptr;
 }
 
 
@@ -153,77 +155,81 @@ void InputFile::initialize(const std::filesystem::path& name,
 {
    finish();
 
-   StoragePos      = 0;
-   Line            = 0;
-   Format          = format;
-   Name            = name.string();
-   File            = nullptr;
-   BZFile          = nullptr;
-   GZFile          = nullptr;
-   std::memset(&LZMAStream, 0, sizeof(lzma_stream));
-   LZMAInitialized = false;
-   ZSTDDStream     = nullptr;
-   RawBufferPos    = 0;
-   RawBufferSize   = 0;
-   RawFileEof      = false;
-   StreamEof       = false;
+   if(!Pimpl) {
+      Pimpl = std::make_unique<Impl>();
+   }
+
+   Pimpl->StoragePos      = 0;
+   Line                   = 0;
+   Format                 = format;
+   Name                   = name.string();
+   Pimpl->File            = nullptr;
+   Pimpl->BZFile          = nullptr;
+   Pimpl->GZFile          = nullptr;
+   std::memset(&Pimpl->LZMAStream, 0, sizeof(lzma_stream));
+   Pimpl->LZMAInitialized = false;
+   Pimpl->ZSTDDStream     = nullptr;
+   Pimpl->RawBufferPos    = 0;
+   Pimpl->RawBufferSize   = 0;
+   Pimpl->RawFileEof      = false;
+   Pimpl->StreamEof       = false;
 
    if(format == InputFileFormat::None) {
       return;
    }
    else if(format == InputFileFormat::GZip) {
       if(!Name.empty()) {
-         GZFile = gzopen(Name.c_str(), "rb");
+         Pimpl->GZFile = gzopen(Name.c_str(), "rb");
       }
-      if(GZFile == nullptr) {
+      if(Pimpl->GZFile == nullptr) {
          throw InputFileException("Unable to open GZip input file", Name, errno);
       }
    }
    else {
-      File = !Name.empty() ? std::fopen(Name.c_str(), "rb") : std::tmpfile();
-      if(File == nullptr) {
+      Pimpl->File = !Name.empty() ? std::fopen(Name.c_str(), "rb") : std::tmpfile();
+      if(Pimpl->File == nullptr) {
          throw InputFileException("Unable to open input file", Name, errno);
       }
 
       if(format == InputFileFormat::BZip2) {
          int bzerror = BZ_OK;
-         BZFile = BZ2_bzReadOpen(&bzerror, File, 0, 0, nullptr, 0);
-         if(bzerror != BZ_OK || BZFile == nullptr) {
+         Pimpl->BZFile = BZ2_bzReadOpen(&bzerror, Pimpl->File, 0, 0, nullptr, 0);
+         if(bzerror != BZ_OK || Pimpl->BZFile == nullptr) {
             const int err = bzerror;
-            const char* reason = BZ2_bzerror(BZFile, &bzerror);
-            BZ2_bzReadClose(&bzerror, BZFile);
-            BZFile = nullptr;
-            std::fclose(File);
-            File = nullptr;
+            const char* reason = BZ2_bzerror(Pimpl->BZFile, &bzerror);
+            BZ2_bzReadClose(&bzerror, Pimpl->BZFile);
+            Pimpl->BZFile = nullptr;
+            std::fclose(Pimpl->File);
+            Pimpl->File = nullptr;
             throw InputFileException("Unable to initialize BZip2 decompression",
                                      Name, err, reason ? reason : "Unknown BZip2 error");
          }
       }
       else if(format == InputFileFormat::XZ) {
-         const lzma_ret ret = lzma_auto_decoder(&LZMAStream, UINT64_MAX, 0);
+         const lzma_ret ret = lzma_auto_decoder(&Pimpl->LZMAStream, UINT64_MAX, 0);
          if(ret != LZMA_OK) {
-            std::fclose(File);
-            File = nullptr;
+            std::fclose(Pimpl->File);
+            Pimpl->File = nullptr;
             throw InputFileException("Unable to initialize XZ decompression",
-                                     Name, static_cast<int>(ret), lzmaErrorToString(ret));
+                                     Name, static_cast<int>(ret), lzmaErrorToString(static_cast<int>(ret)));
          }
-         LZMAStream.next_in  = nullptr;
-         LZMAStream.avail_in = 0;
-         LZMAInitialized     = true;
+         Pimpl->LZMAStream.next_in  = nullptr;
+         Pimpl->LZMAStream.avail_in = 0;
+         Pimpl->LZMAInitialized     = true;
       }
       else if(format == InputFileFormat::ZSTD) {
-         ZSTDDStream = ZSTD_createDStream();
-         if(ZSTDDStream == nullptr) {
-            std::fclose(File);
-            File = nullptr;
+         Pimpl->ZSTDDStream = ZSTD_createDStream();
+         if(Pimpl->ZSTDDStream == nullptr) {
+            std::fclose(Pimpl->File);
+            Pimpl->File = nullptr;
             throw InputFileException("Unable to create Zstandard decompression stream", Name);
          }
-         const size_t ret = ZSTD_initDStream(ZSTDDStream);
+         const size_t ret = ZSTD_initDStream(Pimpl->ZSTDDStream);
          if(ZSTD_isError(ret)) {
-            ZSTD_freeDStream(ZSTDDStream);
-            ZSTDDStream = nullptr;
-            std::fclose(File);
-            File = nullptr;
+            ZSTD_freeDStream(Pimpl->ZSTDDStream);
+            Pimpl->ZSTDDStream = nullptr;
+            std::fclose(Pimpl->File);
+            Pimpl->File = nullptr;
             throw InputFileException("Unable to initialize Zstandard decompression",
                                      Name, static_cast<int>(ret), ZSTD_getErrorName(ret));
          }
@@ -235,68 +241,72 @@ void InputFile::initialize(const std::filesystem::path& name,
 // ###### Finish input file #################################################
 void InputFile::finish(const bool closeFile)
 {
-   if(ZSTDDStream) {
-      ZSTD_freeDStream(ZSTDDStream);
-      ZSTDDStream = nullptr;
+   if(!Pimpl) {
+      return;
    }
 
-   if(LZMAInitialized) {
-      lzma_end(&LZMAStream);
-      std::memset(&LZMAStream, 0, sizeof(lzma_stream));
-      LZMAInitialized = false;
+   if(Pimpl->ZSTDDStream) {
+      ZSTD_freeDStream(Pimpl->ZSTDDStream);
+      Pimpl->ZSTDDStream = nullptr;
    }
 
-   if(GZFile) {
-      gzclose(GZFile);
-      GZFile = nullptr;
+   if(Pimpl->LZMAInitialized) {
+      lzma_end(&Pimpl->LZMAStream);
+      std::memset(&Pimpl->LZMAStream, 0, sizeof(lzma_stream));
+      Pimpl->LZMAInitialized = false;
    }
 
-   if(BZFile) {
+   if(Pimpl->GZFile) {
+      gzclose(Pimpl->GZFile);
+      Pimpl->GZFile = nullptr;
+   }
+
+   if(Pimpl->BZFile) {
       int bzerror = BZ_OK;
-      BZ2_bzReadClose(&bzerror, BZFile);
-      BZFile = nullptr;
+      BZ2_bzReadClose(&bzerror, Pimpl->BZFile);
+      Pimpl->BZFile = nullptr;
    }
 
-   if(File) {
+   if(Pimpl->File) {
       if(closeFile) {
-         if(std::fclose(File) != 0) {
-            File = nullptr;
+         if(std::fclose(Pimpl->File) != 0) {
+            Pimpl->File = nullptr;
             throw InputFileException("Unable to close input file", Name, errno);
          }
-         File = nullptr;
+         Pimpl->File = nullptr;
       }
       else {
-         std::rewind(File);
+         std::rewind(Pimpl->File);
       }
    }
 
-   RawBufferPos  = 0;
-   RawBufferSize = 0;
-   RawFileEof    = false;
-   StreamEof     = false;
+   Pimpl->RawBufferPos  = 0;
+   Pimpl->RawBufferSize = 0;
+   Pimpl->RawFileEof    = false;
+   Pimpl->StreamEof     = false;
 }
 
 
 // ###### Bulk read from file ###############################################
 size_t InputFile::read(char* const buffer, const size_t bufferSize)
 {
-   if(!exists() || bufferSize == 0) {
+   if(!exists() || bufferSize == 0 || !Pimpl) {
       return 0;
    }
 
    size_t delivered = 0;
 
    // 1. Drain any leftover data in Storage
-   if(StoragePos > 0) {
-      const size_t toCopy = std::min(bufferSize, StoragePos);
-      std::memcpy(buffer, Storage, toCopy);
+   if(Pimpl->StoragePos > 0) {
+      const size_t toCopy = std::min(bufferSize, Pimpl->StoragePos);
+      std::memcpy(buffer, Pimpl->Storage, toCopy);
       delivered += toCopy;
-      if(toCopy < StoragePos) {
-         std::memmove(Storage, Storage + toCopy, StoragePos - toCopy);
-         StoragePos -= toCopy;
+      if(toCopy < Pimpl->StoragePos) {
+         std::memmove(Pimpl->Storage, Pimpl->Storage + toCopy, Pimpl->StoragePos - toCopy);
+         Pimpl->StoragePos -= toCopy;
          return delivered;
       }
-      StoragePos = 0;
+      Pimpl->StoragePos = 0;
       if(delivered == bufferSize) {
          return delivered;
       }
@@ -310,21 +320,21 @@ size_t InputFile::read(char* const buffer, const size_t bufferSize)
    if(Format == InputFileFormat::ZSTD) {
       ZSTD_outBuffer out = { dest, bytesToRead, 0 };
       while(out.pos < out.size) {
-         if(RawBufferPos >= RawBufferSize && !RawFileEof) {
-            const size_t n = std::fread(RawBuffer, 1, sizeof(RawBuffer), File);
+         if(Pimpl->RawBufferPos >= Pimpl->RawBufferSize && !Pimpl->RawFileEof) {
+            const size_t n = std::fread(Pimpl->RawBuffer, 1, sizeof(Pimpl->RawBuffer), Pimpl->File);
             if(n == 0) {
-               RawFileEof = true;
+               Pimpl->RawFileEof = true;
             }
-            RawBufferPos  = 0;
-            RawBufferSize = n;
+            Pimpl->RawBufferPos  = 0;
+            Pimpl->RawBufferSize = n;
          }
-         if(RawBufferPos >= RawBufferSize && RawFileEof) {
+         if(Pimpl->RawBufferPos >= Pimpl->RawBufferSize && Pimpl->RawFileEof) {
             break;
          }
 
-         ZSTD_inBuffer in = { RawBuffer, RawBufferSize, RawBufferPos };
-         const size_t ret = ZSTD_decompressStream(ZSTDDStream, &out, &in);
-         RawBufferPos = in.pos;
+         ZSTD_inBuffer in = { Pimpl->RawBuffer, Pimpl->RawBufferSize, Pimpl->RawBufferPos };
+         const size_t ret = ZSTD_decompressStream(Pimpl->ZSTDDStream, &out, &in);
+         Pimpl->RawBufferPos = in.pos;
 
          if(ZSTD_isError(ret)) {
             throw InputFileException("Failed to decompress Zstandard data",
@@ -339,46 +349,46 @@ size_t InputFile::read(char* const buffer, const size_t bufferSize)
 
    // ====== XZ =============================================================
    else if(Format == InputFileFormat::XZ) {
-      if(StreamEof) {
+      if(Pimpl->StreamEof) {
          return delivered;
       }
-      LZMAStream.next_out  = reinterpret_cast<uint8_t*>(dest);
-      LZMAStream.avail_out = bytesToRead;
+      Pimpl->LZMAStream.next_out  = reinterpret_cast<uint8_t*>(dest);
+      Pimpl->LZMAStream.avail_out = bytesToRead;
 
-      while(LZMAStream.avail_out > 0) {
-         if(LZMAStream.avail_in == 0 && !RawFileEof) {
-            const size_t n = std::fread(RawBuffer, 1, sizeof(RawBuffer), File);
+      while(Pimpl->LZMAStream.avail_out > 0) {
+         if(Pimpl->LZMAStream.avail_in == 0 && !Pimpl->RawFileEof) {
+            const size_t n = std::fread(Pimpl->RawBuffer, 1, sizeof(Pimpl->RawBuffer), Pimpl->File);
             if(n == 0) {
-               RawFileEof = true;
+               Pimpl->RawFileEof = true;
             }
-            LZMAStream.next_in  = RawBuffer;
-            LZMAStream.avail_in = n;
+            Pimpl->LZMAStream.next_in  = Pimpl->RawBuffer;
+            Pimpl->LZMAStream.avail_in = n;
          }
 
-         const lzma_action action = RawFileEof ? LZMA_FINISH : LZMA_RUN;
-         const lzma_ret ret = lzma_code(&LZMAStream, action);
+         const lzma_action action = Pimpl->RawFileEof ? LZMA_FINISH : LZMA_RUN;
+         const lzma_ret ret = lzma_code(&Pimpl->LZMAStream, action);
 
          if(ret == LZMA_STREAM_END) {
-            StreamEof = true;
+            Pimpl->StreamEof = true;
             break;
          }
          else if(ret != LZMA_OK) {
             throw InputFileException("Failed to decompress XZ data",
-                                     Name, static_cast<int>(ret), lzmaErrorToString(ret));
+                                     Name, static_cast<int>(ret), lzmaErrorToString(static_cast<int>(ret)));
          }
-         else if(LZMAStream.avail_in == 0 && RawFileEof) {
+         else if(Pimpl->LZMAStream.avail_in == 0 && Pimpl->RawFileEof) {
             break;
          }
       }
-      return delivered + (bytesToRead - LZMAStream.avail_out);
+      return delivered + (bytesToRead - Pimpl->LZMAStream.avail_out);
    }
 
    // ====== GZip ===========================================================
    else if(Format == InputFileFormat::GZip) {
-      const int count = gzread(GZFile, dest, static_cast<unsigned int>(bytesToRead));
+      const int count = gzread(Pimpl->GZFile, dest, static_cast<unsigned int>(bytesToRead));
       if(count < 0) {
          int errnum = 0;
-         const char* reason = gzerror(GZFile, &errnum);
+         const char* reason = gzerror(Pimpl->GZFile, &errnum);
          throw InputFileException("Failed to read from GZip file", Name, errnum, reason ? reason : "zlib error");
       }
       return delivered + static_cast<size_t>(count);
@@ -386,16 +396,16 @@ size_t InputFile::read(char* const buffer, const size_t bufferSize)
 
    // ====== BZip2 ==========================================================
    else if(Format == InputFileFormat::BZip2) {
-      if(StreamEof) {
+      if(Pimpl->StreamEof) {
          return delivered;
       }
       int bzerror = BZ_OK;
-      const int count = BZ2_bzRead(&bzerror, BZFile, dest, static_cast<int>(bytesToRead));
+      const int count = BZ2_bzRead(&bzerror, Pimpl->BZFile, dest, static_cast<int>(bytesToRead));
       if(bzerror == BZ_STREAM_END) {
-         StreamEof = true;
+         Pimpl->StreamEof = true;
       }
       else if(bzerror != BZ_OK) {
-         const char* reason = BZ2_bzerror(BZFile, &bzerror);
+         const char* reason = BZ2_bzerror(Pimpl->BZFile, &bzerror);
          throw InputFileException("Failed to read from BZip2 file",
                                   Name, bzerror, reason ? reason : "BZip2 error");
       }
@@ -404,8 +414,8 @@ size_t InputFile::read(char* const buffer, const size_t bufferSize)
 
    // ====== Plain text =====================================================
    else if(Format == InputFileFormat::Plain) {
-      const size_t count = std::fread(dest, 1, bytesToRead, File);
-      if(count == 0 && std::ferror(File)) {
+      const size_t count = std::fread(dest, 1, bytesToRead, Pimpl->File);
+      if(count == 0 && std::ferror(Pimpl->File)) {
          throw InputFileException("Failed to read from file", Name, errno);
       }
       return delivered + count;
@@ -420,7 +430,7 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
 {
    eof = false;
 
-   if(bufferSize < 1) {
+   if(bufferSize < 1 || !Pimpl) {
       return -1;
    }
    bufferSize--; // Reserve space for terminating null character
@@ -431,13 +441,13 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
       for(size_t i = 0; i < currentLen; ++i) {
          if(buffer[i] == '\n') {
             const size_t remaining = currentLen - i - 1;
-            if(remaining > sizeof(Storage)) {
+            if(remaining > sizeof(Pimpl->Storage)) {
                throw InputFileException("Buffer overflow while storing remaining line data", Name);
             }
             if(remaining > 0) {
-               std::memcpy(Storage, buffer + i + 1, remaining);
+               std::memcpy(Pimpl->Storage, buffer + i + 1, remaining);
             }
-            StoragePos = remaining;
+            Pimpl->StoragePos = remaining;
             buffer[i]  = 0x00;
             Line++;
             return static_cast<ssize_t>(i);
@@ -450,7 +460,7 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
             Name);
       }
 
-      const size_t bytesToRead = std::min(sizeof(Storage), bufferSize - currentLen);
+      const size_t bytesToRead = std::min(sizeof(Pimpl->Storage), bufferSize - currentLen);
       const size_t n = read(buffer + currentLen, bytesToRead);
       if(n == 0) {
          if(currentLen == 0) {
