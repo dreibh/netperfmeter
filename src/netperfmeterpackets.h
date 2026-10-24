@@ -241,7 +241,9 @@ struct NPM_PACKED NetPerfMeterStartMessage
 {
    NetPerfMeterHeader Header;
 
-   uint32_t           Padding;
+   uint8_t            VectorFormat;
+   uint8_t            ScalarFormat;
+   uint16_t           Padding;
    uint64_t           MeasurementID;
 };
 

@@ -1117,8 +1117,6 @@ static int client_handshake(int            sd,
 static Flow* createFlow(Flow*                  previousFlow,
                         const char*            parameters,
                         const uint64_t         measurementID,
-                        const char*            gVectorNamePattern,
-                        const OutputFileFormat gVectorFileFormat,
                         const int              initialProtocol,
                         const sockaddr_union&  remoteAddress)
 {
@@ -1210,19 +1208,6 @@ static Flow* createFlow(Flow*                  previousFlow,
    }
    Flow* flow = new Flow(measurementID, flowID, streamID, trafficSpec);
    assure(flow != nullptr);
-
-   // ====== Initialize vector file =========================================
-   const std::string vectorName = flow->getNodeOutputName(gVectorNamePattern,
-                                                          "active",
-                                                          formatText("-{:08x}-{:04x}", flowID, streamID));
-   try {
-      flow->initializeVectorFile(vectorName.c_str(), gVectorFileFormat);
-   }
-   catch(const OutputFileException& ex) {
-      // TRANSLATORS: Error message when vector output file cannot be opened. Placeholders: {} 1: file path, 2: failure reason.
-      std::cerr << formatText(gettext("ERROR: Unable to create vector file <{}>: {}!"), vectorName, ex.getReason()) << "\n";
-      exit(1);
-   }
 
    // ====== Initialise destination address =================================
    sockaddr_union destinationAddress = remoteAddress;
@@ -2463,7 +2448,6 @@ static void activeMode(const char* remoteEndpoint)
             flowIterator != assocSpec.Flows.end(); flowIterator++) {
             const char* flowSpec = *flowIterator;
             lastFlow = createFlow(lastFlow, flowSpec, measurementID,
-                                  gVectorNamePattern, gVectorFileFormat,
                                   assocSpec.Protocol, remoteAddress);
             if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
                LOG_FATAL

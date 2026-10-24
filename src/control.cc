@@ -14,12 +14,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -295,12 +295,6 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       NetPerfMeterIdentifyMessage identifyMsg;
       identifyMsg.Header.Type   = NETPERFMETER_IDENTIFY_FLOW;
       identifyMsg.Header.Flags  = 0x00;
-      if(flow->getVectorFile().getFormat() == OFF_None) {
-         identifyMsg.Header.Flags |= NPMIF_NO_VECTORS;
-      }
-      else if(flow->getVectorFile().getFormat() == OFF_BZip2) {
-         identifyMsg.Header.Flags |= NPMIF_COMPRESS_VECTORS;
-      }
       identifyMsg.Header.Length = htobe16(sizeof(identifyMsg));
       identifyMsg.MagicNumber   = htobe64(NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER);
       identifyMsg.MeasurementID = htobe64(flow->getMeasurementID());
@@ -392,7 +386,6 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          iterator != FlowManager::getFlowManager()->getFlowSet().end();
          iterator++) {
          const Flow* flow = *iterator;
-         const std::string extension = formatText("-{:08x}-{:04x}", flow->getFlowID(), flow->getStreamID());
          fprintf(configFile, "FLOW%u_DESCRIPTION=\"%s\"\n",                  flow->getFlowID(), flow->getTrafficSpec().Description.c_str());
          fprintf(configFile, "FLOW%u_PROTOCOL=\"%s\"\n",                     flow->getFlowID(), getProtocolName(flow->getTrafficSpec().Protocol));
          for(unsigned int i = 0;i < NETPERFMETER_RNG_INPUT_PARAMETERS;i++) {
@@ -418,7 +411,9 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
          fprintf(configFile, "FLOW%u_NODELAY=\"%s\"\n",                      flow->getFlowID(), (flow->getTrafficSpec().NoDelay == true) ? "on" : "off");
          fprintf(configFile, "FLOW%u_DEBUG=\"%s\"\n",                        flow->getFlowID(), (flow->getTrafficSpec().Debug == true) ? "on" : "off");
          fprintf(configFile, "FLOW%u_CC=\"%s\"\n",                           flow->getFlowID(), flow->getTrafficSpec().CongestionControl.c_str());
-         fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(), flow->getVectorFile().getName().c_str());
+         fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(),
+                              Flow::getNodeOutputName(vectorNamePattern, "active",
+                                 formatText("-{:08x}-{:04x}", flow->getFlowID(), flow->getStreamID())).c_str());
          fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n",        flow->getFlowID(),
                               Flow::getNodeOutputName(vectorNamePattern, "passive",
                                  formatText("-{:08x}-{:04x}", flow->getFlowID(), flow->getStreamID())).c_str());
@@ -439,19 +434,23 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       NetPerfMeterStartMessage startMsg;
       startMsg.Header.Type   = NETPERFMETER_START;
       startMsg.Header.Length = htobe16(sizeof(startMsg));
-      startMsg.Padding       = 0x00000000;
-      startMsg.MeasurementID = htobe64(measurementID);
       startMsg.Header.Flags  = 0x00;
-      if(scalarNamePattern[0] == 0x00) {
+      startMsg.VectorFormat  = static_cast<uint8_t>(vectorFileFormat);
+      startMsg.ScalarFormat  = static_cast<uint8_t>(scalarFileFormat);
+      startMsg.Padding       = 0x0000;
+      startMsg.MeasurementID = htobe64(measurementID);
+
+      // Backwards compatibility flags for older passive instances:
+      if(scalarFileFormat == OFF_None) {
          startMsg.Header.Flags |= NPMSF_NO_SCALARS;
       }
-      if(hasSuffix(scalarNamePattern, ".bz2")) {
+      else if(scalarFileFormat == OFF_BZip2) {
          startMsg.Header.Flags |= NPMSF_COMPRESS_SCALARS;
       }
-      if(vectorNamePattern[0] == 0x00) {
+      if(vectorFileFormat == OFF_None) {
          startMsg.Header.Flags |= NPMSF_NO_VECTORS;
       }
-      if(hasSuffix(vectorNamePattern, ".bz2")) {
+      else if(vectorFileFormat == OFF_BZip2) {
          startMsg.Header.Flags |= NPMSF_COMPRESS_VECTORS;
       }
 
@@ -993,19 +992,32 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
                         measurementID, controlSocket) << "\n";
    LOG_END
 
-   OutputFileFormat scalarFileFormat = OFF_Plain;
-   if(startMsg->Header.Flags & NPMSF_COMPRESS_SCALARS) {
-      scalarFileFormat = OFF_BZip2;
+   // ====== Determine scalar format ======
+   OutputFileFormat scalarFileFormat = static_cast<OutputFileFormat>(startMsg->ScalarFormat);
+   if(scalarFileFormat == OFF_None) {
+      if(startMsg->Header.Flags & NPMSF_NO_SCALARS) {
+         scalarFileFormat = OFF_None;
+      }
+      else if(startMsg->Header.Flags & NPMSF_COMPRESS_SCALARS) {
+         scalarFileFormat = OFF_BZip2;
+      }
+      else {
+         scalarFileFormat = OFF_Plain;
+      }
    }
-   if(startMsg->Header.Flags & NPMSF_NO_SCALARS) {
-      scalarFileFormat = OFF_None;
-   }
-   OutputFileFormat vectorFileFormat = OFF_Plain;
-   if(startMsg->Header.Flags & NPMSF_COMPRESS_VECTORS) {
-      vectorFileFormat = OFF_BZip2;
-   }
-   if(startMsg->Header.Flags & NPMSF_NO_VECTORS) {
-      vectorFileFormat = OFF_None;
+
+   // ====== Determine vector format ======
+   OutputFileFormat vectorFileFormat = static_cast<OutputFileFormat>(startMsg->VectorFormat);
+   if(vectorFileFormat == OFF_None) {
+      if(startMsg->Header.Flags & NPMSF_NO_VECTORS) {
+         vectorFileFormat = OFF_None;
+      }
+      else if(startMsg->Header.Flags & NPMSF_COMPRESS_VECTORS) {
+         vectorFileFormat = OFF_BZip2;
+      }
+      else {
+         vectorFileFormat = OFF_Plain;
+      }
    }
 
    const uint64_t now = getMicroTime();
@@ -1209,40 +1221,16 @@ bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
                    sd, from, isAlreadyInitialised);
    if(flow != nullptr) {
       if(!isAlreadyInitialised) {
-         OutputFileFormat vectorFileFormat = OFF_Plain;
-         if(identifyMsg->Header.Flags & NPMIF_COMPRESS_VECTORS) {
-            vectorFileFormat = OFF_BZip2;
-         }
-         if(identifyMsg->Header.Flags & NPMIF_NO_VECTORS) {
-            vectorFileFormat = OFF_None;
-         }
          flow->lock();
          const int  controlSocketDescriptor = flow->getControlSocketDescriptor();
-         bool       vectorFileOkay          = false;
-         try {
-            flow->initializeVectorFile(nullptr, vectorFileFormat);
-            vectorFileOkay = true;
-         }
-         catch(const OutputFileException& ex) {
-            LOG_ERROR
-            // TRANSLATORS: Error message when vector output file cannot be opened. Placeholders: {} 1: file path, 2: failure reason.
-            stdlog << formatText(gettext("ERROR: Unable to create vector file <{}>: {}!"),
-                                 flow->getVectorFile().getName(), ex.getReason()) << "\n";
-            LOG_END
-            vectorFileOkay = false;
-         }
-         catch(...) {
-            vectorFileOkay = false;
-         }
          const bool socketConfigured        = flow->configureSocket(sd);
-         const bool success                 = (vectorFileOkay && socketConfigured);
          flow->unlock();
          sendNetPerfMeterAcknowledge(controlSocketDescriptor,
                                      be64toh(identifyMsg->MeasurementID),
                                      be32toh(identifyMsg->FlowID),
                                      be16toh(identifyMsg->StreamID),
-                                     (success == true) ? NETPERFMETER_STATUS_OKAY :
-                                                         NETPERFMETER_STATUS_ERROR);
+                                     (socketConfigured == true) ? NETPERFMETER_STATUS_OKAY :
+                                                                  NETPERFMETER_STATUS_ERROR);
       }
       return true;
    }

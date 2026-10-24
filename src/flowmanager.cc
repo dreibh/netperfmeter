@@ -241,15 +241,29 @@ bool FlowManager::beginMeasurement(const int              controlSocket,
    Measurement* measurement = new Measurement;
    if(measurement != nullptr) {
       try {
+         // 1. Initialize measurement-wide scalar and vector files
          measurement->initialize(now, controlSocket, measurementID,
                                  vectorNamePattern, vectorFileFormat,
                                  scalarNamePattern, scalarFileFormat);
-         success = true;
-         for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-            iterator != FlowSet.end(); iterator++) {
-            Flow* flow = *iterator;
+
+         // 2. Initialize per-flow vector files and activate flows
+         for(auto* flow : FlowSet) {
             if(flow->MeasurementID == measurementID) {
                if(flow->setMeasurement(measurement)) {
+                  if(vectorFileFormat != OutputFileFormat::None) {
+                     std::string flowVectorName;
+                     if(vectorNamePattern != nullptr && vectorNamePattern[0] != '\0') {
+                        // Active node: write directly to target file path
+                        flowVectorName = flow->getNodeOutputName(
+                           vectorNamePattern, "active",
+                           formatText("-{:08x}-{:04x}", flow->FlowID, flow->StreamID));
+                     }
+                     // Passive node: flowVectorName is empty -> buffers in std::tmpfile()
+                     flow->initializeVectorFile(
+                        !flowVectorName.empty() ? flowVectorName.c_str() : nullptr,
+                        vectorFileFormat);
+                  }
+
                   if(flow->SocketDescriptor >= 0) {
                      flow->TimeBase     = now;
                      flow->TimeOffset   = 0;
@@ -260,19 +274,13 @@ bool FlowManager::beginMeasurement(const int              controlSocket,
                      flow->activate();
                   }
                }
-               else {
-                  LOG_WARNING
-                  // TRANSLATORS: Warning message when a flow is already associated with another measurement. Placeholders: {:x} 1: measurement ID (hex), {} 2: socket descriptor.
-                  stdlog << formatText(gettext("Flow associated with Measurement ${:x} on socket {} is already owned by another measurement!"),
-                                       measurementID, controlSocket) << "\n";
-                  LOG_END
-               }
             }
          }
+         success = true;
       }
       catch(const OutputFileException& ex) {
          LOG_ERROR
-         stdlog << formatText("ERROR: Failed to prepare measurement output files for measurement ${:x}: {}!\n",
+         stdlog << formatText("ERROR: Failed to prepare output files for measurement ${:x}: {}!\n",
                               measurementID, ex.what());
          LOG_END
          delete measurement;
