@@ -49,7 +49,7 @@ usage () {
 
 # ###### Version ############################################################
 version () {
-   echo "extract-pem @BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
+   echo "extract-pem @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@"
    exit 0
 }
 

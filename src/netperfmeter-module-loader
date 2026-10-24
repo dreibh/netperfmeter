@@ -124,7 +124,7 @@ showStatus()
 
 # ###### Version ############################################################
 version () {
-   echo "netperfmeter-module-loader @BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
+   echo "netperfmeter-module-loader @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@"
    exit 0
 }
 
