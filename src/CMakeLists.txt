@@ -171,12 +171,17 @@ ADD_EXECUTABLE(netperfmeter
 TARGET_INCLUDE_DIRECTORIES(netperfmeter
                            PRIVATE ${SCTP_INCLUDE_DIR}
                                    ${QUIC_INCLUDE_DIR}
+                                   ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(netperfmeter
                       PRIVATE libfileio-${libraryType}
-                              ${SCTP_LIBRARY} ${QUIC_LIBRARY}
-                              ${LIBIBERTY_LIBRARY} ${KSTAT_LIBRARY}
-                              ${SOCKET_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+                              ${SCTP_LIBRARY}
+                              ${QUIC_LIBRARY}
+                              ${Intl_LIBRARIES}
+                              ${LIBIBERTY_LIBRARY}
+                              ${KSTAT_LIBRARY}
+                              ${SOCKET_LIBRARY}
+                              ${CMAKE_THREAD_LIBS_INIT})
 INSTALL(TARGETS netperfmeter     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   netperfmeter.1   DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES   netperfmeter.xml DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)
