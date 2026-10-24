@@ -140,10 +140,12 @@ plain text and compressed formats (BZip2, GZip, XZ/LZMA, and Zstandard).
 This package contains the development headers and library symlinks.
 
 %files -n libfileio-devel
-%{_libdir}/libfileio.so
-%{_includedir}/fileio.h
-%{_includedir}/inputfile.h
-%{_includedir}/outputfile.h
+%{_includedir}/fileio/fileio.h
+%{_includedir}/fileio/inputfile.h
+%{_includedir}/fileio/outputfile.h
+%{_libdir}/libfileio*.so
+%{_libdir}/libfileio.a
+%{_libdir}/pkgconfig/libfileio.pc
 
 
 %package common

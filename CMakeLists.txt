@@ -127,7 +127,7 @@ ENDIF()
 #### OPTIONS                                                             ####
 #############################################################################
 
-OPTION(WITH_STATIC_LIBRARIES  "Build static libraries"                  OFF)
+OPTION(WITH_STATIC_LIBRARIES  "Build static libraries"                  ON)
 OPTION(WITH_SHARED_LIBRARIES  "Build shared libraries"                  ON)
 OPTION(STATIC_BUILD           "Build statically-linked executables"     OFF)
 

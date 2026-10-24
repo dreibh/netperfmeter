@@ -24,8 +24,6 @@
 --language=C++ src/mutex.h
 --language=C++ src/netperfmeter.cc
 --language=C++ src/netperfmeterpackets.h
---language=C++ src/outputfile.cc
---language=C++ src/outputfile.h
 --language=C++ src/thread.cc
 --language=C++ src/thread.h
 --language=C++ src/tools.cc

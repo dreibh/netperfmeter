@@ -90,7 +90,7 @@ FOREACH(TYPE shared;static)
                                          ${Z_INCLUDE_DIR})
       TARGET_LINK_LIBRARIES(libfileio-${TYPE}
                             PRIVATE ${libfileio_dependencies})
-      INSTALL(TARGETS               libfileio-${TYPE}
+      INSTALL(TARGETS             libfileio-${TYPE}
               RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
               ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
               LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
