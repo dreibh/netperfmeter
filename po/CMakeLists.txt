@@ -1,16 +1,13 @@
 # ==========================================================================
-#             ____        _     _   _      _    ____      _
-#            / ___| _   _| |__ | \ | | ___| |_ / ___|__ _| | ___
-#            \___ \| | | | '_ \|  \| |/ _ \ __| |   / _` | |/ __|
-#             ___) | |_| | |_) | |\  |  __/ |_| |__| (_| | | (__
-#            |____/ \__,_|_.__/|_| \_|\___|\__|\____\__,_|_|\___|
+#         _   _      _   ____            __ __  __      _
+#        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
+#        |  \| |/ _ \ __| |_) / _ \ '__| |_| |\/| |/ _ \ __/ _ \ '__|
+#        | |\  |  __/ |_|  __/  __/ |  |  _| |  | |  __/ ||  __/ |
+#        |_| \_|\___|\__|_|   \___|_|  |_| |_|  |_|\___|\__\___|_|
 #
-#                    ---  IPv4/IPv6 Subnet Calculator  ---
-#                   https://www.nntb.no/~dreibh/subnetcalc/
+#                  NetPerfMeter -- Network Performance Meter
+#                 Copyright (C) 2009-2026 by Thomas Dreibholz
 # ==========================================================================
-#
-# SubNetCalc - IPv4/IPv6 Subnet Calculator
-# Copyright (C) 2024-2026 by Thomas Dreibholz
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,7 +22,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# Contact: thomas.dreibholz@gmail.com
+# Contact:  dreibh@simula.no
+# Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 
 #############################################################################
@@ -65,7 +63,7 @@ FOREACH(source IN LISTS sources)
       --keyword=formatText:1
       --flag=formatText:1:no-c-format
       --no-wrap
-      -p "${CMAKE_CURRENT_SOURCE_DIR}"
+      --force-po
    )
 
    # ====== Parse .sources line by line =====================================
