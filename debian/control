@@ -10,8 +10,11 @@ Build-Depends: cmake,
                ghostscript,
                graphicsmagick,
                libbz2-dev,
-               libsctp-dev (>= 1.0.5),
-               pdf2svg
+               liblzma-dev,
+               libsctp-dev,
+               libzstd-dev,
+               pdf2svg,
+               zlib1g-dev
 Standards-Version: 4.7.4
 Rules-Requires-Root: no
 
@@ -53,6 +56,40 @@ Description: Network Performance Meter (measurement program)
  analysing NetPerfMeter packet traffic.
  .
  This package contains the measurement program.
+
+Package: libfileio2
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${misc:Depends},
+         ${shlibs:Depends}
+Description: File I/O helper library for NetPerfMeter (shared library)
+ NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
+ DCCP, and QUIC transport protocols over IPv4 and IPv6.
+ .
+ libfileio provides transparent input and output file handling supporting
+ plain text and compressed formats (BZip2, GZip, XZ/LZMA, and Zstandard).
+ .
+ This package contains the shared runtime library.
+
+Package: libfileio-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libbz2-dev,
+         libfileio2 (= ${binary:Version}),
+         liblzma-dev,
+         libzstd-dev,
+         zlib1g-dev,
+         ${misc:Depends}
+Description: File I/O helper library for NetPerfMeter (development files)
+ NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
+ DCCP, and QUIC transport protocols over IPv4 and IPv6.
+ .
+ libfileio provides transparent input and output file handling supporting
+ plain text and compressed formats (BZip2, GZip, XZ/LZMA, and Zstandard).
+ .
+ This package contains development headers and library symlinks.
 
 Package: netperfmeter-common
 Architecture: all
@@ -185,7 +222,8 @@ Description: Network Performance Meter (plotting program)
 
 Package: netperfmeter-all
 Architecture: all
-Depends: netperfmeter,
+Depends: libfileio-dev,
+         netperfmeter,
          netperfmeter-common,
          netperfmeter-examples,
          netperfmeter-plotting,
