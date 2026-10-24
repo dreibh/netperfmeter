@@ -163,7 +163,7 @@ void InputFile::initialize(const char* const     name,
 
 // ###### Initialize input file (std::filesystem::path) #####################
 void InputFile::initialize(const std::filesystem::path& name,
-                           const InputFileFormat       format)
+                           const InputFileFormat        format)
 {
    finish();
 
@@ -316,7 +316,7 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
             if(StoragePos > 0) {
                std::memcpy(Storage, buffer + i + 1, StoragePos);
             }
-            buffer[i] = '\0';
+            buffer[i] = 0x00;
             Line++;
             return static_cast<ssize_t>(i);
          }
@@ -331,6 +331,7 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
       const size_t bytesToRead = std::min(sizeof(Storage), bufferSize - currentLen);
       ssize_t bytesRead = 0;
 
+      // ====== Zstandard ===================================================
       if(Format == InputFileFormat::ZSTD) {
          ZSTD_outBuffer out = { buffer + currentLen, bytesToRead, 0 };
          while(out.pos < out.size) {
@@ -357,6 +358,8 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
          }
          bytesRead = static_cast<ssize_t>(out.pos);
       }
+
+      // ====== XZ ==========================================================
       else if(Format == InputFileFormat::XZ) {
          if(StreamEof) {
             bytesRead = 0;
@@ -393,6 +396,8 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
             bytesRead = static_cast<ssize_t>(bytesToRead - LZMAStream.avail_out);
          }
       }
+
+      // ====== GZip ========================================================
       else if(Format == InputFileFormat::GZip) {
          const int count = gzread(GZFile, buffer + currentLen, static_cast<unsigned int>(bytesToRead));
          if(count < 0) {
@@ -402,6 +407,8 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
          }
          bytesRead = static_cast<ssize_t>(count);
       }
+
+      // ====== BZip2 =======================================================
       else if(Format == InputFileFormat::BZip2) {
          if(StreamEof) {
             bytesRead = 0;
@@ -419,6 +426,8 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
             }
          }
       }
+
+      // ====== Plain text ==================================================
       else if(Format == InputFileFormat::Plain) {
          bytesRead = static_cast<ssize_t>(std::fread(buffer + currentLen, 1, bytesToRead, File));
          if(bytesRead == 0 && std::ferror(File)) {
@@ -432,18 +441,18 @@ ssize_t InputFile::readLine(char* const buffer, size_t bufferSize, bool& eof)
       if(bytesRead == 0) {
          if(currentLen == 0) {
             eof = true;
-            buffer[0] = '\0';
+            buffer[0] = 0x00;
             return 0;
          }
 
          // File ended without trailing newline
-         buffer[currentLen] = '\0';
+         buffer[currentLen] = 0x00;
          Line++;
          return static_cast<ssize_t>(currentLen);
       }
 
       currentLen += static_cast<size_t>(bytesRead);
-      buffer[currentLen] = '\0';
+      buffer[currentLen] = 0x00;
    }
 }
 
