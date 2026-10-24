@@ -1456,7 +1456,7 @@ static bool mainLoop(const bool               isActiveMode,
                                    now + 1000000);
 
    // printf("timeout=%d\n",timeout);
-   const int result = ext_poll_wrapper((pollfd*)&fds, n, timeout);
+   const int result = ext_poll((pollfd*)&fds, n, timeout);
    // printf("result=%d\n",result);
 
 

@@ -41,6 +41,7 @@
 #include <netinet/tcp.h>
 #include <signal.h>
 #include <sstream>
+#include <thread>
 
 
 // ###### Constructor #######################################################
@@ -413,10 +414,9 @@ void Flow::run()
 
       // ====== Wait until there is something to do =========================
       if(nextEvent > now) {
-         int timeout = pollTimeout(now, 2,
-                                   now + 1000000ULL,
-                                   nextEvent);
-         ext_poll_wrapper(nullptr, 0, timeout);
+         const auto waitTime = std::min(std::chrono::microseconds(nextEvent - now),
+                                        std::chrono::microseconds(1000000));
+         std::this_thread::sleep_for(waitTime);
          now = getMicroTime();
       }
 

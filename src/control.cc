@@ -685,7 +685,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
    pfd.fd      = controlSocket;
    pfd.events  = POLLIN;
    pfd.revents = 0;
-   const int result = ext_poll_wrapper(&pfd, 1, timeout);
+   const int result = ext_poll(&pfd, 1, timeout);
    if(result < 1) {
       LOG_TRACE
       stdlog << "<timeout>\n";

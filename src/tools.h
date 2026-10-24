@@ -231,13 +231,4 @@ void sendBreak(const bool quiet);
 [[nodiscard]] double randomTruncNormal(const double mean, const double stddev);
 [[nodiscard]] double randomParetoDouble(const double location, const double shape);
 
-#if defined(__APPLE__)
-int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time);
-#else
-inline int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
-{
-   return ext_poll(fdlist, count, time);
-}
-#endif
-
 #endif // TOOLS_H

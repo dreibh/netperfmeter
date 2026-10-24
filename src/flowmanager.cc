@@ -934,7 +934,7 @@ void FlowManager::run()
 #if defined(DEBUG_POLL)
       std::cerr << "poll with timeout=" << timeout << " ms\n";
 #endif
-      const int result = ext_poll_wrapper((pollfd*)&pollFDs, n, timeout);
+      const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
 #if defined(DEBUG_POLL)
       std::cerr << "poll result=" << result << "\n";
 #endif
