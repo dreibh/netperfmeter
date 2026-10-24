@@ -188,7 +188,7 @@ void Flow::setSocketDescriptor(const int  socketDescriptor,
 
 
 // ###### Initialize flow's vector file #####################################
-void Flow::initializeVectorFile(const char* name, const OutputFileFormat format)
+void Flow::initializeVectorFile(const char* name, const FileFormat format)
 {
    lock();
    try {

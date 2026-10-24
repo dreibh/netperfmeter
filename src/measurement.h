@@ -73,13 +73,13 @@ class Measurement : public Mutex
       return FirstStatisticsEvent;
    }
 
-   void initialize(const uint64_t         now,
-                   const int              controlSocketDescriptor,
-                   const uint64_t         measurementID,
-                   const char*            vectorNamePattern,
-                   const OutputFileFormat vectorFileFormat,
-                   const char*            scalarNamePattern,
-                   const OutputFileFormat scalarFileFormat);
+   void initialize(const uint64_t   now,
+                   const int        controlSocketDescriptor,
+                   const uint64_t   measurementID,
+                   const char*      vectorNamePattern,
+                   const FileFormat vectorFileFormat,
+                   const char*      scalarNamePattern,
+                   const FileFormat scalarFileFormat);
    void finish(const bool closeFiles = true);
 
    void writeScalarStatistics(const uint64_t now);

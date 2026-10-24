@@ -41,9 +41,9 @@
 
 
 // ###### Get LZMA error string #############################################
-const char* lzmaErrorToString(const int ret) noexcept
+const char* lzmaErrorToString(const int returnCode) noexcept
 {
-   switch(static_cast<lzma_ret>(ret)) {
+   switch(static_cast<lzma_ret>(returnCode)) {
       case LZMA_OK:             return "Operation completed successfully";
       case LZMA_STREAM_END:     return "End of stream reached";
       case LZMA_MEM_ERROR:      return "Cannot allocate memory";
@@ -84,13 +84,13 @@ FileFormat detectFormatFromHeader(const void* data, const size_t size) noexcept
 // ###### Detect format from file content ###################################
 FileFormat detectFormatFromContent(const std::filesystem::path& path)
 {
-   std::ifstream f(path, std::ios::binary);
-   if(!f) {
+   std::ifstream file(path, std::ios::binary);
+   if(!file) {
       return FileFormat::Plain;
    }
    char header[6];
-   f.read(header, sizeof(header));
-   const size_t bytesRead = static_cast<size_t>(f.gcount());
+   file.read(header, sizeof(header));
+   const size_t bytesRead = static_cast<size_t>(file.gcount());
    return detectFormatFromHeader(header, bytesRead);
 }
 

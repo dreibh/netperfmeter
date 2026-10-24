@@ -296,7 +296,7 @@ int main(int argc, char** argv)
    }
 
    // ====== Detect output format & validate compression level ==============
-   const OutputFileFormat outputFileFormat = detectFormat(outputFileName);
+   const FileFormat outputFileFormat = detectFormat(outputFileName);
    unsigned int compressionLevel = 0;
    if(explicitLevel >= 0) {
       if(!isValidCompressionLevel(outputFileFormat, explicitLevel)) {

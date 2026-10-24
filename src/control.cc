@@ -187,10 +187,10 @@ static bool downloadResults(MessageReader*     messageReader,
 
 
 // ###### Tell remote node to add new flow ##################################
-bool performNetPerfMeterAddFlow(MessageReader*         messageReader,
-                                int                    controlSocket,
-                                const Flow*            flow,
-                                const OutputFileFormat vectorFileFormat)
+bool performNetPerfMeterAddFlow(MessageReader*   messageReader,
+                                int              controlSocket,
+                                const Flow*      flow,
+                                const FileFormat vectorFileFormat)
 {
    // ====== Sent NETPERFMETER_ADD_FLOW to remote node ======================
    const size_t                addFlowMsgSize = sizeof(NetPerfMeterAddFlowMessage) +
@@ -292,10 +292,10 @@ bool performNetPerfMeterAddFlow(MessageReader*         messageReader,
 
 
 // ###### Let remote identify a new flow ####################################
-bool performNetPerfMeterIdentifyFlow(MessageReader*         messageReader,
-                                     int                    controlSocket,
-                                     const Flow*            flow,
-                                     const OutputFileFormat vectorFileFormat)
+bool performNetPerfMeterIdentifyFlow(MessageReader*   messageReader,
+                                     int              controlSocket,
+                                     const Flow*      flow,
+                                     const FileFormat vectorFileFormat)
 {
    // ====== Sent NETPERFMETER_IDENTIFY_FLOW to remote node =================
    unsigned int maxTrials;
@@ -326,10 +326,10 @@ bool performNetPerfMeterIdentifyFlow(MessageReader*         messageReader,
       identifyMsg.StreamID      = htobe16(flow->getStreamID());
 
       // ====== Backwards compatibility flags for older passive instances ===
-      if(vectorFileFormat == OFF_None) {
+      if(vectorFileFormat == FileFormat::None) {
          identifyMsg.Header.Flags |= NPMIF_NO_VECTORS;
       }
-      else if((vectorFileFormat == OFF_BZip2) || (vectorFileFormat != OFF_Plain)) {
+      else if((vectorFileFormat == FileFormat::BZip2) || (vectorFileFormat != FileFormat::Plain)) {
          // Older passive peers only support BZip2 compression:
          identifyMsg.Header.Flags |= NPMIF_COMPRESS_VECTORS;
       }
@@ -377,16 +377,16 @@ bool performNetPerfMeterIdentifyFlow(MessageReader*         messageReader,
 
 
 // ###### Start measurement #################################################
-bool performNetPerfMeterStart(MessageReader*         messageReader,
-                              int                    controlSocket,
-                              const uint64_t         measurementID,
-                              const char*            activeNodeName,
-                              const char*            passiveNodeName,
-                              const char*            configName,
-                              const char*            vectorNamePattern,
-                              const OutputFileFormat vectorFileFormat,
-                              const char*            scalarNamePattern,
-                              const OutputFileFormat scalarFileFormat)
+bool performNetPerfMeterStart(MessageReader*   messageReader,
+                              int              controlSocket,
+                              const uint64_t   measurementID,
+                              const char*      activeNodeName,
+                              const char*      passiveNodeName,
+                              const char*      configName,
+                              const char*      vectorNamePattern,
+                              const FileFormat vectorFileFormat,
+                              const char*      scalarNamePattern,
+                              const FileFormat scalarFileFormat)
 {
    // ====== Write config file ==============================================
    FILE* configFile = nullptr;
@@ -474,16 +474,16 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       startMsg.MeasurementID = htobe64(measurementID);
 
       // Backwards compatibility flags for older passive instances:
-      if(scalarFileFormat == OFF_None) {
+      if(scalarFileFormat == FileFormat::None) {
          startMsg.Header.Flags |= NPMSF_NO_SCALARS;
       }
-      else if(scalarFileFormat != OFF_Plain) {
+      else if(scalarFileFormat != FileFormat::Plain) {
          startMsg.Header.Flags |= NPMSF_COMPRESS_SCALARS;
       }
-      if(vectorFileFormat == OFF_None) {
+      if(vectorFileFormat == FileFormat::None) {
          startMsg.Header.Flags |= NPMSF_NO_VECTORS;
       }
-      else if(vectorFileFormat != OFF_Plain) {
+      else if(vectorFileFormat != FileFormat::Plain) {
          startMsg.Header.Flags |= NPMSF_COMPRESS_VECTORS;
       }
 
@@ -1026,30 +1026,30 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
    LOG_END
 
    // ====== Determine scalar format ======
-   OutputFileFormat scalarFileFormat = static_cast<OutputFileFormat>(startMsg->ScalarFormat);
-   if(scalarFileFormat == OFF_None) {
+   FileFormat scalarFileFormat = static_cast<FileFormat>(startMsg->ScalarFormat);
+   if(scalarFileFormat == FileFormat::None) {
       if(startMsg->Header.Flags & NPMSF_NO_SCALARS) {
-         scalarFileFormat = OFF_None;
+         scalarFileFormat = FileFormat::None;
       }
       else if(startMsg->Header.Flags & NPMSF_COMPRESS_SCALARS) {
-         scalarFileFormat = OFF_BZip2;
+         scalarFileFormat = FileFormat::BZip2;
       }
       else {
-         scalarFileFormat = OFF_Plain;
+         scalarFileFormat = FileFormat::Plain;
       }
    }
 
    // ====== Determine vector format ======
-   OutputFileFormat vectorFileFormat = static_cast<OutputFileFormat>(startMsg->VectorFormat);
-   if(vectorFileFormat == OFF_None) {
+   FileFormat vectorFileFormat = static_cast<FileFormat>(startMsg->VectorFormat);
+   if(vectorFileFormat == FileFormat::None) {
       if(startMsg->Header.Flags & NPMSF_NO_VECTORS) {
-         vectorFileFormat = OFF_None;
+         vectorFileFormat = FileFormat::None;
       }
       else if(startMsg->Header.Flags & NPMSF_COMPRESS_VECTORS) {
-         vectorFileFormat = OFF_BZip2;
+         vectorFileFormat = FileFormat::BZip2;
       }
       else {
-         vectorFileFormat = OFF_Plain;
+         vectorFileFormat = FileFormat::Plain;
       }
    }
 

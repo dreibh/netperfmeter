@@ -112,11 +112,11 @@ class OutputFile
    OutputFile& operator=(OutputFile&& other) noexcept;
 
    void initialize(const std::filesystem::path& name,
-                   OutputFileFormat             format           = OutputFileFormat::Plain,
+                   FileFormat                   format           = FileFormat::Plain,
                    unsigned int                 compressionLevel = 0);
 
    void initialize(const char*      name,
-                   OutputFileFormat format           = OutputFileFormat::Plain,
+                   FileFormat       format           = FileFormat::Plain,
                    unsigned int     compressionLevel = 0);
 
    void finish(bool                closeFile = true,
@@ -129,7 +129,7 @@ class OutputFile
    void writeLine(std::string_view line);
 
    [[nodiscard]] bool exists() const noexcept;
-   [[nodiscard]] inline OutputFileFormat getFormat() const noexcept { return Format; }
+   [[nodiscard]] inline FileFormat getFormat() const noexcept { return Format; }
    [[nodiscard]] FILE* getFile() const noexcept;
    [[nodiscard]] inline const std::string& getName() const noexcept { return Name; }
    [[nodiscard]] inline unsigned long long getLine() const noexcept { return Line; }
@@ -139,7 +139,7 @@ class OutputFile
    struct Impl;
    std::unique_ptr<Impl> Pimpl;
 
-   OutputFileFormat   Format             { OutputFileFormat::None };
+   FileFormat         Format             { FileFormat::None };
    std::string        Name;
    unsigned long long Line               { 0 };
    unsigned long long PlainBytesIn       { 0 };

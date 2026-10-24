@@ -1,3 +1,32 @@
+/*
+ * ==========================================================================
+ *         _   _      _   ____            __ __  __      _
+ *        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
+ *        |  \| |/ _ \ __| |_) / _ \ '__| |_| |\/| |/ _ \ __/ _ \ '__|
+ *        | |\  |  __/ |_|  __/  __/ |  |  _| |  | |  __/ ||  __/ |
+ *        |_| \_|\___|\__|_|   \___|_|  |_| |_|  |_|\___|\__\___|_|
+ *
+ *                  NetPerfMeter -- Network Performance Meter
+ *                 Copyright (C) 2009-2026 by Thomas Dreibholz
+ * ==========================================================================
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Contact:  dreibh@simula.no
+ * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
+ */
+
 #ifndef FILEIO_H
 #define FILEIO_H
 
@@ -7,6 +36,7 @@
 #include <filesystem>
 #include <string>
 #include <string_view>
+
 
 // ====== I/O File Formats ==================================================
 enum class FileFormat : uint8_t
@@ -19,25 +49,10 @@ enum class FileFormat : uint8_t
    ZSTD  = 5
 };
 
-using OutputFileFormat = FileFormat;
-using InputFileFormat  = FileFormat;
-
-inline constexpr FileFormat OFF_None  = FileFormat::None;
-inline constexpr FileFormat OFF_Plain = FileFormat::Plain;
-inline constexpr FileFormat OFF_BZip2 = FileFormat::BZip2;
-inline constexpr FileFormat OFF_GZip  = FileFormat::GZip;
-inline constexpr FileFormat OFF_XZ    = FileFormat::XZ;
-inline constexpr FileFormat OFF_ZSTD  = FileFormat::ZSTD;
-
-inline constexpr FileFormat IFF_None  = FileFormat::None;
-inline constexpr FileFormat IFF_Plain = FileFormat::Plain;
-inline constexpr FileFormat IFF_BZip2 = FileFormat::BZip2;
-inline constexpr FileFormat IFF_GZip  = FileFormat::GZip;
-inline constexpr FileFormat IFF_XZ    = FileFormat::XZ;
-inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 
 // ====== Shared Error String Helpers =======================================
-[[nodiscard]] const char* lzmaErrorToString(int ret) noexcept;
+[[nodiscard]] const char* lzmaErrorToString(int returnCode) noexcept;
+
 
 // ====== Format Detection ==================================================
 [[nodiscard]] inline FileFormat detectFormat(const std::filesystem::path& path)
@@ -148,6 +163,7 @@ inline constexpr FileFormat IFF_ZSTD  = FileFormat::ZSTD;
 
 [[nodiscard]] unsigned int getMaxCompressionLevel(FileFormat format) noexcept;
 [[nodiscard]] bool isValidCompressionLevel(FileFormat format, int level) noexcept;
+
 
 // ====== File Transformation ===============================================
 void transformFile(const std::filesystem::path& sourcePath,

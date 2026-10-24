@@ -226,13 +226,13 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
 
 
 // ###### Begin measurement #################################################
-bool FlowManager::beginMeasurement(const int              controlSocket,
-                                   const uint64_t         measurementID,
-                                   const uint64_t         now,
-                                   const char*            vectorNamePattern,
-                                   const OutputFileFormat vectorFileFormat,
-                                   const char*            scalarNamePattern,
-                                   const OutputFileFormat scalarFileFormat)
+bool FlowManager::beginMeasurement(const int        controlSocket,
+                                   const uint64_t   measurementID,
+                                   const uint64_t   now,
+                                   const char*      vectorNamePattern,
+                                   const FileFormat vectorFileFormat,
+                                   const char*      scalarNamePattern,
+                                   const FileFormat scalarFileFormat)
 {
    std::stringstream ss;
    bool              success = false;
@@ -250,7 +250,7 @@ bool FlowManager::beginMeasurement(const int              controlSocket,
          for(auto* flow : FlowSet) {
             if(flow->MeasurementID == measurementID) {
                if(flow->setMeasurement(measurement)) {
-                  if(vectorFileFormat != OutputFileFormat::None) {
+                  if(vectorFileFormat != FileFormat::None) {
                      std::string flowVectorName;
                      if(vectorNamePattern != nullptr && vectorNamePattern[0] != '\0') {
                         // Active node: write directly to target file path

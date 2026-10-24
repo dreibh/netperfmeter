@@ -68,9 +68,9 @@ void Measurement::initialize([[maybe_unused]] const uint64_t now,
                              const int                       controlSocketDescriptor,
                              const uint64_t                  measurementID,
                              const char*                     vectorNamePattern,
-                             const OutputFileFormat          vectorFileFormat,
+                             const FileFormat                vectorFileFormat,
                              const char*                     scalarNamePattern,
-                             const OutputFileFormat          scalarFileFormat)
+                             const FileFormat                scalarFileFormat)
 {
    ControlSocketDescriptor = controlSocketDescriptor;
    MeasurementID           = measurementID;
@@ -85,7 +85,7 @@ void Measurement::initialize([[maybe_unused]] const uint64_t now,
    try {
       VectorNamePattern = (vectorNamePattern != nullptr) ?
                              std::string(vectorNamePattern) : std::string();
-      if(vectorFileFormat != OutputFileFormat::None) {
+      if(vectorFileFormat != FileFormat::None) {
          if(!VectorNamePattern.empty()) {
             VectorFile.initialize(
                Flow::getNodeOutputName(VectorNamePattern, "active"),
@@ -97,12 +97,12 @@ void Measurement::initialize([[maybe_unused]] const uint64_t now,
          }
       }
       else {
-         VectorFile.initialize(std::filesystem::path{}, OutputFileFormat::None);
+         VectorFile.initialize(std::filesystem::path{}, FileFormat::None);
       }
 
       ScalarNamePattern = (scalarNamePattern != nullptr) ?
                              std::string(scalarNamePattern) : std::string();
-      if(scalarFileFormat != OutputFileFormat::None) {
+      if(scalarFileFormat != FileFormat::None) {
          if(!ScalarNamePattern.empty()) {
             ScalarFile.initialize(
                Flow::getNodeOutputName(ScalarNamePattern, "active"),
@@ -114,7 +114,7 @@ void Measurement::initialize([[maybe_unused]] const uint64_t now,
          }
       }
       else {
-         ScalarFile.initialize(std::filesystem::path{}, OutputFileFormat::None);
+         ScalarFile.initialize(std::filesystem::path{}, FileFormat::None);
       }
    }
    catch(...) {

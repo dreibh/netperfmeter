@@ -51,24 +51,24 @@ extern unsigned int gOutputVerbosity;
 // #### Active Side Control                                              ####
 // ##########################################################################
 
-bool performNetPerfMeterAddFlow(MessageReader*         messageReader,
-                                int                    controlSocket,
-                                const Flow*            flow,
-                                const OutputFileFormat vectorFileFormat = OFF_None);
-bool performNetPerfMeterIdentifyFlow(MessageReader*         messageReader,
-                                     int                    controlSocket,
-                                     const Flow*            flow,
-                                     const OutputFileFormat vectorFileFormat = OFF_None);
-bool performNetPerfMeterStart(MessageReader*         messageReader,
-                              int                    controlSocket,
-                              const uint64_t         measurementID,
-                              const char*            activeNodeName,
-                              const char*            passiveNodeName,
-                              const char*            configName,
-                              const char*            vectorNamePattern,
-                              const OutputFileFormat vectorFileFormat,
-                              const char*            scalarNamePattern,
-                              const OutputFileFormat scalarFileFormat);
+bool performNetPerfMeterAddFlow(MessageReader*   messageReader,
+                                int              controlSocket,
+                                const Flow*      flow,
+                                const FileFormat vectorFileFormat = FileFormat::None);
+bool performNetPerfMeterIdentifyFlow(MessageReader*   messageReader,
+                                     int              controlSocket,
+                                     const Flow*      flow,
+                                     const FileFormat vectorFileFormat = FileFormat::None);
+bool performNetPerfMeterStart(MessageReader*   messageReader,
+                              int              controlSocket,
+                              const uint64_t   measurementID,
+                              const char*      activeNodeName,
+                              const char*      passiveNodeName,
+                              const char*      configName,
+                              const char*      vectorNamePattern,
+                              const FileFormat vectorFileFormat,
+                              const char*      scalarNamePattern,
+                              const FileFormat scalarFileFormat);
 bool performNetPerfMeterStop(MessageReader* messageReader,
                              int            controlSocket,
                              const uint64_t measurementID);

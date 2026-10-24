@@ -130,9 +130,9 @@ static double           gRuntime               = -1.0;
 static bool             gDisplayEnabled        = true;
 static bool             gStopTimeReached       = false;
 static const char*      gVectorNamePattern     = "";
-static OutputFileFormat gVectorFileFormat      = OFF_None;
+static FileFormat       gVectorFileFormat      = FileFormat::None;
 static const char*      gScalarNamePattern     = "";
-static OutputFileFormat gScalarFileFormat      = OFF_None;
+static FileFormat       gScalarFileFormat      = FileFormat::None;
 static const char*      gConfigName            = "";
 static unsigned int     gControlHBInterval     = 15000;   // ms
 static unsigned int     gControlHBPathMaxRtx   = 3;       // trials
@@ -435,7 +435,7 @@ static bool handleGlobalParameters(int argc, char** argv)
          case 'S':
             gScalarNamePattern = optarg;
             if(gScalarNamePattern[0] == 0x00) {
-               gScalarFileFormat = OFF_None;
+               gScalarFileFormat = FileFormat::None;
             }
             else {
                gScalarFileFormat = detectFormat(gScalarNamePattern);
@@ -444,7 +444,7 @@ static bool handleGlobalParameters(int argc, char** argv)
          case 'V':
             gVectorNamePattern = optarg;
             if(gVectorNamePattern[0] == 0x00) {
-               gVectorFileFormat = OFF_None;
+               gVectorFileFormat = FileFormat::None;
             }
             else {
                gVectorFileFormat = detectFormat(gVectorNamePattern);

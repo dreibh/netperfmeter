@@ -367,8 +367,8 @@ int main(int argc, char** argv)
    const std::string outputFileName(argv[optind++]);
 
    // ====== Detect formats & validate compression level ====================
-   const InputFileFormat  inputFileFormat  = detectFormat(inputFileName);
-   const OutputFileFormat outputFileFormat = detectFormat(outputFileName);
+   const FileFormat inputFileFormat  = detectFormat(inputFileName);
+   const FileFormat outputFileFormat = detectFormat(outputFileName);
 
    unsigned int compressionLevel = 0;
    if(explicitLevel >= 0) {

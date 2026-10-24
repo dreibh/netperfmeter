@@ -69,6 +69,7 @@ static inline std::string formatText(std::string_view formatString, const Args&.
 }
 #endif
 
+#include "fileio.h"
 #include "inputfile.h"
 #include "outputfile.h"
 #include "package-version.h"
@@ -522,14 +523,14 @@ static bool handleScalarFile(const std::string& varValues,
 
 
 // ###### Close output file =================================================
-static void closeOutputFile(OutputFile&              outputFile,
+static void closeOutputFile(OutputFile&                         outputFile,
                             [[maybe_unused]] const std::string& outputFileName,
-                            const unsigned long long lineNumber,
-                            unsigned long long&      totalIn,
-                            unsigned long long&      totalOut,
-                            unsigned long long&      totalLines,
-                            unsigned int&            totalFiles,
-                            const bool               interactiveMode)
+                            const unsigned long long            lineNumber,
+                            unsigned long long&                 totalIn,
+                            unsigned long long&                 totalOut,
+                            unsigned long long&                 totalLines,
+                            unsigned int&                       totalFiles,
+                            const bool                          interactiveMode)
 {
    if(outputFile.exists()) {
       unsigned long long in  = 0;

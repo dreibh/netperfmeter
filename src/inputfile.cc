@@ -94,7 +94,7 @@ InputFile::InputFile(InputFile&& other) noexcept
      Name(std::move(other.Name)),
      Line(other.Line)
 {
-   other.Format = InputFileFormat::None;
+   other.Format = FileFormat::None;
    other.Line   = 0;
    if(!other.Pimpl) {
       other.Pimpl = std::make_unique<Impl>();
@@ -117,7 +117,7 @@ InputFile& InputFile::operator=(InputFile&& other) noexcept
       Name   = std::move(other.Name);
       Line   = other.Line;
 
-      other.Format = InputFileFormat::None;
+      other.Format = FileFormat::None;
       other.Line   = 0;
       if(!other.Pimpl) {
          other.Pimpl = std::make_unique<Impl>();
@@ -142,8 +142,8 @@ FILE* InputFile::getFile() const noexcept
 
 
 // ###### Initialize input file (const char*) ###############################
-void InputFile::initialize(const char* const     name,
-                           const InputFileFormat format)
+void InputFile::initialize(const char* const name,
+                           const FileFormat  format)
 {
    initialize(name ? std::filesystem::path(name) : std::filesystem::path{}, format);
 }
@@ -151,7 +151,7 @@ void InputFile::initialize(const char* const     name,
 
 // ###### Initialize input file (std::filesystem::path) #####################
 void InputFile::initialize(const std::filesystem::path& name,
-                           const InputFileFormat        format)
+                           const FileFormat             format)
 {
    finish();
 
@@ -174,10 +174,10 @@ void InputFile::initialize(const std::filesystem::path& name,
    Pimpl->RawFileEof      = false;
    Pimpl->StreamEof       = false;
 
-   if(format == InputFileFormat::None) {
+   if(format == FileFormat::None) {
       return;
    }
-   else if(format == InputFileFormat::GZip) {
+   else if(format == FileFormat::GZip) {
       if(!Name.empty()) {
          Pimpl->GZFile = gzopen(Name.c_str(), "rb");
       }
@@ -191,7 +191,7 @@ void InputFile::initialize(const std::filesystem::path& name,
          throw InputFileException("Unable to open input file", Name, errno);
       }
 
-      if(format == InputFileFormat::BZip2) {
+      if(format == FileFormat::BZip2) {
          int bzerror = BZ_OK;
          Pimpl->BZFile = BZ2_bzReadOpen(&bzerror, Pimpl->File, 0, 0, nullptr, 0);
          if(bzerror != BZ_OK || Pimpl->BZFile == nullptr) {
@@ -205,7 +205,7 @@ void InputFile::initialize(const std::filesystem::path& name,
                                      Name, err, reason ? reason : "Unknown BZip2 error");
          }
       }
-      else if(format == InputFileFormat::XZ) {
+      else if(format == FileFormat::XZ) {
          const lzma_ret ret = lzma_auto_decoder(&Pimpl->LZMAStream, UINT64_MAX, 0);
          if(ret != LZMA_OK) {
             std::fclose(Pimpl->File);
@@ -217,7 +217,7 @@ void InputFile::initialize(const std::filesystem::path& name,
          Pimpl->LZMAStream.avail_in = 0;
          Pimpl->LZMAInitialized     = true;
       }
-      else if(format == InputFileFormat::ZSTD) {
+      else if(format == FileFormat::ZSTD) {
          Pimpl->ZSTDDStream = ZSTD_createDStream();
          if(Pimpl->ZSTDDStream == nullptr) {
             std::fclose(Pimpl->File);
@@ -317,7 +317,7 @@ size_t InputFile::read(char* const buffer, const size_t bufferSize)
    char* const  dest        = buffer + delivered;
 
    // ====== Zstandard ======================================================
-   if(Format == InputFileFormat::ZSTD) {
+   if(Format == FileFormat::ZSTD) {
       ZSTD_outBuffer out = { dest, bytesToRead, 0 };
       while(out.pos < out.size) {
          if(Pimpl->RawBufferPos >= Pimpl->RawBufferSize && !Pimpl->RawFileEof) {
@@ -348,7 +348,7 @@ size_t InputFile::read(char* const buffer, const size_t bufferSize)
    }
 
    // ====== XZ =============================================================
-   else if(Format == InputFileFormat::XZ) {
+   else if(Format == FileFormat::XZ) {
       if(Pimpl->StreamEof) {
          return delivered;
       }
@@ -384,7 +384,7 @@ size_t InputFile::read(char* const buffer, const size_t bufferSize)
    }
 
    // ====== GZip ===========================================================
-   else if(Format == InputFileFormat::GZip) {
+   else if(Format == FileFormat::GZip) {
       const int count = gzread(Pimpl->GZFile, dest, static_cast<unsigned int>(bytesToRead));
       if(count < 0) {
          int errnum = 0;
@@ -395,7 +395,7 @@ size_t InputFile::read(char* const buffer, const size_t bufferSize)
    }
 
    // ====== BZip2 ==========================================================
-   else if(Format == InputFileFormat::BZip2) {
+   else if(Format == FileFormat::BZip2) {
       if(Pimpl->StreamEof) {
          return delivered;
       }
@@ -413,7 +413,7 @@ size_t InputFile::read(char* const buffer, const size_t bufferSize)
    }
 
    // ====== Plain text =====================================================
-   else if(Format == InputFileFormat::Plain) {
+   else if(Format == FileFormat::Plain) {
       const size_t count = std::fread(dest, 1, bytesToRead, Pimpl->File);
       if(count == 0 && std::ferror(Pimpl->File)) {
          throw InputFileException("Failed to read from file", Name, errno);

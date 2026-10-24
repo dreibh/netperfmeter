@@ -91,7 +91,7 @@ OutputFile::OutputFile(OutputFile&& other) noexcept
      CompressedBytesOut(other.CompressedBytesOut),
      WriteError(other.WriteError)
 {
-   other.Format             = OutputFileFormat::None;
+   other.Format             = FileFormat::None;
    other.Line               = 0;
    other.PlainBytesIn       = 0;
    other.CompressedBytesOut = 0;
@@ -120,7 +120,7 @@ OutputFile& OutputFile::operator=(OutputFile&& other) noexcept
       CompressedBytesOut = other.CompressedBytesOut;
       WriteError         = other.WriteError;
 
-      other.Format             = OutputFileFormat::None;
+      other.Format             = FileFormat::None;
       other.Line               = 0;
       other.PlainBytesIn       = 0;
       other.CompressedBytesOut = 0;
@@ -148,9 +148,9 @@ FILE* OutputFile::getFile() const noexcept
 
 
 // ###### Initialize output file (const char*) ##############################
-void OutputFile::initialize(const char* const     name,
-                            const OutputFileFormat format,
-                            const unsigned int     compressionLevel)
+void OutputFile::initialize(const char* const  name,
+                            const FileFormat   format,
+                            const unsigned int compressionLevel)
 {
    initialize(name ? std::filesystem::path(name) : std::filesystem::path{}, format, compressionLevel);
 }
@@ -158,7 +158,7 @@ void OutputFile::initialize(const char* const     name,
 
 // ###### Initialize output file (std::filesystem::path) ####################
 void OutputFile::initialize(const std::filesystem::path& name,
-                            const OutputFileFormat       format,
+                            const FileFormat             format,
                             const unsigned int           compressionLevel)
 {
    finish();
@@ -179,12 +179,12 @@ void OutputFile::initialize(const std::filesystem::path& name,
    Pimpl->LZMAInitialized = false;
    Pimpl->ZSTDCStream     = nullptr;
 
-   if(format == OutputFileFormat::None) {
+   if(format == FileFormat::None) {
       return;
    }
 
    // ====== Initialize GZip compressor =====================================
-   if(format == OutputFileFormat::GZip) {
+   if(format == FileFormat::GZip) {
       const unsigned int level = (compressionLevel == 0) ? 6u : std::clamp(compressionLevel, 1u, 9u);
       const std::string mode = "wb" + std::to_string(level);
 
@@ -235,7 +235,7 @@ void OutputFile::initialize(const std::filesystem::path& name,
       }
 
       // ====== Initialize BZip2 compressor =================================
-      if(format == OutputFileFormat::BZip2) {
+      if(format == FileFormat::BZip2) {
          int bzerror = BZ_OK;
          const unsigned int level = (compressionLevel == 0) ? 9u : std::clamp(compressionLevel, 1u, 9u);
          Pimpl->BZFile = BZ2_bzWriteOpen(&bzerror, Pimpl->File, static_cast<int>(level), 0, 30);
@@ -257,7 +257,7 @@ void OutputFile::initialize(const std::filesystem::path& name,
       }
 
       // ====== Initialize XZ compressor ====================================
-      else if(format == OutputFileFormat::XZ) {
+      else if(format == FileFormat::XZ) {
          const unsigned int level = (compressionLevel == 0) ? 6u : std::min(compressionLevel, 9u);
          const lzma_ret ret = lzma_easy_encoder(&Pimpl->LZMAStream, level, LZMA_CHECK_CRC64);
          if(ret != LZMA_OK) {
@@ -275,7 +275,7 @@ void OutputFile::initialize(const std::filesystem::path& name,
       }
 
       // ====== Initialize Zstandard compressor ==============================
-      else if(format == OutputFileFormat::ZSTD) {
+      else if(format == FileFormat::ZSTD) {
          Pimpl->ZSTDCStream = ZSTD_createCStream();
          if(Pimpl->ZSTDCStream == nullptr) {
             std::fclose(Pimpl->File);

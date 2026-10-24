@@ -89,13 +89,13 @@ class FlowManager : public Thread
    void printFlows(std::ostream& os,
                    const bool    printStatistics);
 
-   bool beginMeasurement(const int              controlSocket,
-                         const uint64_t         measurementID,
-                         const uint64_t         now,
-                         const char*            vectorNamePattern,
-                         const OutputFileFormat vectorFileFormat,
-                         const char*            scalarNamePattern,
-                         const OutputFileFormat scalarFileFormat);
+   bool beginMeasurement(const int        controlSocket,
+                         const uint64_t   measurementID,
+                         const uint64_t   now,
+                         const char*      vectorNamePattern,
+                         const FileFormat vectorFileFormat,
+                         const char*      scalarNamePattern,
+                         const FileFormat scalarFileFormat);
    void finishMeasurement(const int      controlSocket,
                           const uint64_t measurementID);
 

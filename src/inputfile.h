@@ -1,3 +1,32 @@
+/*
+ * ==========================================================================
+ *         _   _      _   ____            __ __  __      _
+ *        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
+ *        |  \| |/ _ \ __| |_) / _ \ '__| |_| |\/| |/ _ \ __/ _ \ '__|
+ *        | |\  |  __/ |_|  __/  __/ |  |  _| |  | |  __/ ||  __/ |
+ *        |_| \_|\___|\__|_|   \___|_|  |_| |_|  |_|\___|\__\___|_|
+ *
+ *                  NetPerfMeter -- Network Performance Meter
+ *                 Copyright (C) 2009-2026 by Thomas Dreibholz
+ * ==========================================================================
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Contact:  dreibh@simula.no
+ * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
+ */
+
 #ifndef INPUTFILE_H
 #define INPUTFILE_H
 
@@ -14,6 +43,8 @@
 #include <string_view>
 #include <sys/types.h>
 
+
+// ###### Input File Exception ##############################################
 class InputFileException : public std::runtime_error
 {
    public:
@@ -60,6 +91,8 @@ class InputFileException : public std::runtime_error
    int         ErrorCode { 0 };
 };
 
+
+// ###### Input File Class ##################################################
 class InputFile
 {
    public:
@@ -73,10 +106,10 @@ class InputFile
    InputFile& operator=(InputFile&& other) noexcept;
 
    void initialize(const std::filesystem::path& name,
-                   InputFileFormat              format = InputFileFormat::Plain);
+                   FileFormat                   format = FileFormat::Plain);
 
-   void initialize(const char*     name,
-                   InputFileFormat format = InputFileFormat::Plain);
+   void initialize(const char* name,
+                   FileFormat  format = FileFormat::Plain);
 
    void finish(bool closeFile = true);
 
@@ -89,16 +122,16 @@ class InputFile
    bool readLine(std::string& line);
 
    [[nodiscard]] bool exists() const noexcept;
-   [[nodiscard]] InputFileFormat getFormat() const noexcept  { return Format; }
+   [[nodiscard]] inline FileFormat getFormat() const noexcept  { return Format; }
    [[nodiscard]] FILE* getFile() const noexcept;
-   [[nodiscard]] const std::string& getName() const noexcept { return Name;   }
-   [[nodiscard]] unsigned long long getLine() const noexcept { return Line;   }
+   [[nodiscard]] inline const std::string& getName() const noexcept { return Name;   }
+   [[nodiscard]] inline unsigned long long getLine() const noexcept { return Line;   }
 
    private:
    struct Impl;
    std::unique_ptr<Impl> Pimpl;
 
-   InputFileFormat    Format { InputFileFormat::None };
+   FileFormat         Format { FileFormat::None };
    std::string        Name;
    unsigned long long Line   { 0 };
 };

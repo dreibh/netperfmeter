@@ -173,7 +173,7 @@ class Flow : public Thread
       return std::format("{}-{}{}{}", prefix, type, extension, suffix);
    }
 
-   void initializeVectorFile(const char* name, const OutputFileFormat format);
+   void initializeVectorFile(const char* name, const FileFormat format);
    void updateTransmissionStatistics(const uint64_t          now,
                                      const unsigned long long addedFrames,
                                      const unsigned long long addedPackets,
