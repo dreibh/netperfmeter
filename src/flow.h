@@ -174,21 +174,21 @@ class Flow : public Thread
    }
 
    void initializeVectorFile(const char* name, const FileFormat format);
-   void updateTransmissionStatistics(const uint64_t          now,
-                                     const unsigned long long addedFrames,
-                                     const unsigned long long addedPackets,
-                                     const unsigned long long addedBytes);
+   void updateTransmissionStatistics(const uint64_t now,
+                                     const uint64_t addedFrames,
+                                     const uint64_t addedPackets,
+                                     const uint64_t addedBytes);
 
-   void updateReceptionStatistics(const uint64_t          now,
-                                  const unsigned long long addedFrames,
-                                  const unsigned long long addedBytes,
-                                  const unsigned long long lostFrames,
-                                  const unsigned long long lostPackets,
-                                  const unsigned long long lostBytes,
-                                  const uint64_t          seqNumber,
-                                  const double            delay,
-                                  const double            delayDiff,
-                                  const double            jitter);
+   void updateReceptionStatistics(const uint64_t now,
+                                  const uint64_t addedFrames,
+                                  const uint64_t addedBytes,
+                                  const uint64_t lostFrames,
+                                  const uint64_t lostPackets,
+                                  const uint64_t lostBytes,
+                                  const uint64_t seqNumber,
+                                  const double   delay,
+                                  const double   delayDiff,
+                                  const double   jitter);
 
    void print(std::ostream& os, const bool printStatistics = false);
    void resetStatistics();

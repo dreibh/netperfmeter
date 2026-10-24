@@ -35,6 +35,7 @@
 #include "tools.h"
 
 #include <chrono>
+#include <cinttypes>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -210,10 +211,10 @@ void Flow::initializeVectorFile(const char* name, const FileFormat format)
 
 
 // ###### Update transmission statistics ####################################
-void Flow::updateTransmissionStatistics(const uint64_t          now,
-                                        const unsigned long long addedFrames,
-                                        const unsigned long long addedPackets,
-                                        const unsigned long long addedBytes)
+void Flow::updateTransmissionStatistics(const uint64_t now,
+                                        const uint64_t addedFrames,
+                                        const uint64_t addedPackets,
+                                        const uint64_t addedBytes)
 {
    lock();
 
@@ -231,16 +232,16 @@ void Flow::updateTransmissionStatistics(const uint64_t          now,
 
 
 // ###### Update reception statistics #######################################
-void Flow::updateReceptionStatistics(const uint64_t          now,
-                                     const unsigned long long addedFrames,
-                                     const unsigned long long addedBytes,
-                                     const unsigned long long lostFrames,
-                                     const unsigned long long lostPackets,
-                                     const unsigned long long lostBytes,
-                                     const uint64_t          seqNumber,
-                                     const double            delay,
-                                     const double            delayDiff,
-                                     const double            jitter)
+void Flow::updateReceptionStatistics(const uint64_t now,
+                                     const uint64_t addedFrames,
+                                     const uint64_t addedBytes,
+                                     const uint64_t lostFrames,
+                                     const uint64_t lostPackets,
+                                     const uint64_t lostBytes,
+                                     const uint64_t seqNumber,
+                                     const double   delay,
+                                     const double   delayDiff,
+                                     const double   jitter)
 {
    lock();
 
@@ -261,17 +262,17 @@ void Flow::updateReceptionStatistics(const uint64_t          now,
    // ====== Write line to flow's vector file ===============================
    if((MyMeasurement) && (MyMeasurement->getFirstStatisticsEvent() > 0)) {
       VectorFile.printf(
-         "%06llu\t%llu\t%1.6f\t%llu\t"
-         "%llu\t%llu\t%llu\t"
-         "%llu\t%u\t%llu\t"
+         "%06" PRIu64 "\t%" PRIu64 "\t%1.6f\t%" PRIu64 "\t"
+         "%" PRIu64 "\t%" PRIu64 "\t%" PRIu64 "\t"
+         "%" PRIu64 "\t%u\t%" PRIu64 "\t"
          "%1.3f\t%1.3f\t%1.3f\n",
-         VectorFile.nextLine(),
-         static_cast<unsigned long long>(now),
+         static_cast<uint64_t>(VectorFile.nextLine()),
+         now,
          std::chrono::duration<double>(std::chrono::microseconds(now - MyMeasurement->getFirstStatisticsEvent())).count(),
-         static_cast<unsigned long long>(seqNumber),
-         static_cast<unsigned long long>(CurrentBandwidthStats.ReceivedBytes),
-         static_cast<unsigned long long>(CurrentBandwidthStats.ReceivedPackets),
-         static_cast<unsigned long long>(CurrentBandwidthStats.ReceivedFrames),
+         seqNumber,
+         CurrentBandwidthStats.ReceivedBytes,
+         CurrentBandwidthStats.ReceivedPackets,
+         CurrentBandwidthStats.ReceivedFrames,
          addedBytes, 1u, addedFrames,
          delay, delayDiff, jitter);
    }
