@@ -33,12 +33,13 @@
 #include "loglevel.h"
 #include "transfer.h"
 
+#include <fcntl.h>
+#include <netinet/tcp.h>
 #include <poll.h>
 #include <signal.h>
-#include <netinet/tcp.h>
+#include <unistd.h>
 
 #include <cstring>
-#include <set>
 #include <sstream>
 
 
@@ -57,15 +58,39 @@ FlowManager::FlowManager()
    FirstDisplayEvent = 0;
    LastDisplayEvent  = 0;
    NextDisplayEvent  = 0;
-   start();
+
+   // ====== Initialize Wakeup Pipe =========================================
+   WakeupPipe[0] = -1;
+   WakeupPipe[1] = -1;
+   if(pipe(WakeupPipe) == 0) {
+      for(int i = 0; i < 2; i++) {
+         const int flags = fcntl(WakeupPipe[i], F_GETFL, 0);
+         if(flags >= 0) {
+            fcntl(WakeupPipe[i], F_SETFL, flags | O_NONBLOCK);
+         }
+         fcntl(WakeupPipe[i], F_SETFD, FD_CLOEXEC);
+      }
+   }
 }
 
 
 // ###### Destructor ########################################################
 FlowManager::~FlowManager()
 {
-   stop();
-   waitForFinish();
+   if(isRunning()) {
+      stop();
+      waitForFinish();
+   }
+
+   // ====== Close Wakeup Pipe ==============================================
+   if(WakeupPipe[0] >= 0) {
+      ext_close(WakeupPipe[0]);
+      WakeupPipe[0] = -1;
+   }
+   if(WakeupPipe[1] >= 0) {
+      ext_close(WakeupPipe[1]);
+      WakeupPipe[1] = -1;
+   }
 
    // ====== Clean up measurements ==========================================
    std::map<std::pair<int, uint64_t>, Measurement*>::iterator measurementIterator = MeasurementSet.begin();
@@ -99,12 +124,45 @@ FlowManager::~FlowManager()
 }
 
 
+// ###### Wake up polling thread ############################################
+void FlowManager::wakeup()
+{
+   if(WakeupPipe[1] >= 0) {
+      const char token = 'W';
+      const ssize_t written = write(WakeupPipe[1], &token, 1);
+      (void)written;
+   }
+}
+
+
+// ###### Stop polling thread ###############################################
+void FlowManager::stop()
+{
+   Thread::stop();
+   wakeup();
+}
+
+
+// ###### Configure status display ##########################################
+void FlowManager::configureDisplay(const bool on)
+{
+   lock();
+   DisplayEnabled = on;
+   wakeup();
+   unlock();
+}
+
+
 // ###### Add flow ##########################################################
 void FlowManager::addFlow(Flow* flow)
 {
+   if(!isRunning()) {
+      start();
+   }
    lock();
    flow->PollFDEntry = nullptr;
    FlowSet.push_back(flow);
+   wakeup();
    unlock();
 }
 
@@ -118,7 +176,7 @@ void FlowManager::removeFlow(Flow* flow)
    // ====== Remove flow from flow set ======================================
    flow->PollFDEntry = nullptr;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
        if(*iterator == flow) {
           FlowSet.erase(iterator);
           break;
@@ -128,13 +186,14 @@ void FlowManager::removeFlow(Flow* flow)
    // ====== Check whether the socket descriptor is still referenced ========
    flow->OriginalSocketDescriptor = true;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
        if((*iterator)->SocketDescriptor == flow->SocketDescriptor) {
           flow->OriginalSocketDescriptor = false;
           break;
        }
    }
 
+   wakeup();
    unlock();
 }
 
@@ -146,8 +205,8 @@ void FlowManager::printFlows(std::ostream& os,
    lock();
    os << "FlowManager:\n";
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
-      Flow* flow= *iterator;
+       iterator != FlowSet.end(); iterator++) {
+      Flow* flow = *iterator;
       flow->print(os, printStatistics);
    }
    unlock();
@@ -163,7 +222,7 @@ Flow* FlowManager::findFlow(const uint64_t measurementID,
 
    lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
       Flow* flow = *iterator;
       if( (flow->MeasurementID == measurementID) &&
           (flow->FlowID == flowID) &&
@@ -186,7 +245,7 @@ Flow* FlowManager::findFlow(const int      socketDescriptor,
 
    lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
       Flow* flow = *iterator;
       if(flow->SocketDescriptor == socketDescriptor) {
          if(flow->StreamID == streamID) {
@@ -208,7 +267,7 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
 
    lock();
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
       Flow* flow = *iterator;
       if( (flow->RemoteAddressIsValid) &&
           (addresscmp(from, &flow->RemoteAddress.sa, true) == 0) ) {
@@ -242,7 +301,7 @@ bool FlowManager::beginMeasurement(const int                controlSocket,
                                  scalarNamePattern, scalarFileFormat)) {
          success = true;
          for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-            iterator != FlowSet.end();iterator++) {
+            iterator != FlowSet.end(); iterator++) {
             Flow* flow = *iterator;
             if(flow->MeasurementID == measurementID) {
                if(flow->setMeasurement(measurement)) {
@@ -269,6 +328,7 @@ bool FlowManager::beginMeasurement(const int                controlSocket,
          delete measurement;
       }
    }
+   wakeup();
    unlock();
    CPULoadStats.update();
 
@@ -283,7 +343,7 @@ bool FlowManager::beginMeasurement(const int                controlSocket,
 }
 
 
-// ###### Finish measurement ##################################################
+// ###### Finish measurement ################################################
 void FlowManager::finishMeasurement(const int      controlSocket,
                                     const uint64_t measurementID)
 {
@@ -291,7 +351,7 @@ void FlowManager::finishMeasurement(const int      controlSocket,
 
    LOG_INFO
    stdlog << format("Stopped measurement $%llx on socket %d\n",
-                     measurementID, controlSocket);
+                    measurementID, controlSocket);
    LOG_END
 }
 
@@ -367,6 +427,7 @@ void FlowManager::removeAllMeasurements(const int controlSocket)
       }
    }
 
+   wakeup();
    unlock();
 }
 
@@ -389,6 +450,10 @@ void FlowManager::printMeasurements(std::ostream& os)
 void FlowManager::addUnidentifiedSocket(const int protocol,
                                         const int socketDescriptor)
 {
+   if(!isRunning()) {
+      start();
+   }
+
    UnidentifiedSocket* us = new UnidentifiedSocket;
    us->SocketDescriptor = socketDescriptor;
    us->Protocol         = protocol;
@@ -399,6 +464,7 @@ void FlowManager::addUnidentifiedSocket(const int protocol,
    lock();
    Reader.registerSocket(protocol, socketDescriptor);
    UnidentifiedSockets.insert(std::pair<int, UnidentifiedSocket*>(socketDescriptor, us));
+   wakeup();
    unlock();
 }
 
@@ -419,6 +485,7 @@ void FlowManager::removeUnidentifiedSocket(const int  socketDescriptor,
       us->ToBeRemoved = true;
       us->ToBeClosed  = closeSocket;
    }
+   wakeup();
    unlock();
 }
 
@@ -460,9 +527,9 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
 // ###### Get next statistics or display events #############################
 unsigned long long FlowManager::getNextEvent()
 {
-   unsigned long long nextEvent = NextDisplayEvent;
-
    lock();
+   unsigned long long nextEvent = DisplayEnabled ? NextDisplayEvent : ~0ULL;
+
    for(std::map<std::pair<int, uint64_t>, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
        const Measurement* measurement = iterator->second;
@@ -585,7 +652,7 @@ void FlowManager::writeScalarStatistics(const uint64_t           measurementID,
    lock();
    FlowBandwidthStats totalBandwidthStats;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-      iterator != FlowSet.end();iterator++) {
+      iterator != FlowSet.end(); iterator++) {
       Flow* flow = *iterator;
       flow->lock();
       if(flow->MeasurementID == measurementID) {
@@ -730,7 +797,7 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
    FlowBandwidthStats currentTotalStats;
    const double duration = (now - lastStatisticsEvent) / 1000000.0;
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
-       iterator != FlowSet.end();iterator++) {
+       iterator != FlowSet.end(); iterator++) {
        Flow* flow = *iterator;
        if(flow->MeasurementID == measurementID) {
           flow->lock();
@@ -774,27 +841,27 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
    // ====== Write total statistics =========================================
    const unsigned long long line = vectorFile.getLine();
    const FlowBandwidthStats relTotalStats = currentTotalStats - lastTotalStats;
-      vectorFile.printf(
-         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
-            "\"Sent\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
-         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
-            "\"Received\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
-         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
-            "\"Lost\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n",
+   vectorFile.printf(
+      "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+         "\"Sent\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
+      "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+         "\"Received\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
+      "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+         "\"Lost\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n",
 
-         line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-            currentTotalStats.TransmittedBytes, currentTotalStats.TransmittedPackets, currentTotalStats.TransmittedFrames,
-            relTotalStats.TransmittedBytes, relTotalStats.TransmittedPackets, relTotalStats.TransmittedFrames,
+      line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+         currentTotalStats.TransmittedBytes, currentTotalStats.TransmittedPackets, currentTotalStats.TransmittedFrames,
+         relTotalStats.TransmittedBytes, relTotalStats.TransmittedPackets, relTotalStats.TransmittedFrames,
 
-         line + 2, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-            currentTotalStats.ReceivedBytes, currentTotalStats.ReceivedPackets, currentTotalStats.ReceivedFrames,
-            relTotalStats.ReceivedBytes, relTotalStats.ReceivedPackets, relTotalStats.ReceivedFrames,
+      line + 2, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+         currentTotalStats.ReceivedBytes, currentTotalStats.ReceivedPackets, currentTotalStats.ReceivedFrames,
+         relTotalStats.ReceivedBytes, relTotalStats.ReceivedPackets, relTotalStats.ReceivedFrames,
 
-         line + 3, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-            currentTotalStats.LostBytes, currentTotalStats.LostPackets, currentTotalStats.LostFrames,
-            relTotalStats.LostBytes, relTotalStats.LostPackets, relTotalStats.LostFrames);
+      line + 3, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+         currentTotalStats.LostBytes, currentTotalStats.LostPackets, currentTotalStats.LostFrames,
+         relTotalStats.LostBytes, relTotalStats.LostPackets, relTotalStats.LostFrames);
 
-    vectorFile.nextLine(); vectorFile.nextLine(); vectorFile.nextLine();
+   vectorFile.nextLine(); vectorFile.nextLine(); vectorFile.nextLine();
 
    // ====== Return global values (all measurements) for displaying =========
    globalStats     = CurrentGlobalStats;
@@ -815,36 +882,42 @@ void FlowManager::run()
       // ====== Collect PollFDs for poll() ==================================
       lock();
 
-      // NOTE:
-      // The UDP socket handles flows and incoming new connects.
-      // It is handled by mainLoop() of netperfmeter.cc, i.e. it must to be
-      // ignored here!
+      // Allocate space for flows + unidentified sockets + 1 wakeup pipe
+      pollfd       pollFDs[FlowSet.size() + UnidentifiedSockets.size() + 1];
+      unsigned int n = 0;
+
+      // ------ Register Wakeup Pipe ----------------------------------------
+      pollfd* wakeupPollFD = nullptr;
+      if(WakeupPipe[0] >= 0) {
+         pollFDs[n].fd      = WakeupPipe[0];
+         pollFDs[n].events  = POLLIN;
+         pollFDs[n].revents = 0;
+         wakeupPollFD       = &pollFDs[n];
+         n++;
+      }
 
       // ------ Get socket descriptors for flows ----------------------------
-      std::set<int> socketSet;
-      pollfd        pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
-      unsigned int  n = 0;
-#if defined(DEBUG_POLL)
-      std::cerr << "poll-init:\n";
-#endif
-      for(unsigned int i = 0;i  < FlowSet.size(); i++) {
+      for(unsigned int i = 0; i < FlowSet.size(); i++) {
          FlowSet[i]->lock();
          FlowSet[i]->PollFDEntry = nullptr;
          if( (FlowSet[i]->InputStatus != Flow::Off) &&
              (FlowSet[i]->SocketDescriptor >= 0) ) {
-            if(!((FlowSet[i]->getTrafficSpec().Protocol == IPPROTO_UDP) &&   // Global UDP socket is handled by main loop!
-                 (FlowSet[i]->ControlSocketDescriptor >= 0)) ) {             // Incoming UDP association has ControlSocketDescriptor >= 0.
-               if(socketSet.find(FlowSet[i]->SocketDescriptor) == socketSet.end()) {
+            if(!((FlowSet[i]->getTrafficSpec().Protocol == IPPROTO_UDP) &&
+                 (FlowSet[i]->isAcceptedIncomingFlow())) ) {
+               // Direct linear scan for duplicates (zero heap allocations)
+               bool alreadyAdded = false;
+               for(unsigned int j = 0; j < n; j++) {
+                  if(pollFDs[j].fd == FlowSet[i]->SocketDescriptor) {
+                     alreadyAdded = true;
+                     break;
+                  }
+               }
+               if(!alreadyAdded) {
                   pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
                   pollFDs[n].events  = POLLIN;
                   pollFDs[n].revents = 0;
                   FlowSet[i]->PollFDEntry = &pollFDs[n];
                   n++;
-                  socketSet.insert(FlowSet[i]->SocketDescriptor);
-#if defined(DEBUG_POLL)
-                  std::cerr << "\t" << n << ": flow socket " << FlowSet[i]->SocketDescriptor
-                            << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
-#endif
                }
             }
          }
@@ -861,12 +934,7 @@ void FlowManager::run()
             pollFDs[n].fd      = ud->SocketDescriptor;
             pollFDs[n].events  = POLLIN;
             pollFDs[n].revents = 0;
-            ud->PollFDEntry = &pollFDs[n];
-#if defined(DEBUG_POLL)
-            std::cerr << "\t" << n << ": unidentified socket "
-                      << ud->SocketDescriptor
-                      << " protocol " << ud->Protocol << "\n";
-#endif
+            ud->PollFDEntry    = &pollFDs[n];
             n++;
          }
       }
@@ -876,11 +944,13 @@ void FlowManager::run()
 
       // ====== Wait for events =============================================
       unsigned long long now = getMicroTime();
-      const int timeout = pollTimeout(getMicroTime(), 2,
-                                      now + 2500000,
-                                      nextEvent);
+      int timeout = -1;
+      if(nextEvent != ~0ULL) {
+         timeout = pollTimeout(now, 2, nextEvent, nextEvent);
+      }
+
 #if defined(DEBUG_POLL)
-      std::cerr << "poll with timeout=" << timeout << " ms\n";
+      std::cerr << "poll with timeout=" << timeout << " ms, n=" << n << "\n";
 #endif
       const int result = ext_poll_wrapper((pollfd*)&pollFDs, n, timeout);
 #if defined(DEBUG_POLL)
@@ -893,6 +963,14 @@ void FlowManager::run()
 
       now = getMicroTime();
       if(result > 0) {
+         // ------ Drain wakeup pipe ----------------------------------------
+         if(wakeupPollFD && (wakeupPollFD->revents & (POLLIN | POLLERR))) {
+            char buffer[64];
+            while(read(WakeupPipe[0], buffer, sizeof(buffer)) > 0) {
+               // Drained
+            }
+         }
+
          // ====== Handle read events of flows ==============================
          for(unsigned int i = 0; i < FlowSet.size(); i++) {
             FlowSet[i]->lock();
@@ -914,7 +992,7 @@ void FlowManager::run()
                      // Close the broken connection!
                      LOG_WARNING
                      stdlog << format("Closing disconnected socket %d!",
-                                       FlowSet[i]->SocketDescriptor) << "\n";
+                                      FlowSet[i]->SocketDescriptor) << "\n";
                      LOG_END
                      const bool deregisteredFromReader =
                         Reader.deregisterSocket(FlowSet[i]->SocketDescriptor);

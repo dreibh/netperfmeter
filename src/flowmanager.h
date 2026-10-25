@@ -66,11 +66,10 @@ class FlowManager : public Thread
       return FlowSet;
    }
 
-   inline void configureDisplay(const bool on) {
-      lock();
-      DisplayEnabled = on;
-      unlock();
-   }
+   void stop() override;
+   void wakeup();
+
+   void configureDisplay(const bool on);
 
    void addUnidentifiedSocket(const int protocol, const int socketDescriptor);
    void removeUnidentifiedSocket(const int  socketDescriptor,
@@ -144,6 +143,7 @@ class FlowManager : public Thread
    FlowBandwidthStats                 CurrentGlobalStats;
    FlowBandwidthStats                 LastGlobalStats;
    bool                               DisplayEnabled;
+   int                                WakeupPipe[2];
 
    // ------ Measurement Management -----------------------------------------
    std::map<std::pair<int, uint64_t>,
