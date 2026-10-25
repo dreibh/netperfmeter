@@ -56,6 +56,31 @@ FUNCTION(ADD_NETPERFMETER_FAIL_TEST TEST_NAME)
 ENDFUNCTION()
 
 
+# ###### Helper for parameterized flow tests ################################
+FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME PROTOCOL SPEC)
+   SET(RUNTIME "2")
+   IF(${ARGC} GREATER 3)
+      SET(RUNTIME "${ARGV3}")
+   ENDIF()
+
+   ADD_TEST(
+      NAME ${TEST_NAME}
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_flow.sh
+         $<TARGET_FILE:netperfmeter>
+         ${PROTOCOL}
+         ${SPEC}
+         ${RUNTIME}
+         ${ARGN}
+   )
+   SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:"
+      LABELS "flow;${PROTOCOL};integration"
+      TIMEOUT 30
+   )
+ENDFUNCTION()
+
+
 #############################################################################
 #### BASIC CLI OPTIONS                                                   ####
 #############################################################################
@@ -87,3 +112,14 @@ ADD_NETPERFMETER_FAIL_TEST(fail_no_args)
 # Unknown or malformed options must exit with code 1
 ADD_NETPERFMETER_FAIL_TEST(fail_invalid_option    --non-existent-option)
 ADD_NETPERFMETER_FAIL_TEST(fail_invalid_short_opt -Z)
+
+
+#############################################################################
+#### FLOW INTEGRATION TESTS                                              ####
+#############################################################################
+
+# --- TCP Flows -------------------------------------------------------------
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_const tcp const10:const1000:const10:const1000)
+
+# --- UDP Flows -------------------------------------------------------------
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_const udp const10:const1000:const10:const1000)
