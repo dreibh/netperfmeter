@@ -423,6 +423,7 @@ static void updateStatistics(Flow*                          flow,
    size_t lostBytes;
    flow->getDefragmenter()->purge(nowMonotonic.value, flow->getTrafficSpec().DefragmentTimeout,
                                   receivedFrames, lostFrames, lostPackets, lostBytes);
+printf("F=%llu\n", (unsigned long long)receivedFrames);
 
    flow->updateReceptionStatistics(
       nowMonotonic, nowSystem,
