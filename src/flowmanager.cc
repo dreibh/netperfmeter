@@ -60,15 +60,16 @@ FlowManager::FlowManager()
    FirstDisplayEvent = 0;
    LastDisplayEvent  = 0;
    NextDisplayEvent  = 0;
-   start();
 }
 
 
 // ###### Destructor ########################################################
 FlowManager::~FlowManager()
 {
-   stop();
-   waitForFinish();
+   if(isRunning()) {
+      stop();
+      waitForFinish();
+   }
 
    // ====== Clean up measurements ==========================================
    std::map<std::pair<int, uint64_t>, Measurement*>::iterator measurementIterator = MeasurementSet.begin();
@@ -105,6 +106,9 @@ FlowManager::~FlowManager()
 // ###### Add flow ##########################################################
 void FlowManager::addFlow(Flow* flow)
 {
+   if(!isRunning()) {
+      start();
+   }
    lock();
    flow->PollFDEntry = nullptr;
    FlowSet.push_back(flow);
@@ -418,6 +422,10 @@ void FlowManager::printMeasurements(std::ostream& os)
 void FlowManager::addUnidentifiedSocket(const int protocol,
                                         const int socketDescriptor)
 {
+   if(!isRunning()) {
+      start();
+   }
+
    UnidentifiedSocket* us = new UnidentifiedSocket;
    us->SocketDescriptor = socketDescriptor;
    us->Protocol         = protocol;
@@ -489,9 +497,9 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
 // ###### Get next statistics or display events #############################
 uint64_t FlowManager::getNextEvent()
 {
-   uint64_t nextEvent = NextDisplayEvent;
-
    lock();
+   uint64_t nextEvent = DisplayEnabled ? NextDisplayEvent : ~0ULL;
+
    for(std::map<std::pair<int, uint64_t>, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
        const Measurement* measurement = iterator->second;
