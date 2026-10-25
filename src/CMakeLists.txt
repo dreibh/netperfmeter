@@ -25,8 +25,6 @@
 # Contact:  dreibh@simula.no
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
-SET(CMAKE_INCLUDE_CURRENT_DIR ON)
-
 
 #############################################################################
 #### VERSION FILE                                                        ####
