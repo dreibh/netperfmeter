@@ -31,6 +31,7 @@
 #define DEFRAGMENTER_H
 
 #include <map>
+#include <ostream>
 
 #include "netperfmeterpackets.h"
 

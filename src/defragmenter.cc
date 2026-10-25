@@ -35,7 +35,7 @@
 #include <map>
 
 
-// ###### Constructor #################b######################################
+// ###### Constructor #######################################################
 Defragmenter::Defragmenter()
 {
    NextFrameID         = 0;
@@ -106,6 +106,7 @@ void Defragmenter::addFragment(const unsigned long long       now,
    std::map<uint32_t, Frame*>::iterator foundFrame = FrameSet.find(frameID);
    if(foundFrame != FrameSet.end()) {
       frame = foundFrame->second;
+      frame->LastUpdate = now;
    }
    else {
       // ====== Frame has to be created =====================================
@@ -134,6 +135,30 @@ void Defragmenter::addFragment(const unsigned long long       now,
    }
    else {
       // puts("Duplicate???");
+   }
+
+   // ====== Check whether frame is now complete ============================
+   if(frame->FragmentSet.size() > 0) {
+      const Fragment* firstFrag = frame->FragmentSet.begin()->second;
+      const Fragment* lastFrag  = frame->FragmentSet.rbegin()->second;
+
+      if((firstFrag->Flags & NPMDF_FRAME_BEGIN) && (lastFrag->Flags & NPMDF_FRAME_END)) {
+         bool contiguous = true;
+         std::map<uint64_t, Fragment*>::const_iterator it = frame->FragmentSet.begin();
+         const Fragment* prev = it->second;
+         it++;
+         while(it != frame->FragmentSet.end()) {
+            const Fragment* curr = it->second;
+            if((prev->PacketSeqNumber + 1 != curr->PacketSeqNumber) ||
+               (prev->ByteSeqNumber + prev->Length != curr->ByteSeqNumber)) {
+               contiguous = false;
+               break;
+            }
+            prev = curr;
+            it++;
+         }
+         frame->Completed = contiguous;
+      }
    }
 }
 
@@ -221,11 +246,19 @@ void Defragmenter::purge(const unsigned long long now,
    if(getFirstFragment(frame, fragment)) {
       bool eraseCurrentFragment;
       do {
-         if(frame->LastUpdate + defragmentTimeout <= now) {
+         const bool canReleaseComplete = (frame->Completed && (frame->FrameID <= NextFrameID));
+         const bool isTimedOut         = (frame->LastUpdate + defragmentTimeout <= now);
+
+         if(canReleaseComplete || isTimedOut) {
             eraseCurrentFragment = true;
 
             if(frame->FrameID >= NextFrameID) {
-               receivedFrames++;
+               if(frame->Completed) {
+                  receivedFrames++;
+               }
+               else {
+                  lostFrames++;   // Incomplete frame timed out
+               }
                lostFrames += ((unsigned long long)frame->FrameID - (unsigned long long)NextFrameID);
                NextFrameID = frame->FrameID + 1;
             }
