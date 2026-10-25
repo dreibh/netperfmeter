@@ -68,11 +68,16 @@ class FlowManager : public Thread
       return FlowSet;
    }
 
-   inline void configureDisplay(const bool on) {
-      lock();
-      DisplayEnabled = on;
-      unlock();
-   }
+   void stop() override;
+   void wakeup();
+
+   void configureDisplay(const bool on);
+
+   void addFlow(Flow* flow);
+   void removeFlow(Flow* flow);
+   void printFlows(std::ostream& os,
+                   const bool    printStatistics);
+
 
    void addUnidentifiedSocket(const int protocol, const int socketDescriptor);
    void removeUnidentifiedSocket(const int  socketDescriptor,
@@ -83,11 +88,6 @@ class FlowManager : public Thread
                         const int              socketDescriptor,
                         const sockaddr_union*  from,
                         bool&                  isAlreadyInitialised);
-
-   void addFlow(Flow* flow);
-   void removeFlow(Flow* flow);
-   void printFlows(std::ostream& os,
-                   const bool    printStatistics);
 
    bool beginMeasurement(const int        controlSocket,
                          const uint64_t   measurementID,
@@ -125,7 +125,6 @@ class FlowManager : public Thread
    void removeAllMeasurements(const int controlSocket);
    void printMeasurements(std::ostream& os);
 
-
    // ====== Protected Methods ==============================================
    protected:
    virtual void run();
@@ -146,6 +145,7 @@ class FlowManager : public Thread
    FlowBandwidthStats                 CurrentGlobalStats;
    FlowBandwidthStats                 LastGlobalStats;
    bool                               DisplayEnabled;
+   int                                WakeupPipe[2];
 
    // ------ Measurement Management -----------------------------------------
    std::map<std::pair<int, uint64_t>,

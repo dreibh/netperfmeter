@@ -38,6 +38,7 @@
 #include <cinttypes>
 #include <cstdint>
 #include <cstring>
+#include <fcntl.h>
 #include <netinet/tcp.h>
 #include <poll.h>
 #include <set>
@@ -60,6 +61,19 @@ FlowManager::FlowManager()
    FirstDisplayEvent = 0;
    LastDisplayEvent  = 0;
    NextDisplayEvent  = 0;
+
+   // ====== Initialize Wakeup Pipe =========================================
+   WakeupPipe[0] = -1;
+   WakeupPipe[1] = -1;
+   if(pipe(WakeupPipe) == 0) {
+      for(int i = 0; i < 2; i++) {
+         const int flags = fcntl(WakeupPipe[i], F_GETFL, 0);
+         if(flags >= 0) {
+            fcntl(WakeupPipe[i], F_SETFL, flags | O_NONBLOCK);
+         }
+         fcntl(WakeupPipe[i], F_SETFD, FD_CLOEXEC);
+      }
+   }
 }
 
 
@@ -69,6 +83,16 @@ FlowManager::~FlowManager()
    if(isRunning()) {
       stop();
       waitForFinish();
+   }
+
+   // ====== Close Wakeup Pipe ==============================================
+   if(WakeupPipe[0] >= 0) {
+      ext_close(WakeupPipe[0]);
+      WakeupPipe[0] = -1;
+   }
+   if(WakeupPipe[1] >= 0) {
+      ext_close(WakeupPipe[1]);
+      WakeupPipe[1] = -1;
    }
 
    // ====== Clean up measurements ==========================================
@@ -103,6 +127,35 @@ FlowManager::~FlowManager()
 }
 
 
+// ###### Wake up polling thread ############################################
+void FlowManager::wakeup()
+{
+   if(WakeupPipe[1] >= 0) {
+      const char token = 'W';
+      const ssize_t written = write(WakeupPipe[1], &token, 1);
+      (void)written;
+   }
+}
+
+
+// ###### Stop polling thread ###############################################
+void FlowManager::stop()
+{
+   Thread::stop();
+   wakeup();
+}
+
+
+// ###### Configure status display ##########################################
+void FlowManager::configureDisplay(const bool on)
+{
+   lock();
+   DisplayEnabled = on;
+   wakeup();
+   unlock();
+}
+
+
 // ###### Add flow ##########################################################
 void FlowManager::addFlow(Flow* flow)
 {
@@ -112,6 +165,7 @@ void FlowManager::addFlow(Flow* flow)
    lock();
    flow->PollFDEntry = nullptr;
    FlowSet.push_back(flow);
+   wakeup();
    unlock();
 }
 
@@ -142,6 +196,7 @@ void FlowManager::removeFlow(Flow* flow)
        }
    }
 
+   wakeup();
    unlock();
 }
 
@@ -302,6 +357,7 @@ bool FlowManager::beginMeasurement(const int        controlSocket,
          success = false;
       }
    }
+   wakeup();
    unlock();
    CPULoadStats.update();
 
@@ -402,6 +458,7 @@ void FlowManager::removeAllMeasurements(const int controlSocket)
       }
    }
 
+   wakeup();
    unlock();
 }
 
@@ -436,6 +493,7 @@ void FlowManager::addUnidentifiedSocket(const int protocol,
    lock();
    Reader.registerSocket(protocol, socketDescriptor);
    UnidentifiedSockets.insert(std::pair<int, UnidentifiedSocket*>(socketDescriptor, us));
+   wakeup();
    unlock();
 }
 
@@ -456,6 +514,7 @@ void FlowManager::removeUnidentifiedSocket(const int  socketDescriptor,
       us->ToBeRemoved = true;
       us->ToBeClosed  = closeSocket;
    }
+   wakeup();
    unlock();
 }
 
@@ -876,25 +935,32 @@ void FlowManager::run()
       // ====== Collect PollFDs for poll() ==================================
       lock();
 
-      // NOTE:
-      // The UDP socket handles flows and incoming new connects.
-      // It is handled by mainLoop() of netperfmeter.cc, i.e. it must to be
-      // ignored here!
-
-      // ------ Get socket descriptors for flows ----------------------------
+      // Allocate space for flows + unidentified sockets + 1 wakeup pipe
       std::set<int> socketSet;
-      pollfd        pollFDs[FlowSet.size() + UnidentifiedSockets.size()];
+      pollfd        pollFDs[FlowSet.size() + UnidentifiedSockets.size() + 1];
       unsigned int  n = 0;
 #if defined(DEBUG_POLL)
       std::cerr << "poll-init:\n";
 #endif
+
+      // ------ Register Wakeup Pipe ----------------------------------------
+      pollfd* wakeupPollFD = nullptr;
+      if(WakeupPipe[0] >= 0) {
+         pollFDs[n].fd      = WakeupPipe[0];
+         pollFDs[n].events  = POLLIN;
+         pollFDs[n].revents = 0;
+         wakeupPollFD       = &pollFDs[n];
+         n++;
+      }
+
+      // ------ Get socket descriptors for flows ----------------------------
       for(unsigned int i = 0; i < FlowSet.size(); i++) {
          FlowSet[i]->lock();
          FlowSet[i]->PollFDEntry = nullptr;
          if( (FlowSet[i]->InputStatus != Flow::Off) &&
              (FlowSet[i]->SocketDescriptor >= 0) ) {
-            if(!((FlowSet[i]->getTrafficSpec().Protocol == IPPROTO_UDP) &&   // Global UDP socket is handled by main loop!
-                 (FlowSet[i]->ControlSocketDescriptor >= 0)) ) {             // Incoming UDP association has ControlSocketDescriptor >= 0.
+            if(!((FlowSet[i]->getTrafficSpec().Protocol == IPPROTO_UDP) &&
+                 (FlowSet[i]->isAcceptedIncomingFlow())) ) {
                if(socketSet.find(FlowSet[i]->SocketDescriptor) == socketSet.end()) {
                   pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
                   pollFDs[n].events  = POLLIN;
@@ -902,10 +968,6 @@ void FlowManager::run()
                   FlowSet[i]->PollFDEntry = &pollFDs[n];
                   n++;
                   socketSet.insert(FlowSet[i]->SocketDescriptor);
-#if defined(DEBUG_POLL)
-                  std::cerr << "\t" << n << ": flow socket " << FlowSet[i]->SocketDescriptor
-                            << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
-#endif
                }
             }
          }
@@ -917,12 +979,11 @@ void FlowManager::run()
           iterator != UnidentifiedSockets.end(); iterator++) {
          UnidentifiedSocket* ud = iterator->second;
          ud->PollFDEntry = nullptr;
-         // See note above about UDP: UDP is handled by mainLoop()!
          if(ud->Protocol != IPPROTO_UDP) {
             pollFDs[n].fd      = ud->SocketDescriptor;
             pollFDs[n].events  = POLLIN;
             pollFDs[n].revents = 0;
-            ud->PollFDEntry = &pollFDs[n];
+            ud->PollFDEntry    = &pollFDs[n];
 #if defined(DEBUG_POLL)
             std::cerr << "\t" << n << ": unidentified socket "
                       << ud->SocketDescriptor
@@ -931,23 +992,26 @@ void FlowManager::run()
             n++;
          }
       }
+
       const uint64_t nextEvent = getNextEvent();
       unlock();
 
-
       // ====== Wait for events =============================================
+      // No more maxIdleTimeout! Sleep indefinitely (-1) if no timers are scheduled,
+      // or sleep until the exact nextEvent timestamp.
       MonotonicMicroTime nowMonotonic = getMonotonicMicroTime();
-      const int timeout = pollTimeout(nowMonotonic.value, 2,
-                                      (nowMonotonic + 2500000ULL).value,
-                                      nextEvent);
+      int timeout = -1;
+      if(nextEvent != ~0ULL) {
+         timeout = pollTimeout(nowMonotonic.value, 2, nextEvent, nextEvent);
+      }
+
 #if defined(DEBUG_POLL)
-      std::cerr << "poll with timeout=" << timeout << " ms\n";
+      std::cerr << "poll with timeout=" << timeout << " ms, n=" << n << "\n";
 #endif
       const int result = ext_poll((pollfd*)&pollFDs, n, timeout);
 #if defined(DEBUG_POLL)
       std::cerr << "poll result=" << result << "\n";
 #endif
-
 
       // ====== Handle events ===============================================
       lock();
@@ -955,6 +1019,14 @@ void FlowManager::run()
       nowMonotonic                    = getMonotonicMicroTime();
       const SystemMicroTime nowSystem = getSystemMicroTime();
       if(result > 0) {
+         // ------ Drain wakeup pipe ----------------------------------------
+         if(wakeupPollFD && (wakeupPollFD->revents & (POLLIN | POLLERR))) {
+            char buffer[64];
+            while(read(WakeupPipe[0], buffer, sizeof(buffer)) > 0) {
+               // Drained
+            }
+         }
+
          // ====== Handle read events of flows ==============================
          for(unsigned int i = 0; i < FlowSet.size(); i++) {
             FlowSet[i]->lock();
