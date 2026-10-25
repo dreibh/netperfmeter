@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 22, 2026
+.Dd October 23, 2026
 .Dt setpdfmetadata 1
 .Os setpdfmetadata
 .\" ###### Name #############################################################
@@ -36,11 +36,7 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm setpdfmetadata
-.Ar input\_pdf
-.br
-.Ar metadata\_file
-.br
-.Ar output\_pdf
+.Ar input_pdf metadata_file output_pdf
 .Nm setpdfmetadata
 .Op Fl h | Fl \-help
 .Nm setpdfmetadata
@@ -54,21 +50,23 @@ the document properties (e.g. author, title, keywords, creator, producer).
 .Pp
 The metadata file may contain the following commands:
 .Bl -tag -width indent
-.It outline Level Page Bookmark
+.It Cm outline Ar level page bookmark
 Add a PDF outline at the given level
 (0=chapter, 1=section, 2=subsection, 3=subsubsection, 4=paragraph, ...) and
-pointing to the given page number. Bookmark denotes the label text.
-.It author Author
+pointing to the given page number.
+.Ar bookmark
+denotes the label text.
+.It Cm author Ar author
 Sets the document author to the given value.
-.It title Title
+.It Cm title Ar title
 Sets the document title to the given value.
-.It subject Subject
+.It Cm subject Ar subject
 Sets the document subject to the given value.
-.It keywords Keywords
+.It Cm keywords Ar keywords
 Sets the document keywords to the given value.
-.It creator Creator
+.It Cm creator Ar creator
 Sets the document creator to the given value.
-.It producer Producer
+.It Cm producer Ar producer
 Sets the document producer to the given value.
 .El
 .Pp
@@ -76,11 +74,11 @@ Sets the document producer to the given value.
 .Sh ARGUMENTS
 The following arguments and options may be provided:
 .Bl -tag -width indent
-.It Ar input\_pdf
+.It Ar input_pdf
 The input PDF file name.
-.It Ar metadata\_file
+.It Ar metadata_file
 The metadata file name.
-.It Ar output\_pdf
+.It Ar output_pdf
 The output PDF file name.
 .It Fl h | Fl \-help
 Prints command\-line help.
@@ -94,11 +92,15 @@ The
 tool exits with 0 on success, and >0 in case of an error.
 .\" ###### Examples #########################################################
 .Sh EXAMPLES
-A setpdfmetadata usage example:
-.Bl -tag -width indent
-.It setpdfmetadata MyDocument.pdf MyMetadata.meta MyDocument\-Updated.pdf
-Update metadata of MyDocument.pdf using MyMetadata.meta and write the result to MyDocument\-Updated.pdf.
-.El
+Update metadata of
+.Pa MyDocument.pdf
+using
+.Pa MyMetadata.meta
+and write the result to
+.Pa MyDocument\-Updated.pdf :
+.Bd -literal
+setpdfmetadata MyDocument.pdf MyMetadata.meta MyDocument\-Updated.pdf
+.Ed
 .Pp
 A metadata file example:
 .Bd -literal

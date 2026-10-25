@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -40,6 +40,8 @@
 #include "cpustatus.h"
 #include "tools.h"
 
+#include <chrono>
+#include <cstdint>
 #include <map>
 #include <vector>
 
@@ -71,6 +73,12 @@ class FlowManager : public Thread
 
    void configureDisplay(const bool on);
 
+   void addFlow(Flow* flow);
+   void removeFlow(Flow* flow);
+   void printFlows(std::ostream& os,
+                   const bool    printStatistics);
+
+
    void addUnidentifiedSocket(const int protocol, const int socketDescriptor);
    void removeUnidentifiedSocket(const int  socketDescriptor,
                                  const bool closeSocket = true);
@@ -81,38 +89,33 @@ class FlowManager : public Thread
                         const sockaddr_union*  from,
                         bool&                  isAlreadyInitialised);
 
-   void addFlow(Flow* flow);
-   void removeFlow(Flow* flow);
-   void printFlows(std::ostream& os,
-                   const bool    printStatistics);
-
-   bool beginMeasurement(const int                controlSocket,
-                         const uint64_t           measurementID,
-                         const unsigned long long now,
-                         const char*              vectorNamePattern,
-                         const OutputFileFormat   vectorFileFormat,
-                         const char*              scalarNamePattern,
-                         const OutputFileFormat   scalarFileFormat);
+   bool beginMeasurement(const int        controlSocket,
+                         const uint64_t   measurementID,
+                         const uint64_t   nowMonotonic,
+                         const char*      vectorNamePattern,
+                         const FileFormat vectorFileFormat,
+                         const char*      scalarNamePattern,
+                         const FileFormat scalarFileFormat);
    void finishMeasurement(const int      controlSocket,
                           const uint64_t measurementID);
 
-   void writeScalarStatistics(const uint64_t           measurementID,
-                              const unsigned long long now,
-                              OutputFile&              scalarFile,
-                              const unsigned long long firstStatisticsEvent);
-   void writeVectorStatistics(const uint64_t           measurementID,
-                              const unsigned long long now,
-                              OutputFile&              vectorFile,
-                              FlowBandwidthStats&      globalStats,
-                              FlowBandwidthStats&      relGlobalStats,
-                              const unsigned long long firstStatisticsEvent,
-                              const unsigned long long lastStatisticsEvent);
+   void writeScalarStatistics(const uint64_t measurementID,
+                              const uint64_t nowMonotonic,
+                              OutputFile&    scalarFile,
+                              const uint64_t firstStatisticsEvent);
+   void writeVectorStatistics(const uint64_t      measurementID,
+                              const uint64_t      nowMonotonic,
+                              OutputFile&         vectorFile,
+                              FlowBandwidthStats& globalStats,
+                              FlowBandwidthStats& relGlobalStats,
+                              const uint64_t      firstStatisticsEvent,
+                              const uint64_t      lastStatisticsEvent);
 
    Flow* findFlow(const uint64_t measurementID,
                   const uint32_t flowID,
                   const uint16_t streamID);
-   Flow* findFlow(const int socketDescriptor,
-                  uint16_t  streamID);
+   Flow* findFlow(const int      socketDescriptor,
+                  const uint16_t streamID);
    Flow* findFlow(const struct sockaddr* from);
 
 
@@ -122,15 +125,14 @@ class FlowManager : public Thread
    void removeAllMeasurements(const int controlSocket);
    void printMeasurements(std::ostream& os);
 
-
    // ====== Protected Methods ==============================================
    protected:
-   void run();
+   virtual void run();
 
 
    // ====== Private Methods ================================================
-   unsigned long long getNextEvent();
-   void handleEvents(const unsigned long long now);
+   uint64_t getNextEvent();
+   void handleEvents(const uint64_t nowMonotonic);
 
 
    // ====== Private Data ===================================================
@@ -148,10 +150,10 @@ class FlowManager : public Thread
    // ------ Measurement Management -----------------------------------------
    std::map<std::pair<int, uint64_t>,
             Measurement*>             MeasurementSet;
-   unsigned long long                 DisplayInterval;
-   unsigned long long                 FirstDisplayEvent;
-   unsigned long long                 LastDisplayEvent;
-   unsigned long long                 NextDisplayEvent;
+   uint64_t                           DisplayInterval;
+   uint64_t                           FirstDisplayEvent;
+   uint64_t                           LastDisplayEvent;
+   uint64_t                           NextDisplayEvent;
    CPUStatus                          CPULoadStats;
    FlowBandwidthStats                 GlobalStats;      // For displaying only
    FlowBandwidthStats                 RelGlobalStats;   // For displaying only
@@ -178,4 +180,4 @@ int createAndBindSocket(const int             family,
                         const bool            bindV6Only);
 bool setBufferSizes(int sd, const int sndBufSize, const int rcvBufSize);
 
-#endif
+#endif // FLOWMANAGER_H

@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -34,30 +34,43 @@
 #include "config.h"
 #endif
 
+#include <chrono>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
+#include <format>
 #include <iostream>
 #include <netinet/in.h>
 #include <poll.h>
+#include <string>
+#include <string_view>
 #include <unistd.h>
 
 #include <ext_socket.h>
 
-// Endianess conversions: htobe*(), be*toh():
+#ifdef ENABLE_NLS
+#include <libintl.h>
+#else
+#define bindtextdomain(domain, dirname) { }
+#define textdomain(domain)              { }
+#define gettext(string)                 (string)
+#define ngettext(singular, plural, n)   (((n) == 1) ? (singular) : (plural))
+#endif
+
+// Endianness conversions: htobe*(), be*toh():
 #if defined(__linux__) || defined(__OpenBSD__) || defined(__sun) || defined(__sun__) || defined(__GNU__)
 #include <endian.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__)
 #include <sys/endian.h>
 #elif defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
-// Big Endian conversions:
 #define htobe16(x) OSSwapHostToBigInt16(x)
 #define be16toh(x) OSSwapBigToHostInt16(x)
 #define htobe32(x) OSSwapHostToBigInt32(x)
 #define be32toh(x) OSSwapBigToHostInt32(x)
 #define htobe64(x) OSSwapHostToBigInt64(x)
 #define be64toh(x) OSSwapBigToHostInt64(x)
-// Little Endian conversions:
 #define htole16(x) OSSwapHostToLittleInt16(x)
 #define le16toh(x) OSSwapLittleToHostInt16(x)
 #define htole32(x) OSSwapHostToLittleInt32(x)
@@ -70,7 +83,6 @@
 
 #include "mutex.h"
 
-
 // MPTCP definitions
 #if defined(HAVE_MPTCP)
 #include <linux/mptcp.h>
@@ -81,8 +93,6 @@
 extern "C" {
 #include <netinet/quic.h>
 }
-// #else
-// #warning QUIC is not supported by the API of this system!
 #endif
 
 // DCCP definitions
@@ -91,17 +101,94 @@ extern "C" {
 #endif
 
 
-std::string format(const char* fmt, ...);
+// ###### Modern C++20 string formatting ###################################
+template<typename... Args>
+inline std::string formatText(const std::string_view fmt, const Args&... args)
+{
+   try {
+      return std::vformat(fmt, std::make_format_args(args...));
+   }
+   catch(const std::format_error&) {
+      return std::string(fmt);
+   }
+}
 
-unsigned long long getMicroTime();
+
+// ###### Chrono-based time helpers #########################################
+struct MonotonicMicroTime
+{
+   uint64_t value{0};
+
+   constexpr MonotonicMicroTime() noexcept = default;
+   constexpr explicit MonotonicMicroTime(uint64_t v) noexcept : value(v) {}
+
+   constexpr auto operator<=>(const MonotonicMicroTime&) const noexcept = default;
+
+   // Duration between two monotonic timepoints is uint64_t microseconds:
+   constexpr uint64_t operator-(const MonotonicMicroTime& other) const noexcept {
+      return value - other.value;
+   }
+   constexpr MonotonicMicroTime operator+(uint64_t us) const noexcept {
+      return MonotonicMicroTime(value + us);
+   }
+   constexpr MonotonicMicroTime operator-(uint64_t us) const noexcept {
+      return MonotonicMicroTime(value - us);
+   }
+};
+
+struct SystemMicroTime
+{
+   uint64_t value{0};
+
+   constexpr SystemMicroTime() noexcept = default;
+   constexpr explicit SystemMicroTime(uint64_t v) noexcept : value(v) {}
+
+   constexpr auto operator<=>(const SystemMicroTime&) const noexcept = default;
+};
+
+[[nodiscard]] inline MonotonicMicroTime getMonotonicMicroTime() noexcept
+{
+   return MonotonicMicroTime(static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(
+         std::chrono::steady_clock::now().time_since_epoch()
+      ).count()
+   ));
+}
+
+[[nodiscard]] inline SystemMicroTime getSystemMicroTime() noexcept
+{
+   return SystemMicroTime(static_cast<uint64_t>(
+      std::chrono::duration_cast<std::chrono::microseconds>(
+         std::chrono::system_clock::now().time_since_epoch()
+      ).count()
+   ));
+}
+
+
 void printTimeStamp(std::ostream& os);
 int pollTimeout(const unsigned long long now, const size_t n, ...);
 
 
-int safestrcpy(char* dest, const char* src, const size_t size);
-int safestrcat(char* dest, const char* src, const size_t size);
+// ###### String copy/cat (strlcpy/strlcat) #################################
+#if !defined(HAVE_STRLCPY)
+size_t strlcpy(char* dest, const char* src, size_t size);
+#endif
+#if !defined(HAVE_STRLCAT)
+size_t strlcat(char* dest, const char* src, size_t size);
+#endif
 
-bool hasSuffix(const std::string& name, const std::string& suffix);
+// Backward compatibility wrappers
+inline int safestrcpy(char* dest, const char* src, const size_t size)
+{
+   return strlcpy(dest, src, size) < size;
+}
+
+inline int safestrcat(char* dest, const char* src, const size_t size)
+{
+   return strlcat(dest, src, size) < size;
+}
+
+[[nodiscard]] bool hasSuffix(const std::string& name, const std::string& suffix);
 void dissectName(const std::string& name,
                  std::string&       prefix,
                  std::string&       suffix);
@@ -113,9 +200,11 @@ union sockaddr_union {
    struct sockaddr_in6 in6;
 };
 
-bool checkIPv6();
-size_t getSocklen(const struct sockaddr* address);
-int addresscmp(const struct sockaddr* a1, const struct sockaddr* a2, const bool port);
+[[nodiscard]] bool checkIPv6();
+[[nodiscard]] size_t getSocklen(const struct sockaddr* address);
+[[nodiscard]] int addresscmp(const struct sockaddr* a1,
+                             const struct sockaddr* a2,
+                             const bool             port);
 bool address2string(const struct sockaddr* address,
                     char*                  buffer,
                     const size_t           length,
@@ -130,8 +219,8 @@ void printAddress(std::ostream&          os,
                   const bool             port      = true,
                   const bool             hideScope = false);
 
-const char* getProtocolName(const int protocol);
-uint16_t getPort(const struct sockaddr* address);
+[[nodiscard]] const char* getProtocolName(const int protocol);
+[[nodiscard]] uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
 #if defined(HAVE_SCTP)
 bool sendAbort(int sd, sctp_assoc_t assocID = 0);
@@ -154,13 +243,13 @@ int bindSocket(const int             sd,
 
 typedef unsigned long long network_double_t;
 
-network_double_t doubleToNetwork(double value);
-double networkToDouble(const network_double_t value);
+[[nodiscard]] network_double_t doubleToNetwork(double value);
+[[nodiscard]] double networkToDouble(const network_double_t value);
 
 
 void installBreakDetector();
 void uninstallBreakDetector();
-bool breakDetected();
+[[nodiscard]] bool breakDetected();
 void sendBreak(const bool quiet);
 
 
@@ -171,26 +260,16 @@ void sendBreak(const bool quiet);
 #define RANDOM_NORMAL           4
 #define RANDOM_TRUNCATED_NORMAL 5
 
-const char* getRandomGeneratorName(const uint8_t rng);
-double getRandomValue(const double* valueArray, const uint8_t rng);
-uint8_t random8();
-uint16_t random16();
-uint64_t random64();
-uint32_t random32();
-double randomDouble();
-double randomExpDouble(const double mean);
-double randomNormal(const double mean, const double stddev);
-double randomTruncNormal(const double mean, const double stddev);
-double randomParetoDouble(const double location, const double shape);
+[[nodiscard]] const char* getRandomGeneratorName(const uint8_t rng);
+[[nodiscard]] double getRandomValue(const double* valueArray, const uint8_t rng);
+[[nodiscard]] uint8_t random8();
+[[nodiscard]] uint16_t random16();
+[[nodiscard]] uint64_t random64();
+[[nodiscard]] uint32_t random32();
+[[nodiscard]] double randomDouble();
+[[nodiscard]] double randomExpDouble(const double mean);
+[[nodiscard]] double randomNormal(const double mean, const double stddev);
+[[nodiscard]] double randomTruncNormal(const double mean, const double stddev);
+[[nodiscard]] double randomParetoDouble(const double location, const double shape);
 
-#if defined(__APPLE__)
-// Apple's poll() function is broken. We need a wrapper to select() here!
-int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time);
-#else
-inline int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
-{
-   return ext_poll(fdlist, count, time);
-}
-#endif
-
-#endif
+#endif // TOOLS_H

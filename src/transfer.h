@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -31,16 +31,19 @@
 #define TRANSFER_H
 
 #include "flow.h"
+#include "tools.h"
 
+#include <cstdint>
 #include <sys/types.h>
 
 
-bool transmitFrame(Flow*                    flow,
-                   const unsigned long long now);
+bool transmitFrame(Flow*                   flow,
+                   const MonotonicMicroTime now);
 
 bool handleNetPerfMeterData(const bool               isActiveMode,
-                            const unsigned long long now,
+                            const MonotonicMicroTime nowMonotonic,
+                            const SystemMicroTime    nowSystem,
                             const int                protocol,
                             const int                sd);
 
-#endif
+#endif // TRANSFER_H

@@ -1,0 +1,6 @@
+usr/include/fileio/fileio.h
+usr/include/fileio/inputfile.h
+usr/include/fileio/outputfile.h
+usr/lib/${DEB_HOST_MULTIARCH}/libfileio*.so
+usr/lib/${DEB_HOST_MULTIARCH}/libfileio.a
+usr/lib/${DEB_HOST_MULTIARCH}/pkgconfig/libfileio.pc

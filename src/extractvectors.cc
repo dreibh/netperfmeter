@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -27,16 +27,20 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include <algorithm>
+#include <cctype>
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cctype>
-#include <getopt.h>
+#include <filesystem>
 #include <iostream>
 #include <map>
 #include <string>
-#include <unistd.h>
+#include <string_view>
 #include <vector>
+#include <getopt.h>
+#include <unistd.h>
 
 #if defined(HAVE_LIBIBERTY)
 #include <libiberty.h>
@@ -46,19 +50,44 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 }
 #endif
 
+#if __has_include(<format>)
+#include <format>
+template<typename... Args>
+static inline std::string formatText(const std::string_view fmt, const Args&... args)
+{
+   try {
+      return std::vformat(fmt, std::make_format_args(args...));
+   }
+   catch(const std::format_error&) {
+      return std::string(fmt);
+   }
+}
+#else
+template<typename... Args>
+static inline std::string formatText(const std::string_view fmt, const Args&...)
+{
+   return std::string(fmt);
+}
+#endif
+
+#include "fileio.h"
 #include "inputfile.h"
 #include "outputfile.h"
 #include "package-version.h"
 
 
-class VectorInfo
+struct VectorInfo
 {
-   public:
-   VectorInfo(const std::string& vectorPrefix, const bool splitMode) :
-   VectorPrefix(vectorPrefix), SplitMode(splitMode), Found(false) { }
-   std::string VectorPrefix;
-   bool        SplitMode;
-   bool        Found;
+   std::string vectorPrefix;
+   bool        splitMode { false };
+   bool        found     { false };
+};
+
+struct VectorMetadata
+{
+   std::string name;
+   std::string split;
+   std::string object;
 };
 
 
@@ -70,99 +99,96 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                                          const bool               addLineNumbers,
                                          const char*              separator)
 {
-   std::map<unsigned int, const std::string> vectorToNameMap;
-   std::map<unsigned int, const std::string> vectorToSplitMap;
-   std::map<unsigned int, const std::string> vectorToObjectMap;
-   unsigned long long                        outputLine = 0;
-   char                                      inBuffer[4096];
-   char                                      outBuffer[sizeof(inBuffer) + 4096];
-   bool                                      versionOkay  = false;
+   std::map<unsigned int, VectorMetadata> vectorMap;
+   unsigned long long                     outputLine  = 0;
+   char                                   inBuffer[4096];
+   bool                                   versionOkay = false;
 
    for(;;) {
       // ====== Read line from input file ===================================
-      bool          eof;
+      bool          eof = false;
       const ssize_t bytesRead = inputFile.readLine(inBuffer, sizeof(inBuffer), eof);
-      if((bytesRead < 0) || (eof)) {
+      if((bytesRead < 0) || eof) {
          break;
       }
 
+      // Strip any trailing \r from DOS line endings
+      size_t len = std::strlen(inBuffer);
+      if(len > 0 && inBuffer[len - 1] == '\r') {
+         inBuffer[--len] = '\0';
+      }
+
       // ====== Process line ================================================
-      outBuffer[0] = 0x00;
       if(!versionOkay) {
          // ====== Handle version number ====================================
-         unsigned int version;
+         unsigned int version = 0;
          if((inputFile.getLine() == 1) &&
-            (sscanf(inBuffer, "version %u", &version) == 1)) {
+            (std::sscanf(inBuffer, "version %u", &version) == 1)) {
             if(version != 2) {
-               std::cerr << "ERROR: Got unknown version number "
-                         << version << " (expected 2)\n";
-               exit(1);
+               std::cerr << "ERROR: Got unknown version number " << version << " (expected 2)\n";
+               std::exit(1);
             }
             versionOkay = true;
-            snprintf(outBuffer, sizeof(outBuffer),
-                     "Time%sEvent%sObject%sVector%sSplit%sValue\n",
-                     separator, separator, separator, separator, separator);
+            outputFile.printf("Time%sEvent%sObject%sVector%sSplit%sValue\n",
+                              separator, separator, separator, separator, separator);
+            outputLine++;
          }
          else {
             std::cerr << "ERROR: Missing \"version\" entry in input file!\n";
-            exit(1);
+            std::exit(1);
          }
       }
       else {
          // ====== Handle data line =========================================
-         unsigned int vectorID;
-         unsigned int event;
-         double       simTime;
-         double       value;
-         int          n;
-         if(sscanf(inBuffer, "%u %u %lf %lf%n",
-                   &vectorID, &event, &simTime, &value, &n) == 4) {
-            std::map<unsigned int, const std::string>::iterator found =
-               vectorToNameMap.find(vectorID);
-            if(found != vectorToNameMap.end()) {
+         unsigned int vectorID = 0;
+         unsigned int event    = 0;
+         double       simTime  = 0.0;
+         double       value    = 0.0;
+         int          n        = 0;
+         if(std::sscanf(inBuffer, "%u %u %lf %lf%n",
+                        &vectorID, &event, &simTime, &value, &n) == 4) {
+            const auto found = vectorMap.find(vectorID);
+            if(found != vectorMap.end()) {
                if(addLineNumbers) {
-                  snprintf(outBuffer, sizeof(outBuffer),
-                           "%u%s%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
-                           (unsigned int)outputLine,            separator,
-                           simTime,                             separator,
-                           event,                               separator,
-                           vectorToObjectMap[vectorID].c_str(), separator,
-                           found->second.c_str(),               separator,
-                           vectorToSplitMap[vectorID].c_str(),  separator,
-                           value);
+                  outputFile.printf("%llu%s%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
+                                    outputLine,                   separator,
+                                    simTime,                      separator,
+                                    event,                        separator,
+                                    found->second.object.c_str(), separator,
+                                    found->second.name.c_str(),   separator,
+                                    found->second.split.c_str(),  separator,
+                                    value);
                }
                else {
-                  snprintf(outBuffer, sizeof(outBuffer),
-                           "%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
-                           simTime,                             separator,
-                           event,                               separator,
-                           vectorToObjectMap[vectorID].c_str(), separator,
-                           found->second.c_str(),               separator,
-                           vectorToSplitMap[vectorID].c_str(),  separator,
-                           value);
+                  outputFile.printf("%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
+                                    simTime,                      separator,
+                                    event,                        separator,
+                                    found->second.object.c_str(), separator,
+                                    found->second.name.c_str(),   separator,
+                                    found->second.split.c_str(),  separator,
+                                    value);
                }
+               outputLine++;
             }
          }
 
          // ====== Handle vector definition =================================
-         else if(strncmp(inBuffer, "vector ", 7) == 0) {
+         else if(std::strncmp(inBuffer, "vector ", 7) == 0) {
             char objectName[1024];
             char vectorName[1024];
-            if( (sscanf(inBuffer, "vector %u %1022s \"%1022[^\\\"]\" ETV",
-                        &vectorID, objectName, vectorName) == 3) ||
-                (sscanf(inBuffer, "vector %u %1022s %1022[^\\\"] ETV",
-                        &vectorID, objectName, vectorName) == 3) ) {
-               bool includeVector = (vectorsToExtract.size() == 0);
+            if((std::sscanf(inBuffer, "vector %u %1022s \"%1022[^\\\"]\" ETV",
+                            &vectorID, objectName, vectorName) == 3) ||
+               (std::sscanf(inBuffer, "vector %u %1022s %1022[^\\\"] ETV",
+                            &vectorID, objectName, vectorName) == 3)) {
+               bool includeVector = vectorsToExtract.empty();
                bool splitMode     = defaultVectorSplittingMode;
+
                if(!includeVector) {
-                  for(std::vector<VectorInfo>::iterator iterator = vectorsToExtract.begin();
-                      iterator != vectorsToExtract.end(); iterator++) {
-                     VectorInfo& vectorInfo = *iterator;
-                     if(strncmp(vectorInfo.VectorPrefix.c_str(),
-                                vectorName, vectorInfo.VectorPrefix.size()) == 0) {
-                        includeVector = true;
-                        vectorInfo.Found = true;
-                        if(vectorInfo.SplitMode) {
+                  for(auto& vectorInfo : vectorsToExtract) {
+                     if(std::string_view(vectorName).starts_with(vectorInfo.vectorPrefix)) {
+                        includeVector    = true;
+                        vectorInfo.found = true;
+                        if(vectorInfo.splitMode) {
                            splitMode = true;
                         }
                      }
@@ -170,59 +196,43 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                }
 
                if(includeVector) {
-                  const char* splitName = "";
+                  std::string vName(vectorName);
+                  std::string splitName;
                   if(splitMode) {
-                     for(int i = strlen(vectorName); i >= 0; i--) {
-                        if(vectorName[i] == ' ') {
-                           splitName     = &vectorName[i + 1];
-                           vectorName[i] = 0x00;
-                           break;
-                        }
+                     const auto lastSpace = vName.rfind(' ');
+                     if(lastSpace != std::string::npos) {
+                        splitName = vName.substr(lastSpace + 1);
+                        vName.erase(lastSpace);
                      }
-                     std::cout << "Adding vector \"" << vectorName << "\", split \""
+                     std::cout << "Adding vector \"" << vName << "\", split \""
                                << splitName << "\" of object " << objectName << " ...\n";
                   }
                   else {
-                     std::cout << "Adding vector \"" << vectorName << "\" of object "
+                     std::cout << "Adding vector \"" << vName << "\" of object "
                                << objectName << " ...\n";
                   }
 
-                  vectorToNameMap.insert(std::pair<unsigned int, const std::string>(
-                     vectorID, std::string(vectorName)));
-                  vectorToSplitMap.insert(std::pair<unsigned int, const std::string>(
-                     vectorID, std::string(splitName)));
-                  vectorToObjectMap.insert(std::pair<unsigned int, const std::string>(
-                     vectorID, std::string(objectName)));
+                  vectorMap.emplace(vectorID, VectorMetadata {
+                     .name   = std::move(vName),
+                     .split  = std::move(splitName),
+                     .object = std::string(objectName)
+                  });
                }
             }
             else {
                std::cerr << "ERROR: Unexpected vector definition on input file "
                          << inputFile.getLine() << "!\n";
-               exit(1);
+               std::exit(1);
             }
          }
-      }
-
-
-      // ====== Write output line ===========================================
-      if(outBuffer[0] != 0x00) {
-         if(!outputFile.write(outBuffer, strlen(outBuffer))) {
-            exit(1);
-         }
-         outputLine++;
       }
    }
 
    // ====== Warn, if no vector had been extracted ==========================
-   unsigned int uniqueFoundPrefixes = 0;
-   for(std::vector<VectorInfo>::iterator iterator = vectorsToExtract.begin();
-       iterator != vectorsToExtract.end(); iterator++) {
-      if(iterator->Found) {
-         uniqueFoundPrefixes++;
-      }
-   }
-   if( (uniqueFoundPrefixes < vectorsToExtract.size()) &&
-       (vectorsToExtract.size() != 0) ) {
+   const size_t uniqueFoundPrefixes = static_cast<size_t>(
+      std::ranges::count_if(vectorsToExtract, [](const VectorInfo& v) { return v.found; })
+   );
+   if((uniqueFoundPrefixes < vectorsToExtract.size()) && !vectorsToExtract.empty()) {
       std::cerr << "WARNING: Found only " << uniqueFoundPrefixes << " of "
                 << vectorsToExtract.size() << " specified!\n";
    }
@@ -231,12 +241,11 @@ static unsigned long long extractVectors(InputFile&               inputFile,
 }
 
 
-
-// ###### Version ###########################################################
-[[ noreturn ]] static void version()
+// ###### Version #==========================================================
+[[noreturn]] static void version()
 {
-   std::cerr << "ExtractVectors" << " " << EXTRACTVECTORS_VERSION << "\n";
-   exit(0);
+   std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n";
+   std::exit(0);
 }
 
 
@@ -253,174 +262,201 @@ static unsigned long long extractVectors(InputFile&               inputFile,
 [[ noreturn ]]
 static void usage(const char* program, const int exitCode)
 {
+   const std::string manpage(std::string("\x1b[1m") +
+                             std::filesystem::path(program).stem().string() +
+                             std::string("\x1b[0m"));
+   const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
+                              std::string(PROJECT_HOMEPAGE_URL) +
+                              "\a" + std::string(PROJECT_HOMEPAGE_URL) + "\a" +
+                              std::string("\x1b]8;;\a\x1b[0m"));
+   const std::string repository(std::string("\x1b[1m\x1b]8;;") +
+                                std::string(PROJECT_SOURCE_URL) +
+                                "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
+                                std::string("\x1b]8;;\a\x1b[0m"));
+
    std::cerr << HEADER("Usage:") << "\n"
-             << CMD(program) << "\n"
-                   ENTRY(ARG("input_file"))
-                   ENTRY(ARG("output_file"))
-                   ENTRY(ARG("[!]vector_name_prefix"))
-                   ENTRY("...")
+             << CMD(program) << " "
+                ARG("input_file") " " ARG("output_file") "\n"
                    ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
                    ENTRY(OPT("-s") " " ARG("separator") PIPE OPT("--separator") " " ARG("separator"))
                    ENTRY(OPT("-l") PIPE OPT("--line-numbers") PIPE OPT("-n") PIPE OPT("--no-line-numbers"))
                    ENTRY(OPT("-p") PIPE OPT("--split") PIPE OPT("-a") PIPE OPT("--no-split"))
                    ENTRY(OPT("-q") PIPE OPT("--quiet"))
+                   ENTRY(ARG("[!]vector_name_prefix") " " SYN("[") "..." SYN("]"))
              << CMD(program) << "\n"
                    ENTRY(OPT("-h") PIPE OPT("--help"))
              << CMD(program) << "\n"
-                   ENTRY(OPT("-v") PIPE OPT("--version"));
-   exit(exitCode);
+                   ENTRY(OPT("-v") PIPE OPT("--version"))
+             << "\n"
+             << formatText("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM.",
+                           manpage, homepage, repository) << "\n";
+   std::exit(exitCode);
 }
 // ------ END-OF-USAGE-BLOCK ------
 
 
-
-// ###### Main program ######################################################
+// ###### Main program ======================================================
 int main(int argc, char** argv)
 {
    bool                    addLineNumbers      = false;
-   unsigned int            compressionLevel    = 9;
+   int                     explicitLevel       = -1;
    const char*             separator           = "\t";
    bool                    vectorSplittingMode = false;
    bool                    quietMode           = false;
    std::vector<VectorInfo> vectorsToExtract;
 
-
    // ====== Handle command-line arguments ==================================
-   const static struct option long_options[] = {
-      { "compress",        required_argument, 0, 'c' },
-      { "separator",       required_argument, 0, 's' },
-      { "line-numbers",    no_argument,       0, 'l' },
-      { "no-line-numbers", no_argument,       0, 'n' },
-      { "split",           no_argument,       0, 'p' },
-      { "no-split",        no_argument,       0, 'a' },
-      { "quiet",           no_argument,       0, 'q' },
+   static const struct option long_options[] = {
+      { "compress",        required_argument, nullptr, 'c' },
+      { "separator",       required_argument, nullptr, 's' },
+      { "line-numbers",    no_argument,       nullptr, 'l' },
+      { "no-line-numbers", no_argument,       nullptr, 'n' },
+      { "split",           no_argument,       nullptr, 'p' },
+      { "no-split",        no_argument,       nullptr, 'a' },
+      { "quiet",           no_argument,       nullptr, 'q' },
 
-      { "help",            no_argument,       0, 'h' },
-      { "version",         no_argument,       0, 'v' },
-      {  nullptr,          0,                 0, 0   }
+      { "help",            no_argument,       nullptr, 'h' },
+      { "version",         no_argument,       nullptr, 'v' },
+      { nullptr,           0,                 nullptr, 0   }
    };
 
-   int option;
-   int longIndex;
-   while( (option = getopt_long_only(argc, argv, "c:s:lnpaqhv", long_options, &longIndex)) != -1 ) {
+   int option    = 0;
+   int longIndex = 0;
+   while((option = getopt_long_only(argc, argv, "c:s:lnpaqhv", long_options, &longIndex)) != -1) {
       switch(option) {
          case 'c':
-            compressionLevel = atol(optarg);
-            if(compressionLevel < 1) {
-               compressionLevel = 1;
-            }
-            else if(compressionLevel > 9) {
-               compressionLevel = 9;
-            }
-          break;
+            explicitLevel = std::atoi(optarg);
+            break;
          case 's':
             separator = optarg;
-          break;
+            break;
          case 'l':
             addLineNumbers = true;
-          break;
+            break;
          case 'n':
             addLineNumbers = false;
-          break;
+            break;
          case 'p':
             vectorSplittingMode = true;
-          break;
+            break;
          case 'a':
             vectorSplittingMode = false;
-          break;
+            break;
          case 'q':
             quietMode = true;
-          break;
+            break;
          case 'v':
             version();
-          break;
+            break;
          case 'h':
          case '?':
-            // Exit with 0 on h/help, exit with 1 on '?' (unknown option):
             usage(argv[0], (option == 'h') ? 0 : 1);
-          break;
+            break;
          case '-':
-          break;
+            break;
          default:
-            // This should not happen: wrong getopt parameters, or missing case?
-            fprintf(stderr, "INTERNAL ERROR: Unhandled option c=%c code=%x!\n",
-                    (isprint(option) ? (char)option : ' '), option);
+            std::cerr << "INTERNAL ERROR: Unhandled option code=" << option << "!\n";
             return 1;
-          break;
       }
    }
+
    if(optind + 1 >= argc) {
       usage(argv[0], 1);
    }
    const std::string inputFileName(argv[optind++]);
    const std::string outputFileName(argv[optind++]);
 
+   // ====== Detect formats & validate compression level ====================
+   const FileFormat inputFileFormat  = detectFormat(inputFileName);
+   const FileFormat outputFileFormat = detectFormat(outputFileName);
+
+   unsigned int compressionLevel = 0;
+   if(explicitLevel >= 0) {
+      if(!isValidCompressionLevel(outputFileFormat, explicitLevel)) {
+         std::cerr << "ERROR: Compression level " << explicitLevel
+                   << " is invalid for format " << getFormatName(outputFileFormat) << "!\n";
+         if(outputFileFormat == FileFormat::Plain) {
+            std::cerr << "Compression level for Plain format must be 0.\n";
+         }
+         else {
+            std::cerr << "Allowed range: " << getMinCompressionLevel(outputFileFormat)
+                      << " to " << getMaxCompressionLevel(outputFileFormat) << "\n";
+         }
+         std::exit(1);
+      }
+      compressionLevel = static_cast<unsigned int>(explicitLevel);
+   }
+   else {
+      compressionLevel = getDefaultCompressionLevel(outputFileFormat);
+   }
 
    // ====== Print information ==============================================
    if(!quietMode) {
       std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n"
-                << "* Vector Splitting:  " << (vectorSplittingMode  ? "on" : "off") << "\n"
+                << "* Vector Splitting:  " << (vectorSplittingMode ? "on" : "off") << "\n"
+                << "* Input Format:      " << getFormatName(inputFileFormat) << "\n"
+                << "* Output Format:     " << getFormatName(outputFileFormat) << "\n"
                 << "* Compression Level: " << compressionLevel << "\n"
                 << "\n";
    }
 
-
-   // ====== Open files =====================================================
-   InputFile        inputFile;
-   InputFileFormat  inputFileFormat = IFF_Plain;
-   if( (inputFileName.size() >= 4) &&
-       ( (inputFileName.substr(inputFileName.size() - 4) == ".bz2") ||
-         (inputFileName.substr(inputFileName.size() - 4) == ".BZ2")) ) {
-       inputFileFormat = IFF_BZip2;
-   }
-   if(inputFile.initialize(inputFileName.c_str(), inputFileFormat) == false) {
-      exit(1);
-   }
-
-   OutputFile       outputFile;
-   OutputFileFormat outputFileFormat = OFF_Plain;
-   if( (outputFileName.size() >= 4) &&
-       ( (outputFileName.substr(outputFileName.size() - 4) == ".bz2") ||
-         (outputFileName.substr(outputFileName.size() - 4) == ".BZ2")) ) {
-       outputFileFormat = OFF_BZip2;
-   }
-   if(outputFile.initialize(outputFileName.c_str(), outputFileFormat,
-                            compressionLevel) == false) {
-      exit(1);
-   }
-
-
-   // ====== Extract vectors ================================================
+   // ====== Parse vector name prefixes =====================================
    for(int i = optind; i < argc; i++) {
-      if(argv[i][0] == '!') {
-         VectorInfo vectorInfo(&argv[i][1], true);
-         vectorsToExtract.push_back(vectorInfo);
+      const std::string_view arg(argv[i]);
+      if(!arg.empty() && arg.front() == '!') {
+         vectorsToExtract.push_back(VectorInfo {
+            .vectorPrefix = std::string(arg.substr(1)),
+            .splitMode    = true,
+            .found        = false
+         });
       }
       else {
-         VectorInfo vectorInfo(argv[i], vectorSplittingMode);
-         vectorsToExtract.push_back(vectorInfo);
+         vectorsToExtract.push_back(VectorInfo {
+            .vectorPrefix = std::string(arg),
+            .splitMode    = vectorSplittingMode,
+            .found        = false
+         });
       }
    }
-   const unsigned long long lines =
-      extractVectors(inputFile, outputFile,
-                     vectorSplittingMode, vectorsToExtract,
-                     addLineNumbers, separator);
 
+   // ====== Process files ==================================================
+   try {
+      InputFile inputFile;
+      inputFile.initialize(inputFileName, inputFileFormat);
 
-   // ====== Close files ====================================================
-   inputFile.finish();
+      OutputFile outputFile;
+      outputFile.initialize(outputFileName, outputFileFormat, compressionLevel);
 
-   unsigned long long in, out;
-   if(!outputFile.finish(true, &in, &out)) {
-      exit(1);
-   }
-   if(!quietMode) {
-      std::cout << "Wrote " << lines << " lines";
-      if(in > 0) {
-         std::cout << " (" << in << " -> " << out << " - "
-                     << ((double)out * 100.0 / in) << "%)";
+      const unsigned long long lines = extractVectors(inputFile, outputFile,
+                                                      vectorSplittingMode, vectorsToExtract,
+                                                      addLineNumbers, separator);
+
+      inputFile.finish();
+
+      unsigned long long in  = 0;
+      unsigned long long out = 0;
+      outputFile.finish(true, &in, &out);
+
+      if(!quietMode) {
+         std::cout << "Wrote " << lines << " lines";
+         if(in > 0) {
+            std::cout << " (" << in << " -> " << out << " - "
+                      << (static_cast<double>(out) * 100.0 / static_cast<double>(in)) << "%)";
+         }
+         std::cout << "\n";
       }
-      std::cout << "\n";
+   }
+   catch(const InputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
+      std::exit(1);
+   }
+   catch(const OutputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
+      std::exit(1);
+   }
+   catch(const std::exception& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
+      std::exit(1);
    }
 
    return 0;

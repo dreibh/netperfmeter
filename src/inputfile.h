@@ -19,7 +19,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -30,58 +30,110 @@
 #ifndef INPUTFILE_H
 #define INPUTFILE_H
 
-#include <bzlib.h>
-#include <iostream>
+#include "fileio.h"
+
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
+#include <cstring>
+#include <filesystem>
+#include <memory>
+#include <stdexcept>
 #include <string>
+#include <string_view>
+#include <sys/types.h>
 
 
-// Input File Formats
-enum InputFileFormat
+// ###### Input File Exception ##############################################
+class InputFileException : public std::runtime_error
 {
-   IFF_Plain = 1,
-   IFF_BZip2 = 2
+   public:
+   InputFileException(std::string_view message,
+                      std::string_view filename  = {},
+                      int              errorCode = 0,
+                      std::string_view reason    = {})
+      : std::runtime_error(formatErrorMessage(message, filename, errorCode, reason)),
+        Filename(filename),
+        Reason(!reason.empty() ? std::string(reason) : (errorCode != 0 ? std::string(std::strerror(errorCode)) : std::string())),
+        ErrorCode(errorCode)
+   {
+   }
+
+   [[nodiscard]] const std::string& getFileName() const noexcept { return Filename; }
+   [[nodiscard]] const std::string& getReason() const noexcept   { return Reason; }
+   [[nodiscard]] int getErrorCode() const noexcept               { return ErrorCode; }
+
+   private:
+   static std::string formatErrorMessage(std::string_view message,
+                                         std::string_view filename,
+                                         int              errorCode,
+                                         std::string_view reason)
+   {
+      std::string result(message);
+      if(!filename.empty()) {
+         result += " <";
+         result += filename;
+         result += ">";
+      }
+      if(!reason.empty()) {
+         result += ": ";
+         result += reason;
+      }
+      else if(errorCode != 0) {
+         result += ": ";
+         result += std::strerror(errorCode);
+      }
+      return result;
+   }
+
+   std::string Filename;
+   std::string Reason;
+   int         ErrorCode { 0 };
 };
 
 
+// ###### Input File Class ##################################################
 class InputFile
 {
-   // ====== Methods ========================================================
    public:
    InputFile();
    ~InputFile();
 
-   bool initialize(const char*            name,
-                   const InputFileFormat format);
-   bool finish(const bool closeFile = true);
+   InputFile(const InputFile&) = delete;
+   InputFile& operator=(const InputFile&) = delete;
 
-   inline bool exists() const {
-      return File || BZFile;
+   InputFile(InputFile&& other) noexcept;
+   InputFile& operator=(InputFile&& other) noexcept;
+
+   void initialize(const std::filesystem::path& name,
+                   FileFormat                   format = FileFormat::Plain);
+
+   void initialize(const char* name,
+                   FileFormat  format = FileFormat::Plain);
+
+   void finish(bool closeFile = true);
+
+   size_t read(char* buffer, size_t bufferSize);
+   inline size_t read(void* buffer, size_t bufferSize) {
+      return read(static_cast<char*>(buffer), bufferSize);
    }
-   inline InputFileFormat getFormat() const {
-      return Format;
-   }
-   inline FILE* getFile() const {
-      return File;
-   }
-   inline const std::string& getName() const {
-      return Name;
-   }
-   inline unsigned long long getLine() const {
-      return Line;
-   }
+
    ssize_t readLine(char* buffer, size_t bufferSize, bool& eof);
+   bool readLine(std::string& line);
 
-   // ====== Private Data ===================================================
+   [[nodiscard]] bool exists() const noexcept;
+   [[nodiscard]] inline FileFormat getFormat() const noexcept  { return Format; }
+   [[nodiscard]] FILE* getFile() const noexcept;
+   [[nodiscard]] inline const std::string& getName() const noexcept { return Name;   }
+   [[nodiscard]] inline unsigned long long getLine() const noexcept { return Line;   }
+
    private:
-   InputFileFormat    Format;
+   struct Impl;
+   std::unique_ptr<Impl> Pimpl;
+
+   FileFormat         Format { FileFormat::None };
    std::string        Name;
-   unsigned long long Line;
-   FILE*              File;
-   BZFILE*            BZFile;
-   bool               ReadError;
-   size_t             StoragePos;
-   char               Storage[16384];
+   unsigned long long Line   { 0 };
 };
 
-#endif
+#endif // INPUTFILE_H

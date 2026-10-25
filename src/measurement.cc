@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -30,38 +30,47 @@
 #include "measurement.h"
 #include "flow.h"
 
+#include <exception>
+#include <stdexcept>
 
-// ###### Destructor ########################################################
+
+// ###### Constructor #######################################################
 Measurement::Measurement()
 {
-   MeasurementID        = 0;
-   FirstTransmission    = 0;
-   LastTransmission     = 0;
-   FirstReception       = 0;
-   LastReception        = 0;
+   MeasurementID           = 0;
+   ControlSocketDescriptor = -1;
+   FirstTransmission       = 0;
+   LastTransmission        = 0;
+   FirstReception          = 0;
+   LastReception           = 0;
 
-   StatisticsInterval   = 1000000;
-   FirstStatisticsEvent = 0;
-   LastStatisticsEvent  = 0;
-   NextStatisticsEvent  = 0;
+   StatisticsInterval      = 1000000ULL;
+   FirstStatisticsEvent    = 0;
+   LastStatisticsEvent     = 0;
+   NextStatisticsEvent     = 0;
 }
 
 
 // ###### Destructor ########################################################
 Measurement::~Measurement()
 {
-   finish(true);
+   try {
+      finish(true);
+   }
+   catch(...) {
+      // Destructors must remain noexcept
+   }
 }
 
 
 // ###### Initialize measurement ############################################
-bool Measurement::initialize(const unsigned long long now,
-                             const int                controlSocketDescriptor,
-                             const uint64_t           measurementID,
-                             const char*              vectorNamePattern,
-                             const OutputFileFormat   vectorFileFormat,
-                             const char*              scalarNamePattern,
-                             const OutputFileFormat   scalarFileFormat)
+void Measurement::initialize([[maybe_unused]] const uint64_t now,
+                             const int                       controlSocketDescriptor,
+                             const uint64_t                  measurementID,
+                             const char*                     vectorNamePattern,
+                             const FileFormat                vectorFileFormat,
+                             const char*                     scalarNamePattern,
+                             const FileFormat                scalarFileFormat)
 {
    ControlSocketDescriptor = controlSocketDescriptor;
    MeasurementID           = measurementID;
@@ -69,37 +78,82 @@ bool Measurement::initialize(const unsigned long long now,
    LastStatisticsEvent     = 0;
    NextStatisticsEvent     = 0;
 
-   if(FlowManager::getFlowManager()->addMeasurement(ControlSocketDescriptor, this)) {
+   if(!FlowManager::getFlowManager()->addMeasurement(ControlSocketDescriptor, this)) {
+      throw std::runtime_error("Unable to add measurement to FlowManager");
+   }
+
+   try {
       VectorNamePattern = (vectorNamePattern != nullptr) ?
                              std::string(vectorNamePattern) : std::string();
-      const bool s1 = VectorFile.initialize(
-                         (vectorNamePattern != nullptr) ?
-                            Flow::getNodeOutputName(vectorNamePattern, "active").c_str() : nullptr,
-                         vectorFileFormat);
+      if(vectorFileFormat != FileFormat::None) {
+         if(!VectorNamePattern.empty()) {
+            VectorFile.initialize(
+               Flow::getNodeOutputName(VectorNamePattern, "active"),
+               vectorFileFormat);
+         }
+         else {
+            // Passive instance: buffer output in a temporary file for subsequent upload
+            VectorFile.initialize(std::filesystem::path{}, vectorFileFormat);
+         }
+      }
+      else {
+         VectorFile.initialize(std::filesystem::path{}, FileFormat::None);
+      }
+
       ScalarNamePattern = (scalarNamePattern != nullptr) ?
                              std::string(scalarNamePattern) : std::string();
-      const bool s2 = ScalarFile.initialize(
-                         (scalarNamePattern != nullptr) ?
-                            Flow::getNodeOutputName(scalarNamePattern, "active").c_str() : nullptr,
-                         scalarFileFormat);
-      return s1 && s2;
+      if(scalarFileFormat != FileFormat::None) {
+         if(!ScalarNamePattern.empty()) {
+            ScalarFile.initialize(
+               Flow::getNodeOutputName(ScalarNamePattern, "active"),
+               scalarFileFormat);
+         }
+         else {
+            // Passive instance: buffer output in a temporary file for subsequent upload
+            ScalarFile.initialize(std::filesystem::path{}, scalarFileFormat);
+         }
+      }
+      else {
+         ScalarFile.initialize(std::filesystem::path{}, FileFormat::None);
+      }
    }
-   return false;
+   catch(...) {
+      FlowManager::getFlowManager()->removeMeasurement(ControlSocketDescriptor, this);
+      throw;
+   }
 }
 
 
 // ###### Finish measurement ################################################
-bool Measurement::finish(const bool closeFiles)
+void Measurement::finish(const bool closeFiles)
 {
    FlowManager::getFlowManager()->removeMeasurement(ControlSocketDescriptor, this);
-   const bool s1 = VectorFile.finish(closeFiles);
-   const bool s2 = ScalarFile.finish(closeFiles);
-   return s1 && s2;
+
+   std::exception_ptr errorToThrow = nullptr;
+   try {
+      VectorFile.finish(closeFiles);
+   }
+   catch(...) {
+      errorToThrow = std::current_exception();
+   }
+
+   try {
+      ScalarFile.finish(closeFiles);
+   }
+   catch(...) {
+      if(!errorToThrow) {
+         errorToThrow = std::current_exception();
+      }
+   }
+
+   if(errorToThrow) {
+      std::rethrow_exception(errorToThrow);
+   }
 }
 
 
 // ###### Write scalars #####################################################
-void Measurement::writeScalarStatistics(const unsigned long long now)
+void Measurement::writeScalarStatistics(const uint64_t now)
 {
    lock();
    FlowManager::getFlowManager()->writeScalarStatistics(
@@ -110,9 +164,9 @@ void Measurement::writeScalarStatistics(const unsigned long long now)
 
 
 // ###### Write vectors #####################################################
-void Measurement::writeVectorStatistics(const unsigned long long now,
-                                        FlowBandwidthStats&      globalStats,
-                                        FlowBandwidthStats&      relGlobalStats)
+void Measurement::writeVectorStatistics(const uint64_t      now,
+                                        FlowBandwidthStats& globalStats,
+                                        FlowBandwidthStats& relGlobalStats)
 {
    lock();
 

@@ -26,46 +26,93 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 22, 2026
-.Dt plot\-netperfmeter\-results 1
-.Os plot\-netperfmeter\-results
+.Dd October 23, 2026
+.Dt createsummary 1
+.Os createsummary
 .\" ###### Name #############################################################
 .Sh NAME
-.Nm plot\-netperfmeter\-results
-.Nd Results Plotting Tool for NetPerfMeter
+.Nm createsummary
+.Nd Scalar File Summarisation Tool
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
-.Nm plot\-netperfmeter\-results
-.Ar config\_name
+.Nm createsummary
+.Op Fl b | Fl \-batch | Fl i | Fl \-interactive
 .br
-.Op Fl w | Fl \-own\-file | Fl \-ownfile
+.Op Fl c Ar level | Fl \-compress Ar level
 .br
-.Op Fl k | Fl \-keep\-summaries
+.Op Fl s Ar separator | Fl \-separator Ar separator
 .br
-.Op Fl p | Fl \-per\-flow\-plots
-.Nm plot\-netperfmeter\-results
+.Op Fl l | Fl \-line\-numbers | Fl n | Fl \-no\-line\-numbers
+.br
+.Op Fl p | Fl \-split | Fl a | Fl \-no\-split
+.br
+.Op Fl r | Fl \-ignore\-scalar\-file\-errors
+.br
+.Op Fl q | Fl \-quiet
+.br
+.Op Ar variable_names
+.Nm createsummary
 .Op Fl h | Fl \-help
-.Nm plot\-netperfmeter\-results
+.Nm createsummary
 .Op Fl v | Fl \-version
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
-.Nm plot\-netperfmeter\-results
-uses GNU R to plot measurement results written by NetPerfMeter into a PDF file. Optionally, a separate PDF file can be written for each page.
+.Nm createsummary
+is a summarisation tool for scalar files: it creates one CSV/GNU R data table file (using tabulator as column separator) for each scalar.
+.Nm
+supports on\-the\-fly BZip2 compression. After startup, the program accepts the following commands from standard input
+.Pq Em not as command\-line arguments! :
+.Bl -tag -width indent
+.It Cm \-\-varnames= Ns Ar variables
+A space\-separated list of output variable names to be added to the output data tables.
+.It Cm \-\-values= Ns Ar values
+Sets the values of the output variables for the next scalar file to the provided space\-separated values. One value for each variable has to be provided.
+.It Cm \-\-input= Ns Ar filename
+Process the given scalar file.
+.It Cm \-\-logfile= Ns Ar name
+Sets the log file for the next scalar file. On an error related to this scalar file, the log file's name is displayed. This command can be used to identify bad simulation/measurement runs by pointing to the log file being created for the simulation/measurement.
+.It Cm \-\-statusfile= Ns Ar name
+Sets the status file for the next scalar file. On an error related to this scalar file, the status file is deleted. This command can be used to repeat bad simulation/measurement runs by re\-running the simulation/measurement on missing status files.
+.It Cm \-\-skip= Ns Ar prefix
+All scalars beginning with the given prefix are not written to output tables. This command can be used to filter out unnecessary results.
+.It Cm \-\-simulationsdirectory= Ns Ar directory
+Sets the directory where to find the scalar files.
+.It Cm \-\-resultsdirectory= Ns Ar directory
+Sets the directory where to write the summary tables to.
+.It Cm \-\-splitall
+Enables scalar splitting mode for all following scalar files.
+.It Cm \-\-ignore\-scalar\-file\-errors
+Ignore scalar file errors (that is, missing input files) instead of aborting.
+.El
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
-The following arguments have to be provided:
+The following arguments and options may be provided:
 .Bl -tag -width indent
-.It Ar config\_name
-The name of the config file written by NetPerfMeter.
-.It Fl w | Fl \-own\-file | Fl \-ownfile
-Plot a separate PDF file for each page.
-.It Fl k | Fl \-keep\-summaries
-Keep temporary summary data files.
-.It Fl p | Fl \-per\-flow\-plots
-Also generate separate plots for each flow.
+.It Ar variable_names
+A space\-separated list of output variable names to be added to the output data tables.
+.It Fl b | Fl \-batch
+Run in batch mode. The program is aborted on errors.
+.It Fl i | Fl \-interactive
+Run in interactive mode (default). On errors, the program is continued.
+.It Fl c Ar level | Fl \-compress Ar level
+Sets the compression level; 0=none, 1=fastest (lowest), 9=highest (default).
+.It Fl s Ar separator | Fl \-separator Ar separator
+Sets the separator for the tables. Default: tabulator character (i.e., $'\et').
+.It Fl l | Fl \-line\-numbers
+Add line numbers into the output table files, as usual for GNU R.
+.It Fl n | Fl \-no\-line\-numbers
+Do not add line numbers into the output table files, as usual for CSV (default).
+.It Fl p | Fl \-split
+Try to split the scalar name ending in a number into the name part as well as the number. A scalar output table is then generated for the name part, with the corresponding number in table column "Split". Example: Scalars "Throughput1", ..., "Throughput9" will be written into output table "Throughput", the number will be in table column "Split". Without the \-\-split option, each scalar would get its own table.
+.It Fl a | Fl \-no\-split
+Turns scalar splitting off (default).
+.It Fl r | Fl \-ignore\-scalar\-file\-errors
+Ignore scalar file errors (that is, missing input files) instead of aborting.
+.It Fl q | Fl \-quiet
+Do not print verbose status information.
 .It Fl h | Fl \-help
-Prints command\-line parameters.
+Prints command\-line help.
 .It Fl v | Fl \-version
 Prints program version.
 .El
@@ -76,22 +123,36 @@ The
 tool exits with 0 on success, and >0 in case of an error.
 .\" ###### Examples #########################################################
 .Sh EXAMPLES
-Some plot\-netperfmeter\-results usage examples:
-.Bl -tag -width indent
-.It plot\-netperfmeter\-results output.config
-Plot the results given by output.config. The resulting PDF file will be named output.pdf.
-.It plot\-netperfmeter\-results output.config \--per\-flow\-plots
-Plot the results given by output.config, including per\-flow plots. The resulting PDF file will be named output.pdf.
-.It plot\-netperfmeter\-results output.config \--own\-file
-Plot the results given by output.config. For each page, a separate PDF file is written. The resulting PDF files will be named output\-<title>.pdf, where <title> corresponds to the page title.
-.It plot\-netperfmeter\-results \--version
-.It plot\-netperfmeter\-results \--help
-.El
+Consider two simulation results
+.Pa test1.sca.bz2
+(created with ParameterX=One) and
+.Pa test2.sca.bz2
+(created with ParameterX=Two). The scalar files are located in
+the current directory, the output tables should be written to
+.Pa /tmp
+with compression level 5:
+.Bd -literal
+( echo "\-\-simulationsdirectory=."  && \\
+  echo "\-\-resultsdirectory=/tmp"   && \\
+  echo "\-\-values=One"              && \\
+  echo "\-\-input=test1.sca.bz2"     && \\
+  echo "\-\-values=Two"              && \\
+  echo "\-\-input=test2.sca.bz2" ) | createsummary "ParameterX" \-\-batch \-\-compress 5
+.Ed
+.Pp
+Print command\-line help:
+.Bd -literal
+createsummary \-\-help
+.Ed
+.Pp
+Print program version:
+.Bd -literal
+createsummary \-\-version
+.Ed
 .\" ###### See also #########################################################
 .Sh SEE ALSO
-.Xr netperfmeter 1,
-.Xr pdfembedfonts 1,
-.Xr setpdfmetadata 1
+.Xr combinesummaries 1 ,
+.Xr extractvectors 1
 .\" ###### Notes ############################################################
 .Sh NOTES
 This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at

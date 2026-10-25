@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -29,7 +29,9 @@
 
 #include "assure.h"
 #include "defragmenter.h"
+#include "tools.h"
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <map>
@@ -69,20 +71,18 @@ Defragmenter::~Defragmenter()
 // ###### Print FragmentSet #################################################
 void Defragmenter::print(std::ostream& os)
 {
-   os << "FragmentSet:\n";
+   os << "FragmentSet:" << "\n";
    for(std::map<uint32_t, Frame*>::iterator frameIterator = FrameSet.begin();
-         frameIterator != FrameSet.end(); frameIterator++) {
+       frameIterator != FrameSet.end(); frameIterator++) {
       Frame* frame = frameIterator->second;
-      os << "   - Frame " << frame->FrameID
-         << ", LastUpdate=" << frame->LastUpdate
-         << ":\n";
+      os << formatText("   - Frame {}, LastUpdate={}:",
+                       frame->FrameID, frame->LastUpdate) << "\n";
 
       for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
           fragmentIterator != frame->FragmentSet.end(); fragmentIterator++) {
          Fragment* fragment = fragmentIterator->second;
-         os << "      + Fragment " << fragment->PacketSeqNumber << ":\t"
-            << "ByteSeq=" << fragment->ByteSeqNumber
-            << ", Length=" << fragment->Length << "   ";
+         os << formatText("      + Fragment {}:\tByteSeq={}, Length={}",
+                          fragment->PacketSeqNumber, fragment->ByteSeqNumber, fragment->Length) << "   ";
          if(fragment->Flags & NPMDF_FRAME_BEGIN) {
             os << "<Begin> ";
          }
@@ -96,7 +96,7 @@ void Defragmenter::print(std::ostream& os)
 
 
 // ###### Add fragment to Defragmenter ######################################
-void Defragmenter::addFragment(const unsigned long long       now,
+void Defragmenter::addFragment(const uint64_t                 now,
                                const NetPerfMeterDataMessage* dataMsg)
 {
    const uint32_t frameID = be32toh(dataMsg->FrameID);
@@ -133,22 +133,19 @@ void Defragmenter::addFragment(const unsigned long long       now,
          frame->FragmentSet.insert(std::pair<uint64_t, Fragment*>(fragment->PacketSeqNumber, fragment));
       }
    }
-   else {
-      // puts("Duplicate???");
-   }
 
    // ====== Check whether frame is now complete ============================
-   if(frame->FragmentSet.size() > 0) {
+   if(!frame->FragmentSet.empty()) {
       const Fragment* firstFrag = frame->FragmentSet.begin()->second;
       const Fragment* lastFrag  = frame->FragmentSet.rbegin()->second;
 
       if((firstFrag->Flags & NPMDF_FRAME_BEGIN) && (lastFrag->Flags & NPMDF_FRAME_END)) {
          bool contiguous = true;
-         std::map<uint64_t, Fragment*>::const_iterator it = frame->FragmentSet.begin();
-         const Fragment* prev = it->second;
+         auto it = frame->FragmentSet.begin();
+         auto prev = it->second;
          it++;
          while(it != frame->FragmentSet.end()) {
-            const Fragment* curr = it->second;
+            auto curr = it->second;
             if((prev->PacketSeqNumber + 1 != curr->PacketSeqNumber) ||
                (prev->ByteSeqNumber + prev->Length != curr->ByteSeqNumber)) {
                contiguous = false;
@@ -212,7 +209,7 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
    if(eraseCurrentFrame) {
       lastFrame->FragmentSet.erase(lastFragmentIterator);
       delete lastFragment;
-      if(lastFrame->FragmentSet.size() == 0) {
+      if(lastFrame->FragmentSet.empty()) {
          FrameSet.erase(lastFrameIterator);
          delete lastFrame;
          if(lastFrame == frame) {   // Ensure reference gets invalidated!
@@ -229,12 +226,12 @@ bool Defragmenter::getNextFragment(Frame*&    frame,
 
 
 // ###### Purge incomplete frames from Defragmenter #########################
-void Defragmenter::purge(const unsigned long long now,
-                         const unsigned long long defragmentTimeout,
-                         size_t&                  receivedFrames,
-                         size_t&                  lostFrames,
-                         size_t&                  lostPackets,
-                         size_t&                  lostBytes)
+void Defragmenter::purge(const uint64_t now,
+                         const uint64_t defragmentTimeout,
+                         size_t&        receivedFrames,
+                         size_t&        lostFrames,
+                         size_t&        lostPackets,
+                         size_t&        lostBytes)
 {
    receivedFrames = 0;
    lostBytes      = 0;
@@ -257,17 +254,17 @@ void Defragmenter::purge(const unsigned long long now,
                   receivedFrames++;
                }
                else {
-                  lostFrames++;   // Incomplete frame timed out
+                  lostFrames++; // Incomplete frame timed out
                }
-               lostFrames += ((unsigned long long)frame->FrameID - (unsigned long long)NextFrameID);
+               lostFrames += (static_cast<uint64_t>(frame->FrameID) - static_cast<uint64_t>(NextFrameID));
                NextFrameID = frame->FrameID + 1;
             }
             if(fragment->ByteSeqNumber >= NextByteSeqNumber) {
-               lostBytes += ((unsigned long long)fragment->ByteSeqNumber - (unsigned long long)NextByteSeqNumber);
+               lostBytes += (fragment->ByteSeqNumber - NextByteSeqNumber);
                NextByteSeqNumber = fragment->ByteSeqNumber + fragment->Length;
             }
             if(fragment->PacketSeqNumber >= NextPacketSeqNumber) {
-               lostPackets += ((unsigned long long)fragment->PacketSeqNumber - (unsigned long long)NextPacketSeqNumber);
+               lostPackets += (fragment->PacketSeqNumber - NextPacketSeqNumber);
                NextPacketSeqNumber = fragment->PacketSeqNumber + 1;
             }
          }

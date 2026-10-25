@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -35,6 +35,9 @@
 #include "flowbandwidthstats.h"
 #include "tools.h"
 
+#include <cstdint>
+#include <string>
+
 
 class Measurement : public Mutex
 {
@@ -45,58 +48,64 @@ class Measurement : public Mutex
    Measurement();
    ~Measurement();
 
-   uint64_t getMeasurementID() const {
+   [[nodiscard]] inline uint64_t getMeasurementID() const noexcept {
       return MeasurementID;
    }
-   const std::string& getVectorNamePattern() const {
+   [[nodiscard]] inline const std::string& getVectorNamePattern() const noexcept {
       return VectorNamePattern;
    }
-   const OutputFile& getVectorFile() const {
+   [[nodiscard]] inline const OutputFile& getVectorFile() const noexcept {
       return VectorFile;
    }
-   const std::string& getScalarNamePattern() const {
+   [[nodiscard]] inline OutputFile& getVectorFile() noexcept {
+      return VectorFile;
+   }
+   [[nodiscard]] inline const std::string& getScalarNamePattern() const noexcept {
       return ScalarNamePattern;
    }
-   const OutputFile& getScalarFile() const {
+   [[nodiscard]] inline const OutputFile& getScalarFile() const noexcept {
       return ScalarFile;
    }
-   inline unsigned long long getFirstStatisticsEvent() const {
+   [[nodiscard]] inline OutputFile& getScalarFile() noexcept {
+      return ScalarFile;
+   }
+   [[nodiscard]] inline uint64_t getFirstStatisticsEvent() const noexcept {
       return FirstStatisticsEvent;
    }
 
-   bool initialize(const unsigned long long now,
-                   const int                controlSocketDescriptor,
-                   const uint64_t           measurementID,
-                   const char*              vectorNamePattern,
-                   const OutputFileFormat   vectorFileFormat,
-                   const char*              scalarNamePattern,
-                   const OutputFileFormat   scalarFileFormat);
-   bool finish(const bool closeFiles);
+   void initialize(const uint64_t   now,
+                   const int        controlSocketDescriptor,
+                   const uint64_t   measurementID,
+                   const char*      vectorNamePattern,
+                   const FileFormat vectorFileFormat,
+                   const char*      scalarNamePattern,
+                   const FileFormat scalarFileFormat);
+   void finish(const bool closeFiles = true);
 
-   void writeScalarStatistics(const unsigned long long now);
-   void writeVectorStatistics(const unsigned long long now,
-                              FlowBandwidthStats&      globalStats,
-                              FlowBandwidthStats&      relGlobalStats);
+   void writeScalarStatistics(const uint64_t now);
+   void writeVectorStatistics(const uint64_t      now,
+                              FlowBandwidthStats& globalStats,
+                              FlowBandwidthStats& relGlobalStats);
 
 
    // ====== Private Data ===================================================
    private:
-   int                ControlSocketDescriptor;
-   uint64_t           MeasurementID;
-   unsigned long long StatisticsInterval;
-   unsigned long long FirstStatisticsEvent;
-   unsigned long long LastStatisticsEvent;
-   unsigned long long NextStatisticsEvent;
+   int         ControlSocketDescriptor { -1 };
+   uint64_t    MeasurementID           { 0 };
+   uint64_t    StatisticsInterval      { 1000000ULL };
+   uint64_t    FirstStatisticsEvent    { 0 };
+   uint64_t    LastStatisticsEvent     { 0 };
+   uint64_t    NextStatisticsEvent     { 0 };
 
-   std::string        VectorNamePattern;
-   std::string        ScalarNamePattern;
-   OutputFile         VectorFile;
-   OutputFile         ScalarFile;
+   std::string VectorNamePattern;
+   std::string ScalarNamePattern;
+   OutputFile  VectorFile;
+   OutputFile  ScalarFile;
 
-   unsigned long long LastTransmission;
-   unsigned long long FirstTransmission;
-   unsigned long long LastReception;
-   unsigned long long FirstReception;
+   uint64_t    LastTransmission        { 0 };
+   uint64_t    FirstTransmission       { 0 };
+   uint64_t    LastReception           { 0 };
+   uint64_t    FirstReception          { 0 };
 };
 
-#endif
+#endif // MEASUREMENT_H

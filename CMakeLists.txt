@@ -25,13 +25,19 @@
 # Contact:  dreibh@simula.no
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
-PROJECT(netperfmeter LANGUAGES C CXX)
-
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12)
 SET(BUILD_MAJOR "2")
 SET(BUILD_MINOR "0")
 SET(BUILD_PATCH "13")
-SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
+PROJECT(netperfmeter
+        VERSION      "${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH}"
+        LANGUAGES    C CXX
+        HOMEPAGE_URL "https://www.nntb.no/~dreibh/netperfmeter")
+SET(PROJECT_SOURCE_URL "https://github.com/dreibh/netperfmeter")
+
+SET(CMAKE_CXX_STANDARD          20)
+SET(CMAKE_CXX_STANDARD_REQUIRED ON)
+SET(CMAKE_CXX_EXTENSIONS        OFF)
 
 
 #############################################################################
@@ -43,7 +49,15 @@ INCLUDE(CheckCSourceCompiles)
 INCLUDE(CheckCSourceRuns)
 INCLUDE(CheckIncludeFile)
 INCLUDE(CheckStructHasMember)
+INCLUDE(CheckSymbolExists)
 INCLUDE(GNUInstallDirs)
+
+
+#############################################################################
+#### TESTING                                                             ####
+#############################################################################
+
+INCLUDE(CTest)
 
 
 #############################################################################
@@ -113,11 +127,32 @@ ENDIF()
 #### OPTIONS                                                             ####
 #############################################################################
 
-OPTION(WITH_KERNEL_SCTP       "Use Kernel SCTP"                           1)
-OPTION(WITH_ICONS             "Build NetPerfMeter icons and logo files"   1)
-OPTION(WITH_PLOT_PROGRAMS     "Include plot programs"                     1)
-OPTION(WITH_EXAMPLE_SCRIPTS   "Include example scripts"                   1)
-OPTION(WITH_EXAMPLE_RESULTS   "Include example results"                   1)
+OPTION(WITH_STATIC_LIBRARIES  "Build static libraries"                  ON)
+OPTION(WITH_SHARED_LIBRARIES  "Build shared libraries"                  ON)
+OPTION(STATIC_BUILD           "Build statically-linked executables"     OFF)
+
+OPTION(WITH_I18N "Build with Internationalization (i18n) support"       ON)
+
+OPTION(WITH_KERNEL_SCTP       "Use Kernel SCTP"                         ON)
+OPTION(WITH_ICONS             "Build NetPerfMeter icons and logo files" ON)
+OPTION(WITH_PLOT_PROGRAMS     "Include plot programs"                   ON)
+OPTION(WITH_EXAMPLE_SCRIPTS   "Include example scripts"                 ON)
+OPTION(WITH_EXAMPLE_RESULTS   "Include example results"                 ON)
+
+
+#############################################################################
+#### CHECKS                                                              ####
+#############################################################################
+
+CHECK_SYMBOL_EXISTS(strlcat "string.h" HAVE_STRLCAT)
+IF (HAVE_STRLCAT)
+   ADD_DEFINITIONS(-DHAVE_STRLCAT)
+ENDIF()
+
+CHECK_SYMBOL_EXISTS(strlcpy "string.h" HAVE_STRLCPY)
+IF (HAVE_STRLCPY)
+   ADD_DEFINITIONS(-DHAVE_STRLCPY)
+ENDIF()
 
 
 #############################################################################
@@ -232,6 +267,27 @@ IF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
    ENDIF()
 ENDIF()
 
+# ====== libz ===============================================================
+FIND_LIBRARY(Z_LIBRARY NAMES z)
+FIND_PATH(Z_INCLUDE_DIR NAMES zlib.h)
+IF (Z_LIBRARY AND Z_INCLUDE_DIR)
+   MESSAGE(STATUS "GZip library found:")
+   MESSAGE(STATUS " Z_LIBRARY:     ${Z_LIBRARY}")
+   MESSAGE(STATUS " Z_INCLUDE_DIR: ${Z_INCLUDE_DIR}")
+ELSE()
+   MESSAGE(FATAL_ERROR
+           "Cannot find Z library! Try:\n"
+           " * Ubuntu/Debian: sudo apt install -y zlib1g-dev\n"
+           " * Fedora:        sudo dnf install -y zlib-ng-compat-devel\n"
+           " * OpenSUSE:      sudo zypper install -y zlib-devel\n"
+           " * Alpine:        sudo apk add zlib-ng-dev\n"
+           " * FreeBSD:       (should be installed by default)\n"
+           " * NetBSD:        (should be installed by default)\n"
+           " * OpenBSD:       (should be installed by default)\n"
+           " * Solaris:       sudo pkg install zlib\n"
+           " * Apple:         brew install zlib")
+ENDIF()
+
 # ====== libbz2 =============================================================
 FIND_LIBRARY(BZ2_LIBRARY NAMES bz2)
 FIND_PATH(BZ2_INCLUDE_DIR NAMES bzlib.h)
@@ -244,13 +300,55 @@ ELSE()
            "Cannot find BZip2 library! Try:\n"
            " * Ubuntu/Debian: sudo apt install -y libbz2-dev\n"
            " * Fedora:        sudo dnf install -y bzip2-devel\n"
-           " * SuSE:          sudo zypper install -y libbz2-devel\n"
+           " * OpenSUSE:      sudo zypper install -y libbz2-devel\n"
            " * Alpine:        sudo apk add bzip2-dev\n"
            " * FreeBSD:       sudo pkg install -y bzip2\n"
            " * NetBSD:        (should be installed by default)\n"
            " * OpenBSD:       (should be installed by default)\n"
            " * Solaris:       sudo pkg install bzip2\n"
            " * Apple:         brew install bzip2")
+ENDIF()
+
+# ====== liblzma ============================================================
+FIND_LIBRARY(LZMA_LIBRARY NAMES lzma)
+FIND_PATH(LZMA_INCLUDE_DIR NAMES lzma.h)
+IF (LZMA_LIBRARY AND LZMA_INCLUDE_DIR)
+   MESSAGE(STATUS "LZMA library found:")
+   MESSAGE(STATUS " LZMA_LIBRARY:     ${LZMA_LIBRARY}")
+   MESSAGE(STATUS " LZMA_INCLUDE_DIR: ${LZMA_INCLUDE_DIR}")
+ELSE()
+   MESSAGE(FATAL_ERROR
+           "Cannot find LZMA library! Try:\n"
+           " * Ubuntu/Debian: sudo apt install -y liblzma-dev\n"
+           " * Fedora:        sudo dnf install -y xz-devel\n"
+           " * OpenSUSE:      sudo zypper install -y xz-devel\n"
+           " * Alpine:        sudo apk add xz-dev\n"
+           " * FreeBSD:       sudo pkg install -y lzmalib\n"
+           " * NetBSD:        sudo pkgin -y install lzmalib\n"
+           " * OpenBSD:       sudo pkg_add xz\n"
+           " * Solaris:       sudo pkg install compress/xz\n"
+           " * Apple:         brew install xz")
+ENDIF()
+
+# ====== libzstd ============================================================
+FIND_LIBRARY(ZSTD_LIBRARY NAMES zstd)
+FIND_PATH(ZSTD_INCLUDE_DIR NAMES zstd.h)
+IF (ZSTD_LIBRARY AND ZSTD_INCLUDE_DIR)
+   MESSAGE(STATUS "ZSTD library found:")
+   MESSAGE(STATUS " ZSTD_LIBRARY:     ${ZSTD_LIBRARY}")
+   MESSAGE(STATUS " ZSTD_INCLUDE_DIR: ${ZSTD_INCLUDE_DIR}")
+ELSE()
+   MESSAGE(FATAL_ERROR
+           "Cannot find ZSTD library! Try:\n"
+           " * Ubuntu/Debian: sudo apt install -y libzstd-dev\n"
+           " * Fedora:        sudo dnf install -y libzstd-devel\n"
+           " * OpenSUSE:      sudo zypper install -y libzstd-devel\n"
+           " * Alpine:        sudo apk add libzstd-devel\n"
+           " * FreeBSD:       sudo pkg install -y zstd\n"
+           " * NetBSD:        sudo pkgin -y install zstd\n"
+           " * OpenBSD:       sudo pkg_add zstd\n"
+           " * Solaris:       sudo pkg install compress/zstd\n"
+           " * Apple:         brew install zsdt")
 ENDIF()
 
 # ====== SCTP support =======================================================
@@ -476,7 +574,87 @@ ENDIF()
 
 
 #############################################################################
+#### INTERNATIONALISATION (I18N)                                         ####
+#############################################################################
+
+IF (WITH_I18N)
+   FIND_PACKAGE(Intl)
+   IF (Intl_FOUND)
+      MESSAGE(STATUS "Internationalization (i18n) support found:")
+      MESSAGE(STATUS " Intl_INCLUDE_DIRS: ${Intl_INCLUDE_DIRS}")
+      MESSAGE(STATUS " Intl_LIBRARIES:    ${Intl_LIBRARIES}")
+      MESSAGE(STATUS " Version:           ${Intl_VERSION}")
+   ELSE()
+      MESSAGE(FATAL_ERROR
+            "Cannot find Internationalization (i18n) support! Try:\n"
+            " * Ubuntu/Debian: sudo apt install -y gettext libc6-dev\n"
+            " * Fedora:        sudo dnf install -y gettext-devel\n"
+            " * OpenSUSE:      sudo zypper install -y gettext-devel\n"
+            " * Alpine:        sudo apk add gettext-dev\n"
+            " * FreeBSD:       sudo pkg install -y gettext\n"
+            " * NetBSD:        sudo pkgin -y install gettext\n"
+            " * OpenBSD:       sudo pkg_add gettext-runtime gettext-tools\n"
+            " * Solaris:       sudo pkg install gnu-gettext\n"
+            " * Apple:         brew install gettext"
+            " * Windows:       vcpkg install gettext[core,tools]:x64-windows\n")
+   ENDIF()
+
+   FIND_PROGRAM(XGETTEXT xgettext HINTS /usr/pkg/bin /usr/gnu/bin /opt/homebrew/opt/gettext/bin /usr/local/opt/gettext/bin)
+   FIND_PROGRAM(MSGMERGE msgmerge HINTS /usr/pkg/bin /usr/gnu/bin /opt/homebrew/opt/gettext/bin /usr/local/opt/gettext/bin)
+   FIND_PROGRAM(MSGFMT   msgfmt   HINTS /usr/pkg/bin /usr/gnu/bin /opt/homebrew/opt/gettext/bin /usr/local/opt/gettext/bin)
+
+   IF (XGETTEXT AND MSGMERGE AND MSGFMT)
+      MESSAGE(STATUS "GNU gettext support found:")
+
+      EXECUTE_PROCESS(COMMAND ${XGETTEXT} --version
+                      OUTPUT_VARIABLE XGETTEXT_OUTPUT
+                      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+      STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" XGETTEXT_VERSION "${XGETTEXT_OUTPUT}")
+
+      EXECUTE_PROCESS(COMMAND ${MSGMERGE} --version
+                      OUTPUT_VARIABLE MSGMERGE_OUTPUT
+                      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+      STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" MSGMERGE_VERSION "${MSGMERGE_OUTPUT}")
+
+      EXECUTE_PROCESS(COMMAND ${MSGFMT} --version
+                      OUTPUT_VARIABLE MSGFMT_OUTPUT
+                      ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+      STRING(REGEX MATCH "([0-9]+\\.[0-9]+\\.[0-9]+|[0-9]+\\.[0-9]+)" MSGFMT_VERSION "${MSGFMT_OUTPUT}")
+
+      MESSAGE(STATUS " xgettext: ${XGETTEXT} (version ${XGETTEXT_VERSION})")
+      MESSAGE(STATUS " msgmerge: ${MSGMERGE} (version ${MSGMERGE_VERSION})")
+      MESSAGE(STATUS " msgfmt:   ${MSGFMT} (version ${MSGFMT_VERSION})")
+   ENDIF()
+
+   SET(GETTEXT_MIN_VERSION 0.19)
+   IF ((NOT XGETTEXT) OR (NOT MSGMERGE) OR (NOT MSGFMT)       OR
+       (XGETTEXT_VERSION VERSION_LESS ${GETTEXT_MIN_VERSION}) OR
+       (MSGMERGE_VERSION VERSION_LESS ${GETTEXT_MIN_VERSION}) OR
+       (MSGFMT_VERSION   VERSION_LESS ${GETTEXT_MIN_VERSION}))
+      MESSAGE(FATAL_ERROR
+              "Cannot find gettext tools >= ${GETTEXT_MIN_VERSION}! Try:\n"
+              " * Ubuntu/Debian: sudo apt install -y gettext libc6-dev\n"
+              " * Fedora:        sudo dnf install -y gettext-devel\n"
+              " * OpenSUSE:      sudo zypper install -y gettext-devel\n"
+              " * Alpine:        sudo apk add gettext-dev\n"
+              " * FreeBSD:       sudo pkg install -y gettext\n"
+              " * NetBSD:        sudo pkgin -y install gettext\n"
+              " * OpenBSD:       sudo pkg_add gettext-runtime gettext-tools\n"
+              " * Solaris:       sudo pkg install gnu-gettext\n"
+              " * Apple:         brew install gettext\n"
+              " * Windows:       vcpkg install gettext[core,tools]:x64-windows\n")
+   ENDIF()
+
+   ADD_DEFINITIONS(-DENABLE_NLS)
+ENDIF()
+
+
+#############################################################################
 #### SUBDIRECTORIES                                                      ####
 #############################################################################
 
 ADD_SUBDIRECTORY(src)
+
+IF (WITH_I18N)
+   ADD_SUBDIRECTORY(po)
+ENDIF()

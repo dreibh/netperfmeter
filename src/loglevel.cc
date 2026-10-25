@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -30,12 +30,9 @@
 #include "loglevel.h"
 #include "tools.h"
 
-#include <cstring>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <limits.h>
-#include <sys/utsname.h>
-#include <unistd.h>
 
 
 std::ostream* gStdLog        = &std::cerr;
@@ -53,19 +50,28 @@ bool initLogFile(const unsigned int logLevel,
    finishLogging();
    if(fileName != nullptr) {
       std::ofstream* newLogFile =
-         new std::ofstream(fileName, (appendMode == true) ?
-                                        std::ios_base::app : std::ios_base::trunc);
+         new std::ofstream(fileName, appendMode ? std::ios_base::app : std::ios_base::trunc);
       if(newLogFile != nullptr) {
          if(newLogFile->good()) {
-            gStdLog = newLogFile;
+            gStdLog      = newLogFile;
             gCloseStdLog = true;
-            gLogLevel    = std::min(std::max(logLevel, MIN_LOGLEVEL), MAX_LOGLEVEL);
+            gLogLevel    = std::clamp(logLevel, MIN_LOGLEVEL, MAX_LOGLEVEL);
             return true;
          }
          delete newLogFile;
       }
    }
    return false;
+}
+
+
+// ###### Initialise log file (mode string overload) ########################
+bool initLogFile(const unsigned int logLevel,
+                 const char*        fileName,
+                 const char*        mode)
+{
+   const bool appendMode = (mode != nullptr) && (mode[0] == 'a');
+   return initLogFile(logLevel, fileName, appendMode);
 }
 
 
@@ -85,7 +91,8 @@ void beginLogging()
    }
 
    LOG_DEBUG
-   *gStdLog << format("Logging started, log level is %d.", gLogLevel)
+   // TRANSLATORS: Debug status message when logging starts. Placeholder: {} is the log level number.
+   *gStdLog << formatText(gettext("Logging started, log level is {}."), gLogLevel)
             << "\n";
    LOG_END
 
@@ -98,7 +105,8 @@ void finishLogging()
 {
    if((gStdLog) && (gCloseStdLog)) {
       LOG_DEBUG
-      *gStdLog << "Logging finished.\n";
+      // TRANSLATORS: Debug status message when logging finishes.
+      *gStdLog << gettext("Logging finished.") << "\n";
       LOG_END
       delete gStdLog;
       gStdLog      = &std::cerr;

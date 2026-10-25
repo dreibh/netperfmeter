@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -31,15 +31,16 @@
 #define MESSAGEREADER_H
 
 #include <cstddef>
+#include <cstdint>
 #include <ext_socket.h>
 #include <map>
 #include <sys/types.h>
 
 
-#define MRRM_SOCKET_ERROR (ssize_t)-1
-#define MRRM_STREAM_ERROR (ssize_t)-2
-#define MRRM_PARTIAL_READ (ssize_t)-3
-#define MRRM_BAD_SOCKET   (ssize_t)-4
+#define MRRM_SOCKET_ERROR static_cast<ssize_t>(-1)
+#define MRRM_STREAM_ERROR static_cast<ssize_t>(-2)
+#define MRRM_PARTIAL_READ static_cast<ssize_t>(-3)
+#define MRRM_BAD_SOCKET   static_cast<ssize_t>(-4)
 
 class MessageReader
 {
@@ -63,7 +64,7 @@ class MessageReader
                           int*             msgFlags = nullptr);
    size_t getAllSDs(int* sds, const size_t maxEntries);
 
-   inline size_t size() {
+   inline size_t size() const {
       return SocketMap.size();
    }
 
@@ -102,4 +103,4 @@ class MessageReader
    std::map<int, Socket*> SocketMap;
 };
 
-#endif
+#endif // MESSAGEREADER_H

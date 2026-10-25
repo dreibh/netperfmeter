@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -27,12 +27,16 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
-#include <cstdio>
+#include <algorithm>
+#include <cctype>
+#include <cstddef>
 #include <cstdlib>
 #include <cstring>
-#include <cctype>
-#include <getopt.h>
+#include <filesystem>
 #include <iostream>
+#include <string>
+#include <string_view>
+#include <getopt.h>
 #include <unistd.h>
 
 #if defined(HAVE_LIBIBERTY)
@@ -43,13 +47,34 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 }
 #endif
 
+#if __has_include(<format>)
+#include <format>
+template<typename... Args>
+static inline std::string formatText(const std::string_view fmt, const Args&... args)
+{
+   try {
+      return std::vformat(fmt, std::make_format_args(args...));
+   }
+   catch(const std::format_error&) {
+      return std::string(fmt);
+   }
+}
+#else
+template<typename... Args>
+static inline std::string formatText(const std::string_view fmt, const Args&...)
+{
+   return std::string(fmt);
+}
+#endif
+
+#include "fileio.h"
 #include "inputfile.h"
 #include "outputfile.h"
 #include "package-version.h"
 
 
 // ###### Check columns for proper quotation ################################
-static bool checkColumns(const std::string& values)
+static bool checkColumns(std::string_view values)
 {
    bool         inQuotation    = false;
    unsigned int quotationMarks = 0;
@@ -57,11 +82,11 @@ static bool checkColumns(const std::string& values)
       switch(values[i]) {
          case '\\':
             i++;
-          break;
+            break;
          case '"':
             inQuotation = !inQuotation;
             quotationMarks++;
-          break;
+            break;
       }
    }
    return ((quotationMarks & 1) == 0);
@@ -69,87 +94,87 @@ static bool checkColumns(const std::string& values)
 
 
 // ###### Read and process data file ########################################
-void addDataFile(OutputFile&         outputFile,
-                 const bool          withLineNumbers,
-                 unsigned long long& outputLineNumber,
-                 const std::string&  varNames,
-                 const std::string&  varValues,
-                 const std::string&  inputFileName,
-                 const char*         separator = "\t")
+static void addDataFile(OutputFile&         outputFile,
+                        const bool          withLineNumbers,
+                        unsigned long long& outputLineNumber,
+                        const std::string&  varNames,
+                        const std::string&  varValues,
+                        const std::string&  inputFileName,
+                        const char*         separator = "\t")
 {
    // ====== Open input file ================================================
-   InputFile       inputFile;
-   InputFileFormat inputFileFormat = IFF_Plain;
-   if( (inputFileName.size() >= 4) &&
-       ( (inputFileName.substr(inputFileName.size() - 4) == ".bz2") ||
-         (inputFileName.substr(inputFileName.size() - 4) == ".BZ2")) ) {
-       inputFileFormat = IFF_BZip2;
+   InputFile inputFile;
+   try {
+      inputFile.initialize(inputFileName, detectFormat(inputFileName));
    }
-   if(inputFile.initialize(inputFileName.c_str(), inputFileFormat) == false) {
-      exit(1);
+   catch(const InputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
+      std::exit(1);
    }
 
-   for(;;) {
-      // ====== Read line from input file ===================================
-      bool          eof;
-      char          buffer[4097];
-      const ssize_t bytesRead = inputFile.readLine(buffer, sizeof(buffer), eof);
-      if((bytesRead < 0) || (eof)) {
-         break;
-      }
-
-      // ====== Process line ================================================
-
-      if(withLineNumbers) {
-         if(inputFile.getLine() == 1) {
-            if(outputLineNumber == 0) {
-               if(outputFile.printf("%s%sSubLineNo%s%s\n", varNames.c_str(), separator, separator, buffer) == false) {
-                  outputFile.finish();
-                  exit(1);
-               }
-               outputLineNumber++;
-            }
+   char buffer[4096];
+   try {
+      for(;;) {
+         // ====== Read line from input file ================================
+         bool eof = false;
+         const ssize_t bytesRead = inputFile.readLine(buffer, sizeof(buffer), eof);
+         if((bytesRead < 0) || eof) {
+            break;
          }
-         else {
-            if(outputFile.printf("%llu%s%s%s%s\n",
+
+         // Strip any trailing \r from DOS line endings
+         size_t len = std::strlen(buffer);
+         if(len > 0 && buffer[len - 1] == '\r') {
+            buffer[--len] = '\0';
+         }
+
+         // ====== Process line =============================================
+         if(withLineNumbers) {
+            if(inputFile.getLine() == 1) {
+               if(outputLineNumber == 0) {
+                  outputFile.printf("%s%sSubLineNo%s%s\n",
+                                    varNames.c_str(), separator, separator, buffer);
+                  outputLineNumber++;
+               }
+            }
+            else {
+               outputFile.printf("%llu%s%s%s%s\n",
                                  outputLineNumber, separator,
                                  varValues.c_str(), separator,
-                                 buffer) == false) {
-               outputFile.finish();
-               exit(1);
-            }
-            outputLineNumber++;
-         }
-      }
-      else {
-         if(inputFile.getLine() == 1) {
-            if(outputLineNumber == 0) {
-               if(outputFile.printf("%s%s%s\n", varNames.c_str(), separator, buffer) == false) {
-                  outputFile.finish();
-                  exit(1);
-               }
+                                 buffer);
                outputLineNumber++;
             }
          }
          else {
-            if(outputFile.printf("%s%s%s\n", varValues.c_str(), separator, buffer) == false) {
-               outputFile.finish();
-               exit(1);
+            if(inputFile.getLine() == 1) {
+               if(outputLineNumber == 0) {
+                  outputFile.printf("%s%s%s\n",
+                                    varNames.c_str(), separator, buffer);
+                  outputLineNumber++;
+               }
             }
-            outputLineNumber++;
+            else {
+               outputFile.printf("%s%s%s\n",
+                                 varValues.c_str(), separator, buffer);
+               outputLineNumber++;
+            }
          }
       }
-   }
 
-   inputFile.finish();
+      inputFile.finish();
+   }
+   catch(const InputFileException& exception) {
+      std::cerr << "ERROR: " << exception.what() << "\n";
+      std::exit(1);
+   }
 }
 
 
 // ###### Version ###########################################################
-[[ noreturn ]] static void version()
+[[noreturn]] static void version()
 {
-   std::cerr << "CombineSummaries" << " " << COMBINESUMMARIES_VERSION << "\n";
-   exit(0);
+   std::cout << "CombineSummaries " << COMBINESUMMARIES_VERSION << "\n";
+   std::exit(0);
 }
 
 
@@ -166,88 +191,93 @@ void addDataFile(OutputFile&         outputFile,
 [[ noreturn ]]
 static void usage(const char* program, const int exitCode)
 {
+   const std::string manpage(std::string("\x1b[1m") +
+                             std::filesystem::path(program).stem().string() +
+                             std::string("\x1b[0m"));
+   const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
+                              std::string(PROJECT_HOMEPAGE_URL) +
+                              "\a" + std::string(PROJECT_HOMEPAGE_URL) + "\a" +
+                              std::string("\x1b]8;;\a\x1b[0m"));
+   const std::string repository(std::string("\x1b[1m\x1b]8;;") +
+                                std::string(PROJECT_SOURCE_URL) +
+                                "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
+                                std::string("\x1b]8;;\a\x1b[0m"));
+
    std::cerr << HEADER("Usage:") << "\n"
              << CMD(program) << " "
                 ARG("output_file") "\n"
-                   ENTRY(ARG("variable_names"))
                    ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
                    ENTRY(OPT("-s") " " ARG("separator") PIPE OPT("--separator") " " ARG("separator"))
                    ENTRY(OPT("-l") PIPE OPT("--line-numbers") PIPE OPT("-n") PIPE OPT("--no-line-numbers"))
                    ENTRY(OPT("-q") PIPE OPT("--quiet"))
+                   ENTRY(ARG("variable_names"))
              << CMD(program) << "\n"
                    ENTRY(OPT("-h") PIPE OPT("--help"))
              << CMD(program) << "\n"
-                   ENTRY(OPT("-v") PIPE OPT("--version"));
-   exit(exitCode);
+                   ENTRY(OPT("-v") PIPE OPT("--version"))
+             << "\n"
+             << formatText("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM.",
+                           manpage, homepage, repository) << "\n";
+   std::exit(exitCode);
 }
 // ------ END-OF-USAGE-BLOCK ------
-
 
 
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
-   bool         quietMode        = false;
-   bool         withLineNumbers  = false;
-   unsigned int compressionLevel = 9;
-   const char*  separator        = "\t";
+   bool        quietMode       = false;
+   bool        withLineNumbers = false;
+   int         explicitLevel   = -1;
+   const char* separator       = "\t";
 
    // ====== Handle command-line arguments ==================================
-   const static struct option long_options[] = {
-      { "compress",                  required_argument, 0, 'c' },
-      { "separator",                 required_argument, 0, 's' },
-      { "line-numbers",              no_argument,       0, 'l' },
-      { "no-line-numbers",           no_argument,       0, 'n' },
-      { "quiet",                     no_argument,       0, 'q' },
+   static const struct option long_options[] = {
+      { "compress",        required_argument, nullptr, 'c' },
+      { "separator",       required_argument, nullptr, 's' },
+      { "line-numbers",    no_argument,       nullptr, 'l' },
+      { "no-line-numbers", no_argument,       nullptr, 'n' },
+      { "quiet",           no_argument,       nullptr, 'q' },
 
-      { "help",                      no_argument,       0, 'h' },
-      { "version",                   no_argument,       0, 'v' },
-      {  nullptr,                    0,                 0, 0   }
+      { "help",            no_argument,       nullptr, 'h' },
+      { "version",         no_argument,       nullptr, 'v' },
+      { nullptr,           0,                 nullptr, 0   }
    };
 
-   int option;
-   int longIndex;
-   while( (option = getopt_long_only(argc, argv, "c:s:lnqhv", long_options, &longIndex)) != -1 ) {
+   int option = 0;
+   int longIndex = 0;
+   while((option = getopt_long_only(argc, argv, "c:s:lnqhv", long_options, &longIndex)) != -1) {
       switch(option) {
          case 'c':
-            compressionLevel = atol(optarg);
-            if(compressionLevel < 1) {
-               compressionLevel = 1;
-            }
-            else if(compressionLevel > 9) {
-               compressionLevel = 9;
-            }
-          break;
+            explicitLevel = std::atoi(optarg);
+            break;
          case 's':
             separator = optarg;
-          break;
+            break;
          case 'l':
             withLineNumbers = true;
-          break;
+            break;
          case 'n':
             withLineNumbers = false;
-          break;
+            break;
          case 'q':
             quietMode = true;
-          break;
+            break;
          case 'v':
             version();
-          break;
+            break;
          case 'h':
          case '?':
-            // Exit with 0 on h/help, exit with 1 on '?' (unknown option):
             usage(argv[0], (option == 'h') ? 0 : 1);
-          break;
+            break;
          case '-':
-          break;
+            break;
          default:
-            // This should not happen: wrong getopt parameters, or missing case?
-            fprintf(stderr, "INTERNAL ERROR: Unhandled option c=%c code=%x!\n",
-                    (isprint(option) ? (char)option : ' '), option);
+            std::cerr << "INTERNAL ERROR: Unhandled option code=" << option << "!\n";
             return 1;
-          break;
       }
    }
+
    if(optind >= argc) {
       usage(argv[0], 1);
    }
@@ -257,7 +287,7 @@ int main(int argc, char** argv)
       varNames = argv[optind++];
       if(!checkColumns(varNames)) {
          std::cerr << "ERROR: Invalid quotation in variable names string!\n";
-         exit(1);
+         std::exit(1);
       }
    }
    if(optind < argc) {
@@ -265,119 +295,130 @@ int main(int argc, char** argv)
       usage(argv[0], 1);
    }
 
+   // ====== Detect output format & validate compression level ==============
+   const FileFormat outputFileFormat = detectFormat(outputFileName);
+   unsigned int compressionLevel = 0;
+   if(explicitLevel >= 0) {
+      if(!isValidCompressionLevel(outputFileFormat, explicitLevel)) {
+         std::cerr << "ERROR: Compression level " << explicitLevel
+                   << " is invalid for format " << getFormatName(outputFileFormat) << "!\n";
+         if(outputFileFormat == FileFormat::Plain) {
+            std::cerr << "Compression level for Plain format must be 0.\n";
+         }
+         else {
+            std::cerr << "Allowed range: " << getMinCompressionLevel(outputFileFormat)
+                      << " to " << getMaxCompressionLevel(outputFileFormat) << "\n";
+         }
+         std::exit(1);
+      }
+      compressionLevel = static_cast<unsigned int>(explicitLevel);
+   }
+   else {
+      compressionLevel = getDefaultCompressionLevel(outputFileFormat);
+   }
 
    // ====== Print information ==============================================
    if(!quietMode) {
       std::cout << "CombineSummaries " << COMBINESUMMARIES_VERSION << "\n"
+                << "* Output Format:     " << getFormatName(outputFileFormat) << "\n"
                 << "* Compression Level: " << compressionLevel << "\n"
                 << "* Separator:         \"" << separator << "\"\n"
                 << "* Line Numbers:      " << (withLineNumbers ? "yes" : "no") << "\n"
                 << "\n";
    }
 
+   // ====== Open output file and process input =============================
+   try {
+      OutputFile outputFile;
+      outputFile.initialize(outputFileName, outputFileFormat, compressionLevel);
 
-   // ====== Open output file ===============================================
-   OutputFile       outputFile;
-   OutputFileFormat outputFileFormat = OFF_Plain;
-   if( (outputFileName.size() >= 4) &&
-       ( (outputFileName.substr(outputFileName.size() - 4) == ".bz2") ||
-         (outputFileName.substr(outputFileName.size() - 4) == ".BZ2")) ) {
-       outputFileFormat = OFF_BZip2;
-   }
-   if(outputFile.initialize(outputFileName.c_str(), outputFileFormat,
-                            compressionLevel) == false) {
-      exit(1);
-   }
-
-
-   // ====== Process input ==================================================
-   unsigned long long outputLineNumber = 0;
-   std::string        varValues;
-   std::string        simulationsDirectory(".");
-   char               commandBuffer[4097];
-   char*              command;
-
-   if(!quietMode) {
-      std::cout << "Ready> ";
-      std::cout.flush();
-   }
-   while((command = fgets(commandBuffer, sizeof(commandBuffer), stdin))) {
-      size_t length = strlen(command);
-      if( (length > 0) && (command[length - 1] == '\n') ) {
-         command[length - 1] = 0x00;
-         length--;
-      }
-
-      if(length == 0) {
-         if(!quietMode) {
-            std::cout << "Ready> ";
-            std::cout.flush();
-         }
-         continue;
-      }
-
-      if(!(strncmp(command, "--values=", 9))) {
-         varValues = &command[9];
-         if( (varValues.size() >= 2)    &&
-             (varValues.front() == '"') &&
-             (varValues.back() == '"') ) {
-            varValues = varValues.substr(1, varValues.size() - 2);
-         }
-         if(!checkColumns(varValues)) {
-            std::cerr << "ERROR: Invalid quotation in variable values string!\n";
-            exit(1);
-         }
-      }
-      else if(!(strncmp(command, "--input=", 8))) {
-         if(varValues.empty()) {
-            std::cerr << "ERROR: No values given (parameter --values=...)!\n";
-            exit(1);
-         }
-         addDataFile(outputFile, withLineNumbers, outputLineNumber,
-                     varNames, varValues,
-                     simulationsDirectory + "/" + &command[8],
-                     separator);
-         varValues = "";
-      }
-      else if(!(strncmp(command, "--varnames=", 11))) {
-         varNames = &command[11];
-         if( (varNames.size() >= 2)    &&
-             (varNames.front() == '"') &&
-             (varNames.back() == '"') ) {
-            varNames = varNames.substr(1, varNames.size() - 2);
-         }
-         if(!checkColumns(varNames)) {
-            std::cerr << "ERROR: Invalid quotation in variable names string!\n";
-            exit(1);
-         }
-      }
-      else if(!(strncmp(command, "--simulationsdirectory=", 23))) {
-         simulationsDirectory = &command[23];
-      }
-      else {
-         std::cerr << "ERROR: Invalid command!\n";
-         exit(1);
-      }
+      unsigned long long outputLineNumber = 0;
+      std::string        varValues;
+      std::string        simulationsDirectory = ".";
+      std::string        line;
 
       if(!quietMode) {
-         std::cout << "Ready> ";
-         std::cout.flush();
+         std::cout << "Ready> " << std::flush;
+      }
+
+      while(std::getline(std::cin, line)) {
+         if(line.ends_with('\r')) {
+            line.pop_back();
+         }
+
+         if(line.empty()) {
+            if(!quietMode) {
+               std::cout << "Ready> " << std::flush;
+            }
+            continue;
+         }
+
+         if(line.starts_with("--values=")) {
+            varValues = line.substr(9);
+            if(varValues.size() >= 2 && varValues.front() == '"' && varValues.back() == '"') {
+               varValues = varValues.substr(1, varValues.size() - 2);
+            }
+            if(!checkColumns(varValues)) {
+               std::cerr << "ERROR: Invalid quotation in variable values string!\n";
+               std::exit(1);
+            }
+         }
+         else if(line.starts_with("--input=")) {
+            if(varValues.empty()) {
+               std::cerr << "ERROR: No values given (parameter --values=...)!\n";
+               std::exit(1);
+            }
+            const std::string inputFilePath = simulationsDirectory + "/" + std::string(line.substr(8));
+            addDataFile(outputFile, withLineNumbers, outputLineNumber,
+                        varNames, varValues,
+                        inputFilePath,
+                        separator);
+            varValues.clear();
+         }
+         else if(line.starts_with("--varnames=")) {
+            varNames = line.substr(11);
+            if(varNames.size() >= 2 && varNames.front() == '"' && varNames.back() == '"') {
+               varNames = varNames.substr(1, varNames.size() - 2);
+            }
+            if(!checkColumns(varNames)) {
+               std::cerr << "ERROR: Invalid quotation in variable names string!\n";
+               std::exit(1);
+            }
+         }
+         else if(line.starts_with("--simulationsdirectory=")) {
+            simulationsDirectory = line.substr(23);
+         }
+         else {
+            std::cerr << "ERROR: Invalid command!\n";
+            std::exit(1);
+         }
+
+         if(!quietMode) {
+            std::cout << "Ready> " << std::flush;
+         }
+      }
+
+      // ====== Close output file ===========================================
+      unsigned long long in = 0;
+      unsigned long long out = 0;
+      outputFile.finish(true, &in, &out);
+
+      if(!quietMode) {
+         std::cout << "\nWrote " << outputLineNumber << " lines";
+         if(in > 0) {
+            std::cout << " (" << in << " -> " << out << " - "
+                      << (static_cast<double>(out) * 100.0 / static_cast<double>(in)) << "%)";
+         }
+         std::cout << "\n";
       }
    }
-
-
-   // ====== Close output file ==============================================
-   unsigned long long in, out;
-   if(!outputFile.finish(true, &in, &out)) {
-      exit(1);
+   catch(const OutputFileException& ex) {
+      std::cerr << "ERROR: " << ex.what() << "\n";
+      std::exit(1);
    }
-   if(!quietMode) {
-      std::cout << "\n" << "Wrote " << outputLineNumber << " lines";
-      if(in > 0) {
-         std::cout << " (" << in << " -> " << out << " - "
-                   << ((double)out * 100.0 / in) << "%)";
-      }
-      std::cout << "\n";
+   catch(const std::exception& ex) {
+      std::cerr << "ERROR: " << ex.what() << "\n";
+      std::exit(1);
    }
 
    return 0;

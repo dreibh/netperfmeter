@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -30,49 +30,34 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 
-#include <cassert>
-#include <pthread.h>
+#include <mutex>
 
 
 class Mutex
 {
+   // ====== Methods ========================================================
    public:
    Mutex();
    virtual ~Mutex();
 
+   Mutex(const Mutex&) = delete;
+   Mutex& operator=(const Mutex&) = delete;
+
    inline void lock() {
-#if !defined(__APPLE__)
-      pthread_mutex_lock(&MyMutex);
-#else
-      if(!pthread_equal(MutexOwner, pthread_self())) {
-         pthread_mutex_lock(&MyMutex);
-         MutexOwner = pthread_self();
-      }
-      MutexRecursionLevel++;
-#endif
+      MyMutex.lock();
    }
 
    inline void unlock() {
-#if !defined(__APPLE__)
-      pthread_mutex_unlock(&MyMutex);
-#else
-      assert(MutexRecursionLevel != 0);
-      if(pthread_equal(MutexOwner, pthread_self())) {
-         MutexRecursionLevel--;
-         if(MutexRecursionLevel == 0) {
-            MutexOwner = 0;
-            pthread_mutex_unlock(&MyMutex);
-         }
-      }
-#endif
+      MyMutex.unlock();
    }
 
+   inline bool try_lock() {
+      return MyMutex.try_lock();
+   }
+
+   // ====== Private Data ===================================================
    private:
-   pthread_mutex_t MyMutex;
-#if defined(__APPLE__)
-   pthread_t       MutexOwner;
-   unsigned int    MutexRecursionLevel;
-#endif
+   std::recursive_mutex MyMutex;
 };
 
-#endif
+#endif // MUTEX_H

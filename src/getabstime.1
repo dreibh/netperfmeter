@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 22, 2026
+.Dd October 23, 2026
 .Dt getabstime 1
 .Os getabstime
 .\" ###### Name #############################################################
@@ -48,10 +48,10 @@ prints the current 64\-bit time stamp in microseconds since the epoch
 .Pp
 .\" ###### Arguments ########################################################
 .Sh ARGUMENTS
-The following options are available:
+The following options may be provided:
 .Bl -tag -width indent
 .It Fl h | Fl \-help
-Prints command help.
+Prints command\-line help.
 .It Fl v | Fl \-version
 Prints program version.
 .El
@@ -70,6 +70,16 @@ getabstime
 Store the time stamp in a shell variable:
 .Bd -literal
 TIMESTAMP=$(getabstime)
+.Ed
+.Pp
+Print command\-line help:
+.Bd -literal
+getabstime \-\-help
+.Ed
+.Pp
+Print program version:
+.Bd -literal
+getabstime \-\-version
 .Ed
 .\" ###### See also #########################################################
 .Sh SEE ALSO

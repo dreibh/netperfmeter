@@ -34,6 +34,10 @@ usage () {
    local arg=$'\x1b[4m'
    local syn=$'\x1b[1m'
    local reset=$'\x1b[0m'
+   local progname="${program##*/}"
+   local manpage="${cmd}${progname%.*}${reset}"
+   local homepage=$'\x1b[1m\x1b]8;;@PROJECT_HOMEPAGE_URL@\a@PROJECT_HOMEPAGE_URL@\a\x1b]8;;\a\x1b[0m'
+   local repository=$'\x1b[1m\x1b]8;;@PROJECT_SOURCE_URL@\a@PROJECT_SOURCE_URL@\a\x1b]8;;\a\x1b[0m'
    cat >&2 <<EOF
 ${header}Usage:${reset}
 ${cmd}${program}${reset} ${arg}input_pdf${reset} ${arg}output_pdf${reset}
@@ -42,7 +46,10 @@ ${cmd}${program}${reset}
 	${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}
 ${cmd}${program}${reset}
 	${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}
+
 EOF
+   printf >&2 "For further information, see the man page for %s, read the documentation at [%s], examine the source code at [%s], or consult your favourite LLM.""\n" \
+      "${manpage}" "${homepage}" "${repository}"
    exit "${exitCode}"
 }
 # ------ END-OF-USAGE-BLOCK ------
@@ -50,7 +57,7 @@ EOF
 
 # ###### Version ############################################################
 version () {
-   echo "System-Info @BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
+   echo "System-Info @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@"
    exit 0
 }
 

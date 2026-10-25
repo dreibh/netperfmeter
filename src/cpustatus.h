@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -33,6 +33,7 @@
 #include <cassert>
 #include <cstdint>
 #include <cstdio>
+#include <vector>
 
 #if defined(__APPLE__)
 #include <mach/mach.h>
@@ -46,48 +47,55 @@ class CPUStatus
    CPUStatus();
    ~CPUStatus();
 
+   CPUStatus(const CPUStatus&) = delete;
+   CPUStatus& operator=(const CPUStatus&) = delete;
+
+   CPUStatus(CPUStatus&& other) noexcept;
+   CPUStatus& operator=(CPUStatus&& other) noexcept;
+
    void update();
 
-   inline unsigned int getNumberOfCPUs() const {
+   [[nodiscard]] inline unsigned int getNumberOfCPUs() const noexcept {
       return CPUs;
    }
-   inline unsigned int getCpuStates() const {
+   [[nodiscard]] inline unsigned int getCpuStates() const noexcept {
       return CpuStates;
    }
-   inline const char* getCpuStateName(const unsigned int index) const {
+   [[nodiscard]] inline const char* getCpuStateName(const unsigned int index) const noexcept {
       assert(index < CpuStates);
       return CpuStateNames[index];
    }
-   inline float getCpuStatePercentage(const unsigned int cpuIndex,
-                                      const unsigned int stateIndex) const {
+   [[nodiscard]] inline float getCpuStatePercentage(const unsigned int cpuIndex,
+                                                    const unsigned int stateIndex) const noexcept {
       assert(cpuIndex <= CPUs);
       assert(stateIndex < CpuStates);
       const unsigned int index = (cpuIndex * CpuStates) + stateIndex;
       return Percentages[index];
    }
-   float getCpuUtilization(const unsigned int cpuIndex) const;
+   [[nodiscard]] float getCpuUtilization(const unsigned int cpuIndex) const noexcept;
 
    // ====== Private data ===================================================
    private:
 #if defined(__linux__) || defined(__GNU__)
-   typedef unsigned long long tick_t;
+   using tick_t = unsigned long long;
 #elif defined(__NetBSD__)
-   typedef uint64_t           tick_t;
+   using tick_t = uint64_t;
 #elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__sun)
-   typedef unsigned long      tick_t;
+   using tick_t = unsigned long;
 #elif defined(__APPLE__)
-   typedef unsigned int       tick_t;
+   using tick_t = unsigned int;
 #endif
 
 #if defined(__APPLE__)
-   host_name_port_t           MachHost;
+   host_name_port_t    MachHost  { MACH_PORT_NULL };
 #endif
-   unsigned int               CPUs;
-   tick_t*                    CpuTimes;
-   tick_t*                    OldCpuTimes;
-   float*                     Percentages;
-   unsigned int               CpuStates;
-   static const char*         CpuStateNames[];
+   unsigned int        CPUs      { 0 };
+   unsigned int        CpuStates { 0 };
+   std::vector<tick_t> CpuTimes;
+   std::vector<tick_t> OldCpuTimes;
+   std::vector<float>  Percentages;
+
+   static const char*  CpuStateNames[];
 };
 
-#endif
+#endif // CPUSTATUS_H

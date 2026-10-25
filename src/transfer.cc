@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -27,19 +27,24 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include "transfer.h"
 #include "control.h"
 #include "loglevel.h"
 #include "tools.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <cstring>
 
 
-#define MAXIMUM_MESSAGE_SIZE (size_t)65536
+#define MAXIMUM_MESSAGE_SIZE static_cast<size_t>(65536)
 #define MAXIMUM_PAYLOAD_SIZE (MAXIMUM_MESSAGE_SIZE - sizeof(NetPerfMeterDataMessage))
 
 
 static void updateStatistics(Flow*                          flowSpec,
-                             const unsigned long long       now,
+                             const MonotonicMicroTime       nowMonotonic,
+                             const SystemMicroTime          nowSystem,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   received);
 
@@ -53,7 +58,7 @@ static void fillPayload(unsigned char* payload,
    // ====== Pattern for Active -> Passive transfer =========================
    if(!reverse) {
       unsigned char c = 30;
-      for(size_t i = 0;i < length;i++) {
+      for(size_t i = 0; i < length; i++) {
          *payload++ = c++;
          if(c > 127) {
             c = 30;
@@ -63,7 +68,7 @@ static void fillPayload(unsigned char* payload,
    // ====== Pattern for Passive -> Active transfer =========================
    else {
       unsigned char c = 127;
-      for(size_t i = 0;i < length;i++) {
+      for(size_t i = 0; i < length; i++) {
          *payload++ = c--;
          if(c < 30) {
             c = 127;
@@ -74,15 +79,15 @@ static void fillPayload(unsigned char* payload,
 
 
 // ###### Send NETPERFMETER_DATA message ####################################
-ssize_t sendNetPerfMeterData(Flow*                    flow,
-                             const uint32_t           frameID,
-                             const bool               isFrameBegin,
-                             const bool               isFrameEnd,
-                             const unsigned long long now,
-                             size_t                   bytesToSend)
+ssize_t sendNetPerfMeterData(Flow*                   flow,
+                             const uint32_t          frameID,
+                             const bool              isFrameBegin,
+                             const bool              isFrameEnd,
+                             const MonotonicMicroTime now,
+                             size_t                  bytesToSend)
 {
-   char                     outputBuffer[MAXIMUM_MESSAGE_SIZE];
-   NetPerfMeterDataMessage* dataMsg = (NetPerfMeterDataMessage*)&outputBuffer;
+   char  outputBuffer[MAXIMUM_MESSAGE_SIZE];
+   auto* dataMsg = reinterpret_cast<NetPerfMeterDataMessage*>(&outputBuffer);
 
    if(bytesToSend < sizeof(NetPerfMeterDataMessage)) {
       bytesToSend = sizeof(NetPerfMeterDataMessage);
@@ -98,7 +103,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    if(isFrameEnd) {
       dataMsg->Header.Flags |= NPMDF_FRAME_END;
    }
-   dataMsg->Header.Length = htobe16(bytesToSend);
+   dataMsg->Header.Length = htobe16(static_cast<uint16_t>(bytesToSend));
    dataMsg->MeasurementID = htobe64(flow->getMeasurementID());
    dataMsg->FlowID        = htobe32(flow->getFlowID());
    dataMsg->StreamID      = htobe16(flow->getStreamID());
@@ -106,10 +111,10 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    dataMsg->FrameID       = htobe32(frameID);
    dataMsg->SeqNumber     = htobe64(flow->nextOutboundSeqNumber());
    dataMsg->ByteSeqNumber = htobe64(flow->getCurrentBandwidthStats().TransmittedBytes);
-   dataMsg->TimeStamp     = htobe64(now);
+   dataMsg->TimeStamp     = htobe64(now.value);
 
    // ------ Create payload data pattern ------------------
-   fillPayload((unsigned char*)&dataMsg->Payload,
+   fillPayload(reinterpret_cast<unsigned char*>(&dataMsg->Payload),
                bytesToSend - sizeof(NetPerfMeterDataMessage),
                flow->isAcceptedIncomingFlow());
 
@@ -145,7 +150,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
          }
       }
       sent = sctp_send(flow->getSocketDescriptor(),
-                       (char*)&outputBuffer, bytesToSend,
+                       outputBuffer, bytesToSend,
                        &sinfo, 0);
    }
 #endif
@@ -154,30 +159,30 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
       int64_t  sid;
       uint32_t flags;
       if(flow->isAcceptedIncomingFlow()) {   // from passive side (server)
-         sid   = ((int64_t)flow->getStreamID() << 2) | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
+         sid   = (static_cast<int64_t>(flow->getStreamID()) << 2) | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
          flags = (flow->getFirstTransmission() == 0) ? MSG_QUIC_STREAM_NEW : 0;
       }
       else {
-         sid   = ((int64_t)flow->getStreamID() << 2) | QUIC_STREAM_TYPE_UNI_MASK;
+         sid   = (static_cast<int64_t>(flow->getStreamID()) << 2) | QUIC_STREAM_TYPE_UNI_MASK;
          flags = 0;   // already created by Identify procedure!
       }
-      sent = quic_sendmsg(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, sid, flags);
+      sent = quic_sendmsg(flow->getSocketDescriptor(), outputBuffer, bytesToSend, sid, flags);
    }
 #endif
    else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
       if(flow->isRemoteAddressValid()) {
          sent = ext_sendto(flow->getSocketDescriptor(),
-                           (char*)&outputBuffer, bytesToSend, 0,
+                           outputBuffer, bytesToSend, 0,
                            flow->getRemoteAddress(),
                            getSocklen(flow->getRemoteAddress()));
       }
       else {
          sent = ext_send(flow->getSocketDescriptor(),
-                         (char*)&outputBuffer, bytesToSend, 0);
+                         outputBuffer, bytesToSend, 0);
       }
    }
    else {
-      sent = ext_send(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, 0);
+      sent = ext_send(flow->getSocketDescriptor(), outputBuffer, bytesToSend, 0);
    }
 
    // ====== Check, whether flow has been aborted unintentionally ===========
@@ -187,9 +192,10 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
        (flow->getTrafficSpec().ErrorOnAbort) &&
        (flow->getOutputStatus() == Flow::On) ) {
       LOG_FATAL
-      stdlog << format("Flow #%u on socket %d has been aborted: %s!",
-                       flow->getFlowID(), flow->getSocketDescriptor(),
-                       strerror(errno)) << "\n";
+      // TRANSLATORS: Error message when a data flow is unexpectedly terminated. Placeholders: {} 1: flow ID, 2: socket descriptor, 3: strerror() message.
+      stdlog << formatText(gettext("Flow #{} on socket {} has been aborted: {}!"),
+                           flow->getFlowID(), flow->getSocketDescriptor(),
+                           strerror(errno)) << "\n";
       LOG_END_FATAL
    }
 
@@ -199,26 +205,26 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
 
 // ###### Transmit data frame ###############################################
 bool transmitFrame(Flow*                    flow,
-                   const unsigned long long now)
+                   const MonotonicMicroTime now)
 {
    // ====== Obtain length of data to send ==================================
    ssize_t bytesToSend =
-      (ssize_t)rint(getRandomValue((const double*)&flow->getTrafficSpec().OutboundFrameSize,
-                                   flow->getTrafficSpec().OutboundFrameSizeRng));
+      static_cast<ssize_t>(rint(getRandomValue(static_cast<const double*>(flow->getTrafficSpec().OutboundFrameSize),
+                                               flow->getTrafficSpec().OutboundFrameSizeRng)));
    ssize_t bytesSent   = 0;
    size_t  packetsSent = 0;
    if(bytesToSend > 0) {
       const uint32_t frameID = flow->nextOutboundFrameID();
-      while(bytesSent < (ssize_t)bytesToSend) {
+      while(bytesSent < bytesToSend) {
          // ====== Send message =============================================
          ssize_t chunkSize = std::min(bytesToSend - bytesSent,
-                                      std::min((ssize_t)flow->getTrafficSpec().MaxMsgSize,
-                                               (ssize_t)MAXIMUM_MESSAGE_SIZE));
+                                      std::min(static_cast<ssize_t>(flow->getTrafficSpec().MaxMsgSize),
+                                               static_cast<ssize_t>(MAXIMUM_MESSAGE_SIZE)));
          const ssize_t sent =
             sendNetPerfMeterData(flow, frameID,
                                  (bytesSent == 0),                       // Is frame begin?
                                  (bytesSent + chunkSize >= bytesToSend), // Is frame end?
-                                 now, (size_t)chunkSize);
+                                 now, static_cast<size_t>(chunkSize));
          // NOTE: Due to minimum size for a NETPERFMETER_DATA chunk (48 B),
          //       the sent size may be >= chunkSize!
 
@@ -238,14 +244,15 @@ bool transmitFrame(Flow*                    flow,
    }
 
    // ====== Update statistics ==============================================
-   flow->updateTransmissionStatistics(now, 1, (size_t)packetsSent, (size_t)bytesSent);
+   flow->updateTransmissionStatistics(now, 1, packetsSent, static_cast<size_t>(bytesSent));
    return (bytesSent >= bytesToSend);
 }
 
 
 // ###### Handle data message ###############################################
 bool handleNetPerfMeterData(const bool               isActiveMode,
-                            const unsigned long long now,
+                            const MonotonicMicroTime nowMonotonic,
+                            const SystemMicroTime    nowSystem,
                             const int                protocol,
                             const int                sd)
 {
@@ -268,20 +275,19 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 #if defined(HAVE_SCTP)
       if(!(flags & MSG_NOTIFICATION)) {
 #endif
-         const NetPerfMeterDataMessage*     dataMsg     =
-            (const NetPerfMeterDataMessage*)&inputBuffer;
-         const NetPerfMeterIdentifyMessage* identifyMsg =
-            (const NetPerfMeterIdentifyMessage*)&inputBuffer;
+         const auto* dataMsg     = reinterpret_cast<const NetPerfMeterDataMessage*>(&inputBuffer);
+         const auto* identifyMsg = reinterpret_cast<const NetPerfMeterIdentifyMessage*>(&inputBuffer);
 
          // ====== Handle NETPERFMETER_IDENTIFY_FLOW message ================
-         if( (received >= (ssize_t)sizeof(NetPerfMeterIdentifyMessage)) &&
-            (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
-            (be64toh(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
+         if( (received >= static_cast<ssize_t>(sizeof(NetPerfMeterIdentifyMessage))) &&
+             (identifyMsg->Header.Type == NETPERFMETER_IDENTIFY_FLOW) &&
+             (be64toh(identifyMsg->MagicNumber) == NETPERFMETER_IDENTIFY_FLOW_MAGIC_NUMBER) ) {
             const bool identifyOkay =
                handleNetPerfMeterIdentify(identifyMsg, sd, &from);
             if(!identifyOkay) {
                LOG_WARNING
-               stdlog << format("Failed handling NETPERFMETER_IDENTIFY on socket %d!", sd) << "\n";
+               // TRANSLATORS: Warning message when handling flow identification fails. Placeholder: {} is socket descriptor.
+               stdlog << formatText(gettext("Failed handling NETPERFMETER_IDENTIFY on socket {}!"), sd) << "\n";
                LOG_END
                if(protocol != IPPROTO_UDP) {
                   ext_shutdown(sd, SHUT_RDWR);
@@ -291,7 +297,7 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
          }
 
          // ====== Handle NETPERFMETER_DATA message =========================
-         else if( (received >= (ssize_t)sizeof(NetPerfMeterDataMessage)) &&
+         else if( (received >= static_cast<ssize_t>(sizeof(NetPerfMeterDataMessage))) &&
                   (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
             // ====== Identify flow =========================================
             Flow* flow;
@@ -300,13 +306,13 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             }
             else if(protocol == IPPROTO_SCTP) {
                // Flow ID = SCTP stream ID:
-               flow = FlowManager::getFlowManager()->findFlow(sd, (uint32_t)streamID);
+               flow = FlowManager::getFlowManager()->findFlow(sd, static_cast<uint16_t>(streamID));
             }
 #if defined(HAVE_QUIC)
             else if(protocol == IPPROTO_QUIC) {
-               // Flow ID = QUIC stream ID (remove 2 last bits:
-               const uint32_t flowID = (uint32_t)(streamID >> 2);
-               flow = FlowManager::getFlowManager()->findFlow(sd, flowID);
+               // Flow ID = QUIC stream ID (remove 2 last bits):
+               const uint16_t flowStreamID = static_cast<uint16_t>(streamID >> 2);
+               flow = FlowManager::getFlowManager()->findFlow(sd, flowStreamID);
             }
 #endif
             else {
@@ -315,11 +321,13 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             }
             if(flow) {
                // Update flow statistics by received NETPERFMETER_DATA message.
-               updateStatistics(flow, now, dataMsg, (size_t)received);
+               updateStatistics(flow, nowMonotonic, nowSystem,
+                                dataMsg, static_cast<size_t>(received));
             }
             else {
                LOG_WARNING
-               stdlog << format("Received NETPERFMETER_DATA for unknown flow on socket %d!", sd) << "\n";
+               // TRANSLATORS: Warning message when data message is received for an unknown flow. Placeholder: {} is socket descriptor.
+               stdlog << formatText(gettext("Received NETPERFMETER_DATA for unknown flow on socket {}!"), sd) << "\n";
                LOG_END
                if(protocol != IPPROTO_UDP) {
                   ext_shutdown(sd, SHUT_RDWR);
@@ -329,7 +337,8 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
          }
          else {
             LOG_WARNING
-            stdlog << format("Received garbage on socket %d!", sd) << "\n";
+            // TRANSLATORS: Warning message when an unrecognized packet is received on a data socket. Placeholder: {} is socket descriptor.
+            stdlog << formatText(gettext("Received garbage on socket {}!"), sd) << "\n";
             LOG_END
             if(protocol != IPPROTO_UDP) {
                ext_shutdown(sd, SHUT_RDWR);
@@ -349,15 +358,17 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
          if(!flow->isAcceptedIncomingFlow()) {
             // The outgoing flow on the active side is closed:
             LOG_WARNING
-            stdlog << format("End of input for flow #%u on socket %d!",
-                             flow->getFlowID(), sd) << "\n";
+            // TRANSLATORS: Warning message when end of input is reached for an active flow. Placeholders: {} 1: flow ID, 2: socket descriptor.
+            stdlog << formatText(gettext("End of input for flow #{} on socket {}!"),
+                                 flow->getFlowID(), sd) << "\n";
             LOG_END
          }
          else {
             // This is probably just the regular connection shutdown:
             LOG_DEBUG
-            stdlog << format("End of input for flow #%u on socket %d!",
-                             flow->getFlowID(), sd) << "\n";
+            // TRANSLATORS: Debug message when regular end of input is reached for an accepted incoming flow. Placeholders: {} 1: flow ID, 2: socket descriptor.
+            stdlog << formatText(gettext("End of input for flow #{} on socket {}!"),
+                                 flow->getFlowID(), sd) << "\n";
             LOG_END
          }
          flow->unlock();
@@ -366,8 +377,9 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
       }
       else {
          LOG_WARNING
-         stdlog << format("End of input for unidentified flow on socket %d!",
-                          sd) << "\n";
+         // TRANSLATORS: Warning message when end of input is reached on an unidentified socket. Placeholder: {} is socket descriptor.
+         stdlog << formatText(gettext("End of input for unidentified flow on socket {}!"),
+                              sd) << "\n";
          LOG_END
       }
       if(protocol != IPPROTO_UDP) {
@@ -382,14 +394,15 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 
 // ###### Update flow statistics with incoming NETPERFMETER_DATA message ####
 static void updateStatistics(Flow*                          flow,
-                             const unsigned long long       now,
+                             const MonotonicMicroTime       nowMonotonic,
+                             const SystemMicroTime          nowSystem,
                              const NetPerfMeterDataMessage* dataMsg,
                              const size_t                   receivedBytes)
 {
    // ====== Update QoS statistics ==========================================
    const uint64_t seqNumber   = be64toh(dataMsg->SeqNumber);
    const uint64_t timeStamp   = be64toh(dataMsg->TimeStamp);
-   const double   transitTime = ((double)now - (double)timeStamp) / 1000.0;
+   const double   transitTime = (static_cast<double>(nowMonotonic.value) - static_cast<double>(timeStamp)) / 1000.0;
 
    // ------ Jitter calculation according to RFC 3550 -----------------------
    /* From RFC 3550:
@@ -400,19 +413,21 @@ static void updateStatistics(Flow*                          flow,
       s->jitter += (1./16.) * ((double)d - s->jitter);
    */
    const double diff   = transitTime - flow->getDelay();
-   const double jitter = flow->getJitter() + (1.0/16.0) * (fabs(diff) - flow->getJitter());
+   const double jitter = flow->getJitter() + (1.0 / 16.0) * (fabs(diff) - flow->getJitter());
 
    // ------ Loss calculation -----------------------------------------------
-   flow->getDefragmenter()->addFragment(now, dataMsg);
+   flow->getDefragmenter()->addFragment(nowMonotonic.value, dataMsg);
    size_t receivedFrames;
    size_t lostFrames;
    size_t lostPackets;
    size_t lostBytes;
-   flow->getDefragmenter()->purge(now, flow->getTrafficSpec().DefragmentTimeout,
+   flow->getDefragmenter()->purge(nowMonotonic.value, flow->getTrafficSpec().DefragmentTimeout,
                                   receivedFrames, lostFrames, lostPackets, lostBytes);
+printf("F=%llu\n", (unsigned long long)receivedFrames);
 
    flow->updateReceptionStatistics(
-      now, receivedFrames, receivedBytes,
+      nowMonotonic, nowSystem,
+      receivedFrames, receivedBytes,
       lostFrames, lostPackets, lostBytes,
-      (unsigned long long)seqNumber, transitTime, diff, jitter);
+      seqNumber, transitTime, diff, jitter);
 }

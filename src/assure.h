@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -30,25 +30,47 @@
 #ifndef ASSURE_H
 #define ASSURE_H
 
-// Assertion like assert(), but which will be checked in all build types,
-// i.e. not only for Debug builds but also in Release builds
+#include <cerrno>
+#include <source_location>
+#include <string_view>
+
+// Assertion like assert(), but checked in all build types
+// (i.e. retained in Release builds as well as Debug builds).
 #define assure(expression) \
-   if(__builtin_expect(!(expression), 0)) { \
-      __assure_fail(#expression, __FILE__, __LINE__, __func__); \
-   }
+   do { \
+      if (!(expression)) [[unlikely]] { \
+         __assure_fail(#expression); \
+      } \
+   } while(0)
 
 #define assure_perror(expression) \
-   if(__builtin_expect(!(expression), 0)) { \
-      __assure_fail_perror(#expression, __FILE__, __LINE__, __func__); \
-   }
+   do { \
+      if (!(expression)) [[unlikely]] { \
+         const int __assure_saved_errno = errno; \
+         __assure_fail_perror(#expression, __assure_saved_errno); \
+      } \
+   } while(0)
 
-void __assure_fail(const char*  expression,
-                   const char*  file,
-                   unsigned int line,
-                   const char*  function) __attribute__ ((__noreturn__));
-void __assure_fail_perror(const char*  expression,
-                          const char*  file,
-                          unsigned int line,
-                          const char*  function) __attribute__ ((__noreturn__));
+// Modern C++20 source_location signatures
+[[noreturn]] void __assure_fail(std::string_view           expression,
+                                const std::source_location location = std::source_location::current());
+
+[[noreturn]] void __assure_fail_perror(std::string_view           expression,
+                                       int                        errorCode,
+                                       const std::source_location location = std::source_location::current());
+
+[[noreturn]] void __assure_fail_perror(std::string_view           expression,
+                                       const std::source_location location = std::source_location::current());
+
+// Backward-compatible signatures
+[[noreturn]] void __assure_fail(const char*  expression,
+                                const char*  file,
+                                unsigned int line,
+                                const char*  function);
+
+[[noreturn]] void __assure_fail_perror(const char*  expression,
+                                       const char*  file,
+                                       unsigned int line,
+                                       const char*  function);
 
 #endif

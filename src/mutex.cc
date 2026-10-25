@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -33,22 +33,10 @@
 // ###### Constructor #######################################################
 Mutex::Mutex()
 {
-#if !defined(__APPLE__)
-   pthread_mutexattr_t attr;
-   pthread_mutexattr_init(&attr);
-   pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-   pthread_mutex_init(&MyMutex, &attr);
-   pthread_mutexattr_destroy(&attr);
-#else
-   MutexOwner          = 0;
-   MutexRecursionLevel = 0;
-   pthread_mutex_init(&MyMutex, nullptr);
-#endif
 }
 
 
 // ###### Destructor ########################################################
 Mutex::~Mutex()
 {
-   pthread_mutex_destroy(&MyMutex);
 }

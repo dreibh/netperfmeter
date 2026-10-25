@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -33,6 +33,7 @@
 #include "flow.h"
 #include "messagereader.h"
 
+#include <cstdint>
 #include <ext_socket.h>
 
 
@@ -50,22 +51,24 @@ extern unsigned int gOutputVerbosity;
 // #### Active Side Control                                              ####
 // ##########################################################################
 
-bool performNetPerfMeterAddFlow(MessageReader* messageReader,
-                                int            controlSocket,
-                                const Flow*    flow);
-bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
-                                     int            controlSocket,
-                                     const Flow*    flow);
-bool performNetPerfMeterStart(MessageReader*         messageReader,
-                              int                    controlSocket,
-                              const uint64_t         measurementID,
-                              const char*            activeNodeName,
-                              const char*            passiveNodeName,
-                              const char*            configName,
-                              const char*            vectorNamePattern,
-                              const OutputFileFormat vectorFileFormat,
-                              const char*            scalarNamePattern,
-                              const OutputFileFormat scalarFileFormat);
+bool performNetPerfMeterAddFlow(MessageReader*   messageReader,
+                                int              controlSocket,
+                                const Flow*      flow,
+                                const FileFormat vectorFileFormat = FileFormat::None);
+bool performNetPerfMeterIdentifyFlow(MessageReader*   messageReader,
+                                     int              controlSocket,
+                                     const Flow*      flow,
+                                     const FileFormat vectorFileFormat = FileFormat::None);
+bool performNetPerfMeterStart(MessageReader*   messageReader,
+                              int              controlSocket,
+                              const uint64_t   measurementID,
+                              const char*      activeNodeName,
+                              const char*      passiveNodeName,
+                              const char*      configName,
+                              const char*      vectorNamePattern,
+                              const FileFormat vectorFileFormat,
+                              const char*      scalarNamePattern,
+                              const FileFormat scalarFileFormat);
 bool performNetPerfMeterStop(MessageReader* messageReader,
                              int            controlSocket,
                              const uint64_t measurementID);
@@ -97,4 +100,4 @@ bool sendNetPerfMeterAcknowledge(int            controlSocket,
 
 void handleControlAssocShutdown(int controlSocket);
 
-#endif
+#endif // CONTROL_H

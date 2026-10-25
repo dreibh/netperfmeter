@@ -30,6 +30,8 @@
 #include <cctype>
 #include <chrono>
 #include <cstdio>
+#include <filesystem>
+#include <format>
 #include <getopt.h>
 #include <iostream>
 
@@ -42,6 +44,14 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 #endif
 
 #include "package-version.h"
+
+
+// ###### Modern C++20 string formatting ###################################
+template<typename... Args>
+inline std::string formatText(const std::string_view fmt, Args&&... args)
+{
+   return std::vformat(fmt, std::make_format_args(args...));
+}
 
 
 // ###### Version ###########################################################
@@ -65,13 +75,28 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 [[ noreturn ]]
 static void usage(const char* program, const int exitCode)
 {
+   const std::string manpage(std::string("\x1b[1m") +
+                             std::filesystem::path(program).stem().string() +
+                             std::string("\x1b[0m"));
+   const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
+                              std::string(PROJECT_HOMEPAGE_URL) +
+                              "\a" + std::string(PROJECT_HOMEPAGE_URL) + "\a" +
+                              std::string("\x1b]8;;\a\x1b[0m"));
+   const std::string repository(std::string("\x1b[1m\x1b]8;;") +
+                                std::string(PROJECT_SOURCE_URL) +
+                                "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
+                                std::string("\x1b]8;;\a\x1b[0m"));
+
    std::cerr << HEADER("Usage:") << "\n"
              << CMD(program) << "\n"
              << CMD(program) << "\n"
                    ENTRY(OPT("-h") PIPE OPT("--help"))
              << CMD(program) << "\n"
-                   ENTRY(OPT("-v") PIPE OPT("--version"));
-   exit(exitCode);
+                   ENTRY(OPT("-v") PIPE OPT("--version"))
+             << "\n"
+             << formatText("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM.",
+                           manpage, homepage, repository) << "\n";
+   std::exit(exitCode);
 }
 // ------ END-OF-USAGE-BLOCK ------
 

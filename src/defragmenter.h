@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -30,6 +30,7 @@
 #ifndef DEFRAGMENTER_H
 #define DEFRAGMENTER_H
 
+#include <cstdint>
 #include <map>
 #include <ostream>
 
@@ -45,14 +46,14 @@ class Defragmenter
 
    void print(std::ostream& os);
 
-   void addFragment(const unsigned long long       now,
+   void addFragment(const uint64_t                 now,
                     const NetPerfMeterDataMessage* dataMsg);
-   void purge(const unsigned long long now,
-              const unsigned long long defragmentTimeout,
-              size_t&                  receivedFrames,
-              size_t&                  lostFrames,
-              size_t&                  lostPackets,
-              size_t&                  lostBytes);
+   void purge(const uint64_t now,
+              const uint64_t defragmentTimeout,
+              size_t&        receivedFrames,
+              size_t&        lostFrames,
+              size_t&        lostPackets,
+              size_t&        lostBytes);
 
 
    // ====== Private Data ===================================================
@@ -67,7 +68,7 @@ class Defragmenter
    struct Frame
    {
       uint32_t                      FrameID;
-      unsigned long long            LastUpdate;
+      uint64_t                      LastUpdate;
       std::map<uint64_t, Fragment*> FragmentSet;
       bool                          Completed;
    };
@@ -86,4 +87,4 @@ class Defragmenter
    uint32_t                                NextFrameID;
 };
 
-#endif
+#endif // DEFRAGMENTER_H

@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -30,8 +30,9 @@
 #ifndef FLOWBANDWIDTHSTATS_H
 #define FLOWBANDWIDTHSTATS_H
 
-#include <iostream>
 #include <cmath>
+#include <cstdint>
+#include <iostream>
 #include <string>
 
 
@@ -39,39 +40,41 @@ class FlowBandwidthStats
 {
    // ====== Methods ========================================================
    public:
-   FlowBandwidthStats();
-   ~FlowBandwidthStats();
+   FlowBandwidthStats() = default;
+   ~FlowBandwidthStats() = default;
 
    void print(std::ostream& os,
               const double  transmissionDuration,
               const double  receptionDuration) const;
    void reset();
 
-   inline static unsigned long long calculateRate(const unsigned long long value,
-                                                  const double             duration) {
+   [[nodiscard]] inline static constexpr uint64_t calculateRate(const uint64_t value,
+                                                                const double   duration) noexcept {
       if(duration < 0.000001) {
          return 0;
       }
-      return (unsigned long long)rint(value / duration);
+      return static_cast<uint64_t>(std::rint(static_cast<double>(value) / duration));
    }
 
    // ====== Public Data ====================================================
    public:
-   unsigned long long TransmittedBytes;
-   unsigned long long TransmittedPackets;
-   unsigned long long TransmittedFrames;
+   uint64_t TransmittedBytes   { 0 };
+   uint64_t TransmittedPackets { 0 };
+   uint64_t TransmittedFrames  { 0 };
 
-   unsigned long long ReceivedBytes;
-   unsigned long long ReceivedPackets;
-   unsigned long long ReceivedFrames;
+   uint64_t ReceivedBytes      { 0 };
+   uint64_t ReceivedPackets    { 0 };
+   uint64_t ReceivedFrames     { 0 };
 
-   unsigned long long LostBytes;
-   unsigned long long LostPackets;
-   unsigned long long LostFrames;
+   uint64_t LostBytes          { 0 };
+   uint64_t LostPackets        { 0 };
+   uint64_t LostFrames         { 0 };
 };
 
 
-FlowBandwidthStats operator+(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2);
-FlowBandwidthStats operator-(const FlowBandwidthStats& s1, const FlowBandwidthStats& s2);
+[[nodiscard]] FlowBandwidthStats operator+(const FlowBandwidthStats& s1,
+                                           const FlowBandwidthStats& s2) noexcept;
+[[nodiscard]] FlowBandwidthStats operator-(const FlowBandwidthStats& s1,
+                                           const FlowBandwidthStats& s2) noexcept;
 
-#endif
+#endif // FLOWBANDWIDTHSTATS_H

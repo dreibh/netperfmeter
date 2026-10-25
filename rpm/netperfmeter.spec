@@ -9,10 +9,13 @@ Source: https://www.nntb.no/~dreibh/netperfmeter/download/%{name}-%{version}.tar
 
 AutoReqProv: on
 BuildRequires: (bzip2-devel or libbz2-devel)
+BuildRequires: (xz-devel or liblzma-devel)
+BuildRequires: (zlib-devel or libz-devel)
 BuildRequires: cmake
 BuildRequires: gcc-c++
 BuildRequires: ghostscript
 BuildRequires: GraphicsMagick
+BuildRequires: libzstd-devel
 BuildRequires: lksctp-tools-devel
 BuildRequires: mupdf
 BuildRequires: valgrind-devel
@@ -94,6 +97,55 @@ done
 %{_mandir}/man1/netperfmeter-module-loader.1.gz
 %{_mandir}/man1/runtimeestimator.1.gz
 %{_prefix}/lib/systemd/system/netperfmeter-module-loader.service
+
+
+%package -n libfileio2
+Summary: File I/O helper library for NetPerfMeter
+Group: System/Libraries
+Provides: %{name}-libfileio = %{version}-%{release}
+
+%description -n libfileio2
+NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
+DCCP, and QUIC transport protocols over IPv4 and IPv6.
+.
+libfileio provides transparent input and output file handling supporting
+plain text and compressed formats (BZip2, GZip, XZ/LZMA, and Zstandard).
+.
+This package contains the shared runtime library.
+
+%post -n libfileio2 -p /sbin/ldconfig
+%postun -n libfileio2 -p /sbin/ldconfig
+
+%files -n libfileio2
+%{_libdir}/libfileio.so.*
+
+
+%package -n libfileio-devel
+Summary: Development files for the NetPerfMeter File I/O library
+Group: Development/Libraries/C and C++
+Requires: libfileio2 = %{version}-%{release}
+Requires: (bzip2-devel or libbz2-devel)
+Requires: (xz-devel or liblzma-devel)
+Requires: (zlib-devel or libz-devel)
+Requires: libzstd-devel
+Provides: %{name}-libfileio-devel = %{version}-%{release}
+
+%description -n libfileio-devel
+NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
+DCCP, and QUIC transport protocols over IPv4 and IPv6.
+.
+libfileio provides transparent input and output file handling supporting
+plain text and compressed formats (BZip2, GZip, XZ/LZMA, and Zstandard).
+.
+This package contains the development headers and library symlinks.
+
+%files -n libfileio-devel
+%{_includedir}/fileio/fileio.h
+%{_includedir}/fileio/inputfile.h
+%{_includedir}/fileio/outputfile.h
+%{_libdir}/libfileio*.so
+%{_libdir}/libfileio.a
+%{_libdir}/pkgconfig/libfileio.pc
 
 
 %package common
@@ -284,6 +336,7 @@ Requires: %{name}-examples = %{version}-%{release}
 Requires: %{name}-plotting = %{version}-%{release}
 Requires: %{name}-pdfproctools = %{version}-%{release}
 Requires: %{name}-service = %{version}-%{release}
+Requires: libfileio-devel = %{version}-%{release}
 
 %description all
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,

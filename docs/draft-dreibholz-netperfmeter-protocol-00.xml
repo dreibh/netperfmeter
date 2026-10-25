@@ -1,0 +1,799 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE rfc [
+<!ENTITY nbsp "&#160;">
+<!ENTITY zwsp "&#8203;">
+<!ENTITY nbhy "&#8209;">
+<!ENTITY wj "&#8288;">
+]>
+<rfc xmlns:xi="http://www.w3.org/2001/XInclude"
+     category="info"
+     submissionType="IETF"
+     consensus="true"
+     ipr="trust200902"
+     docName="draft-dreibholz-netperfmeter-protocol-00"
+     obsoletes=""
+     updates=""
+     xml:lang="en"
+     tocInclude="true"
+     symRefs="true"
+     version="3">
+ <?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+ <front>
+  <title abbrev="NetPerfMeter Protocol">The NetPerfMeter Protocol (NPMP)</title>
+  <seriesInfo name="Internet-Draft" value="draft-dreibholz-netperfmeter-protocol-00" />
+  <!-- ************** THOMAS DREIBHOLZ *************** -->
+  <author initials="T." surname="Dreibholz" fullname="Thomas Dreibholz">
+   <organization abbrev="SimulaMet">Simula Metropolitan Centre for Digital Engineering</organization>
+   <address>
+    <postal>
+     <street>Stensberggata 27</street>
+     <city>0170 Oslo</city>
+     <country>Norway</country>
+    </postal>
+    <email>dreibh@simula.no</email>
+    <uri>https://www.simula.no/people/dreibh</uri>
+   </address>
+  </author>
+  <date day="24" month="October" year="2026" />
+  <area>Transport</area>
+  <workgroup>Network Working Group</workgroup>
+  <keyword>Internet-Draft</keyword>
+  <keyword>NetPerfMeter</keyword>
+  <keyword>NPMP</keyword>
+  <keyword>Performance Measurement</keyword>
+  <keyword>Transport Protocols</keyword>
+  <keyword>SCTP</keyword>
+  <keyword>MPTCP</keyword>
+  <keyword>DCCP</keyword>
+  <keyword>QUIC</keyword>
+  <abstract>
+   <t>
+    This document specifies the NetPerfMeter Protocol (NPMP), a network
+    performance benchmarking and metering protocol designed for comparative
+    evaluations across multiple Transport Layer protocols, including TCP,
+    MPTCP, UDP, SCTP, DCCP, and QUIC. NPMP is decoupled into a reliable
+    Control Channel (NPMP-CONTROL) for testbed orchestration, scenario
+    parameter negotiation, and scalar/vector result retrieval, and one or
+    more Data Channels (NPMP-DATA) conveying synthetic application workloads
+    with fine-grained QoS metric collection (throughput, delay, jitter, and
+    packet loss). This document describes the protocol architecture, state
+    transitions, packet formats, IANA-registered identifiers (PPIDs, Service
+    Codes, and ALPN strings), reference implementations, and simulation
+    models in the OMNeT++ INET Framework.
+   </t>
+  </abstract>
+ </front>
+ <middle>
+  <section toc="default">
+   <name>Introduction</name>
+   <t>
+    Evaluating and comparing the performance of Transport Layer protocols under
+    realistic operating conditions requires an application protocol capable of
+    generating identical, highly configurable, and reproducible traffic
+    workloads across fundamentally different transport services. Existing
+    network evaluation utilities typically specialize in single-stream bulk
+    data transfers (such as TTCP or early versions of Iperf and Netperf), or
+    focus exclusively on isolated protocols like TCP or UDP without providing
+    concurrent multi-stream, multi-protocol, or multi-path testing facilities.
+   </t>
+   <t>
+    The NetPerfMeter Protocol (NPMP) provides a unified protocol architecture
+    explicitly designed for multi-protocol transport benchmarking. As defined
+    in the NetPerfMeter tool-chain (see <xref target="Dre2012" /> and
+    <xref target="SoftCOM2011" />), NPMP decouples the control signaling
+    (NPMP-CONTROL) from the measurement data transmission (NPMP-DATA). This
+    separation enables test orchestrators to systematically evaluate both
+    single-path and multi-path protocols (such as Concurrent Multipath
+    Transfer for SCTP (CMT-SCTP) and Multipath TCP (MPTCP)) while preventing
+    control signaling from distorting measured transport dynamics.
+   </t>
+   <t>
+    NPMP supports bidirectional saturated flows (bulk transfers), non-saturated
+    flows (configurable constant or randomized frame rates and sizes to mimic
+    interactive and multimedia traffic), on/off traffic patterns, and partial
+    reliability / unordered delivery options.
+   </t>
+   <section toc="default">
+    <name>Terminology</name>
+    <t>This document uses the following terms:</t>
+    <ul spacing="normal">
+     <li>
+      Active Node: The endpoint initiating the measurement session (client),
+      responsible for configuring scenario parameters, commanding measurement
+      start/stop, and downloading remote measurement results.
+     </li>
+     <li>
+      Passive Node: The endpoint awaiting connections (server), which receives
+      scenario configurations, binds listener sockets, generates requested
+      inbound traffic, and records statistics.
+     </li>
+     <li>
+      Control Channel (NPMP-CONTROL): The reliable signaling association
+      used to orchestrate the measurement lifecycle, exchange flow
+      configurations, synchronize start/stop events, and transfer result files.
+     </li>
+     <li>
+      Data Channel (NPMP-DATA): The communication association(s) established
+      over the transport protocol under test (TCP, MPTCP, UDP, SCTP, DCCP, or
+      QUIC) carrying timestamped payload data.
+     </li>
+     <li>
+      Frame: The application-layer data unit produced by the traffic generator
+      at a specified or randomized rate and size.
+     </li>
+     <li>
+      Message: The transport-layer data packet into which application frames
+      are segmented if their size exceeds the Maximum Message Size.
+     </li>
+     <li>
+      Flow: A configured communication relation characterized by unique flow
+      and stream identifiers, a transport protocol, and directional traffic
+      parameters.
+     </li>
+     <li>
+      Stream: A subchannel or stream within a multi-stream association (e.g.,
+      SCTP stream or QUIC unidirectional stream).
+     </li>
+    </ul>
+   </section>
+   <section toc="default">
+    <name>Conventions</name>
+    <t>
+     The key words "<bcp14>MUST</bcp14>", "<bcp14>MUST NOT</bcp14>",
+     "<bcp14>REQUIRED</bcp14>", "<bcp14>SHALL</bcp14>", "<bcp14>SHALL
+     NOT</bcp14>", "<bcp14>SHOULD</bcp14>", "<bcp14>SHOULD NOT</bcp14>",
+     "<bcp14>RECOMMENDED</bcp14>", "<bcp14>NOT RECOMMENDED</bcp14>",
+     "<bcp14>MAY</bcp14>", and "<bcp14>OPTIONAL</bcp14>" in this document are
+     to be interpreted as described in BCP 14 <xref target="RFC2119" />
+     <xref target="RFC8174" /> when, and only when, they appear in all
+     capitals, as shown here.
+    </t>
+   </section>
+  </section>
+  <section toc="default">
+   <name>Protocol Architecture and Overview</name>
+   <section toc="default">
+    <name>Dual-Channel Architecture</name>
+    <t>
+     The fundamental design principle of NPMP is the separation of control
+     plane coordination from data plane execution:
+    </t>
+    <artwork name="" type="" align="left" alt=""><![CDATA[
++---------------------+                      +---------------------+
+|     Active Node     |                      |    Passive Node     |
+|      (Client)       |                      |      (Server)       |
++---------------------+                      +---------------------+
+| NPMP-CONTROL Client |<=== Control Channel ===>| NPMP-CONTROL Server |
+|                     |     (SCTP or TCP)    |                     |
+|  NPMP-DATA Sender/  |<==== Data Channel(s) ==>|  NPMP-DATA Sender/  |
+|      Receiver       |   (TCP/MPTCP/UDP/    |      Receiver       |
++---------------------+    SCTP/DCCP/QUIC)   +---------------------+
+    ]]></artwork>
+    <t>
+     The Control Channel operates over a reliable connection-oriented transport
+     protocol (by default SCTP using PPID 36, or TCP). It remains active for the
+     entire duration of the session to ensure reliable delivery of management
+     commands. The Data Channel encompasses all data flows generated according
+     to the traffic specifications, utilizing any supported transport protocol:
+    </t>
+    <ul spacing="normal">
+     <li>TCP: Transmission Control Protocol <xref target="RFC9293" />.</li>
+     <li>MPTCP: Multipath TCP <xref target="RFC8684" />.</li>
+     <li>UDP: User Datagram Protocol <xref target="RFC0768" />.</li>
+     <li>SCTP: Stream Control Transmission Protocol <xref target="RFC9260" />, including Partial Reliability (PR-SCTP) <xref target="RFC3758" />.</li>
+     <li>DCCP: Datagram Congestion Control Protocol <xref target="RFC4340" />, including CCID 2 <xref target="RFC4341" /> and CCID 3 <xref target="RFC4342" />.</li>
+     <li>QUIC: QUIC Transport Protocol <xref target="RFC9000" /> over TLS <xref target="RFC9001" />.</li>
+    </ul>
+   </section>
+   <section toc="default">
+    <name>Port and Multiplexing Conventions</name>
+    <t>
+     To avoid port collisions and allow simultaneous evaluation of multiple
+     protocols (e.g., standard TCP vs. MPTCP, or UDP vs. QUIC), NPMP defines
+     a well-defined port scheme relative to a configured Base Port (denoted as
+     BP, with default value 9000):
+    </t>
+    <table align="center">
+     <name>NPMP Port and Protocol Conventions</name>
+     <thead>
+      <tr>
+       <th align="left">Channel</th>
+       <th align="left">Transport Protocol</th>
+       <th align="left">Port Number</th>
+       <th align="left">Identifier / ALPN</th>
+      </tr>
+     </thead>
+     <tbody>
+      <tr>
+       <td align="left">NPMP-CONTROL</td>
+       <td align="left">SCTP</td>
+       <td align="left">BP + 1 (9001)</td>
+       <td align="left">PPID 36</td>
+      </tr>
+      <tr>
+       <td align="left">NPMP-CONTROL</td>
+       <td align="left">TCP / MPTCP</td>
+       <td align="left">BP + 1 (9001)</td>
+       <td align="left">netperfmeter/control</td>
+      </tr>
+      <tr>
+       <td align="left">NPMP-DATA</td>
+       <td align="left">TCP</td>
+       <td align="left">BP (9000)</td>
+       <td align="left">-</td>
+      </tr>
+      <tr>
+       <td align="left">NPMP-DATA</td>
+       <td align="left">MPTCP</td>
+       <td align="left">BP - 1 (8999)</td>
+       <td align="left">-</td>
+      </tr>
+      <tr>
+       <td align="left">NPMP-DATA</td>
+       <td align="left">UDP</td>
+       <td align="left">BP (9000)</td>
+       <td align="left">-</td>
+      </tr>
+      <tr>
+       <td align="left">NPMP-DATA</td>
+       <td align="left">QUIC</td>
+       <td align="left">BP - 1 (8999)</td>
+       <td align="left">netperfmeter/data</td>
+      </tr>
+      <tr>
+       <td align="left">NPMP-DATA</td>
+       <td align="left">SCTP</td>
+       <td align="left">BP (9000)</td>
+       <td align="left">PPID 37</td>
+      </tr>
+      <tr>
+       <td align="left">NPMP-DATA</td>
+       <td align="left">DCCP</td>
+       <td align="left">BP (9000)</td>
+       <td align="left">Service Code 1852861808</td>
+      </tr>
+     </tbody>
+    </table>
+   </section>
+   <section toc="default">
+    <name>Measurement Session Lifecycle</name>
+    <t>
+     A measurement session proceeds through four distinct phases:
+    </t>
+    <ol spacing="normal">
+     <li>
+      Configuration Phase: The Active Node connects to the Passive Node via
+      NPMP-CONTROL and defines one or more flows using NETPERFMETER_ADD_FLOW
+      messages, each acknowledged with NETPERFMETER_ACKNOWLEDGE.
+     </li>
+     <li>
+      Association and Identification Phase: The Active Node establishes the
+      data transport connection(s) to the Passive Node's data port(s). Over
+      each data connection, it transmits a NETPERFMETER_IDENTIFY_FLOW message
+      containing a unique 64-bit magic number, Measurement ID, Flow ID, and
+      Stream ID. The Passive Node binds the new socket/stream to the configured
+      flow state and confirms via NETPERFMETER_ACKNOWLEDGE on the Control
+      Channel.
+     </li>
+     <li>
+      Measurement Phase: The Active Node issues a NETPERFMETER_START message.
+      Upon acknowledgment, both nodes launch transmission threads, generating
+      timestamped NETPERFMETER_DATA messages according to the traffic specs,
+      and logging vector/scalar statistics.
+     </li>
+     <li>
+      Termination and Retrieval Phase: When the runtime expires or an abort is
+      signaled, the Active Node issues NETPERFMETER_STOP. After stopping local
+      flows, both endpoints close data streams. The Active Node then requests
+      the recorded passive-side scalar and vector files using chunked
+      NETPERFMETER_RESULTS messages, concludes by removing flows via
+      NETPERFMETER_REMOVE_FLOW, and closes the session.
+     </li>
+    </ol>
+   </section>
+  </section>
+  <section toc="default">
+   <name>Protocol Message Formats</name>
+   <t>
+    All NPMP messages are binary-encoded. Multi-byte integer fields
+    <bcp14>MUST</bcp14> be transmitted in network byte order (big-endian),
+    unless explicitly stated otherwise.
+   </t>
+   <section toc="default">
+    <name>Common Message Header</name>
+    <t>
+     Every NPMP message starts with a 4-octet header:
+    </t>
+    <artwork name="" type="" align="left" alt=""><![CDATA[
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|     Type      |     Flags     |            Length             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ]]></artwork>
+    <ul spacing="normal">
+     <li>
+      <t>Type (8 bits): Identifies the message type:</t>
+      <ul spacing="compact">
+       <li>0x01: NETPERFMETER_ACKNOWLEDGE</li>
+       <li>0x02: NETPERFMETER_ADD_FLOW</li>
+       <li>0x03: NETPERFMETER_REMOVE_FLOW</li>
+       <li>0x04: NETPERFMETER_IDENTIFY_FLOW</li>
+       <li>0x05: NETPERFMETER_DATA</li>
+       <li>0x06: NETPERFMETER_START</li>
+       <li>0x07: NETPERFMETER_STOP</li>
+       <li>0x08: NETPERFMETER_RESULTS</li>
+      </ul>
+     </li>
+     <li>Flags (8 bits): Type-specific flags (default 0x00).</li>
+     <li>
+      Length (16 bits): Total length of the message in octets, including the
+      header and any variable payload.
+     </li>
+    </ul>
+   </section>
+   <section toc="default">
+    <name>NETPERFMETER_ACKNOWLEDGE Message</name>
+    <t>
+     Transmitted over the Control Channel to acknowledge preceding requests.
+    </t>
+    <artwork name="" type="" align="left" alt=""><![CDATA[
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|   Type=0x01   |     Flags     |          Length=24            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                            FlowID                             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                         MeasurementID                         +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           StreamID            |            Padding            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                            Status                             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ]]></artwork>
+    <ul spacing="normal">
+     <li>FlowID (32 bits): Flow identifier referenced by the acknowledgment.</li>
+     <li>MeasurementID (64 bits): Unique identifier of the measurement run.</li>
+     <li>StreamID (16 bits): Stream index within the flow (e.g. SCTP stream).</li>
+     <li>Padding (16 bits): Reserved; <bcp14>MUST</bcp14> be set to 0.</li>
+     <li>
+      Status (32 bits): Result status: 0 denotes success (Okay); 1 denotes
+      an error condition (Error).
+     </li>
+    </ul>
+   </section>
+   <section toc="default">
+    <name>NETPERFMETER_ADD_FLOW Message</name>
+    <t>
+     Configures a new flow on the peer. It specifies transport options,
+     buffer sizes, congestion control, and random parameter arrays for frame
+     rate, frame size, and on/off events.
+    </t>
+    <artwork name="" type="" align="left" alt=""><![CDATA[
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|   Type=0x02   |     Flags     |            Length             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                            FlowID                             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                         MeasurementID                         +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           StreamID            |       Protocol (Little-E)     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                    Description (32 octets)                    +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                          OrderedMode                          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         ReliableMode                          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                     RetransmissionTrials                      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                  FrameRate [4 x IEEE 64-bit]                  +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                  FrameSize [4 x IEEE 64-bit]                  +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| FrameRateRng  | FrameSizeRng  |          MaxMsgSize           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         RcvBufferSize                         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         SndBufferSize                         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|      CMT      |     CCID      |          NDiffPorts           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      PathMgr (16 octets)                      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                 CongestionControl (16 octets)                 |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                     Scheduler (16 octets)                     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|          OnOffEvents          |    NetPerfMeterOnOffEvent...  |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ]]></artwork>
+    <t>Notable flags and fields include:</t>
+    <ul spacing="normal">
+     <li>Flags: Bit 0: Debug mode; Bit 1: NoDelay (disable Nagle); Bit 2: Repeat on/off events.</li>
+     <li>Protocol: Transport protocol number (IPPROTO_TCP, IPPROTO_UDP, IPPROTO_SCTP, IPPROTO_DCCP, IPPROTO_MPTCP, or IPPROTO_QUIC). Note: encoded in little-endian format for historical compatibility.</li>
+     <li>OrderedMode: Scaled 32-bit probability [0.0, 1.0] for ordered delivery.</li>
+     <li>ReliableMode: Scaled 32-bit probability [0.0, 1.0] for reliable delivery.</li>
+     <li>RetransmissionTrials: Number of trials, or timeout in milliseconds if Bit 31 is set.</li>
+     <li>FrameRate / FrameSize: 4 network 64-bit floating point numbers defining distribution parameters.</li>
+     <li>FrameRateRng / FrameSizeRng: Random number generator identifier (Constant=0, Uniform=1, Exponential=2, Pareto=3, Normal=4, TruncNormal=5).</li>
+     <li>CMT: Concurrent Multipath Transfer mode (0=Off, 1=CMT, 2=CMT/RPv1, 3=CMT/RPv2, 4=MPTCP-like).</li>
+     <li>CCID: DCCP Congestion Control Identifier (e.g. 2 or 3).</li>
+     <li>OnOffEvents: Count of trailing NetPerfMeterOnOffEvent records (each 36 octets).</li>
+     <li>NDiffPorts, PathMgr, Scheduler: Obsolete configuration fields retained for wire compatibility with legacy Linux kernel MPTCP implementations.</li>
+    </ul>
+   </section>
+   <section toc="default">
+    <name>NETPERFMETER_IDENTIFY_FLOW Message</name>
+    <t>
+     Transmitted over newly established data channels to correlate the underlying
+     transport socket/stream with its configured flow definition:
+    </t>
+    <artwork name="" type="" align="left" alt=""><![CDATA[
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|   Type=0x04   |     Flags     |          Length=26            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                            FlowID                             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                MagicNumber (0x4bcdf3aa303c6774)               +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                         MeasurementID                         +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           StreamID            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ]]></artwork>
+    <t>
+     The 64-bit MagicNumber (0x4bcdf3aa303c6774) ensures that unintentional or
+     malformed data connections are detected and rejected prior to association.
+    </t>
+   </section>
+   <section toc="default">
+    <name>NETPERFMETER_DATA Message</name>
+    <t>
+     Conveys synthetic payload over active Data Channels:
+    </t>
+    <artwork name="" type="" align="left" alt=""><![CDATA[
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|   Type=0x05   |     Flags     |            Length             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                            FlowID                             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                         MeasurementID                         +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           StreamID            |            Padding            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                            FrameID                            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                           SeqNumber                           +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                         ByteSeqNumber                         +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               |
++                           TimeStamp                           +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           Payload...                          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    ]]></artwork>
+    <ul spacing="normal">
+     <li>Flags: Bit 0 (NPMDF_FRAME_BEGIN) indicates frame start; Bit 1 (NPMDF_FRAME_END) indicates frame termination.</li>
+     <li>FrameID (32 bits): Incrementing frame identifier.</li>
+     <li>SeqNumber (64 bits): Packet sequence number for loss tracking.</li>
+     <li>ByteSeqNumber (64 bits): Cumulative transmitted byte count.</li>
+     <li>TimeStamp (64 bits): Transmission microsecond timestamp for latency and jitter calculation.</li>
+     <li>Payload: Variable bytes filled with deterministic test patterns (e.g., repeating byte sequences 30..127).</li>
+    </ul>
+   </section>
+   <section toc="default">
+    <name>Start, Stop, and Results Messages</name>
+    <t>
+     The remaining control messages supervise measurement execution:
+    </t>
+    <ul spacing="normal">
+     <li>
+      NETPERFMETER_START (Type 0x06, 16 octets): Commands the passive node to
+      commence traffic transmission and local vector/scalar logging for the
+      specified MeasurementID. Flags specify file compression and format.
+     </li>
+     <li>
+      NETPERFMETER_STOP (Type 0x07, 16 octets): Commands termination of data
+      transmission and finalization of measurement statistics.
+     </li>
+     <li>
+      NETPERFMETER_RESULTS (Type 0x08, 4 octets header + up to 1400 octets data):
+      Transfers captured vector and scalar log files from the passive node to the
+      active node in sequential chunks. Bit 0 of Flags (NPMRF_EOF) denotes the
+      final chunk of a downloaded file.
+     </li>
+     <li>
+      NETPERFMETER_REMOVE_FLOW (Type 0x03, 18 octets): Removes flow state and
+      triggers download of the corresponding flow's vector file.
+     </li>
+    </ul>
+   </section>
+  </section>
+  <section toc="default">
+   <name>Traffic Generation and Quality of Service Metrics</name>
+   <section toc="default">
+    <name>Traffic Models</name>
+    <t>
+     NetPerfMeter generates traffic as discrete frames. A flow is either
+     saturated (frame rate set to 0, sending as fast as the transport layer
+     permits) or non-saturated (governed by frame rate and frame size
+     distributions). Supported distributions include:
+    </t>
+    <ul spacing="normal">
+     <li>Constant: Deterministic frame rate and size.</li>
+     <li>Uniform: Distributed within [min, max].</li>
+     <li>Exponential: Negative exponential distribution for Poisson arrivals.</li>
+     <li>Pareto: Heavy-tailed distribution to model bursty Internet traffic.</li>
+     <li>Normal / Truncated Normal: Gaussian distribution.</li>
+    </ul>
+   </section>
+   <section toc="default">
+    <name>Delay and Jitter Measurements</name>
+    <t>
+     Each packet carries a 64-bit microsecond timestamp indicating the
+     transmission time t_s. Upon reception at monotonic time t_r, the
+     receiver computes transit time (one-way delay) as:
+    </t>
+    <artwork align="center"><![CDATA[
+D = (t_r - t_s) / 1000  (in ms)
+    ]]></artwork>
+    <t>
+     Inter-arrival jitter is calculated according to the exponential smoothing
+     formula defined in <xref target="RFC3550" />:
+    </t>
+    <artwork align="center"><![CDATA[
+diff = D - D_prev
+J = J + (1/16) * (|diff| - J)
+    ]]></artwork>
+   </section>
+  </section>
+  <section toc="default">
+   <name>Reference Implementation and Simulation Models</name>
+   <section toc="default">
+    <name>Open Source Software Implementation</name>
+    <t>
+     The reference software implementation of NetPerfMeter is written in C++
+     and released under the GNU General Public License (GPLv3). It runs on
+     Linux, FreeBSD, NetBSD, OpenBSD, Solaris, GNU Hurd, and macOS.
+    </t>
+    <ul spacing="normal">
+     <li>Project Homepage: <eref target="https://www.nntb.no/~dreibh/netperfmeter/" /></li>
+     <li>Git Source Repository: <eref target="https://github.com/dreibh/netperfmeter" /></li>
+    </ul>
+    <t>
+     Section 6.3 of <xref target="Dre2012" /> documents the software design,
+     traffic modeling features, and evaluation methodology of the NetPerfMeter
+     tool-chain.
+    </t>
+   </section>
+   <section toc="default">
+    <name>OMNeT++ INET Framework Simulation Model</name>
+    <t>
+     NetPerfMeter is integrated into the well-known INET Framework for the
+     OMNeT++ discrete-event network simulator as the module:
+    </t>
+    <t keepWithNext="true">
+     <tt>inet.applications.netperfmeter.NetPerfMeter</tt>
+    </t>
+    <t>
+     This simulation model, documented in <xref target="NetPerfMeterSim2012" />, implements
+     the same flow specification parameters, random traffic distributions, and
+     metrics logging as the real-world tool. This ensures that scenarios
+     simulated in OMNeT++ can be replicated identically in physical testbed
+     environments such as NorNet.
+    </t>
+    <ul spacing="normal">
+     <li>INET Framework Homepage: <eref target="https://inet.omnetpp.org/" /></li>
+     <li>INET Framework Git Repository: <eref target="https://github.com/inet-framework/inet" /></li>
+    </ul>
+   </section>
+   <section toc="default">
+    <name>Wireshark Protocol Dissector</name>
+    <t>
+     The Wireshark network protocol analyzer provides built-in dissectors for
+     the NetPerfMeter Protocol in the dissector module
+     <tt>packet-netperfmeter.c</tt>. It decodes both NPMP-CONTROL and
+     NPMP-DATA messages across all underlying transport protocols.
+    </t>
+   </section>
+  </section>
+  <section toc="default">
+   <name>Security Considerations</name>
+   <t>
+    NPMP is a measurement tool intended for performance evaluation in research,
+    laboratory, and operational testbed environments. Unauthenticated control
+    channels could allow malicious actors to instruct endpoints to establish
+    high-volume denial-of-service traffic streams.
+   </t>
+   <t>
+    When operating across public or untrusted networks, the Control Channel
+    <bcp14>SHOULD</bcp14> be protected by network-layer security (IPsec) or
+    transport-layer security. QUIC data channels <bcp14>MUST</bcp14> enforce
+    mutual TLS certificate authentication as specified in <xref target="RFC9001" />.
+   </t>
+  </section>
+  <section toc="default">
+   <name>IANA Considerations</name>
+   <section toc="default">
+    <name>SCTP Payload Protocol Identifiers (PPIDs)</name>
+    <t>
+     IANA has registered the following SCTP Payload Protocol Identifiers in the
+     "Stream Control Transmission Protocol (SCTP) Parameters" registry:
+    </t>
+    <table align="center">
+     <name>SCTP PPID Registrations</name>
+     <thead>
+      <tr>
+       <th align="left">Value</th>
+       <th align="left">SCTP PPID</th>
+       <th align="left">Reference</th>
+      </tr>
+     </thead>
+     <tbody>
+      <tr>
+       <td align="left">36</td>
+       <td align="left">NetPerfMeter Protocol Control Channel (NPMP-CONTROL)</td>
+       <td align="left"><xref target="Dre2012" /></td>
+      </tr>
+      <tr>
+       <td align="left">37</td>
+       <td align="left">NetPerfMeter Protocol Data Channel (NPMP-DATA)</td>
+       <td align="left"><xref target="Dre2012" /></td>
+      </tr>
+     </tbody>
+    </table>
+   </section>
+   <section toc="default">
+    <name>DCCP Service Codes</name>
+    <t>
+     IANA has registered the following Service Code in the "Datagram Congestion
+     Control Protocol (DCCP) Parameters: Service Codes" registry:
+    </t>
+    <table align="center">
+     <name>DCCP Service Code Registration</name>
+     <thead>
+      <tr>
+       <th align="left">Service Code (Decimal)</th>
+       <th align="left">ASCII</th>
+       <th align="left">Description</th>
+       <th align="left">Reference</th>
+      </tr>
+     </thead>
+     <tbody>
+      <tr>
+       <td align="left">1852861808</td>
+       <td align="left">npmp</td>
+       <td align="left">NetPerfMeter Protocol on the Data Channel (NPMP-DATA)</td>
+       <td align="left"><xref target="RFC4340" /></td>
+      </tr>
+     </tbody>
+    </table>
+   </section>
+   <section toc="default">
+    <name>TLS Application-Layer Protocol Negotiation (ALPN) Protocol IDs</name>
+    <t>
+     IANA has registered the following Application-Layer Protocol Negotiation
+     (ALPN) Protocol IDs in the "TLS Application-Layer Protocol Negotiation
+     (ALPN) Protocol IDs" registry established by <xref target="RFC7301" />:
+    </t>
+    <table align="center">
+     <name>TLS ALPN Protocol ID Registrations</name>
+     <thead>
+      <tr>
+       <th align="left">Protocol</th>
+       <th align="left">Identification Sequence</th>
+       <th align="left">Reference</th>
+      </tr>
+     </thead>
+     <tbody>
+      <tr>
+       <td align="left">NetPerfMeter Protocol Control Channel (NPMP-CONTROL)</td>
+       <td align="left">0x6e 0x65 0x74 0x70 0x65 0x72 0x66 0x6d 0x65 0x74 0x65 0x72 0x2f 0x63 0x6f 0x6e 0x74 0x72 0x6f 0x6c ("netperfmeter/control")</td>
+       <td align="left"><eref target="https://www.nntb.no/~dreibh/netperfmeter/" /></td>
+      </tr>
+      <tr>
+       <td align="left">NetPerfMeter Protocol Data Channel (NPMP-DATA)</td>
+       <td align="left">0x6e 0x65 0x74 0x70 0x65 0x72 0x66 0x6d 0x65 0x74 0x65 0x72 0x2f 0x64 0x61 0x74 0x61 ("netperfmeter/data")</td>
+       <td align="left"><eref target="https://www.nntb.no/~dreibh/netperfmeter/" /></td>
+      </tr>
+     </tbody>
+    </table>
+   </section>
+  </section>
+  <section toc="default">
+   <name>Acknowledgments</name>
+   <t>
+    The author would like to thank Michael Tüxen, Martin Becke, Hakim Adhari,
+    Erwin P. Rathgeb, Xing Zhou, and the contributors to the OMNeT++ INET
+    Framework and Wireshark communities for their valuable feedback and
+    support.
+   </t>
+  </section>
+ </middle>
+ <back>
+  <references>
+   <name>Normative References</name>
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.0768.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3550.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3758.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.4340.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7301.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8684.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9000.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9001.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9260.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.9293.xml" />
+  </references>
+  <references>
+   <name>Informative References</name>
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.4341.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.4342.xml" />
+   <reference anchor="Dre2012" target="https://www.nntb.no/~dreibh/habilitation/Dre2012.pdf">
+    <front>
+     <title>Evaluation and Optimisation of Multi-Path Transport using the Stream Control Transmission Protocol</title>
+     <author initials="T." surname="Dreibholz" fullname="Thomas Dreibholz">
+      <organization>University of Duisburg-Essen</organization>
+     </author>
+     <date month="March" year="2012" />
+    </front>
+    <seriesInfo name="Habilitation Treatise" value="University of Duisburg-Essen, Faculty of Economics, Institute for Computer Science and Business Information Systems, URN urn:nbn:de:hbz:464-20120315-103327-4" />
+   </reference>
+   <reference anchor="SoftCOM2011" target="https://web.archive.org/web/20260420112909/https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/SoftCOM2011.pdf">
+    <front>
+     <title>Evaluation of A New Multipath Congestion Control Scheme using the NetPerfMeter Tool-Chain</title>
+     <author initials="T." surname="Dreibholz" fullname="Thomas&#160;Dreibholz" />
+     <author initials="M." surname="Becke" fullname="Martin&#160;Becke" />
+     <author initials="H." surname="Adhari" fullname="Hakim&#160;Adhari" />
+     <author initials="E.&#160;P." surname="Rathgeb" fullname="Erwin Paul&#160;Rathgeb" />
+     <date day="16" month="September" year="2011" />
+    </front>
+    <seriesInfo name="Proceedings of the 19th IEEE International Conference on Software, Telecommunications and Computer Networks&#160;(SoftCOM)" value="Pages 1–6, ISBN&#160;978-953-290-027-9" />
+    <format type="PDF" octets="367773" target="https://web.archive.org/web/20260420112909/https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/SoftCOM2011.pdf" />
+   </reference>
+   <reference anchor="NetPerfMeterSim2012" target="https://web.archive.org/web/20260420112909/https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/NetPerfMeterSim2012.pdf">
+    <front>
+     <title>NetPerfMeter – A Versatile Tool for Multi-Protocol Network Performance Evaluations</title>
+     <author initials="T." surname="Dreibholz" fullname="Thomas&#160;Dreibholz" />
+     <author initials="H." surname="Adhari" fullname="Hakim&#160;Adhari" />
+     <author initials="M." surname="Becke" fullname="Martin&#160;Becke" />
+     <author initials="E.&#160;P." surname="Rathgeb" fullname="Erwin Paul&#160;Rathgeb" />
+     <date day="8" month="February" year="2012" />
+    </front>
+    <seriesInfo name="" value="OMNeT++ Code Contribution" />
+    <format type="PDF" octets="341735" target="https://web.archive.org/web/20260420112909/https://www.wiwi.uni-due.de/fileadmin/fileupload/I-TDR/SCTP/Paper/NetPerfMeterSim2012.pdf" />
+   </reference>
+  </references>
+ </back>
+</rfc>

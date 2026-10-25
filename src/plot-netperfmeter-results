@@ -41,17 +41,29 @@ usage () {
    local arg=$'\x1b[4m'
    local syn=$'\x1b[1m'
    local reset=$'\x1b[0m'
+   local progname="${program##*/}"
+   local manpage="${cmd}${progname%.*}${reset}"
+   local homepage=$'\x1b[1m\x1b]8;;@PROJECT_HOMEPAGE_URL@\a@PROJECT_HOMEPAGE_URL@\a\x1b]8;;\a\x1b[0m'
+   local repository=$'\x1b[1m\x1b]8;;@PROJECT_SOURCE_URL@\a@PROJECT_SOURCE_URL@\a\x1b]8;;\a\x1b[0m'
    cat >&2 <<EOF
 ${header}Usage:${reset}
-${cmd}${program}${reset} ${arg}config_name${reset}
-	${syn}[${reset}${opt}-w${reset} ${syn}|${reset} ${opt}--own-file${reset} ${syn}|${reset} ${opt}--ownfile${reset}${syn}]${reset}
-	${syn}[${reset}${opt}-k${reset} ${syn}|${reset} ${opt}--keep-summaries${reset}${syn}]${reset}
-	${syn}[${reset}${opt}-p${reset} ${syn}|${reset} ${opt}--per-flow-plots${reset}${syn}]${reset}
+${cmd}${program}${reset}
+	${syn}[${reset}${opt}-b${reset} ${syn}|${reset} ${opt}--batch${reset} ${syn}|${reset} ${opt}-i${reset} ${syn}|${reset} ${opt}--interactive${reset}${syn}]${reset}
+	${syn}[${reset}${opt}-c${reset} ${arg}level${reset} ${syn}|${reset} ${opt}--compress${reset} ${arg}level${reset}${syn}]${reset}
+	${syn}[${reset}${opt}-s${reset} ${arg}separator${reset} ${syn}|${reset} ${opt}--separator${reset} ${arg}separator${reset}${syn}]${reset}
+	${syn}[${reset}${opt}-l${reset} ${syn}|${reset} ${opt}--line-numbers${reset} ${syn}|${reset} ${opt}-n${reset} ${syn}|${reset} ${opt}--no-line-numbers${reset}${syn}]${reset}
+	${syn}[${reset}${opt}-p${reset} ${syn}|${reset} ${opt}--split${reset} ${syn}|${reset} ${opt}-a${reset} ${syn}|${reset} ${opt}--no-split${reset}${syn}]${reset}
+	${syn}[${reset}${opt}-r${reset} ${syn}|${reset} ${opt}--ignore-scalar-file-errors${reset}${syn}]${reset}
+	${syn}[${reset}${opt}-q${reset} ${syn}|${reset} ${opt}--quiet${reset}${syn}]${reset}
+	${syn}[${reset}${arg}variable_names${reset}${syn}]${reset}
 ${cmd}${program}${reset}
 	${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}
 ${cmd}${program}${reset}
 	${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}
+
 EOF
+   printf >&2 "For further information, see the man page for %s, read the documentation at [%s], examine the source code at [%s], or consult your favourite LLM.""\n" \
+      "${manpage}" "${homepage}" "${repository}"
    exit "${exitCode}"
 }
 # ------ END-OF-USAGE-BLOCK ------
@@ -59,7 +71,7 @@ EOF
 
 # ###### Version ############################################################
 version () {
-   echo "plot-netperfmeter-results @BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
+   echo "plot-netperfmeter-results @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@"
    exit 0
 }
 

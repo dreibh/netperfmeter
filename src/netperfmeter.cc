@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -33,12 +33,18 @@
 #include "loglevel.h"
 #include "transfer.h"
 #include "package-version.h"
+#include "tools.h"
+#include "fileio.h"
+#include "outputfile.h"
 
 #include <cerrno>
+#include <clocale>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <getopt.h>
 #include <iostream>
 #include <netinet/in.h>
@@ -124,9 +130,9 @@ static double           gRuntime               = -1.0;
 static bool             gDisplayEnabled        = true;
 static bool             gStopTimeReached       = false;
 static const char*      gVectorNamePattern     = "";
-static OutputFileFormat gVectorFileFormat      = OFF_None;
+static FileFormat       gVectorFileFormat      = FileFormat::None;
 static const char*      gScalarNamePattern     = "";
-static OutputFileFormat gScalarFileFormat      = OFF_None;
+static FileFormat       gScalarFileFormat      = FileFormat::None;
 static const char*      gConfigName            = "";
 static unsigned int     gControlHBInterval     = 15000;   // ms
 static unsigned int     gControlHBPathMaxRtx   = 3;       // trials
@@ -147,7 +153,7 @@ static MessageReader gMessageReader;
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cerr << "NetPerfMeter" << " " << NETPERFMETER_VERSION << "\n";
+   std::cerr << "NetPerfMeter " << PROJECT_VERSION << "\n";
    exit(0);
 }
 
@@ -165,7 +171,21 @@ static MessageReader gMessageReader;
 [[ noreturn ]]
 static void usage(const char* program, const int exitCode)
 {
-   std::cerr << HEADER("Usage:") << "\n"
+   const std::string manpage(std::string("\x1b[1m") +
+                             std::filesystem::path(program).stem().string() +
+                             std::string("\x1b[0m"));
+   const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
+                              std::string(PROJECT_HOMEPAGE_URL) +
+                              "\a" + std::string(PROJECT_HOMEPAGE_URL) + "\a" +
+                              std::string("\x1b]8;;\a\x1b[0m"));
+   const std::string repository(std::string("\x1b[1m\x1b]8;;") +
+                                std::string(PROJECT_SOURCE_URL) +
+                                "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
+                                std::string("\x1b]8;;\a\x1b[0m"));
+
+   // TRANSLATORS: Command-line syntax message prefix:
+   // "Usage: <program> [options]".
+   std::cerr << HEADER(gettext("Usage:")) << "\n"
              << CMD(program) << " "
                 ARG("local_port") "\n"
                    ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-X") PIPE OPT("--no-control-over-sctp"))
@@ -223,8 +243,13 @@ static void usage(const char* program, const int exitCode)
              << CMD(program) << "\n"
                    ENTRY(OPT("-v") PIPE OPT("--version"))
              << CMD("FLOWSPEC:") << " "
-                ARG("outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option:...") "\n";
-   exit(exitCode);
+                ARG("outgoing_frame_rateoutgoing_frame_sizeincoming_frame_rateincoming_frame_sizeoption...") "\n"
+             << "\n"
+             // TRANSLATORS: Informational message at the end of usage:
+             // "For further information, see the man page for <manpage>, read the documentation at [<url>], examine the source code at [<url>], or consult your favourite LLM.".
+             << formatText(gettext("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM."),
+                           manpage, homepage, repository) << "\n";
+   std::exit(exitCode);
 }
 // ------ END-OF-USAGE-BLOCK ------
 
@@ -285,14 +310,15 @@ static bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
+   while((option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1) {
       switch(option) {
          case 'x':
 #if defined(HAVE_SCTP)
             gActiveControlProtocol = IPPROTO_SCTP;
             gPassiveControlSCTP    = true;
 #else
-            std::cerr << "ERROR: SCTP support is not compiled in!" << "\n";
+            // TRANSLATORS: Error message when SCTP protocol support was disabled at compile time.
+            std::cerr << gettext("ERROR: SCTP support is not compiled in!") << "\n";
             exit(1);
 #endif
           break;
@@ -300,7 +326,8 @@ static bool handleGlobalParameters(int argc, char** argv)
 #if defined(HAVE_SCTP)
             gPassiveControlSCTP    = false;
 #else
-            std::cerr << "ERROR: SCTP support is not compiled in!" << "\n";
+            // TRANSLATORS: Error message when SCTP protocol support was disabled at compile time.
+            std::cerr << gettext("ERROR: SCTP support is not compiled in!") << "\n";
             exit(1);
 #endif
           break;
@@ -320,7 +347,8 @@ static bool handleGlobalParameters(int argc, char** argv)
             gPassiveControlTCP     = true;
             gPassiveControlMPTCP   = true;
 #else
-            std::cerr << "ERROR: MPTCP support is not compiled in!" << "\n";
+            // TRANSLATORS: Error message when MPTCP protocol support was disabled at compile time.
+            std::cerr << gettext("ERROR: MPTCP support is not compiled in!") << "\n";
             exit(1);
 #endif
           break;
@@ -339,8 +367,8 @@ static bool handleGlobalParameters(int argc, char** argv)
                      *idx = 0x00;
                   }
                   if(!string2address(address, &gLocalDataAddressArray[gLocalDataAddresses])) {
-                     std::cerr << "ERROR: Bad address " << address
-                               << " for local data endpoint! Use format <address:port>.\n";
+                     // TRANSLATORS: Error message for invalid IP address or hostname. {} is the user input.
+                     std::cerr << formatText(gettext("ERROR: Bad address {} for local data endpoint! Use format <address:port>."), address) << "\n";
                      exit(1);
                   }
                   gLocalDataAddresses++;
@@ -362,8 +390,8 @@ static bool handleGlobalParameters(int argc, char** argv)
                      *idx = 0x00;
                   }
                   if(!string2address(address, &gLocalControlAddressArray[gLocalControlAddresses])) {
-                     std::cerr << "ERROR: Bad address " << address
-                               << " for local control endpoint! Use format <address:port>.\n";
+                     // TRANSLATORS: Error message for invalid IP address or hostname. {} is the user input.
+                     std::cerr << formatText(gettext("ERROR: Bad address {} for local control endpoint! Use format <address:port>."), address) << "\n";
                      exit(1);
                   }
                   gLocalControlAddresses++;
@@ -393,7 +421,8 @@ static bool handleGlobalParameters(int argc, char** argv)
          case 'N':
             gFlowCount = atol(optarg);
             if( (gFlowCount < 1) || (gFlowCount > 256) ) {
-               std::cerr << "ERROR: Invalid flow count " << gFlowCount << "!\n";
+               // TRANSLATORS: Error message when flow count is outside the valid range [1, 256]. {} is the input count.
+               std::cerr << formatText(gettext("ERROR: Invalid flow count {}!"), gFlowCount) << "\n";
                exit(1);
             }
           break;
@@ -405,24 +434,20 @@ static bool handleGlobalParameters(int argc, char** argv)
           break;
          case 'S':
             gScalarNamePattern = optarg;
-            if(gScalarNamePattern[0] == 0x00)
-               gScalarFileFormat = OFF_None;
-            else if(hasSuffix(gScalarNamePattern, ".bz2")) {
-               gScalarFileFormat = OFF_BZip2;
+            if(gScalarNamePattern[0] == 0x00) {
+               gScalarFileFormat = FileFormat::None;
             }
             else {
-               gScalarFileFormat = OFF_Plain;
+               gScalarFileFormat = detectFormat(gScalarNamePattern);
             }
           break;
          case 'V':
             gVectorNamePattern = optarg;
-            if(gVectorNamePattern[0] == 0x00)
-               gVectorFileFormat = OFF_None;
-            else if(hasSuffix(gVectorNamePattern, ".bz2")) {
-               gVectorFileFormat = OFF_BZip2;
+            if(gVectorNamePattern[0] == 0x00) {
+               gVectorFileFormat = FileFormat::None;
             }
             else {
-               gVectorFileFormat = OFF_Plain;
+               gVectorFileFormat = detectFormat(gVectorNamePattern);
             }
           break;
          case 'A':
@@ -458,7 +483,8 @@ static bool handleGlobalParameters(int argc, char** argv)
 #if defined(HAVE_MPTCP)
                      flow.Protocol = IPPROTO_MPTCP;
 #else
-                     std::cerr << "ERROR: MPTCP support is not compiled in!" << "\n";
+                     // TRANSLATORS: Error message when MPTCP protocol support was disabled at compile time.
+                     std::cerr << gettext("ERROR: MPTCP support is not compiled in!") << "\n";
                      exit(1);
 #endif
                    break;
@@ -466,7 +492,8 @@ static bool handleGlobalParameters(int argc, char** argv)
 #if defined(HAVE_DCCP)
                      flow.Protocol = IPPROTO_DCCP;
 #else
-                     std::cerr << "ERROR: DCCP support is not compiled in!" << "\n";
+                     // TRANSLATORS: Error message when DCCP protocol support was disabled at compile time.
+                     std::cerr << gettext("ERROR: DCCP support is not compiled in!") << "\n";
                      exit(1);
 #endif
                    break;
@@ -478,7 +505,8 @@ static bool handleGlobalParameters(int argc, char** argv)
                         optind++;
                      }
 #else
-                     std::cerr << "ERROR: QUIC support is not compiled in!" << "\n";
+                     // TRANSLATORS: Error message when QUIC protocol support was disabled at compile time.
+                     std::cerr << gettext("ERROR: QUIC support is not compiled in!") << "\n";
                      exit(1);
 #endif
                    break;
@@ -522,13 +550,15 @@ static bool handleGlobalParameters(int argc, char** argv)
           break;
          case 0x3010:
             if(!initLogFile(gLogLevel,optarg,"a")) {
-               std::cerr << format("ERROR: Unable to initialise log file %s!", optarg) << "\n";
+               // TRANSLATORS: Error message when log file cannot be opened. {} is the file path.
+               std::cerr << formatText(gettext("ERROR: Unable to initialise log file {}!"), optarg) << "\n";
                exit(1);
             }
           break;
          case 0x3011:
             if(!initLogFile(gLogLevel,optarg,"w")) {
-               std::cerr << format("ERROR: Unable to initialise log file %s!", optarg) << "\n";
+               // TRANSLATORS: Error message when log file cannot be opened. {} is the file path.
+               std::cerr << formatText(gettext("ERROR: Unable to initialise log file {}!"), optarg) << "\n";
                exit(1);
             }
           break;
@@ -572,7 +602,8 @@ static bool handleGlobalParameters(int argc, char** argv)
 #endif
        (!gPassiveControlTCP)
      ) {
-      std::cerr << "ERROR: At least one control channel protocol must be enabled!" << "\n";
+      // TRANSLATORS: Error message when all control protocols (SCTP, TCP, MPTCP) are disabled.
+      std::cerr << gettext("ERROR: At least one control channel protocol must be enabled!") << "\n";
       exit(1);
    }
 
@@ -584,18 +615,25 @@ static bool handleGlobalParameters(int argc, char** argv)
 static void printGlobalParameters()
 {
    LOG_INFO
-   stdlog << "Global Parameters:\n"
-          << " - Runtime                   = ";
+   // TRANSLATORS: Header for printing active global configuration parameters.
+   stdlog << gettext("Global Parameters:") << "\n"
+          // TRANSLATORS: Parameter label for test duration.
+          << gettext(" - Runtime                   = ");
    if(gRuntime >= 0.0) {
       stdlog << gRuntime << " s\n";
    }
    else {
-      stdlog << "until manual stop\n";
+      // TRANSLATORS: Indication that the test runs until interrupted by the user.
+      stdlog << gettext("until manual stop") << "\n";
    }
-   stdlog << " - Minimum Logging Level     = " << gLogLevel << "\n"
-          << " - Active Node Name          = " << gActiveNodeName  << "\n"
-          << " - Passive Node Name         = " << gPassiveNodeName << "\n"
-          << " - Local Data Address(es)    = ";
+   // TRANSLATORS: Parameter label for log level. {} is the log level number.
+   stdlog << formatText(gettext(" - Minimum Logging Level     = {}"), gLogLevel) << "\n"
+          // TRANSLATORS: Parameter label for client/active node name. {} is the name string.
+          << formatText(gettext(" - Active Node Name          = {}"), gActiveNodeName) << "\n"
+          // TRANSLATORS: Parameter label for server/passive node name. {} is the name string.
+          << formatText(gettext(" - Passive Node Name         = {}"), gPassiveNodeName) << "\n"
+          // TRANSLATORS: Parameter label for local IP addresses bound for data flows.
+          << gettext(" - Local Data Address(es)    = ");
    if(gLocalDataAddresses > 0) {
       for(unsigned int i = 0; i < gLocalDataAddresses; i++) {
          if(i > 0) {
@@ -605,9 +643,11 @@ static void printGlobalParameters()
       }
    }
    else {
-      stdlog << "(any)";
+      // TRANSLATORS: Indicates listening or binding on all available interfaces (INADDR_ANY / in6addr_any).
+      stdlog << gettext("(any)");
    }
-   stdlog << "\n - Local Control Address(es) = ";
+   // TRANSLATORS: Parameter label for local IP addresses bound for control connections.
+   stdlog << "\n" << gettext(" - Local Control Address(es) = ");
    if(gLocalControlAddresses > 0) {
       for(unsigned int i = 0; i < gLocalControlAddresses; i++) {
          if(i > 0) {
@@ -617,12 +657,12 @@ static void printGlobalParameters()
       }
    }
    else {
-      stdlog << "(any)";
+      // TRANSLATORS: Indicates listening or binding on all available interfaces (INADDR_ANY / in6addr_any).
+      stdlog << gettext("(any)");
    }
-   stdlog << "\n - Control Heartbeats        = "
-          << gControlHBPathMaxRtx << " per path / "
-          << gControlHBPathMaxRtx << " per association / "
-          << gControlHBInterval << " ms\n";
+   // TRANSLATORS: Placeholders: {} 1: path max retransmissions, 2: association max retransmissions, 3: interval in ms.
+   stdlog << "\n" << formatText(gettext(" - Control Heartbeats        = {} per path / {} per association / {} ms"),
+                                gControlHBPathMaxRtx, gControlHBAssocMaxRtx, gControlHBInterval) << "\n";
    LOG_END
 }
 
@@ -659,7 +699,8 @@ static const char* parseNextEntry(const char* parameters,
       *rng = RANDOM_CONSTANT;
    }
    else {
-      std::cerr << "ERROR: Invalid parameters " << parameters << "!\n";
+      // TRANSLATORS: Error message when parsing a numerical or random distribution specification fails. {} is the input string.
+      std::cerr << formatText(gettext("ERROR: Invalid parameters {}!"), parameters) << "\n";
       exit(1);
    }
    if(parameters[n] == 0x00) {
@@ -696,28 +737,32 @@ static const char* parseTrafficSpecOption(const char*      parameters,
    }
    else if(sscanf(parameters, "ordered=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         std::cerr << "ERROR: Bad probability for \"ordered\" option in " << parameters << "!\n";
+         // TRANSLATORS: Error message when probability is outside [0.0, 1.0]. {} is the input string.
+         std::cerr << formatText(gettext("ERROR: Bad probability for \"ordered\" option in {}!"), parameters) << "\n";
          exit(1);
       }
       trafficSpec.OrderedMode = dblValue;
    }
    else if(sscanf(parameters, "unordered=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         std::cerr << "ERROR: Bad probability for \"unordered\" option in " << parameters << "!\n";
+         // TRANSLATORS: Error message when probability is outside [0.0, 1.0]. {} is the input string.
+         std::cerr << formatText(gettext("ERROR: Bad probability for \"unordered\" option in {}!"), parameters) << "\n";
          exit(1);
       }
       trafficSpec.OrderedMode = 1.0 - dblValue;
    }
    else if(sscanf(parameters, "reliable=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         std::cerr << "ERROR: Bad probability for \"reliable\" option in " << parameters << "!\n";
+         // TRANSLATORS: Error message when probability is outside [0.0, 1.0]. {} is the input string.
+         std::cerr << formatText(gettext("ERROR: Bad probability for \"reliable\" option in {}!"), parameters) << "\n";
          exit(1);
       }
       trafficSpec.ReliableMode = dblValue;
    }
    else if(sscanf(parameters, "unreliable=%lf%n", &dblValue, &n) == 1) {
       if((dblValue < 0.0) || (dblValue > 1.0)) {
-         std::cerr << "ERROR: Bad probability for \"unreliable\" option in " << parameters << "!\n";
+         // TRANSLATORS: Error message when probability is outside [0.0, 1.0]. {} is the input string.
+         std::cerr << formatText(gettext("ERROR: Bad probability for \"unreliable\" option in {}!"), parameters) << "\n";
          exit(1);
       }
       trafficSpec.ReliableMode = 1.0 - dblValue;
@@ -777,7 +822,8 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 4 + pos;
       }
       else {
-         std::cerr << "ERROR: Invalid \"cmt\" setting: " << (const char*)&parameters[4] << "!\n";
+         // TRANSLATORS: Error message when Concurrent Multipath Transfer setting is unknown. {} is the input setting.
+         std::cerr << formatText(gettext("ERROR: Invalid \"cmt\" setting: {}!"), (const char*)&parameters[4]) << "\n";
          exit(1);
       }
    }
@@ -789,7 +835,8 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 5 + pos;
       }
       else {
-         std::cerr << "ERROR: Invalid \"ccid\" setting: " << (const char*)&parameters[5] << "!\n";
+         // TRANSLATORS: Error message when DCCP Congestion Control ID is invalid. {} is the input setting.
+         std::cerr << formatText(gettext("ERROR: Invalid \"ccid\" setting: {}!"), (const char*)&parameters[5]) << "\n";
          exit(1);
       }
    }
@@ -803,7 +850,8 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 15 + 3;
       }
       else {
-         std::cerr << "ERROR: Invalid \"error_on_abort\" setting: " << (const char*)&parameters[4] << "!\n";
+         // TRANSLATORS: Error message when error_on_abort is not on/off. {} is the input setting.
+         std::cerr << formatText(gettext("ERROR: Invalid \"error_on_abort\" setting: {}!"), (const char*)&parameters[4]) << "\n";
          exit(1);
       }
    }
@@ -848,13 +896,15 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       if(trafficSpec.RepeatOnOff == true) {
          if((trafficSpec.OnOffEvents.size() % 2) != 0) {
-            std::cerr << "ERROR: Repeated on/off traffic needs even number of events!\n";
+            // TRANSLATORS: Error message for on/off traffic pattern validation.
+            std::cerr << gettext("ERROR: Repeated on/off traffic needs even number of events!") << "\n";
             exit(1);
          }
          for(std::vector<OnOffEvent>::const_iterator iterator = trafficSpec.OnOffEvents.begin();
             iterator != trafficSpec.OnOffEvents.end();iterator++) {
             if((*iterator).RelativeTime == false) {
-               std::cerr << "ERROR: Repeated on/off traffic needs relative times!\n";
+               // TRANSLATORS: Error message for on/off traffic pattern validation.
+               std::cerr << gettext("ERROR: Repeated on/off traffic needs relative times!") << "\n";
                exit(1);
             }
          }
@@ -871,7 +921,8 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 8 + 3;
       }
       else {
-         std::cerr << "ERROR: Invalid \"nodelay\" setting: " << (const char*)&parameters[8] << "!\n";
+         // TRANSLATORS: Error message when nodelay setting is not on/off. {} is the input setting.
+         std::cerr << formatText(gettext("ERROR: Invalid \"nodelay\" setting: {}!"), (const char*)&parameters[8]) << "\n";
          exit(1);
       }
    }
@@ -885,7 +936,8 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 6 + 3;
       }
       else {
-         std::cerr << "ERROR: Invalid \"debug\" setting: " << (const char*)&parameters[6] << "!\n";
+         // TRANSLATORS: Error message when debug setting is not on/off. {} is the input setting.
+         std::cerr << formatText(gettext("ERROR: Invalid \"debug\" setting: {}!"), (const char*)&parameters[6]) << "\n";
          exit(1);
       }
    }
@@ -902,15 +954,16 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       congestionControl[i] = 0x00;
       if( (parameters[3 + i] != ':') && (parameters[3 + i] != 0x00) ) {
-         std::cerr << "ERROR: Invalid \"cc\" setting: " << (const char*)&parameters[8]
-                   << " - name too long!\n";
+         // TRANSLATORS: Error message when TCP congestion control algorithm name exceeds buffer size. {} is the name.
+         std::cerr << formatText(gettext("ERROR: Invalid \"cc\" setting: {} - name too long!"), (const char*)&parameters[8]) << "\n";
           exit(1);
       }
       trafficSpec.CongestionControl = std::string((const char*)&congestionControl);
       n = 3 + strlen((const char*)&congestionControl);
    }
    else {
-      std::cerr << "ERROR: Invalid option \"" << parameters << "\"!\n";
+      // TRANSLATORS: Error message when an unrecognized flow option is encountered. {} is the option string.
+      std::cerr << formatText(gettext("ERROR: Invalid option \"{}\"!"), parameters) << "\n";
       exit(1);
    }
 
@@ -943,8 +996,8 @@ static int server_handshake(int          sd,
                                                 tlsCAFile, GNUTLS_X509_FMT_PEM);
       if(loadedCAs <= 0) {
          LOG_ERROR
-         stdlog << "Loading CA certificate from "
-                << ((tlsCAFile != nullptr) ? tlsCAFile : "(none)") << " failed\n";
+         // TRANSLATORS: Error message when TLS CA certificate fails to load. {} is the file path.
+         stdlog << formatText(gettext("Loading CA certificate from {} failed"), ((tlsCAFile != nullptr) ? tlsCAFile : "(none)")) << "\n";
          LOG_END
          gnutls_certificate_free_credentials(credentials);
          return -1;
@@ -990,7 +1043,8 @@ static int server_handshake(int          sd,
 
    if(error) {
       LOG_ERROR
-      stdlog << "TLS setup failed: " << gnutls_strerror(error) << "\n";
+      // TRANSLATORS: Error message when TLS setup fails. {} is the GnuTLS error string.
+      stdlog << formatText(gettext("TLS setup failed: {}"), gnutls_strerror(error)) << "\n";
       LOG_END
    }
    return error;
@@ -1015,8 +1069,8 @@ static int client_handshake(int            sd,
    if(!error) {
       int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
       if(loadedCAs <= 0) {
-         std::cerr << "ERROR: Loading CA certificate from "
-                   << ((tlsCAFile != nullptr) ? tlsCAFile : "(none)") << " failed\n";
+         // TRANSLATORS: Error message when TLS CA certificate fails to load. {} is the file path.
+         std::cerr << formatText(gettext("ERROR: Loading CA certificate from {} failed"), ((tlsCAFile != nullptr) ? tlsCAFile : "(none)")) << "\n";
          gnutls_certificate_free_credentials(credentials);
          return -1;
       }
@@ -1040,12 +1094,6 @@ static int client_handshake(int            sd,
             }
             if(!error) {
                error = quic_handshake(session);
-               // if( (!error) && (alpns != NULL) ) {
-               //    size_t alpnLength;
-               //    char   alpn[64];
-               //    alpnLength = sizeof(alpn);
-               //    error = quic_session_get_alpn(session, alpn, &alpnLength);
-               // }
             }
             if( (!error) && (ticketOut != NULL) ) {
                error =  quic_session_get_data(session, ticketOut, ticketOutLength);
@@ -1057,7 +1105,8 @@ static int client_handshake(int            sd,
    }
 
    if(error) {
-      std::cerr << "ERROR: TLS setup failed: " << gnutls_strerror(error) << "\n";
+      // TRANSLATORS: Error message when TLS setup fails. {} is the GnuTLS error string.
+      std::cerr << formatText(gettext("ERROR: TLS setup failed: {}"), gnutls_strerror(error)) << "\n";
    }
    return error;
 }
@@ -1068,8 +1117,6 @@ static int client_handshake(int            sd,
 static Flow* createFlow(Flow*                  previousFlow,
                         const char*            parameters,
                         const uint64_t         measurementID,
-                        const char*            gVectorNamePattern,
-                        const OutputFileFormat gVectorFileFormat,
                         const int              initialProtocol,
                         const sockaddr_union&  remoteAddress)
 {
@@ -1136,7 +1183,8 @@ static Flow* createFlow(Flow*                  previousFlow,
       }
    }
    if(trafficSpec.Description == "") {
-      trafficSpec.Description = format("Flow %u", flowID);
+      // TRANSLATORS: Default flow description label. {} is the flow index.
+      trafficSpec.Description = formatText(gettext("Flow {}"), flowID);
    }
 
    // ------ Use TCP or MPTCP? ----------------------------------------------
@@ -1145,8 +1193,8 @@ static Flow* createFlow(Flow*                  previousFlow,
       trafficSpec.Protocol = IPPROTO_MPTCP;
    }
    if( (trafficSpec.Protocol == IPPROTO_MPTCP) && (trafficSpec.CMT != NPAF_LikeMPTCP) ) {
-      std::cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
-                << " for MPTCP! Using default instead!\n";
+      // TRANSLATORS: Warning when CMT option is incompatible with MPTCP. {} is the input setting.
+      std::cerr << formatText(gettext("WARNING: Invalid \"cmt\" setting: {} for MPTCP! Using default instead!"), (const char*)&parameters[4]) << "\n";
       exit(1);
    }
 #endif
@@ -1154,20 +1202,12 @@ static Flow* createFlow(Flow*                  previousFlow,
 
    // ====== Create new flow ================================================
    if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID) != nullptr) {
-      std::cerr << "ERROR: Flow ID " << flowID << " is used twice. Ensure correct id=<ID> parameters!\n";
+      // TRANSLATORS: Error message when a flow ID is duplicated. {} is the duplicate flow ID.
+      std::cerr << formatText(gettext("ERROR: Flow ID {} is used twice. Ensure correct id=<ID> parameters!"), flowID) << "\n";
       exit(1);
    }
    Flow* flow = new Flow(measurementID, flowID, streamID, trafficSpec);
    assure(flow != nullptr);
-
-   // ====== Initialize vector file =========================================
-   const std::string vectorName = flow->getNodeOutputName(gVectorNamePattern,
-                                                          "active",
-                                                          format("-%08x-%04x", flowID, streamID));
-   if(!flow->initializeVectorFile(vectorName.c_str(), gVectorFileFormat)) {
-      std::cerr << "ERROR: Unable to create vector file <" << vectorName << ">!\n";
-      exit(1);
-   }
 
    // ====== Initialise destination address =================================
    sockaddr_union destinationAddress = remoteAddress;
@@ -1188,10 +1228,11 @@ static Flow* createFlow(Flow*                  previousFlow,
 
    // ====== Print information ==============================================
    LOG_INFO
-   stdlog << format("Flow #%u: connecting %s socket to",
-                     flow->getFlowID(), getProtocolName(trafficSpec.Protocol)) << " ";
+   // TRANSLATORS: Log message before connecting socket. Placeholders: {} 1: flow ID, 2: protocol name (TCP, SCTP, etc.).
+   stdlog << formatText(gettext("Flow #{}: connecting {} socket to "), flow->getFlowID(), getProtocolName(trafficSpec.Protocol));
    printAddress(stdlog, &destinationAddress.sa, true);
-   stdlog << " from ";
+   // TRANSLATORS: Separator in log line between destination and source addresses (e.g. "connecting to <dest> from <source>").
+   stdlog << gettext(" from ");
    if(gLocalDataAddresses > 0) {
       for(unsigned int i = 0;i < gLocalDataAddresses;i++) {
          if(i > 0) {
@@ -1201,7 +1242,8 @@ static Flow* createFlow(Flow*                  previousFlow,
       }
    }
    else {
-      stdlog << "(any)";
+      // TRANSLATORS: Indicates listening or binding on all available interfaces (INADDR_ANY / in6addr_any).
+      stdlog << gettext("(any)");
    }
    stdlog << " ...\n";
    LOG_END
@@ -1214,8 +1256,8 @@ static Flow* createFlow(Flow*                  previousFlow,
       originalSocketDescriptor = false;
       socketDescriptor         = previousFlow->getSocketDescriptor();
       LOG_INFO
-      stdlog << format("Flow #%u: connected socket %d",
-                       flow->getFlowID(), socketDescriptor) << "\n";
+      // TRANSLATORS: Log message after socket connection. Placeholders: {} 1: flow ID, 2: socket descriptor number.
+      stdlog << formatText(gettext("Flow #{}: connected socket {}"), flow->getFlowID(), socketDescriptor) << "\n";
       LOG_END
    }
    else {
@@ -1262,8 +1304,8 @@ static Flow* createFlow(Flow*                  previousFlow,
 
       }
       if(socketDescriptor < 0) {
-         std::cerr << "ERROR: Unable to create " << getProtocolName(trafficSpec.Protocol)
-                   << " socket - " << strerror(errno) << "!\n";
+         // TRANSLATORS: Error message on socket() failure. Placeholders: {} 1: protocol name, 2: strerror() message.
+         std::cerr << formatText(gettext("ERROR: Unable to create {} socket - {}!"), getProtocolName(trafficSpec.Protocol), strerror(errno)) << "\n";
          exit(1);
       }
 
@@ -1277,8 +1319,8 @@ static Flow* createFlow(Flow*                  previousFlow,
          initmsg.sinit_max_instreams = 65535;
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
                            &initmsg, sizeof(initmsg)) < 0) {
-            std::cerr << "ERROR: Unable to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - "
-                      << strerror(errno) << "!\n";
+            // TRANSLATORS: Error message when SCTP setsockopt(SCTP_INITMSG) fails. {} is strerror() message.
+            std::cerr << formatText(gettext("ERROR: Unable to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - {}!"), strerror(errno)) << "\n";
             exit(1);
          }
 
@@ -1288,8 +1330,8 @@ static Flow* createFlow(Flow*                  previousFlow,
          events.sctp_data_io_event = 1;
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
                            &events, sizeof(events)) < 0) {
-            std::cerr << "ERROR: Unable to configure events on SCTP socket (SCTP_EVENTS option) - "
-                      << strerror(errno) << "!\n";
+            // TRANSLATORS: Error message when SCTP setsockopt(SCTP_EVENTS) fails. {} is strerror() message.
+            std::cerr << formatText(gettext("ERROR: Unable to configure events on SCTP socket (SCTP_EVENTS option) - {}!"), strerror(errno)) << "\n";
             exit(1);
          }
       }
@@ -1299,8 +1341,8 @@ static Flow* createFlow(Flow*                  previousFlow,
          exit(1);
       }
       if(ext_connect(socketDescriptor, &destinationAddress.sa, getSocklen(&destinationAddress.sa)) < 0) {
-         std::cerr << "ERROR: Unable to connect " << getProtocolName(trafficSpec.Protocol)
-                   << " socket - " << strerror(errno) << "!\n";
+         // TRANSLATORS: Error message on connect() failure. Placeholders: {} 1: protocol name, 2: strerror() message.
+         std::cerr << formatText(gettext("ERROR: Unable to connect {} socket - {}!"), getProtocolName(trafficSpec.Protocol), strerror(errno)) << "\n";
          exit(1);
       }
 
@@ -1349,8 +1391,8 @@ static void addToPollFDs(pollfd* pollFDs, const int fd, nfds_t& n, int* index = 
 
 
 // ###### Main loop #########################################################
-static bool mainLoop(const bool               isActiveMode,
-                     const unsigned long long stopAt)
+static bool mainLoop(const bool     isActiveMode,
+                     const uint64_t stopAt)
 {
    pollfd             fds[5 + gMessageReader.size()];
    nfds_t             n       = 0;
@@ -1374,7 +1416,7 @@ static bool mainLoop(const bool               isActiveMode,
 #if defined(HAVE_QUIC)
    int                quicID  = -1;
 #endif
-   unsigned long long now     = getMicroTime();
+   MonotonicMicroTime nowMonotonic = getMonotonicMicroTime();
    std::map<int, pollfd*> pollFDIndex;
 
 
@@ -1409,17 +1451,18 @@ static bool mainLoop(const bool               isActiveMode,
 
 
    // ====== Use poll() to wait for events ==================================
-   const int timeout = pollTimeout(now, 2,
+   const int timeout = pollTimeout(nowMonotonic.value, 2,
                                    stopAt,
-                                   now + 1000000);
+                                   nowMonotonic.value + 1000000);
 
    // printf("timeout=%d\n",timeout);
-   const int result = ext_poll_wrapper((pollfd*)&fds, n, timeout);
+   const int result = ext_poll((pollfd*)&fds, n, timeout);
    // printf("result=%d\n",result);
 
 
    // ====== Handle socket events ===========================================
-   now = getMicroTime();   // Get current time.
+   nowMonotonic                    = getMonotonicMicroTime();   // Get current time.
+   const SystemMicroTime nowSystem = getSystemMicroTime();
    if(result > 0) {
 
       // ====== Incoming control message ====================================
@@ -1431,15 +1474,15 @@ static bool mainLoop(const bool               isActiveMode,
                const int newSD = ext_accept(gControlSocket, nullptr, 0);
                if(newSD >= 0) {
                   LOG_TRACE
-                  stdlog << format("Accept on SCTP control socket %d -> new control connection %d",
-                                   gControlSocket, newSD) << "\n";
+                  // TRANSLATORS: Log message on incoming SCTP control connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+                  stdlog << formatText(gettext("Accept on SCTP control socket {} -> new control connection {}"), gControlSocket, newSD) << "\n";
                   LOG_END
                   gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
                }
                else {
                   LOG_ERROR
-                  stdlog << format("Accept on SCTP control socket %d failed: %s!",
-                                   gControlSocket, strerror(errno)) << "\n";
+                  // TRANSLATORS: Error message when accept() fails on SCTP control socket. Placeholders: {} 1: listening socket fd, 2: strerror() message.
+                  stdlog << formatText(gettext("Accept on SCTP control socket {} failed: {}!"), gControlSocket, strerror(errno)) << "\n";
                   LOG_END
                }
             }
@@ -1448,15 +1491,15 @@ static bool mainLoop(const bool               isActiveMode,
                const int newSD = ext_accept(gControlSocketTCP, nullptr, 0);
                if(newSD >= 0) {
                   LOG_TRACE
-                  stdlog << format("Accept on TCP control socket %d -> new control connection %d",
-                                   gControlSocketTCP, newSD) << "\n";
+                  // TRANSLATORS: Log message on incoming TCP control connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+                  stdlog << formatText(gettext("Accept on TCP control socket {} -> new control connection {}"), gControlSocketTCP, newSD) << "\n";
                   LOG_END
                   gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                }
                else {
                   LOG_ERROR
-                  stdlog << format("Accept on TCP control socket %d failed: %s!",
-                                   gControlSocketTCP, strerror(errno)) << "\n";
+                  // TRANSLATORS: Error message when accept() fails on TCP control socket. Placeholders: {} 1: listening socket fd, 2: strerror() message.
+                  stdlog << formatText(gettext("Accept on TCP control socket {} failed: {}!"), gControlSocketTCP, strerror(errno)) << "\n";
                   LOG_END
                }
             }
@@ -1466,15 +1509,15 @@ static bool mainLoop(const bool               isActiveMode,
                const int newSD = ext_accept(gControlSocketTCP6, nullptr, 0);
                if(newSD >= 0) {
                   LOG_TRACE
-                  stdlog << format("Accept on TCP6 control socket %d -> new control connection %d",
-                                   gControlSocketTCP6, newSD) << "\n";
+                  // TRANSLATORS: Log message on incoming TCP6 control connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+                  stdlog << formatText(gettext("Accept on TCP6 control socket {} -> new control connection {}"), gControlSocketTCP6, newSD) << "\n";
                   LOG_END
                   gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                }
                else {
                   LOG_ERROR
-                  stdlog << format("Accept on TCP6 control socket %d failed: %s!",
-                                   gControlSocketTCP6, strerror(errno)) << "\n";
+                  // TRANSLATORS: Error message when accept() fails on TCP6 control socket. Placeholders: {} 1: listening socket fd, 2: strerror() message.
+                  stdlog << formatText(gettext("Accept on TCP6 control socket {} failed: {}!"), gControlSocketTCP6, strerror(errno)) << "\n";
                   LOG_END
                }
             }
@@ -1501,8 +1544,8 @@ static bool mainLoop(const bool               isActiveMode,
          const int newSD = ext_accept(gTCPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on TCP data socket %d -> new TCP data connection %d",
-                             gTCPSocket, newSD) << "\n";
+            // TRANSLATORS: Log message on incoming TCP data connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+            stdlog << formatText(gettext("Accept on TCP data socket {} -> new TCP data connection {}"), gTCPSocket, newSD) << "\n";
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
          }
@@ -1512,8 +1555,8 @@ static bool mainLoop(const bool               isActiveMode,
          const int newSD = ext_accept(gTCP6Socket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on TCP6 data socket %d -> new TCP6 data connection %d",
-                             gTCP6Socket, newSD) << "\n";
+            // TRANSLATORS: Log message on incoming TCP6 data connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+            stdlog << formatText(gettext("Accept on TCP6 data socket {} -> new TCP6 data connection {}"), gTCP6Socket, newSD) << "\n";
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
          }
@@ -1524,8 +1567,8 @@ static bool mainLoop(const bool               isActiveMode,
          const int newSD = ext_accept(gMPTCPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on MPTCP data socket %d -> new MPTCP data connection %d",
-                             gMPTCPSocket, newSD) << "\n";
+            // TRANSLATORS: Log message on incoming MPTCP data connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+            stdlog << formatText(gettext("Accept on MPTCP data socket {} -> new MPTCP data connection {}"), gMPTCPSocket, newSD) << "\n";
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_MPTCP, newSD);
          }
@@ -1533,13 +1576,13 @@ static bool mainLoop(const bool               isActiveMode,
 #endif
       if( (udpID >= 0) && (fds[udpID].revents & (POLLIN|POLLERR)) ) {
          FlowManager::getFlowManager()->lock();
-         handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDPSocket);
+         handleNetPerfMeterData(isActiveMode, nowMonotonic, nowSystem, IPPROTO_UDP, gUDPSocket);
          FlowManager::getFlowManager()->unlock();
       }
 #if defined(__OpenBSD__)
       if( (udp6ID >= 0) && (fds[udp6ID].revents & (POLLIN|POLLERR)) ) {
          FlowManager::getFlowManager()->lock();
-         handleNetPerfMeterData(isActiveMode, now, IPPROTO_UDP, gUDP6Socket);
+         handleNetPerfMeterData(isActiveMode, nowMonotonic, nowSystem, IPPROTO_UDP, gUDP6Socket);
          FlowManager::getFlowManager()->unlock();
       }
 #endif
@@ -1548,8 +1591,8 @@ static bool mainLoop(const bool               isActiveMode,
          const int newSD = ext_accept(gSCTPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on SCTP data socket %d -> new SCTP data connection %d",
-                             gSCTPSocket, newSD) << "\n";
+            // TRANSLATORS: Log message on incoming SCTP data connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+            stdlog << formatText(gettext("Accept on SCTP data socket {} -> new SCTP data connection {}"), gSCTPSocket, newSD) << "\n";
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_SCTP, newSD);
          }
@@ -1560,8 +1603,8 @@ static bool mainLoop(const bool               isActiveMode,
          const int newSD = ext_accept(gDCCPSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on DCCP data socket %d -> new DCCP data connection %d",
-                             gDCCPSocket, newSD) << "\n";
+            // TRANSLATORS: Log message on incoming DCCP data connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+            stdlog << formatText(gettext("Accept on DCCP data socket {} -> new DCCP data connection {}"), gDCCPSocket, newSD) << "\n";
             LOG_END
             FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_DCCP, newSD);
          }
@@ -1572,8 +1615,8 @@ static bool mainLoop(const bool               isActiveMode,
          const int newSD = ext_accept(gQUICSocket, nullptr, 0);
          if(newSD >= 0) {
             LOG_TRACE
-            stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
-                             gQUICSocket, newSD) << "\n";
+            // TRANSLATORS: Log message on incoming QUIC data connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+            stdlog << formatText(gettext("Accept on QUIC data socket {} -> new QUIC data connection {}"), gQUICSocket, newSD) << "\n";
             LOG_END
             LOG_TRACE
             stdlog << "server handshake <sd=" << gQUICSocket
@@ -1592,8 +1635,8 @@ static bool mainLoop(const bool               isActiveMode,
                                    gQUICCA, gQUICCertificate, gQUICKey,
                                    sessionKey, sessionKeyLength) == 0) {
                   LOG_TRACE
-                  stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
-                                   gQUICSocket, newSD) << "\n";
+                  // TRANSLATORS: Log message on incoming QUIC data connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+                  stdlog << formatText(gettext("Accept on QUIC data socket {} -> new QUIC data connection {}"), gQUICSocket, newSD) << "\n";
                   LOG_END
                   FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
                }
@@ -1603,8 +1646,8 @@ static bool mainLoop(const bool               isActiveMode,
             }
             else {
                LOG_WARNING
-               stdlog << "getsockopt(QUIC_SOCKOPT_SESSION_TICKET): "
-                      << strerror(errno) << "\n";
+               // TRANSLATORS: Warning when retrieving QUIC session ticket fails. {} is strerror() message.
+               stdlog << formatText(gettext("getsockopt(QUIC_SOCKOPT_SESSION_TICKET): {}"), strerror(errno)) << "\n";
                LOG_END
                ext_close(newSD);
             }
@@ -1615,7 +1658,7 @@ static bool mainLoop(const bool               isActiveMode,
    }
 
    // ====== Stop-time reached ==============================================
-   if(now >= stopAt) {
+   if(nowMonotonic.value >= stopAt) {
       gStopTimeReached = true;
    }
    return true;
@@ -1636,7 +1679,8 @@ static void passiveMode(const uint16_t localPort)
                                     &testAddress, true, false);
    if(testSD >= 0) {
       LOG_WARNING
-      stdlog << "WARNING: This machine seems to have an interface with address 172.17.0.1! This is typically used by Docker setups. If you connect from another machine having the same configuration, in an environment with only private addresses SCTP may try to use this address -> OOTB ABORT." << "\n";
+      // TRANSLATORS: Warning about local Docker interface address 172.17.0.1 which can cause SCTP routing aborts.
+      stdlog << gettext("WARNING: This machine seems to have an interface with address 172.17.0.1! This is typically used by Docker setups. If you connect from another machine having the same configuration, in an environment with only private addresses SCTP may try to use this address -> OOTB ABORT.") << "\n";
       LOG_END
       ext_close(testSD);
    }
@@ -1657,8 +1701,8 @@ static void passiveMode(const uint16_t localPort)
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM,
                            &sinfo, sizeof(sinfo)) < 0) {
             LOG_FATAL
-            stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
-                             gControlSocket, strerror(errno)) << "\n";
+            // TRANSLATORS: Error configuring SCTP control socket default send params. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket {}: {}!"), gControlSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
 
@@ -1672,8 +1716,8 @@ static void passiveMode(const uint16_t localPort)
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
                            &params, sizeof(params)) < 0) {
             LOG_FATAL
-            stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
-                             gControlSocket, strerror(errno)) << "\n";
+            // TRANSLATORS: Error enabling SCTP heartbeats. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket {}: {}!"), gControlSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
 
@@ -1683,8 +1727,8 @@ static void passiveMode(const uint16_t localPort)
          assocparams.sasoc_asocmaxrxt = gControlHBAssocMaxRtx;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
             LOG_WARNING
-            stdlog << format("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket %d: %s!",
-                             gControlSocket, strerror(errno)) << "\n";
+            // TRANSLATORS: Warning configuring SCTP association retransmission max. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket {}: {}!"), gControlSocket, strerror(errno)) << "\n";
             LOG_END
          }
 
@@ -1692,8 +1736,8 @@ static void passiveMode(const uint16_t localPort)
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_NODELAY,
                            (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
             LOG_ERROR
-            stdlog << format("Unable to set SCTP_NODELAY on SCTP control socket: %s!",
-                              strerror(errno)) << "\n";
+            // TRANSLATORS: Error disabling Nagle algorithm on SCTP control socket. {} is strerror() message.
+            stdlog << formatText(gettext("Unable to set SCTP_NODELAY on SCTP control socket: {}!"), strerror(errno)) << "\n";
             LOG_END_FATAL
          }
 
@@ -1704,8 +1748,8 @@ static void passiveMode(const uint16_t localPort)
          events.sctp_association_event = 1;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
             LOG_FATAL
-            stdlog << format("Unable to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
-                             gControlSocket, strerror(errno)) << "\n";
+            // TRANSLATORS: Error subscribing to SCTP notification events. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to configure events (SCTP_EVENTS option) on SCTP socket {}: {}!"), gControlSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
 
@@ -1715,16 +1759,18 @@ static void passiveMode(const uint16_t localPort)
          if( (errno != EPROTONOSUPPORT) ||
              (gPassiveControlTCP == false) ) {
             LOG_FATAL
-            stdlog << format("Unable to create and bind SCTP control socket on port %d: %s!",
-                             localPort + 1, strerror(errno)) << "\n";
+            // TRANSLATORS: Fatal error when binding SCTP control socket. Placeholders: {} 1: port number, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to create and bind SCTP control socket on port {}: {}!"), localPort + 1, strerror(errno)) << "\n";
             if(errno == EPROTONOSUPPORT) {
-               stdlog << "SCTP is not available => Try -y|--control-over-tcp for control over TCP!\n";
+               // TRANSLATORS: Hint suggesting TCP control channel when SCTP kernel support is unavailable.
+               stdlog << gettext("SCTP is not available => Try -y|--control-over-tcp for control over TCP!") << "\n";
             }
             LOG_END_FATAL
          }
          LOG_WARNING
-         stdlog << "WARNING: SCTP is not available => no control connections via SCTP possible!\n"
-                   "SCTP can be disabled by -X|--no-control-over-sctp.\n";
+         // TRANSLATORS: Warning when SCTP is unavailable on the host system.
+         stdlog << gettext("WARNING: SCTP is not available => no control connections via SCTP possible!") << "\n"
+                << gettext("SCTP can be disabled by -X|--no-control-over-sctp.") << "\n";
          LOG_END
       }
    }
@@ -1750,24 +1796,24 @@ static void passiveMode(const uint16_t localPort)
                                               true, gBindV6Only);
       if(gControlSocketTCP < 0) {
          LOG_FATAL
-         stdlog << format("Unable to create and bind TCP control socket on port %d: %s!",
-                        localPort + 1, strerror(errno)) << "\n";
+         // TRANSLATORS: Fatal error when binding TCP control socket. Placeholders: {} 1: port number, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to create and bind TCP control socket on port {}: {}!"), localPort + 1, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       const int noDelayOption = 1;
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_NODELAY,
                         (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_NODELAY on TCP control socket: %s!",
-                           strerror(errno)) << "\n";
+         // TRANSLATORS: Error disabling Nagle algorithm on TCP control socket. {} is strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_NODELAY on TCP control socket: {}!"), strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       const int keepAliveOption = 1;
       if(ext_setsockopt(gControlSocketTCP, SOL_SOCKET, SO_KEEPALIVE,
                         (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set SO_KEEPALIVE on TCP control socket: %s!",
-                           strerror(errno)) << "\n";
+         // TRANSLATORS: Error enabling SO_KEEPALIVE on TCP control socket. {} is strerror() message.
+         stdlog << formatText(gettext("Unable to set SO_KEEPALIVE on TCP control socket: {}!"), strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 #if defined(TCP_KEEPIDLE) && !defined(__GNU__)
@@ -1775,8 +1821,8 @@ static void passiveMode(const uint16_t localPort)
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPIDLE,
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket: %s!",
-                           strerror(errno)) << "\n";
+         // TRANSLATORS: Error setting TCP keepalive idle time. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_KEEPIDLE on TCP control socket {}: {}!"), gControlSocketTCP, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 #else
@@ -1787,8 +1833,8 @@ static void passiveMode(const uint16_t localPort)
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPINTVL,
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket: %s!",
-                           strerror(errno)) << "\n";
+         // TRANSLATORS: Error setting TCP keepalive probe interval. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_KEEPINTVL on TCP control socket {}: {}!"), gControlSocketTCP, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 #else
@@ -1799,8 +1845,8 @@ static void passiveMode(const uint16_t localPort)
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket: %s!",
-                           strerror(errno)) << "\n";
+         // TRANSLATORS: Error setting TCP keepalive probe count. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_KEEPCNT on TCP control socket {}: {}!"), gControlSocketTCP, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 #else
@@ -1824,16 +1870,16 @@ static void passiveMode(const uint16_t localPort)
                                                   true, gBindV6Only);
          if(gControlSocketTCP6 < 0) {
             LOG_FATAL
-            stdlog << format("Unable to create and bind TCP6 control socket on port %d: %s!",
-                             localPort + 1, strerror(errno)) << "\n";
+            // TRANSLATORS: Fatal error when binding IPv6 TCP control socket. Placeholders: {} 1: port number, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to create and bind TCP6 control socket on port {}: {}!"), localPort + 1, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
          const int noDelayOption = 1;
          if(ext_setsockopt(gControlSocketTCP6, IPPROTO_TCP, TCP_NODELAY,
                            (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
             LOG_ERROR
-            stdlog << format("Unable to set TCP6_NODELAY on TCP6 control socket: %s!",
-                             strerror(errno)) << "\n";
+            // TRANSLATORS: Error disabling Nagle algorithm on IPv6 TCP control socket. {} is strerror() message.
+            stdlog << formatText(gettext("Unable to set TCP6_NODELAY on TCP6 control socket: {}!"), strerror(errno)) << "\n";
             LOG_END_FATAL
          }
          gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP6);
@@ -1856,14 +1902,14 @@ static void passiveMode(const uint16_t localPort)
                                     true, gBindV6Only);
    if(gTCPSocket < 0) {
       LOG_FATAL
-      stdlog << format("Unable to create and bind TCP socket on port %d: %s!",
-                       localPort, strerror(errno)) << "\n";
+      // TRANSLATORS: Fatal error when binding TCP data socket. Placeholders: {} 1: port number, 2: strerror() message.
+      stdlog << formatText(gettext("Unable to create and bind TCP socket on port {}: {}!"), localPort, strerror(errno)) << "\n";
       LOG_END_FATAL
    }
    if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
       LOG_FATAL
-      stdlog << format("Unable to configure buffer sizes on TCP socket %d!",
-                       gTCPSocket) << "\n";
+      // TRANSLATORS: Error setting socket buffer sizes (SO_SNDBUF/SO_RCVBUF). {} is socket descriptor.
+      stdlog << formatText(gettext("Unable to configure buffer sizes on TCP socket {}!"), gTCPSocket) << "\n";
       LOG_END_FATAL
    }
 #if defined(__OpenBSD__)
@@ -1874,14 +1920,14 @@ static void passiveMode(const uint16_t localPort)
                                         true, gBindV6Only);
       if(gTCP6Socket < 0) {
          LOG_FATAL
-         stdlog << format("Unable to create and bind TCP6 socket on port %d: %s!",
-                          localPort, strerror(errno)) << "\n";
+         // TRANSLATORS: Fatal error when binding IPv6 TCP data socket. Placeholders: {} 1: port number, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to create and bind TCP6 socket on port {}: {}!"), localPort, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gTCP6Socket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on TCP6 socket %d!",
-                          gTCP6Socket) << "\n";
+         // TRANSLATORS: Error setting IPv6 TCP socket buffer sizes. {} is socket descriptor.
+         stdlog << formatText(gettext("Unable to configure buffer sizes on TCP6 socket {}!"), gTCP6Socket) << "\n";
          LOG_END_FATAL
       }
    }
@@ -1895,15 +1941,15 @@ static void passiveMode(const uint16_t localPort)
                                       true, gBindV6Only);
    if(gMPTCPSocket < 0) {
       LOG_DEBUG
-      stdlog << format("NOTE: Unable to create and bind MPTCP socket on port %d: %s!",
-                        localPort - 1, strerror(errno)) << "\n";
+      // TRANSLATORS: Informational note when MPTCP data socket cannot be bound. Placeholders: {} 1: port number, 2: strerror() message.
+      stdlog << formatText(gettext("NOTE: Unable to create and bind MPTCP socket on port {}: {}!"), localPort - 1, strerror(errno)) << "\n";
       LOG_END
    }
    else {
       if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on MPTCP socket %d!",
-                          gMPTCPSocket) << "\n";
+         // TRANSLATORS: Error setting MPTCP socket buffer sizes. {} is socket descriptor.
+         stdlog << formatText(gettext("Unable to configure buffer sizes on MPTCP socket {}!"), gMPTCPSocket) << "\n";
          LOG_END_FATAL
       }
    }
@@ -1922,8 +1968,8 @@ static void passiveMode(const uint16_t localPort)
                                     true, gBindV6Only);
    if(gUDPSocket < 0) {
       LOG_FATAL
-      stdlog << "ERROR: Unable to create and bind UDP socket on port " << localPort << " - "
-             << strerror(errno) << "!\n";
+      // TRANSLATORS: Fatal error when binding UDP socket. Placeholders: {} 1: port number, 2: strerror() message.
+      stdlog << formatText(gettext("ERROR: Unable to create and bind UDP socket on port {} - {}!"), localPort, strerror(errno)) << "\n";
       LOG_END_FATAL
    }
    // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
@@ -1937,8 +1983,8 @@ static void passiveMode(const uint16_t localPort)
                                         true, gBindV6Only);
       if(gUDP6Socket < 0) {
          LOG_FATAL
-         stdlog << "ERROR: Unable to create and bind UDP6 socket on port " << localPort << " - "
-                << strerror(errno) << "!\n";
+         // TRANSLATORS: Fatal error when binding IPv6 UDP socket. Placeholders: {} 1: port number, 2: strerror() message.
+         stdlog << formatText(gettext("ERROR: Unable to create and bind UDP6 socket on port {} - {}!"), localPort, strerror(errno));
          LOG_END_FATAL
       }
       // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
@@ -1953,22 +1999,22 @@ static void passiveMode(const uint16_t localPort)
                                      true, gBindV6Only);
    if(gDCCPSocket < 0) {
       LOG_INFO
-      stdlog << format("NOTE: Unable to create and bind DCCP socket on port %d: %s!",
-                        localPort, strerror(errno)) << "\n";
+      // TRANSLATORS: Informational note when DCCP socket cannot be bound. Placeholders: {} 1: port number, 2: strerror() message.
+      stdlog << formatText(gettext("NOTE: Unable to create and bind DCCP socket on port {}: {}!"), localPort, strerror(errno)) << "\n";
       LOG_END
    }
    else {
       const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(gDCCPSocket, IPPROTO_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket: %s!",
-                           (unsigned int)be32toh(service[0]), gDCCPSocket, strerror(errno)) << "\n";
+         // TRANSLATORS: Error setting DCCP service code. Placeholders: {} 1: service code number, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to configure DCCP service code {} (DCCP_SOCKOPT_SERVICE option) on DCCP socket: {}!"), static_cast<unsigned int>(be32toh(service[0])), gDCCPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on DCCP socket %d!",
-                          gDCCPSocket) << "\n";
+         // TRANSLATORS: Error setting DCCP socket buffer sizes. {} is socket descriptor.
+         stdlog << formatText(gettext("Unable to configure buffer sizes on DCCP socket {}!"), gDCCPSocket) << "\n";
          LOG_END_FATAL
       }
    }
@@ -1981,28 +2027,28 @@ static void passiveMode(const uint16_t localPort)
    // NOTE: It is necessary to set the ALPN before enabling the listening mode!
    if(gQUICSocket < 0) {
       LOG_INFO
-      stdlog << format("NOTE: Unable to create and bind QUIC socket on port %d: %s!",
-                        localPort, strerror(errno)) << "\n";
+      // TRANSLATORS: Informational note when QUIC socket cannot be bound. Placeholders: {} 1: port number, 2: strerror() message.
+      stdlog << formatText(gettext("NOTE: Unable to create and bind QUIC socket on port {}: {}!"), localPort, strerror(errno)) << "\n";
       LOG_END
    }
    else {
       if(ext_setsockopt(gQUICSocket, IPPROTO_QUIC, QUIC_SOCKOPT_ALPN,
                         ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket: %s!",
-                          gQUICSocket, strerror(errno)) << "\n";
+         // TRANSLATORS: Error setting QUIC Application-Layer Protocol Negotiation string. {} is strerror() message.
+         stdlog << formatText(gettext("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket: {}!"), gQUICSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on QUIC socket %d!",
-                          gQUICSocket) << "\n";
+         // TRANSLATORS: Error setting QUIC socket buffer sizes. {} is socket descriptor.
+         stdlog << formatText(gettext("Unable to configure buffer sizes on QUIC socket {}!"), gQUICSocket) << "\n";
          LOG_END_FATAL
       }
       if(ext_listen(gQUICSocket, 100) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to enable listening on QUIC socket %d!",
-                          gQUICSocket) << "\n";
+         // TRANSLATORS: Error putting QUIC socket into listening mode. {} is socket descriptor.
+         stdlog << formatText(gettext("Unable to enable listening on QUIC socket {}!"), gQUICSocket) << "\n";
          LOG_END_FATAL
       }
    }
@@ -2024,27 +2070,28 @@ static void passiveMode(const uint16_t localPort)
       if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_INITMSG,
                         &initmsg, sizeof(initmsg)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure INIT parameters (SCTP_INITMSG option) on SCTP socket %d: %s!",
-                          gSCTPSocket, strerror(errno)) << "\n";
+         // TRANSLATORS: Error setting SCTP stream parameters. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to configure INIT parameters (SCTP_INITMSG option) on SCTP socket {}: {}!"), gSCTPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 
       // ------ Enable SCTP events ------------------------------------------
       sctp_event_subscribe events;
       memset((char*)&events, 0 ,sizeof(events));
-      events.sctp_data_io_event = 1;
+      events.sctp_data_io_event     = 1;
+      events.sctp_association_event = 1;
       if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure events (SCTP_EVENTS option) on SCTP socket %d: %s!",
-                          gSCTPSocket, strerror(errno)) << "\n";
+         // TRANSLATORS: Error subscribing to SCTP notification events. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to configure events (SCTP_EVENTS option) on SCTP socket {}: {}!"), gSCTPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 
       // ------ Set SCTP buffer sizes ---------------------------------------
       if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on SCTP socket %d!",
-                          gSCTPSocket) << "\n";
+         // TRANSLATORS: Error setting SCTP socket buffer sizes. {} is socket descriptor.
+         stdlog << formatText(gettext("Unable to configure buffer sizes on SCTP socket {}!"), gSCTPSocket) << "\n";
          LOG_END_FATAL
       }
 
@@ -2052,8 +2099,8 @@ static void passiveMode(const uint16_t localPort)
    else {
       if( (errno != EPROTONOSUPPORT) || (gPassiveControlTCP == false) ) {
          LOG_FATAL
-         stdlog << format("Unable to create and bind SCTP socket on port %d: %s!",
-                          localPort, strerror(errno)) << "\n";
+         // TRANSLATORS: Fatal error when binding SCTP data socket. Placeholders: {} 1: port number, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to create and bind SCTP socket on port {}: {}!"), localPort, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
    }
@@ -2103,15 +2150,13 @@ static void passiveMode(const uint16_t localPort)
    }
 #endif
    if(dataProtocols2.size() > 0) {
-      dataProtocols2 = format(", and %s on port %u",
-                              dataProtocols2.c_str(), localPort - 1);
+      // TRANSLATORS: Append clause for additional listening ports (e.g. ", and MPTCP on port 8999"). Placeholders: {} 1: protocol list, 2: port number.
+      dataProtocols2 = formatText(gettext(", and {} on port {}"), dataProtocols2.c_str(), localPort - 1);
    }
-   stdlog << format("Passive Mode: Waiting for incoming connections:\n"
-                    " - Control Channel = %s on port %u\n"
-                    " - Data Channel    = %s on port %u%s\n",
-                    controlProtocols.c_str(), localPort + 1,
-                    dataProtocols1.c_str(), localPort,
-                    dataProtocols2.c_str());
+   // TRANSLATORS: Passive mode startup summary banner.
+   stdlog << gettext("Passive Mode: Waiting for incoming connections:") << "\n"
+          << formatText(gettext(" - Control Channel = {} on port {}"), controlProtocols, localPort + 1) << "\n"
+          << formatText(gettext(" - Data Channel    = {} on port {}{}"), dataProtocols1, localPort, dataProtocols2) << "\n";
    LOG_END
    LOG_TRACE
    stdlog << "Sockets:\n"
@@ -2150,8 +2195,8 @@ static void passiveMode(const uint16_t localPort)
 
    FlowManager::getFlowManager()->configureDisplay(gDisplayEnabled);
 
-   const unsigned long long stopAt = (gRuntime > 0) ?
-      (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
+   const uint64_t stopAt = (gRuntime > 0) ?
+      (getMonotonicMicroTime().value + static_cast<uint64_t>(rint(gRuntime * 1000000.0))) : ~0ULL;
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       mainLoop(false, stopAt);
    }
@@ -2219,7 +2264,8 @@ static void activeMode(const char* remoteEndpoint)
    sockaddr_union remoteAddress;
    if(string2address(remoteEndpoint, &remoteAddress) == false) {
       LOG_FATAL
-      std::cerr << format("ERROR: Invalid remote address %s", remoteEndpoint) << "!\n";
+      // TRANSLATORS: Error message when target remote endpoint string cannot be parsed. {} is the endpoint string.
+      std::cerr << formatText(gettext("ERROR: Invalid remote address {}!"), remoteEndpoint) << "\n";
       LOG_END_FATAL
    }
    if(getPort(&remoteAddress.sa) < 2) {
@@ -2251,14 +2297,18 @@ static void activeMode(const char* remoteEndpoint)
    }
 
    LOG_INFO
-   stdlog << "Active Mode:\n"
-          << "- Measurement ID  = " << format("$%llx", measurementID) << "\n"
-          << "- Remote Address  = ";
+   // TRANSLATORS: Header for active mode test execution.
+   stdlog << gettext("Active Mode:") << "\n"
+          // TRANSLATORS: Hexadecimal measurement ID display. {:x} is the hex value.
+          << formatText(gettext("- Measurement ID  = ${:x}"), measurementID) << "\n"
+          // TRANSLATORS: Active mode display label for remote target address.
+          << gettext("- Remote Address  = ");
    printAddress(stdlog, &remoteAddress.sa, true);
-   stdlog << "\n"
-          << "- Control Address = ";
+   // TRANSLATORS: Active mode display label for remote control address.
+   stdlog << "\n" << gettext("- Control Address = ");
    printAddress(stdlog, &controlAddress.sa, true);
-   stdlog << " - connecting via " << controlProtocol << " ...\n";
+   // TRANSLATORS: Status indication while establishing control channel. {} is protocol name (SCTP, TCP, MPTCP).
+   stdlog << formatText(gettext(" - connecting via {} ..."), controlProtocol) << "\n";
    LOG_END
 
    // ====== Initialize control socket ======================================
@@ -2267,10 +2317,12 @@ static void activeMode(const char* remoteEndpoint)
                                         false, gBindV6Only);
    if(gControlSocket < 0) {
       LOG_FATAL
-      stdlog << format("Unable to create and bind control socket: %s!",
+      // TRANSLATORS: Fatal error when creating active control socket. {} is strerror() message.
+      stdlog << formatText(gettext("Unable to create and bind control socket: {}!"),
                        strerror(errno)) << "\n";
       if( (gActiveControlProtocol == IPPROTO_SCTP) && (errno == EPROTONOSUPPORT) ) {
-         stdlog << "SCTP is not available => Try -y|--control-over-tcp for control over TCP!\n";
+         // TRANSLATORS: Hint suggesting TCP control channel when SCTP kernel support is unavailable.
+         stdlog << gettext("SCTP is not available => Try -y|--control-over-tcp for control over TCP!") << "\n";
       }
       LOG_END_FATAL
    }
@@ -2281,7 +2333,8 @@ static void activeMode(const char* remoteEndpoint)
       sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket: %s!",
+         // TRANSLATORS: Error configuring SCTP default send parameters. {} is strerror() message.
+         stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket: {}!"),
                           strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2289,10 +2342,12 @@ static void activeMode(const char* remoteEndpoint)
 #endif
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
       LOG_FATAL
-      stdlog << format("Unable to establish control association: %s!",
+      // TRANSLATORS: Fatal error when connecting to remote control endpoint. {} is strerror() message.
+      stdlog << formatText(gettext("Unable to establish control association: {}!"),
                        strerror(errno)) << "\n";
       if(gActiveControlProtocol == IPPROTO_SCTP) {
-         stdlog << "Note: Try -y|--control-over-tcp for control over TCP in case of NAT traversal or restrictive firewalls!\n";
+         // TRANSLATORS: Troubleshooting suggestion for SCTP connection failures behind NAT/firewalls.
+         stdlog << gettext("Note: Try -y|--control-over-tcp for control over TCP in case of NAT traversal or restrictive firewalls!") << "\n";
       }
       LOG_END_FATAL
    }
@@ -2305,17 +2360,20 @@ static void activeMode(const char* remoteEndpoint)
       paddrparams.spp_pathmaxrxt = gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddrparams, sizeof(paddrparams)) < 0) {
          LOG_WARNING
-         stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
+         // TRANSLATORS: Error enabling SCTP heartbeats. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket {}: {}!"),
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END
       }
 
       sctp_assocparams assocparams;
       memset(&assocparams, 0, sizeof(assocparams));
+      assocparams.sasoc_assoc_id   = SCTP_FUTURE_ASSOC;
       assocparams.sasoc_asocmaxrxt = gControlHBAssocMaxRtx;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
          LOG_WARNING
-         stdlog << format("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket %d: %s!",
+         // TRANSLATORS: Warning configuring SCTP association retransmission max. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket {}: {}!"),
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END
       }
@@ -2327,7 +2385,8 @@ static void activeMode(const char* remoteEndpoint)
       if(ext_setsockopt(gControlSocket, SOL_SOCKET, SO_KEEPALIVE,
                         (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set SO_KEEPALIVE on TCP control socket %d: %s!",
+         // TRANSLATORS: Error enabling keepalive on TCP control socket. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set SO_KEEPALIVE on TCP control socket {}: {}!"),
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2336,7 +2395,8 @@ static void activeMode(const char* remoteEndpoint)
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPIDLE,
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket %d: %s!",
+         // TRANSLATORS: Error setting TCP keepalive idle time. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_KEEPIDLE on TCP control socket {}: {}!"),
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2348,7 +2408,8 @@ static void activeMode(const char* remoteEndpoint)
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPINTVL,
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket %d: %s!",
+         // TRANSLATORS: Error setting TCP keepalive probe interval. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_KEEPINTVL on TCP control socket {}: {}!"),
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2360,7 +2421,8 @@ static void activeMode(const char* remoteEndpoint)
       if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket %s: %s!",
+         // TRANSLATORS: Error setting TCP keepalive probe count. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_KEEPCNT on TCP control socket {}: {}!"),
                           gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2387,11 +2449,11 @@ static void activeMode(const char* remoteEndpoint)
             flowIterator != assocSpec.Flows.end(); flowIterator++) {
             const char* flowSpec = *flowIterator;
             lastFlow = createFlow(lastFlow, flowSpec, measurementID,
-                                  gVectorNamePattern, gVectorFileFormat,
                                   assocSpec.Protocol, remoteAddress);
-            if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow)) {
+            if(!performNetPerfMeterAddFlow(&gMessageReader, gControlSocket, lastFlow, gVectorFileFormat)) {
                LOG_FATAL
-               stdlog << "ERROR: Unable to add flow to remote node!\n";
+               // TRANSLATORS: Fatal error when sending ADD_FLOW command to passive peer over control channel.
+               stdlog << gettext("ERROR: Unable to add flow to remote node!") << "\n";
                LOG_END_FATAL
             }
             LOG_TRACE
@@ -2412,21 +2474,23 @@ static void activeMode(const char* remoteEndpoint)
                                 gVectorNamePattern, gVectorFileFormat,
                                 gScalarNamePattern, gScalarFileFormat)) {
       LOG_FATAL
-      stdlog << "ERROR: Unable to start measurement!\n";
+      // TRANSLATORS: Fatal error when sending START command to passive peer over control channel.
+      stdlog << gettext("ERROR: Unable to start measurement!") << "\n";
       LOG_END_FATAL
    }
 
 
    // ====== Main loop ======================================================
-   const unsigned long long stopAt = (gRuntime > 0) ?
-      (getMicroTime() + (unsigned long long)rint(gRuntime * 1000000.0)) : ~0ULL;
+   const uint64_t stopAt = (gRuntime > 0) ?
+      (getMonotonicMicroTime().value + static_cast<uint64_t>(rint(gRuntime * 1000000.0))) : ~0ULL;
    signal(SIGPIPE, SIG_IGN);
    installBreakDetector();
 
    FlowManager::getFlowManager()->configureDisplay(gDisplayEnabled);
    while( (!breakDetected()) && (!gStopTimeReached) ) {
       if(!mainLoop(true, stopAt)) {
-         std::cout << "\n" << "*** Aborted ***\n";
+         // TRANSLATORS: Notification when measurement is aborted due to error or break.
+         std::cout << "\n" << gettext("*** Aborted ***") << "\n";
          break;
       }
    }
@@ -2439,11 +2503,13 @@ static void activeMode(const char* remoteEndpoint)
 
    // ====== Stop measurement ===============================================
    LOG_INFO
-   stdlog << "Shutdown" << "\n";
+   // TRANSLATORS: Log notification indicating measurement shutdown sequence.
+   stdlog << gettext("Shutdown") << "\n";
    LOG_END
    if(!performNetPerfMeterStop(&gMessageReader, gControlSocket, measurementID)) {
       LOG_FATAL
-      stdlog << "Unable to stop measurement and download the results!\n";
+      // TRANSLATORS: Fatal error when STOP command or result retrieval fails.
+      stdlog << gettext("Unable to stop measurement and download the results!") << "\n";
       LOG_END_FATAL
    }
 }
@@ -2453,6 +2519,33 @@ static void activeMode(const char* remoteEndpoint)
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
+   // ====== Initialise locale support ======================================
+   if(std::setlocale(LC_ALL, "") == nullptr) {
+      std::setlocale(LC_ALL, "C.UTF-8");
+   }
+   std::setlocale(LC_NUMERIC, "C");   // Use "." for fractional numbers!
+
+   // ====== Initialise i18n support ========================================
+#if defined(ENABLE_NLS)
+#if !defined(_WIN32)
+   const char* textdomaindir     = std::getenv("TEXTDOMAINDIR");
+#else
+   char*       textdomaindir     = nullptr;
+   size_t      textdomaindirsize = 0;
+   _dupenv_s(&textdomaindir, &textdomaindirsize, "TEXTDOMAINDIR");
+#endif
+   bindtextdomain("netperfmeter",
+                  ( ((textdomaindir) && (textdomaindir[0] != 0x00)) ?
+                       textdomaindir : PROJECT_LOCALEDIR ));
+#if defined(_WIN32)
+   if(textdomaindir) {
+       free(textdomaindir);
+   }
+#endif
+   bind_textdomain_codeset("netperfmeter", "UTF-8");
+   textdomain("netperfmeter");
+#endif
+
    // ====== Handle parameters ==============================================
    handleGlobalParameters(argc, argv);
    if(argc - optind != 1) {
@@ -2462,17 +2555,20 @@ int main(int argc, char** argv)
                                          atol(argv[optind]) : 0;
    const bool         inPassiveMode = (localPort >= 1) && (localPort < 65535);
    if( (!inPassiveMode) && (gAssocSpecs.size() < 1) ) {
-      std::cerr << "ERROR: No flows specified!\n";
+      // TRANSLATORS: Error message when running in active mode without specifying any flows.
+      std::cerr << gettext("ERROR: No flows specified!") << "\n";
       return 1;
    }
 
    // ====== Start logging ==================================================
    beginLogging();
    LOG_INFO
-   stdlog << "Network Performance Meter " << NETPERFMETER_VERSION
-          << " in "
-          << ((inPassiveMode == true) ? "Passive Mode" : "Active Mode")
-          << "\n";
+   // TRANSLATORS: Main startup banner. Placeholders: {} 1: package version, 2: operational mode ("Active Mode" or "Passive Mode").
+   stdlog << formatText(gettext("Network Performance Meter {} in {}"),
+                        PROJECT_VERSION,
+                        // TRANSLATORS: Operational mode label for receiver/server instance.
+                        // TRANSLATORS: Operational mode label for sender/client instance.
+                        inPassiveMode ? gettext("Passive Mode") : gettext("Active Mode")) << "\n";
    LOG_END
 
    // ====== Run active or passive instance =================================

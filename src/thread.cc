@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -29,56 +29,49 @@
 
 #include "thread.h"
 #include "loglevel.h"
+#include "tools.h"
 
-#include <pthread.h>
+#include <system_error>
 
 
 // ###### Constructor #######################################################
 Thread::Thread()
+   : Stopping(false)
 {
-   MyThread = 0;
-   lock();
-   Stopping = false;
-   unlock();
 }
 
 
 // ###### Destructor ########################################################
 Thread::~Thread()
 {
-   if(MyThread != 0) {
+   if(MyThread.joinable()) {
       waitForFinish();
    }
-}
-
-
-// ###### Start routine to lauch thread's run() function ####################
-void* Thread::startRoutine(void* object)
-{
-   Thread* thread = (Thread*)object;
-   thread->run();
-   return nullptr;
 }
 
 
 // ###### Start thread ######################################################
 bool Thread::start()
 {
-   if(MyThread == 0) {
+   if(!MyThread.joinable()) {
       lock();
-      Stopping = false;
+      Stopping.store(false);
       unlock();
-      if(pthread_create(&MyThread, nullptr, startRoutine, (void*)this) == 0) {
+      try {
+         MyThread = std::thread(&Thread::run, this);
          return true;
       }
-      MyThread = 0;
-      LOG_ERROR
-      stdlog << "Unable to start new thread!" << "\n";
-      LOG_END
+      catch(const std::system_error& e) {
+         LOG_ERROR
+         // TRANSLATORS: Error message when starting a new thread fails. {} is the system error description.
+         stdlog << formatText(gettext("Unable to start new thread: {}!"), e.what()) << "\n";
+         LOG_END
+      }
    }
    else {
       LOG_ERROR
-      stdlog << "Thread is already running!" << "\n";
+      // TRANSLATORS: Error message when trying to start an already running thread.
+      stdlog << gettext("Thread is already running!") << "\n";
       LOG_END
    }
    return false;
@@ -89,7 +82,7 @@ bool Thread::start()
 void Thread::stop()
 {
    lock();
-   Stopping = true;
+   Stopping.store(true);
    unlock();
 }
 
@@ -97,15 +90,21 @@ void Thread::stop()
 // ###### Wait until thread has been finished ###############################
 void Thread::waitForFinish()
 {
-   if(MyThread != 0) {
-      pthread_join(MyThread, nullptr);
-      MyThread = 0;
+   if(MyThread.joinable()) {
+      MyThread.join();
    }
 }
 
 
 // ###### Wait a given amount of microseconds ###############################
-void Thread::delay(const unsigned int us)
+void Thread::delay(const uint32_t us)
 {
-   usleep(us);
+   std::this_thread::sleep_for(std::chrono::microseconds(us));
+}
+
+
+// ###### Wait a given chrono duration ######################################
+void Thread::delay(const std::chrono::microseconds duration)
+{
+   std::this_thread::sleep_for(duration);
 }

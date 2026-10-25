@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -32,6 +32,8 @@
 
 #include "mutex.h"
 #include "tools.h"
+
+#include <iostream>
 
 
 #define LOGLEVEL_FATAL   5U
@@ -68,14 +70,15 @@ extern Mutex         gLogMutex;
       loggingMutexUnlock();       \
    }
 
-#define LOG_END_FATAL                          \
-      *gStdLog << "FATAL ERROR - ABORTING!\n"; \
-      if(gColorMode) {                         \
-        *gStdLog << "\x1b[0m\x1b[2K";          \
-      }                                        \
-      gStdLog->flush();                        \
-      loggingMutexUnlock();                    \
-   }                                           \
+// TRANSLATORS: Fatal error termination notice.
+#define LOG_END_FATAL                                           \
+      *gStdLog << gettext("FATAL ERROR - ABORTING!") << "\n";   \
+      if(gColorMode) {                                          \
+        *gStdLog << "\x1b[0m\x1b[2K";                           \
+      }                                                         \
+      gStdLog->flush();                                         \
+      loggingMutexUnlock();                                     \
+   }                                                            \
    exit(1);
 
 
@@ -90,15 +93,18 @@ extern Mutex         gLogMutex;
 bool initLogFile(const unsigned int logLevel,
                  const char*        fileName,
                  const bool         appendMode);
+bool initLogFile(const unsigned int logLevel,
+                 const char*        fileName,
+                 const char*        mode);
 void beginLogging();
 void finishLogging();
 
-inline void loggingMutexLock() {
+inline void loggingMutexLock() noexcept {
    gLogMutex.lock();
 }
 
-inline void loggingMutexUnlock() {
+inline void loggingMutexUnlock() noexcept {
    gLogMutex.unlock();
 }
 
-#endif
+#endif // LOGLEVEL_H
