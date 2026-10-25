@@ -30,36 +30,6 @@ use subs qw(updatePDFMetadataRecursion);
 use subs qw(updatePDFMetadata);
 
 
-# ------ BEGIN-OF-USAGE-BLOCK ------
-# ###### Usage ##############################################################
-sub usage($$) {
-   my ($program, $exitCode) = @_;
-   my $header = "\x1b[4m";
-   my $cmd    = "\x1b[1m";
-   my $opt    = "\x1b[1m";
-   my $arg    = "\x1b[4m";
-   my $syn    = "\x1b[1m";
-   my $reset  = "\x1b[0m";
-
-   print STDERR "${header}Usage:${reset}\n";
-   print STDERR "${cmd}${program}${reset} ${arg}input_pdf${reset} ${arg}metadata_file${reset} ${arg}output_pdf${reset}\n";
-   print STDERR "${cmd}${program}${reset}\n";
-   print STDERR "\t${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}\n";
-   print STDERR "${cmd}${program}${reset}\n";
-   print STDERR "\t${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}\n";
-
-   exit($exitCode);
-}
-# ------ END-OF-USAGE-BLOCK ------
-
-
-# ###### Version ############################################################
-sub version() {
-   print "setpdfmetadata \@BUILD_MAJOR\@.\@BUILD_MINOR\@.\@BUILD_PATCH@\n";
-   exit(0);
-}
-
-
 # ###### Get next command line ##############################################
 sub getNextCommand($) {
    my $inputFile = shift;   # Metadata input file
@@ -173,6 +143,36 @@ sub updatePDFMetadata($$) {
    my $command = getNextCommand($metadataFile);
 
    updatePDFMetadataRecursion($pdfFile, $pdfFile->outlines, $command, $metadataFile);
+}
+
+
+# ------ BEGIN-OF-USAGE-BLOCK ------
+# ###### Usage ##############################################################
+sub usage($$) {
+   my ($program, $exitCode) = @_;
+   my $header = "\x1b[4m";
+   my $cmd    = "\x1b[1m";
+   my $opt    = "\x1b[1m";
+   my $arg    = "\x1b[4m";
+   my $syn    = "\x1b[1m";
+   my $reset  = "\x1b[0m";
+
+   print STDERR "${header}Usage:${reset}\n";
+   print STDERR "${cmd}${program}${reset} ${arg}input_pdf${reset} ${arg}metadata_file${reset} ${arg}output_pdf${reset}\n";
+   print STDERR "${cmd}${program}${reset}\n";
+   print STDERR "\t${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}\n";
+   print STDERR "${cmd}${program}${reset}\n";
+   print STDERR "\t${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}\n";
+
+   exit($exitCode);
+}
+# ------ END-OF-USAGE-BLOCK ------
+
+
+# ###### Version ############################################################
+sub version() {
+   print 'setpdfmetadata @BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@', "\n";
+   exit(0);
 }
 
 
