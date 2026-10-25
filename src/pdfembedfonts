@@ -96,7 +96,6 @@ while [ $# -gt 0 ] ; do
    case "$1" in
       -O | --optimise | --optimize)
          OPTIMISE=1
-         shift
          ;;
       -h | --help)
          usage "$0" 0
