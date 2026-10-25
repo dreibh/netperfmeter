@@ -106,6 +106,7 @@ void Defragmenter::addFragment(const uint64_t                 now,
    std::map<uint32_t, Frame*>::iterator foundFrame = FrameSet.find(frameID);
    if(foundFrame != FrameSet.end()) {
       frame = foundFrame->second;
+      frame->LastUpdate = now;
    }
    else {
       // ====== Frame has to be created =====================================
@@ -132,8 +133,29 @@ void Defragmenter::addFragment(const uint64_t                 now,
          frame->FragmentSet.insert(std::pair<uint64_t, Fragment*>(fragment->PacketSeqNumber, fragment));
       }
    }
-   else {
-      // puts("Duplicate???");
+
+   // ====== Check whether frame is now complete ============================
+   if(!frame->FragmentSet.empty()) {
+      const Fragment* firstFrag = frame->FragmentSet.begin()->second;
+      const Fragment* lastFrag  = frame->FragmentSet.rbegin()->second;
+
+      if((firstFrag->Flags & NPMDF_FRAME_BEGIN) && (lastFrag->Flags & NPMDF_FRAME_END)) {
+         bool contiguous = true;
+         auto it = frame->FragmentSet.begin();
+         auto prev = it->second;
+         it++;
+         while(it != frame->FragmentSet.end()) {
+            auto curr = it->second;
+            if((prev->PacketSeqNumber + 1 != curr->PacketSeqNumber) ||
+               (prev->ByteSeqNumber + prev->Length != curr->ByteSeqNumber)) {
+               contiguous = false;
+               break;
+            }
+            prev = curr;
+            it++;
+         }
+         frame->Completed = contiguous;
+      }
    }
 }
 
@@ -221,11 +243,19 @@ void Defragmenter::purge(const uint64_t now,
    if(getFirstFragment(frame, fragment)) {
       bool eraseCurrentFragment;
       do {
-         if(frame->LastUpdate + defragmentTimeout <= now) {
+         const bool canReleaseComplete = (frame->Completed && (frame->FrameID <= NextFrameID));
+         const bool isTimedOut         = (frame->LastUpdate + defragmentTimeout <= now);
+
+         if(canReleaseComplete || isTimedOut) {
             eraseCurrentFragment = true;
 
             if(frame->FrameID >= NextFrameID) {
-               receivedFrames++;
+               if(frame->Completed) {
+                  receivedFrames++;
+               }
+               else {
+                  lostFrames++; // Incomplete frame timed out
+               }
                lostFrames += (static_cast<uint64_t>(frame->FrameID) - static_cast<uint64_t>(NextFrameID));
                NextFrameID = frame->FrameID + 1;
             }
