@@ -41,17 +41,23 @@ FUNCTION(GET_NEXT_TEST_PORT OUT_PORT)
 ENDFUNCTION()
 
 
-# ###### Helper for deterministic commands (expected return code: 0) #######
-FUNCTION(ADD_NETPERFMETER_TEST TEST_NAME)
+# ###### Generic helper for compiled binary targets (expected code: 0) ######
+FUNCTION(ADD_PROGRAM_TEST TEST_NAME TARGET_NAME)
    ADD_TEST(
       NAME ${TEST_NAME}
-      COMMAND $<TARGET_FILE:netperfmeter> ${ARGN}
+      COMMAND $<TARGET_FILE:${TARGET_NAME}> ${ARGN}
    )
    SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
       FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:"
-      LABELS "cli"
+      LABELS "cli;${TARGET_NAME}"
    )
+ENDFUNCTION()
+
+
+# ###### Backward-compatible wrapper for NetPerfMeter binary ################
+FUNCTION(ADD_NETPERFMETER_TEST TEST_NAME)
+   ADD_PROGRAM_TEST(${TEST_NAME} netperfmeter ${ARGN})
 ENDFUNCTION()
 
 
@@ -64,7 +70,72 @@ FUNCTION(ADD_NETPERFMETER_FAIL_TEST TEST_NAME)
    SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
       WILL_FAIL TRUE
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
-      LABELS "negative;error"
+      LABELS "negative;error;netperfmeter"
+   )
+ENDFUNCTION()
+
+
+# ###### Helper for standard compiled tool CLI tests ########################
+MACRO(ADD_TOOL_CLI_TESTS TARGET_NAME)
+   IF(TARGET ${TARGET_NAME})
+      # Version checks (-v, --version)
+      ADD_PROGRAM_TEST(cli_${TARGET_NAME}_version_short ${TARGET_NAME} -v)
+      ADD_PROGRAM_TEST(cli_${TARGET_NAME}_version_long  ${TARGET_NAME} --version)
+      SET_TESTS_PROPERTIES(cli_${TARGET_NAME}_version_short cli_${TARGET_NAME}_version_long PROPERTIES
+         PASS_REGULAR_EXPRESSION "[0-9]+\\.[0-9]+\\.[0-9]+"
+      )
+
+      # Help / Usage checks (-h, --help)
+      ADD_PROGRAM_TEST(cli_${TARGET_NAME}_help_short ${TARGET_NAME} -h)
+      ADD_PROGRAM_TEST(cli_${TARGET_NAME}_help_long  ${TARGET_NAME} --help)
+      SET_TESTS_PROPERTIES(cli_${TARGET_NAME}_help_short cli_${TARGET_NAME}_help_long PROPERTIES
+         PASS_REGULAR_EXPRESSION "Usage:"
+      )
+   ENDIF()
+ENDMACRO()
+
+
+# ###### Helper for script CLI tests (testing configured .versioned files) ##
+FUNCTION(ADD_SCRIPT_CLI_TESTS SCRIPT_NAME)
+   # The configured script is output to the binary tree's src/ directory
+   SET(SCRIPT_PATH "${CMAKE_CURRENT_BINARY_DIR}/../${SCRIPT_NAME}.versioned")
+   IF(NOT EXISTS "${SCRIPT_PATH}")
+      SET(SCRIPT_PATH "${PROJECT_BINARY_DIR}/src/${SCRIPT_NAME}.versioned")
+   ENDIF()
+
+   # Ensure execute permissions on the generated script
+   EXECUTE_PROCESS(COMMAND chmod +x "${SCRIPT_PATH}")
+
+   # Version checks (-v, --version)
+   ADD_TEST(
+      NAME cli_${SCRIPT_NAME}_version_short
+      COMMAND "${SCRIPT_PATH}" -v
+   )
+   ADD_TEST(
+      NAME cli_${SCRIPT_NAME}_version_long
+      COMMAND "${SCRIPT_PATH}" --version
+   )
+   SET_TESTS_PROPERTIES(cli_${SCRIPT_NAME}_version_short cli_${SCRIPT_NAME}_version_long PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:@PROJECT_VERSION"
+      PASS_REGULAR_EXPRESSION "[0-9]+\\.[0-9]+"
+      LABELS "cli;script;${SCRIPT_NAME}"
+   )
+
+   # Help / Usage checks (-h, --help)
+   ADD_TEST(
+      NAME cli_${SCRIPT_NAME}_help_short
+      COMMAND "${SCRIPT_PATH}" -h
+   )
+   ADD_TEST(
+      NAME cli_${SCRIPT_NAME}_help_long
+      COMMAND "${SCRIPT_PATH}" --help
+   )
+   SET_TESTS_PROPERTIES(cli_${SCRIPT_NAME}_help_short cli_${SCRIPT_NAME}_help_long PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:"
+      PASS_REGULAR_EXPRESSION "Usage:"
+      LABELS "cli;script;${SCRIPT_NAME}"
    )
 ENDFUNCTION()
 
@@ -114,21 +185,19 @@ ENDFUNCTION()
 #### BASIC CLI OPTIONS                                                   ####
 #############################################################################
 
-# --- Version Checks (-v, --version) ----------------------------------------
-ADD_NETPERFMETER_TEST(cli_version_short -v)
-ADD_NETPERFMETER_TEST(cli_version_long  --version)
+# ====== 1. Compiled Binaries ===============================================
+ADD_TOOL_CLI_TESTS(netperfmeter)
+ADD_TOOL_CLI_TESTS(combinesummaries)
+ADD_TOOL_CLI_TESTS(createsummary)
+ADD_TOOL_CLI_TESTS(extractvectors)
+ADD_TOOL_CLI_TESTS(getabstime)
+ADD_TOOL_CLI_TESTS(runtimeestimator)
 
-SET_TESTS_PROPERTIES(cli_version_short cli_version_long PROPERTIES
-   PASS_REGULAR_EXPRESSION "NetPerfMeter [0-9]+\\.[0-9]+\\.[0-9]+"
-)
-
-# --- Help / Usage Checks (-h, --help) --------------------------------------
-ADD_NETPERFMETER_TEST(cli_help_short -h)
-ADD_NETPERFMETER_TEST(cli_help_long  --help)
-
-SET_TESTS_PROPERTIES(cli_help_short cli_help_long PROPERTIES
-   PASS_REGULAR_EXPRESSION "Usage:"
-)
+# ====== 2. Companion Scripts (.versioned) ==================================
+ADD_SCRIPT_CLI_TESTS(netperfmeter-module-loader)
+ADD_SCRIPT_CLI_TESTS(pdfembedfonts)
+ADD_SCRIPT_CLI_TESTS(plot-netperfmeter-results)
+ADD_SCRIPT_CLI_TESTS(setpdfmetadata)
 
 
 #############################################################################
