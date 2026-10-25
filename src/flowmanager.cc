@@ -936,9 +936,8 @@ void FlowManager::run()
       lock();
 
       // Allocate space for flows + unidentified sockets + 1 wakeup pipe
-      std::set<int> socketSet;
-      pollfd        pollFDs[FlowSet.size() + UnidentifiedSockets.size() + 1];
-      unsigned int  n = 0;
+      pollfd       pollFDs[FlowSet.size() + UnidentifiedSockets.size() + 1];
+      unsigned int n = 0;
 #if defined(DEBUG_POLL)
       std::cerr << "poll-init:\n";
 #endif
@@ -961,13 +960,22 @@ void FlowManager::run()
              (FlowSet[i]->SocketDescriptor >= 0) ) {
             if(!((FlowSet[i]->getTrafficSpec().Protocol == IPPROTO_UDP) &&
                  (FlowSet[i]->isAcceptedIncomingFlow())) ) {
-               if(socketSet.find(FlowSet[i]->SocketDescriptor) == socketSet.end()) {
+
+               // Check if the descriptor was already added to pollFDs:
+               bool alreadyAdded = false;
+               for(unsigned int j = 0; j < n; j++) {
+                  if(pollFDs[j].fd == FlowSet[i]->SocketDescriptor) {
+                     alreadyAdded = true;
+                     break;
+                  }
+               }
+
+               if(!alreadyAdded) {
                   pollFDs[n].fd      = FlowSet[i]->SocketDescriptor;
                   pollFDs[n].events  = POLLIN;
                   pollFDs[n].revents = 0;
                   FlowSet[i]->PollFDEntry = &pollFDs[n];
                   n++;
-                  socketSet.insert(FlowSet[i]->SocketDescriptor);
                }
             }
          }
