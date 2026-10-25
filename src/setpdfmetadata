@@ -32,20 +32,21 @@ use subs qw(updatePDFMetadata);
 
 # ------ BEGIN-OF-USAGE-BLOCK ------
 # ###### Usage ##############################################################
-usage () {
-   local program="$1"
-   local exitCode="$2"
-   local header=$'\x1b[4m'
-   local cmd=$'\x1b[1m'
-   local opt=$'\x1b[1m'
-   local arg=$'\x1b[4m'
-   local syn=$'\x1b[1m'
-   local reset=$'\x1b[0m'
-   local progname="${program##*/}"
-   local manpage="${cmd}${progname%.*}${reset}"
-   local homepage=$'\x1b[1m\x1b]8;;@PROJECT_HOMEPAGE_URL@\a@PROJECT_HOMEPAGE_URL@\a\x1b]8;;\a\x1b[0m'
-   local repository=$'\x1b[1m\x1b]8;;@PROJECT_SOURCE_URL@\a@PROJECT_SOURCE_URL@\a\x1b]8;;\a\x1b[0m'
-   cat >&2 <<EOF
+sub usage($$) {
+   my ($program, $exitCode) = @_;
+   my $header = "\x1b[4m";
+   my $cmd    = "\x1b[1m";
+   my $opt    = "\x1b[1m";
+   my $arg    = "\x1b[4m";
+   my $syn    = "\x1b[1m";
+   my $reset  = "\x1b[0m";
+   my $progname = (split(m{/}, $program))[-1];
+   $progname =~ s{\.[^.]+$}{};
+   my $manpage    = "${cmd}${progname}${reset}";
+   my $homepage   = "${cmd}\x1b]8;;\@PROJECT_HOMEPAGE_URL\@\a\@PROJECT_HOMEPAGE_URL\@\a\x1b]8;;\a${reset}";
+   my $repository = "${cmd}\x1b]8;;\@PROJECT_SOURCE_URL\@\a\@PROJECT_SOURCE_URL\@\a\x1b]8;;\a${reset}";
+
+   print STDERR <<EOF;
 ${header}Usage:${reset}
 ${cmd}${program}${reset} ${arg}input_pdf${reset} ${arg}metadata_file${reset} ${arg}output_pdf${reset}
 ${cmd}${program}${reset}
@@ -54,9 +55,9 @@ ${cmd}${program}${reset}
 	${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}
 
 EOF
-   printf >&2 "For further information, see the man page for %s, read the documentation at [%s], examine the source code at [%s], or consult your favourite LLM.""\n" \
-      "${manpage}" "${homepage}" "${repository}"
-   exit "${exitCode}"
+   printf STDERR ("For further information, see the man page for %s, read the documentation at [%s], examine the source code at [%s], or consult your favourite LLM.\n",
+                  $manpage, $homepage, $repository);
+   exit($exitCode);
 }
 # ------ END-OF-USAGE-BLOCK ------
 
