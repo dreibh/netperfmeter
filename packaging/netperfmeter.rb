@@ -1,8 +1,8 @@
 class Netperfmeter < Formula
   desc "Network Performance Meter"
   homepage "https://www.nntb.no/~dreibh/netperfmeter/"
-  url "https://www.nntb.no/~dreibh/netperfmeter/download/netperfmeter-2.0.13.tar.xz"
-  sha256 "efa52ae8eebc541c0951d93339ed7ca1440b14bb9473d7f7501470f54af72a27"
+  url "https://www.nntb.no/~dreibh/netperfmeter/download/netperfmeter-2.0.14.tar.xz"
+  sha256 "0c24e2a3fded88570b42cef9d8de92e10210b22347f2f459a40d3686a0fced39"
   license "GPL-3.0-or-later"
 
   # Options ON by default (matching FreeBSD OPTIONS_DEFAULT)
