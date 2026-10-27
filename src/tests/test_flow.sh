@@ -31,7 +31,7 @@
 #
 # Examples:
 #   test_flow.sh ./netperfmeter 25000 127.0.0.1 tcp const10:const1000:const10:const1000 plain 2
-#   test_flow.sh ./netperfmeter 25010 ::1       udp const10:const1000:const0:const0     zst   2
+#   test_flow.sh ./netperfmeter 25010 ::1       udp const10:const1000:const0:const0     zst   2 --no-vector
 
 set -eu
 
@@ -43,11 +43,25 @@ SPEC="${5:-const10:const1000:const10:const1000}"
 FORMAT="${6:-plain}"
 RUNTIME="${7:-5}"
 
+ENABLE_SCALAR=1
+ENABLE_VECTOR=1
+PASSTHROUGH_ARGS=""
+
 if [ "$#" -ge 7 ]; then
     shift 7
-    EXTRA_ARGS="$*"
-else
-    EXTRA_ARGS=""
+    for arg in "$@"; do
+        case "$arg" in
+            --no-scalar|--without-scalar)
+                ENABLE_SCALAR=0
+                ;;
+            --no-vector|--without-vector)
+                ENABLE_VECTOR=0
+                ;;
+            *)
+                PASSTHROUGH_ARGS="${PASSTHROUGH_ARGS} $arg"
+                ;;
+        esac
+    done
 fi
 
 # NetPerfMeter control channel runs on BP + 1
@@ -209,7 +223,7 @@ check_vector() {
         return 1
     fi
 
-    # 3. Validate each vector file (global and all per-flow files)
+    # 3. Validate each vector file
     for _file in "${_global_file}" "$@"; do
         if [ ! -s "${_file}" ]; then
             continue
@@ -234,10 +248,10 @@ check_vector() {
             my $data_rows = 0;
             my $errors = 0;
 
-            # Tracking for flow vector files (packet arrival log)
+            # Tracking for flow vector files
             my ($last_seq, $last_abs_b, $last_abs_p, $last_abs_f);
 
-            # Tracking for measurement vector files (summary snapshots)
+            # Tracking for measurement vector files
             my (%max_abs_bytes, %last_meas_bytes, %last_meas_pkts, %last_meas_frames);
 
             while (<STDIN>) {
@@ -245,7 +259,6 @@ check_vector() {
                 chomp;
                 next if /^\s*$/;
 
-                # Header detection
                 if (/^AbsTime/) {
                     if (/SeqNumber/) {
                         $is_flow_vector = 1;
@@ -257,9 +270,6 @@ check_vector() {
                 $data_rows++;
 
                 if ($is_flow_vector) {
-                    # --- Per-Flow Vector File ---
-                    # Col 0: Line, 1: AbsTime, 2: RelTime, 3: SeqNumber,
-                    # Col 4: AbsBytes, 5: AbsPackets, 6: AbsFrames, 7: RelBytes...
                     if (@fields < 7) {
                         warn "FAIL in $filename (line $line_num): Malformed flow vector row (expected >= 7 columns, got " . scalar(@fields) . ")\n";
                         $errors++;
@@ -271,13 +281,11 @@ check_vector() {
                     my $pkts  = $fields[5] + 0;
                     my $frms  = $fields[6] + 0;
 
-                    # Flow vector files record received packets
                     if (!$expect_rx) {
                         warn "FAIL in $filename (line $line_num): Unexpected data row when expect_rx == 0 (AbsBytes: $bytes)\n";
                         $errors++;
                     }
 
-                    # Monotonicity checks
                     if (defined $last_seq && $seq < $last_seq) {
                         warn "FAIL in $filename (line $line_num): Non-monotonic SeqNumber ($seq < $last_seq)\n";
                         $errors++;
@@ -301,9 +309,6 @@ check_vector() {
                     $last_abs_f = $frms;
 
                 } else {
-                    # --- Global / Measurement-Wide Vector File ---
-                    # Col 4: FlowID, 7: Action ("Sent"|"Received"|"Lost"),
-                    # Col 8: AbsBytes, 9: AbsPackets, 10: AbsFrames...
                     next if @fields < 11;
                     my $flow_id = $fields[4];
                     my $action  = $fields[7];
@@ -339,7 +344,6 @@ check_vector() {
                 }
             }
 
-            # Completeness and direction checks
             if ($is_flow_vector) {
                 if ($expect_rx) {
                     if ($data_rows == 0) {
@@ -434,14 +438,23 @@ SERVER_PID=$!
 wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" 5
 
 # 2. Run active node (client)
+SCALAR_ARG=""
+VECTOR_ARG=""
+if [ "${ENABLE_SCALAR}" -eq 1 ]; then
+    SCALAR_ARG="-scalar=${TMP_DIR}/test.sca${EXT}"
+fi
+if [ "${ENABLE_VECTOR}" -eq 1 ]; then
+    VECTOR_ARG="-vector=${TMP_DIR}/test.vec${EXT}"
+fi
+
 if ! "${NETPERFMETER}" "${TARGET}:${PORT}" \
     -control-over-tcp \
     -runtime="${RUNTIME}" \
     "-${PROTOCOL}" "${SPEC}" \
     --config="${TMP_DIR}/test.config" \
-    -scalar="${TMP_DIR}/test.sca${EXT}" \
-    -vector="${TMP_DIR}/test.vec${EXT}" \
-    ${EXTRA_ARGS} \
+    ${SCALAR_ARG} \
+    ${VECTOR_ARG} \
+    ${PASSTHROUGH_ARGS} \
     >"${TMP_DIR}/client.log" 2>&1; then
     echo "FAIL: Active instance exited with an error." >&2
     echo "--- Client Log ---" >&2
@@ -457,13 +470,29 @@ if [ ! -s "${TMP_DIR}/test.config" ]; then
     exit 1
 fi
 
-# 4. Verify Scalar outputs with expected directional constraints
-check_scalar "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"
-check_scalar "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}"
+# 4. Verify Scalar outputs
+if [ "${ENABLE_SCALAR}" -eq 1 ]; then
+    check_scalar "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"
+    check_scalar "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}"
+else
+    set -- "${TMP_DIR}"/test-*.sca*
+    if [ -e "$1" ]; then
+        echo "FAIL: Scalar output '$1' was generated, but --no-scalar was requested." >&2
+        exit 1
+    fi
+fi
 
-# 5. Verify Vector outputs with expected directional constraints
-check_vector "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"
-check_vector "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}"
+# 5. Verify Vector outputs
+if [ "${ENABLE_VECTOR}" -eq 1 ]; then
+    check_vector "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"
+    check_vector "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}"
+else
+    set -- "${TMP_DIR}"/test-*.vec*
+    if [ -e "$1" ]; then
+        echo "FAIL: Vector output '$1' was generated, but --no-vector was requested." >&2
+        exit 1
+    fi
+fi
 
 SUCCESS=1
 echo "PASS: ${PROTOCOL} flow test (Port: ${PORT}, Host: ${ADDRESS}, Spec: ${SPEC}, Format: ${FORMAT}) passed."

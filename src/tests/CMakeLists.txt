@@ -145,8 +145,15 @@ ENDFUNCTION()
 #   ADD_NETPERFMETER_FLOW_TEST(TEST_NAME ADDRESS PROTOCOL SPEC FORMAT [RUNTIME] [EXTRA_ARGS...])
 FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
    SET(RUNTIME "2")
+   SET(EXTRA_TEST_ARGS "")
    IF(${ARGC} GREATER 5)
       SET(RUNTIME "${ARGV5}")
+      IF(${ARGC} GREATER 6)
+         MATH(EXPR LAST_INDEX "${ARGC} - 1")
+         FOREACH(IDX RANGE 6 ${LAST_INDEX})
+            LIST(APPEND EXTRA_TEST_ARGS "${ARGV${IDX}}")
+         ENDFOREACH()
+      ENDIF()
    ENDIF()
 
    # Allocate a dedicated base port window for this test
@@ -162,7 +169,7 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
          ${SPEC}
          ${FORMAT}
          ${RUNTIME}
-         ${ARGN}
+         ${EXTRA_TEST_ARGS}
    )
 
    SET(TEST_LABELS "flow;${PROTOCOL};${FORMAT};integration")
@@ -171,6 +178,11 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
    ELSE()
       LIST(APPEND TEST_LABELS "ipv4")
    ENDIF()
+   FOREACH(ARG ${EXTRA_TEST_ARGS})
+      IF(ARG MATCHES "^--no-(.*)")
+         LIST(APPEND TEST_LABELS "no-${CMAKE_MATCH_1}")
+      ENDIF()
+   ENDFOREACH()
 
    SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
@@ -242,3 +254,14 @@ ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_gz  127.0.0.1 tcp const10:const1000:c
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_bz2 127.0.0.1 tcp const10:const1000:const10:const1000 bz2)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_xz  127.0.0.1 tcp const10:const1000:const10:const1000 xz)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_zst 127.0.0.1 tcp const10:const1000:const10:const1000 zst)
+
+# ====== 5. Output Combinations (Without Scalars and/or Vectors) ============
+# Run with vectors only (scalar files omitted)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_no_scalar  127.0.0.1 tcp const10:const1000:const10:const1000 plain 2 --no-scalar)
+
+# Run with scalars only (vector files omitted)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_no_vector  127.0.0.1 tcp const10:const1000:const10:const1000 plain 2 --no-vector)
+
+# Run without any scalars or vectors (configuration file only)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_no_outputs 127.0.0.1 tcp const10:const1000:const10:const1000 plain 2 --no-scalar --no-vector)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_no_outputs 127.0.0.1 udp const10:const1000:const10:const1000 plain 2 --no-scalar --no-vector)
