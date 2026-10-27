@@ -30,6 +30,7 @@
 #include "control.h"
 #include "loglevel.h"
 #include "tools.h"
+#include "transfer.h"
 
 #include <cstring>
 
@@ -74,12 +75,13 @@ static void fillPayload(unsigned char* payload,
 
 
 // ###### Send NETPERFMETER_DATA message ####################################
-ssize_t sendNetPerfMeterData(Flow*                    flow,
-                             const uint32_t           frameID,
-                             const bool               isFrameBegin,
-                             const bool               isFrameEnd,
-                             const unsigned long long now,
-                             size_t                   bytesToSend)
+static ssize_t sendNetPerfMeterData(Flow*                    flow,
+                                    const uint32_t           frameID,
+                                    const bool               isFrameBegin,
+                                    const bool               isFrameEnd,
+                                    const unsigned long long now,
+                                    const size_t             byteOffset,
+                                    size_t                   bytesToSend)
 {
    char                     outputBuffer[MAXIMUM_MESSAGE_SIZE];
    NetPerfMeterDataMessage* dataMsg = (NetPerfMeterDataMessage*)&outputBuffer;
@@ -105,7 +107,7 @@ ssize_t sendNetPerfMeterData(Flow*                    flow,
    dataMsg->Padding       = 0x0000;
    dataMsg->FrameID       = htobe32(frameID);
    dataMsg->SeqNumber     = htobe64(flow->nextOutboundSeqNumber());
-   dataMsg->ByteSeqNumber = htobe64(flow->getCurrentBandwidthStats().TransmittedBytes);
+   dataMsg->ByteSeqNumber = htobe64(flow->getCurrentBandwidthStats().TransmittedBytes + byteOffset);
    dataMsg->TimeStamp     = htobe64(now);
 
    // ------ Create payload data pattern ------------------
@@ -218,7 +220,9 @@ bool transmitFrame(Flow*                    flow,
             sendNetPerfMeterData(flow, frameID,
                                  (bytesSent == 0),                       // Is frame begin?
                                  (bytesSent + chunkSize >= bytesToSend), // Is frame end?
-                                 now, (size_t)chunkSize);
+                                 now,
+                                 (size_t)bytesSent,
+                                 (size_t)chunkSize);
          // NOTE: Due to minimum size for a NETPERFMETER_DATA chunk (48 B),
          //       the sent size may be >= chunkSize!
 
