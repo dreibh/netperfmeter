@@ -28,10 +28,6 @@
 
 # Usage:
 #   test_flow.sh <bin> <port> <addr> <proto> <spec> [format] [runtime] [extra_args...]
-#
-# Examples:
-#   test_flow.sh ./netperfmeter 25000 127.0.0.1 tcp const10:const1000:const10:const1000 plain 2
-#   test_flow.sh ./netperfmeter 25010 ::1       udp const10:const1000:const0:const0     zst   2 --no-vector
 
 set -eu
 
@@ -51,23 +47,15 @@ if [ "$#" -ge 7 ]; then
     shift 7
     for arg in "$@"; do
         case "$arg" in
-            --no-scalar|--without-scalar)
-                ENABLE_SCALAR=0
-                ;;
-            --no-vector|--without-vector)
-                ENABLE_VECTOR=0
-                ;;
-            *)
-                PASSTHROUGH_ARGS="${PASSTHROUGH_ARGS} $arg"
-                ;;
+            --no-scalar|--without-scalar) ENABLE_SCALAR=0 ;;
+            --no-vector|--without-vector) ENABLE_VECTOR=0 ;;
+            *) PASSTHROUGH_ARGS="${PASSTHROUGH_ARGS} $arg" ;;
         esac
     done
 fi
 
-# NetPerfMeter control channel runs on BP + 1
 CONTROL_PORT=$((PORT + 1))
 
-# Resolve file extension according to chosen compression format
 case "${FORMAT}" in
     gz|gzip)     EXT=".gz" ;;
     bz2|bzip2)   EXT=".bz2" ;;
@@ -78,13 +66,12 @@ case "${FORMAT}" in
     *)           EXT=".${FORMAT}" ;;
 esac
 
-# Format endpoint for IPv4 vs IPv6
 case "${ADDRESS}" in
     *:*) TARGET="[${ADDRESS}]" ;;
     *)   TARGET="${ADDRESS}" ;;
 esac
 
-# Deduce expected directional activity from SPEC (out_rate:out_size:in_rate:in_size)
+# Deduce directional activity and fragmentation expectations from SPEC
 OLD_IFS="$IFS"
 IFS=":"
 set -- ${SPEC}
@@ -95,13 +82,23 @@ OUT_SIZE="${2:-0}"
 IN_RATE="${3:-0}"
 IN_SIZE="${4:-0}"
 
-# Active TX -> Passive RX
+# Check for maxmsgsize in options ($5, $6, ...)
+MAXMSGSIZE=0
+shift 4 2>/dev/null || true
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        maxmsgsize=*)
+            MAXMSGSIZE="${1#maxmsgsize=}"
+            ;;
+    esac
+    shift
+done
+
 case "${OUT_RATE}:${OUT_SIZE}" in
     0:0|const0:0|0:const0|const0:const0) OUT_ACTIVE=0 ;;
     *) OUT_ACTIVE=1 ;;
 esac
 
-# Passive TX -> Active RX
 case "${IN_RATE}:${IN_SIZE}" in
     0:0|const0:0|0:const0|const0:const0) IN_ACTIVE=0 ;;
     *) IN_ACTIVE=1 ;;
@@ -111,6 +108,29 @@ ACTIVE_EXPECT_TX="${OUT_ACTIVE}"
 ACTIVE_EXPECT_RX="${IN_ACTIVE}"
 PASSIVE_EXPECT_TX="${IN_ACTIVE}"
 PASSIVE_EXPECT_RX="${OUT_ACTIVE}"
+
+# Extract numeric frame sizes (e.g., const2000 -> 2000)
+OUT_SIZE_NUM=$(echo "${OUT_SIZE}" | tr -dc '0-9' || echo 0)
+IN_SIZE_NUM=$(echo "${IN_SIZE}" | tr -dc '0-9' || echo 0)
+OUT_SIZE_NUM="${OUT_SIZE_NUM:-0}"
+IN_SIZE_NUM="${IN_SIZE_NUM:-0}"
+
+# Fragmentation flags: frame size strictly greater than maxmsgsize
+ACTIVE_FRAG_TX=0
+ACTIVE_FRAG_RX=0
+PASSIVE_FRAG_TX=0
+PASSIVE_FRAG_RX=0
+
+if [ "${MAXMSGSIZE}" -gt 0 ]; then
+    if [ "${OUT_ACTIVE}" -eq 1 ] && [ "${OUT_SIZE_NUM}" -gt "${MAXMSGSIZE}" ]; then
+        ACTIVE_FRAG_TX=1
+        PASSIVE_FRAG_RX=1
+    fi
+    if [ "${IN_ACTIVE}" -eq 1 ] && [ "${IN_SIZE_NUM}" -gt "${MAXMSGSIZE}" ]; then
+        ACTIVE_FRAG_RX=1
+        PASSIVE_FRAG_TX=1
+    fi
+fi
 
 TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'npm_test')
 
@@ -129,7 +149,6 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-# ====== Decompression Helper ==============================================
 decompress_cat() {
     _file="$1"
     case "${_file}" in
@@ -146,6 +165,8 @@ check_scalar() {
     _role="$1"
     _expect_tx="$2"
     _expect_rx="$3"
+    _frag_tx="$4"
+    _frag_rx="$5"
     _file="${TMP_DIR}/test-${_role}.sca${EXT}"
 
     if [ ! -s "${_file}" ]; then
@@ -153,49 +174,66 @@ check_scalar() {
         return 1
     fi
 
-    # Verify that Transmitted and Received metrics strictly match > 0 vs == 0
     if ! decompress_cat "${_file}" | perl -e '
         use strict;
         use warnings;
 
-        my ($filename, $expect_tx, $expect_rx) = @ARGV;
+        my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx) = @ARGV;
         my $line_num = 0;
-        my %count;
-        my $errors = 0;
+        my (%stats, $errors);
 
         while (<STDIN>) {
             $line_num++;
-            if (/^scalar\s+"[^"]+"\s+"(Transmitted|Received)\s+([^"]+)"\s+([0-9.]+)/) {
-                my ($dir, $metric, $raw_val) = ($1, $2, $3);
-                my $val = $raw_val + 0.0;
-                my $expected = ($dir eq "Transmitted") ? $expect_tx : $expect_rx;
-                $count{$dir}++;
+            if (/^scalar\s+"([^"]+)"\s+"(Transmitted|Received)\s+(Bytes|Packets|Frames)"\s+([0-9.]+)/) {
+                my ($obj, $dir, $metric, $val) = ($1, $2, $3, $4 + 0);
+                $stats{$obj}{$dir}{$metric} = $val;
+            }
+        }
+
+        foreach my $obj (keys %stats) {
+            foreach my $dir ("Transmitted", "Received") {
+                my $expected  = ($dir eq "Transmitted") ? $expect_tx : $expect_rx;
+                my $expect_fg = ($dir eq "Transmitted") ? $frag_tx   : $frag_rx;
+
+                my $b = (defined $stats{$obj}{$dir}{Bytes})   ? $stats{$obj}{$dir}{Bytes}   : 0;
+                my $p = (defined $stats{$obj}{$dir}{Packets}) ? $stats{$obj}{$dir}{Packets} : 0;
+                my $f = (defined $stats{$obj}{$dir}{Frames})  ? $stats{$obj}{$dir}{Frames}  : 0;
 
                 if ($expected) {
-                    if ($val <= 0) {
-                        warn "FAIL in $filename (line $line_num): Expected $dir $metric > 0, got $raw_val\n";
+                    if ($b <= 0 || $p <= 0 || $f <= 0) {
+                        warn "FAIL in $filename (obj $obj): Expected $dir Bytes/Packets/Frames > 0 (got B=$b, P=$p, F=$f)\n";
                         $errors++;
                     }
+                    if ($b < $p) {
+                        warn "FAIL in $filename (obj $obj): Invariant violation: $dir Bytes ($b) < Packets ($p)\n";
+                        $errors++;
+                    }
+                    if ($p < $f) {
+                        warn "FAIL in $filename (obj $obj): Invariant violation: $dir Packets ($p) < Frames ($f)\n";
+                        $errors++;
+                    }
+                    if ($expect_fg) {
+                        if ($p <= $f) {
+                            warn "FAIL in $filename (obj $obj): Framing failure: Expected $dir Packets ($p) > Frames ($f) under fragmentation\n";
+                            $errors++;
+                        }
+                    } else {
+                        if ($p != $f) {
+                            warn "FAIL in $filename (obj $obj): Unfragmented flow expected Packets ($p) == Frames ($f)\n";
+                            $errors++;
+                        }
+                    }
                 } else {
-                    if ($val != 0) {
-                        warn "FAIL in $filename (line $line_num): Expected $dir $metric == 0, got $raw_val\n";
+                    if ($b != 0 || $p != 0 || $f != 0) {
+                        warn "FAIL in $filename (obj $obj): Expected zero $dir metrics (got B=$b, P=$p, F=$f)\n";
                         $errors++;
                     }
                 }
             }
         }
 
-        if (!$count{Transmitted}) {
-            warn "FAIL in $filename (line $line_num): No \"Transmitted\" scalar metrics found\n";
-            $errors++;
-        }
-        if (!$count{Received}) {
-            warn "FAIL in $filename (line $line_num): No \"Received\" scalar metrics found\n";
-            $errors++;
-        }
-
         exit($errors ? 1 : 0);
-    ' "${_file}" "${_expect_tx}" "${_expect_rx}"; then
+    ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}"; then
         echo "FAIL: Scalar verification failed for '${_file}'." >&2
         echo "--- Content of ${_file} ---" >&2
         decompress_cat "${_file}" >&2
@@ -208,28 +246,26 @@ check_vector() {
     _role="$1"
     _expect_tx="$2"
     _expect_rx="$3"
+    _frag_tx="$4"
+    _frag_rx="$5"
 
-    # 1. Global (measurement-wide) vector file
     _global_file="${TMP_DIR}/test-${_role}.vec${EXT}"
     if [ ! -s "${_global_file}" ]; then
         echo "FAIL: Global vector output '${_global_file}' is missing or empty." >&2
         return 1
     fi
 
-    # 2. Per-flow vector file(s)
     set -- "${TMP_DIR}"/test-"${_role}"-*.vec"${EXT}"
     if [ ! -e "$1" ] || [ ! -s "$1" ]; then
         echo "FAIL: Per-flow vector output for role '${_role}' (test-${_role}-*.vec${EXT}) is missing or empty." >&2
         return 1
     fi
 
-    # 3. Validate each vector file
     for _file in "${_global_file}" "$@"; do
         if [ ! -s "${_file}" ]; then
             continue
         fi
 
-        # Header check
         if ! decompress_cat "${_file}" | grep -q "^AbsTime"; then
             echo "FAIL in ${_file}: Missing valid 'AbsTime' header." >&2
             echo "--- Content of ${_file} ---" >&2
@@ -237,22 +273,18 @@ check_vector() {
             return 1
         fi
 
-        # Comprehensive data & monotonicity verification
         if ! decompress_cat "${_file}" | perl -e '
             use strict;
             use warnings;
 
-            my ($filename, $expect_tx, $expect_rx) = @ARGV;
+            my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx) = @ARGV;
             my $line_num = 0;
             my $is_flow_vector = 0;
             my $data_rows = 0;
             my $errors = 0;
 
-            # Tracking for flow vector files
-            my ($last_seq, $last_abs_b, $last_abs_p, $last_abs_f);
-
-            # Tracking for measurement vector files
-            my (%max_abs_bytes, %last_meas_bytes, %last_meas_pkts, %last_meas_frames);
+            my ($last_seq, $last_b, $last_p, $last_f);
+            my (%max_b, %max_p, %max_f, %last_meas_b, %last_meas_p, %last_meas_f);
 
             while (<STDIN>) {
                 $line_num++;
@@ -260,9 +292,7 @@ check_vector() {
                 next if /^\s*$/;
 
                 if (/^AbsTime/) {
-                    if (/SeqNumber/) {
-                        $is_flow_vector = 1;
-                    }
+                    $is_flow_vector = 1 if /SeqNumber/;
                     next;
                 }
 
@@ -271,7 +301,7 @@ check_vector() {
 
                 if ($is_flow_vector) {
                     if (@fields < 7) {
-                        warn "FAIL in $filename (line $line_num): Malformed flow vector row (expected >= 7 columns, got " . scalar(@fields) . ")\n";
+                        warn "FAIL in $filename (line $line_num): Malformed flow vector row\n";
                         $errors++;
                         next;
                     }
@@ -282,31 +312,42 @@ check_vector() {
                     my $frms  = $fields[6] + 0;
 
                     if (!$expect_rx) {
-                        warn "FAIL in $filename (line $line_num): Unexpected data row when expect_rx == 0 (AbsBytes: $bytes)\n";
+                        warn "FAIL in $filename (line $line_num): Unexpected data row when expect_rx == 0\n";
                         $errors++;
                     }
 
+                    # Plausibility hierarchy
+                    if ($bytes < $pkts) {
+                        warn "FAIL in $filename (line $line_num): AbsBytes ($bytes) < AbsPackets ($pkts)\n";
+                        $errors++;
+                    }
+                    if ($pkts < $frms) {
+                        warn "FAIL in $filename (line $line_num): AbsPackets ($pkts) < AbsFrames ($frms)\n";
+                        $errors++;
+                    }
+
+                    # Monotonicity
                     if (defined $last_seq && $seq < $last_seq) {
                         warn "FAIL in $filename (line $line_num): Non-monotonic SeqNumber ($seq < $last_seq)\n";
                         $errors++;
                     }
-                    if (defined $last_abs_b && $bytes < $last_abs_b) {
-                        warn "FAIL in $filename (line $line_num): Non-monotonic AbsBytes ($bytes < $last_abs_b)\n";
+                    if (defined $last_b && $bytes < $last_b) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic AbsBytes ($bytes < $last_b)\n";
                         $errors++;
                     }
-                    if (defined $last_abs_p && $pkts < $last_abs_p) {
-                        warn "FAIL in $filename (line $line_num): Non-monotonic AbsPackets ($pkts < $last_abs_p)\n";
+                    if (defined $last_p && $pkts < $last_p) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic AbsPackets ($pkts < $last_p)\n";
                         $errors++;
                     }
-                    if (defined $last_abs_f && $frms < $last_abs_f) {
-                        warn "FAIL in $filename (line $line_num): Non-monotonic AbsFrames ($frms < $last_abs_f)\n";
+                    if (defined $last_f && $frms < $last_f) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic AbsFrames ($frms < $last_f)\n";
                         $errors++;
                     }
 
-                    $last_seq   = $seq;
-                    $last_abs_b = $bytes;
-                    $last_abs_p = $pkts;
-                    $last_abs_f = $frms;
+                    $last_seq = $seq;
+                    $last_b   = $bytes;
+                    $last_p   = $pkts;
+                    $last_f   = $frms;
 
                 } else {
                     next if @fields < 11;
@@ -320,73 +361,84 @@ check_vector() {
                     my $pkts  = $fields[9]  + 0;
                     my $frms  = $fields[10] + 0;
 
-                    if (!defined $max_abs_bytes{$action} || $bytes > $max_abs_bytes{$action}) {
-                        $max_abs_bytes{$action} = $bytes;
+                    if ($bytes < $pkts) {
+                        warn "FAIL in $filename (line $line_num): $action AbsBytes ($bytes) < AbsPackets ($pkts)\n";
+                        $errors++;
                     }
+                    if ($pkts < $frms) {
+                        warn "FAIL in $filename (line $line_num): $action AbsPackets ($pkts) < AbsFrames ($frms)\n";
+                        $errors++;
+                    }
+
+                    if (!defined $max_b{$action} || $bytes > $max_b{$action}) { $max_b{$action} = $bytes; }
+                    if (!defined $max_p{$action} || $pkts  > $max_p{$action}) { $max_p{$action} = $pkts; }
+                    if (!defined $max_f{$action} || $frms  > $max_f{$action}) { $max_f{$action} = $frms; }
 
                     my $key = "$action:$flow_id";
-                    if (defined $last_meas_bytes{$key} && $bytes < $last_meas_bytes{$key}) {
-                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsBytes ($bytes < $last_meas_bytes{$key})\n";
+                    if (defined $last_meas_b{$key} && $bytes < $last_meas_b{$key}) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsBytes\n";
                         $errors++;
                     }
-                    if (defined $last_meas_pkts{$key} && $pkts < $last_meas_pkts{$key}) {
-                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsPackets ($pkts < $last_meas_pkts{$key})\n";
+                    if (defined $last_meas_p{$key} && $pkts < $last_meas_p{$key}) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsPackets\n";
                         $errors++;
                     }
-                    if (defined $last_meas_frames{$key} && $frms < $last_meas_frames{$key}) {
-                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsFrames ($frms < $last_meas_frames{$key})\n";
+                    if (defined $last_meas_f{$key} && $frms < $last_meas_f{$key}) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsFrames\n";
                         $errors++;
                     }
 
-                    $last_meas_bytes{$key}  = $bytes;
-                    $last_meas_pkts{$key}   = $pkts;
-                    $last_meas_frames{$key} = $frms;
+                    $last_meas_b{$key} = $bytes;
+                    $last_meas_p{$key} = $pkts;
+                    $last_meas_f{$key} = $frms;
                 }
             }
 
             if ($is_flow_vector) {
                 if ($expect_rx) {
                     if ($data_rows == 0) {
-                        warn "FAIL in $filename (line $line_num): Expected received data rows, but file had 0 data rows\n";
+                        warn "FAIL in $filename (line $line_num): Expected received trace data, got 0 rows\n";
                         $errors++;
-                    } elsif (($last_abs_b // 0) <= 0) {
-                        warn "FAIL in $filename (line $line_num): Expected final AbsBytes > 0, got " . ($last_abs_b // 0) . "\n";
+                    }
+                    if ($frag_rx && defined $last_p && defined $last_f && $last_p <= $last_f) {
+                        warn "FAIL in $filename (line $line_num): Framing failure: Expected AbsPackets ($last_p) > AbsFrames ($last_f)\n";
                         $errors++;
                     }
                 } else {
                     if ($data_rows > 0) {
-                        warn "FAIL in $filename (line $line_num): Expected 0 data rows when expect_rx == 0, got $data_rows rows\n";
+                        warn "FAIL in $filename (line $line_num): Expected 0 data rows when expect_rx == 0\n";
                         $errors++;
                     }
                 }
             } else {
-                if ($expect_tx) {
-                    if (($max_abs_bytes{Sent} // 0) <= 0) {
-                        warn "FAIL in $filename (line $line_num): Expected Sent traffic > 0, max AbsBytes was " . ($max_abs_bytes{Sent} // 0) . "\n";
-                        $errors++;
-                    }
-                } else {
-                    if (($max_abs_bytes{Sent} // 0) != 0) {
-                        warn "FAIL in $filename (line $line_num): Expected Sent traffic == 0, max AbsBytes was $max_abs_bytes{Sent}\n";
-                        $errors++;
-                    }
-                }
+                foreach my $dir ("Sent", "Received") {
+                    my $expected  = ($dir eq "Sent") ? $expect_tx : $expect_rx;
+                    my $expect_fg = ($dir eq "Sent") ? $frag_tx   : $frag_rx;
 
-                if ($expect_rx) {
-                    if (($max_abs_bytes{Received} // 0) <= 0) {
-                        warn "FAIL in $filename (line $line_num): Expected Received traffic > 0, max AbsBytes was " . ($max_abs_bytes{Received} // 0) . "\n";
-                        $errors++;
-                    }
-                } else {
-                    if (($max_abs_bytes{Received} // 0) != 0) {
-                        warn "FAIL in $filename (line $line_num): Expected Received traffic == 0, max AbsBytes was $max_abs_bytes{Received}\n";
-                        $errors++;
+                    my $b = (defined $max_b{$dir}) ? $max_b{$dir} : 0;
+                    my $p = (defined $max_p{$dir}) ? $max_p{$dir} : 0;
+                    my $f = (defined $max_f{$dir}) ? $max_f{$dir} : 0;
+
+                    if ($expected) {
+                        if ($b <= 0 || $p <= 0 || $f <= 0) {
+                            warn "FAIL in $filename (line $line_num): Expected max $dir B/P/F > 0 (got B=$b, P=$p, F=$f)\n";
+                            $errors++;
+                        }
+                        if ($expect_fg && $p <= $f) {
+                            warn "FAIL in $filename (line $line_num): Expected $dir Packets ($p) > Frames ($f) under fragmentation\n";
+                            $errors++;
+                        }
+                    } else {
+                        if ($b != 0 || $p != 0 || $f != 0) {
+                            warn "FAIL in $filename (line $line_num): Expected zero $dir traffic (got B=$b, P=$p, F=$f)\n";
+                            $errors++;
+                        }
                     }
                 }
             }
 
             exit($errors ? 1 : 0);
-        ' "${_file}" "${_expect_tx}" "${_expect_rx}"; then
+        ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}"; then
             echo "FAIL: Vector verification failed for '${_file}'." >&2
             echo "--- Content of ${_file} ---" >&2
             decompress_cat "${_file}" >&2
@@ -430,14 +482,11 @@ wait_for_listener() {
     return 1
 }
 
-# 1. Start passive node (server) listening on PORT (control on PORT+1 via TCP)
 "${NETPERFMETER}" "${PORT}" -no-control-over-sctp >"${TMP_DIR}/server.log" 2>&1 &
 SERVER_PID=$!
 
-# Wait until control channel (PORT + 1) is ready
 wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" 5
 
-# 2. Run active node (client)
 SCALAR_ARG=""
 VECTOR_ARG=""
 if [ "${ENABLE_SCALAR}" -eq 1 ]; then
@@ -464,16 +513,14 @@ if ! "${NETPERFMETER}" "${TARGET}:${PORT}" \
     exit 1
 fi
 
-# 3. Verify Configuration output (--config)
 if [ ! -s "${TMP_DIR}/test.config" ]; then
     echo "FAIL: Configuration file (--config) missing or empty." >&2
     exit 1
 fi
 
-# 4. Verify Scalar outputs
 if [ "${ENABLE_SCALAR}" -eq 1 ]; then
-    check_scalar "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"
-    check_scalar "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}"
+    check_scalar "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"  "${ACTIVE_FRAG_TX}"  "${ACTIVE_FRAG_RX}"
+    check_scalar "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}" "${PASSIVE_FRAG_TX}" "${PASSIVE_FRAG_RX}"
 else
     set -- "${TMP_DIR}"/test-*.sca*
     if [ -e "$1" ]; then
@@ -482,10 +529,9 @@ else
     fi
 fi
 
-# 5. Verify Vector outputs
 if [ "${ENABLE_VECTOR}" -eq 1 ]; then
-    check_vector "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"
-    check_vector "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}"
+    check_vector "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"  "${ACTIVE_FRAG_TX}"  "${ACTIVE_FRAG_RX}"
+    check_vector "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}" "${PASSIVE_FRAG_TX}" "${PASSIVE_FRAG_RX}"
 else
     set -- "${TMP_DIR}"/test-*.vec*
     if [ -e "$1" ]; then

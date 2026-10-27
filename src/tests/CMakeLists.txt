@@ -97,13 +97,11 @@ ENDMACRO()
 
 # ###### Helper for script CLI tests (testing configured .versioned files) ##
 FUNCTION(ADD_SCRIPT_CLI_TESTS SCRIPT_NAME)
-   # The configured script is output to the binary tree's src/ directory
    SET(SCRIPT_PATH "${CMAKE_CURRENT_BINARY_DIR}/../${SCRIPT_NAME}.versioned")
    IF(NOT EXISTS "${SCRIPT_PATH}")
       SET(SCRIPT_PATH "${PROJECT_BINARY_DIR}/src/${SCRIPT_NAME}.versioned")
    ENDIF()
 
-   # Ensure execute permissions on the generated script
    EXECUTE_PROCESS(COMMAND chmod +x "${SCRIPT_PATH}")
 
    # Version checks (-v, --version)
@@ -156,7 +154,6 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
       ENDIF()
    ENDIF()
 
-   # Allocate a dedicated base port window for this test
    GET_NEXT_TEST_PORT(TEST_PORT)
 
    ADD_TEST(
@@ -177,6 +174,9 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
       LIST(APPEND TEST_LABELS "ipv6")
    ELSE()
       LIST(APPEND TEST_LABELS "ipv4")
+   ENDIF()
+   IF(SPEC MATCHES "maxmsgsize")
+      LIST(APPEND TEST_LABELS "framing;defragmenter")
    ENDIF()
    FOREACH(ARG ${EXTRA_TEST_ARGS})
       IF(ARG MATCHES "^--no-(.*)")
@@ -256,12 +256,28 @@ ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_xz  127.0.0.1 tcp const10:const1000:c
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_zst 127.0.0.1 tcp const10:const1000:const10:const1000 zst)
 
 # ====== 5. Output Combinations (Without Scalars and/or Vectors) ============
-# Run with vectors only (scalar files omitted)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_no_scalar  127.0.0.1 tcp const10:const1000:const10:const1000 plain 2 --no-scalar)
-
-# Run with scalars only (vector files omitted)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_no_vector  127.0.0.1 tcp const10:const1000:const10:const1000 plain 2 --no-vector)
-
-# Run without any scalars or vectors (configuration file only)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_no_outputs 127.0.0.1 tcp const10:const1000:const10:const1000 plain 2 --no-scalar --no-vector)
 ADD_NETPERFMETER_FLOW_TEST(flow_udp_no_outputs 127.0.0.1 udp const10:const1000:const10:const1000 plain 2 --no-scalar --no-vector)
+
+# ====== 6. Framing and Defragmentation (maxmsgsize & frame sizes) ==========
+# --- TCP Framing Tests ---
+# Small frames (1,000 B) segmented into 250 B messages (4 msgs/frame)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_framing_small      127.0.0.1 tcp const10:const1000:const10:const1000:maxmsgsize=250  plain 2)
+# Medium frames (4,000 B) segmented into 1,000 B messages (4 msgs/frame)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_framing_medium     127.0.0.1 tcp const10:const4000:const10:const4000:maxmsgsize=1000 plain 2)
+# Large frames (8,000 B) segmented into 1,400 B messages (6 msgs/frame)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_framing_large      127.0.0.1 tcp const10:const8000:const10:const8000:maxmsgsize=1400 plain 2)
+# Asymmetric bidirectional frame sizes (out: 4,000 B, in: 1,000 B, maxmsgsize: 500 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_framing_asymmetric 127.0.0.1 tcp const10:const4000:const10:const1000:maxmsgsize=500  plain 2)
+
+# --- UDP Framing Tests ---
+# Small frames (1,000 B) segmented into 250 B messages
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_framing_small      127.0.0.1 udp const10:const1000:const10:const1000:maxmsgsize=250  plain 2)
+# Medium frames (4,000 B) segmented into 1,000 B messages
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_framing_medium     127.0.0.1 udp const10:const4000:const10:const4000:maxmsgsize=1000 plain 2)
+# Large frames (8,000 B) segmented into 1,400 B messages
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_framing_large      127.0.0.1 udp const10:const8000:const10:const8000:maxmsgsize=1400 plain 2)
+# Asymmetric bidirectional frame sizes (out: 4,000 B, in: 1,000 B, maxmsgsize: 500 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_framing_asymmetric 127.0.0.1 udp const10:const4000:const10:const1000:maxmsgsize=500  plain 2)
