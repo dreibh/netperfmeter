@@ -28,6 +28,10 @@
 
 # Usage:
 #   test_flow.sh <bin> <port> <addr> <proto> <spec> [format] [runtime] [extra_args...]
+#
+# Examples:
+#   test_flow.sh ./netperfmeter 25000 127.0.0.1 tcp const10:const1000:const10:const1000 plain 2
+#   test_flow.sh ./netperfmeter 25010 ::1       udp const10:const1000:const0:const0     zst   2 --no-vector
 
 set -eu
 
@@ -71,7 +75,7 @@ case "${ADDRESS}" in
     *)   TARGET="${ADDRESS}" ;;
 esac
 
-# Deduce directional activity and fragmentation expectations from SPEC
+# Deduce directional activity and distributions from SPEC
 OLD_IFS="$IFS"
 IFS=":"
 set -- ${SPEC}
@@ -109,24 +113,37 @@ ACTIVE_EXPECT_RX="${IN_ACTIVE}"
 PASSIVE_EXPECT_TX="${IN_ACTIVE}"
 PASSIVE_EXPECT_RX="${OUT_ACTIVE}"
 
-# Extract numeric frame sizes (e.g., const2000 -> 2000)
-OUT_SIZE_NUM=$(echo "${OUT_SIZE}" | tr -dc '0-9' || echo 0)
-IN_SIZE_NUM=$(echo "${IN_SIZE}" | tr -dc '0-9' || echo 0)
-OUT_SIZE_NUM="${OUT_SIZE_NUM:-0}"
-IN_SIZE_NUM="${IN_SIZE_NUM:-0}"
+# Numerical approximations for fragmentation checks
+parse_mean() {
+    _dist="$1"
+    perl -e '
+        my $d = $ARGV[0] // "0";
+        if ($d =~ /^const([0-9.]+)/) { print $1; }
+        elsif ($d =~ /^uniform([0-9.]+),([0-9.]+)/) { print (($1 + $2) / 2.0); }
+        elsif ($d =~ /^exp([0-9.]+)/) { print $1; }
+        elsif ($d =~ /^pareto([0-9.]+),([0-9.]+)/) {
+            my ($k, $a) = ($1 + 0, $2 + 0);
+            print ($a > 1.0 ? ($a * $k) / ($a - 1.0) : $k);
+        }
+        elsif ($d =~ /^(?:trunc)?normal([0-9.]+),([0-9.]+)/) { print $1; }
+        else { print 0; }
+    ' "${_dist}"
+}
 
-# Fragmentation flags: frame size strictly greater than maxmsgsize
+OUT_SIZE_MEAN=$(parse_mean "${OUT_SIZE}")
+IN_SIZE_MEAN=$(parse_mean "${IN_SIZE}")
+
 ACTIVE_FRAG_TX=0
 ACTIVE_FRAG_RX=0
 PASSIVE_FRAG_TX=0
 PASSIVE_FRAG_RX=0
 
 if [ "${MAXMSGSIZE}" -gt 0 ]; then
-    if [ "${OUT_ACTIVE}" -eq 1 ] && [ "${OUT_SIZE_NUM}" -gt "${MAXMSGSIZE}" ]; then
+    if [ "${OUT_ACTIVE}" -eq 1 ] && perl -e "exit(!(${OUT_SIZE_MEAN} > ${MAXMSGSIZE}))"; then
         ACTIVE_FRAG_TX=1
         PASSIVE_FRAG_RX=1
     fi
-    if [ "${IN_ACTIVE}" -eq 1 ] && [ "${IN_SIZE_NUM}" -gt "${MAXMSGSIZE}" ]; then
+    if [ "${IN_ACTIVE}" -eq 1 ] && perl -e "exit(!(${IN_SIZE_MEAN} > ${MAXMSGSIZE}))"; then
         ACTIVE_FRAG_RX=1
         PASSIVE_FRAG_TX=1
     fi
@@ -167,6 +184,10 @@ check_scalar() {
     _expect_rx="$3"
     _frag_tx="$4"
     _frag_rx="$5"
+    _dist_tx_rate="$6"
+    _dist_tx_size="$7"
+    _dist_rx_rate="$8"
+    _dist_rx_size="$9"
     _file="${TMP_DIR}/test-${_role}.sca${EXT}"
 
     if [ ! -s "${_file}" ]; then
@@ -178,15 +199,50 @@ check_scalar() {
         use strict;
         use warnings;
 
-        my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx) = @ARGV;
+        my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx,
+            $dist_tx_rate, $dist_tx_size, $dist_rx_rate, $dist_rx_size) = @ARGV;
         my $line_num = 0;
-        my (%stats, $errors);
+        my (%stats, %rates, $errors);
+
+        # Rate targets use Harmonic Mean; Size targets use Arithmetic Mean
+        sub parse_dist {
+            my ($dist, $is_rate) = @_;
+            return (0, 0) if !$dist || $dist eq "0";
+
+            if ($dist =~ /^const([0-9.]+)/) {
+                return ($1 + 0, 0.15);
+            } elsif ($dist =~ /^uniform([0-9.]+),([0-9.]+)/) {
+                my ($a, $b) = ($1 + 0, $2 + 0);
+                if ($is_rate) {
+                    my $hm = ($b > $a && $a > 0) ? ($b - $a) / log($b / $a) : ($a + $b) / 2.0;
+                    return ($hm, 0.20);
+                } else {
+                    return (($a + $b) / 2.0, 0.20);
+                }
+            } elsif ($dist =~ /^exp([0-9.]+)/) {
+                my $mean = $1 + 0;
+                return ($is_rate ? ($mean * 0.30) : $mean, 0.40);
+            } elsif ($dist =~ /^pareto([0-9.]+),([0-9.]+)/) {
+                my ($k, $a) = ($1 + 0, $2 + 0);
+                if ($is_rate) {
+                    my $hm = ($a > 0) ? (($a + 1.0) / $a) * $k : $k;
+                    return ($hm, 0.30);
+                } else {
+                    my $am = ($a > 1.0) ? ($a * $k) / ($a - 1.0) : $k;
+                    return ($am, 0.35);
+                }
+            } elsif ($dist =~ /^(?:trunc)?normal([0-9.]+),([0-9.]+)/) {
+                return ($1 + 0, 0.25);
+            }
+            return (0, 0);
+        }
 
         while (<STDIN>) {
             $line_num++;
             if (/^scalar\s+"([^"]+)"\s+"(Transmitted|Received)\s+(Bytes|Packets|Frames)"\s+([0-9.]+)/) {
-                my ($obj, $dir, $metric, $val) = ($1, $2, $3, $4 + 0);
-                $stats{$obj}{$dir}{$metric} = $val;
+                $stats{$1}{$2}{$3} = $4 + 0;
+            } elsif (/^scalar\s+"([^"]+)"\s+"(Transmitted|Received)\s+Frame Rate"\s+([0-9.]+)/) {
+                $rates{$1}{$2} = $3 + 0;
             }
         }
 
@@ -194,38 +250,65 @@ check_scalar() {
             foreach my $dir ("Transmitted", "Received") {
                 my $expected  = ($dir eq "Transmitted") ? $expect_tx : $expect_rx;
                 my $expect_fg = ($dir eq "Transmitted") ? $frag_tx   : $frag_rx;
+                my $dist_r    = ($dir eq "Transmitted") ? $dist_tx_rate : $dist_rx_rate;
+                my $dist_s    = ($dir eq "Transmitted") ? $dist_tx_size : $dist_rx_size;
 
                 my $b = (defined $stats{$obj}{$dir}{Bytes})   ? $stats{$obj}{$dir}{Bytes}   : 0;
                 my $p = (defined $stats{$obj}{$dir}{Packets}) ? $stats{$obj}{$dir}{Packets} : 0;
                 my $f = (defined $stats{$obj}{$dir}{Frames})  ? $stats{$obj}{$dir}{Frames}  : 0;
+                my $r = (defined $rates{$obj}{$dir})          ? $rates{$obj}{$dir}          : 0;
 
                 if ($expected) {
                     if ($b <= 0 || $p <= 0 || $f <= 0) {
-                        warn "FAIL in $filename (obj $obj): Expected $dir Bytes/Packets/Frames > 0 (got B=$b, P=$p, F=$f)\n";
+                        warn "FAIL in $filename ($obj): Expected $dir B/P/F > 0 (got B=$b, P=$p, F=$f)\n";
                         $errors++;
                     }
                     if ($b < $p) {
-                        warn "FAIL in $filename (obj $obj): Invariant violation: $dir Bytes ($b) < Packets ($p)\n";
+                        warn "FAIL in $filename ($obj): Invariant violation: $dir Bytes ($b) < Packets ($p)\n";
                         $errors++;
                     }
                     if ($p < $f) {
-                        warn "FAIL in $filename (obj $obj): Invariant violation: $dir Packets ($p) < Frames ($f)\n";
+                        warn "FAIL in $filename ($obj): Invariant violation: $dir Packets ($p) < Frames ($f)\n";
                         $errors++;
                     }
                     if ($expect_fg) {
                         if ($p <= $f) {
-                            warn "FAIL in $filename (obj $obj): Framing failure: Expected $dir Packets ($p) > Frames ($f) under fragmentation\n";
+                            warn "FAIL in $filename ($obj): Expected $dir Packets ($p) > Frames ($f) under fragmentation\n";
                             $errors++;
                         }
                     } else {
                         if ($p != $f) {
-                            warn "FAIL in $filename (obj $obj): Unfragmented flow expected Packets ($p) == Frames ($f)\n";
+                            warn "FAIL in $filename ($obj): Expected unfragmented Packets ($p) == Frames ($f)\n";
                             $errors++;
+                        }
+                    }
+
+                    # Plausibility check against theoretical distribution mean (only for individual flow objects)
+                    if ($obj =~ /flow\[/) {
+                        my ($target_rate, $tol_rate) = parse_dist($dist_r, 1);
+                        if ($target_rate > 0) {
+                            my $diff = abs($r - $target_rate);
+                            if ($diff > ($target_rate * $tol_rate)) {
+                                my $pct = sprintf("%.1f%%", ($diff / $target_rate) * 100);
+                                warn "FAIL in $filename ($obj): $dir Frame Rate ($r) deviated from expected ($target_rate) by $pct (allowed: " . ($tol_rate * 100) . "%)\n";
+                                $errors++;
+                            }
+                        }
+
+                        my ($target_size, $tol_size) = parse_dist($dist_s, 0);
+                        if ($target_size > 0 && $f > 0) {
+                            my $avg_size = $b / $f;
+                            my $diff = abs($avg_size - $target_size);
+                            if ($diff > ($target_size * $tol_size)) {
+                                my $pct = sprintf("%.1f%%", ($diff / $target_size) * 100);
+                                warn "FAIL in $filename ($obj): $dir Avg Frame Size ($avg_size) deviated from expected ($target_size) by $pct (allowed: " . ($tol_size * 100) . "%)\n";
+                                $errors++;
+                            }
                         }
                     }
                 } else {
                     if ($b != 0 || $p != 0 || $f != 0) {
-                        warn "FAIL in $filename (obj $obj): Expected zero $dir metrics (got B=$b, P=$p, F=$f)\n";
+                        warn "FAIL in $filename ($obj): Expected zero $dir metrics (got B=$b, P=$p, F=$f)\n";
                         $errors++;
                     }
                 }
@@ -233,7 +316,8 @@ check_scalar() {
         }
 
         exit($errors ? 1 : 0);
-    ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}"; then
+    ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}" \
+      "${_dist_tx_rate}" "${_dist_tx_size}" "${_dist_rx_rate}" "${_dist_rx_size}"; then
         echo "FAIL: Scalar verification failed for '${_file}'." >&2
         echo "--- Content of ${_file} ---" >&2
         decompress_cat "${_file}" >&2
@@ -316,7 +400,6 @@ check_vector() {
                         $errors++;
                     }
 
-                    # Plausibility hierarchy
                     if ($bytes < $pkts) {
                         warn "FAIL in $filename (line $line_num): AbsBytes ($bytes) < AbsPackets ($pkts)\n";
                         $errors++;
@@ -326,7 +409,6 @@ check_vector() {
                         $errors++;
                     }
 
-                    # Monotonicity
                     if (defined $last_seq && $seq < $last_seq) {
                         warn "FAIL in $filename (line $line_num): Non-monotonic SeqNumber ($seq < $last_seq)\n";
                         $errors++;
@@ -482,11 +564,14 @@ wait_for_listener() {
     return 1
 }
 
+# 1. Start passive node (server) listening on PORT (control on PORT+1 via TCP)
 "${NETPERFMETER}" "${PORT}" -no-control-over-sctp >"${TMP_DIR}/server.log" 2>&1 &
 SERVER_PID=$!
 
+# Wait until control channel (PORT + 1) is ready
 wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" 5
 
+# 2. Run active node (client)
 SCALAR_ARG=""
 VECTOR_ARG=""
 if [ "${ENABLE_SCALAR}" -eq 1 ]; then
@@ -513,14 +598,18 @@ if ! "${NETPERFMETER}" "${TARGET}:${PORT}" \
     exit 1
 fi
 
+# 3. Verify Configuration output (--config)
 if [ ! -s "${TMP_DIR}/test.config" ]; then
     echo "FAIL: Configuration file (--config) missing or empty." >&2
     exit 1
 fi
 
+# 4. Verify Scalar outputs
 if [ "${ENABLE_SCALAR}" -eq 1 ]; then
-    check_scalar "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"  "${ACTIVE_FRAG_TX}"  "${ACTIVE_FRAG_RX}"
-    check_scalar "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}" "${PASSIVE_FRAG_TX}" "${PASSIVE_FRAG_RX}"
+    check_scalar "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"  "${ACTIVE_FRAG_TX}"  "${ACTIVE_FRAG_RX}" \
+                 "${OUT_RATE}" "${OUT_SIZE}" "${IN_RATE}" "${IN_SIZE}"
+    check_scalar "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}" "${PASSIVE_FRAG_TX}" "${PASSIVE_FRAG_RX}" \
+                 "${IN_RATE}" "${IN_SIZE}" "${OUT_RATE}" "${OUT_SIZE}"
 else
     set -- "${TMP_DIR}"/test-*.sca*
     if [ -e "$1" ]; then
@@ -529,6 +618,7 @@ else
     fi
 fi
 
+# 5. Verify Vector outputs
 if [ "${ENABLE_VECTOR}" -eq 1 ]; then
     check_vector "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"  "${ACTIVE_FRAG_TX}"  "${ACTIVE_FRAG_RX}"
     check_vector "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}" "${PASSIVE_FRAG_TX}" "${PASSIVE_FRAG_RX}"
