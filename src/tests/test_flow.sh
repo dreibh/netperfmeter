@@ -44,9 +44,8 @@ ENABLE_VECTOR=1
 MAX_RETRIES=1
 PASSTHROUGH_ARGS=""
 
-# Retries (up to 5 attempts) are strictly restricted to unbounded/heavy-tailed
-# distributions (exp, pareto) where extreme high random values can mathematically occur.
-# All other tests (const, uniform, truncnormal, framing, etc.) run strictly once.
+# Automatic retry policy: unbounded distributions (exp, pareto) can legitimately produce
+# extreme outliers in small sample sizes; allow up to 5 retries. Bounded tests run strictly once.
 case "${SPEC}" in
     *exp*|*pareto*)
         MAX_RETRIES=5
@@ -93,12 +92,33 @@ OUT_SIZE="${2:-0}"
 IN_RATE="${3:-0}"
 IN_SIZE="${4:-0}"
 
+# Check for framing (maxmsgsize) and on-off scheduling (events / onoff) in options ($5, $6, ...)
 MAXMSGSIZE=0
+HAS_ONOFF_EVENTS=0
+ONOFF_ACTIVE_IN_RUNTIME=0
+
 shift 4 2>/dev/null || true
 while [ "$#" -gt 0 ]; do
     case "$1" in
         maxmsgsize=*)
             MAXMSGSIZE="${1#maxmsgsize=}"
+            ;;
+        events=*|onoff=*)
+            HAS_ONOFF_EVENTS=1
+            _ev_list="${1#*=}"
+            # Check without clobbering outer positional parameters ($@)
+            if perl -e '
+                my ($evs, $runtime) = @ARGV;
+                my @list = split(/,/, $evs);
+                for (my $i = 0; $i < @list; $i++) {
+                    if ($i % 2 == 0 && ($list[$i] + 0) < ($runtime + 0)) {
+                        exit 0;
+                    }
+                }
+                exit 1;
+            ' "${_ev_list}" "${RUNTIME}"; then
+                ONOFF_ACTIVE_IN_RUNTIME=1
+            fi
             ;;
     esac
     shift
@@ -106,7 +126,14 @@ done
 
 case "${OUT_RATE}:${OUT_SIZE}" in
     0:0|const0:0|0:const0|const0:const0) OUT_ACTIVE=0 ;;
-    *) OUT_ACTIVE=1 ;;
+    *)
+        # If on-off events exist but no active interval starts before RUNTIME, no bytes are sent
+        if [ "${HAS_ONOFF_EVENTS}" -eq 1 ] && [ "${ONOFF_ACTIVE_IN_RUNTIME}" -eq 0 ]; then
+            OUT_ACTIVE=0
+        else
+            OUT_ACTIVE=1
+        fi
+        ;;
 esac
 
 case "${IN_RATE}:${IN_SIZE}" in
@@ -177,6 +204,7 @@ check_scalar() {
     _dist_rx_rate="$8"
     _dist_rx_size="$9"
     _protocol="${10:-$PROTOCOL}"
+    _has_onoff="${11:-0}"
     _file="${TMP_DIR}/test-${_role}.sca${EXT}"
 
     if [ ! -s "${_file}" ]; then
@@ -189,7 +217,8 @@ check_scalar() {
         use warnings;
 
         my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx,
-            $dist_tx_rate, $dist_tx_size, $dist_rx_rate, $dist_rx_size, $protocol) = @ARGV;
+            $dist_tx_rate, $dist_tx_size, $dist_rx_rate, $dist_rx_size,
+            $protocol, $has_onoff) = @ARGV;
         my $line_num = 0;
         my (%stats, %rates, $errors);
 
@@ -210,6 +239,8 @@ check_scalar() {
                 }
             } elsif ($dist =~ /^exp([0-9.]+)/) {
                 my $mean = $1 + 0;
+                # Exp rate has infinite reciprocal variance; skip tight rate bound.
+                # Exp frame size uses 0.40 (40%) tolerance.
                 return ($is_rate ? (0, 0) : ($mean, 0.40));
             } elsif ($dist =~ /^pareto([0-9.]+),([0-9.]+)/) {
                 my ($k, $a) = ($1 + 0, $2 + 0);
@@ -266,6 +297,9 @@ check_scalar() {
                             $errors++;
                         }
                     } else {
+                        # For datagram protocols (UDP) or const frame sizes, Packets must equal Frames.
+                        # For stream protocols (TCP) with variable frame size distributions, occasional socket buffer
+                        # segmentation / partial writes during large bursts can cause Packets >= Frames.
                         if ($protocol ne "tcp" || $dist_s =~ /^const/) {
                             if ($p != $f) {
                                 warn "FAIL in $filename ($obj): Expected unfragmented Packets ($p) == Frames ($f)\n";
@@ -277,7 +311,8 @@ check_scalar() {
                     # Plausibility check against theoretical distribution mean (only for individual flow objects)
                     if ($obj =~ /flow\[/) {
                         my ($target_rate, $tol_rate) = parse_dist($dist_r, 1);
-                        if ($target_rate > 0) {
+                        # Duty-cycled on-off flows have lower time-averaged rates; skip continuous rate comparison
+                        if (!$has_onoff && $target_rate > 0) {
                             my $diff = abs($r - $target_rate);
                             if ($diff > ($target_rate * $tol_rate)) {
                                 my $pct = sprintf("%.1f%%", ($diff / $target_rate) * 100);
@@ -308,7 +343,8 @@ check_scalar() {
 
         exit($errors ? 1 : 0);
     ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}" \
-      "${_dist_tx_rate}" "${_dist_tx_size}" "${_dist_rx_rate}" "${_dist_rx_size}" "${_protocol}"; then
+      "${_dist_tx_rate}" "${_dist_tx_size}" "${_dist_rx_rate}" "${_dist_rx_size}" \
+      "${_protocol}" "${_has_onoff}"; then
         echo "FAIL: Scalar verification failed for '${_file}'." >&2
         echo "--- Content of ${_file} ---" >&2
         decompress_cat "${_file}" >&2
@@ -616,11 +652,11 @@ run_attempt() {
     # 5. Verify Scalar outputs
     if [ "${ENABLE_SCALAR}" -eq 1 ]; then
         if ! check_scalar "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"  "${ACTIVE_FRAG_TX}"  "${ACTIVE_FRAG_RX}" \
-                          "${OUT_RATE}" "${OUT_SIZE}" "${IN_RATE}" "${IN_SIZE}" "${PROTOCOL}"; then
+                          "${OUT_RATE}" "${OUT_SIZE}" "${IN_RATE}" "${IN_SIZE}" "${PROTOCOL}" "${HAS_ONOFF_EVENTS}"; then
             return 1
         fi
         if ! check_scalar "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}" "${PASSIVE_FRAG_TX}" "${PASSIVE_FRAG_RX}" \
-                          "${IN_RATE}" "${IN_SIZE}" "${OUT_RATE}" "${OUT_SIZE}" "${PROTOCOL}"; then
+                          "${IN_RATE}" "${IN_SIZE}" "${OUT_RATE}" "${OUT_SIZE}" "${PROTOCOL}" "${HAS_ONOFF_EVENTS}"; then
             return 1
         fi
     else

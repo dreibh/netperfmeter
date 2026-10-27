@@ -178,6 +178,9 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
    IF(SPEC MATCHES "maxmsgsize")
       LIST(APPEND TEST_LABELS "framing;defragmenter")
    ENDIF()
+   IF(SPEC MATCHES "onoff")
+      LIST(APPEND TEST_LABELS "onoff")
+   ENDIF()
    FOREACH(ARG ${EXTRA_TEST_ARGS})
       IF(ARG MATCHES "^--no-(.*)")
          LIST(APPEND TEST_LABELS "no-${CMAKE_MATCH_1}")
@@ -305,6 +308,51 @@ ADD_NETPERFMETER_FLOW_TEST(dist_udp_truncnormal 127.0.0.1 udp truncnormal20,2:tr
 # 4. Pareto Distribution with Finite Variance (Shape alpha=3.0 -> HM = (4/3)*k = 20 for k=15; Size k=666.7 -> AM 1000)
 ADD_NETPERFMETER_FLOW_TEST(dist_tcp_pareto  127.0.0.1 tcp pareto15,3:pareto667,3:pareto15,3:pareto667,3 plain 8)
 ADD_NETPERFMETER_FLOW_TEST(dist_udp_pareto  127.0.0.1 udp pareto15,3:pareto667,3:pareto15,3:pareto667,3 plain 8)
+
+
+#############################################################################
+#### ON-OFF FLOW SCHEDULE TESTS (onoff=t1,t2,...)                        ####
+#############################################################################
+
+# ====== 1. Single On-Off Burst (Off 0..1s, On 1..3s, Off 3..5s) ============
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_single_burst_ipv4
+   127.0.0.1 tcp const20:const1000:const0:const0:onoff=1,3 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_single_burst_ipv6
+   ::1       tcp const20:const1000:const0:const0:onoff=1,3 plain 5)
+
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_single_burst_ipv4
+   127.0.0.1 udp const20:const1000:const0:const0:onoff=1,3 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_single_burst_ipv6
+   ::1       udp const20:const1000:const0:const0:onoff=1,3 plain 5)
+
+# ====== 2. Multi-Burst On-Off (Alternating On/Off: 1..2s On, 3..4s On) =====
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_multiburst_ipv4
+   127.0.0.1 tcp const20:const1000:const0:const0:onoff=1,2,3,4 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_multiburst_ipv4
+   127.0.0.1 udp const20:const1000:const0:const0:onoff=1,2,3,4 plain 5)
+
+# ====== 3. Delayed Start (Off 0..2s, On 2..5s until test completion) ======
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_delayed_start
+   127.0.0.1 tcp const20:const1000:const0:const0:onoff=2 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_delayed_start
+   127.0.0.1 udp const20:const1000:const0:const0:onoff=2 plain 5)
+
+# ====== 4. On-Off Combined with Message Segmentation =======================
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_fragmented
+   127.0.0.1 tcp const20:const3000:const0:const0:onoff=1,3:maxmsgsize=1000 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_fragmented
+   127.0.0.1 udp const20:const3000:const0:const0:onoff=1,3:maxmsgsize=1000 plain 5)
+
+# ====== 5. On-Off Combined with Stochastic Distribution (Exp Size) =========
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_exp_size
+   127.0.0.1 tcp const20:exp1000:const0:const0:onoff=1,4 plain 6)
+
+# ====== 6. Negative Boundary: Events Scheduled Beyond Runtime ==============
+# Flow scheduled to turn on at 10s, but runtime is only 3s (asserts 0 bytes transferred)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_never_active
+   127.0.0.1 tcp const20:const1000:const0:const0:onoff=10,20 plain 3)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_never_active
+   127.0.0.1 udp const20:const1000:const0:const0:onoff=10,20 plain 3)
 
 
 #############################################################################
