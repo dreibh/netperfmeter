@@ -1,3 +1,85 @@
+commit 0e0d802a8f3218f882a0714784b4519a3de3f1ba
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 25 18:48:28 2026 +0100
+
+    Fixed version string.
+
+commit 5af9504b1c1c9420a310a8ba7bd2f7673eeb9983
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 25 17:53:46 2026 +0100
+
+    Bugfix: Parameter handling fix for --optimise.
+
+commit f9ff367fb9f4c1fde5a66f4cecbd45c11b0a90eb
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 25 17:17:05 2026 +0100
+
+    Bugfix: Fix for frame counting.
+
+commit 7931bea9d3ca7eda150667fa5aaad85f1e68f30b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Oct 25 17:12:53 2026 +0100
+
+    Added wake-up pipe to remove timeout-based waiting for events.
+    
+    Bugfix: This fixes handling of UDP flows with very short runtime.
+
+commit af4dec3d5b5b72042b929a39e57d00aeab9c0617
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 17:37:54 2026 +0200
+
+    Shell completion fixes.
+
+commit e8aef663e712d31b8baa4d465aa8d8ee4a0e8942
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 11:41:46 2026 +0200
+
+    Updated Homebrew formula.
+
+commit ea5570fa87b6ec7b5b13863ee1d000a84525f9dd
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 11:38:47 2026 +0200
+
+    Updated APKBUILD file.
+
+commit affd45d8f051e3379cbe7db121a4b3adbd16600e
+Merge: a3f2a79 015e965
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 11:38:31 2026 +0200
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit a3f2a795e22c8d8e86b9d2a2f215cd0f57c1f973
+Merge: ccad86b e7e4f90
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 11:37:54 2026 +0200
+
+    Merge branch 'master' into dreibh/tcp-heartbeats
+
+commit 015e965ccdfeb8d98dc847248035234367859b70
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 11:36:09 2026 +0200
+
+    Changed sndbuf/rcvbuf default from 233016 to 209712, to allow NetBSD connectivity with its kernel defaults.
+
+commit ccad86bd0acc17a3440d983f364fece5a3ceeb56
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 10:18:13 2026 +0100
+
+    GNU Hurd does not support TCP heartbeats configuration, but it defines the options.
+
+commit e7e4f903a2c08baf7206c8f676123532b903c0b7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 10:41:41 2026 +0200
+
+    RPM spec fix.
+
+commit e7e19c2ce146b9833ab0f909f1b4d69bb436ceb8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 23 10:37:59 2026 +0200
+
+    New release netperfmeter-2.0.13.
+
 commit c874e3465df1161cc26955f05855f12b288c8d3b
 Merge: 39de066 7ed76f6
 Author: Thomas Dreibholz <dreibh@simula.no>
