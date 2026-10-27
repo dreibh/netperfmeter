@@ -523,3 +523,217 @@ ADD_NETPERFMETER_FLOW_TEST(profile_db_kafka_batch_frag
 # 50. Backup Catalog Sync with Fragmentation (12 fps, mean 3200 B, maxmsgsize=1200, TCP)
 ADD_NETPERFMETER_FLOW_TEST(profile_backup_catalog_frag
    127.0.0.1 tcp const12:truncnormal3200,200:const12:truncnormal3200,200:maxmsgsize=1200 plain 8)
+
+
+# ====== 8. Financial Systems, FinTech & Trading ===========================
+# 51. FIX Protocol Market Depth Quotes (40 fps, 325 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_fix_market_data
+   127.0.0.1 tcp uniform30,50:uniform200,450:uniform30,50:uniform200,450 plain 8)
+
+# 52. ITCH/OUCH Low-Latency Market Depth Feed (80 fps, 96 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_itch_feed_udp
+   127.0.0.1 udp truncnormal80,4:uniform64,128:truncnormal80,4:uniform64,128 plain 8)
+
+# 53. High-Frequency Algorithmic Execution over IPv6 (100 fps, 120 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_hft_execution_v6
+   ::1       tcp const100:truncnormal120,10:const100:truncnormal120,10 plain 8)
+
+# 54. Payment Gateway Card Authorization (20 fps, asymmetric request/response, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_iso8583_auth
+   127.0.0.1 tcp uniform15,25:uniform300,500:uniform15,25:exp900 plain 8)
+
+# 55. WebSocket Crypto Order Book Level-2 Depth (25 fps, Pareto mean 750 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_crypto_l2_book
+   127.0.0.1 tcp const25:pareto500,3:const25:pareto500,3 plain 8)
+
+# 56. Inter-Bank Settlement Batching with Segmentation (10 fps, mean 2400 B, maxmsgsize=800, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_swift_batch_frag
+   127.0.0.1 tcp const10:truncnormal2400,150:const10:truncnormal2400,150:maxmsgsize=800 plain 8)
+
+# 57. Centralized Risk Calculation Heartbeat (60 fps, 64 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_risk_heartbeat
+   127.0.0.1 udp const60:const64:const60:const64 plain 8)
+
+# 58. Trade Allocation Drop Copy Reports over IPv6 (25 fps, 550 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_drop_copy_reports
+   ::1       udp uniform20,30:uniform400,700:uniform20,30:uniform400,700 plain 8)
+
+
+# ====== 9. Industrial Robotics, Automation & Industry 4.0 =================
+# 59. Robot Arm 6-DoF Kinematics Telemetry over IPv6 (100 fps, 150 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_ind_robot_kinematics_v6
+   ::1       udp truncnormal100,5:uniform120,180:truncnormal100,5:uniform120,180 plain 8)
+
+# 60. OPC UA Binary Machine Telemetry (20 fps, 400 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_ind_opcua_telemetry
+   127.0.0.1 tcp const20:truncnormal400,30:const20:truncnormal400,30 plain 8)
+
+# 61. Machine-Vision Quality Inspection (6 fps, Pareto mean 2250 B, maxmsgsize=1000, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_ind_vision_inspection_frag
+   127.0.0.1 tcp const6:pareto1500,3:const6:pareto1500,3:maxmsgsize=1000 plain 8)
+
+# 62. Automated Guided Vehicle (AGV) LIDAR Point Cloud (40 fps, 1250 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_ind_agv_lidar_stream
+   127.0.0.1 udp uniform35,45:uniform1100,1400:uniform35,45:uniform1100,1400 plain 8)
+
+# 63. CNC Spindle High-Frequency Vibration Telemetry (80 fps, 96 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_ind_cnc_spindle_vibe
+   127.0.0.1 udp const80:uniform64,128:const80:uniform64,128 plain 8)
+
+# 64. Digital Twin Spatial State Sync over IPv6 (25 fps, 1000 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_ind_digital_twin_v6
+   ::1       tcp uniform20,30:uniform800,1200:uniform20,30:uniform800,1200 plain 8)
+
+# 65. Emergency Stop (E-Stop) Bus Beacon (100 fps, 48 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_ind_safety_estop
+   127.0.0.1 udp const100:const48:const100:const48 plain 8)
+
+# 66. Predictive Maintenance Vibration FFT Spectra (10 fps, Pareto mean 1200 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_ind_predictive_maint
+   127.0.0.1 tcp const10:pareto800,3:const10:pareto800,3 plain 8)
+
+
+# ====== 10. Aerospace, Satellites & Defense ================================
+# 67. Satellite CCSDS Telemetry Downlink (20 fps, 750 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_satellite_downlink
+   127.0.0.1 udp const20:uniform500,1000:const20:uniform500,1000 plain 8)
+
+# 68. LEO Inter-Satellite Link (ISL) Routing Beacon over IPv6 (15 fps, 150 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_isl_routing_v6
+   ::1       udp uniform10,20:uniform100,200:uniform10,20:uniform100,200 plain 8)
+
+# 69. ADS-B Mode-S Aircraft Position Transponder (15 fps, 170 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_adsb_transponder
+   127.0.0.1 udp const15:uniform120,220:const15:uniform120,220 plain 8)
+
+# 70. Marine AIS Commercial Vessel Tracking (7.5 fps, 120 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_ais_marine_track
+   127.0.0.1 udp uniform5,10:uniform80,160:uniform5,10:uniform80,160 plain 8)
+
+# 71. Autonomous Drone Waypoint Mission Control (12 fps, 250 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_drone_mission_ctrl
+   127.0.0.1 tcp const12:truncnormal250,25:const12:truncnormal250,25 plain 8)
+
+# 72. Primary Radar Target Plot Correlation Feed (50 fps, 400 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_radar_track_sync
+   127.0.0.1 udp truncnormal50,4:uniform300,500:truncnormal50,4:uniform300,500 plain 8)
+
+# 73. Tactical Data Link (Link-16 style) over IPv6 (25 fps, 180 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_tactical_tdl_v6
+   ::1       udp uniform20,30:uniform120,240:uniform20,30:uniform120,240 plain 8)
+
+# 74. Satellite Imagery Raster Tile Sync (5 fps, Pareto mean 3000 B, maxmsgsize=1200, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_sat_imagery_frag
+   127.0.0.1 tcp const5:pareto2000,3:const5:pareto2000,3:maxmsgsize=1200 plain 8)
+
+
+# ====== 11. Healthcare, Biomedical & Clinical Telemetry ====================
+# 75. Continuous Bedside Multi-Lead ECG Telemetry (50 fps, 200 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_med_ecg_telemetry
+   127.0.0.1 udp const50:uniform150,250:const50:uniform150,250 plain 8)
+
+# 76. PACS DICOM Radiological Imaging Transfer (8 fps, mean 4000 B, maxmsgsize=1000, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_med_pacs_dicom_frag
+   127.0.0.1 tcp const8:truncnormal4000,300:const8:truncnormal4000,300:maxmsgsize=1000 plain 8)
+
+# 77. Robotic Telesurgery Bilateral Haptic Feedback over IPv6 (100 fps, 100 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_med_surgical_haptics_v6
+   ::1       udp truncnormal100,5:uniform80,120:truncnormal100,5:uniform80,120 plain 8)
+
+# 78. Smart Infusion Pump Rate Telemetry (2 fps, 192 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_med_infusion_pump
+   127.0.0.1 tcp const2:uniform128,256:const2:uniform128,256 plain 8)
+
+# 79. Interactive Telehealth Video Consultation (30 fps, 1150 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_med_telehealth_consult
+   127.0.0.1 udp const30:uniform1000,1300:const30:uniform1000,1300 plain 8)
+
+# 80. HL7 FHIR Patient Record Sync over IPv6 (12 fps, Exp size mean 900 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_med_fhir_hl7_sync_v6
+   ::1       tcp uniform10,15:exp900:uniform10,15:exp900 plain 8)
+
+# 81. Neural Myoelectric Prosthesis Sensor Feedback Loop (50 fps, 80 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_med_prosthesis_feedback
+   127.0.0.1 udp uniform40,60:uniform60,100:uniform40,60:uniform60,100 plain 8)
+
+# 82. Critical Care ICU Central Alarm Broadcast over IPv6 (10 fps, 300 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_med_icu_alarm_broadcast
+   ::1       udp const10:uniform200,400:const10:uniform200,400 plain 8)
+
+
+# ====== 12. Cloud Infrastructure, Virtualization & Storage =================
+# 83. NVMe-over-Fabrics Completion Queue Processing (50 fps, 512 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_cloud_nvme_of_queue
+   127.0.0.1 tcp uniform40,60:truncnormal512,32:uniform40,60:truncnormal512,32 plain 8)
+
+# 84. Distributed Object Storage (Ceph/Gluster) Heartbeat over IPv6 (25 fps, 128 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_cloud_ceph_heartbeat_v6
+   ::1       tcp const25:const128:const25:const128 plain 8)
+
+# 85. Kubernetes CNI Inter-Pod Service Mesh Ingress (40 fps, 450 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_cloud_cni_service_proxy
+   127.0.0.1 tcp uniform35,45:uniform250,650:uniform35,45:uniform250,650 plain 8)
+
+# 86. Linux eBPF Continuous Observability Trace Feed (65 fps, 300 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_cloud_ebpf_observability
+   127.0.0.1 udp uniform50,80:uniform200,400:uniform50,80:uniform200,400 plain 8)
+
+# 87. Hypervisor Live VM Migration Dirty Pages (16 fps, Pareto mean 3300 B, maxmsgsize=1400, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_cloud_vm_migration_frag
+   127.0.0.1 tcp const16:pareto2200,3:const16:pareto2200,3:maxmsgsize=1400 plain 8)
+
+# 88. Distributed Coordination (ZooKeeper/etcd) Leases over IPv6 (40 fps, 96 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_cloud_zk_lock_sync_v6
+   ::1       tcp const40:uniform64,128:const40:uniform64,128 plain 8)
+
+# 89. OpenSearch Index Shard Rebalancing (10 fps, mean 2800 B, maxmsgsize=1000, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_cloud_elastic_rebalance_frag
+   127.0.0.1 tcp const10:truncnormal2800,200:const10:truncnormal2800,200:maxmsgsize=1000 plain 8)
+
+# 90. Serverless FaaS Invocation Trigger (20 fps, asymmetric Exp response 1100 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_cloud_faas_cold_trigger
+   127.0.0.1 tcp uniform15,25:uniform300,700:uniform15,25:exp1100 plain 8)
+
+
+# ====== 13. Smart Home, Consumer IoT & AR/VR ===============================
+# 91. Smart Speaker Voice Assistant Stream (45 fps, 400 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_home_voice_assistant
+   127.0.0.1 udp uniform40,50:uniform300,500:uniform40,50:uniform300,500 plain 8)
+
+# 92. Smart Thermostat Energy Telemetry Sync (1 fps, 96 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_home_thermostat_sync
+   127.0.0.1 tcp const1:uniform64,128:const1:uniform64,128 plain 8)
+
+# 93. Video Doorbell Bidirectional Audio/Video Stream (24 fps, 950 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_home_doorbell_intercom
+   127.0.0.1 udp const24:uniform800,1100:const24:uniform800,1100 plain 8)
+
+# 94. Wearable Smartwatch PPG Sensor Stream over IPv6 (5 fps, 80 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_home_wearable_ppg_v6
+   ::1       udp const5:uniform60,100:const5:uniform60,100 plain 8)
+
+# 95. Matter / Thread Border Router Discovery Beacon over IPv6 (10 fps, 140 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_home_matter_thread_v6
+   ::1       udp uniform8,12:uniform100,180:uniform8,12:uniform100,180 plain 8)
+
+# 96. Robotic Vacuum Indoor SLAM Grid Map Sync (4 fps, Pareto mean 1050 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_home_robovac_slam_map
+   127.0.0.1 tcp const4:pareto700,3:const4:pareto700,3 plain 8)
+
+# 97. Smart Lighting Group Multicast Mesh Control (15 fps, 120 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_home_lighting_mesh
+   127.0.0.1 udp const15:uniform80,160:const15:uniform80,160 plain 8)
+
+# 98. Augmented Reality Spatial Mesh Coordinate Stream over IPv6 (60 fps, 600 B, UDP)
+ADD_NETPERFMETER_FLOW_TEST(profile_home_ar_spatial_mesh_v6
+   ::1       udp truncnormal60,4:uniform400,800:truncnormal60,4:uniform400,800 plain 8)
+
+
+# ====== 14. Edge AI & Distributed Machine Learning =========================
+# 99. Edge Computer Vision Inferencing Pipeline (20 fps, Pareto mean 1500 B, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_ai_edge_inferencing
+   127.0.0.1 tcp const20:pareto1000,3:const20:pareto1000,3 plain 8)
+
+# 100. Federated Learning Localized Gradient Updates (5 fps, mean 3500 B, maxmsgsize=1200, TCP)
+ADD_NETPERFMETER_FLOW_TEST(profile_ai_federated_weights_frag
+   ::1       tcp const5:truncnormal3500,250:const5:truncnormal3500,250:maxmsgsize=1200 plain 8)

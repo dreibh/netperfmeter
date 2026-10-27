@@ -44,9 +44,11 @@ ENABLE_VECTOR=1
 MAX_RETRIES=1
 PASSTHROUGH_ARGS=""
 
-# Automatic retry default: stochastic distributions allow up to 5 attempts
+# Retries (up to 5 attempts) are strictly restricted to unbounded/heavy-tailed
+# distributions (exp, pareto) where extreme high random values can mathematically occur.
+# All other tests (const, uniform, truncnormal, framing, etc.) run strictly once.
 case "${SPEC}" in
-    *exp*|*pareto*|*uniform*|*normal*)
+    *exp*|*pareto*)
         MAX_RETRIES=5
         ;;
 esac
@@ -208,8 +210,6 @@ check_scalar() {
                 }
             } elsif ($dist =~ /^exp([0-9.]+)/) {
                 my $mean = $1 + 0;
-                # Exp rate has infinite reciprocal variance (E[1/R] = inf); skip tight rate bound.
-                # Exp frame size uses 0.40 (40%) tolerance.
                 return ($is_rate ? (0, 0) : ($mean, 0.40));
             } elsif ($dist =~ /^pareto([0-9.]+),([0-9.]+)/) {
                 my ($k, $a) = ($1 + 0, $2 + 0);
@@ -266,9 +266,6 @@ check_scalar() {
                             $errors++;
                         }
                     } else {
-                        # For datagram protocols (UDP) or const frame sizes, Packets must equal Frames.
-                        # For stream protocols (TCP) with variable frame size distributions, occasional socket buffer
-                        # segmentation / partial writes during large bursts can cause Packets >= Frames.
                         if ($protocol ne "tcp" || $dist_s =~ /^const/) {
                             if ($p != $f) {
                                 warn "FAIL in $filename ($obj): Expected unfragmented Packets ($p) == Frames ($f)\n";
@@ -452,15 +449,15 @@ check_vector() {
 
                     my $key = "$action:$flow_id";
                     if (defined $last_meas_b{$key} && $bytes < $last_meas_b{$key}) {
-                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsBytes\n";
+                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsBytes ($bytes < $last_meas_b{$key})\n";
                         $errors++;
                     }
                     if (defined $last_meas_p{$key} && $pkts < $last_meas_p{$key}) {
-                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsPackets\n";
+                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsPackets ($pkts < $last_meas_p{$key})\n";
                         $errors++;
                     }
                     if (defined $last_meas_f{$key} && $frms < $last_meas_f{$key}) {
-                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsFrames\n";
+                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsFrames ($frms < $last_meas_f{$key})\n";
                         $errors++;
                     }
 
