@@ -101,12 +101,17 @@ PASSIVE_EXPECT_RX="${OUT_ACTIVE}"
 TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'npm_test')
 
 SERVER_PID=""
+SUCCESS=0
 cleanup() {
     if [ -n "${SERVER_PID}" ] && kill -0 "${SERVER_PID}" 2>/dev/null; then
         kill -TERM "${SERVER_PID}" 2>/dev/null || true
         wait "${SERVER_PID}" 2>/dev/null || true
     fi
-    rm -rf "${TMP_DIR}"
+    if [ "${SUCCESS}" -eq 1 ]; then
+        rm -rf "${TMP_DIR}"
+    else
+        echo "Test failed; artifacts preserved in ${TMP_DIR}" >&2
+    fi
 }
 trap cleanup EXIT INT TERM
 
@@ -134,18 +139,18 @@ check_scalar() {
         return 1
     fi
 
-    decompress_cat "${_file}"
-
     # Verify that Transmitted and Received metrics strictly match > 0 vs == 0
     if ! decompress_cat "${_file}" | perl -e '
         use strict;
         use warnings;
 
         my ($filename, $expect_tx, $expect_rx) = @ARGV;
+        my $line_num = 0;
         my %count;
         my $errors = 0;
 
         while (<STDIN>) {
+            $line_num++;
             if (/^scalar\s+"[^"]+"\s+"(Transmitted|Received)\s+([^"]+)"\s+([0-9.]+)/) {
                 my ($dir, $metric, $raw_val) = ($1, $2, $3);
                 my $val = $raw_val + 0.0;
@@ -154,12 +159,12 @@ check_scalar() {
 
                 if ($expected) {
                     if ($val <= 0) {
-                        warn "FAIL in $filename: Expected $dir $metric > 0, got $raw_val\n";
+                        warn "FAIL in $filename (line $line_num): Expected $dir $metric > 0, got $raw_val\n";
                         $errors++;
                     }
                 } else {
                     if ($val != 0) {
-                        warn "FAIL in $filename: Expected $dir $metric == 0, got $raw_val\n";
+                        warn "FAIL in $filename (line $line_num): Expected $dir $metric == 0, got $raw_val\n";
                         $errors++;
                     }
                 }
@@ -167,35 +172,223 @@ check_scalar() {
         }
 
         if (!$count{Transmitted}) {
-            warn "FAIL in $filename: No \"Transmitted\" scalar metrics found\n";
+            warn "FAIL in $filename (line $line_num): No \"Transmitted\" scalar metrics found\n";
             $errors++;
         }
         if (!$count{Received}) {
-            warn "FAIL in $filename: No \"Received\" scalar metrics found\n";
+            warn "FAIL in $filename (line $line_num): No \"Received\" scalar metrics found\n";
             $errors++;
         }
 
         exit($errors ? 1 : 0);
     ' "${_file}" "${_expect_tx}" "${_expect_rx}"; then
         echo "FAIL: Scalar verification failed for '${_file}'." >&2
+        echo "--- Content of ${_file} ---" >&2
+        decompress_cat "${_file}" >&2
         return 1
     fi
 }
 
-# ====== Check Vector Results ==============================================
+# ====== Check Vector Results (Global and Per-Flow) ========================
 check_vector() {
     _role="$1"
+    _expect_tx="$2"
+    _expect_rx="$3"
 
+    # 1. Global (measurement-wide) vector file
+    _global_file="${TMP_DIR}/test-${_role}.vec${EXT}"
+    if [ ! -s "${_global_file}" ]; then
+        echo "FAIL: Global vector output '${_global_file}' is missing or empty." >&2
+        return 1
+    fi
+
+    # 2. Per-flow vector file(s)
     set -- "${TMP_DIR}"/test-"${_role}"-*.vec"${EXT}"
     if [ ! -e "$1" ] || [ ! -s "$1" ]; then
-        echo "FAIL: Vector file for role '${_role}' (*.vec${EXT}) is missing or empty." >&2
+        echo "FAIL: Per-flow vector output for role '${_role}' (test-${_role}-*.vec${EXT}) is missing or empty." >&2
         return 1
     fi
 
-    if ! decompress_cat "$1" | grep -q "AbsTime"; then
-        echo "FAIL: Vector file '$1' missing valid header." >&2
-        return 1
-    fi
+    # 3. Validate each vector file (global and all per-flow files)
+    for _file in "${_global_file}" "$@"; do
+        if [ ! -s "${_file}" ]; then
+            continue
+        fi
+
+        # Header check
+        if ! decompress_cat "${_file}" | grep -q "^AbsTime"; then
+            echo "FAIL in ${_file}: Missing valid 'AbsTime' header." >&2
+            echo "--- Content of ${_file} ---" >&2
+            decompress_cat "${_file}" >&2
+            return 1
+        fi
+
+        # Comprehensive data & monotonicity verification
+        if ! decompress_cat "${_file}" | perl -e '
+            use strict;
+            use warnings;
+
+            my ($filename, $expect_tx, $expect_rx) = @ARGV;
+            my $line_num = 0;
+            my $is_flow_vector = 0;
+            my $data_rows = 0;
+            my $errors = 0;
+
+            # Tracking for flow vector files (packet arrival log)
+            my ($last_seq, $last_abs_b, $last_abs_p, $last_abs_f);
+
+            # Tracking for measurement vector files (summary snapshots)
+            my (%max_abs_bytes, %last_meas_bytes, %last_meas_pkts, %last_meas_frames);
+
+            while (<STDIN>) {
+                $line_num++;
+                chomp;
+                next if /^\s*$/;
+
+                # Header detection
+                if (/^AbsTime/) {
+                    if (/SeqNumber/) {
+                        $is_flow_vector = 1;
+                    }
+                    next;
+                }
+
+                my @fields = split(/\t/);
+                $data_rows++;
+
+                if ($is_flow_vector) {
+                    # --- Per-Flow Vector File ---
+                    # Col 0: Line, 1: AbsTime, 2: RelTime, 3: SeqNumber,
+                    # Col 4: AbsBytes, 5: AbsPackets, 6: AbsFrames, 7: RelBytes...
+                    if (@fields < 7) {
+                        warn "FAIL in $filename (line $line_num): Malformed flow vector row (expected >= 7 columns, got " . scalar(@fields) . ")\n";
+                        $errors++;
+                        next;
+                    }
+
+                    my $seq   = $fields[3] + 0;
+                    my $bytes = $fields[4] + 0;
+                    my $pkts  = $fields[5] + 0;
+                    my $frms  = $fields[6] + 0;
+
+                    # Flow vector files record received packets
+                    if (!$expect_rx) {
+                        warn "FAIL in $filename (line $line_num): Unexpected data row when expect_rx == 0 (AbsBytes: $bytes)\n";
+                        $errors++;
+                    }
+
+                    # Monotonicity checks
+                    if (defined $last_seq && $seq < $last_seq) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic SeqNumber ($seq < $last_seq)\n";
+                        $errors++;
+                    }
+                    if (defined $last_abs_b && $bytes < $last_abs_b) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic AbsBytes ($bytes < $last_abs_b)\n";
+                        $errors++;
+                    }
+                    if (defined $last_abs_p && $pkts < $last_abs_p) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic AbsPackets ($pkts < $last_abs_p)\n";
+                        $errors++;
+                    }
+                    if (defined $last_abs_f && $frms < $last_abs_f) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic AbsFrames ($frms < $last_abs_f)\n";
+                        $errors++;
+                    }
+
+                    $last_seq   = $seq;
+                    $last_abs_b = $bytes;
+                    $last_abs_p = $pkts;
+                    $last_abs_f = $frms;
+
+                } else {
+                    # --- Global / Measurement-Wide Vector File ---
+                    # Col 4: FlowID, 7: Action ("Sent"|"Received"|"Lost"),
+                    # Col 8: AbsBytes, 9: AbsPackets, 10: AbsFrames...
+                    next if @fields < 11;
+                    my $flow_id = $fields[4];
+                    my $action  = $fields[7];
+                    $action =~ s/^"|"$//g;
+
+                    next unless ($action eq "Sent" || $action eq "Received");
+
+                    my $bytes = $fields[8]  + 0;
+                    my $pkts  = $fields[9]  + 0;
+                    my $frms  = $fields[10] + 0;
+
+                    if (!defined $max_abs_bytes{$action} || $bytes > $max_abs_bytes{$action}) {
+                        $max_abs_bytes{$action} = $bytes;
+                    }
+
+                    my $key = "$action:$flow_id";
+                    if (defined $last_meas_bytes{$key} && $bytes < $last_meas_bytes{$key}) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsBytes ($bytes < $last_meas_bytes{$key})\n";
+                        $errors++;
+                    }
+                    if (defined $last_meas_pkts{$key} && $pkts < $last_meas_pkts{$key}) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsPackets ($pkts < $last_meas_pkts{$key})\n";
+                        $errors++;
+                    }
+                    if (defined $last_meas_frames{$key} && $frms < $last_meas_frames{$key}) {
+                        warn "FAIL in $filename (line $line_num): Non-monotonic $action AbsFrames ($frms < $last_meas_frames{$key})\n";
+                        $errors++;
+                    }
+
+                    $last_meas_bytes{$key}  = $bytes;
+                    $last_meas_pkts{$key}   = $pkts;
+                    $last_meas_frames{$key} = $frms;
+                }
+            }
+
+            # Completeness and direction checks
+            if ($is_flow_vector) {
+                if ($expect_rx) {
+                    if ($data_rows == 0) {
+                        warn "FAIL in $filename (line $line_num): Expected received data rows, but file had 0 data rows\n";
+                        $errors++;
+                    } elsif (($last_abs_b // 0) <= 0) {
+                        warn "FAIL in $filename (line $line_num): Expected final AbsBytes > 0, got " . ($last_abs_b // 0) . "\n";
+                        $errors++;
+                    }
+                } else {
+                    if ($data_rows > 0) {
+                        warn "FAIL in $filename (line $line_num): Expected 0 data rows when expect_rx == 0, got $data_rows rows\n";
+                        $errors++;
+                    }
+                }
+            } else {
+                if ($expect_tx) {
+                    if (($max_abs_bytes{Sent} // 0) <= 0) {
+                        warn "FAIL in $filename (line $line_num): Expected Sent traffic > 0, max AbsBytes was " . ($max_abs_bytes{Sent} // 0) . "\n";
+                        $errors++;
+                    }
+                } else {
+                    if (($max_abs_bytes{Sent} // 0) != 0) {
+                        warn "FAIL in $filename (line $line_num): Expected Sent traffic == 0, max AbsBytes was $max_abs_bytes{Sent}\n";
+                        $errors++;
+                    }
+                }
+
+                if ($expect_rx) {
+                    if (($max_abs_bytes{Received} // 0) <= 0) {
+                        warn "FAIL in $filename (line $line_num): Expected Received traffic > 0, max AbsBytes was " . ($max_abs_bytes{Received} // 0) . "\n";
+                        $errors++;
+                    }
+                } else {
+                    if (($max_abs_bytes{Received} // 0) != 0) {
+                        warn "FAIL in $filename (line $line_num): Expected Received traffic == 0, max AbsBytes was $max_abs_bytes{Received}\n";
+                        $errors++;
+                    }
+                }
+            }
+
+            exit($errors ? 1 : 0);
+        ' "${_file}" "${_expect_tx}" "${_expect_rx}"; then
+            echo "FAIL: Vector verification failed for '${_file}'." >&2
+            echo "--- Content of ${_file} ---" >&2
+            decompress_cat "${_file}" >&2
+            return 1
+        fi
+    done
 }
 
 # ====== Listener Readiness Probe (Perl IO::Socket::IP) =====================
@@ -208,6 +401,10 @@ wait_for_listener() {
     while [ "$_elapsed" -lt "$_timeout" ]; do
         if [ -n "${SERVER_PID}" ] && ! kill -0 "${SERVER_PID}" 2>/dev/null; then
             echo "FAIL: Passive server process (PID ${SERVER_PID}) terminated early." >&2
+            if [ -s "${TMP_DIR}/server.log" ]; then
+                echo "--- Server Log ---" >&2
+                cat "${TMP_DIR}/server.log" >&2
+            fi
             return 1
         fi
 
@@ -222,6 +419,10 @@ wait_for_listener() {
     done
 
     echo "FAIL: Passive server failed to listen on ${_host}:${_port} within ${_timeout}s." >&2
+    if [ -s "${TMP_DIR}/server.log" ]; then
+        echo "--- Server Log ---" >&2
+        cat "${TMP_DIR}/server.log" >&2
+    fi
     return 1
 }
 
@@ -260,9 +461,10 @@ fi
 check_scalar "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"
 check_scalar "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}"
 
-# 5. Verify Vector outputs
-check_vector "active"
-check_vector "passive"
+# 5. Verify Vector outputs with expected directional constraints
+check_vector "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"
+check_vector "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}"
 
+SUCCESS=1
 echo "PASS: ${PROTOCOL} flow test (Port: ${PORT}, Host: ${ADDRESS}, Spec: ${SPEC}, Format: ${FORMAT}) passed."
 exit 0
