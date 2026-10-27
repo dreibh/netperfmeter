@@ -349,6 +349,19 @@ void FlowManager::finishMeasurement(const int      controlSocket,
 {
    CPULoadStats.update();
 
+   lock();
+   Measurement* measurement = findMeasurement(controlSocket, measurementID);
+   if(measurement != nullptr) {
+      if(measurement->NextStatisticsEvent != ~0ULL) {
+         const unsigned long long now = getMicroTime();
+         // 1. Write the final vector statistics while flows are still in FlowSet:
+         measurement->writeVectorStatistics(now, GlobalStats, RelGlobalStats);
+         // 2. Stop the timer, so no subsequent events are generated:
+         measurement->NextStatisticsEvent = ~0ULL;
+      }
+   }
+   unlock();
+
    LOG_INFO
    stdlog << format("Stopped measurement $%llx on socket %d\n",
                     measurementID, controlSocket);
@@ -403,6 +416,21 @@ void FlowManager::removeAllMeasurements(const int controlSocket)
 {
    lock();
 
+   const unsigned long long now = getMicroTime();
+
+   // 1. Flush final vector statistics and stop timers before removing flows:
+   for(std::map<std::pair<int, uint64_t>, Measurement*>::iterator measurementIterator = MeasurementSet.begin();
+       measurementIterator != MeasurementSet.end(); measurementIterator++) {
+      Measurement* measurement = measurementIterator->second;
+      if(measurement->ControlSocketDescriptor == controlSocket) {
+         if(measurement->NextStatisticsEvent != ~0ULL) {
+            measurement->writeVectorStatistics(now, GlobalStats, RelGlobalStats);
+            measurement->NextStatisticsEvent = ~0ULL;
+         }
+      }
+   }
+
+   // 2. Remove and delete the flows:
    std::vector<Flow*>::iterator flowIterator = FlowSet.begin();
    while(flowIterator != FlowSet.end()) {
       Flow* flow = *flowIterator;
@@ -415,6 +443,7 @@ void FlowManager::removeAllMeasurements(const int controlSocket)
       }
    }
 
+   // 3. Remove and delete the measurements:
    std::map<std::pair<int, uint64_t>, Measurement*>::iterator measurementIterator = MeasurementSet.begin();
    while(measurementIterator != MeasurementSet.end()) {
       Measurement* measurement = measurementIterator->second;
@@ -795,11 +824,15 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
    // ====== Write flow statistics ==========================================
    FlowBandwidthStats lastTotalStats;
    FlowBandwidthStats currentTotalStats;
-   const double duration = (now - lastStatisticsEvent) / 1000000.0;
+   unsigned int       matchingFlows = 0;
+   const double       duration      =
+      (now - lastStatisticsEvent) / 1000000.0;
+
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end(); iterator++) {
        Flow* flow = *iterator;
        if(flow->MeasurementID == measurementID) {
+          matchingFlows++;
           flow->lock();
 
           const FlowBandwidthStats relStats = flow->CurrentBandwidthStats - flow->LastBandwidthStats;
@@ -839,35 +872,37 @@ void FlowManager::writeVectorStatistics(const uint64_t           measurementID,
    }
 
    // ====== Write total statistics =========================================
-   const unsigned long long line = vectorFile.getLine();
-   const FlowBandwidthStats relTotalStats = currentTotalStats - lastTotalStats;
-   vectorFile.printf(
-      "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
-         "\"Sent\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
-      "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
-         "\"Received\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
-      "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
-         "\"Lost\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n",
+   if(matchingFlows > 0) {
+      const unsigned long long line = vectorFile.getLine();
+      const FlowBandwidthStats relTotalStats = currentTotalStats - lastTotalStats;
+      vectorFile.printf(
+         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+            "\"Sent\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
+         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+            "\"Received\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n"
+         "%06llu\t%llu\t%1.6f\t%1.6f\t-1\t\"Total\"\t0\t"
+            "\"Lost\"\t%llu\t%llu\t%llu\t%llu\t%llu\t%llu\n",
 
-      line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-         currentTotalStats.TransmittedBytes, currentTotalStats.TransmittedPackets, currentTotalStats.TransmittedFrames,
-         relTotalStats.TransmittedBytes, relTotalStats.TransmittedPackets, relTotalStats.TransmittedFrames,
+         line + 1, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            currentTotalStats.TransmittedBytes, currentTotalStats.TransmittedPackets, currentTotalStats.TransmittedFrames,
+            relTotalStats.TransmittedBytes, relTotalStats.TransmittedPackets, relTotalStats.TransmittedFrames,
 
-      line + 2, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-         currentTotalStats.ReceivedBytes, currentTotalStats.ReceivedPackets, currentTotalStats.ReceivedFrames,
-         relTotalStats.ReceivedBytes, relTotalStats.ReceivedPackets, relTotalStats.ReceivedFrames,
+         line + 2, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            currentTotalStats.ReceivedBytes, currentTotalStats.ReceivedPackets, currentTotalStats.ReceivedFrames,
+            relTotalStats.ReceivedBytes, relTotalStats.ReceivedPackets, relTotalStats.ReceivedFrames,
 
-      line + 3, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
-         currentTotalStats.LostBytes, currentTotalStats.LostPackets, currentTotalStats.LostFrames,
-         relTotalStats.LostBytes, relTotalStats.LostPackets, relTotalStats.LostFrames);
+         line + 3, now, (double)(now - firstStatisticsEvent) / 1000000.0, duration,
+            currentTotalStats.LostBytes, currentTotalStats.LostPackets, currentTotalStats.LostFrames,
+            relTotalStats.LostBytes, relTotalStats.LostPackets, relTotalStats.LostFrames);
 
-   vectorFile.nextLine(); vectorFile.nextLine(); vectorFile.nextLine();
+      vectorFile.nextLine(); vectorFile.nextLine(); vectorFile.nextLine();
 
-   // ====== Return global values (all measurements) for displaying =========
-   globalStats     = CurrentGlobalStats;
-   relGlobalStats  = CurrentGlobalStats - LastGlobalStats;
+      // ====== Return global values (all measurements) for displaying =========
+      globalStats     = CurrentGlobalStats;
+      relGlobalStats  = CurrentGlobalStats - LastGlobalStats;
 
-   LastGlobalStats = CurrentGlobalStats;
+      LastGlobalStats = CurrentGlobalStats;
+   }
 
    unlock();
 }
