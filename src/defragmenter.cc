@@ -254,7 +254,7 @@ void Defragmenter::purge(const uint64_t now,
                   receivedFrames++;
                }
                else {
-                  lostFrames++; // Incomplete frame timed out
+                  lostFrames++;   // Incomplete frame timed out
                }
                lostFrames += (static_cast<uint64_t>(frame->FrameID) - static_cast<uint64_t>(NextFrameID));
                NextFrameID = frame->FrameID + 1;
