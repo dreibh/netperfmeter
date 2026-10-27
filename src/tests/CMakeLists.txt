@@ -29,7 +29,7 @@ SET(TEST_LOCALE_DIR "${CMAKE_BINARY_DIR}/po")
 
 
 # Configurable starting port; each test reserves a block of 10 ports
-SET(TEST_BASE_PORT 10000 CACHE STRING "Initial base port number for automated flow tests")
+SET(TEST_BASE_PORT 20000 CACHE STRING "Initial base port number for automated flow tests")
 SET_PROPERTY(GLOBAL PROPERTY NPM_TEST_PORT_COUNTER ${TEST_BASE_PORT})
 
 # Helper to fetch and advance the port counter
