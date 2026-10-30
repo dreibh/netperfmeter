@@ -200,18 +200,20 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
 
 
 // ###### Transmit data frame ###############################################
-bool transmitFrame(Flow*                    flow,
+bool transmitFrame(Flow*                   flow,
                    const unsigned long long now)
 {
    // ====== Obtain length of data to send ==================================
    ssize_t bytesToSend =
-      (ssize_t)rint(getRandomValue((const double*)&flow->getTrafficSpec().OutboundFrameSize,
+      (ssize_t)rint(getRandomValue((const double*)flow->getTrafficSpec().OutboundFrameSize,
                                    flow->getTrafficSpec().OutboundFrameSizeRng));
-   ssize_t bytesSent   = 0;
-   size_t  packetsSent = 0;
+   ssize_t            bytesSent   = 0;
+   unsigned long long packetsSent = 0;
+   unsigned long long framesSent  = 0;
    if(bytesToSend > 0) {
       const uint32_t frameID = flow->nextOutboundFrameID();
-      while(bytesSent < (ssize_t)bytesToSend) {
+      bool           success = true;
+      while(bytesSent < bytesToSend) {
          // ====== Send message =============================================
          ssize_t chunkSize = std::min(bytesToSend - bytesSent,
                                       std::min((ssize_t)flow->getTrafficSpec().MaxMsgSize,
@@ -221,10 +223,8 @@ bool transmitFrame(Flow*                    flow,
                                  (bytesSent == 0),                       // Is frame begin?
                                  (bytesSent + chunkSize >= bytesToSend), // Is frame end?
                                  now,
-                                 (size_t)bytesSent,
+                                 (unsigned long long)bytesSent,
                                  (size_t)chunkSize);
-         // NOTE: Due to minimum size for a NETPERFMETER_DATA chunk (48 B),
-         //       the sent size may be >= chunkSize!
 
          // ====== Update statistics ========================================
          if(sent > 0) {
@@ -233,8 +233,12 @@ bool transmitFrame(Flow*                    flow,
          }
          else {
             // Transmission error -> stop sending.
+            success = false;
             break;
          }
+      }
+      if(success) {
+         framesSent = 1;
       }
    }
    else {
@@ -242,7 +246,10 @@ bool transmitFrame(Flow*                    flow,
    }
 
    // ====== Update statistics ==============================================
-   flow->updateTransmissionStatistics(now, 1, (size_t)packetsSent, (size_t)bytesSent);
+   flow->updateTransmissionStatistics(now,
+                                      framesSent,
+                                      packetsSent,
+                                      (size_t)bytesSent);
    return (bytesSent >= bytesToSend);
 }
 
