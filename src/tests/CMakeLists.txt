@@ -123,7 +123,7 @@ FUNCTION(ADD_SCRIPT_CLI_TESTS SCRIPT_NAME)
    # Help / Usage checks (-h, --help)
    ADD_TEST(
       NAME cli_${SCRIPT_NAME}_help_short
-      COMMAND "${SCRIPT_PATH}" -h
+      COMMAND "${SCRIPT_PATH}" --help
    )
    ADD_TEST(
       NAME cli_${SCRIPT_NAME}_help_long
