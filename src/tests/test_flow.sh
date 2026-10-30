@@ -335,31 +335,24 @@ check_scalar() {
                         $fatal_errors++;
                     }
 
-                    # Protocol-aware Packet vs. Frame checks:
-                    # On TCP, byte-stream socket coalescing allows Packets < Frames on BOTH Transmitted and Received.
-                    # On UDP, datagram boundaries require Packets >= Frames.
-                    if ($protocol ne "tcp") {
-                        if ($p < $f) {
-                            if ($flow_has_random && ($f - $p) <= 2) {
-                                # Minor datagram loss under heavy -j128 saturation: retryable
-                                $stat_errors++;
-                            } else {
-                                warn "FAIL in $filename ($obj): Invariant violation: UDP $dir Packets ($p) < Frames ($f)\n";
-                                $fatal_errors++;
-                            }
-                        }
+                    # Physical Invariant: Every frame consists of at least 1 packet.
+                    # Frames > Packets (Packets < Frames) is strictly invalid!
+                    if ($p < $f) {
+                        warn "FAIL in $filename ($obj): Invariant violation: $dir Packets ($p) < Frames ($f) (Frames > Packets is invalid)\n";
+                        $fatal_errors++;
                     }
 
                     if ($expect_fg) {
                         if ($p <= $f) {
-                            warn "FAIL in $filename ($obj): Expected $dir Packets ($p) > Frames ($f) under fragmentation\n";
+                            warn "FAIL in $filename ($obj): Expected fragmented $dir Packets ($p) > Frames ($f)\n";
                             $fatal_errors++;
                         }
                     } else {
-                        # Constant frame sizes on UDP require exactly 1 packet per frame
-                        if ($protocol ne "tcp" && $dist_s =~ /^const/) {
+                        # For deterministic unfragmented constant flows, Packets must strictly equal Frames.
+                        # For stochastic flows (Pareto, Exp), occasional tail frames can exceed chunk size and segment.
+                        if ($dist_s =~ /^const/) {
                             if ($p != $f) {
-                                warn "FAIL in $filename ($obj): Expected unfragmented UDP Packets ($p) == Frames ($f)\n";
+                                warn "FAIL in $filename ($obj): Expected unfragmented constant $dir Packets ($p) == Frames ($f)\n";
                                 $fatal_errors++;
                             }
                         }
@@ -478,7 +471,6 @@ check_vector() {
     _frag_tx="$4"
     _frag_rx="$5"
     _onoff="${6:-}"
-    _protocol="${7:-$PROTOCOL}"
 
     _global_file="${TMP_DIR}/test-${_role}.vec${EXT}"
     if [ ! -s "${_global_file}" ]; then
@@ -508,7 +500,7 @@ check_vector() {
             use strict;
             use warnings;
 
-            my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx, $onoff_str, $role, $protocol) = @ARGV;
+            my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx, $onoff_str, $role) = @ARGV;
             my $line_num = 0;
             my $is_flow_vector = 0;
             my $data_rows = 0;
@@ -600,8 +592,8 @@ check_vector() {
                         warn "FAIL in $filename (line $line_num): AbsBytes ($bytes) < AbsPackets ($pkts)\n";
                         $errors++;
                     }
-                    if ($protocol ne "tcp" && $pkts < $frms) {
-                        warn "FAIL in $filename (line $line_num): AbsPackets ($pkts) < AbsFrames ($frms)\n";
+                    if ($pkts < $frms) {
+                        warn "FAIL in $filename (line $line_num): Invariant violation: AbsPackets ($pkts) < AbsFrames ($frms)\n";
                         $errors++;
                     }
 
@@ -648,9 +640,8 @@ check_vector() {
                         warn "FAIL in $filename (line $line_num): $action AbsBytes ($bytes) < AbsPackets ($pkts)\n";
                         $errors++;
                     }
-                    # TCP byte-stream socket write/read coalescing allows Packets < Frames on both Sent and Received
-                    if ($protocol ne "tcp" && $pkts < $frms) {
-                        warn "FAIL in $filename (line $line_num): $action AbsPackets ($pkts) < AbsFrames ($frms)\n";
+                    if ($pkts < $frms) {
+                        warn "FAIL in $filename (line $line_num): Invariant violation: $action AbsPackets ($pkts) < AbsFrames ($frms)\n";
                         $errors++;
                     }
 
@@ -745,7 +736,7 @@ check_vector() {
             }
 
             exit($errors ? 1 : 0);
-        ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}" "${_onoff}" "${_role}" "${_protocol}"; then
+        ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}" "${_onoff}" "${_role}"; then
             echo "FAIL: Vector verification failed for '${_file}'." >&2
             echo "--- Content of ${_file} ---" >&2
             decompress_cat "${_file}" >&2
@@ -875,10 +866,10 @@ run_attempt() {
 
     # 6. Verify Vector outputs
     if [ "${ENABLE_VECTOR}" -eq 1 ]; then
-        if ! check_vector "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"  "${ACTIVE_FRAG_TX}"  "${ACTIVE_FRAG_RX}" "${ONOFF_SPEC}" "${PROTOCOL}"; then
+        if ! check_vector "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"  "${ACTIVE_FRAG_TX}"  "${ACTIVE_FRAG_RX}" "${ONOFF_SPEC}"; then
             return 1
         fi
-        if ! check_vector "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}" "${PASSIVE_FRAG_TX}" "${PASSIVE_FRAG_RX}" "${ONOFF_SPEC}" "${PROTOCOL}"; then
+        if ! check_vector "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}" "${PASSIVE_FRAG_TX}" "${PASSIVE_FRAG_RX}" "${ONOFF_SPEC}"; then
             return 1
         fi
     else
