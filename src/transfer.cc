@@ -212,10 +212,12 @@ bool transmitFrame(Flow*                    flow,
    ssize_t bytesToSend =
       static_cast<ssize_t>(rint(getRandomValue(static_cast<const double*>(flow->getTrafficSpec().OutboundFrameSize),
                                                flow->getTrafficSpec().OutboundFrameSizeRng)));
-   ssize_t bytesSent   = 0;
-   size_t  packetsSent = 0;
+   ssize_t  bytesSent   = 0;
+   uint64_t packetsSent = 0;
+   uint64_t framesSent  = 0;
    if(bytesToSend > 0) {
       const uint32_t frameID = flow->nextOutboundFrameID();
+      bool           success = true;
       while(bytesSent < bytesToSend) {
          // ====== Send message =============================================
          ssize_t chunkSize = std::min(bytesToSend - bytesSent,
@@ -238,8 +240,12 @@ bool transmitFrame(Flow*                    flow,
          }
          else {
             // Transmission error -> stop sending.
+            success = false;
             break;
          }
+      }
+      if(success) {
+         framesSent = 1;
       }
    }
    else {
@@ -247,7 +253,10 @@ bool transmitFrame(Flow*                    flow,
    }
 
    // ====== Update statistics ==============================================
-   flow->updateTransmissionStatistics(now, 1, packetsSent, static_cast<size_t>(bytesSent));
+   flow->updateTransmissionStatistics(now,
+                                      framesSent,
+                                      packetsSent,
+                                      static_cast<size_t>(bytesSent));
    return (bytesSent >= bytesToSend);
 }
 
