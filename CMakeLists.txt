@@ -381,6 +381,49 @@ IF (WITH_KERNEL_SCTP)
       ENDIF()
    ENDIF()
 
+   # ------ Test whether an SCTP socket can be created ----------------------
+   IF (HAVE_NETINET_SCTP_H)
+      SET(CMAKE_REQUIRED_LIBRARIES_BACKUP ${CMAKE_REQUIRED_LIBRARIES})
+      IF (SCTP_LIBRARY)
+         LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${SCTP_LIBRARY})
+      ENDIF()
+      IF (SOCKET_LIBRARY)
+         LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${SOCKET_LIBRARY})
+      ENDIF()
+
+      CHECK_C_SOURCE_RUNS("
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <netinet/sctp.h>
+
+int main (int argc, char** argv)
+{
+   int sd = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
+   if(sd < 0) {
+      sd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
+   }
+   if(sd < 0) {
+      return 1;
+   }
+   close(sd);
+   return 0;
+}"
+      HAVE_SCTP_SOCKET)
+
+      SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_BACKUP})
+
+      IF (HAVE_SCTP_SOCKET)
+         MESSAGE(STATUS "Kernel SCTP socket creation successful: SCTP is available for tests")
+         SET(HAVE_SCTP_FOR_TESTS TRUE CACHE INTERNAL "SCTP socket creation supported for tests")
+         ADD_DEFINITIONS(-DHAVE_SCTP_SOCKET)
+      ELSE()
+         MESSAGE(STATUS "Kernel SCTP socket creation failed: SCTP is NOT available for tests")
+         SET(HAVE_SCTP_FOR_TESTS FALSE CACHE INTERNAL "SCTP socket creation supported for tests")
+      ENDIF()
+   ENDIF()
+
 ELSE()
    # ====== SCTPLIB User-Space SCTP =========================================
    CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPLIB_SCTP_H)

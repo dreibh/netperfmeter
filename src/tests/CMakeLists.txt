@@ -184,6 +184,8 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
    FOREACH(ARG ${EXTRA_TEST_ARGS})
       IF(ARG MATCHES "^--no-(.*)")
          LIST(APPEND TEST_LABELS "no-${CMAKE_MATCH_1}")
+      ELSEIF(ARG STREQUAL "--control-over-sctp")
+         LIST(APPEND TEST_LABELS "control-sctp")
       ENDIF()
    ENDFOREACH()
 
@@ -785,3 +787,55 @@ ADD_NETPERFMETER_FLOW_TEST(profile_ai_edge_inferencing
 # 100. Federated Learning Localized Gradient Updates (5 fps, mean 3500 B, maxmsgsize=1200, TCP)
 ADD_NETPERFMETER_FLOW_TEST(profile_ai_federated_weights_frag
    ::1       tcp const5:truncnormal3500,250:const5:truncnormal3500,250:maxmsgsize=1200 plain 8)
+
+
+#############################################################################
+#### SCTP FLOW INTEGRATION TESTS                                         ####
+#############################################################################
+
+IF (HAVE_SCTP_FOR_TESTS)
+
+# ====== 1. Bidirectional Flows =============================================
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_bidi_ipv4 127.0.0.1 sctp const10:const1000:const10:const1000 plain)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_bidi_ipv6 ::1       sctp const10:const1000:const10:const1000 plain)
+
+# ====== 2. Upload-Only Flows (Active -> Passive) ===========================
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_upload_ipv4 127.0.0.1 sctp const10:const1000:const0:const0 plain)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_upload_ipv6 ::1       sctp const10:const1000:const0:const0 plain)
+
+# ====== 3. Download-Only Flows (Passive -> Active) =========================
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_download_ipv4 127.0.0.1 sctp const0:const0:const10:const1000 plain)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_download_ipv6 ::1       sctp const0:const0:const10:const1000 plain)
+
+# ====== 4. Control Channel Over SCTP =======================================
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ctrl_sctp_bidi_ipv4 127.0.0.1 sctp const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ctrl_sctp_bidi_ipv6 ::1       sctp const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_ctrl_sctp_bidi_ipv4  127.0.0.1 tcp  const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_ctrl_sctp_bidi_ipv4  127.0.0.1 udp  const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+
+# ====== 5. Compression Formats Matrix ======================================
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_gz  127.0.0.1 sctp const10:const1000:const10:const1000 gz)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_bz2 127.0.0.1 sctp const10:const1000:const10:const1000 bz2)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_xz  127.0.0.1 sctp const10:const1000:const10:const1000 xz)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_zst 127.0.0.1 sctp const10:const1000:const10:const1000 zst)
+
+# ====== 6. Output Combinations (Without Scalars and/or Vectors) ============
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_no_scalar  127.0.0.1 sctp const10:const1000:const10:const1000 plain 2 --no-scalar)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_no_vector  127.0.0.1 sctp const10:const1000:const10:const1000 plain 2 --no-vector)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_no_outputs 127.0.0.1 sctp const10:const1000:const10:const1000 plain 2 --no-scalar --no-vector)
+
+# ====== 7. Framing and Defragmentation (maxmsgsize & frame sizes) ==========
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_framing_small      127.0.0.1 sctp const10:const1000:const10:const1000:maxmsgsize=250  plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_framing_medium     127.0.0.1 sctp const10:const4000:const10:const4000:maxmsgsize=1000 plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_framing_large      127.0.0.1 sctp const10:const8000:const10:const8000:maxmsgsize=1400 plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_framing_asymmetric 127.0.0.1 sctp const10:const4000:const10:const1000:maxmsgsize=500  plain 2)
+
+# ====== 8. On-Off Flow Schedule Tests (onoff=t1,t2,...) ====================
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_single_burst_ipv4    127.0.0.1 sctp const20:const1000:const0:const0:onoff=1,3 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_single_burst_ipv6    ::1       sctp const20:const1000:const0:const0:onoff=1,3 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_multiburst_ipv4      127.0.0.1 sctp const20:const1000:const0:const0:onoff=1,2,3,4 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_delayed_start        127.0.0.1 sctp const20:const1000:const0:const0:onoff=2 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_fragmented           127.0.0.1 sctp const20:const3000:const0:const0:onoff=1,3:maxmsgsize=1000 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_never_active         127.0.0.1 sctp const20:const1000:const0:const0:onoff=10,20 plain 3)
+
+ENDIF()

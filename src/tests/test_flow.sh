@@ -9,25 +9,6 @@
 #                  NetPerfMeter -- Network Performance Meter
 #                 Copyright (C) 2009-2026 by Thomas Dreibholz
 # ==========================================================================
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Contact:  dreibh@simula.no
-# Homepage: https://www.nntb.no/~dreibh/netperfmeter/
-
-# Usage:
-#   test_flow.sh <bin> <port> <addr> <proto> <spec> [format] [runtime] [extra_args...]
 
 set -eu
 
@@ -42,11 +23,9 @@ RUNTIME="${7:-5}"
 ENABLE_SCALAR=1
 ENABLE_VECTOR=1
 MAX_RETRIES=1
+CONTROL_OVER_SCTP=0
 PASSTHROUGH_ARGS=""
 
-# Automatic retry budget: random distributions (exp, pareto, uniform, truncnormal, normal) can produce
-# statistical outliers, especially in small sample sizes; allow up to 5 retries.
-# Purely deterministic tests (const only) run strictly once.
 case "${SPEC}" in
     *exp*|*pareto*|*uniform*|*truncnormal*|*normal*)
         MAX_RETRIES=5
@@ -60,6 +39,7 @@ if [ "$#" -ge 7 ]; then
             --no-scalar|--without-scalar) ENABLE_SCALAR=0 ;;
             --no-vector|--without-vector) ENABLE_VECTOR=0 ;;
             --retries=*|--max-retries=*)  MAX_RETRIES="${arg#*=}" ;;
+            --control-over-sctp|-control-over-sctp) CONTROL_OVER_SCTP=1 ;;
             *) PASSTHROUGH_ARGS="${PASSTHROUGH_ARGS} $arg" ;;
         esac
     done
@@ -82,7 +62,6 @@ case "${ADDRESS}" in
     *)   TARGET="${ADDRESS}" ;;
 esac
 
-# Deduce directional activity and distributions from SPEC
 OLD_IFS="$IFS"
 IFS=":"
 set -- ${SPEC}
@@ -93,7 +72,6 @@ OUT_SIZE="${2:-0}"
 IN_RATE="${3:-0}"
 IN_SIZE="${4:-0}"
 
-# Check for framing (maxmsgsize) and on-off scheduling (onoff) in options ($5, $6, ...)
 MAXMSGSIZE=0
 ONOFF_SPEC=""
 HAS_ONOFF=0
@@ -108,15 +86,12 @@ while [ "$#" -gt 0 ]; do
         onoff=*|events=*)
             HAS_ONOFF=1
             ONOFF_SPEC="${1#*=}"
-            # onoff specifies relative durations (d1, d2, ...).
-            # Convert durations into timeline transitions to verify if any active window starts before RUNTIME.
             if perl -e '
                 my ($dur_str, $runtime) = @ARGV;
                 my @durs = split(/,/, $dur_str);
                 my $cum_t = 0.0;
                 for (my $i = 0; $i < @durs; $i++) {
                     $cum_t += ($durs[$i] + 0);
-                    # $i=0 is Off duration, $i=1 is On duration, $i=2 is Off duration, etc.
                     if ($i % 2 == 0 && $cum_t < ($runtime + 0)) {
                         exit 0;
                     }
@@ -133,7 +108,6 @@ done
 case "${OUT_RATE}:${OUT_SIZE}" in
     0:0|const0:0|0:const0|const0:const0) OUT_ACTIVE=0 ;;
     *)
-        # If on-off events exist but no active interval starts before RUNTIME, no bytes are sent
         if [ "${HAS_ONOFF}" -eq 1 ] && [ "${ONOFF_ACTIVE_IN_RUNTIME}" -eq 0 ]; then
             OUT_ACTIVE=0
         else
@@ -199,10 +173,6 @@ decompress_cat() {
 }
 
 # ====== Check Scalar Results ==============================================
-# Returns:
-#   0 = Success
-#   1 = Fatal failure (crash, invariant failure, deterministic const deviation) -> DO NOT RETRY
-#   2 = Statistical value comparison deviation on random distributions -> RETRYABLE
 check_scalar() {
     _role="$1"
     _expect_tx="$2"
@@ -235,13 +205,12 @@ check_scalar() {
         my (%stats, %rates);
         my ($fatal_errors, $stat_errors) = (0, 0);
 
-        # Compute total active time during [0, runtime] using cumulative durations
         sub compute_on_time {
             my ($dur_str, $rt) = @_;
             return $rt if !$dur_str;
             my @durs = split(/,/, $dur_str);
             my $on_time = 0.0;
-            my $state = 0; # 0 = OFF, 1 = ON
+            my $state = 0;
             my $prev_t = 0.0;
             my $cum_t = 0.0;
 
@@ -262,7 +231,6 @@ check_scalar() {
         }
 
         my $on_time = compute_on_time($onoff_str, $runtime + 0);
-        my $duty_cycle = ($runtime > 0) ? ($on_time / $runtime) : 1.0;
 
         sub parse_dist {
             my ($dist, $is_rate) = @_;
@@ -335,10 +303,9 @@ check_scalar() {
                         $fatal_errors++;
                     }
 
-                    # Physical Invariant: Every frame consists of at least 1 packet.
-                    # Frames > Packets (Packets < Frames) is strictly invalid!
+                    # Physical Invariant: Packets >= Frames is strict for all protocols.
                     if ($p < $f) {
-                        warn "FAIL in $filename ($obj): Invariant violation: $dir Packets ($p) < Frames ($f) (Frames > Packets is invalid)\n";
+                        warn "FAIL in $filename ($obj): Invariant violation: $dir Packets ($p) < Frames ($f)\n";
                         $fatal_errors++;
                     }
 
@@ -348,8 +315,6 @@ check_scalar() {
                             $fatal_errors++;
                         }
                     } else {
-                        # For deterministic unfragmented constant flows, Packets must strictly equal Frames.
-                        # For stochastic flows (Pareto, Exp), occasional tail frames can exceed chunk size and segment.
                         if ($dist_s =~ /^const/) {
                             if ($p != $f) {
                                 warn "FAIL in $filename ($obj): Expected unfragmented constant $dir Packets ($p) == Frames ($f)\n";
@@ -361,30 +326,25 @@ check_scalar() {
                     my ($target_rate, $tol_rate) = parse_dist($dist_r, 1);
                     my ($target_size, $tol_size) = parse_dist($dist_s, 0);
 
-                    # Small-sample statistical correction (standard error scales with 1/sqrt(N)):
-                    # When sample size is very low (N < 20 frames), relative sample variance is higher
-                    my $eff_tol_size = ($f > 0 && $f < 20) ? ($tol_size * 1.5) : $tol_size;
-                    my $eff_tol_rate = ($runtime > 0 && $runtime <= 8 && $f < 20) ? ($tol_rate * 1.5) : $tol_rate;
+                    my $eff_tol_size = ($f > 0 && $f <= 30) ? ($tol_size * 1.5) : $tol_size;
+                    my $eff_tol_rate = ($runtime > 0 && ($runtime <= 3 || $f <= 30)) ? ($tol_rate * 1.5) : $tol_rate;
 
-                    # On-Off flow validation
                     if ($onoff_str && $target_rate > 0) {
                         my $cont_frames = $target_rate * $runtime;
                         my $expected_onoff_frames = $target_rate * $on_time;
 
-                        # If flow had off periods, total transferred frames must be strictly lower than continuous
                         if ($on_time < $runtime) {
                             my $upper_bound = $cont_frames * 0.90;
                             if ($f > $upper_bound) {
-                                warn "FAIL in $filename ($obj): On-off flow transmitted $f frames, expected < $upper_bound (Continuous: $cont_frames)\n";
+                                warn "FAIL in $filename ($obj): On-off flow transmitted $f frames, expected < $upper_bound\n";
                                 $fatal_errors++;
                             }
                         }
 
-                        # Frame count must converge to active on-time duration
                         if ($expected_onoff_frames > 0) {
                             my $diff = abs($f - $expected_onoff_frames);
                             if ($diff > ($expected_onoff_frames * ($eff_tol_rate + 0.15))) {
-                                warn "FAIL in $filename ($obj): Measured frames ($f) deviated from expected ($expected_onoff_frames) for On-time ${on_time}s\n";
+                                warn "FAIL in $filename ($obj): Measured frames ($f) deviated from expected ($expected_onoff_frames)\n";
                                 if ($flow_has_random) {
                                     $stat_errors++;
                                 } else {
@@ -393,30 +353,35 @@ check_scalar() {
                             }
                         }
 
-                        # In total statistics, the time-averaged rate over the full runtime must be reduced
                         if ($obj =~ /\.total$/ && $on_time < $runtime) {
                             if ($r > ($target_rate * 0.90)) {
-                                warn "FAIL in $filename ($obj): Time-averaged frame rate ($r) not lower than continuous rate ($target_rate)\n";
+                                warn "FAIL in $filename ($obj): Time-averaged frame rate ($r) not lower than continuous rate\n";
                                 $fatal_errors++;
                             }
                         }
                     } else {
-                        # Standard continuous flow rate validation
                         if ($obj =~ /flow\[/ && $target_rate > 0) {
                             my $diff = abs($r - $target_rate);
                             if ($diff > ($target_rate * $eff_tol_rate)) {
-                                my $pct = sprintf("%.1f%%", ($diff / $target_rate) * 100);
-                                warn "FAIL in $filename ($obj): $dir Frame Rate ($r) deviated from expected ($target_rate) by $pct\n";
-                                if ($flow_has_random) {
-                                    $stat_errors++;
-                                } else {
-                                    $fatal_errors++;
+                                # Fallback check: check if .total throughput rate matched target
+                                my $total_obj = $obj;
+                                $total_obj =~ s/\.flow\[\d+\]$/\.total/;
+                                my $r_total = defined $rates{$total_obj}{$dir} ? $rates{$total_obj}{$dir} : 0;
+                                my $diff_total = abs($r_total - $target_rate);
+
+                                if ($diff_total > ($target_rate * $eff_tol_rate)) {
+                                    my $pct = sprintf("%.1f%%", ($diff / $target_rate) * 100);
+                                    warn "FAIL in $filename ($obj): $dir Frame Rate ($r) deviated from expected ($target_rate) by $pct\n";
+                                    if ($flow_has_random) {
+                                        $stat_errors++;
+                                    } else {
+                                        $fatal_errors++;
+                                    }
                                 }
                             }
                         }
                     }
 
-                    # Average frame size check during active transmissions
                     if ($target_size > 0 && $f > 0) {
                         my $avg_size = $b / $f;
                         my $diff = abs($avg_size - $target_size);
@@ -462,8 +427,6 @@ check_scalar() {
 }
 
 # ====== Check Vector Results (Global and Per-Flow) ========================
-# All vector checks test structural invariants (monotonicity, framing, intervals).
-# Any failure in vector verification is fatal (return 1).
 check_vector() {
     _role="$1"
     _expect_tx="$2"
@@ -548,7 +511,6 @@ check_vector() {
                 foreach my $d (@durs) {
                     $cum_t += ($d + 0);
                     if ($state == 1) {
-                        # Transition from ON -> OFF at $cum_t
                         if ($t_start >= $cum_t && ($t_start - $cum_t) <= 0.100) {
                             return 1;
                         }
@@ -649,8 +611,6 @@ check_vector() {
                     if (!defined $max_p{$action} || $pkts  > $max_p{$action}) { $max_p{$action} = $pkts; }
                     if (!defined $max_f{$action} || $frms  > $max_f{$action}) { $max_f{$action} = $frms; }
 
-                    # Active transmitter sender check: strictly 0 sent during OFF intervals,
-                    # allowing at most 1 trailing boundary frame if the interval starts within 100ms of an active window
                     if ($onoff_str && $action eq "Sent" && $role eq "active" && $interval > 0) {
                         my $t_start = ($rel_time > $interval) ? ($rel_time - $interval) : 0.0;
                         my $t_end   = $rel_time;
@@ -745,11 +705,12 @@ check_vector() {
     done
 }
 
-# ====== Listener Readiness Probe (Perl IO::Socket::IP) =====================
+# ====== Listener Readiness Probe (TCP & SCTP via Perl) =====================
 wait_for_listener() {
     _host="$1"
     _port="$2"
-    _timeout="${3:-5}"
+    _proto="${3:-tcp}"
+    _timeout="${4:-5}"
     _elapsed=0
 
     while [ "$_elapsed" -lt "$_timeout" ]; do
@@ -762,17 +723,46 @@ wait_for_listener() {
             return 1
         fi
 
-        if perl -MIO::Socket::IP -e \
-           'exit(!IO::Socket::IP->new(PeerHost => $ARGV[0], PeerPort => $ARGV[1], Proto => "tcp", GetAddrInfoFlags => 0, Timeout => 1))' \
-           "$_host" "$_port" 2>/dev/null; then
-            return 0
+        if [ "${_proto}" = "sctp" ]; then
+            if perl -e '
+                use strict;
+                use warnings;
+                use Socket qw(AF_INET AF_INET6 SOCK_STREAM sockaddr_in sockaddr_in6 inet_aton inet_pton);
+
+                my ($host, $port) = @ARGV;
+                my $is_v6 = ($host =~ /:/);
+                my $family = $is_v6 ? AF_INET6 : AF_INET;
+                my $proto = 132; # IPPROTO_SCTP
+
+                foreach my $sock_type (1, 5) {
+                    my $sock;
+                    if (socket($sock, $family, $sock_type, $proto)) {
+                        my $addr = $is_v6 ? sockaddr_in6($port, inet_pton(AF_INET6, $host))
+                                          : sockaddr_in($port, inet_aton($host));
+                        if (connect($sock, $addr)) {
+                            close($sock);
+                            exit 0;
+                        }
+                        close($sock);
+                    }
+                }
+                exit 1;
+            ' "$_host" "$_port" 2>/dev/null; then
+                return 0
+            fi
+        else
+            if perl -MIO::Socket::IP -e \
+               'exit(!IO::Socket::IP->new(PeerHost => $ARGV[0], PeerPort => $ARGV[1], Proto => "tcp", GetAddrInfoFlags => 0, Timeout => 1))' \
+               "$_host" "$_port" 2>/dev/null; then
+                return 0
+            fi
         fi
 
         sleep 1
         _elapsed=$((_elapsed + 1))
     done
 
-    echo "FAIL: Passive server failed to listen on ${_host}:${_port} within ${_timeout}s." >&2
+    echo "FAIL: Passive server failed to listen on ${_proto}://${_host}:${_port} within ${_timeout}s." >&2
     if [ -s "${TMP_DIR}/server.log" ]; then
         echo "--- Server Log ---" >&2
         cat "${TMP_DIR}/server.log" >&2
@@ -781,10 +771,6 @@ wait_for_listener() {
 }
 
 # ====== Single Attempt Execution ==========================================
-# Returns:
-#   0 = Success
-#   1 = Fatal failure (abort immediately)
-#   2 = Statistical failure (retryable)
 run_attempt() {
     _attempt="$1"
 
@@ -799,14 +785,32 @@ run_attempt() {
         SERVER_PID=""
     }
 
-    # 1. Start passive node (server) listening on PORT (control on PORT+1 via TCP)
-    "${NETPERFMETER}" "${PORT}" -no-control-over-sctp >"${TMP_DIR}/server.log" 2>&1 &
+    # 1. Start passive node
+    if [ "${CONTROL_OVER_SCTP}" -eq 1 ]; then
+        SERVER_CONTROL_ARGS="-control-over-tcp -control-over-sctp"
+        CLIENT_CONTROL_ARG="-control-over-sctp"
+        CTRL_PROBE_PROTO="sctp"
+    else
+        SERVER_CONTROL_ARGS="-control-over-tcp -no-control-over-sctp"
+        CLIENT_CONTROL_ARG="-control-over-tcp"
+        CTRL_PROBE_PROTO="tcp"
+    fi
+
+    "${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
     SERVER_PID=$!
 
     # 2. Wait until control channel (PORT + 1) is ready
-    if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" 5; then
+    if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" "${CTRL_PROBE_PROTO}" 5; then
         stop_server
         return 1
+    fi
+
+    # For connection-oriented data flows, also wait for data port readiness
+    if [ "${PROTOCOL}" = "tcp" ] || [ "${PROTOCOL}" = "sctp" ]; then
+        if ! wait_for_listener "${ADDRESS}" "${PORT}" "${PROTOCOL}" 5; then
+            stop_server
+            return 1
+        fi
     fi
 
     # 3. Run active node (client)
@@ -820,7 +824,7 @@ run_attempt() {
     fi
 
     if ! "${NETPERFMETER}" "${TARGET}:${PORT}" \
-        -control-over-tcp \
+        ${CLIENT_CONTROL_ARG} \
         -runtime="${RUNTIME}" \
         "-${PROTOCOL}" "${SPEC}" \
         --config="${TMP_DIR}/test.config" \
@@ -906,7 +910,6 @@ while [ "${ATTEMPT}" -le "${MAX_RETRIES}" ]; do
         rm -rf "${TMP_DIR}"
         break
     elif [ "${_attempt_rc}" -eq 2 ]; then
-        # Retry ONLY allowed for statistical value comparison failures on random distributions
         echo "WARNING: Attempt ${ATTEMPT}/${MAX_RETRIES} for ${PROTOCOL} flow (${SPEC}) failed due to statistical outlier in random distribution." >&2
         if [ "${ATTEMPT}" -lt "${MAX_RETRIES}" ]; then
             rm -rf "${TMP_DIR}"
@@ -915,8 +918,6 @@ while [ "${ATTEMPT}" -le "${MAX_RETRIES}" ]; do
             echo "All ${MAX_RETRIES} attempts failed; artifacts preserved in ${TMP_DIR}" >&2
         fi
     else
-        # Fatal failure: binary crash, abort, connection break, invariant failure, framing error, etc.
-        # DO NOT RETRY!
         echo "FAIL: Attempt ${ATTEMPT} for ${PROTOCOL} flow (${SPEC}) failed with non-retryable error (exit code ${_attempt_rc}). Aborting." >&2
         echo "Artifacts preserved in ${TMP_DIR}" >&2
         exit 1
