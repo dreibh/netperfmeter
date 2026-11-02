@@ -123,7 +123,7 @@ FUNCTION(ADD_SCRIPT_CLI_TESTS SCRIPT_NAME)
    # Help / Usage checks (-h, --help)
    ADD_TEST(
       NAME cli_${SCRIPT_NAME}_help_short
-      COMMAND "${SCRIPT_PATH}" --help
+      COMMAND "${SCRIPT_PATH}" -h
    )
    ADD_TEST(
       NAME cli_${SCRIPT_NAME}_help_long
@@ -189,7 +189,7 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
       ENDIF()
    ENDFOREACH()
 
-   # Dynamic timeout: accommodates up to 5 retries plus margin under high concurrency (-j64)
+   # Dynamic timeout: accommodates up to 5 retries plus margin under high concurrency (-j128)
    MATH(EXPR TEST_TIMEOUT "(${RUNTIME} * 5) + 40")
 
    SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
@@ -233,7 +233,7 @@ ADD_NETPERFMETER_FAIL_TEST(fail_invalid_short_opt -Z)
 
 
 #############################################################################
-#### FLOW INTEGRATION TESTS                                              ####
+#### FLOW INTEGRATION TESTS (TCP & UDP)                                  ####
 #############################################################################
 
 # ====== 1. Bidirectional Flows =============================================
@@ -292,7 +292,7 @@ ADD_NETPERFMETER_FLOW_TEST(flow_udp_framing_asymmetric 127.0.0.1 udp const10:con
 
 
 #############################################################################
-#### RANDOM DISTRIBUTION TESTS (VBR FLOWS)                               ####
+#### RANDOM DISTRIBUTION TESTS (VBR FLOWS - TCP & UDP)                   ####
 #############################################################################
 
 # 1. Uniform Distribution (Rate [15, 25) -> HM ~19.6, Size [800, 1200) -> AM 1000)
@@ -313,7 +313,7 @@ ADD_NETPERFMETER_FLOW_TEST(dist_udp_pareto  127.0.0.1 udp pareto15,3:pareto667,3
 
 
 #############################################################################
-#### ON-OFF FLOW SCHEDULE TESTS (onoff=t1,t2,...)                        ####
+#### ON-OFF FLOW SCHEDULE TESTS (TCP & UDP)                              ####
 #############################################################################
 
 # ====== 1. Single On-Off Burst (Off 0..1s, On 1..3s, Off 3..5s) ============
@@ -358,7 +358,8 @@ ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_never_active
 
 
 #############################################################################
-#### 50 REALISTIC APPLICATION DISTRIBUTION PROFILES                      ####
+#### 150 REALISTIC APPLICATION DISTRIBUTION PROFILES                     ####
+#### (Profiles 1-100: TCP & UDP, Profiles 101-150: SCTP)                 ####
 #############################################################################
 
 # ====== 1. Real-Time Audio, Voice & Interactive Speech =====================
@@ -796,46 +797,310 @@ ADD_NETPERFMETER_FLOW_TEST(profile_ai_federated_weights_frag
 IF (HAVE_SCTP_FOR_TESTS)
 
 # ====== 1. Bidirectional Flows =============================================
+# Symmetrical constant rate and size (10 fps, 1000 B) over IPv4 and IPv6
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_bidi_ipv4 127.0.0.1 sctp const10:const1000:const10:const1000 plain)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_bidi_ipv6 ::1       sctp const10:const1000:const10:const1000 plain)
 
 # ====== 2. Upload-Only Flows (Active -> Passive) ===========================
+# Unidirectional sender traffic (10 fps, 1000 B, no inbound)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_upload_ipv4 127.0.0.1 sctp const10:const1000:const0:const0 plain)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_upload_ipv6 ::1       sctp const10:const1000:const0:const0 plain)
 
 # ====== 3. Download-Only Flows (Passive -> Active) =========================
+# Unidirectional receiver traffic (no outbound, 10 fps, 1000 B inbound)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_download_ipv4 127.0.0.1 sctp const0:const0:const10:const1000 plain)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_download_ipv6 ::1       sctp const0:const0:const10:const1000 plain)
 
 # ====== 4. Control Channel Over SCTP =======================================
+# Control channel using SCTP with SCTP data flow
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ctrl_sctp_bidi_ipv4 127.0.0.1 sctp const10:const1000:const10:const1000 plain 2 --control-over-sctp)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ctrl_sctp_bidi_ipv6 ::1       sctp const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+
+# Control channel using SCTP with TCP data flow
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_ctrl_sctp_bidi_ipv4  127.0.0.1 tcp  const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+
+# Control channel using SCTP with UDP data flow
 ADD_NETPERFMETER_FLOW_TEST(flow_udp_ctrl_sctp_bidi_ipv4  127.0.0.1 udp  const10:const1000:const10:const1000 plain 2 --control-over-sctp)
 
 # ====== 5. Compression Formats Matrix ======================================
+# Verify scalar/vector compressed stream logging (gzip, bzip2, xz, zstd)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_gz  127.0.0.1 sctp const10:const1000:const10:const1000 gz)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_bz2 127.0.0.1 sctp const10:const1000:const10:const1000 bz2)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_xz  127.0.0.1 sctp const10:const1000:const10:const1000 xz)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_zst 127.0.0.1 sctp const10:const1000:const10:const1000 zst)
 
 # ====== 6. Output Combinations (Without Scalars and/or Vectors) ============
+# Verify CLI suppression flags (--no-scalar, --no-vector)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_no_scalar  127.0.0.1 sctp const10:const1000:const10:const1000 plain 2 --no-scalar)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_no_vector  127.0.0.1 sctp const10:const1000:const10:const1000 plain 2 --no-vector)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_no_outputs 127.0.0.1 sctp const10:const1000:const10:const1000 plain 2 --no-scalar --no-vector)
 
 # ====== 7. Framing and Defragmentation (maxmsgsize & frame sizes) ==========
+# Small frames (1,000 B) segmented into 250 B chunks (4 chunks/frame)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_framing_small      127.0.0.1 sctp const10:const1000:const10:const1000:maxmsgsize=250  plain 2)
+# Medium frames (4,000 B) segmented into 1,000 B chunks (4 chunks/frame)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_framing_medium     127.0.0.1 sctp const10:const4000:const10:const4000:maxmsgsize=1000 plain 2)
+# Large frames (8,000 B) segmented into 1,400 B chunks (6 chunks/frame)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_framing_large      127.0.0.1 sctp const10:const8000:const10:const8000:maxmsgsize=1400 plain 2)
+# Asymmetric bidirectional frame sizes (out: 4,000 B, in: 1,000 B, maxmsgsize: 500 B)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_framing_asymmetric 127.0.0.1 sctp const10:const4000:const10:const1000:maxmsgsize=500  plain 2)
 
 # ====== 8. On-Off Flow Schedule Tests (onoff=t1,t2,...) ====================
+# Single On-Off Burst (Off 0..1s, On 1..3s, Off 3..5s)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_single_burst_ipv4    127.0.0.1 sctp const20:const1000:const0:const0:onoff=1,3 plain 5)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_single_burst_ipv6    ::1       sctp const20:const1000:const0:const0:onoff=1,3 plain 5)
+# Multi-Burst On-Off (Alternating On/Off: 1..2s On, 3..4s On)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_multiburst_ipv4      127.0.0.1 sctp const20:const1000:const0:const0:onoff=1,2,3,4 plain 5)
+# Delayed Start (Off 0..2s, On 2..5s until test completion)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_delayed_start        127.0.0.1 sctp const20:const1000:const0:const0:onoff=2 plain 5)
+# On-Off Combined with Message Segmentation
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_fragmented           127.0.0.1 sctp const20:const3000:const0:const0:onoff=1,3:maxmsgsize=1000 plain 5)
+# Negative Boundary: Events Scheduled Beyond Runtime (0 bytes transferred)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_never_active         127.0.0.1 sctp const20:const1000:const0:const0:onoff=10,20 plain 3)
+
+# ====== 9. Basic Stochastic Distribution Tests (VBR Flows) =================
+# 1. Uniform Distribution (Rate [15, 25) -> HM ~19.6, Size [800, 1200) -> AM 1000)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_uniform      127.0.0.1 sctp uniform15,25:uniform800,1200:uniform15,25:uniform800,1200 plain 8)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_uniform_ipv6 ::1       sctp uniform15,25:uniform800,1200:uniform15,25:uniform800,1200 plain 8)
+
+# 2. Exponential Frame Sizes with Constant Rate (Rate 20 frames/s, Exp Size mean 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_exp          127.0.0.1 sctp const20:exp1000:const20:exp1000 plain 8)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_exp_ipv6     ::1       sctp const20:exp1000:const20:exp1000 plain 8)
+
+# 3. Truncated Normal Distribution (Rate mean 20, stddev 2; Size mean 1000, stddev 100)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_truncnormal      127.0.0.1 sctp truncnormal20,2:truncnormal1000,100:truncnormal20,2:truncnormal1000,100 plain 8)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_truncnormal_ipv6 ::1       sctp truncnormal20,2:truncnormal1000,100:truncnormal20,2:truncnormal1000,100 plain 8)
+
+# 4. Pareto Distribution with Finite Variance (Shape alpha=3.0 -> HM = (4/3)*k = 20 for k=15; Size k=666.7 -> AM 1000)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_pareto      127.0.0.1 sctp pareto15,3:pareto667,3:pareto15,3:pareto667,3 plain 8)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_pareto_ipv6 ::1       sctp pareto15,3:pareto667,3:pareto15,3:pareto667,3 plain 8)
+
+# ====== 10. Control-Over-SCTP with Stochastic Data Distributions ===========
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_ctrl_sctp_uniform
+   127.0.0.1 sctp uniform15,25:uniform800,1200:uniform15,25:uniform800,1200 plain 8 --control-over-sctp)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_ctrl_sctp_exp
+   127.0.0.1 sctp const20:exp1000:const20:exp1000 plain 8 --control-over-sctp)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_ctrl_sctp_truncnormal
+   127.0.0.1 sctp truncnormal20,2:truncnormal1000,100:truncnormal20,2:truncnormal1000,100 plain 8 --control-over-sctp)
+ADD_NETPERFMETER_FLOW_TEST(dist_sctp_ctrl_sctp_pareto
+   127.0.0.1 sctp pareto15,3:pareto667,3:pareto15,3:pareto667,3 plain 8 --control-over-sctp)
+
+
+# ===========================================================================
+# 50 REALISTIC SCTP APPLICATION DISTRIBUTION PROFILES (Profiles 101 - 150)
+# ===========================================================================
+
+# ====== 15. 3GPP 4G LTE & 5G Cellular Core Signaling =======================
+# 101. 4G LTE S1AP / NAS Signaling Transport (20 fps, ~200 B / ~230 B, uniform request/response)
+ADD_NETPERFMETER_FLOW_TEST(profile_telco_s1ap_nas_transport
+   127.0.0.1 sctp uniform18,22:uniform120,280:uniform18,22:uniform140,320 plain 8)
+
+# 102. 5G NGAP gNodeB Inter-gNB Handover Coordination over IPv6 (15 fps, 350 B / 420 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_telco_ngap_handover_v6
+   ::1       sctp const15:truncnormal350,30:const15:truncnormal420,40 plain 8)
+
+# 103. Diameter S6a HSS Authentication Vectors (30 fps, 320 B request -> Exp 600 B reply)
+ADD_NETPERFMETER_FLOW_TEST(profile_telco_diameter_s6a_auth
+   127.0.0.1 sctp uniform25,35:uniform240,400:uniform25,35:exp600 plain 8)
+
+# 104. Diameter Gx/Gy Real-Time Credit-Control Policy & Charging (40 fps, 280 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_telco_diameter_gx_gy_charging
+   127.0.0.1 sctp const40:truncnormal280,25:const40:truncnormal280,25 plain 8)
+
+# 105. LTE X2AP Neighbor Cell Load Indication over IPv6 (15 fps, 240 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_telco_x2ap_load_indication_v6
+   ::1       sctp uniform10,20:uniform180,300:uniform10,20:uniform180,300 plain 8)
+
+# 106. SIGTRAN M3UA SS7 ISUP Call Setup Routing (25 fps, 128 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_telco_m3ua_ss7_isup
+   127.0.0.1 sctp const25:uniform96,160:const25:uniform96,160 plain 8)
+
+# 107. SIGTRAN SUA SCCP Subsystem Routing Management (15 fps, 210 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_telco_sua_sccp_routing
+   127.0.0.1 sctp uniform12,18:truncnormal210,20:uniform12,18:truncnormal210,20 plain 8)
+
+# 108. SIGTRAN M2PA Link Alignment State Sync over IPv6 (50 fps, 64 B small frames, const)
+ADD_NETPERFMETER_FLOW_TEST(profile_telco_m2pa_link_alignment_v6
+   ::1       sctp const50:const64:const50:const64 plain 8)
+
+# 109. 5G N2 AMF-SMF PDU Session Establishment (20 fps, Pareto mean 450 B, pareto)
+ADD_NETPERFMETER_FLOW_TEST(profile_telco_5g_n2_n3_setup
+   127.0.0.1 sctp uniform15,25:pareto300,3:uniform15,25:pareto300,3 plain 8)
+
+# 110. CAMEL CAP Prepaid Call Interrogation (10 fps, 325 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_telco_camel_cap_billing
+   127.0.0.1 sctp const10:uniform200,450:const10:uniform200,450 plain 8)
+
+
+# ====== 16. WebRTC SCTP Data Channels (RFC 8831) ===========================
+# 111. WebRTC Data Channel Low-Latency Game Controller Input (60 fps, 90 B, truncnormal/uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_game_input
+   127.0.0.1 sctp truncnormal60,3:uniform70,110:truncnormal60,3:uniform70,110 plain 8)
+
+# 112. WebRTC In-Conference Text Chat Stream over IPv6 (10 fps, 200 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_chat_messages_v6
+   ::1       sctp uniform5,15:uniform80,320:uniform5,15:uniform80,320 plain 8)
+
+# 113. WebRTC Collaborative Canvas Vector Stroke Sync (30 fps, 180 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_whiteboard_sync
+   127.0.0.1 sctp const30:truncnormal180,20:const30:truncnormal180,20 plain 8)
+
+# 114. WebRTC P2P Chunked File Sharing with Framing (20 fps, 4000 B frame, maxmsgsize=1000)
+ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_file_chunk_transfer
+   127.0.0.1 sctp const20:const4000:const0:const0:maxmsgsize=1000 plain 8)
+
+# 115. WebRTC Client-Side WebVitals & QoS Telemetry over IPv6 (15 fps, 200 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_telemetry_metrics_v6
+   ::1       sctp uniform10,20:uniform150,250:uniform10,20:uniform150,250 plain 8)
+
+# 116. WebRTC High-Rate Virtual Mouse / Laser Pointer Stream (100 fps, 48 B minimal packets)
+ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_pointer_teleoperation
+   127.0.0.1 sctp const100:const48:const100:const48 plain 8)
+
+# 117. WebRTC Metaverse 3D Spatial Audio Orientation Metadata (50 fps, 120 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_spatial_audio_meta
+   127.0.0.1 sctp uniform45,55:truncnormal120,15:uniform45,55:truncnormal120,15 plain 8)
+
+# 118. WebRTC MLS End-to-End Encryption Key Ratchet Exchange over IPv6 (4 fps, 400 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_e2ee_key_ratchet_v6
+   ::1       sctp const4:uniform300,500:const4:uniform300,500 plain 8)
+
+
+# ====== 17. Aviation, Air Traffic Management & Maritime ====================
+# 119. Eurocontrol ASTERIX Category 048 Monoradar Target Reports (40 fps, 380 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_asterix_cat048_radar
+   127.0.0.1 sctp uniform35,45:uniform280,480:uniform35,45:uniform280,480 plain 8)
+
+# 120. ASTERIX CAT 062 Track Position Exchange over IPv6 (50 fps, 320 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_asterix_cat062_system_track
+   ::1       sctp const50:truncnormal320,30:const50:truncnormal320,30 plain 8)
+
+# 121. ICAO ATN/IPS Controller-Pilot Data Link Communications (8 fps, 250 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_atn_ips_cpdlc
+   127.0.0.1 sctp uniform6,10:uniform150,350:uniform6,10:uniform150,350 plain 8)
+
+# 122. Aeronautical Message Handling System (AMHS) Flight Plans (6 fps, Pareto mean 1200 B)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_aftn_amhs_flight_plans
+   127.0.0.1 sctp const6:pareto800,3:const6:pareto800,3 plain 8)
+
+# 123. FAA SWIM Digital NOTAM / Weather Bulletin Stream over IPv6 (11 fps, Exp mean 800 B)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_swim_notam_dissemination_v6
+   ::1       sctp uniform8,14:exp800:uniform8,14:exp800 plain 8)
+
+# 124. Coastal Vessel Traffic Service (VTS) Radar/AIS Fusion (25 fps, 300 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_marine_vts_ais_radar_fusion
+   127.0.0.1 sctp const25:uniform200,400:const25:uniform200,400 plain 8)
+
+# 125. Oceanic Airspace ADS-C Position & Meteorological Reporting (5 fps, 220 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_aero_ads_c_periodic_reports
+   127.0.0.1 sctp const5:uniform180,260:const5:uniform180,260 plain 8)
+
+
+# ====== 18. Railway Signaling, Power Grid & Smart Utilities ================
+# 126. ERTMS / ETCS Level 2 Radio Block Centre Movement Authority (20 fps, 220 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_rail_etcs_rbc_movement_auth
+   127.0.0.1 sctp const20:truncnormal220,20:const20:truncnormal220,20 plain 8)
+
+# 127. 5G-Rail (FRMCS) Train-to-Ground Critical Control Data over IPv6 (25 fps, 225 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_rail_frmcs_mission_critical_data_v6
+   ::1       sctp uniform20,30:uniform150,300:uniform20,30:uniform150,300 plain 8)
+
+# 128. Automated Train Operation (ATO) Trajectory & Speed Profiles (10 fps, 400 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_rail_ato_speed_profile_sync
+   127.0.0.1 sctp const10:uniform300,500:const10:uniform300,500 plain 8)
+
+# 129. IEEE C37.118 Synchrophasor PMU High-Speed Grid Frequency Data (50 fps, 140 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_smartgrid_pmu_c37_118
+   127.0.0.1 sctp const50:truncnormal140,10:const50:truncnormal140,10 plain 8)
+
+# 130. High-Voltage Electrical Substation IEC 60870-5-104 Telecontrol (12 fps, 130 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_substation_iec_60870_5_104_v6
+   ::1       sctp uniform8,16:uniform90,170:uniform8,16:uniform90,170 plain 8)
+
+# 131. Urban Metro CBTC Interlocking Vital Beacon Protocol (40 fps, 80 B, const)
+ADD_NETPERFMETER_FLOW_TEST(profile_metro_cbct_interlocking_beacons
+   127.0.0.1 sctp const40:const80:const40:const80 plain 8)
+
+# 132. Municipal Water Treatment & Pump Telemetry Ring (8 fps, 180 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_water_scada_distribution_ring
+   127.0.0.1 sctp uniform5,11:uniform120,240:uniform5,11:uniform120,240 plain 8)
+
+
+# ====== 19. Financial Systems & Exchange Trading ===========================
+# 133. FIX Protocol Multi-Stream Direct Market Access Execution (50 fps, 300 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_fix_multistream_orders
+   127.0.0.1 sctp uniform40,60:uniform220,380:uniform40,60:uniform220,380 plain 8)
+
+# 134. FAST Protocol Compressed Equities Order Book Deltas over IPv6 (80 fps, 110 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_fast_market_data_delta_v6
+   ::1       sctp const80:truncnormal110,12:const80:truncnormal110,12 plain 8)
+
+# 135. Derivatives Volatility Surface & Greeks Real-Time Stream (25 fps, Pareto mean 600 B)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_options_greeks_feed
+   127.0.0.1 sctp const25:pareto400,3:const25:pareto400,3 plain 8)
+
+# 136. Multi-Bank FX ECN Spot Quotation Pipeline (70 fps, 130 B, truncnormal/uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_forex_aggregator_quote
+   127.0.0.1 sctp truncnormal70,5:uniform100,160:truncnormal70,5:uniform100,160 plain 8)
+
+# 137. Central Counterparty (CCP) Trade Allocation with Framing (8 fps, 1800 B, maxmsgsize=800)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_clearing_settlement_batch_v6
+   ::1       sctp const8:truncnormal1800,150:const8:truncnormal1800,150:maxmsgsize=800 plain 8)
+
+# 138. Crypto Exchange Cross-Margin Collateral Synchronization (40 fps, 240 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_fin_crypto_spot_perpetual_sync
+   127.0.0.1 sctp uniform30,50:uniform160,320:uniform30,50:uniform160,320 plain 8)
+
+
+# ====== 20. High-Availability Clustering & Distributed Systems =============
+# 139. Corosync Totem Single-Ring Token Passing Heartbeat (50 fps, 72 B, const)
+ADD_NETPERFMETER_FLOW_TEST(profile_cluster_corosync_totem_ring
+   127.0.0.1 sctp const50:const72:const50:const72 plain 8)
+
+# 140. Distributed Lock Manager (DLM) Resource Queue Arbitration (30 fps, 160 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_cluster_dlm_lock_arbitration_v6
+   ::1       sctp uniform25,35:truncnormal160,20:uniform25,35:truncnormal160,20 plain 8)
+
+# 141. DRBD Synchronous Storage Block Replication Stream (20 fps, 4096 B block, maxmsgsize=1400)
+ADD_NETPERFMETER_FLOW_TEST(profile_cluster_drbd_block_replication
+   127.0.0.1 sctp const20:const4096:const0:const0:maxmsgsize=1400 plain 8)
+
+# 142. NewSQL Multi-Stream Raft Log Replicated Entries (40 fps, 350 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_cluster_database_raft_multistream
+   127.0.0.1 sctp uniform30,50:uniform200,500:uniform30,50:uniform200,500 plain 8)
+
+# 143. Ceph Storage OSD Heartbeat & Cluster Map Peering over IPv6 (15 fps, 600 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_cluster_ceph_osd_peering_v6
+   ::1       sctp const15:truncnormal600,50:const15:truncnormal600,50 plain 8)
+
+# 144. In-Memory Distributed Cache Key Invalidation Feed (20 fps, Exp mean 500 B)
+ADD_NETPERFMETER_FLOW_TEST(profile_cluster_distributed_cache_invalidation
+   127.0.0.1 sctp uniform15,25:exp500:uniform15,25:exp500 plain 8)
+
+
+# ====== 21. Defense, Healthcare & Intelligent Robotics =====================
+# 145. NATO C2 Joint Friendly Force Situational Awareness Stream (25 fps, 400 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_defense_c2_situational_awareness
+   127.0.0.1 sctp uniform20,30:uniform250,550:uniform20,30:uniform250,550 plain 8)
+
+# 146. Unmanned Military Drone Flight Data & Waypoint Uplink over IPv6 (30 fps, 220 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_defense_uav_telemetry_uplink_v6
+   ::1       sctp const30:truncnormal220,25:const30:truncnormal220,25 plain 8)
+
+# 147. Laparoscopic Surgical Robot Force Feedback Master-Slave Stream (100 fps, 64 B, const)
+ADD_NETPERFMETER_FLOW_TEST(profile_med_teleoperation_surgical_force
+   127.0.0.1 sctp const100:const64:const100:const64 plain 8)
+
+# 148. ICU Multi-Channel Continuous EEG Neuromonitoring (50 fps, 480 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_med_multilead_eeg_waveform_v6
+   ::1       sctp const50:truncnormal480,40:const50:truncnormal480,40 plain 8)
+
+# 149. Autonomous Warehouse AMR SLAM Grid Occupancy Updates (8 fps, Pareto mean 1800 B, maxmsgsize=1000)
+ADD_NETPERFMETER_FLOW_TEST(profile_robotics_fleet_slam_occupancy
+   127.0.0.1 sctp const8:pareto1200,3:const8:pareto1200,3:maxmsgsize=1000 plain 8)
+
+# 150. Transmission Grid Substation Wide-Area Phasor Concentrator over IPv6 (35 fps, 350 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_smartgrid_substation_phasor_gateway_v6
+   ::1       sctp uniform30,40:truncnormal350,30:uniform30,40:truncnormal350,30 plain 8)
 
 ENDIF()
