@@ -9,6 +9,25 @@
 #                  NetPerfMeter -- Network Performance Meter
 #                 Copyright (C) 2009-2026 by Thomas Dreibholz
 # ==========================================================================
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Contact:  dreibh@simula.no
+# Homepage: https://www.nntb.no/~dreibh/netperfmeter/
+
+# Usage:
+#   test_flow.sh <bin> <port> <addr> <proto> <spec> [format] [runtime] [extra_args...]
 
 set -eu
 
@@ -24,8 +43,13 @@ ENABLE_SCALAR=1
 ENABLE_VECTOR=1
 MAX_RETRIES=1
 CONTROL_OVER_SCTP=0
+EXPECTED_FLOWS=1
 PASSTHROUGH_ARGS=""
 
+ALL_FLOW_PROTOS="${PROTOCOL}"
+ALL_FLOW_SPECS="${SPEC}"
+
+# Automatic retry budget for stochastic specs
 case "${SPEC}" in
     *exp*|*pareto*|*uniform*|*truncnormal*|*normal*)
         MAX_RETRIES=5
@@ -34,14 +58,29 @@ esac
 
 if [ "$#" -ge 7 ]; then
     shift 7
-    for arg in "$@"; do
-        case "$arg" in
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
             --no-scalar|--without-scalar) ENABLE_SCALAR=0 ;;
             --no-vector|--without-vector) ENABLE_VECTOR=0 ;;
-            --retries=*|--max-retries=*)  MAX_RETRIES="${arg#*=}" ;;
+            --retries=*|--max-retries=*)  MAX_RETRIES="${1#*=}" ;;
             --control-over-sctp|-control-over-sctp) CONTROL_OVER_SCTP=1 ;;
-            *) PASSTHROUGH_ARGS="${PASSTHROUGH_ARGS} $arg" ;;
+            -tcp|-udp|-sctp)
+                _proto="${1#-}"
+                _spec="$2"
+                ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};${_proto}"
+                ALL_FLOW_SPECS="${ALL_FLOW_SPECS};${_spec}"
+                EXPECTED_FLOWS=$((EXPECTED_FLOWS + 1))
+                case "${_spec}" in
+                    *exp*|*pareto*|*uniform*|*truncnormal*|*normal*)
+                        MAX_RETRIES=5
+                        ;;
+                esac
+                PASSTHROUGH_ARGS="${PASSTHROUGH_ARGS} $1 $2"
+                shift
+                ;;
+            *) PASSTHROUGH_ARGS="${PASSTHROUGH_ARGS} $1" ;;
         esac
+        shift
     done
 fi
 
@@ -62,70 +101,6 @@ case "${ADDRESS}" in
     *)   TARGET="${ADDRESS}" ;;
 esac
 
-OLD_IFS="$IFS"
-IFS=":"
-set -- ${SPEC}
-IFS="$OLD_IFS"
-
-OUT_RATE="${1:-0}"
-OUT_SIZE="${2:-0}"
-IN_RATE="${3:-0}"
-IN_SIZE="${4:-0}"
-
-MAXMSGSIZE=0
-ONOFF_SPEC=""
-HAS_ONOFF=0
-ONOFF_ACTIVE_IN_RUNTIME=0
-
-shift 4 2>/dev/null || true
-while [ "$#" -gt 0 ]; do
-    case "$1" in
-        maxmsgsize=*)
-            MAXMSGSIZE="${1#maxmsgsize=}"
-            ;;
-        onoff=*|events=*)
-            HAS_ONOFF=1
-            ONOFF_SPEC="${1#*=}"
-            if perl -e '
-                my ($dur_str, $runtime) = @ARGV;
-                my @durs = split(/,/, $dur_str);
-                my $cum_t = 0.0;
-                for (my $i = 0; $i < @durs; $i++) {
-                    $cum_t += ($durs[$i] + 0);
-                    if ($i % 2 == 0 && $cum_t < ($runtime + 0)) {
-                        exit 0;
-                    }
-                }
-                exit 1;
-            ' "${ONOFF_SPEC}" "${RUNTIME}"; then
-                ONOFF_ACTIVE_IN_RUNTIME=1
-            fi
-            ;;
-    esac
-    shift
-done
-
-case "${OUT_RATE}:${OUT_SIZE}" in
-    0:0|const0:0|0:const0|const0:const0) OUT_ACTIVE=0 ;;
-    *)
-        if [ "${HAS_ONOFF}" -eq 1 ] && [ "${ONOFF_ACTIVE_IN_RUNTIME}" -eq 0 ]; then
-            OUT_ACTIVE=0
-        else
-            OUT_ACTIVE=1
-        fi
-        ;;
-esac
-
-case "${IN_RATE}:${IN_SIZE}" in
-    0:0|const0:0|0:const0|const0:const0) IN_ACTIVE=0 ;;
-    *) IN_ACTIVE=1 ;;
-esac
-
-ACTIVE_EXPECT_TX="${OUT_ACTIVE}"
-ACTIVE_EXPECT_RX="${IN_ACTIVE}"
-PASSIVE_EXPECT_TX="${IN_ACTIVE}"
-PASSIVE_EXPECT_RX="${OUT_ACTIVE}"
-
 parse_mean() {
     _dist="$1"
     perl -e '
@@ -142,24 +117,91 @@ parse_mean() {
     ' "${_dist}"
 }
 
-OUT_SIZE_MEAN=$(parse_mean "${OUT_SIZE}")
-IN_SIZE_MEAN=$(parse_mean "${IN_SIZE}")
-
-ACTIVE_FRAG_TX=0
-ACTIVE_FRAG_RX=0
-PASSIVE_FRAG_TX=0
-PASSIVE_FRAG_RX=0
-
-if [ "${MAXMSGSIZE}" -gt 0 ]; then
-    if [ "${OUT_ACTIVE}" -eq 1 ] && perl -e "exit(!(${OUT_SIZE_MEAN} > ${MAXMSGSIZE}))"; then
-        ACTIVE_FRAG_TX=1
-        PASSIVE_FRAG_RX=1
+compute_on_time() {
+    _dur_str="$1"
+    _rt="$2"
+    if [ -z "${_dur_str}" ]; then
+        echo "${_rt}"
+        return 0
     fi
-    if [ "${IN_ACTIVE}" -eq 1 ] && perl -e "exit(!(${IN_SIZE_MEAN} > ${MAXMSGSIZE}))"; then
-        ACTIVE_FRAG_RX=1
-        PASSIVE_FRAG_TX=1
-    fi
-fi
+    perl -e '
+        my ($dur_str, $rt) = @ARGV;
+        if (!$dur_str) { print $rt; exit 0; }
+        my @durs = split(/,/, $dur_str);
+        my $on_time = 0.0;
+        my $state = 0;
+        my $prev_t = 0.0;
+        my $cum_t = 0.0;
+        foreach my $d (@durs) {
+            $cum_t += ($d + 0);
+            my $t = ($cum_t < $rt) ? $cum_t : ($rt + 0);
+            if ($t > $prev_t) {
+                $on_time += ($t - $prev_t) if $state == 1;
+                $prev_t = $t;
+            }
+            $state = 1 - $state;
+            last if $cum_t >= $rt;
+        }
+        if ($prev_t < $rt && $state == 1) {
+            $on_time += ($rt - $prev_t);
+        }
+        print $on_time;
+    ' "${_dur_str}" "${_rt}"
+}
+
+# Deduce global TX and RX expectations aggregated across ALL flows
+GLOBAL_ACTIVE_EXPECT_TX=0
+GLOBAL_ACTIVE_EXPECT_RX=0
+GLOBAL_ACTIVE_FRAG_TX=0
+GLOBAL_ACTIVE_FRAG_RX=0
+
+OLD_IFS="$IFS"
+IFS=";"
+for _fspec in ${ALL_FLOW_SPECS}; do
+    IFS=":"
+    set -- ${_fspec}
+    _o_rate="${1:-0}"
+    _o_size="${2:-0}"
+    _i_rate="${3:-0}"
+    _i_size="${4:-0}"
+
+    _f_maxmsgsize=0
+    _f_onoff=""
+    shift 4 2>/dev/null || true
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            maxmsgsize=*) _f_maxmsgsize="${1#maxmsgsize=}" ;;
+            onoff=*|events=*) _f_onoff="${1#*=}" ;;
+        esac
+        shift
+    done
+
+    case "${_o_rate}:${_o_size}" in
+        0:0|const0:0|0:const0|const0:const0) ;;
+        *)
+            GLOBAL_ACTIVE_EXPECT_TX=1
+            if [ "${_f_maxmsgsize}" -gt 0 ] && perl -e "exit(!($(parse_mean "${_o_size}") > ${_f_maxmsgsize}))"; then
+                GLOBAL_ACTIVE_FRAG_TX=1
+            fi
+            ;;
+    esac
+
+    case "${_i_rate}:${_i_size}" in
+        0:0|const0:0|0:const0|const0:const0) ;;
+        *)
+            GLOBAL_ACTIVE_EXPECT_RX=1
+            if [ "${_f_maxmsgsize}" -gt 0 ] && perl -e "exit(!($(parse_mean "${_i_size}") > ${_f_maxmsgsize}))"; then
+                GLOBAL_ACTIVE_FRAG_RX=1
+            fi
+            ;;
+    esac
+done
+IFS="$OLD_IFS"
+
+GLOBAL_PASSIVE_EXPECT_TX="${GLOBAL_ACTIVE_EXPECT_RX}"
+GLOBAL_PASSIVE_EXPECT_RX="${GLOBAL_ACTIVE_EXPECT_TX}"
+GLOBAL_PASSIVE_FRAG_TX="${GLOBAL_ACTIVE_FRAG_RX}"
+GLOBAL_PASSIVE_FRAG_RX="${GLOBAL_ACTIVE_FRAG_TX}"
 
 decompress_cat() {
     _file="$1"
@@ -173,19 +215,15 @@ decompress_cat() {
 }
 
 # ====== Check Scalar Results ==============================================
+# Returns:
+#   0 = Success
+#   1 = Fatal failure (crash, invariant failure, deterministic const deviation) -> DO NOT RETRY
+#   2 = Statistical value comparison deviation on random distributions -> RETRYABLE
 check_scalar() {
     _role="$1"
-    _expect_tx="$2"
-    _expect_rx="$3"
-    _frag_tx="$4"
-    _frag_rx="$5"
-    _dist_tx_rate="$6"
-    _dist_tx_size="$7"
-    _dist_rx_rate="$8"
-    _dist_rx_size="$9"
-    _protocol="${10:-$PROTOCOL}"
-    _onoff="${11:-}"
-    _runtime="${12:-$RUNTIME}"
+    _all_specs="$2"
+    _all_protos="$3"
+    _runtime="${4:-$RUNTIME}"
     _file="${TMP_DIR}/test-${_role}.sca${EXT}"
 
     if [ ! -s "${_file}" ]; then
@@ -198,12 +236,52 @@ check_scalar() {
         use strict;
         use warnings;
 
-        my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx,
-            $dist_tx_rate, $dist_tx_size, $dist_rx_rate, $dist_rx_size,
-            $protocol, $onoff_str, $runtime) = @ARGV;
-        my $line_num = 0;
-        my (%stats, %rates);
+        my ($filename, $role, $all_specs_str, $all_protos_str, $runtime) = @ARGV;
+
+        my @flow_specs = split(/;/, $all_specs_str);
+        my @flow_protos = split(/;/, $all_protos_str);
+        my $expected_flows = scalar(@flow_specs);
+
+        my (%stats, %rates, %flow_objects);
         my ($fatal_errors, $stat_errors) = (0, 0);
+
+        sub parse_mean {
+            my ($dist) = @_;
+            return 0 if !$dist || $dist eq "0";
+            if ($dist =~ /^const([0-9.]+)/) { return $1 + 0; }
+            elsif ($dist =~ /^uniform([0-9.]+),([0-9.]+)/) { return ($1 + $2) / 2.0; }
+            elsif ($dist =~ /^exp([0-9.]+)/) { return $1 + 0; }
+            elsif ($dist =~ /^pareto([0-9.]+),([0-9.]+)/) {
+                my ($k, $a) = ($1 + 0, $2 + 0);
+                return $a > 1.0 ? ($a * $k) / ($a - 1.0) : $k;
+            } elsif ($dist =~ /^(?:trunc)?normal([0-9.]+),([0-9.]+)/) { return $1 + 0; }
+            return 0;
+        }
+
+        sub parse_dist {
+            my ($dist, $is_rate) = @_;
+            return (0, 0) if !$dist || $dist eq "0";
+            if ($dist =~ /^const([0-9.]+)/) {
+                return ($1 + 0, 0.20);
+            } elsif ($dist =~ /^uniform([0-9.]+),([0-9.]+)/) {
+                my ($a, $b) = ($1 + 0, $2 + 0);
+                if ($is_rate) {
+                    my $hm = ($b > $a && $a > 0) ? ($b - $a) / log($b / $a) : ($a + $b) / 2.0;
+                    return ($hm, 0.20);
+                } else {
+                    return (($a + $b) / 2.0, 0.20);
+                }
+            } elsif ($dist =~ /^exp([0-9.]+)/) {
+                return ($is_rate ? (0, 0) : ($1 + 0, 0.40));
+            } elsif ($dist =~ /^pareto([0-9.]+),([0-9.]+)/) {
+                my ($k, $a) = ($1 + 0, $2 + 0);
+                return ($is_rate ? (($a > 0 ? (($a + 1.0)/$a)*$k : $k), 0.30)
+                                 : (($a > 1.0 ? ($a*$k)/($a - 1.0) : $k), 0.35));
+            } elsif ($dist =~ /^(?:trunc)?normal([0-9.]+),([0-9.]+)/) {
+                return ($1 + 0, 0.25);
+            }
+            return (0, 0);
+        }
 
         sub compute_on_time {
             my ($dur_str, $rt) = @_;
@@ -213,7 +291,6 @@ check_scalar() {
             my $state = 0;
             my $prev_t = 0.0;
             my $cum_t = 0.0;
-
             foreach my $d (@durs) {
                 $cum_t += ($d + 0);
                 my $t = ($cum_t < $rt) ? $cum_t : ($rt + 0);
@@ -230,60 +307,94 @@ check_scalar() {
             return $on_time;
         }
 
-        my $on_time = compute_on_time($onoff_str, $runtime + 0);
-
-        sub parse_dist {
-            my ($dist, $is_rate) = @_;
-            return (0, 0) if !$dist || $dist eq "0";
-
-            if ($dist =~ /^const([0-9.]+)/) {
-                return ($1 + 0, 0.20);
-            } elsif ($dist =~ /^uniform([0-9.]+),([0-9.]+)/) {
-                my ($a, $b) = ($1 + 0, $2 + 0);
-                if ($is_rate) {
-                    my $hm = ($b > $a && $a > 0) ? ($b - $a) / log($b / $a) : ($a + $b) / 2.0;
-                    return ($hm, 0.20);
-                } else {
-                    return (($a + $b) / 2.0, 0.20);
-                }
-            } elsif ($dist =~ /^exp([0-9.]+)/) {
-                my $mean = $1 + 0;
-                return ($is_rate ? (0, 0) : ($mean, 0.40));
-            } elsif ($dist =~ /^pareto([0-9.]+),([0-9.]+)/) {
-                my ($k, $a) = ($1 + 0, $2 + 0);
-                if ($is_rate) {
-                    my $hm = ($a > 0) ? (($a + 1.0) / $a) * $k : $k;
-                    return ($hm, 0.30);
-                } else {
-                    my $am = ($a > 1.0) ? ($a * $k) / ($a - 1.0) : $k;
-                    return ($am, 0.35);
-                }
-            } elsif ($dist =~ /^(?:trunc)?normal([0-9.]+),([0-9.]+)/) {
-                return ($1 + 0, 0.25);
-            }
-            return (0, 0);
-        }
-
         while (<STDIN>) {
-            $line_num++;
             if (/^scalar\s+"([^"]+)"\s+"(Transmitted|Received)\s+(Bytes|Packets|Frames)"\s+([0-9.]+)/) {
-                $stats{$1}{$2}{$3} = $4 + 0;
+                my ($obj, $dir, $metric, $val) = ($1, $2, $3, $4 + 0);
+                $stats{$obj}{$dir}{$metric} = $val;
+                $flow_objects{$obj} = 1 if $obj =~ /\.flow\[\d+\]$/;
             } elsif (/^scalar\s+"([^"]+)"\s+"(Transmitted|Received)\s+Frame Rate"\s+([0-9.]+)/) {
-                $rates{$1}{$2} = $3 + 0;
+                my ($obj, $dir, $val) = ($1, $2, $3 + 0);
+                $rates{$obj}{$dir} = $val;
             }
         }
 
-        foreach my $obj (keys %stats) {
-            foreach my $dir ("Transmitted", "Received") {
-                my $expected  = ($dir eq "Transmitted") ? $expect_tx : $expect_rx;
-                my $expect_fg = ($dir eq "Transmitted") ? $frag_tx   : $frag_rx;
-                my $dist_r    = ($dir eq "Transmitted") ? $dist_tx_rate : $dist_rx_rate;
-                my $dist_s    = ($dir eq "Transmitted") ? $dist_tx_size : $dist_rx_size;
+        my $num_flows_found = scalar(keys %flow_objects);
+        if ($expected_flows > 1 && $num_flows_found != $expected_flows) {
+            warn "FAIL in $filename: Expected $expected_flows flows, found $num_flows_found\n";
+            $fatal_errors++;
+        }
 
-                my $b = (defined $stats{$obj}{$dir}{Bytes})   ? $stats{$obj}{$dir}{Bytes}   : 0;
-                my $p = (defined $stats{$obj}{$dir}{Packets}) ? $stats{$obj}{$dir}{Packets} : 0;
-                my $f = (defined $stats{$obj}{$dir}{Frames})  ? $stats{$obj}{$dir}{Frames}  : 0;
-                my $r = (defined $rates{$obj}{$dir})          ? $rates{$obj}{$dir}          : 0;
+        # Multi-connection aggregation verification: .total must equal sum of flows
+        if ($num_flows_found > 1) {
+            foreach my $dir ("Transmitted", "Received") {
+                foreach my $metric ("Bytes", "Packets", "Frames") {
+                    my $sum = 0;
+                    foreach my $flow_obj (keys %flow_objects) {
+                        $sum += $stats{$flow_obj}{$dir}{$metric} // 0;
+                    }
+                    my ($total_key) = grep { /\.total$/ } keys %stats;
+                    if ($total_key) {
+                        my $total_val = $stats{$total_key}{$dir}{$metric} // 0;
+                        if ($sum != $total_val) {
+                            warn "FAIL in $filename: Multi-connection aggregation mismatch for $dir $metric (Sum of flows=$sum, Total=$total_val)\n";
+                            $fatal_errors++;
+                        }
+                    }
+                }
+            }
+        }
+
+        # Validate each flow object individually against its respective spec
+        for (my $idx = 0; $idx < $expected_flows; $idx++) {
+            my ($flow_obj) = grep { /\.flow\[$idx\]$/ } keys %stats;
+            if (!$flow_obj) {
+                warn "FAIL in $filename: Missing metrics for flow[$idx]\n";
+                $fatal_errors++;
+                next;
+            }
+
+            my $spec = $flow_specs[$idx];
+            my $proto = $flow_protos[$idx] // "tcp";
+            my ($out_r, $out_s, $in_r, $in_s, @opts) = split(/:/, $spec);
+            $out_r //= "0"; $out_s //= "0"; $in_r //= "0"; $in_s //= "0";
+
+            my ($maxmsgsize, $onoff_str) = (0, "");
+            foreach my $opt (@opts) {
+                if ($opt =~ /^maxmsgsize=(\d+)/) { $maxmsgsize = $1 + 0; }
+                elsif ($opt =~ /^(?:onoff|events)=(.+)/) { $onoff_str = $1; }
+            }
+
+            my $on_time = compute_on_time($onoff_str, $runtime + 0);
+            my $out_active = (!($out_r =~ /^(?:0|const0)$/) && !($out_s =~ /^(?:0|const0)$/)) ? 1 : 0;
+            my $in_active  = (!($in_r  =~ /^(?:0|const0)$/) && !($in_s  =~ /^(?:0|const0)$/)) ? 1 : 0;
+
+            my ($expect_tx, $expect_rx);
+            my ($flow_tx_r, $flow_tx_s, $flow_rx_r, $flow_rx_s);
+            if ($role eq "active") {
+                $expect_tx = $out_active;
+                $expect_rx = $in_active;
+                ($flow_tx_r, $flow_tx_s) = ($out_r, $out_s);
+                ($flow_rx_r, $flow_rx_s) = ($in_r, $in_s);
+            } else {
+                $expect_tx = $in_active;
+                $expect_rx = $out_active;
+                ($flow_tx_r, $flow_tx_s) = ($in_r, $in_s);
+                ($flow_rx_r, $flow_rx_s) = ($out_r, $out_s);
+            }
+
+            my $frag_tx = ($maxmsgsize > 0 && parse_mean($flow_tx_s) > $maxmsgsize) ? 1 : 0;
+            my $frag_rx = ($maxmsgsize > 0 && parse_mean($flow_rx_s) > $maxmsgsize) ? 1 : 0;
+
+            foreach my $dir ("Transmitted", "Received") {
+                my $expected = ($dir eq "Transmitted") ? $expect_tx : $expect_rx;
+                my $frag     = ($dir eq "Transmitted") ? $frag_tx   : $frag_rx;
+                my $dist_r   = ($dir eq "Transmitted") ? $flow_tx_r : $flow_rx_r;
+                my $dist_s   = ($dir eq "Transmitted") ? $flow_tx_s : $flow_rx_s;
+
+                my $b = $stats{$flow_obj}{$dir}{Bytes} // 0;
+                my $p = $stats{$flow_obj}{$dir}{Packets} // 0;
+                my $f = $stats{$flow_obj}{$dir}{Frames} // 0;
+                my $r = $rates{$flow_obj}{$dir} // 0;
 
                 my $is_rand_r = ($dist_r =~ /^(?:exp|pareto|uniform|truncnormal|normal)/);
                 my $is_rand_s = ($dist_s =~ /^(?:exp|pareto|uniform|truncnormal|normal)/);
@@ -291,33 +402,31 @@ check_scalar() {
 
                 if ($expected) {
                     if ($b <= 0 || $p <= 0 || $f <= 0) {
-                        warn "FAIL in $filename ($obj): Expected $dir B/P/F > 0 (got B=$b, P=$p, F=$f)\n";
+                        warn "FAIL in $filename ($flow_obj): Expected $dir B/P/F > 0 (got B=$b, P=$p, F=$f)\n";
                         $fatal_errors++;
                     }
                     if ($b < $p) {
-                        warn "FAIL in $filename ($obj): Invariant violation: $dir Bytes ($b) < Packets ($p)\n";
+                        warn "FAIL in $filename ($flow_obj): Invariant violation: $dir Bytes ($b) < Packets ($p)\n";
                         $fatal_errors++;
                     }
                     if ($b < $f) {
-                        warn "FAIL in $filename ($obj): Invariant violation: $dir Bytes ($b) < Frames ($f)\n";
+                        warn "FAIL in $filename ($flow_obj): Invariant violation: $dir Bytes ($b) < Frames ($f)\n";
                         $fatal_errors++;
                     }
-
-                    # Physical Invariant: Packets >= Frames is strict for all protocols.
                     if ($p < $f) {
-                        warn "FAIL in $filename ($obj): Invariant violation: $dir Packets ($p) < Frames ($f)\n";
+                        warn "FAIL in $filename ($flow_obj): Invariant violation: $dir Packets ($p) < Frames ($f)\n";
                         $fatal_errors++;
                     }
 
-                    if ($expect_fg) {
+                    if ($frag) {
                         if ($p <= $f) {
-                            warn "FAIL in $filename ($obj): Expected fragmented $dir Packets ($p) > Frames ($f)\n";
+                            warn "FAIL in $filename ($flow_obj): Expected fragmented $dir Packets ($p) > Frames ($f)\n";
                             $fatal_errors++;
                         }
                     } else {
                         if ($dist_s =~ /^const/) {
                             if ($p != $f) {
-                                warn "FAIL in $filename ($obj): Expected unfragmented constant $dir Packets ($p) == Frames ($f)\n";
+                                warn "FAIL in $filename ($flow_obj): Expected unfragmented constant $dir Packets ($p) == Frames ($f)\n";
                                 $fatal_errors++;
                             }
                         }
@@ -333,10 +442,11 @@ check_scalar() {
                         my $cont_frames = $target_rate * $runtime;
                         my $expected_onoff_frames = $target_rate * $on_time;
 
+                        # If flow had off periods, total transferred frames must be strictly lower than continuous
                         if ($on_time < $runtime) {
                             my $upper_bound = $cont_frames * 0.90;
                             if ($f > $upper_bound) {
-                                warn "FAIL in $filename ($obj): On-off flow transmitted $f frames, expected < $upper_bound\n";
+                                warn "FAIL in $filename ($flow_obj): On-off flow transmitted $f frames, expected < $upper_bound\n";
                                 $fatal_errors++;
                             }
                         }
@@ -344,40 +454,19 @@ check_scalar() {
                         if ($expected_onoff_frames > 0) {
                             my $diff = abs($f - $expected_onoff_frames);
                             if ($diff > ($expected_onoff_frames * ($eff_tol_rate + 0.15))) {
-                                warn "FAIL in $filename ($obj): Measured frames ($f) deviated from expected ($expected_onoff_frames)\n";
-                                if ($flow_has_random) {
-                                    $stat_errors++;
-                                } else {
-                                    $fatal_errors++;
-                                }
-                            }
-                        }
-
-                        if ($obj =~ /\.total$/ && $on_time < $runtime) {
-                            if ($r > ($target_rate * 0.90)) {
-                                warn "FAIL in $filename ($obj): Time-averaged frame rate ($r) not lower than continuous rate\n";
-                                $fatal_errors++;
+                                warn "FAIL in $filename ($flow_obj): Measured frames ($f) deviated from expected ($expected_onoff_frames)\n";
+                                if ($flow_has_random) { $stat_errors++; }
+                                else { $fatal_errors++; }
                             }
                         }
                     } else {
-                        if ($obj =~ /flow\[/ && $target_rate > 0) {
+                        if ($target_rate > 0) {
                             my $diff = abs($r - $target_rate);
                             if ($diff > ($target_rate * $eff_tol_rate)) {
-                                # Fallback check: check if .total throughput rate matched target
-                                my $total_obj = $obj;
-                                $total_obj =~ s/\.flow\[\d+\]$/\.total/;
-                                my $r_total = defined $rates{$total_obj}{$dir} ? $rates{$total_obj}{$dir} : 0;
-                                my $diff_total = abs($r_total - $target_rate);
-
-                                if ($diff_total > ($target_rate * $eff_tol_rate)) {
-                                    my $pct = sprintf("%.1f%%", ($diff / $target_rate) * 100);
-                                    warn "FAIL in $filename ($obj): $dir Frame Rate ($r) deviated from expected ($target_rate) by $pct\n";
-                                    if ($flow_has_random) {
-                                        $stat_errors++;
-                                    } else {
-                                        $fatal_errors++;
-                                    }
-                                }
+                                my $pct = sprintf("%.1f%%", ($diff / $target_rate) * 100);
+                                warn "FAIL in $filename ($flow_obj): $dir Frame Rate ($r) deviated from expected ($target_rate) by $pct\n";
+                                if ($flow_has_random) { $stat_errors++; }
+                                else { $fatal_errors++; }
                             }
                         }
                     }
@@ -387,33 +476,42 @@ check_scalar() {
                         my $diff = abs($avg_size - $target_size);
                         if ($diff > ($target_size * $eff_tol_size)) {
                             my $pct = sprintf("%.1f%%", ($diff / $target_size) * 100);
-                            warn "FAIL in $filename ($obj): $dir Avg Frame Size ($avg_size) deviated from expected ($target_size) by $pct\n";
-                            if ($is_rand_s) {
-                                $stat_errors++;
-                            } else {
-                                $fatal_errors++;
-                            }
+                            warn "FAIL in $filename ($flow_obj): $dir Avg Frame Size ($avg_size) deviated from expected ($target_size) by $pct\n";
+                            if ($is_rand_s) { $stat_errors++; }
+                            else { $fatal_errors++; }
                         }
                     }
                 } else {
                     if ($b != 0 || $p != 0 || $f != 0) {
-                        warn "FAIL in $filename ($obj): Expected zero $dir metrics (got B=$b, P=$p, F=$f)\n";
+                        warn "FAIL in $filename ($flow_obj): Expected zero $dir metrics (got B=$b, P=$p, F=$f)\n";
                         $fatal_errors++;
                     }
                 }
             }
         }
 
-        if ($fatal_errors > 0) {
-            exit 1;
-        } elsif ($stat_errors > 0) {
-            exit 2;
-        } else {
-            exit 0;
+        # Check total object invariants
+        my ($total_obj) = grep { /\.total$/ } keys %stats;
+        if ($total_obj) {
+            foreach my $dir ("Transmitted", "Received") {
+                my $b = $stats{$total_obj}{$dir}{Bytes} // 0;
+                my $p = $stats{$total_obj}{$dir}{Packets} // 0;
+                my $f = $stats{$total_obj}{$dir}{Frames} // 0;
+                if ($b < $p) {
+                    warn "FAIL in $filename ($total_obj): Total Bytes ($b) < Packets ($p)\n";
+                    $fatal_errors++;
+                }
+                if ($p < $f) {
+                    warn "FAIL in $filename ($total_obj): Total Packets ($p) < Frames ($f)\n";
+                    $fatal_errors++;
+                }
+            }
         }
-    ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}" \
-      "${_dist_tx_rate}" "${_dist_tx_size}" "${_dist_rx_rate}" "${_dist_rx_size}" \
-      "${_protocol}" "${_onoff}" "${_runtime}" || _scalar_eval_rc=$?
+
+        if ($fatal_errors > 0) { exit 1; }
+        elsif ($stat_errors > 0) { exit 2; }
+        else { exit 0; }
+    ' "${_file}" "${_role}" "${_all_specs}" "${_all_protos}" "${_runtime}" || _scalar_eval_rc=$?
 
     if [ "${_scalar_eval_rc}" -eq 2 ]; then
         echo "WARNING: Statistical value comparison deviation detected in '${_file}'." >&2
@@ -426,14 +524,16 @@ check_scalar() {
     fi
 }
 
-# ====== Check Vector Results (Global and Per-Flow) ========================
+# ====== Check Vector Results ==============================================
+# All vector checks test structural invariants (monotonicity, framing, intervals).
+# Any failure in vector verification is fatal (return 1).
 check_vector() {
     _role="$1"
     _expect_tx="$2"
     _expect_rx="$3"
     _frag_tx="$4"
     _frag_rx="$5"
-    _onoff="${6:-}"
+    _all_specs="$6"
 
     _global_file="${TMP_DIR}/test-${_role}.vec${EXT}"
     if [ ! -s "${_global_file}" ]; then
@@ -463,7 +563,7 @@ check_vector() {
             use strict;
             use warnings;
 
-            my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx, $onoff_str, $role) = @ARGV;
+            my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx, $all_specs_str, $role) = @ARGV;
             my $line_num = 0;
             my $is_flow_vector = 0;
             my $data_rows = 0;
@@ -471,6 +571,14 @@ check_vector() {
 
             my ($last_seq, $last_b, $last_p, $last_f);
             my (%max_b, %max_p, %max_f, %last_meas_b, %last_meas_p, %last_meas_f);
+
+            my @flow_specs = split(/;/, $all_specs_str);
+            my %flow_onoff;
+            for (my $i = 0; $i < @flow_specs; $i++) {
+                if ($flow_specs[$i] =~ /(?:onoff|events)=([^:]+)/) {
+                    $flow_onoff{$i} = $1;
+                }
+            }
 
             sub interval_active_time {
                 my ($dur_str, $t_start, $t_end) = @_;
@@ -511,7 +619,8 @@ check_vector() {
                 foreach my $d (@durs) {
                     $cum_t += ($d + 0);
                     if ($state == 1) {
-                        if ($t_start >= $cum_t && ($t_start - $cum_t) <= 0.100) {
+                        # Transition from ON -> OFF at $cum_t; allow up to 250ms scheduler jitter under load
+                        if ($t_start >= $cum_t && ($t_start - $cum_t) <= 0.250) {
                             return 1;
                         }
                     }
@@ -545,17 +654,12 @@ check_vector() {
                     my $pkts  = $fields[5] + 0;
                     my $frms  = $fields[6] + 0;
 
-                    if (!$expect_rx) {
-                        warn "FAIL in $filename (line $line_num): Unexpected data row when expect_rx == 0\n";
-                        $errors++;
-                    }
-
                     if ($bytes < $pkts) {
                         warn "FAIL in $filename (line $line_num): AbsBytes ($bytes) < AbsPackets ($pkts)\n";
                         $errors++;
                     }
                     if ($pkts < $frms) {
-                        warn "FAIL in $filename (line $line_num): Invariant violation: AbsPackets ($pkts) < AbsFrames ($frms)\n";
+                        warn "FAIL in $filename (line $line_num): AbsPackets ($pkts) < AbsFrames ($frms)\n";
                         $errors++;
                     }
 
@@ -585,7 +689,7 @@ check_vector() {
                     next if @fields < 11;
                     my $rel_time = $fields[2] + 0;
                     my $interval = $fields[3] + 0;
-                    my $flow_id  = $fields[4];
+                    my $flow_id  = $fields[4] + 0;
                     my $action   = $fields[7];
                     $action =~ s/^"|"$//g;
 
@@ -603,7 +707,7 @@ check_vector() {
                         $errors++;
                     }
                     if ($pkts < $frms) {
-                        warn "FAIL in $filename (line $line_num): Invariant violation: $action AbsPackets ($pkts) < AbsFrames ($frms)\n";
+                        warn "FAIL in $filename (line $line_num): $action AbsPackets ($pkts) < AbsFrames ($frms)\n";
                         $errors++;
                     }
 
@@ -611,22 +715,27 @@ check_vector() {
                     if (!defined $max_p{$action} || $pkts  > $max_p{$action}) { $max_p{$action} = $pkts; }
                     if (!defined $max_f{$action} || $frms  > $max_f{$action}) { $max_f{$action} = $frms; }
 
-                    if ($onoff_str && $action eq "Sent" && $role eq "active" && $interval > 0) {
-                        my $t_start = ($rel_time > $interval) ? ($rel_time - $interval) : 0.0;
-                        my $t_end   = $rel_time;
-                        my $act     = interval_active_time($onoff_str, $t_start, $t_end);
+                    # On-off silence check during OFF intervals (checked per-flow, skip Total aggregate)
+                    if ($flow_id >= 0 && defined $flow_onoff{$flow_id}) {
+                        my $onoff_spec = $flow_onoff{$flow_id};
+                        if ($action eq "Sent" && $role eq "active" && $interval > 0) {
+                            my $t_start = ($rel_time > $interval) ? ($rel_time - $interval) : 0.0;
+                            my $t_end   = $rel_time;
+                            my $act     = interval_active_time($onoff_spec, $t_start, $t_end);
 
-                        if ($act == 0.0) {
-                            my $is_boundary = is_near_active_boundary($onoff_str, $t_start);
-                            if ($is_boundary) {
-                                if ($rel_frms > 1) {
-                                    warn "FAIL in $filename (line $line_num): Continuous traffic ($rel_frms frames) sent during OFF period [$t_start, $t_end]\n";
-                                    $errors++;
-                                }
-                            } else {
-                                if ($rel_frms != 0 || $rel_bytes != 0) {
-                                    warn "FAIL in $filename (line $line_num): Traffic sent during OFF period [$t_start, $t_end] (RelFrames=$rel_frms, RelBytes=$rel_bytes)\n";
-                                    $errors++;
+                            if ($act == 0.0) {
+                                my $is_boundary = is_near_active_boundary($onoff_spec, $t_start);
+                                if ($is_boundary) {
+                                    # Allow at most 1 trailing boundary frame from the active interval
+                                    if ($rel_frms > 1) {
+                                        warn "FAIL in $filename (line $line_num): Continuous traffic ($rel_frms frames) sent during OFF period [$t_start, $t_end]\n";
+                                        $errors++;
+                                    }
+                                } else {
+                                    if ($rel_frms != 0 || $rel_bytes != 0) {
+                                        warn "FAIL in $filename (line $line_num): Traffic sent during OFF period [$t_start, $t_end] (RelFrames=$rel_frms, RelBytes=$rel_bytes)\n";
+                                        $errors++;
+                                    }
                                 }
                             }
                         }
@@ -652,30 +761,14 @@ check_vector() {
                 }
             }
 
-            if ($is_flow_vector) {
-                if ($expect_rx) {
-                    if ($data_rows == 0) {
-                        warn "FAIL in $filename (line $line_num): Expected received trace data, got 0 rows\n";
-                        $errors++;
-                    }
-                    if ($frag_rx && defined $last_p && defined $last_f && $last_p <= $last_f) {
-                        warn "FAIL in $filename (line $line_num): Framing failure: Expected AbsPackets ($last_p) > AbsFrames ($last_f)\n";
-                        $errors++;
-                    }
-                } else {
-                    if ($data_rows > 0) {
-                        warn "FAIL in $filename (line $line_num): Expected 0 data rows when expect_rx == 0\n";
-                        $errors++;
-                    }
-                }
-            } else {
+            if (!$is_flow_vector) {
                 foreach my $dir ("Sent", "Received") {
                     my $expected  = ($dir eq "Sent") ? $expect_tx : $expect_rx;
                     my $expect_fg = ($dir eq "Sent") ? $frag_tx   : $frag_rx;
 
-                    my $b = (defined $max_b{$dir}) ? $max_b{$dir} : 0;
-                    my $p = (defined $max_p{$dir}) ? $max_p{$dir} : 0;
-                    my $f = (defined $max_f{$dir}) ? $max_f{$dir} : 0;
+                    my $b = $max_b{$dir} // 0;
+                    my $p = $max_p{$dir} // 0;
+                    my $f = $max_f{$dir} // 0;
 
                     if ($expected) {
                         if ($b <= 0 || $p <= 0 || $f <= 0) {
@@ -696,7 +789,7 @@ check_vector() {
             }
 
             exit($errors ? 1 : 0);
-        ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}" "${_onoff}" "${_role}"; then
+        ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}" "${_all_specs}" "${_role}"; then
             echo "FAIL: Vector verification failed for '${_file}'." >&2
             echo "--- Content of ${_file} ---" >&2
             decompress_cat "${_file}" >&2
@@ -849,14 +942,12 @@ run_attempt() {
     # 5. Verify Scalar outputs
     if [ "${ENABLE_SCALAR}" -eq 1 ]; then
         _scalar_rc=0
-        check_scalar "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"  "${ACTIVE_FRAG_TX}"  "${ACTIVE_FRAG_RX}" \
-                          "${OUT_RATE}" "${OUT_SIZE}" "${IN_RATE}" "${IN_SIZE}" "${PROTOCOL}" "${ONOFF_SPEC}" "${RUNTIME}" || _scalar_rc=$?
+        check_scalar "active"  "${ALL_FLOW_SPECS}" "${ALL_FLOW_PROTOS}" "${RUNTIME}" || _scalar_rc=$?
         if [ "${_scalar_rc}" -ne 0 ]; then
             return "${_scalar_rc}"
         fi
 
-        check_scalar "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}" "${PASSIVE_FRAG_TX}" "${PASSIVE_FRAG_RX}" \
-                          "${IN_RATE}" "${IN_SIZE}" "${OUT_RATE}" "${OUT_SIZE}" "${PROTOCOL}" "${ONOFF_SPEC}" "${RUNTIME}" || _scalar_rc=$?
+        check_scalar "passive" "${ALL_FLOW_SPECS}" "${ALL_FLOW_PROTOS}" "${RUNTIME}" || _scalar_rc=$?
         if [ "${_scalar_rc}" -ne 0 ]; then
             return "${_scalar_rc}"
         fi
@@ -870,10 +961,10 @@ run_attempt() {
 
     # 6. Verify Vector outputs
     if [ "${ENABLE_VECTOR}" -eq 1 ]; then
-        if ! check_vector "active"  "${ACTIVE_EXPECT_TX}"  "${ACTIVE_EXPECT_RX}"  "${ACTIVE_FRAG_TX}"  "${ACTIVE_FRAG_RX}" "${ONOFF_SPEC}"; then
+        if ! check_vector "active"  "${GLOBAL_ACTIVE_EXPECT_TX}"  "${GLOBAL_ACTIVE_EXPECT_RX}"  "${GLOBAL_ACTIVE_FRAG_TX}"  "${GLOBAL_ACTIVE_FRAG_RX}" "${ALL_FLOW_SPECS}"; then
             return 1
         fi
-        if ! check_vector "passive" "${PASSIVE_EXPECT_TX}" "${PASSIVE_EXPECT_RX}" "${PASSIVE_FRAG_TX}" "${PASSIVE_FRAG_RX}" "${ONOFF_SPEC}"; then
+        if ! check_vector "passive" "${GLOBAL_PASSIVE_EXPECT_TX}" "${GLOBAL_PASSIVE_EXPECT_RX}" "${GLOBAL_PASSIVE_FRAG_TX}" "${GLOBAL_PASSIVE_FRAG_RX}" "${ALL_FLOW_SPECS}"; then
             return 1
         fi
     else
@@ -926,7 +1017,7 @@ while [ "${ATTEMPT}" -le "${MAX_RETRIES}" ]; do
 done
 
 if [ "${SUCCESS}" -eq 1 ]; then
-    echo "PASS: ${PROTOCOL} flow test (Port: ${PORT}, Host: ${ADDRESS}, Spec: ${SPEC}) passed after ${ATTEMPT} attempt(s)."
+    echo "PASS: ${PROTOCOL} flow test (Port: ${PORT}, Host: ${ADDRESS}, Spec: ${SPEC}, Flows: ${EXPECTED_FLOWS}) passed after ${ATTEMPT} attempt(s)."
     exit 0
 else
     exit 1

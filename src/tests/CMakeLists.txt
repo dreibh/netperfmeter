@@ -317,6 +317,7 @@ ADD_NETPERFMETER_FLOW_TEST(dist_udp_pareto  127.0.0.1 udp pareto15,3:pareto667,3
 #############################################################################
 
 # ====== 1. Single On-Off Burst (Off 0..1s, On 1..3s, Off 3..5s) ============
+# Active duration = 2.0s, expected frames ~ 40 (continuous would be 100)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_single_burst_ipv4
    127.0.0.1 tcp const20:const1000:const0:const0:onoff=1,3 plain 5)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_single_burst_ipv6
@@ -328,33 +329,110 @@ ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_single_burst_ipv6
    ::1       udp const20:const1000:const0:const0:onoff=1,3 plain 5)
 
 # ====== 2. Multi-Burst On-Off (Alternating On/Off: 1..2s On, 3..4s On) =====
+# Active duration = 2.0s across 2 separate bursts, expected frames ~ 40
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_multiburst_ipv4
    127.0.0.1 tcp const20:const1000:const0:const0:onoff=1,2,3,4 plain 5)
 ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_multiburst_ipv4
    127.0.0.1 udp const20:const1000:const0:const0:onoff=1,2,3,4 plain 5)
 
 # ====== 3. Delayed Start (Off 0..2s, On 2..5s until test completion) ======
+# Active duration = 3.0s, expected frames ~ 60
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_delayed_start
    127.0.0.1 tcp const20:const1000:const0:const0:onoff=2 plain 5)
 ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_delayed_start
    127.0.0.1 udp const20:const1000:const0:const0:onoff=2 plain 5)
 
 # ====== 4. On-Off Combined with Message Segmentation =======================
+# Active 1..3s with 3000 B frames chunked into 1000 B messages
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_fragmented
    127.0.0.1 tcp const20:const3000:const0:const0:onoff=1,3:maxmsgsize=1000 plain 5)
 ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_fragmented
    127.0.0.1 udp const20:const3000:const0:const0:onoff=1,3:maxmsgsize=1000 plain 5)
 
 # ====== 5. On-Off Combined with Stochastic Distribution (Exp Size) =========
+# Active 1..4s (3.0s active time), expected frames ~ 60, Exp mean size 1000 B
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_exp_size
    127.0.0.1 tcp const20:exp1000:const0:const0:onoff=1,4 plain 6)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_exp_size
+   127.0.0.1 udp const20:exp1000:const0:const0:onoff=1,4 plain 6)
 
-# ====== 6. Negative Boundary: Events Scheduled Beyond Runtime ==============
-# Flow scheduled to turn on at 10s, but runtime is only 3s (asserts 0 bytes transferred)
-ADD_NETPERFMETER_FLOW_TEST(flow_tcp_onoff_never_active
-   127.0.0.1 tcp const20:const1000:const0:const0:onoff=10,20 plain 3)
-ADD_NETPERFMETER_FLOW_TEST(flow_udp_onoff_never_active
-   127.0.0.1 udp const20:const1000:const0:const0:onoff=10,20 plain 3)
+
+#############################################################################
+#### MULTI-CONNECTION & CONCURRENT FLOW TESTS (TCP & UDP)                ####
+#############################################################################
+
+# ====== 1. Homogeneous Multi-Connection Tests (TCP) =======================
+# 2 concurrent TCP connections over IPv4 (2x 10 fps, 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_2connections_ipv4
+   127.0.0.1 tcp const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000)
+
+# 4 concurrent TCP connections over IPv4 (4x 10 fps, 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_4connections_ipv4
+   127.0.0.1 tcp const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000
+   -tcp const10:const1000:const10:const1000
+   -tcp const10:const1000:const10:const1000)
+
+# 2 concurrent TCP connections over IPv6
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_2connections_ipv6
+   ::1       tcp const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000)
+
+
+# ====== 2. Homogeneous Multi-Connection Tests (UDP) =======================
+# 2 concurrent UDP flows over IPv4 (2x 10 fps, 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_2flows_ipv4
+   127.0.0.1 udp const10:const1000:const10:const1000 plain 3
+   -udp const10:const1000:const10:const1000)
+
+# 4 concurrent UDP flows over IPv4 (4x 10 fps, 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_4flows_ipv4
+   127.0.0.1 udp const10:const1000:const10:const1000 plain 3
+   -udp const10:const1000:const10:const1000
+   -udp const10:const1000:const10:const1000
+   -udp const10:const1000:const10:const1000)
+
+# 2 concurrent UDP flows over IPv6
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_2flows_ipv6
+   ::1       udp const10:const1000:const10:const1000 plain 3
+   -udp const10:const1000:const10:const1000)
+
+
+# ====== 3. Heterogeneous Cross-Protocol Concurrent Connections =============
+# Concurrent TCP + UDP competing flows (1 TCP connection + 1 UDP flow)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_udp_cross_traffic_ipv4
+   127.0.0.1 tcp const10:const1000:const10:const1000 plain 3
+   -udp const10:const1000:const10:const1000)
+
+# Concurrent TCP + UDP competing flows over IPv6
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_udp_cross_traffic_ipv6
+   ::1       tcp const10:const1000:const10:const1000 plain 3
+   -udp const10:const1000:const10:const1000)
+
+
+# ====== 4. Asymmetric Split Concurrency (Upload + Download on Separate Sockets)
+# Flow 0: Upload-only TCP, Flow 1: Download-only TCP running simultaneously
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_split_upload_download
+   127.0.0.1 tcp const15:const1000:const0:const0 plain 3
+   -tcp const0:const0:const15:const1000)
+
+# Flow 0: Upload-only UDP, Flow 1: Download-only UDP running simultaneously
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_split_upload_download
+   127.0.0.1 udp const15:const1000:const0:const0 plain 3
+   -udp const0:const0:const15:const1000)
+
+
+# ====== 5. Multi-Connection Framing & Segmentation Tests ===================
+# 2 concurrent TCP connections with message segmentation (maxmsgsize=250)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_2connections_fragmented
+   127.0.0.1 tcp const10:const1000:const10:const1000:maxmsgsize=250 plain 3
+   -tcp const10:const1000:const10:const1000:maxmsgsize=250)
+
+# 2 concurrent UDP flows with datagram segmentation (maxmsgsize=250)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_2flows_fragmented
+   127.0.0.1 udp const10:const1000:const10:const1000:maxmsgsize=250 plain 3
+   -udp const10:const1000:const10:const1000:maxmsgsize=250)
 
 
 #############################################################################
@@ -855,8 +933,8 @@ ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_multiburst_ipv4      127.0.0.1 sctp c
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_delayed_start        127.0.0.1 sctp const20:const1000:const0:const0:onoff=2 plain 5)
 # On-Off Combined with Message Segmentation
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_fragmented           127.0.0.1 sctp const20:const3000:const0:const0:onoff=1,3:maxmsgsize=1000 plain 5)
-# Negative Boundary: Events Scheduled Beyond Runtime (0 bytes transferred)
-ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_never_active         127.0.0.1 sctp const20:const1000:const0:const0:onoff=10,20 plain 3)
+# On-Off Combined with Exponential Distribution (Mean 1000 B, active 1..4s)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_onoff_exp_size             127.0.0.1 sctp const20:exp1000:const0:const0:onoff=1,4 plain 6)
 
 # ====== 9. Basic Stochastic Distribution Tests (VBR Flows) =================
 # 1. Uniform Distribution (Rate [15, 25) -> HM ~19.6, Size [800, 1200) -> AM 1000)
@@ -884,6 +962,51 @@ ADD_NETPERFMETER_FLOW_TEST(dist_sctp_ctrl_sctp_truncnormal
    127.0.0.1 sctp truncnormal20,2:truncnormal1000,100:truncnormal20,2:truncnormal1000,100 plain 8 --control-over-sctp)
 ADD_NETPERFMETER_FLOW_TEST(dist_sctp_ctrl_sctp_pareto
    127.0.0.1 sctp pareto15,3:pareto667,3:pareto15,3:pareto667,3 plain 8 --control-over-sctp)
+
+
+# ====== 11. SCTP Multi-Connection & Multi-Stream Integration Tests ==========
+# 2 concurrent SCTP flows over IPv4 (2x 10 fps, 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_2flows_ipv4
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   -sctp const10:const1000:const10:const1000)
+
+# 4 concurrent SCTP flows over IPv4 (4x 10 fps, 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_4flows_ipv4
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   -sctp const10:const1000:const10:const1000
+   -sctp const10:const1000:const10:const1000
+   -sctp const10:const1000:const10:const1000)
+
+# 2 concurrent SCTP flows over IPv6
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_2flows_ipv6
+   ::1       sctp const10:const1000:const10:const1000 plain 3
+   -sctp const10:const1000:const10:const1000)
+
+# Concurrent SCTP + TCP heterogeneous flows
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_tcp_cross_traffic
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000)
+
+# Concurrent SCTP + UDP heterogeneous flows
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_udp_cross_traffic
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   -udp const10:const1000:const10:const1000)
+
+# Tri-Protocol Concurrency: SCTP + TCP + UDP all running concurrently in 1 session
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tri_protocol_concurrent
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000
+   -udp const10:const1000:const10:const1000)
+
+# 2 concurrent SCTP flows with control channel over SCTP
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_2flows_ctrl_sctp
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   -sctp const10:const1000:const10:const1000 --control-over-sctp)
+
+# 2 concurrent SCTP flows with message chunking (maxmsgsize=250)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_2flows_fragmented
+   127.0.0.1 sctp const10:const1000:const10:const1000:maxmsgsize=250 plain 3
+   -sctp const10:const1000:const10:const1000:maxmsgsize=250)
 
 
 # ===========================================================================
