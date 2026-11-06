@@ -1227,3 +1227,44 @@ ADD_NETPERFMETER_FLOW_TEST(profile_smartgrid_substation_phasor_gateway_v6
    ::1       sctp uniform30,40:truncnormal350,30:uniform30,40:truncnormal350,30 plain 8)
 
 ENDIF()
+
+
+#############################################################################
+#### SATURATED BULK FLOW TESTS WITH MULTI-MESSAGE FRAMING                ####
+#############################################################################
+
+# ====== 1. Saturated TCP Flows with Message Segmentation ===================
+# 16 KB frames segmented into 1,400 B messages (~12 messages per frame), saturated
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_saturated_large_frames
+   127.0.0.1 tcp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3)
+
+# 64 KB jumbo frames segmented into 1,400 B messages (~46 messages per frame), saturated
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_saturated_jumbo_frames
+   127.0.0.1 tcp const0:const65536:const0:const65536:maxmsgsize=1400 plain 3)
+
+# Saturated upload-only TCP with large framed messages
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_saturated_upload_segmented
+   127.0.0.1 tcp const0:const32000:const0:const0:maxmsgsize=1400 plain 3)
+
+
+# ====== 2. Saturated SCTP Flows with Multi-Message Chunking ================
+IF (HAVE_SCTP_FOR_TESTS)
+
+# Saturated SCTP bidirectional transfer: 16 KB frames fragmented into 1,400 B chunks
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_saturated_large_frames
+   127.0.0.1 sctp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3)
+
+# Saturated SCTP transfer with 64 KB jumbo frames fragmented into 1,000 B chunks
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_saturated_jumbo_frames
+   127.0.0.1 sctp const0:const65536:const0:const65536:maxmsgsize=1000 plain 3)
+
+# Saturated SCTP multi-stream: Stream 0 (16 KB frames) and Stream 1 (32 KB frames)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_saturated_multistream
+   127.0.0.1 sctp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3
+   -sctp const0:const32000:const0:const32000:maxmsgsize=1400)
+
+# Saturated SCTP with control channel running over SCTP
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_saturated_ctrl_sctp
+   127.0.0.1 sctp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3 --control-over-sctp)
+
+ENDIF()

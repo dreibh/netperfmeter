@@ -176,8 +176,9 @@ for _fspec in ${ALL_FLOW_SPECS}; do
         shift
     done
 
-    case "${_o_rate}:${_o_size}" in
-        0:0|const0:0|0:const0|const0:const0) ;;
+    # A flow is active if its frame size > 0 (supports both constant/stochastic rate and saturated const0 bulk)
+    case "${_o_size}" in
+        0|const0) ;;
         *)
             GLOBAL_ACTIVE_EXPECT_TX=1
             if [ "${_f_maxmsgsize}" -gt 0 ] && perl -e "exit(!($(parse_mean "${_o_size}") > ${_f_maxmsgsize}))"; then
@@ -186,8 +187,8 @@ for _fspec in ${ALL_FLOW_SPECS}; do
             ;;
     esac
 
-    case "${_i_rate}:${_i_size}" in
-        0:0|const0:0|0:const0|const0:const0) ;;
+    case "${_i_size}" in
+        0|const0) ;;
         *)
             GLOBAL_ACTIVE_EXPECT_RX=1
             if [ "${_f_maxmsgsize}" -gt 0 ] && perl -e "exit(!($(parse_mean "${_i_size}") > ${_f_maxmsgsize}))"; then
@@ -365,8 +366,8 @@ check_scalar() {
             }
 
             my $on_time = compute_on_time($onoff_str, $runtime + 0);
-            my $out_active = (!($out_r =~ /^(?:0|const0)$/) && !($out_s =~ /^(?:0|const0)$/)) ? 1 : 0;
-            my $in_active  = (!($in_r  =~ /^(?:0|const0)$/) && !($in_s  =~ /^(?:0|const0)$/)) ? 1 : 0;
+            my $out_active = (!($out_s =~ /^(?:0|const0)$/)) ? 1 : 0;
+            my $in_active  = (!($in_s  =~ /^(?:0|const0)$/)) ? 1 : 0;
 
             my ($expect_tx, $expect_rx);
             my ($flow_tx_r, $flow_tx_s, $flow_rx_r, $flow_rx_s);
@@ -424,7 +425,7 @@ check_scalar() {
                             $fatal_errors++;
                         }
                     } else {
-                        if ($dist_s =~ /^const/) {
+                        if ($dist_s =~ /^const/ && !($dist_r =~ /^(?:0|const0)$/)) {
                             if ($p != $f) {
                                 warn "FAIL in $filename ($flow_obj): Expected unfragmented constant $dir Packets ($p) == Frames ($f)\n";
                                 $fatal_errors++;
@@ -438,11 +439,11 @@ check_scalar() {
                     my $eff_tol_size = ($f > 0 && $f <= 30) ? ($tol_size * 1.5) : $tol_size;
                     my $eff_tol_rate = ($runtime > 0 && ($runtime <= 3 || $f <= 30)) ? ($tol_rate * 1.5) : $tol_rate;
 
+                    # On-off schedule validation
                     if ($onoff_str && $target_rate > 0) {
                         my $cont_frames = $target_rate * $runtime;
                         my $expected_onoff_frames = $target_rate * $on_time;
 
-                        # If flow had off periods, total transferred frames must be strictly lower than continuous
                         if ($on_time < $runtime) {
                             my $upper_bound = $cont_frames * 0.90;
                             if ($f > $upper_bound) {
@@ -460,6 +461,7 @@ check_scalar() {
                             }
                         }
                     } else {
+                        # Standard rate validation (bypassed for saturated bulk flows where target_rate == 0)
                         if ($target_rate > 0) {
                             my $diff = abs($r - $target_rate);
                             if ($diff > ($target_rate * $eff_tol_rate)) {
@@ -471,6 +473,7 @@ check_scalar() {
                         }
                     }
 
+                    # Average frame size check during active transmissions
                     if ($target_size > 0 && $f > 0) {
                         my $avg_size = $b / $f;
                         my $diff = abs($avg_size - $target_size);
