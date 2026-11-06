@@ -155,11 +155,14 @@ void Measurement::finish(const bool closeFiles)
 // ###### Write scalars #####################################################
 void Measurement::writeScalarStatistics(const uint64_t now)
 {
+   FlowManager* flowManager = FlowManager::getFlowManager();
+   flowManager->lock();
    lock();
    FlowManager::getFlowManager()->writeScalarStatistics(
       MeasurementID, now, ScalarFile,
       FirstStatisticsEvent);
    unlock();
+   flowManager->unlock();
 }
 
 

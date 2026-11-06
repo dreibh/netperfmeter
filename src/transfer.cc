@@ -191,7 +191,8 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
        (errno != EAGAIN) &&
        (!flow->isAcceptedIncomingFlow()) &&
        (flow->getTrafficSpec().ErrorOnAbort) &&
-       (flow->getOutputStatus() == Flow::On) ) {
+       (flow->getOutputStatus() == Flow::On) &&
+       (!flow->isStopping()) ) {
       LOG_FATAL
       // TRANSLATORS: Error message when a data flow is unexpectedly terminated. Placeholders: {} 1: flow ID, 2: socket descriptor, 3: strerror() message.
       stdlog << formatText(gettext("Flow #{} on socket {} has been aborted: {}!"),

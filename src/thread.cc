@@ -91,7 +91,9 @@ void Thread::stop()
 void Thread::waitForFinish()
 {
    if(MyThread.joinable()) {
-      MyThread.join();
+      if(MyThread.get_id() != std::this_thread::get_id()) {
+         MyThread.join();
+      }
    }
 }
 

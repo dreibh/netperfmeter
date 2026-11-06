@@ -300,20 +300,34 @@ void Flow::deactivate(const bool asyncStop)
       OutputStatus = Off;
       PollFDEntry  = nullptr;   // Poll FD entry is now invalid!
       unlock();
-      if(SocketDescriptor >= 0) {
+
+      // Check whether another flow is still sharing this socket descriptor:
+      bool socketStillShared = false;
+      FlowManager* flowManager = FlowManager::getFlowManager();
+      flowManager->lock();
+      for(const auto* otherFlow : flowManager->getFlowSet()) {
+         if((otherFlow != this) && (otherFlow->getSocketDescriptor() == SocketDescriptor)) {
+            socketStillShared = true;
+            break;
+         }
+      }
+      flowManager->unlock();
+
+      if((SocketDescriptor >= 0) && (!socketStillShared)) {
          if(TrafficSpec.Protocol == IPPROTO_UDP) {
             // NOTE: There is only one UDP socket. We cannot close it here!
-            // The thread will notice the need to finish after the poll()
-            // timeout.
          }
          else {
             ext_shutdown(SocketDescriptor, (TrafficSpec.Protocol == IPPROTO_TCP) ? SHUT_WR : SHUT_RDWR);
          }
       }
+
       stop();
       if(!asyncStop) {
          waitForFinish();
-         FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
+         if(!socketStillShared) {
+            FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
+         }
       }
    }
 }
