@@ -31,7 +31,7 @@
 #include "flow.h"
 
 
-// ###### Destructor ########################################################
+// ###### Constructor #######################################################
 Measurement::Measurement()
 {
    MeasurementID        = 0;
@@ -101,11 +101,14 @@ bool Measurement::finish(const bool closeFiles)
 // ###### Write scalars #####################################################
 void Measurement::writeScalarStatistics(const unsigned long long now)
 {
+   FlowManager* flowManager = FlowManager::getFlowManager();
+   flowManager->lock();
    lock();
    FlowManager::getFlowManager()->writeScalarStatistics(
       MeasurementID, now, ScalarFile,
       FirstStatisticsEvent);
    unlock();
+   flowManager->unlock();
 }
 
 

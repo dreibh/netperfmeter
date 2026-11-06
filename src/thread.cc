@@ -31,6 +31,7 @@
 #include "loglevel.h"
 
 #include <pthread.h>
+#include <unistd.h>
 
 
 // ###### Constructor #######################################################
@@ -52,7 +53,7 @@ Thread::~Thread()
 }
 
 
-// ###### Start routine to lauch thread's run() function ####################
+// ###### Start routine to launch thread's run() function ###################
 void* Thread::startRoutine(void* object)
 {
    Thread* thread = (Thread*)object;
@@ -98,8 +99,13 @@ void Thread::stop()
 void Thread::waitForFinish()
 {
    if(MyThread != 0) {
-      pthread_join(MyThread, nullptr);
-      MyThread = 0;
+      if(!pthread_equal(MyThread, pthread_self())) {
+         pthread_join(MyThread, nullptr);
+         MyThread = 0;
+      }
+      else {
+         pthread_detach(MyThread);
+      }
    }
 }
 

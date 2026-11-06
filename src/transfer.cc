@@ -187,7 +187,8 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
        (errno != EAGAIN) &&
        (!flow->isAcceptedIncomingFlow()) &&
        (flow->getTrafficSpec().ErrorOnAbort) &&
-       (flow->getOutputStatus() == Flow::On) ) {
+       (flow->getOutputStatus() == Flow::On) &&
+       (!flow->isStopping()) ) {
       LOG_FATAL
       stdlog << format("Flow #%u on socket %d has been aborted: %s!",
                        flow->getFlowID(), flow->getSocketDescriptor(),
