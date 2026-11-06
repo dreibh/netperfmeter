@@ -44,7 +44,9 @@ ENABLE_VECTOR=1
 MAX_RETRIES=1
 CONTROL_OVER_SCTP=0
 EXPECTED_FLOWS=1
-PASSTHROUGH_ARGS=""
+GENERAL_EXTRA_ARGS=""
+STREAM_ARGS=""
+EXTRA_CONN_ARGS=""
 
 ALL_FLOW_PROTOS="${PROTOCOL}"
 ALL_FLOW_SPECS="${SPEC}"
@@ -64,7 +66,22 @@ if [ "$#" -ge 7 ]; then
             --no-vector|--without-vector) ENABLE_VECTOR=0 ;;
             --retries=*|--max-retries=*)  MAX_RETRIES="${1#*=}" ;;
             --control-over-sctp|-control-over-sctp) CONTROL_OVER_SCTP=1 ;;
+            --stream|-stream)
+                # Additional stream within the current SCTP association
+                _spec="$2"
+                ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};sctp"
+                ALL_FLOW_SPECS="${ALL_FLOW_SPECS};${_spec}"
+                EXPECTED_FLOWS=$((EXPECTED_FLOWS + 1))
+                case "${_spec}" in
+                    *exp*|*pareto*|*uniform*|*truncnormal*|*normal*)
+                        MAX_RETRIES=5
+                        ;;
+                esac
+                STREAM_ARGS="${STREAM_ARGS} ${_spec}"
+                shift
+                ;;
             -tcp|-udp|-sctp)
+                # Additional separate transport connection / association
                 _proto="${1#-}"
                 _spec="$2"
                 ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};${_proto}"
@@ -75,10 +92,10 @@ if [ "$#" -ge 7 ]; then
                         MAX_RETRIES=5
                         ;;
                 esac
-                PASSTHROUGH_ARGS="${PASSTHROUGH_ARGS} $1 $2"
+                EXTRA_CONN_ARGS="${EXTRA_CONN_ARGS} $1 $2"
                 shift
                 ;;
-            *) PASSTHROUGH_ARGS="${PASSTHROUGH_ARGS} $1" ;;
+            *) GENERAL_EXTRA_ARGS="${GENERAL_EXTRA_ARGS} $1" ;;
         esac
         shift
     done
@@ -196,6 +213,7 @@ for _fspec in ${ALL_FLOW_SPECS}; do
             fi
             ;;
     esac
+    IFS=";"
 done
 IFS="$OLD_IFS"
 
@@ -919,14 +937,18 @@ run_attempt() {
         VECTOR_ARG="-vector=${TMP_DIR}/test.vec${EXT}"
     fi
 
+    # General options precede flow specifications, allowing extra stream specs
+    # passed in ${STREAM_ARGS} to follow "-${PROTOCOL}" "${SPEC}"
     if ! "${NETPERFMETER}" "${TARGET}:${PORT}" \
         ${CLIENT_CONTROL_ARG} \
         -runtime="${RUNTIME}" \
-        "-${PROTOCOL}" "${SPEC}" \
         --config="${TMP_DIR}/test.config" \
         ${SCALAR_ARG} \
         ${VECTOR_ARG} \
-        ${PASSTHROUGH_ARGS} \
+        ${GENERAL_EXTRA_ARGS} \
+        "-${PROTOCOL}" "${SPEC}" \
+        ${STREAM_ARGS} \
+        ${EXTRA_CONN_ARGS} \
         >"${TMP_DIR}/client.log" 2>&1; then
         echo "FAIL: Active instance exited with an error." >&2
         cat "${TMP_DIR}/client.log" >&2

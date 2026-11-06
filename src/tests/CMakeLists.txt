@@ -1009,6 +1009,106 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_2flows_fragmented
    -sctp const10:const1000:const10:const1000:maxmsgsize=250)
 
 
+# ====== 12. Partial Reliability (PR-SCTP, RFC 3758) =========================
+# Fully unreliable delivery (unreliable=1.0) over IPv4
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_unreliable_ipv4
+   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0 plain 3)
+
+# Fully unreliable delivery over IPv6
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_unreliable_ipv6
+   ::1       sctp const20:const1000:const20:const1000:unreliable=1.0 plain 3)
+
+# 50% partial reliability (unreliable=0.5: 50% reliable, 50% unreliable)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_partial_50percent
+   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=0.5 plain 3)
+
+# PR-SCTP with limited retransmission trials (rtx_trials=0: drop upon first loss)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_rtx_trials_zero
+   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0:rtx_trials=0 plain 3)
+
+# PR-SCTP with up to 3 retransmission trials (rtx_trials=3)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_rtx_trials_three
+   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0:rtx_trials=3 plain 3)
+
+# PR-SCTP with timed lifetime / buffer expiration (rtx_timeout=200ms)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_rtx_timeout_timed
+   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0:rtx_timeout=200 plain 3)
+
+# PR-SCTP unreliable flow combined with message segmentation
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_unreliable_fragmented
+   127.0.0.1 sctp const20:const3000:const20:const3000:unreliable=1.0:maxmsgsize=1000 plain 3)
+
+
+# ====== 13. Ordered vs. Unordered Delivery (RFC 9260) =======================
+# Fully unordered delivery (unordered=1.0) over IPv4
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_unordered_delivery_ipv4
+   127.0.0.1 sctp const20:const1000:const20:const1000:unordered=1.0 plain 3)
+
+# Fully unordered delivery over IPv6
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_unordered_delivery_ipv6
+   ::1       sctp const20:const1000:const20:const1000:unordered=1.0 plain 3)
+
+# Explicit 100% ordered delivery (ordered=1.0)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ordered_explicit
+   127.0.0.1 sctp const20:const1000:const20:const1000:ordered=1.0 plain 3)
+
+# Mixed 50% ordered / 50% unordered delivery (unordered=0.5)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_mixed_ordering_50percent
+   127.0.0.1 sctp const20:const1000:const20:const1000:unordered=0.5 plain 3)
+
+# Unordered delivery with message segmentation
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_unordered_fragmented
+   127.0.0.1 sctp const20:const3000:const20:const3000:unordered=1.0:maxmsgsize=1000 plain 3)
+
+# Unordered + Unreliable combined (RFC 9260 unordered + RFC 3758 PR-SCTP)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_unordered_unreliable_pr
+   127.0.0.1 sctp const20:const1000:const20:const1000:unordered=1.0:unreliable=1.0:rtx_trials=0 plain 3)
+
+
+# ====== 14. SCTP Multi-Streaming (Single Association, Multiple Streams) =====
+# 2 streams within 1 association: Stream 0 (10 fps, 1000 B) and Stream 1 (20 fps, 500 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_2streams_ipv4
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   --stream const20:const500:const20:const500)
+
+# 2 streams within 1 association over IPv6
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_2streams_ipv6
+   ::1       sctp const10:const1000:const10:const1000 plain 3
+   --stream const20:const500:const20:const500)
+
+# 4 streams within 1 association (5, 10, 15, and 20 fps)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_4streams
+   127.0.0.1 sctp const5:const500:const5:const500 plain 3
+   --stream const10:const500:const10:const500
+   --stream const15:const500:const15:const500
+   --stream const20:const500:const20:const500)
+
+# Asymmetric multi-stream: Stream 0 upload-only, Stream 1 download-only in 1 association
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_asymmetric_split
+   127.0.0.1 sctp const15:const1000:const0:const0 plain 3
+   --stream const0:const0:const15:const1000)
+
+# Multi-stream combining ordered and unordered streams in 1 association
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_ordered_and_unordered
+   127.0.0.1 sctp const10:const1000:const10:const1000:ordered=1.0 plain 3
+   --stream const20:const500:const20:const500:unordered=1.0)
+
+# Multi-stream combining reliable and unreliable streams in 1 association
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_reliable_and_unreliable
+   127.0.0.1 sctp const10:const1000:const10:const1000:reliable=1.0 plain 3
+   --stream const20:const500:const20:const500:unreliable=1.0:rtx_trials=0)
+
+# 2 streams within 1 association with control channel over SCTP
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_ctrl_sctp
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   --stream const20:const500:const20:const500 --control-over-sctp)
+
+# 2 streams within 1 association with message chunking (maxmsgsize=500)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_fragmented
+   127.0.0.1 sctp const10:const2000:const10:const2000:maxmsgsize=500 plain 3
+   --stream const10:const2000:const10:const2000:maxmsgsize=500)
+
+
 # ===========================================================================
 # 50 REALISTIC SCTP APPLICATION DISTRIBUTION PROFILES (Profiles 101 - 150)
 # ===========================================================================
