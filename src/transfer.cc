@@ -306,9 +306,18 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
          else if( (received >= (ssize_t)sizeof(NetPerfMeterDataMessage)) &&
                   (dataMsg->Header.Type == NETPERFMETER_DATA) ) {
             // ====== Identify flow =========================================
-            Flow* flow;
-            if( (protocol == IPPROTO_UDP) && (!isActiveMode) ) {
-               flow = FlowManager::getFlowManager()->findFlow(&from.sa);
+            Flow* flow = nullptr;
+            if(protocol == IPPROTO_UDP) {
+               // UDP is connectionless and shares sockets on the passive node.
+               // Identify flow directly via in-band message header:
+               flow = FlowManager::getFlowManager()->findFlow(
+                         be64toh(dataMsg->MeasurementID),
+                         be32toh(dataMsg->FlowID),
+                         be16toh(dataMsg->StreamID));
+               if(!flow && !isActiveMode) {
+                  // Fallback for initial unmapped datagrams
+                  flow = FlowManager::getFlowManager()->findFlow(&from.sa);
+               }
             }
             else if(protocol == IPPROTO_SCTP) {
                // Flow ID = SCTP stream ID:
@@ -316,15 +325,16 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             }
 #if defined(HAVE_QUIC)
             else if(protocol == IPPROTO_QUIC) {
-               // Flow ID = QUIC stream ID (remove 2 last bits:
+               // Flow ID = QUIC stream ID (remove 2 last bits):
                const uint32_t flowID = (uint32_t)(streamID >> 2);
                flow = FlowManager::getFlowManager()->findFlow(sd, flowID);
             }
 #endif
             else {
-               // Flow ID is always 0:
+               // Flow ID is always 0 (TCP, MPTCP, DCCP):
                flow = FlowManager::getFlowManager()->findFlow(sd, 0);
             }
+
             if(flow) {
                // Update flow statistics by received NETPERFMETER_DATA message.
                updateStatistics(flow, now, dataMsg, (size_t)received);
