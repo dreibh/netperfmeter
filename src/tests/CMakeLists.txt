@@ -379,6 +379,18 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_2connections_ipv6
    ::1       tcp const10:const1000:const10:const1000 plain 3
    -tcp const10:const1000:const10:const1000)
 
+# 4 concurrent TCP connections over IPv6 (4x 10 fps, 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_4connections_ipv6
+   ::1       tcp const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000
+   -tcp const10:const1000:const10:const1000
+   -tcp const10:const1000:const10:const1000)
+
+# 2 competing TCP connections: interactive small frames (50 fps, 100 B) vs bulk frames (10 fps, 1400 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_heterogeneous_rates_sizes
+   127.0.0.1 tcp const50:const100:const50:const100 plain 3
+   -tcp const10:const1400:const10:const1400)
+
 
 # ====== 2. Homogeneous Multi-Connection Tests (UDP) =======================
 # 2 concurrent UDP flows over IPv4 (2x 10 fps, 1000 B)
@@ -398,6 +410,20 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_2flows_ipv6
    ::1       udp const10:const1000:const10:const1000 plain 3
    -udp const10:const1000:const10:const1000)
 
+# 4 concurrent UDP flows over IPv6 (4x 10 fps, 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_4flows_ipv6
+   ::1       udp const10:const1000:const10:const1000 plain 3
+   -udp const10:const1000:const10:const1000
+   -udp const10:const1000:const10:const1000
+   -udp const10:const1000:const10:const1000)
+
+# 4 UDP flows with distinct asymmetric frame rates and sizes
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_4flows_heterogeneous
+   127.0.0.1 udp const40:const150:const40:const150 plain 3
+   -udp const20:const500:const20:const500
+   -udp const10:const1200:const10:const1200
+   -udp const5:const1400:const5:const1400)
+
 
 # ====== 3. Heterogeneous Cross-Protocol Concurrent Connections =============
 # Concurrent TCP + UDP competing flows (1 TCP connection + 1 UDP flow)
@@ -408,6 +434,13 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_udp_cross_traffic_ipv4
 # Concurrent TCP + UDP competing flows over IPv6
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_udp_cross_traffic_ipv6
    ::1       tcp const10:const1000:const10:const1000 plain 3
+   -udp const10:const1000:const10:const1000)
+
+# 4-flow hybrid session: 2 concurrent TCP connections + 2 concurrent UDP flows
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_udp_4flows_cross
+   127.0.0.1 tcp const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000
+   -udp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000)
 
 
@@ -422,6 +455,11 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_split_upload_download
    127.0.0.1 udp const15:const1000:const0:const0 plain 3
    -udp const0:const0:const15:const1000)
 
+# Cross-protocol split: Flow 0 upload-only TCP competing with Flow 1 download-only UDP
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_upload_udp_download_split
+   127.0.0.1 tcp const15:const1000:const0:const0 plain 3
+   -udp const0:const0:const15:const1000)
+
 
 # ====== 5. Multi-Connection Framing & Segmentation Tests ===================
 # 2 concurrent TCP connections with message segmentation (maxmsgsize=250)
@@ -433,6 +471,18 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_2connections_fragmented
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_2flows_fragmented
    127.0.0.1 udp const10:const1000:const10:const1000:maxmsgsize=250 plain 3
    -udp const10:const1000:const10:const1000:maxmsgsize=250)
+
+
+# ====== 6. Interleaved & Staggered On-Off Dynamic Concurrency =============
+# 2 TCP connections with alternating bursts (Flow 0 active 1..2s; Flow 1 active 2..3s)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_interleaved_onoff
+   127.0.0.1 tcp const20:const1000:const0:const0:onoff=1,2 plain 4
+   -tcp const20:const1000:const0:const0:onoff=2,3)
+
+# 2 UDP flows with staggered overlapping bursts (Flow 0 active 1..3s; Flow 1 active 2..4s)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_staggered_onoff
+   127.0.0.1 udp const20:const1000:const0:const0:onoff=1,3 plain 5
+   -udp const20:const1000:const0:const0:onoff=2,4)
 
 
 #############################################################################
@@ -998,6 +1048,13 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_tri_protocol_concurrent
    -tcp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000)
 
+# 4-protocol concurrent stress session: 1 SCTP association (2 streams) + 1 TCP conn + 1 UDP flow
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quad_concurrent_stress
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   --stream const10:const500:const10:const500
+   -tcp const10:const1000:const10:const1000
+   -udp const10:const1000:const10:const1000)
+
 # 2 concurrent SCTP flows with control channel over SCTP
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_2flows_ctrl_sctp
    127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
@@ -1097,6 +1154,23 @@ ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_ordered_and_unordered
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_reliable_and_unreliable
    127.0.0.1 sctp const10:const1000:const10:const1000:reliable=1.0 plain 3
    --stream const20:const500:const20:const500:unreliable=1.0:rtx_trials=0)
+
+# 4 streams in 1 association combining all 4 RFC permutations of reliability and ordering
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_all_rfc_permutations
+   127.0.0.1 sctp const10:const500:const10:const500:reliable=1.0:ordered=1.0 plain 3
+   --stream const10:const500:const10:const500:unreliable=1.0:rtx_trials=3:ordered=1.0
+   --stream const10:const500:const10:const500:reliable=1.0:unordered=1.0
+   --stream const10:const500:const10:const500:unreliable=1.0:rtx_trials=0:unordered=1.0)
+
+# 2 streams in 1 association with heterogeneous frame sizes and segmentation
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_mixed_message_sizes
+   127.0.0.1 sctp const20:const250:const20:const250 plain 3
+   --stream const10:const2000:const10:const2000:maxmsgsize=500)
+
+# 2 streams in 1 association with staggered On-Off schedules
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_staggered_onoff
+   127.0.0.1 sctp const20:const1000:const0:const0:onoff=1,3 plain 5
+   --stream const20:const1000:const0:const0:onoff=2,4)
 
 # 2 streams within 1 association with control channel over SCTP
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_ctrl_sctp

@@ -1,0 +1,6 @@
+#!/bin/sh
+cmake .
+make
+while ctest -j128 --output-on-failure ; do 
+   sleep 1
+done
