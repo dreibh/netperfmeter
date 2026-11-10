@@ -117,7 +117,31 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
 
    // ====== Send NETPERFMETER_DATA message =================================
    ssize_t sent;
-   if(0) { /* Dummy for following "else if" in #if ... #endif block */ }
+   if( (flow->getTrafficSpec().Protocol == IPPROTO_TCP)
+#if defined(HAVE_MPTCP)
+       || (flow->getTrafficSpec().Protocol == IPPROTO_MPTCP)
+#endif
+     ) {
+      int flags = 0;
+#if defined(MSG_MORE)
+      if(!isFrameEnd) {
+         flags |= MSG_MORE;   // Accumulate chunks belonging to the frame
+      }
+#endif
+      sent = ext_send(flow->getSocketDescriptor(), outputBuffer, bytesToSend, flags);
+   }
+   else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
+      if(flow->isRemoteAddressValid()) {
+         sent = ext_sendto(flow->getSocketDescriptor(),
+                           (char*)&outputBuffer, bytesToSend, 0,
+                           flow->getRemoteAddress(),
+                           getSocklen(flow->getRemoteAddress()));
+      }
+      else {
+         sent = ext_send(flow->getSocketDescriptor(),
+                         (char*)&outputBuffer, bytesToSend, 0);
+      }
+   }
 #if defined(HAVE_SCTP)
    else if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
@@ -166,18 +190,6 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
       sent = quic_sendmsg(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, sid, flags);
    }
 #endif
-   else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
-      if(flow->isRemoteAddressValid()) {
-         sent = ext_sendto(flow->getSocketDescriptor(),
-                           (char*)&outputBuffer, bytesToSend, 0,
-                           flow->getRemoteAddress(),
-                           getSocklen(flow->getRemoteAddress()));
-      }
-      else {
-         sent = ext_send(flow->getSocketDescriptor(),
-                         (char*)&outputBuffer, bytesToSend, 0);
-      }
-   }
    else {
       sent = ext_send(flow->getSocketDescriptor(), (char*)&outputBuffer, bytesToSend, 0);
    }
