@@ -488,7 +488,6 @@ IF (HAVE_MPTCP)
    ADD_DEFINITIONS(-DHAVE_MPTCP)
 ENDIF()
 
-
 # ====== QUIC support =======================================================
 CHECK_C_SOURCE_COMPILES("
 #include <sys/socket.h>
@@ -518,9 +517,54 @@ IF (HAVE_QUIC)
       ENDIF()
       LIST(APPEND QUIC_LIBRARY ${GNUTLS_LIBRARY})
       ADD_DEFINITIONS(-DHAVE_QUIC)
+
+      # ------ Test whether a QUIC socket can be created --------------------
+      SET(CMAKE_REQUIRED_LIBRARIES_BACKUP ${CMAKE_REQUIRED_LIBRARIES})
+      IF (QUIC_LIBRARY)
+         LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${QUIC_LIBRARY})
+      ENDIF()
+      IF (SOCKET_LIBRARY)
+         LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${SOCKET_LIBRARY})
+      ENDIF()
+
+      CHECK_C_SOURCE_RUNS("
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <linux/quic.h>
+
+int main (int argc, char** argv)
+{
+   int sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_QUIC);
+   if(sd < 0) {
+      sd = socket(AF_INET, SOCK_STREAM, IPPROTO_QUIC);
+   }
+   if(sd < 0) {
+      return 1;
+   }
+   close(sd);
+   return 0;
+}"
+      HAVE_QUIC_SOCKET)
+
+      SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_BACKUP})
+
+      IF (HAVE_QUIC_SOCKET)
+         MESSAGE(STATUS "Kernel QUIC socket creation successful: QUIC is available for tests")
+         SET(HAVE_QUIC_FOR_TESTS TRUE CACHE INTERNAL "QUIC socket creation supported for tests")
+         ADD_DEFINITIONS(-DHAVE_QUIC_SOCKET)
+      ELSE()
+         MESSAGE(STATUS "Kernel QUIC socket creation failed: QUIC is NOT available for tests")
+         SET(HAVE_QUIC_FOR_TESTS FALSE CACHE INTERNAL "QUIC socket creation supported for tests")
+      ENDIF()
+
    ELSE()
       MESSAGE(WARNING "QUIC is available, but libquic is not!")
+      SET(HAVE_QUIC_FOR_TESTS FALSE CACHE INTERNAL "QUIC socket creation supported for tests")
    ENDIF()
+ELSE()
+   SET(HAVE_QUIC_FOR_TESTS FALSE CACHE INTERNAL "QUIC socket creation supported for tests")
 ENDIF()
 
 # ====== Graphics tools for icons and logo ==================================
