@@ -892,11 +892,35 @@ run_attempt() {
     SERVER_PID=""
 
     stop_server() {
-        if [ -n "${SERVER_PID}" ] && kill -0 "${SERVER_PID}" 2>/dev/null; then
-            kill -TERM "${SERVER_PID}" 2>/dev/null || true
-            wait "${SERVER_PID}" 2>/dev/null || true
+        if [ -n "${SERVER_PID}" ]; then
+            _server_rc=0
+            if kill -0 "${SERVER_PID}" 2>/dev/null; then
+                kill -INT "${SERVER_PID}" 2>/dev/null || true
+                wait "${SERVER_PID}" 2>/dev/null || _server_rc=$?
+            else
+                wait "${SERVER_PID}" 2>/dev/null || _server_rc=$?
+            fi
+            SERVER_PID=""
+
+            # Fail if passive instance crashed (e.g., exit status 134 on SIGABRT)
+            if [ "${_server_rc}" -ne 0 ]; then
+                echo "FAIL: Passive server instance crashed with exit code ${_server_rc}." >&2
+                if [ -s "${TMP_DIR}/server.log" ]; then
+                    echo "--- Server Log ---" >&2
+                    cat "${TMP_DIR}/server.log" >&2
+                fi
+                return 1
+            fi
+
+            # Fail if assertion errors or core dump notices appear in server.log
+            if [ -s "${TMP_DIR}/server.log" ] && grep -qE "failed in|FATAL ERROR|Aborted|Avbrutt" "${TMP_DIR}/server.log"; then
+                echo "FAIL: Assertion failure or crash detected in server log." >&2
+                echo "--- Server Log ---" >&2
+                cat "${TMP_DIR}/server.log" >&2
+                return 1
+            fi
         fi
-        SERVER_PID=""
+        return 0
     }
 
     # 1. Start passive node
@@ -952,11 +976,14 @@ run_attempt() {
         >"${TMP_DIR}/client.log" 2>&1; then
         echo "FAIL: Active instance exited with an error." >&2
         cat "${TMP_DIR}/client.log" >&2
-        stop_server
+        stop_server || true
         return 1
     fi
 
-    stop_server
+    # Explicitly check server shutdown status
+    if ! stop_server; then
+        return 1
+    fi
 
     # 4. Verify Configuration output (--config)
     if [ ! -s "${TMP_DIR}/test.config" ]; then

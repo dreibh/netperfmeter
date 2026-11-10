@@ -393,6 +393,11 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_heterogeneous_rates_sizes
 
 
 # ====== 2. Homogeneous Multi-Connection Tests (UDP) =======================
+# 2 concurrent UDP flows to verify clean passive server shutdown on SIGINT
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_2flows_shutdown_clean
+   127.0.0.1 udp const5:const1000:const2:const500 plain 3
+   -udp const20:const1000:const20:const500)
+
 # 2 concurrent UDP flows over IPv4 (2x 10 fps, 1000 B)
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_2flows_ipv4
    127.0.0.1 udp const10:const1000:const10:const1000 plain 3
