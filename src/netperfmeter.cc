@@ -1975,7 +1975,7 @@ static void passiveMode(const uint16_t localPort)
    if(gQUICSocket < 0) {
       LOG_INFO
       stdlog << format("QUIC is unavailable (%s); disabling QUIC socket on port %d!",
-                       strerror(errno), localPort) << "\n";
+                       strerror(errno), localPort - 1) << "\n";
       LOG_END
    }
    else {
