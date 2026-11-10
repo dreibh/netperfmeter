@@ -182,6 +182,19 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
                          outputBuffer, bytesToSend, 0);
       }
    }
+   else if( (flow->getTrafficSpec().Protocol == IPPROTO_TCP)
+#if defined(HAVE_MPTCP)
+            || (flow->getTrafficSpec().Protocol == IPPROTO_MPTCP)
+#endif
+          ) {
+      int flags = 0;
+#if defined(MSG_MORE)
+      if(!isFrameEnd) {
+         flags |= MSG_MORE;   // Accumulate chunks belonging to the frame
+      }
+#endif
+      sent = ext_send(flow->getSocketDescriptor(), outputBuffer, bytesToSend, flags);
+   }
    else {
       sent = ext_send(flow->getSocketDescriptor(), outputBuffer, bytesToSend, 0);
    }
