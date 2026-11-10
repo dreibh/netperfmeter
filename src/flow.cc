@@ -574,7 +574,7 @@ bool Flow::configureSocket(const int socketDescriptor)
    else if(TrafficSpec.Protocol == IPPROTO_QUIC) {
       quic_config quicConfig;
       socklen_t   quicConfigLength = sizeof(quicConfig);
-      if(ext_getsockopt(socketDescriptor, IPPROTO_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
+      if(ext_getsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
 
          LOG_ERROR
          stdlog << format("Unable to obtain configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
@@ -596,7 +596,7 @@ bool Flow::configureSocket(const int socketDescriptor)
          LOG_END
          return false;
       }
-      if(ext_setsockopt(socketDescriptor, IPPROTO_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
+      if(ext_setsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
 
          LOG_WARNING
          stdlog << format("Unable to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",

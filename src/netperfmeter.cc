@@ -1586,7 +1586,7 @@ static bool mainLoop(const bool               isActiveMode,
             uint8_t      sessionKey[64];
             unsigned int sessionKeyLength = sizeof(sessionKey);
             if(ext_getsockopt(newSD,
-                              IPPROTO_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
+                              SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
                               &sessionKey, &sessionKeyLength) == 0) {
                if(server_handshake(newSD, ALPN_NETPERFMETER_DATA,
                                    gQUICCA, gQUICCertificate, gQUICKey,
@@ -1986,10 +1986,10 @@ static void passiveMode(const uint16_t localPort)
       LOG_END
    }
    else {
-      if(ext_setsockopt(gQUICSocket, IPPROTO_QUIC, QUIC_SOCKOPT_ALPN,
+      if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
                         ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
          LOG_FATAL
-         stdlog << format("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket: %s!",
+         stdlog << format("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket %d: %s!",
                           gQUICSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
