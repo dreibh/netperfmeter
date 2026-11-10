@@ -1438,6 +1438,34 @@ ENDIF()
 
 
 #############################################################################
+#### QUIC FLOW INTEGRATION TESTS (RFC 9000 / lxin-quic)                  ####
+#############################################################################
+
+IF (HAVE_QUIC_FOR_TESTS)
+
+# ====== 1. Bidirectional QUIC Flows ========================================
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_bidi_ipv4 127.0.0.1 quic const10:const1000:const10:const1000 plain 3)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_bidi_ipv6 ::1       quic const10:const1000:const10:const1000 plain 3)
+
+# ====== 2. Unidirectional QUIC Flows =======================================
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_upload_ipv4   127.0.0.1 quic const10:const1000:const0:const0 plain 3)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_download_ipv4 127.0.0.1 quic const0:const0:const10:const1000 plain 3)
+
+# ====== 3. QUIC Multi-Stream Flows (Single Connection, 2 Streams) ==========
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2streams_ipv4
+   127.0.0.1 quic const10:const1000:const10:const1000 plain 3
+   -quic const10:const500:const10:const500)
+
+# ====== 4. Cross-Traffic Concurrency (QUIC + TCP + UDP) ====================
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_tcp_udp_cross
+   127.0.0.1 quic const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000
+   -udp const10:const1000:const10:const1000)
+
+ENDIF()
+
+
+#############################################################################
 #### SATURATED BULK FLOW TESTS WITH MULTI-MESSAGE FRAMING                ####
 #############################################################################
 
