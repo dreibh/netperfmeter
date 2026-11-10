@@ -1923,7 +1923,7 @@ static void passiveMode(const uint16_t localPort)
    }
    if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
       LOG_FATAL
-      // TRANSLATORS: Error setting socket buffer sizes (SO_SNDBUF/SO_RCVBUF). {} is socket descriptor.
+      // TRANSLATORS: Error setting socket buffer sizes (SO_SNDBUF/SO_RCVBUF). Placeholders: {} 1: socket descriptor, 2: strerror() message.
       stdlog << formatText(gettext("Unable to configure buffer sizes on TCP socket {}: {}!"),
                            gTCPSocket, strerror(errno)) << "\n";
       LOG_END_FATAL
@@ -1943,7 +1943,7 @@ static void passiveMode(const uint16_t localPort)
       }
       if(setBufferSizes(gTCP6Socket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         // TRANSLATORS: Error setting IPv6 TCP socket buffer sizes. {} is socket descriptor.
+         // TRANSLATORS: Error setting IPv6 TCP socket buffer sizes. Placeholders: {} 1: socket descriptor, 2: strerror() message.
          stdlog << formatText(gettext("Unable to configure buffer sizes on TCP6 socket {}: {}!"),
                               gTCP6Socket, strerror(errno)) << "\n";
          LOG_END_FATAL
@@ -1959,15 +1959,15 @@ static void passiveMode(const uint16_t localPort)
                                       true, gBindV6Only);
    if(gMPTCPSocket < 0) {
       LOG_DEBUG
-      // TRANSLATORS: Informational note when MPTCP data socket cannot be bound. Placeholders: {} 1: port number, 2: strerror() message.
-      stdlog << formatText(gettext("NOTE: Unable to create and bind MPTCP socket on port {}: {}!"),
-                           localPort - 1, strerror(errno)) << "\n";
+      // TRANSLATORS: Informational note when MPTCP is unavailable. Placeholders: {} 1: strerror() message, 2: port number.
+      stdlog << formatText(gettext("MPTCP is unavailable ({}); disabling MPTCP socket on port {}!"),
+                           strerror(errno), localPort - 1) << "\n";
       LOG_END
    }
    else {
       if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         // TRANSLATORS: Error setting MPTCP socket buffer sizes. {} is socket descriptor.
+         // TRANSLATORS: Error setting MPTCP socket buffer sizes. Placeholders: {} 1: socket descriptor, 2: strerror() message.
          stdlog << formatText(gettext("Unable to configure buffer sizes on MPTCP socket {}: {}!"),
                               gMPTCPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
@@ -2013,6 +2013,7 @@ static void passiveMode(const uint16_t localPort)
       FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDP6Socket);
    }
 #endif
+
    // ------ DCCP -----------------------------------------------------------
 #if defined(HAVE_DCCP)
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
@@ -2021,9 +2022,9 @@ static void passiveMode(const uint16_t localPort)
                                      true, gBindV6Only);
    if(gDCCPSocket < 0) {
       LOG_INFO
-      // TRANSLATORS: Informational note when DCCP socket cannot be bound. Placeholders: {} 1: port number, 2: strerror() message.
-      stdlog << formatText(gettext("NOTE: Unable to create and bind DCCP socket on port {}: {}!"),
-                           localPort, strerror(errno)) << "\n";
+      // TRANSLATORS: Informational note when DCCP is unavailable. Placeholders: {} 1: strerror() message, 2: port number.
+      stdlog << formatText(gettext("DCCP is unavailable ({}); disabling DCCP socket on port {}!"),
+                           strerror(errno), localPort) << "\n";
       LOG_END
    }
    else {
@@ -2037,7 +2038,7 @@ static void passiveMode(const uint16_t localPort)
       }
       if(setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         // TRANSLATORS: Error setting DCCP socket buffer sizes. {} is socket descriptor.
+         // TRANSLATORS: Error setting DCCP socket buffer sizes. Placeholders: {} 1: socket descriptor, 2: strerror() message.
          stdlog << formatText(gettext("Unable to configure buffer sizes on DCCP socket {}: {}!"),
                               gDCCPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
@@ -2052,30 +2053,30 @@ static void passiveMode(const uint16_t localPort)
    // NOTE: It is necessary to set the ALPN before enabling the listening mode!
    if(gQUICSocket < 0) {
       LOG_INFO
-      // TRANSLATORS: Informational note when QUIC socket cannot be bound. Placeholders: {} 1: port number, 2: strerror() message.
-      stdlog << formatText(gettext("NOTE: Unable to create and bind QUIC socket on port {}: {}!"),
-                           localPort, strerror(errno)) << "\n";
+      // TRANSLATORS: Informational note when QUIC is unavailable. Placeholders: {} 1: strerror() message, 2: port number.
+      stdlog << formatText(gettext("QUIC is unavailable ({}); disabling QUIC socket on port {}!"),
+                           strerror(errno), localPort - 1) << "\n";
       LOG_END
    }
    else {
       if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
                         ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
          LOG_FATAL
-         // TRANSLATORS: Error setting QUIC Application-Layer Protocol Negotiation string. {} is strerror() message.
+         // TRANSLATORS: Error setting QUIC Application-Layer Protocol Negotiation string. Placeholders: {} 1: socket fd, 2: strerror() message.
          stdlog << formatText(gettext("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket {}: {}!"),
                               gQUICSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         // TRANSLATORS: Error setting QUIC socket buffer sizes. {} is socket descriptor.
+         // TRANSLATORS: Error setting QUIC socket buffer sizes. Placeholders: {} 1: socket descriptor, 2: strerror() message.
          stdlog << formatText(gettext("Unable to configure buffer sizes on QUIC socket {}: {}!"),
                               gQUICSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(ext_listen(gQUICSocket, 100) < 0) {
          LOG_FATAL
-         // TRANSLATORS: Error putting QUIC socket into listening mode. {} is socket descriptor.
+         // TRANSLATORS: Error putting QUIC socket into listening mode. Placeholders: {} 1: socket descriptor, 2: strerror() message.
          stdlog << formatText(gettext("Unable to enable listening on QUIC socket {}: {}!"),
                               gQUICSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
@@ -2121,7 +2122,7 @@ static void passiveMode(const uint16_t localPort)
       // ------ Set SCTP buffer sizes ---------------------------------------
       if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
-         // TRANSLATORS: Error setting SCTP socket buffer sizes. {} is socket descriptor.
+         // TRANSLATORS: Error setting SCTP socket buffer sizes. Placeholders: {} 1: socket descriptor, 2: strerror() message.
          stdlog << formatText(gettext("Unable to configure buffer sizes on SCTP socket {}: {}!"),
                               gSCTPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
