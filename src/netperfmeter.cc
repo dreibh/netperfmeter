@@ -1319,8 +1319,9 @@ static Flow* createFlow(Flow*                  previousFlow,
          initmsg.sinit_max_instreams = 65535;
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_INITMSG,
                            &initmsg, sizeof(initmsg)) < 0) {
-            // TRANSLATORS: Error message when SCTP setsockopt(SCTP_INITMSG) fails. {} is strerror() message.
-            std::cerr << formatText(gettext("ERROR: Unable to configure INIT parameters on SCTP socket (SCTP_INITMSG option) - {}!"), strerror(errno)) << "\n";
+            // TRANSLATORS: Error message when SCTP setsockopt(SCTP_INITMSG) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+            std::cerr << formatText(gettext("ERROR: Unable to configure INIT parameters (SCTP_INITMSG option) on SCTP socket {}: {}!"),
+                                    socketDescriptor, strerror(errno)) << "\n";
             exit(1);
          }
 
@@ -1330,8 +1331,9 @@ static Flow* createFlow(Flow*                  previousFlow,
          events.sctp_data_io_event = 1;
          if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_EVENTS,
                            &events, sizeof(events)) < 0) {
-            // TRANSLATORS: Error message when SCTP setsockopt(SCTP_EVENTS) fails. {} is strerror() message.
-            std::cerr << formatText(gettext("ERROR: Unable to configure events on SCTP socket (SCTP_EVENTS option) - {}!"), strerror(errno)) << "\n";
+            // TRANSLATORS: Error message when SCTP setsockopt(SCTP_EVENTS) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+            std::cerr << formatText(gettext("ERROR: Unable to configure events (SCTP_EVENTS option) on SCTP socket {}: {}!"),
+                                    socketDescriptor, strerror(errno)) << "\n";
             exit(1);
          }
       }
@@ -1341,8 +1343,9 @@ static Flow* createFlow(Flow*                  previousFlow,
          exit(1);
       }
       if(ext_connect(socketDescriptor, &destinationAddress.sa, getSocklen(&destinationAddress.sa)) < 0) {
-         // TRANSLATORS: Error message on connect() failure. Placeholders: {} 1: protocol name, 2: strerror() message.
-         std::cerr << formatText(gettext("ERROR: Unable to connect {} socket - {}!"), getProtocolName(trafficSpec.Protocol), strerror(errno)) << "\n";
+         // TRANSLATORS: Error message on connect() failure. Placeholders: {} 1: protocol name, 2: socket fd, 3: strerror() message.
+         std::cerr << formatText(gettext("ERROR: Unable to connect {} socket {}: {}!"),
+                                 getProtocolName(trafficSpec.Protocol), socketDescriptor, strerror(errno)) << "\n";
          exit(1);
       }
 
@@ -1629,7 +1632,7 @@ static bool mainLoop(const bool     isActiveMode,
             uint8_t      sessionKey[64];
             unsigned int sessionKeyLength = sizeof(sessionKey);
             if(ext_getsockopt(newSD,
-                              IPPROTO_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
+                              SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
                               &sessionKey, &sessionKeyLength) == 0) {
                if(server_handshake(newSD, ALPN_NETPERFMETER_DATA,
                                    gQUICCA, gQUICCertificate, gQUICKey,
@@ -1736,8 +1739,9 @@ static void passiveMode(const uint16_t localPort)
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_NODELAY,
                            (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
             LOG_ERROR
-            // TRANSLATORS: Error disabling Nagle algorithm on SCTP control socket. {} is strerror() message.
-            stdlog << formatText(gettext("Unable to set SCTP_NODELAY on SCTP control socket: {}!"), strerror(errno)) << "\n";
+            // TRANSLATORS: Error disabling Nagle algorithm on SCTP control socket. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to set SCTP_NODELAY on SCTP control socket {}: {}!"),
+                                 gControlSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
 
@@ -1749,7 +1753,8 @@ static void passiveMode(const uint16_t localPort)
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
             LOG_FATAL
             // TRANSLATORS: Error subscribing to SCTP notification events. Placeholders: {} 1: socket fd, 2: strerror() message.
-            stdlog << formatText(gettext("Unable to configure events (SCTP_EVENTS option) on SCTP socket {}: {}!"), gControlSocket, strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to configure events (SCTP_EVENTS option) on SCTP socket {}: {}!"),
+                                 gControlSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
 
@@ -1760,7 +1765,8 @@ static void passiveMode(const uint16_t localPort)
              (gPassiveControlTCP == false) ) {
             LOG_FATAL
             // TRANSLATORS: Fatal error when binding SCTP control socket. Placeholders: {} 1: port number, 2: strerror() message.
-            stdlog << formatText(gettext("Unable to create and bind SCTP control socket on port {}: {}!"), localPort + 1, strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to create and bind SCTP control socket on port {}: {}!"),
+                                 localPort + 1, strerror(errno)) << "\n";
             if(errno == EPROTONOSUPPORT) {
                // TRANSLATORS: Hint suggesting TCP control channel when SCTP kernel support is unavailable.
                stdlog << gettext("SCTP is not available => Try -y|--control-over-tcp for control over TCP!") << "\n";
@@ -1797,23 +1803,26 @@ static void passiveMode(const uint16_t localPort)
       if(gControlSocketTCP < 0) {
          LOG_FATAL
          // TRANSLATORS: Fatal error when binding TCP control socket. Placeholders: {} 1: port number, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to create and bind TCP control socket on port {}: {}!"), localPort + 1, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to create and bind TCP control socket on port {}: {}!"),
+                              localPort + 1, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       const int noDelayOption = 1;
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_NODELAY,
                         (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
          LOG_ERROR
-         // TRANSLATORS: Error disabling Nagle algorithm on TCP control socket. {} is strerror() message.
-         stdlog << formatText(gettext("Unable to set TCP_NODELAY on TCP control socket: {}!"), strerror(errno)) << "\n";
+         // TRANSLATORS: Error disabling Nagle algorithm on TCP control socket. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_NODELAY on TCP control socket {}: {}!"),
+                              gControlSocketTCP, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       const int keepAliveOption = 1;
       if(ext_setsockopt(gControlSocketTCP, SOL_SOCKET, SO_KEEPALIVE,
                         (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
          LOG_ERROR
-         // TRANSLATORS: Error enabling SO_KEEPALIVE on TCP control socket. {} is strerror() message.
-         stdlog << formatText(gettext("Unable to set SO_KEEPALIVE on TCP control socket: {}!"), strerror(errno)) << "\n";
+         // TRANSLATORS: Error enabling SO_KEEPALIVE on TCP control socket. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set SO_KEEPALIVE on TCP control socket {}: {}!"),
+                              gControlSocketTCP, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 #if defined(TCP_KEEPIDLE) && !defined(__GNU__)
@@ -1822,7 +1831,8 @@ static void passiveMode(const uint16_t localPort)
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
          LOG_ERROR
          // TRANSLATORS: Error setting TCP keepalive idle time. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to set TCP_KEEPIDLE on TCP control socket {}: {}!"), gControlSocketTCP, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set TCP_KEEPIDLE on TCP control socket {}: {}!"),
+                              gControlSocketTCP, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 #else
@@ -1834,7 +1844,8 @@ static void passiveMode(const uint16_t localPort)
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
          LOG_ERROR
          // TRANSLATORS: Error setting TCP keepalive probe interval. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to set TCP_KEEPINTVL on TCP control socket {}: {}!"), gControlSocketTCP, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set TCP_KEEPINTVL on TCP control socket {}: {}!"),
+                              gControlSocketTCP, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 #else
@@ -1846,7 +1857,8 @@ static void passiveMode(const uint16_t localPort)
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
          LOG_ERROR
          // TRANSLATORS: Error setting TCP keepalive probe count. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to set TCP_KEEPCNT on TCP control socket {}: {}!"), gControlSocketTCP, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to set TCP_KEEPCNT on TCP control socket {}: {}!"),
+                              gControlSocketTCP, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 #else
@@ -1871,15 +1883,17 @@ static void passiveMode(const uint16_t localPort)
          if(gControlSocketTCP6 < 0) {
             LOG_FATAL
             // TRANSLATORS: Fatal error when binding IPv6 TCP control socket. Placeholders: {} 1: port number, 2: strerror() message.
-            stdlog << formatText(gettext("Unable to create and bind TCP6 control socket on port {}: {}!"), localPort + 1, strerror(errno)) << "\n";
+            stdlog << formatText(gettext("Unable to create and bind TCP6 control socket on port {}: {}!"),
+                                 localPort + 1, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
          const int noDelayOption = 1;
          if(ext_setsockopt(gControlSocketTCP6, IPPROTO_TCP, TCP_NODELAY,
                            (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
             LOG_ERROR
-            // TRANSLATORS: Error disabling Nagle algorithm on IPv6 TCP control socket. {} is strerror() message.
-            stdlog << formatText(gettext("Unable to set TCP6_NODELAY on TCP6 control socket: {}!"), strerror(errno)) << "\n";
+            // TRANSLATORS: Error disabling Nagle algorithm on IPv6 TCP control socket. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to set TCP6_NODELAY on TCP6 control socket {}: {}!"),
+                                 gControlSocketTCP6, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
          gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP6);
@@ -1903,13 +1917,15 @@ static void passiveMode(const uint16_t localPort)
    if(gTCPSocket < 0) {
       LOG_FATAL
       // TRANSLATORS: Fatal error when binding TCP data socket. Placeholders: {} 1: port number, 2: strerror() message.
-      stdlog << formatText(gettext("Unable to create and bind TCP socket on port {}: {}!"), localPort, strerror(errno)) << "\n";
+      stdlog << formatText(gettext("Unable to create and bind TCP socket on port {}: {}!"),
+                           localPort, strerror(errno)) << "\n";
       LOG_END_FATAL
    }
    if(setBufferSizes(gTCPSocket, gSndBufSize, gRcvBufSize) == false) {
       LOG_FATAL
       // TRANSLATORS: Error setting socket buffer sizes (SO_SNDBUF/SO_RCVBUF). {} is socket descriptor.
-      stdlog << formatText(gettext("Unable to configure buffer sizes on TCP socket {}!"), gTCPSocket) << "\n";
+      stdlog << formatText(gettext("Unable to configure buffer sizes on TCP socket {}: {}!"),
+                           gTCPSocket, strerror(errno)) << "\n";
       LOG_END_FATAL
    }
 #if defined(__OpenBSD__)
@@ -1921,13 +1937,15 @@ static void passiveMode(const uint16_t localPort)
       if(gTCP6Socket < 0) {
          LOG_FATAL
          // TRANSLATORS: Fatal error when binding IPv6 TCP data socket. Placeholders: {} 1: port number, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to create and bind TCP6 socket on port {}: {}!"), localPort, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to create and bind TCP6 socket on port {}: {}!"),
+                              localPort, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gTCP6Socket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
          // TRANSLATORS: Error setting IPv6 TCP socket buffer sizes. {} is socket descriptor.
-         stdlog << formatText(gettext("Unable to configure buffer sizes on TCP6 socket {}!"), gTCP6Socket) << "\n";
+         stdlog << formatText(gettext("Unable to configure buffer sizes on TCP6 socket {}: {}!"),
+                              gTCP6Socket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
    }
@@ -1942,14 +1960,16 @@ static void passiveMode(const uint16_t localPort)
    if(gMPTCPSocket < 0) {
       LOG_DEBUG
       // TRANSLATORS: Informational note when MPTCP data socket cannot be bound. Placeholders: {} 1: port number, 2: strerror() message.
-      stdlog << formatText(gettext("NOTE: Unable to create and bind MPTCP socket on port {}: {}!"), localPort - 1, strerror(errno)) << "\n";
+      stdlog << formatText(gettext("NOTE: Unable to create and bind MPTCP socket on port {}: {}!"),
+                           localPort - 1, strerror(errno)) << "\n";
       LOG_END
    }
    else {
       if(setBufferSizes(gMPTCPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
          // TRANSLATORS: Error setting MPTCP socket buffer sizes. {} is socket descriptor.
-         stdlog << formatText(gettext("Unable to configure buffer sizes on MPTCP socket {}!"), gMPTCPSocket) << "\n";
+         stdlog << formatText(gettext("Unable to configure buffer sizes on MPTCP socket {}: {}!"),
+                              gMPTCPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
    }
@@ -1969,7 +1989,8 @@ static void passiveMode(const uint16_t localPort)
    if(gUDPSocket < 0) {
       LOG_FATAL
       // TRANSLATORS: Fatal error when binding UDP socket. Placeholders: {} 1: port number, 2: strerror() message.
-      stdlog << formatText(gettext("ERROR: Unable to create and bind UDP socket on port {} - {}!"), localPort, strerror(errno)) << "\n";
+      stdlog << formatText(gettext("ERROR: Unable to create and bind UDP socket on port {} - {}!"),
+                           localPort, strerror(errno)) << "\n";
       LOG_END_FATAL
    }
    // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
@@ -1984,7 +2005,8 @@ static void passiveMode(const uint16_t localPort)
       if(gUDP6Socket < 0) {
          LOG_FATAL
          // TRANSLATORS: Fatal error when binding IPv6 UDP socket. Placeholders: {} 1: port number, 2: strerror() message.
-         stdlog << formatText(gettext("ERROR: Unable to create and bind UDP6 socket on port {} - {}!"), localPort, strerror(errno));
+         stdlog << formatText(gettext("ERROR: Unable to create and bind UDP6 socket on port {} - {}!"),
+                              localPort, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       // NOTE: For connection-less UDP, the FlowManager takes care of the socket!
@@ -2000,21 +2022,24 @@ static void passiveMode(const uint16_t localPort)
    if(gDCCPSocket < 0) {
       LOG_INFO
       // TRANSLATORS: Informational note when DCCP socket cannot be bound. Placeholders: {} 1: port number, 2: strerror() message.
-      stdlog << formatText(gettext("NOTE: Unable to create and bind DCCP socket on port {}: {}!"), localPort, strerror(errno)) << "\n";
+      stdlog << formatText(gettext("NOTE: Unable to create and bind DCCP socket on port {}: {}!"),
+                           localPort, strerror(errno)) << "\n";
       LOG_END
    }
    else {
       const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(gDCCPSocket, IPPROTO_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_FATAL
-         // TRANSLATORS: Error setting DCCP service code. Placeholders: {} 1: service code number, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to configure DCCP service code {} (DCCP_SOCKOPT_SERVICE option) on DCCP socket: {}!"), static_cast<unsigned int>(be32toh(service[0])), gDCCPSocket, strerror(errno)) << "\n";
+         // TRANSLATORS: Error setting DCCP service code. Placeholders: {} 1: service code number, 2: socket fd, 3: strerror() message.
+         stdlog << formatText(gettext("Unable to configure DCCP service code {} (DCCP_SOCKOPT_SERVICE option) on DCCP socket {}: {}!"),
+                              static_cast<unsigned int>(be32toh(service[0])), gDCCPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gDCCPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
          // TRANSLATORS: Error setting DCCP socket buffer sizes. {} is socket descriptor.
-         stdlog << formatText(gettext("Unable to configure buffer sizes on DCCP socket {}!"), gDCCPSocket) << "\n";
+         stdlog << formatText(gettext("Unable to configure buffer sizes on DCCP socket {}: {}!"),
+                              gDCCPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
    }
@@ -2028,27 +2053,31 @@ static void passiveMode(const uint16_t localPort)
    if(gQUICSocket < 0) {
       LOG_INFO
       // TRANSLATORS: Informational note when QUIC socket cannot be bound. Placeholders: {} 1: port number, 2: strerror() message.
-      stdlog << formatText(gettext("NOTE: Unable to create and bind QUIC socket on port {}: {}!"), localPort, strerror(errno)) << "\n";
+      stdlog << formatText(gettext("NOTE: Unable to create and bind QUIC socket on port {}: {}!"),
+                           localPort, strerror(errno)) << "\n";
       LOG_END
    }
    else {
-      if(ext_setsockopt(gQUICSocket, IPPROTO_QUIC, QUIC_SOCKOPT_ALPN,
+      if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
                         ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
          LOG_FATAL
          // TRANSLATORS: Error setting QUIC Application-Layer Protocol Negotiation string. {} is strerror() message.
-         stdlog << formatText(gettext("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket: {}!"), gQUICSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket {}: {}!"),
+                              gQUICSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
          // TRANSLATORS: Error setting QUIC socket buffer sizes. {} is socket descriptor.
-         stdlog << formatText(gettext("Unable to configure buffer sizes on QUIC socket {}!"), gQUICSocket) << "\n";
+         stdlog << formatText(gettext("Unable to configure buffer sizes on QUIC socket {}: {}!"),
+                              gQUICSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
       if(ext_listen(gQUICSocket, 100) < 0) {
          LOG_FATAL
          // TRANSLATORS: Error putting QUIC socket into listening mode. {} is socket descriptor.
-         stdlog << formatText(gettext("Unable to enable listening on QUIC socket {}!"), gQUICSocket) << "\n";
+         stdlog << formatText(gettext("Unable to enable listening on QUIC socket {}: {}!"),
+                              gQUICSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
    }
@@ -2071,7 +2100,8 @@ static void passiveMode(const uint16_t localPort)
                         &initmsg, sizeof(initmsg)) < 0) {
          LOG_FATAL
          // TRANSLATORS: Error setting SCTP stream parameters. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to configure INIT parameters (SCTP_INITMSG option) on SCTP socket {}: {}!"), gSCTPSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to configure INIT parameters (SCTP_INITMSG option) on SCTP socket {}: {}!"),
+                              gSCTPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 
@@ -2083,7 +2113,8 @@ static void passiveMode(const uint16_t localPort)
       if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_EVENTS, &events, sizeof(events)) < 0) {
          LOG_FATAL
          // TRANSLATORS: Error subscribing to SCTP notification events. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to configure events (SCTP_EVENTS option) on SCTP socket {}: {}!"), gSCTPSocket, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to configure events (SCTP_EVENTS option) on SCTP socket {}: {}!"),
+                              gSCTPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 
@@ -2091,7 +2122,8 @@ static void passiveMode(const uint16_t localPort)
       if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
          // TRANSLATORS: Error setting SCTP socket buffer sizes. {} is socket descriptor.
-         stdlog << formatText(gettext("Unable to configure buffer sizes on SCTP socket {}!"), gSCTPSocket) << "\n";
+         stdlog << formatText(gettext("Unable to configure buffer sizes on SCTP socket {}: {}!"),
+                              gSCTPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
 
@@ -2100,7 +2132,8 @@ static void passiveMode(const uint16_t localPort)
       if( (errno != EPROTONOSUPPORT) || (gPassiveControlTCP == false) ) {
          LOG_FATAL
          // TRANSLATORS: Fatal error when binding SCTP data socket. Placeholders: {} 1: port number, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to create and bind SCTP socket on port {}: {}!"), localPort, strerror(errno)) << "\n";
+         stdlog << formatText(gettext("Unable to create and bind SCTP socket on port {}: {}!"),
+                              localPort, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
    }
@@ -2333,9 +2366,9 @@ static void activeMode(const char* remoteEndpoint)
       sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
          LOG_FATAL
-         // TRANSLATORS: Error configuring SCTP default send parameters. {} is strerror() message.
-         stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM) on SCTP control socket: {}!"),
-                          strerror(errno)) << "\n";
+         // TRANSLATORS: Error configuring SCTP default send parameters. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket {}: {}!"),
+                              gControlSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
    }
