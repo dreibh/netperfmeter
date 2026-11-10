@@ -104,15 +104,8 @@ FlowManager::~FlowManager()
    }
 
    // ====== Clean up flows =================================================
-   std::vector<Flow*>::iterator flowIterator = FlowSet.begin();
-   while(flowIterator != FlowSet.end()) {
-      Flow* flow = *flowIterator;
-      if(flow->SocketDescriptor >= 0) {
-         assure(Reader.deregisterSocket(flow->SocketDescriptor) == true);
-         ext_close(flow->SocketDescriptor);
-      }
-      flowIterator = FlowSet.erase(flowIterator);
-      delete flow;
+   while(!FlowSet.empty()) {
+      delete FlowSet.back();
    }
 
    // ====== Clean up unidentified sockets ==================================
