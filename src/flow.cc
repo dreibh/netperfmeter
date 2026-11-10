@@ -286,23 +286,33 @@ void Flow::deactivate(const bool asyncStop)
 
       // Check whether another flow is still sharing this socket descriptor:
       bool socketStillShared = false;
-      FlowManager* flowManager = FlowManager::getFlowManager();
-      flowManager->lock();
-      for(std::vector<Flow*>::iterator iterator = flowManager->getFlowSet().begin();
-          iterator != flowManager->getFlowSet().end(); iterator++) {
-         const Flow* otherFlow = *iterator;
-         if((otherFlow != this) && (otherFlow->getSocketDescriptor() == SocketDescriptor)) {
-            socketStillShared = true;
-            break;
-         }
+      switch(TrafficSpec.Protocol) {
+         case IPPROTO_TCP:
+#if defined(HAVE_MPTCP)
+         case IPPROTO_MPTCP:
+#endif
+         case IPPROTO_UDP:
+#if defined(HAVE_DCCP)
+         case IPPROTO_DCCP:
+#endif
+            // Single connection only -> nothing to do!
+          break;
+         default:
+            FlowManager* flowManager = FlowManager::getFlowManager();
+            flowManager->lock();
+            for(const auto* otherFlow : flowManager->getFlowSet()) {
+               if((otherFlow != this) && (otherFlow->getSocketDescriptor() == SocketDescriptor)) {
+                  socketStillShared = true;
+                  break;
+               }
+            }
+            flowManager->unlock();
+          break;
       }
-      flowManager->unlock();
 
       if((SocketDescriptor >= 0) && (!socketStillShared)) {
          if(TrafficSpec.Protocol == IPPROTO_UDP) {
             // NOTE: There is only one UDP socket. We cannot close it here!
-            // The thread will notice the need to finish after the poll()
-            // timeout.
          }
          else {
             ext_shutdown(SocketDescriptor, (TrafficSpec.Protocol == IPPROTO_TCP) ? SHUT_WR : SHUT_RDWR);

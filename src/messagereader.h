@@ -84,7 +84,7 @@ class MessageReader
       MessageReaderStatus Status;
       int                 Protocol;
       int                 SocketDescriptor;
-      size_t              UseCount;
+      unsigned int        UseCount;
       char*               MessageBuffer;
       size_t              MessageBufferSize;
       size_t              MessageSize;
