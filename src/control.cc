@@ -1047,6 +1047,8 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
          LOG_END
          ext_shutdown(controlSocket, SHUT_RDWR);
       }
+      // Clean up all flows and measurements belonging to this disconnected client:
+      handleControlAssocShutdown(controlSocket);
       return false;
    }
 
