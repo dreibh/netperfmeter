@@ -201,6 +201,35 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
 ENDFUNCTION()
 
 
+# ###### Helper for Multi-Client Session Tests ##############################
+FUNCTION(ADD_NETPERFMETER_MULTI_CLIENT_TEST TEST_NAME ADDRESS SCENARIO)
+   GET_NEXT_TEST_PORT(TEST_PORT)
+
+   ADD_TEST(
+      NAME ${TEST_NAME}
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_multi_client.sh
+         $<TARGET_FILE:netperfmeter>
+         ${TEST_PORT}
+         ${ADDRESS}
+         ${SCENARIO}
+   )
+
+   SET(TEST_LABELS "flow;multi-client;session-cleanup;integration")
+   IF(ADDRESS STREQUAL "::1")
+      LIST(APPEND TEST_LABELS "ipv6")
+   ELSE()
+      LIST(APPEND TEST_LABELS "ipv4")
+   ENDIF()
+
+   SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:;Avbrutt;Aborted;assure"
+      LABELS "${TEST_LABELS}"
+      TIMEOUT 60
+   )
+ENDFUNCTION()
+
+
 #############################################################################
 #### BASIC CLI OPTIONS                                                   ####
 #############################################################################
@@ -1446,4 +1475,31 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_saturated_multistream
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_saturated_ctrl_sctp
    127.0.0.1 sctp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3 --control-over-sctp)
 
+ENDIF()
+
+
+#############################################################################
+#### MULTI-CLIENT SESSION CLEANUP & SERVER LIFECYCLE TESTS               ####
+#############################################################################
+
+# 1. Two clients simultaneously running TCP and UDP flows
+ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_udp_tcp
+   127.0.0.1 concurrent_2clients_udp_tcp)
+
+# 2. Staggered overlapping clients: Client 2 finishes and tears down session while Client 1 is mid-flight
+ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_staggered_overlap_udp_tcp
+   127.0.0.1 staggered_overlap_udp_tcp)
+
+# 3. Sequential session reuse: 3 client generations run back-to-back against the same server
+ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_sequential_session_reuse
+   127.0.0.1 sequential_session_reuse)
+
+# 4. Two clients running simultaneously over IPv6
+ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_ipv6
+   ::1 concurrent_2clients_ipv6)
+
+# 5. Tri-protocol concurrent stress: 3 clients (SCTP multistream + TCP/UDP + 2x UDP)
+IF (HAVE_SCTP_FOR_TESTS)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_3clients_mixed
+      127.0.0.1 concurrent_3clients_mixed)
 ENDIF()

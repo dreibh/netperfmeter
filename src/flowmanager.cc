@@ -108,7 +108,7 @@ FlowManager::~FlowManager()
    while(flowIterator != FlowSet.end()) {
       Flow* flow = *flowIterator;
       if(flow->SocketDescriptor >= 0) {
-         Reader.deregisterSocket(flow->SocketDescriptor);
+         assure(Reader.deregisterSocket(flow->SocketDescriptor) == true);
          ext_close(flow->SocketDescriptor);
       }
       flowIterator = FlowSet.erase(flowIterator);
