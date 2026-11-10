@@ -490,7 +490,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       if (ext_setsockopt(socketDescriptor, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
          LOG_ERROR
          stdlog << format("Unable to configure Nagle algorithm (TCP_NODELAY option) on TCP socket %d: %s!",
-                           socketDescriptor, strerror(errno)) << "\n";
+                          socketDescriptor, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
@@ -508,7 +508,7 @@ bool Flow::configureSocket(const int socketDescriptor)
 #else
 #warning TCP option TCP_CONGESTION is not supported by the API of this system!
          LOG_ERROR
-         stdlog << format("Congestion control configuration to %s is not supported by TCP socket %d: %s!",
+         stdlog << format("Congestion control configuration to %s is not supported by TCP socket %d!",
                           congestionControl, socketDescriptor) << "\n";
          LOG_END
          return false;
@@ -543,7 +543,8 @@ bool Flow::configureSocket(const int socketDescriptor)
 #else
       if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
          LOG_ERROR
-         stdlog << "CMT usage on SCTP socket configured, but not supported by this system!" << "\n";
+         stdlog << format("CMT usage on SCTP socket %d configured, but not supported by this system!",
+                          socketDescriptor) << "\n";
          LOG_END
          return false;
       }
@@ -556,7 +557,7 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(value != 0) {
          if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
             LOG_WARNING
-            stdlog << format("Unable to configure CCID %u (DCCP_SOCKOPT_CCID option) on DCCP socket: %s!",
+            stdlog << format("Unable to configure CCID %u (DCCP_SOCKOPT_CCID option) on DCCP socket %d: %s!",
                              (unsigned int)value, socketDescriptor, strerror(errno)) << "\n";
             LOG_END
          }
@@ -564,21 +565,21 @@ bool Flow::configureSocket(const int socketDescriptor)
       const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
       if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_ERROR
-         stdlog << format("Unable to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket: %s!",
-                           (unsigned int)be32toh(service[0]), socketDescriptor, strerror(errno)) << "\n";
+         stdlog << format("Unable to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket %d: %s!",
+                          (unsigned int)be32toh(service[0]), socketDescriptor, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
    }
+#endif
 #if defined(HAVE_QUIC)
    else if(TrafficSpec.Protocol == IPPROTO_QUIC) {
       quic_config quicConfig;
       socklen_t   quicConfigLength = sizeof(quicConfig);
       if(ext_getsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
-
          LOG_ERROR
          stdlog << format("Unable to obtain configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
-                           socketDescriptor, strerror(errno)) << "\n";
+                          socketDescriptor, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
@@ -591,21 +592,19 @@ bool Flow::configureSocket(const int socketDescriptor)
       }
       else {
          LOG_ERROR
-         stdlog << format("Invalid congestion control %s for QUIC requested on socket %d",
+         stdlog << format("Invalid congestion control %s for QUIC requested on socket %d!",
                           congestionControl, socketDescriptor) << "\n";
          LOG_END
          return false;
       }
       if(ext_setsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
-
          LOG_WARNING
          stdlog << format("Unable to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
-                           socketDescriptor, strerror(errno)) << "\n";
+                          socketDescriptor, strerror(errno)) << "\n";
          LOG_END
          // return false;
       }
    }
-#endif
 #endif
 
    return true;
