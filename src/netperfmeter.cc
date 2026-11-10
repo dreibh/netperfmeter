@@ -1888,8 +1888,8 @@ static void passiveMode(const uint16_t localPort)
                                       true, gBindV6Only);
    if(gMPTCPSocket < 0) {
       LOG_DEBUG
-      stdlog << format("NOTE: Unable to create and bind MPTCP socket on port %d: %s!",
-                       localPort - 1, strerror(errno)) << "\n";
+      stdlog << format("MPTCP is unavailable (%s); disabling MPTCP socket on port %d!",
+                       strerror(errno), localPort - 1) << "\n";
       LOG_END
    }
    else {
@@ -1946,8 +1946,8 @@ static void passiveMode(const uint16_t localPort)
                                      true, gBindV6Only);
    if(gDCCPSocket < 0) {
       LOG_INFO
-      stdlog << format("NOTE: Unable to create and bind DCCP socket on port %d: %s!",
-                       localPort, strerror(errno)) << "\n";
+      stdlog << format("DCCP is unavailable (%s); disabling DCCP socket on port %d!",
+                       strerror(errno), localPort) << "\n";
       LOG_END
    }
    else {
@@ -1974,8 +1974,8 @@ static void passiveMode(const uint16_t localPort)
    // NOTE: It is necessary to set the ALPN before enabling the listening mode!
    if(gQUICSocket < 0) {
       LOG_INFO
-      stdlog << format("NOTE: Unable to create and bind QUIC socket on port %d: %s!",
-                       localPort, strerror(errno)) << "\n";
+      stdlog << format("QUIC is unavailable (%s); disabling QUIC socket on port %d!",
+                       strerror(errno), localPort) << "\n";
       LOG_END
    }
    else {
