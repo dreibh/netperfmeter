@@ -181,7 +181,7 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
       uint32_t flags;
       if(flow->isAcceptedIncomingFlow()) {   // from passive side (server)
          sid   = ((int64_t)flow->getStreamID() << 2) | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
-         flags = (flow->getFirstTransmission() == 0) ? MSG_QUIC_STREAM_NEW : 0;
+         flags = ((flow->getFirstTransmission() == 0) && isFrameBegin) ? MSG_QUIC_STREAM_NEW : 0;
       }
       else {
          sid   = ((int64_t)flow->getStreamID() << 2) | QUIC_STREAM_TYPE_UNI_MASK;
