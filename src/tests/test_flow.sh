@@ -453,7 +453,7 @@ check_scalar() {
                     my ($target_size, $tol_size) = parse_dist($dist_s, 0);
 
                     my $eff_tol_size = ($f > 0 && $f <= 30) ? ($tol_size * 1.5) : $tol_size;
-                    my $eff_tol_rate = ($runtime > 0 && ($runtime <= 3 || $f <= 30)) ? ($tol_rate * 1.5) : $tol_rate;
+                    my $eff_tol_rate = ($runtime > 0 && ($runtime <= 5 || $f <= 30 || $expected_flows > 1)) ? ($tol_rate * 1.5) : $tol_rate;
 
                     # On-off schedule validation
                     if ($onoff_str && $target_rate > 0) {

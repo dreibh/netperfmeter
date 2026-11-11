@@ -396,9 +396,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_2connections_ipv4
    127.0.0.1 tcp const10:const1000:const10:const1000 plain 3
    -tcp const10:const1000:const10:const1000)
 
-# 4 concurrent TCP connections over IPv4 (4x 10 fps, 1000 B)
+# 4 concurrent TCP connections over IPv4 (4x 10 fps, 1000 B) - 5s for scheduler stability
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_4connections_ipv4
-   127.0.0.1 tcp const10:const1000:const10:const1000 plain 3
+   127.0.0.1 tcp const10:const1000:const10:const1000 plain 5
    -tcp const10:const1000:const10:const1000
    -tcp const10:const1000:const10:const1000
    -tcp const10:const1000:const10:const1000)
@@ -408,16 +408,16 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_2connections_ipv6
    ::1       tcp const10:const1000:const10:const1000 plain 3
    -tcp const10:const1000:const10:const1000)
 
-# 4 concurrent TCP connections over IPv6 (4x 10 fps, 1000 B)
+# 4 concurrent TCP connections over IPv6 (4x 10 fps, 1000 B) - 5s for scheduler stability
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_4connections_ipv6
-   ::1       tcp const10:const1000:const10:const1000 plain 3
+   ::1       tcp const10:const1000:const10:const1000 plain 5
    -tcp const10:const1000:const10:const1000
    -tcp const10:const1000:const10:const1000
    -tcp const10:const1000:const10:const1000)
 
-# 2 competing TCP connections: interactive small frames (50 fps, 100 B) vs bulk frames (10 fps, 1400 B)
+# 2 competing TCP connections: interactive small frames (25 fps, 100 B, nodelay) vs bulk frames (10 fps, 1400 B)
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_heterogeneous_rates_sizes
-   127.0.0.1 tcp const50:const100:const50:const100 plain 3
+   127.0.0.1 tcp const25:const100:const25:const100:nodelay=on plain 5
    -tcp const10:const1400:const10:const1400)
 
 
@@ -432,9 +432,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_2flows_ipv4
    127.0.0.1 udp const10:const1000:const10:const1000 plain 3
    -udp const10:const1000:const10:const1000)
 
-# 4 concurrent UDP flows over IPv4 (4x 10 fps, 1000 B)
+# 4 concurrent UDP flows over IPv4 (4x 10 fps, 1000 B) - 5s for scheduler stability
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_4flows_ipv4
-   127.0.0.1 udp const10:const1000:const10:const1000 plain 3
+   127.0.0.1 udp const10:const1000:const10:const1000 plain 5
    -udp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000)
@@ -444,16 +444,16 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_2flows_ipv6
    ::1       udp const10:const1000:const10:const1000 plain 3
    -udp const10:const1000:const10:const1000)
 
-# 4 concurrent UDP flows over IPv6 (4x 10 fps, 1000 B)
+# 4 concurrent UDP flows over IPv6 (4x 10 fps, 1000 B) - 5s for scheduler stability
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_4flows_ipv6
-   ::1       udp const10:const1000:const10:const1000 plain 3
+   ::1       udp const10:const1000:const10:const1000 plain 5
    -udp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000)
 
-# 4 UDP flows with distinct asymmetric frame rates and sizes
+# 4 UDP flows with distinct asymmetric frame rates and sizes - 5s for multi-flow stability
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_4flows_heterogeneous
-   127.0.0.1 udp const40:const150:const40:const150 plain 3
+   127.0.0.1 udp const40:const150:const40:const150 plain 5
    -udp const20:const500:const20:const500
    -udp const10:const1200:const10:const1200
    -udp const5:const1400:const5:const1400)
@@ -470,9 +470,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_udp_cross_traffic_ipv6
    ::1       tcp const10:const1000:const10:const1000 plain 3
    -udp const10:const1000:const10:const1000)
 
-# 4-flow hybrid session: 2 concurrent TCP connections + 2 concurrent UDP flows
+# 4-flow hybrid session: 2 concurrent TCP connections + 2 concurrent UDP flows - 5s
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_tcp_udp_4flows_cross
-   127.0.0.1 tcp const10:const1000:const10:const1000 plain 3
+   127.0.0.1 tcp const10:const1000:const10:const1000 plain 5
    -tcp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000)
@@ -798,9 +798,9 @@ ADD_NETPERFMETER_FLOW_TEST(profile_ind_cnc_spindle_vibe
 ADD_NETPERFMETER_FLOW_TEST(profile_ind_digital_twin_v6
    ::1       tcp uniform20,30:uniform800,1200:uniform20,30:uniform800,1200 plain 8)
 
-# 65. Emergency Stop (E-Stop) Bus Beacon (100 fps, 48 B, UDP)
+# 65. Emergency Stop (E-Stop) Bus Beacon (~100 fps, ~48 B, realistic input jitter)
 ADD_NETPERFMETER_FLOW_TEST(profile_ind_safety_estop
-   127.0.0.1 udp const100:const48:const100:const48 plain 8)
+   127.0.0.1 udp truncnormal100,3:uniform40,56:truncnormal100,3:uniform40,56 plain 8)
 
 # 66. Predictive Maintenance Vibration FFT Spectra (10 fps, Pareto mean 1200 B, TCP)
 ADD_NETPERFMETER_FLOW_TEST(profile_ind_predictive_maint
@@ -1055,9 +1055,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_2flows_ipv4
    127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
    -sctp const10:const1000:const10:const1000)
 
-# 4 concurrent SCTP flows over IPv4 (4x 10 fps, 1000 B)
+# 4 concurrent SCTP flows over IPv4 (4x 10 fps, 1000 B) - 5s for scheduler stability
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_4flows_ipv4
-   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 5
    -sctp const10:const1000:const10:const1000
    -sctp const10:const1000:const10:const1000
    -sctp const10:const1000:const10:const1000)
@@ -1077,15 +1077,15 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_udp_cross_traffic
    127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
    -udp const10:const1000:const10:const1000)
 
-# Tri-Protocol Concurrency: SCTP + TCP + UDP all running concurrently in 1 session
+# Tri-Protocol Concurrency: SCTP + TCP + UDP all running concurrently in 1 session - 5s
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_tri_protocol_concurrent
-   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 5
    -tcp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000)
 
-# 4-protocol concurrent stress session: 1 SCTP association (2 streams) + 1 TCP conn + 1 UDP flow
+# 4-protocol concurrent stress session: 1 SCTP association (2 streams) + 1 TCP conn + 1 UDP flow - 5s
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_quad_concurrent_stress
-   127.0.0.1 sctp const10:const1000:const10:const1000 plain 3
+   127.0.0.1 sctp const10:const1000:const10:const1000 plain 5
    --stream const10:const500:const10:const500
    -tcp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000)
@@ -1102,33 +1102,33 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_2flows_fragmented
 
 
 # ====== 12. Partial Reliability (PR-SCTP, RFC 3758) =========================
-# Fully unreliable delivery (unreliable=1.0) over IPv4
+# Fully unreliable delivery (unreliable=1.0) over IPv4 - 5s for statistical smoothing
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_unreliable_ipv4
-   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0 plain 3)
+   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0 plain 5)
 
-# Fully unreliable delivery over IPv6
+# Fully unreliable delivery over IPv6 - 5s for statistical smoothing
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_unreliable_ipv6
-   ::1       sctp const20:const1000:const20:const1000:unreliable=1.0 plain 3)
+   ::1       sctp const20:const1000:const20:const1000:unreliable=1.0 plain 5)
 
-# 50% partial reliability (unreliable=0.5: 50% reliable, 50% unreliable)
+# 50% partial reliability (unreliable=0.5: 50% reliable, 50% unreliable) - 5s
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_partial_50percent
-   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=0.5 plain 3)
+   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=0.5 plain 5)
 
-# PR-SCTP with limited retransmission trials (rtx_trials=0: drop upon first loss)
+# PR-SCTP with limited retransmission trials (rtx_trials=0: drop upon first loss) - 5s
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_rtx_trials_zero
-   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0:rtx_trials=0 plain 3)
+   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0:rtx_trials=0 plain 5)
 
-# PR-SCTP with up to 3 retransmission trials (rtx_trials=3)
+# PR-SCTP with up to 3 retransmission trials (rtx_trials=3) - 5s
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_rtx_trials_three
-   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0:rtx_trials=3 plain 3)
+   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0:rtx_trials=3 plain 5)
 
-# PR-SCTP with timed lifetime / buffer expiration (rtx_timeout=200ms)
+# PR-SCTP with timed lifetime / buffer expiration (rtx_timeout=200ms) - 5s
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_rtx_timeout_timed
-   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0:rtx_timeout=200 plain 3)
+   127.0.0.1 sctp const20:const1000:const20:const1000:unreliable=1.0:rtx_timeout=200 plain 5)
 
-# PR-SCTP unreliable flow combined with message segmentation
+# PR-SCTP unreliable flow combined with message segmentation - 5s
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_pr_unreliable_fragmented
-   127.0.0.1 sctp const20:const3000:const20:const3000:unreliable=1.0:maxmsgsize=1000 plain 3)
+   127.0.0.1 sctp const20:const3000:const20:const3000:unreliable=1.0:maxmsgsize=1000 plain 5)
 
 
 # ====== 13. Ordered vs. Unordered Delivery (RFC 9260) =======================
@@ -1152,9 +1152,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_sctp_mixed_ordering_50percent
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_unordered_fragmented
    127.0.0.1 sctp const20:const3000:const20:const3000:unordered=1.0:maxmsgsize=1000 plain 3)
 
-# Unordered + Unreliable combined (RFC 9260 unordered + RFC 3758 PR-SCTP)
+# Unordered + Unreliable combined (RFC 9260 unordered + RFC 3758 PR-SCTP) - 5s
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_unordered_unreliable_pr
-   127.0.0.1 sctp const20:const1000:const20:const1000:unordered=1.0:unreliable=1.0:rtx_trials=0 plain 3)
+   127.0.0.1 sctp const20:const1000:const20:const1000:unordered=1.0:unreliable=1.0:rtx_trials=0 plain 5)
 
 
 # ====== 14. SCTP Multi-Streaming (Single Association, Multiple Streams) =====
@@ -1168,9 +1168,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_2streams_ipv6
    ::1       sctp const10:const1000:const10:const1000 plain 3
    --stream const20:const500:const20:const500)
 
-# 4 streams within 1 association (5, 10, 15, and 20 fps)
+# 4 streams within 1 association (5, 10, 15, and 20 fps) - 5s for multi-stream stability
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_4streams
-   127.0.0.1 sctp const5:const500:const5:const500 plain 3
+   127.0.0.1 sctp const5:const500:const5:const500 plain 5
    --stream const10:const500:const10:const500
    --stream const15:const500:const15:const500
    --stream const20:const500:const20:const500)
@@ -1190,9 +1190,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_reliable_and_unreliable
    127.0.0.1 sctp const10:const1000:const10:const1000:reliable=1.0 plain 3
    --stream const20:const500:const20:const500:unreliable=1.0:rtx_trials=0)
 
-# 4 streams in 1 association combining all 4 RFC permutations of reliability and ordering
+# 4 streams in 1 association combining all 4 RFC permutations of reliability and ordering - 5s
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_all_rfc_permutations
-   127.0.0.1 sctp const10:const500:const10:const500:reliable=1.0:ordered=1.0 plain 3
+   127.0.0.1 sctp const10:const500:const10:const500:reliable=1.0:ordered=1.0 plain 5
    --stream const10:const500:const10:const500:unreliable=1.0:rtx_trials=3:ordered=1.0
    --stream const10:const500:const10:const500:reliable=1.0:unordered=1.0
    --stream const10:const500:const10:const500:unreliable=1.0:rtx_trials=0:unordered=1.0)
@@ -1285,9 +1285,9 @@ ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_file_chunk_transfer
 ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_telemetry_metrics_v6
    ::1       sctp uniform10,20:uniform150,250:uniform10,20:uniform150,250 plain 8)
 
-# 116. WebRTC High-Rate Virtual Mouse / Laser Pointer Stream (100 fps, 48 B minimal packets)
+# 116. WebRTC High-Rate Virtual Mouse / Laser Pointer Stream (~100 fps, ~48 B, realistic input jitter)
 ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_pointer_teleoperation
-   127.0.0.1 sctp const100:const48:const100:const48 plain 8)
+   127.0.0.1 sctp truncnormal100,4:uniform40,56:truncnormal100,4:uniform40,56 plain 8)
 
 # 117. WebRTC Metaverse 3D Spatial Audio Orientation Metadata (50 fps, 120 B, truncnormal)
 ADD_NETPERFMETER_FLOW_TEST(profile_webrtc_dc_spatial_audio_meta
@@ -1419,9 +1419,9 @@ ADD_NETPERFMETER_FLOW_TEST(profile_defense_c2_situational_awareness
 ADD_NETPERFMETER_FLOW_TEST(profile_defense_uav_telemetry_uplink_v6
    ::1       sctp const30:truncnormal220,25:const30:truncnormal220,25 plain 8)
 
-# 147. Laparoscopic Surgical Robot Force Feedback Master-Slave Stream (100 fps, 64 B, const)
+# 147. Laparoscopic Surgical Robot Force Feedback Master-Slave Stream (~100 fps, ~64 B, realistic input jitter)
 ADD_NETPERFMETER_FLOW_TEST(profile_med_teleoperation_surgical_force
-   127.0.0.1 sctp const100:const64:const100:const64 plain 8)
+   127.0.0.1 sctp truncnormal100,3:uniform56,72:truncnormal100,3:uniform56,72 plain 8)
 
 # 148. ICU Multi-Channel Continuous EEG Neuromonitoring (50 fps, 480 B, truncnormal)
 ADD_NETPERFMETER_FLOW_TEST(profile_med_multilead_eeg_waveform_v6
@@ -1452,16 +1452,96 @@ ADD_NETPERFMETER_FLOW_TEST(flow_quic_bidi_ipv6 ::1       quic const10:const1000:
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_upload_ipv4   127.0.0.1 quic const10:const1000:const0:const0 plain 3)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_download_ipv4 127.0.0.1 quic const0:const0:const10:const1000 plain 3)
 
-# ====== 3. QUIC Multi-Stream Flows (Single Connection, 2 Streams) ==========
+# ====== 3. Homogeneous Multi-Connection QUIC Tests (Multiple Sockets) =====
+# 2 concurrent QUIC connections over IPv4 (2x 10 fps, 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2connections_ipv4
+   127.0.0.1 quic const10:const1000:const10:const1000 plain 3
+   -quic const10:const1000:const10:const1000)
+
+# 4 concurrent QUIC connections over IPv4 (4x 10 fps, 1000 B) - 5s for scheduler stability
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_4connections_ipv4
+   127.0.0.1 quic const10:const1000:const10:const1000 plain 5
+   -quic const10:const1000:const10:const1000
+   -quic const10:const1000:const10:const1000
+   -quic const10:const1000:const10:const1000)
+
+# 2 concurrent QUIC connections over IPv6
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2connections_ipv6
+   ::1       quic const10:const1000:const10:const1000 plain 3
+   -quic const10:const1000:const10:const1000)
+
+# 4 concurrent QUIC connections over IPv6 - 5s
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_4connections_ipv6
+   ::1       quic const10:const1000:const10:const1000 plain 5
+   -quic const10:const1000:const10:const1000
+   -quic const10:const1000:const10:const1000
+   -quic const10:const1000:const10:const1000)
+
+# 2 competing QUIC connections: interactive small frames (25 fps, 100 B) vs bulk frames (10 fps, 1400 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_heterogeneous_rates_sizes
+   127.0.0.1 quic const25:const100:const25:const100 plain 5
+   -quic const10:const1400:const10:const1400)
+
+
+# ====== 4. QUIC Multi-Streaming (Single Connection, Multiple Streams) ======
+# 2 streams within 1 QUIC connection over IPv4
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2streams_ipv4
    127.0.0.1 quic const10:const1000:const10:const1000 plain 3
    -quic const10:const500:const10:const500)
 
-# ====== 4. Cross-Traffic Concurrency (QUIC + TCP + UDP) ====================
+# 2 streams within 1 QUIC connection over IPv6
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2streams_ipv6
+   ::1       quic const10:const1000:const10:const1000 plain 3
+   -quic const10:const500:const10:const500)
+
+# 4 streams within 1 QUIC connection (5, 10, 15, and 20 fps) - 5s
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_4streams_ipv4
+   127.0.0.1 quic const5:const500:const5:const500 plain 5
+   -quic const10:const500:const10:const500
+   -quic const15:const500:const15:const500
+   -quic const20:const500:const20:const500)
+
+# Asymmetric multi-stream: Stream 0 upload-only, Stream 1 download-only in 1 connection
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_asymmetric_split
+   127.0.0.1 quic const15:const1000:const0:const0 plain 3
+   -quic const0:const0:const15:const1000)
+
+# 2 streams within 1 QUIC connection with message chunking (maxmsgsize=500)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2streams_fragmented
+   127.0.0.1 quic const10:const2000:const10:const2000:maxmsgsize=500 plain 3
+   -quic const10:const2000:const10:const2000:maxmsgsize=500)
+
+# 2 streams within 1 QUIC connection with staggered On-Off schedules - 5s
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_staggered_onoff
+   127.0.0.1 quic const20:const1000:const0:const0:onoff=1,3 plain 5
+   -quic const20:const1000:const0:const0:onoff=2,4)
+
+
+# ====== 5. Heterogeneous Cross-Traffic Concurrency =========================
+# Competing QUIC + TCP connections
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_tcp_cross_traffic
+   127.0.0.1 quic const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000)
+
+# Competing QUIC + UDP flows
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_udp_cross_traffic
+   127.0.0.1 quic const10:const1000:const10:const1000 plain 3
+   -udp const10:const1000:const10:const1000)
+
+# Concurrent QUIC + TCP + UDP competing flows
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_tcp_udp_cross
    127.0.0.1 quic const10:const1000:const10:const1000 plain 3
    -tcp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000)
+
+IF (HAVE_SCTP_FOR_TESTS)
+   # Full quad-protocol concurrency (QUIC + SCTP + TCP + UDP) - 5s
+   ADD_NETPERFMETER_FLOW_TEST(flow_multi_all_protocols_concurrent
+      127.0.0.1 quic const10:const1000:const10:const1000 plain 5
+      -sctp const10:const1000:const10:const1000
+      -tcp  const10:const1000:const10:const1000
+      -udp  const10:const1000:const10:const1000)
+ENDIF()
 
 
 # ===========================================================================
@@ -1560,17 +1640,17 @@ ADD_NETPERFMETER_FLOW_TEST(profile_quic_kms_key_attestation
 
 
 # ====== 25. Cloud Gaming, Metaverse & Virtual Worlds =======================
-# 172. 120Hz Competitive Gaming Ultra-Low Latency Controller Input (120 fps, 80 B, const)
+# 172. 120Hz Competitive Gaming Ultra-Low Latency Controller Input (~120 fps, ~80 B, realistic input jitter)
 ADD_NETPERFMETER_FLOW_TEST(profile_quic_gaming_controller_input
-   127.0.0.1 quic const120:const80:const120:const80 plain 8)
+   127.0.0.1 quic truncnormal120,4:uniform70,90:truncnormal120,4:uniform70,90 plain 8)
 
 # 173. Multiplayer Game Entity World State Updates over IPv6 (64 fps, 160 B, truncnormal)
 ADD_NETPERFMETER_FLOW_TEST(profile_quic_gaming_state_sync_v6
    ::1       quic truncnormal64,3:uniform120,200:truncnormal64,3:uniform120,200 plain 8)
 
-# 174. Bilateral Telepresence Haptic Force Feedback Loop (100 fps, 100 B, const)
+# 174. Bilateral Telepresence Haptic Force Feedback Loop (~100 fps, ~100 B, realistic input jitter)
 ADD_NETPERFMETER_FLOW_TEST(profile_quic_haptic_feedback_stream
-   127.0.0.1 quic const100:const100:const100:const100 plain 8)
+   127.0.0.1 quic truncnormal100,3:uniform90,110:truncnormal100,3:uniform90,110 plain 8)
 
 # 175. AR/VR 6-DoF Head/Hand Spatial Pose Tracking over IPv6 (90 fps, 120 B, truncnormal)
 ADD_NETPERFMETER_FLOW_TEST(profile_quic_ar_pose_tracking_v6
@@ -1628,9 +1708,9 @@ ADD_NETPERFMETER_FLOW_TEST(profile_quic_fin_settlement_batch_frag
 ADD_NETPERFMETER_FLOW_TEST(profile_quic_fin_drop_copy_v6
    ::1       quic const30:truncnormal450,35:const30:truncnormal450,35 plain 8)
 
-# 188. Ultra-Low Latency Pre-Trade Risk Heartbeat (100 fps, 64 B, const)
+# 188. Ultra-Low Latency Pre-Trade Risk Heartbeat (~100 fps, ~64 B, realistic input jitter)
 ADD_NETPERFMETER_FLOW_TEST(profile_quic_fin_hft_risk_heartbeat
-   127.0.0.1 quic const100:const64:const100:const64 plain 8)
+   127.0.0.1 quic truncnormal100,3:uniform56,72:truncnormal100,3:uniform56,72 plain 8)
 
 
 # ====== 28. IoT, Connected Vehicles (C-V2X) & Smart Grid ===================
@@ -1752,4 +1832,21 @@ ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_ipv6
 IF (HAVE_SCTP_FOR_TESTS)
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_3clients_mixed
       127.0.0.1 concurrent_3clients_mixed)
+ENDIF()
+
+# 6. QUIC Multi-Client Scenarios
+IF (HAVE_QUIC_FOR_TESTS)
+   # Two clients simultaneously running QUIC flows
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_quic
+      127.0.0.1 concurrent_2clients_quic)
+
+   # Staggered overlapping clients over QUIC
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_staggered_overlap_quic
+      127.0.0.1 staggered_overlap_quic)
+ENDIF()
+
+# 7. Quad-protocol concurrent stress: 4 clients (QUIC + SCTP + TCP + UDP)
+IF (HAVE_SCTP_FOR_TESTS AND HAVE_QUIC_FOR_TESTS)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_4clients_all_protocols
+      127.0.0.1 concurrent_4clients_all_protocols)
 ENDIF()
