@@ -520,8 +520,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_staggered_onoff
 
 
 #############################################################################
-#### 150 REALISTIC APPLICATION DISTRIBUTION PROFILES                     ####
-#### (Profiles 1-100: TCP & UDP, Profiles 101-150: SCTP)                 ####
+#### 200 REALISTIC APPLICATION DISTRIBUTION PROFILES                     ####
+#### (Profiles 1-100: TCP & UDP, Profiles 101-150: SCTP,                 ####
+####  Profiles 151-200: QUIC)                                            ####
 #############################################################################
 
 # ====== 1. Real-Time Audio, Voice & Interactive Speech =====================
@@ -1461,6 +1462,227 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_tcp_udp_cross
    127.0.0.1 quic const10:const1000:const10:const1000 plain 3
    -tcp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000)
+
+
+# ===========================================================================
+# 50 REALISTIC QUIC APPLICATION DISTRIBUTION PROFILES (Profiles 151 - 200)
+# (RFC 9000 QUIC, RFC 9114 HTTP/3, RFC 9297 WebTransport, RFC 9250 DoQ)
+# ===========================================================================
+
+# ====== 22. HTTP/3 & WebTransport Microservices (RFC 9114, RFC 9297) =======
+# 151. HTTP/3 REST Microservice API (~30 fps, 350 B request -> Exp mean 1000 B response)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_h3_rest_api
+   127.0.0.1 quic uniform25,35:uniform250,450:uniform25,35:exp1000 plain 8)
+
+# 152. Bidirectional gRPC over HTTP/3 over IPv6 (~35 fps, 400 B symmetric, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_h3_grpc_bidi_v6
+   ::1       quic uniform30,40:truncnormal400,40:uniform30,40:truncnormal400,40 plain 8)
+
+# 153. WebTransport Unreliable Datagram Stream (60 fps, 250 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_webtransport_datagram
+   127.0.0.1 quic uniform55,65:uniform200,300:uniform55,65:uniform200,300 plain 8)
+
+# 154. HTTP/3 Server Push Asset Stream (15 fps, Pareto mean 1500 B, pareto)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_h3_server_push
+   127.0.0.1 quic const15:pareto1000,3:const15:pareto1000,3 plain 8)
+
+# 155. GraphQL Complex Queries over HTTP/3 over IPv6 (20 fps, 300 B query -> Exp 1200 B reply)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_h3_graphql_query_v6
+   ::1       quic const20:uniform200,400:const20:exp1200 plain 8)
+
+# 156. WebTransport Reliable Stream Synchronization (40 fps, 500 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_webtransport_bidi_stream
+   127.0.0.1 quic const40:truncnormal500,40:const40:truncnormal500,40 plain 8)
+
+# 157. HTTP/3 Segmented Asset Transfer with Message Chunking (10 fps, mean 3000 B, maxmsgsize=1000)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_h3_chunked_asset_frag
+   127.0.0.1 quic const10:truncnormal3000,200:const10:truncnormal3000,200:maxmsgsize=1000 plain 8)
+
+# 158. Server-Sent Events (SSE) Push over HTTP/3 over IPv6 (25 fps, 180 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_h3_event_source_v6
+   ::1       quic uniform20,30:uniform120,240:uniform20,30:uniform120,240 plain 8)
+
+
+# ====== 23. Media over QUIC (MoQ) & Real-Time Audio/Video ==================
+# 159. Media over QUIC (MoQ) Ultra-Low Latency Video Ingest (30 fps, Pareto mean 2250 B)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_moq_live_ingest
+   127.0.0.1 quic const30:pareto1500,3:const30:pareto1500,3 plain 8)
+
+# 160. MoQ Multi-Track Opus Stereo Audio Stream over IPv6 (50 fps, 400 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_moq_audio_track_v6
+   ::1       quic const50:uniform300,500:const50:uniform300,500 plain 8)
+
+# 161. MoQ Subgroup Object Chunking with Segmentation (20 fps, 3600 B, maxmsgsize=1200)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_moq_subgroup_frag
+   127.0.0.1 quic const20:truncnormal3600,250:const20:truncnormal3600,250:maxmsgsize=1200 plain 8)
+
+# 162. AV1 Low-Latency Interactive Video Feed (60 fps, 1100 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_video_av1_cbr
+   127.0.0.1 quic truncnormal60,3:uniform1000,1200:truncnormal60,3:uniform1000,1200 plain 8)
+
+# 163. WebRTC Media Engine over QUIC Transport over IPv6 (45 fps, 800 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_webrtc_media_over_quic_v6
+   ::1       quic uniform40,50:uniform600,1000:uniform40,50:uniform600,1000 plain 8)
+
+# 164. 4K CCTV H.265 Security Camera Stream (25 fps, Pareto mean 1800 B)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_surveillance_h265
+   127.0.0.1 quic const25:pareto1200,3:const25:pareto1200,3 plain 8)
+
+# 165. Drone FPV Teleoperation Video Feed (60 fps, 750 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_drone_fpv_video
+   127.0.0.1 quic const60:truncnormal750,50:const60:truncnormal750,50 plain 8)
+
+
+# ====== 24. DNS over Dedicated QUIC (DoQ, RFC 9250) & Security =============
+# 166. DNS-over-QUIC (DoQ) Stub Resolver Queries (20 fps, 100 B request -> 300 B response)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_doq_dns_queries
+   127.0.0.1 quic uniform15,25:uniform80,120:uniform15,25:uniform200,400 plain 8)
+
+# 167. DoQ Recursive Resolver Authoritative Sync over IPv6 (30 fps, 150 B -> Exp 600 B)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_doq_recursive_sync_v6
+   ::1       quic const30:uniform100,200:const30:exp600 plain 8)
+
+# 168. DoQ AXFR/IXFR Incremental Zone Transfer with Chunking (8 fps, 2800 B, maxmsgsize=900)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_doq_zone_transfer_frag
+   127.0.0.1 quic const8:truncnormal2800,200:const8:truncnormal2800,200:maxmsgsize=900 plain 8)
+
+# 169. Certificate Transparency SCT Verification Audit (15 fps, 500 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_cert_transparency_log
+   127.0.0.1 quic uniform12,18:uniform400,600:uniform12,18:uniform400,600 plain 8)
+
+# 170. Real-Time OCSP Revocation Status Probing over IPv6 (25 fps, 350 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_ocsp_stapling_check_v6
+   ::1       quic const25:truncnormal350,30:const25:truncnormal350,30 plain 8)
+
+# 171. Cloud KMS Key Attestation & Secret Exchange (10 fps, 700 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_kms_key_attestation
+   127.0.0.1 quic const10:uniform600,800:const10:uniform600,800 plain 8)
+
+
+# ====== 25. Cloud Gaming, Metaverse & Virtual Worlds =======================
+# 172. 120Hz Competitive Gaming Ultra-Low Latency Controller Input (120 fps, 80 B, const)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_gaming_controller_input
+   127.0.0.1 quic const120:const80:const120:const80 plain 8)
+
+# 173. Multiplayer Game Entity World State Updates over IPv6 (64 fps, 160 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_gaming_state_sync_v6
+   ::1       quic truncnormal64,3:uniform120,200:truncnormal64,3:uniform120,200 plain 8)
+
+# 174. Bilateral Telepresence Haptic Force Feedback Loop (100 fps, 100 B, const)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_haptic_feedback_stream
+   127.0.0.1 quic const100:const100:const100:const100 plain 8)
+
+# 175. AR/VR 6-DoF Head/Hand Spatial Pose Tracking over IPv6 (90 fps, 120 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_ar_pose_tracking_v6
+   ::1       quic truncnormal90,4:uniform90,150:truncnormal90,4:uniform90,150 plain 8)
+
+# 176. Volumetric 3D Holographic Mesh Sync with Segmentation (12 fps, 3500 B, maxmsgsize=1000)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_volumetric_mesh_frag
+   127.0.0.1 quic const12:truncnormal3500,200:const12:truncnormal3500,200:maxmsgsize=1000 plain 8)
+
+# 177. 3D Spatial Audio Spatialization Coordinate Stream (50 fps, 140 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_spatial_audio_metadata
+   127.0.0.1 quic uniform45,55:uniform100,180:uniform45,55:uniform100,180 plain 8)
+
+
+# ====== 26. MASQUE, Proxying & Encrypted Tunneling (RFC 9298) ==============
+# 178. MASQUE CONNECT-UDP Tunnel Packet Forwarding (~50 fps, 450 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_masque_connect_udp
+   127.0.0.1 quic uniform40,60:uniform300,600:uniform40,60:uniform300,600 plain 8)
+
+# 179. Enterprise WireGuard/QUIC Encrypted Mesh Backhaul over IPv6 (40 fps, 800 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_vpn_mesh_backhaul_v6
+   ::1       quic const40:truncnormal800,60:const40:truncnormal800,60 plain 8)
+
+# 180. MASQUE IP Proxying Tunnel with MTU Segmentation (20 fps, 2400 B, maxmsgsize=1200)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_masque_ip_tunnel_frag
+   127.0.0.1 quic const20:truncnormal2400,150:const20:truncnormal2400,150:maxmsgsize=1200 plain 8)
+
+# 181. Oblivious HTTP (OHTTP) Encrypted Relay Exchange (25 fps, 350 B request -> Exp 900 B reply)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_oblivious_http_relay
+   127.0.0.1 quic uniform20,30:uniform200,500:uniform20,30:exp900 plain 8)
+
+# 182. Cloudflare WARP-style Edge Ingress Tunnel over IPv6 (35 fps, 650 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_split_tunnel_ingress_v6
+   ::1       quic uniform30,40:uniform500,800:uniform30,40:uniform500,800 plain 8)
+
+
+# ====== 27. Financial FinTech, Market Feeds & Microsecond Quotes ===========
+# 183. ITCH-style Level-2 Market Depth Feed over QUIC (80 fps, 120 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_fin_itch_feed
+   127.0.0.1 quic truncnormal80,4:uniform90,150:truncnormal80,4:uniform90,150 plain 8)
+
+# 184. Crypto Perpetual Futures Order Book Stream over IPv6 (40 fps, Pareto mean 750 B)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_fin_crypto_l2_book_v6
+   ::1       quic const40:pareto500,3:const40:pareto500,3 plain 8)
+
+# 185. FIX Protocol Direct Market Access over QUIC (50 fps, 320 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_fin_fix_orders
+   127.0.0.1 quic uniform40,60:uniform220,420:uniform40,60:uniform220,420 plain 8)
+
+# 186. High-Value Inter-Bank Clearing Batch Transfer (10 fps, 3200 B, maxmsgsize=1000)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_fin_settlement_batch_frag
+   127.0.0.1 quic const10:truncnormal3200,200:const10:truncnormal3200,200:maxmsgsize=1000 plain 8)
+
+# 187. Trade Allocation Drop Copy Execution Reports over IPv6 (30 fps, 450 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_fin_drop_copy_v6
+   ::1       quic const30:truncnormal450,35:const30:truncnormal450,35 plain 8)
+
+# 188. Ultra-Low Latency Pre-Trade Risk Heartbeat (100 fps, 64 B, const)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_fin_hft_risk_heartbeat
+   127.0.0.1 quic const100:const64:const100:const64 plain 8)
+
+
+# ====== 28. IoT, Connected Vehicles (C-V2X) & Smart Grid ===================
+# 189. C-V2X Cooperative Awareness Safety Message Beacon (10 fps, 350 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_v2x_cam_safety
+   127.0.0.1 quic truncnormal10,1:uniform250,450:truncnormal10,1:uniform250,450 plain 8)
+
+# 190. ISO 15118 EV High-Power Charging Telemetry over IPv6 (5 fps, 250 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_ev_charging_telemetry_v6
+   ::1       quic const5:uniform180,320:const5:uniform180,320 plain 8)
+
+# 191. IEEE C37.118 Substation Phasor Measurement Unit (50 fps, 140 B, const)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_smartgrid_synchrophasor
+   127.0.0.1 quic const50:const140:const50:const140 plain 8)
+
+# 192. Autonomous AGV Warehouse Robot LIDAR Telemetry (40 fps, 1200 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_industrial_agv_telemetry
+   127.0.0.1 quic uniform35,45:uniform1000,1400:uniform35,45:uniform1000,1400 plain 8)
+
+# 193. CoAP-over-QUIC Environmental Sensor Array over IPv6 (15 fps, 120 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_coap_sensor_mesh_v6
+   ::1       quic uniform10,20:uniform90,150:uniform10,20:uniform90,150 plain 8)
+
+# 194. Factory Floor PLC Line Polling & State Verification (20 fps, 220 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_scada_plc_line_polling
+   127.0.0.1 quic const20:truncnormal220,20:const20:truncnormal220,20 plain 8)
+
+
+# ====== 29. Satellite, 5G NTN, Aerospace & Distributed AI ==================
+# 195. LEO Constellation Satellite Telemetry Downlink (25 fps, 750 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_sat_leo_downlink
+   127.0.0.1 quic const25:uniform500,1000:const25:uniform500,1000 plain 8)
+
+# 196. 5G Non-Terrestrial Network (NTN) Beam Handover over IPv6 (15 fps, 400 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_5g_ntn_handover_v6
+   ::1       quic uniform12,18:truncnormal400,30:uniform12,18:truncnormal400,30 plain 8)
+
+# 197. Federated Learning Edge Gradient Updates with Segmentation (5 fps, 3600 B, maxmsgsize=1200)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_ai_federated_gradient_frag
+   127.0.0.1 quic const5:truncnormal3600,250:const5:truncnormal3600,250:maxmsgsize=1200 plain 8)
+
+# 198. Autonomous Drone Swarm Mesh Mission Control over IPv6 (30 fps, 250 B, uniform)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_uav_swarm_mission_ctrl_v6
+   ::1       quic uniform25,35:uniform180,320:uniform25,35:uniform180,320 plain 8)
+
+# 199. Space Tracking Radar Target Plot Vector Stream (50 fps, 400 B, truncnormal)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_deepspace_radar_plots
+   127.0.0.1 quic truncnormal50,3:uniform300,500:truncnormal50,3:uniform300,500 plain 8)
+
+# 200. Kubernetes Edge Mesh Mutual-TLS QUIC Heartbeat (40 fps, 64 B, const)
+ADD_NETPERFMETER_FLOW_TEST(profile_quic_cloud_service_mesh_hb
+   127.0.0.1 quic const40:const64:const40:const64 plain 8)
 
 ENDIF()
 
