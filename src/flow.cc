@@ -303,15 +303,29 @@ void Flow::deactivate(const bool asyncStop)
 
       // Check whether another flow is still sharing this socket descriptor:
       bool socketStillShared = false;
-      FlowManager* flowManager = FlowManager::getFlowManager();
-      flowManager->lock();
-      for(const auto* otherFlow : flowManager->getFlowSet()) {
-         if((otherFlow != this) && (otherFlow->getSocketDescriptor() == SocketDescriptor)) {
-            socketStillShared = true;
-            break;
-         }
+      switch(TrafficSpec.Protocol) {
+         case IPPROTO_TCP:
+#if defined(HAVE_MPTCP)
+         case IPPROTO_MPTCP:
+#endif
+         case IPPROTO_UDP:
+#if defined(HAVE_DCCP)
+         case IPPROTO_DCCP:
+#endif
+            // Single connection only -> nothing to do!
+          break;
+         default:
+            FlowManager* flowManager = FlowManager::getFlowManager();
+            flowManager->lock();
+            for(const auto* otherFlow : flowManager->getFlowSet()) {
+               if((otherFlow != this) && (otherFlow->getSocketDescriptor() == SocketDescriptor)) {
+                  socketStillShared = true;
+                  break;
+               }
+            }
+            flowManager->unlock();
+          break;
       }
-      flowManager->unlock();
 
       if((SocketDescriptor >= 0) && (!socketStillShared)) {
          if(TrafficSpec.Protocol == IPPROTO_UDP) {
@@ -551,8 +565,9 @@ bool Flow::configureSocket(const int socketDescriptor)
 #else
       if(TrafficSpec.CMT != NPAF_PRIMARY_PATH) {
          LOG_ERROR
-         // TRANSLATORS: Error message when CMT is requested on SCTP but unsupported by the system.
-         stdlog << gettext("CMT usage on SCTP socket configured, but not supported by this system!") << "\n";
+         // TRANSLATORS: Error message when CMT is requested on SCTP but unsupported by the system. Placeholder: {} is socket fd.
+         stdlog << formatText(gettext("CMT usage on SCTP socket {} configured, but not supported by this system!"),
+                              socketDescriptor) << "\n";
          LOG_END
          return false;
       }
@@ -575,17 +590,18 @@ bool Flow::configureSocket(const int socketDescriptor)
       if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_ERROR
          // TRANSLATORS: Error message when setsockopt(DCCP_SOCKOPT_SERVICE) fails. Placeholders: {} 1: service code number, 2: socket fd, 3: strerror() message.
-         stdlog << formatText(gettext("Unable to configure DCCP service code {} (DCCP_SOCKOPT_SERVICE option) on DCCP socket: {}!"),
+         stdlog << formatText(gettext("Unable to configure DCCP service code {} (DCCP_SOCKOPT_SERVICE option) on DCCP socket {}: {}!"),
                               static_cast<unsigned int>(be32toh(service[0])), socketDescriptor, strerror(errno)) << "\n";
          LOG_END
          return false;
       }
    }
+#endif
 #if defined(HAVE_QUIC)
    else if(TrafficSpec.Protocol == IPPROTO_QUIC) {
       quic_config quicConfig;
       socklen_t   quicConfigLength = sizeof(quicConfig);
-      if(ext_getsockopt(socketDescriptor, IPPROTO_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
+      if(ext_getsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
          LOG_ERROR
          // TRANSLATORS: Error message when getsockopt(QUIC_SOCKOPT_CONFIG) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
          stdlog << formatText(gettext("Unable to obtain configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket {}: {}!"),
@@ -608,7 +624,7 @@ bool Flow::configureSocket(const int socketDescriptor)
          LOG_END
          return false;
       }
-      if(ext_setsockopt(socketDescriptor, IPPROTO_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
+      if(ext_setsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
          LOG_WARNING
          // TRANSLATORS: Warning message when setsockopt(QUIC_SOCKOPT_CONFIG) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
          stdlog << formatText(gettext("Unable to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket {}: {}!"),
@@ -616,7 +632,6 @@ bool Flow::configureSocket(const int socketDescriptor)
          LOG_END
       }
    }
-#endif
 #endif
 
    return true;

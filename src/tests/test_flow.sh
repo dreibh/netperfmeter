@@ -67,7 +67,7 @@ if [ "$#" -ge 7 ]; then
             --retries=*|--max-retries=*)  MAX_RETRIES="${1#*=}" ;;
             --control-over-sctp|-control-over-sctp) CONTROL_OVER_SCTP=1 ;;
             --stream|-stream)
-                # Additional stream within the current SCTP association
+                # Additional stream within the current association
                 _spec="$2"
                 ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};sctp"
                 ALL_FLOW_SPECS="${ALL_FLOW_SPECS};${_spec}"
@@ -80,8 +80,8 @@ if [ "$#" -ge 7 ]; then
                 STREAM_ARGS="${STREAM_ARGS} ${_spec}"
                 shift
                 ;;
-            -tcp|-udp|-sctp)
-                # Additional separate transport connection / association
+            -tcp|-udp|-sctp|-quic)
+                # Additional separate transport connection / flow
                 _proto="${1#-}"
                 _spec="$2"
                 ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};${_proto}"
@@ -296,9 +296,7 @@ check_scalar() {
                 my ($k, $a) = ($1 + 0, $2 + 0);
                 return ($is_rate ? (($a > 0 ? (($a + 1.0)/$a)*$k : $k), 0.30)
                                  : (($a > 1.0 ? ($a*$k)/($a - 1.0) : $k), 0.35));
-            } elsif ($dist =~ /^(?:trunc)?normal([0-9.]+),([0-9.]+)/) {
-                return ($1 + 0, 0.25);
-            }
+            } elsif ($dist =~ /^(?:trunc)?normal([0-9.]+),([0-9.]+)/) { return ($1 + 0, 0.25); }
             return (0, 0);
         }
 
@@ -892,12 +890,73 @@ run_attempt() {
     SERVER_PID=""
 
     stop_server() {
-        if [ -n "${SERVER_PID}" ] && kill -0 "${SERVER_PID}" 2>/dev/null; then
-            kill -TERM "${SERVER_PID}" 2>/dev/null || true
-            wait "${SERVER_PID}" 2>/dev/null || true
+        if [ -n "${SERVER_PID}" ]; then
+            _server_rc=0
+            if kill -0 "${SERVER_PID}" 2>/dev/null; then
+                kill -INT "${SERVER_PID}" 2>/dev/null || true
+                wait "${SERVER_PID}" 2>/dev/null || _server_rc=$?
+            else
+                wait "${SERVER_PID}" 2>/dev/null || _server_rc=$?
+            fi
+            SERVER_PID=""
+
+            # Fail if passive instance crashed (e.g., exit status 134 on SIGABRT)
+            if [ "${_server_rc}" -ne 0 ]; then
+                echo "FAIL: Passive server instance crashed with exit code ${_server_rc}." >&2
+                if [ -s "${TMP_DIR}/server.log" ]; then
+                    echo "--- Server Log ---" >&2
+                    cat "${TMP_DIR}/server.log" >&2
+                fi
+                return 1
+            fi
+
+            # Fail if assertion errors or core dump notices appear in server.log
+            if [ -s "${TMP_DIR}/server.log" ] && grep -qE "failed in|FATAL ERROR|Aborted|Avbrutt" "${TMP_DIR}/server.log"; then
+                echo "FAIL: Assertion failure or crash detected in server log." >&2
+                echo "--- Server Log ---" >&2
+                cat "${TMP_DIR}/server.log" >&2
+                return 1
+            fi
         fi
-        SERVER_PID=""
+        return 0
     }
+
+    # Check if QUIC is used in any flow
+    HAS_QUIC=0
+    case "${ALL_FLOW_PROTOS}" in
+        *quic*) HAS_QUIC=1 ;;
+    esac
+
+    SERVER_TLS_ARGS=""
+    CLIENT_TLS_ARGS=""
+
+    if [ "${HAS_QUIC}" -eq 1 ]; then
+        CA_KEY="${TMP_DIR}/test_ca.key"
+        CA_CRT="${TMP_DIR}/test_ca.crt"
+        SRV_KEY="${TMP_DIR}/test_server.key"
+        SRV_CSR="${TMP_DIR}/test_server.csr"
+        SRV_CRT="${TMP_DIR}/test_server.crt"
+        SAN_EXT="${TMP_DIR}/san.cnf"
+
+        openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+            -keyout "${CA_KEY}" -out "${CA_CRT}" \
+            -subj "/CN=NetPerfMeterTestCA" 2>/dev/null
+
+        openssl req -newkey rsa:2048 -nodes \
+            -keyout "${SRV_KEY}" -out "${SRV_CSR}" \
+            -subj "/CN=localhost" 2>/dev/null
+
+        cat <<EOF >"${SAN_EXT}"
+subjectAltName = DNS:localhost,IP:127.0.0.1,IP:::1
+EOF
+
+        openssl x509 -req -in "${SRV_CSR}" -CA "${CA_CRT}" -CAkey "${CA_KEY}" \
+            -CAcreateserial -out "${SRV_CRT}" -days 1 \
+            -extfile "${SAN_EXT}" 2>/dev/null
+
+        SERVER_TLS_ARGS="--tls-key ${SRV_KEY} --tls-cert ${SRV_CRT} --tls-ca ${CA_CRT}"
+        CLIENT_TLS_ARGS="--tls-hostname localhost --tls-ca ${CA_CRT}"
+    fi
 
     # 1. Start passive node
     if [ "${CONTROL_OVER_SCTP}" -eq 1 ]; then
@@ -910,19 +969,19 @@ run_attempt() {
         CTRL_PROBE_PROTO="tcp"
     fi
 
-    "${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
+    "${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} ${SERVER_TLS_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
     SERVER_PID=$!
 
     # 2. Wait until control channel (PORT + 1) is ready
     if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" "${CTRL_PROBE_PROTO}" 5; then
-        stop_server
+        stop_server || true
         return 1
     fi
 
     # For connection-oriented data flows, also wait for data port readiness
     if [ "${PROTOCOL}" = "tcp" ] || [ "${PROTOCOL}" = "sctp" ]; then
         if ! wait_for_listener "${ADDRESS}" "${PORT}" "${PROTOCOL}" 5; then
-            stop_server
+            stop_server || true
             return 1
         fi
     fi
@@ -941,6 +1000,7 @@ run_attempt() {
     # passed in ${STREAM_ARGS} to follow "-${PROTOCOL}" "${SPEC}"
     if ! "${NETPERFMETER}" "${TARGET}:${PORT}" \
         ${CLIENT_CONTROL_ARG} \
+        ${CLIENT_TLS_ARGS} \
         -runtime="${RUNTIME}" \
         --config="${TMP_DIR}/test.config" \
         ${SCALAR_ARG} \
@@ -952,11 +1012,14 @@ run_attempt() {
         >"${TMP_DIR}/client.log" 2>&1; then
         echo "FAIL: Active instance exited with an error." >&2
         cat "${TMP_DIR}/client.log" >&2
-        stop_server
+        stop_server || true
         return 1
     fi
 
-    stop_server
+    # Explicitly check server shutdown status
+    if ! stop_server; then
+        return 1
+    fi
 
     # 4. Verify Configuration output (--config)
     if [ ! -s "${TMP_DIR}/test.config" ]; then
@@ -1008,7 +1071,7 @@ TMP_DIR=""
 SERVER_PID=""
 cleanup_exit() {
     if [ -n "${SERVER_PID}" ] && kill -0 "${SERVER_PID}" 2>/dev/null; then
-        kill -TERM "${SERVER_PID}" 2>/dev/null || true
+        kill -INT "${SERVER_PID}" 2>/dev/null || true
         wait "${SERVER_PID}" 2>/dev/null || true
     fi
 }
