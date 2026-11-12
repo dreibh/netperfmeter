@@ -41,6 +41,7 @@ RUNTIME="${7:-5}"
 
 ENABLE_SCALAR=1
 ENABLE_VECTOR=1
+ENABLE_MTLS=1
 MAX_RETRIES=1
 CONTROL_OVER_SCTP=0
 EXPECTED_FLOWS=1
@@ -64,6 +65,7 @@ if [ "$#" -ge 7 ]; then
         case "$1" in
             --no-scalar|--without-scalar) ENABLE_SCALAR=0 ;;
             --no-vector|--without-vector) ENABLE_VECTOR=0 ;;
+            --no-mtls)                    ENABLE_MTLS=0 ;;
             --retries=*|--max-retries=*)  MAX_RETRIES="${1#*=}" ;;
             --control-over-sctp|-control-over-sctp) CONTROL_OVER_SCTP=1 ;;
             --stream|-stream)
@@ -974,8 +976,13 @@ EOF
             -CAcreateserial -out "${CLI_CRT}" -days 1 \
             -extfile "${CLI_EXT}" 2>/dev/null
 
-        SERVER_TLS_ARGS="--tls-key ${SRV_KEY} --tls-cert ${SRV_CRT} --tls-ca ${CA_CRT}"
-        CLIENT_TLS_ARGS="--tls-hostname localhost --tls-ca ${CA_CRT} --tls-key ${CLI_KEY} --tls-cert ${CLI_CRT}"
+        if [ "${ENABLE_MTLS}" -eq 1 ]; then
+            SERVER_TLS_ARGS="--tls-key ${SRV_KEY} --tls-cert ${SRV_CRT} --tls-ca ${CA_CRT}"
+            CLIENT_TLS_ARGS="--tls-hostname localhost --tls-ca ${CA_CRT} --tls-key ${CLI_KEY} --tls-cert ${CLI_CRT}"
+        else
+            SERVER_TLS_ARGS="--tls-key ${SRV_KEY} --tls-cert ${SRV_CRT}"
+            CLIENT_TLS_ARGS="--tls-hostname localhost --tls-ca ${CA_CRT}"
+        fi
     fi
 
     # 1. Start passive node

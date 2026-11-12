@@ -1448,11 +1448,15 @@ IF (HAVE_QUIC_FOR_TESTS)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_bidi_ipv4 127.0.0.1 quic const10:const1000:const10:const1000 plain 3)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_bidi_ipv6 ::1       quic const10:const1000:const10:const1000 plain 3)
 
-# ====== 2. Unidirectional QUIC Flows =======================================
+# ====== 2. Server-Only TLS Authentication (No Client Certificate) ==========
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_server_auth_only_ipv4 127.0.0.1 quic const10:const1000:const10:const1000 plain 3 --no-mtls)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_server_auth_only_ipv6 ::1       quic const10:const1000:const10:const1000 plain 3 --no-mtls)
+
+# ====== 3. Unidirectional QUIC Flows =======================================
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_upload_ipv4   127.0.0.1 quic const10:const1000:const0:const0 plain 3)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_download_ipv4 127.0.0.1 quic const0:const0:const10:const1000 plain 3)
 
-# ====== 3. Homogeneous Multi-Connection QUIC Tests (Multiple Sockets) =====
+# ====== 4. Homogeneous Multi-Connection QUIC Tests (Multiple Sockets) ======
 # 2 concurrent QUIC connections over IPv4 (2x 10 fps, 1000 B)
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2connections_ipv4
    127.0.0.1 quic const10:const1000:const10:const1000 plain 3
@@ -1483,7 +1487,7 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_heterogeneous_rates_sizes
    -quic const10:const1400:const10:const1400)
 
 
-# ====== 4. QUIC Multi-Streaming (Single Connection, Multiple Streams) ======
+# ====== 5. QUIC Multi-Streaming (Single Connection, Multiple Streams) ======
 # 2 streams within 1 QUIC connection over IPv4
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2streams_ipv4
    127.0.0.1 quic const10:const1000:const10:const1000 plain 3
@@ -1517,7 +1521,7 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_staggered_onoff
    -quic const20:const1000:const0:const0:onoff=2,4)
 
 
-# ====== 5. Heterogeneous Cross-Traffic Concurrency =========================
+# ====== 6. Heterogeneous Cross-Traffic Concurrency =========================
 # Competing QUIC + TCP connections
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_tcp_cross_traffic
    127.0.0.1 quic const10:const1000:const10:const1000 plain 3
