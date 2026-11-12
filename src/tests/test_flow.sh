@@ -936,26 +936,46 @@ run_attempt() {
         SRV_KEY="${TMP_DIR}/test_server.key"
         SRV_CSR="${TMP_DIR}/test_server.csr"
         SRV_CRT="${TMP_DIR}/test_server.crt"
-        SAN_EXT="${TMP_DIR}/san.cnf"
+        SRV_EXT="${TMP_DIR}/server.cnf"
+        CLI_KEY="${TMP_DIR}/test_client.key"
+        CLI_CSR="${TMP_DIR}/test_client.csr"
+        CLI_CRT="${TMP_DIR}/test_client.crt"
+        CLI_EXT="${TMP_DIR}/client.cnf"
 
+        # 1. Root CA
         openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
             -keyout "${CA_KEY}" -out "${CA_CRT}" \
             -subj "/CN=NetPerfMeterTestCA" 2>/dev/null
 
+        # 2. Server Certificate (signed by CA)
         openssl req -newkey rsa:2048 -nodes \
             -keyout "${SRV_KEY}" -out "${SRV_CSR}" \
             -subj "/CN=localhost" 2>/dev/null
 
-        cat <<EOF >"${SAN_EXT}"
+        cat <<EOF >"${SRV_EXT}"
 subjectAltName = DNS:localhost,IP:127.0.0.1,IP:::1
+extendedKeyUsage = serverAuth
 EOF
 
         openssl x509 -req -in "${SRV_CSR}" -CA "${CA_CRT}" -CAkey "${CA_KEY}" \
             -CAcreateserial -out "${SRV_CRT}" -days 1 \
-            -extfile "${SAN_EXT}" 2>/dev/null
+            -extfile "${SRV_EXT}" 2>/dev/null
+
+        # 3. Client Certificate (signed by CA)
+        openssl req -newkey rsa:2048 -nodes \
+            -keyout "${CLI_KEY}" -out "${CLI_CSR}" \
+            -subj "/CN=NetPerfMeterTestClient" 2>/dev/null
+
+        cat <<EOF >"${CLI_EXT}"
+extendedKeyUsage = clientAuth
+EOF
+
+        openssl x509 -req -in "${CLI_CSR}" -CA "${CA_CRT}" -CAkey "${CA_KEY}" \
+            -CAcreateserial -out "${CLI_CRT}" -days 1 \
+            -extfile "${CLI_EXT}" 2>/dev/null
 
         SERVER_TLS_ARGS="--tls-key ${SRV_KEY} --tls-cert ${SRV_CRT} --tls-ca ${CA_CRT}"
-        CLIENT_TLS_ARGS="--tls-hostname localhost --tls-ca ${CA_CRT}"
+        CLIENT_TLS_ARGS="--tls-hostname localhost --tls-ca ${CA_CRT} --tls-key ${CLI_KEY} --tls-cert ${CLI_CRT}"
     fi
 
     # 1. Start passive node
