@@ -171,23 +171,17 @@ static MessageReader gMessageReader;
 [[ noreturn ]]
 static void usage(const char* program, const int exitCode)
 {
-   // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
-   const bool rtl = (std::string(gettext("LTR")) == "RTL");
    const std::string manpage(std::string("\x1b[1m") +
                              std::filesystem::path(program).stem().string() +
                              std::string("\x1b[0m"));
-   const std::string homepage((rtl ? std::string("\xe2\x80\x8e") : std::string("")) +
-                              std::string("[\x1b[1m\x1b]8;;") +
+   const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
                               std::string(PROJECT_HOMEPAGE_URL) +
                               "\a" + std::string(PROJECT_HOMEPAGE_URL) + "\a" +
-                              std::string("\x1b]8;;\a\x1b[0m]") +
-                              (rtl ? std::string("\xe2\x80\x8f") : std::string("")) );
-   const std::string repository((rtl ? std::string("\xe2\x80\x8e") : std::string("")) +
-                                std::string("[\x1b[1m\x1b]8;;") +
+                              std::string("\x1b]8;;\a\x1b[0m"));
+   const std::string repository(std::string("\x1b[1m\x1b]8;;") +
                                 std::string(PROJECT_SOURCE_URL) +
                                 "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
-                                std::string("\x1b]8;;\a\x1b[0m]") +
-                                (rtl ? std::string("\xe2\x80\x8f") : std::string("")) );
+                                std::string("\x1b]8;;\a\x1b[0m"));
 
    // TRANSLATORS: Command-line syntax message prefix:
    // "Usage: <program> [options]".
@@ -217,6 +211,9 @@ static void usage(const char* program, const int exitCode)
                    ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-y") PIPE OPT("--control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp"))
                    ENTRY(OPT("-L") " " ARG("address[,address,...]") PIPE OPT("--local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-l") " " ARG("address[,address,...]") PIPE OPT("--control-local") " " ARG("address[,address,...]"))
+                   ENTRY(OPT("-K") " " ARG("key_file") PIPE OPT("--tls-key") " " ARG("key_file"))
+                   ENTRY(OPT("-J") " " ARG("certificate_file") PIPE OPT("--tls-cert") " " ARG("certificate_file"))
+                   ENTRY(OPT("-I") " " ARG("ca_certificate_file") PIPE OPT("--tls-ca") " " ARG("ca_certificate_file"))
                    ENTRY(OPT("-H") " " ARG("hostname") PIPE OPT("--tls-hostname") " " ARG("hostname"))
                    ENTRY(OPT("--control-hbinterval") " " ARG("milliseconds"))
                    ENTRY(OPT("--control-hbpathmaxrtx") " " ARG("count"))
@@ -252,8 +249,9 @@ static void usage(const char* program, const int exitCode)
                 ARG("outgoing_frame_rateoutgoing_frame_sizeincoming_frame_rateincoming_frame_sizeoption...") "\n"
              << "\n"
              // TRANSLATORS: Informational message at the end of usage:
-             // "For further information, see the man page for <manpage>, read the documentation at <url>, examine the source code at <url>, or consult your favourite LLM.".
-             << formatText(gettext("For further information, see the man page for {}, read the documentation at {}, examine the source code at {}, or consult your favourite LLM."),
+             // "For further information, see the man page for <manpage>, read the documentation at [<url>], examine the source code at [<url>], or consult your favourite LLM.".
+             // Placeholders: {} 1: manpage, 2: homepage URL, 3: repository URL.
+             << formatText(gettext("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM."),
                            manpage, homepage, repository) << "\n";
    std::exit(exitCode);
 }
@@ -316,7 +314,7 @@ static bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while((option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1) {
+   while((option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:I:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1) {
       switch(option) {
          case 'x':
 #if defined(HAVE_SCTP)
@@ -612,6 +610,15 @@ static bool handleGlobalParameters(int argc, char** argv)
       std::cerr << gettext("ERROR: At least one control channel protocol must be enabled!") << "\n";
       exit(1);
    }
+
+#if defined(HAVE_QUIC)
+   if( ((gQUICCertificate != nullptr) && (gQUICKey == nullptr)) ||
+       ((gQUICCertificate == nullptr) && (gQUICKey != nullptr)) ) {
+      // TRANSLATORS: Error message when only one of --tls-cert or --tls-key is specified.
+      std::cerr << gettext("ERROR: Both --tls-cert and --tls-key must be specified together!") << "\n";
+      exit(1);
+   }
+#endif
 
    return true;
 }
@@ -997,16 +1004,18 @@ static int server_handshake(int          sd,
 
    error = gnutls_certificate_allocate_credentials(&credentials);
    if(!error) {
-      const int loadedCAs =
-         gnutls_certificate_set_x509_trust_file(credentials,
-                                                tlsCAFile, GNUTLS_X509_FMT_PEM);
-      if(loadedCAs <= 0) {
-         LOG_ERROR
-         // TRANSLATORS: Error message when TLS CA certificate fails to load. {} is the file path.
-         stdlog << formatText(gettext("Loading CA certificate from {} failed"), ((tlsCAFile != nullptr) ? tlsCAFile : "(none)")) << "\n";
-         LOG_END
-         gnutls_certificate_free_credentials(credentials);
-         return -1;
+      if(tlsCAFile != nullptr) {
+         const int loadedCAs =
+            gnutls_certificate_set_x509_trust_file(credentials,
+                                                   tlsCAFile, GNUTLS_X509_FMT_PEM);
+         if(loadedCAs <= 0) {
+            LOG_ERROR
+            // TRANSLATORS: Error message when TLS CA certificate fails to load. {} is the file path.
+            stdlog << formatText(gettext("Loading CA certificate from {} failed"), tlsCAFile) << "\n";
+            LOG_END
+            gnutls_certificate_free_credentials(credentials);
+            return -1;
+         }
       }
 
       error = gnutls_certificate_set_x509_key_file(credentials,
@@ -1020,6 +1029,10 @@ static int server_handshake(int          sd,
          if(!error) {
             error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
             if(!error) {
+               if(tlsCAFile != nullptr) {
+                  gnutls_certificate_server_set_request(session, GNUTLS_CERT_REQUEST);
+                  gnutls_session_set_verify_cert(session, nullptr, 0);
+               }
                error = gnutls_session_ticket_enable_server(session, &skey);
                if(!error) {
                   error = gnutls_record_set_max_early_data_size(session, 0xffffffffu);
@@ -1062,6 +1075,8 @@ static int client_handshake(int            sd,
                             const char*    alpns,
                             const char*    host,
                             const char*    tlsCAFile,
+                            const char*    tlsCertFile,
+                            const char*    tlsKeyFile,
                             const uint8_t* ticketIn,
                             size_t         ticketInLength,
                             uint8_t*       ticketOut,
@@ -1080,6 +1095,20 @@ static int client_handshake(int            sd,
          gnutls_certificate_free_credentials(credentials);
          return -1;
       }
+
+      if((tlsCertFile != nullptr) && (tlsKeyFile != nullptr)) {
+         error = gnutls_certificate_set_x509_key_file(credentials,
+                                                      tlsCertFile, tlsKeyFile,
+                                                      GNUTLS_X509_FMT_PEM);
+         if(error < 0) {
+            // TRANSLATORS: Error message when TLS client certificate/key fails to load. Placeholders: {} 1: cert path, 2: key path, 3: GnuTLS error string.
+            std::cerr << formatText(gettext("ERROR: Loading client certificate from {} and key from {} failed: {}"),
+                                    tlsCertFile, tlsKeyFile, gnutls_strerror(error)) << "\n";
+            gnutls_certificate_free_credentials(credentials);
+            return -1;
+         }
+      }
+
       error = gnutls_init(&session, GNUTLS_CLIENT|GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
       if(!error) {
          error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
@@ -1364,11 +1393,16 @@ static Flow* createFlow(Flow*                  previousFlow,
       if(trafficSpec.Protocol == IPPROTO_QUIC) {
          LOG_TRACE
          stdlog << "client handshake <sd=" << socketDescriptor
-                << ", CA=" << gQUICCA << " H=" << gQUICHostname << ">\n";
+                << ", K="  << ((gQUICKey != nullptr) ? gQUICKey : "(none)")
+                << ", C="  << ((gQUICCertificate != nullptr) ? gQUICCertificate : "(none)")
+                << ", CA=" << ((gQUICCA != nullptr) ? gQUICCA : "(none)")
+                << ", H="  << ((gQUICHostname != nullptr) ? gQUICHostname : "(none)")
+                << ">\n";
          LOG_END
 
          if(client_handshake(socketDescriptor,
                              ALPN_NETPERFMETER_DATA, gQUICHostname, gQUICCA,
+                             gQUICCertificate, gQUICKey,
                              nullptr, 0, nullptr, nullptr) != 0) {
             exit(1);
          }
@@ -2195,7 +2229,9 @@ static void passiveMode(const uint16_t localPort)
    }
    // TRANSLATORS: Passive mode startup summary banner.
    stdlog << gettext("Passive Mode: Waiting for incoming connections:") << "\n"
+          // TRANSLATORS: Passive mode control channel status line. Placeholders: {} 1: protocol name(s), 2: port number.
           << formatText(gettext(" - Control Channel = {} on port {}"), controlProtocols, localPort + 1) << "\n"
+          // TRANSLATORS: Passive mode data channel status line. Placeholders: {} 1: primary protocols, 2: base port, 3: secondary protocol append clause.
           << formatText(gettext(" - Data Channel    = {} on port {}{}"), dataProtocols1, localPort, dataProtocols2) << "\n";
    LOG_END
    LOG_TRACE
