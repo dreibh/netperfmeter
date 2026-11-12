@@ -410,7 +410,8 @@ sudo service netperfmeter-module-loader disable
 
   ```bash
   cd src/quic-setup
-  ./generate-test-certificates TestCA --server --san LOCAL server.domain.example
+  ./generate-test-certificates TestCA -K 4096 -k 4096 --server --san LOCAL server.domain.example
+  ./generate-test-certificates TestCA -K 4096 -k 4096 --client --san LOCAL client.domain.example
   ```
 
   These commands generate the following files:
@@ -436,6 +437,8 @@ sudo service netperfmeter-module-loader disable
      -tls-ca   $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt
   ```
 
+  with `DIRECTORY` the path where `TestCA` is located.
+
 * Run an active instance (i.e., client side), with bidirectional QUIC flow, specifying the TLS hostname of the server for certificate validation and providing the client certificate for mutual TLS authentication (mTLS):
 
   - Active to passive instance: constant 10&nbsp;frames/s, constant 128&nbsp;B/frame;
@@ -450,9 +453,20 @@ sudo service netperfmeter-module-loader disable
      -quic         const10:const128:const25:const1200
   ```
 
+  with:
+
+  * `DIRECTORY` the path where `TestCA` is located;
+  * `SERVER` the IP address of the passive instance.
+
   If the passive side is started without `-tls-ca`, it performs standard server-only authentication and `-tls-key` and `-tls-cert` can be omitted on the active side.
 
   Make sure that the server name matches the information in the server certificate provided by the passive instance. TLS is verifying it, and the TLS handshake will fail (as intended) if it does not match!
+
+  In case of problems with TLS session establishment, `GNUTLS_DEBUG_LEVEL=<LEVEL>` can be set to let GnuTLS provide debugging information, e.g.:
+
+  ```bash
+  GNUTLS_DEBUG_LEVEL=5 netperfmeter ...
+  ```
 
 * See [Wireshark](#-wireshark-dissector-for-netperfmeter-packets) for details on how to examine the NetPerfMeter QUIC traffic with Wireshark!
 
