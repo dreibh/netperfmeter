@@ -164,7 +164,7 @@ _netperfmeter()
             ;;
          # ====== Special case: key file ====================================
          -K | --tls-key)
-            _filedir '@(key)'
+            _filedir '@(key|pem)'
             return
             ;;
          # ====== Special case: certificate file ============================
@@ -216,6 +216,12 @@ _netperfmeter()
 --local
 -l
 --control-local
+-K
+--tls-key
+-J
+--tls-cert
+-I
+--tls-ca
 -H
 --tls-hostname
 --control-hbinterval
