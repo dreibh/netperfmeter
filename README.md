@@ -436,7 +436,7 @@ sudo service netperfmeter-module-loader disable
      -tls-ca   $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt
   ```
 
-* Run an active instance (i.e., client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation:
+* Run an active instance (i.e., client side), with bidirectional QUIC flow, specifying the TLS hostname of the server for certificate validation and providing the client certificate for mutual TLS authentication (mTLS):
 
   - Active to passive instance: constant 10&nbsp;frames/s, constant 128&nbsp;B/frame;
   - Passive to active instance: constant 25&nbsp;frames/s, constant 1200&nbsp;B/frame.
@@ -444,9 +444,13 @@ sudo service netperfmeter-module-loader disable
   ```bash
   netperfmeter $SERVER:9000 \
      -tls-hostname server.domain.example \
-     -tls-ca $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt \
-     -quic const10:const128:const25:const1200
+     -tls-ca       $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt \
+     -tls-key      $DIRECTORY/TestCA/client.domain.example/client.domain.example.key \
+     -tls-cert     $DIRECTORY/TestCA/client.domain.example/client.domain.example.crt \
+     -quic         const10:const128:const25:const1200
   ```
+
+  If the passive side is started without `-tls-ca`, it performs standard server-only authentication and `-tls-key` and `-tls-cert` can be omitted on the active side.
 
   Make sure that the server name matches the information in the server certificate provided by the passive instance. TLS is verifying it, and the TLS handshake will fail (as intended) if it does not match!
 
