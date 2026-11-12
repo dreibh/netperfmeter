@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 23, 2026
+.Dd November 12, 2026
 .Dt NetPerfMeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -78,6 +78,12 @@
 .Op Fl L Ar address[\:,address,...] | Fl \-local Ar address[\:,address,...]
 .br
 .Op Fl l Ar address[\:,address,...] | Fl \-control\:\-local Ar address[\:,address,...]
+.br
+.Op Fl K Ar key\_file | Fl \-tls\-key Ar key\_file
+.br
+.Op Fl J Ar certificate\_file | Fl \-tls\-cert Ar certificate\_file
+.br
+.Op Fl I Ar ca\_certificate\_file | Fl \-tls\-ca Ar ca\_certificate\_file
 .br
 .Op Fl H Ar hostname | Fl \-tls\-hostname Ar hostname
 .br
@@ -176,12 +182,19 @@ On an active node, this option applies to the following flows, i.e. it must be s
 .It Fl l Ar address[\:,address,...] | Fl \-control\:\-local Ar address[\:,address,...]
 Specifies address(es) of the local control endpoint (SCTP or TCP). For TCP, only the first address is used!
 .It Fl K Ar key\_file | Fl \-tls\-key Ar key\_file
-Specifies the TLS key file for QUIC authentication. This option is used by the passive side.
+Specifies the TLS private key file for QUIC authentication.
+On the passive side, this option is required for QUIC.
+On the active side, this option is optional and provides the client private key for mutual TLS (mTLS) authentication.
+Must be specified together with \-\-tls\-cert.
 .It Fl J Ar certificate\_file | Fl \-tls\-cert Ar certificate\_file
-Specifies the TLS certificate file for QUIC authentication. This option is used by the passive side.
-The certificate file must correspond to the key file provided by \-\-tls\-key. The certificate must be for server usage (X.509 Extended Key Usage: TLS Web Server Authentication).
+Specifies the TLS certificate file for QUIC authentication.
+The certificate file must correspond to the key file provided by \-\-tls\-key, and both options must be specified together.
+On the passive side, this option is required for QUIC, and the certificate must be for server usage (X.509 Extended Key Usage: TLS Web Server Authentication).
+On the active side, this option is optional and provides the client certificate for mutual TLS (mTLS) authentication (X.509 Extended Key Usage: TLS Web Client Authentication).
 .It Fl I Ar ca\_certificate\_file | Fl \-tls\-ca Ar ca\_certificate\_file
 Specifies the TLS root CA certificate file for QUIC authentication.
+On the active side, this option is required for QUIC to verify the passive side's server certificate.
+On the passive side, this option is optional: when specified, the passive side requests and verifies a client certificate against the given CA truststore (enabling mutual TLS / mTLS authentication); when omitted, only server authentication is performed.
 .It Fl H Ar hostname | Fl \-tls\-hostname Ar hostname
 Specifies the TLS certificate hostname for QUIC authentication. It is used by the active side.
 The hostname must match the remote (i.e. passive side's) hostname, as provided by the passive side's TLS certificate, to allow for hostname verification. As alternative, it is possible to add the IP addresses into the X.509 SubjectAltName of its certificate.
@@ -359,12 +372,12 @@ SCTP traffic with some variation.
 .It netperfmeter 172.31.33.2:9000 \-udp const0\:const0\:const25\:const2500\:onoff=+pareto0.166667,\:1.5,\:+pareto0.166667,\:1.5,\:repeat
 Some on-off background traffic with Pareto distribution.
 .It netperfmeter 9000 \-tls\-key my\-server.key \-tls\-cert my\-server.crt \-tls\-ca my\-ca.crt
-Start in passive mode, with TLS setup for QUIC.
+Start in passive mode, with mutual TLS (mTLS) setup for QUIC (omitting \-tls\-ca disables client certificate verification and uses server-only TLS authentication).
 See
 .Lk https:\://\:www.nntb.no/\:\(tidreibh/\:netperfmeter/\:#quic-communication "QUIC Communication on the NetPerfMeter Homepage"
 for details about QUIC usage!
-.It netperfmeter 172.31.33.2:9000 \-tls\-hostname my\-server.domain \-tls\-ca my\-ca.crt \-quic const10:const128:const25:const1200
-Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. Set TLS server name of 172.31.33.2 for QUIC to my-server.domain.
+.It netperfmeter 172.31.33.2:9000 \-tls\-hostname my\-server.domain \-tls\-ca my\-ca.crt \-tls\-key my\-client.key \-tls\-cert my\-client.crt \-quic const10:const128:const25:const1200
+Start in active mode, i.e. establish connection to 172.31.33.2, port 9000, using mutual TLS (mTLS) for QUIC. Set TLS server name of 172.31.33.2 to my-server.domain and authenticate the client with my-client.crt and my-client.key (\-tls\-key and \-tls\-cert may be omitted if the passive side does not require client certificates).
 See
 .Lk https:\://\:www.nntb.no/\:\(tidreibh/\:netperfmeter/\:#quic-communication "QUIC Communication on the NetPerfMeter Homepage"
 for details about QUIC usage!
