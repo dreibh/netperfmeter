@@ -1064,6 +1064,19 @@ static int server_handshake(int          sd,
       LOG_ERROR
       // TRANSLATORS: Error message when TLS setup fails. {} is the GnuTLS error string.
       stdlog << formatText(gettext("TLS setup failed: {}"), gnutls_strerror(error)) << "\n";
+      if(error < 0) {
+         quic_connection_close closeInfo;
+         socklen_t             closeInfoLength = sizeof(closeInfo);
+         memset(&closeInfo, 0, sizeof(closeInfo));
+         if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONNECTION_CLOSE,
+                           &closeInfo, &closeInfoLength) == 0) {
+            closeInfo.phrase[sizeof(closeInfo.phrase) - 1] = 0x00;
+            // TRANSLATORS: Error details when a QUIC connection is closed during handshake. Placeholders: {} 1: error code, 2: frame type, 3: reason phrase.
+            stdlog << formatText(gettext("QUIC connection closed: errcode={}, frame={}, phrase=\"{}\""),
+                                 closeInfo.errcode, static_cast<unsigned int>(closeInfo.frame),
+                                 reinterpret_cast<const char*>(closeInfo.phrase)) << "\n";
+         }
+      }
       LOG_END
    }
    return error;
@@ -1142,6 +1155,19 @@ static int client_handshake(int            sd,
    if(error) {
       // TRANSLATORS: Error message when TLS setup fails. {} is the GnuTLS error string.
       std::cerr << formatText(gettext("ERROR: TLS setup failed: {}"), gnutls_strerror(error)) << "\n";
+      if(error < 0) {
+         quic_connection_close closeInfo;
+         socklen_t             closeInfoLength = sizeof(closeInfo);
+         memset(&closeInfo, 0, sizeof(closeInfo));
+         if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONNECTION_CLOSE,
+                           &closeInfo, &closeInfoLength) == 0) {
+            closeInfo.phrase[sizeof(closeInfo.phrase) - 1] = 0x00;
+            // TRANSLATORS: Error details when a QUIC connection is closed during handshake. Placeholders: {} 1: error code, 2: frame type, 3: reason phrase.
+            std::cerr << formatText(gettext("ERROR: QUIC connection closed: errcode={}, frame={}, phrase=\"{}\""),
+                                    closeInfo.errcode, static_cast<unsigned int>(closeInfo.frame),
+                                    reinterpret_cast<const char*>(closeInfo.phrase)) << "\n";
+         }
+      }
    }
    return error;
 }
