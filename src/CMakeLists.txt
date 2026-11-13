@@ -167,7 +167,8 @@ ADD_EXECUTABLE(netperfmeter
    transfer.h
 )
 TARGET_INCLUDE_DIRECTORIES(netperfmeter
-                           PRIVATE ${SCTP_INCLUDE_DIR}
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                                   ${SCTP_INCLUDE_DIR}
                                    ${QUIC_INCLUDE_DIR}
                                    ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})

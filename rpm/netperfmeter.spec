@@ -13,7 +13,9 @@ BuildRequires: (xz-devel or liblzma-devel)
 BuildRequires: (zlib-devel or libz-devel)
 BuildRequires: cmake
 BuildRequires: gcc-c++
+BuildRequires: gettext
 BuildRequires: ghostscript
+BuildRequires: glibc-langpack-en
 BuildRequires: GraphicsMagick
 BuildRequires: libzstd-devel
 BuildRequires: lksctp-tools-devel
@@ -260,7 +262,6 @@ This package sets up a service running a NetPerfMeter server instance.
 %files service
 %{_prefix}/lib/systemd/system/netperfmeter.service
 %config(noreplace) %{_sysconfdir}/netperfmeter.conf
-%{_sysconfdir}/netperfmeter.conf
 
 
 %package pdfproctools
