@@ -13,10 +13,12 @@ BuildRequires: cmake
 BuildRequires: gcc-c++
 BuildRequires: ghostscript
 BuildRequires: GraphicsMagick
+BuildRequires: libzstd-devel
 BuildRequires: lksctp-tools-devel
-BuildRequires: mupdf
+BuildRequires: pdf2svg
 BuildRequires: perl >= 5.8.0
 BuildRequires: perl-PDF-API2
+BuildRequires: qpdf
 BuildRequires: valgrind-devel
 
 Requires: %{name}-common = %{version}-%{release}

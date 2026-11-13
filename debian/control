@@ -13,7 +13,8 @@ Build-Depends: cmake,
                libpdf-api2-perl,
                libsctp-dev (>= 1.0.5),
                pdf2svg,
-               perl (>= 5.8.0)
+               perl (>= 5.8.0),
+               qpdf
 Standards-Version: 4.7.4
 Rules-Requires-Root: no
 
