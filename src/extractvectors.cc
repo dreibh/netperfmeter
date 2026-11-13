@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <clocale>
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
@@ -41,6 +42,12 @@
 #include <vector>
 #include <getopt.h>
 #include <unistd.h>
+
+#if defined(ENABLE_NLS)
+#include <libintl.h>
+#else
+#define gettext(s) (s)
+#endif
 
 #if defined(HAVE_LIBIBERTY)
 #include <libiberty.h>
@@ -125,7 +132,8 @@ static unsigned long long extractVectors(InputFile&               inputFile,
          if((inputFile.getLine() == 1) &&
             (std::sscanf(inBuffer, "version %u", &version) == 1)) {
             if(version != 2) {
-               std::cerr << "ERROR: Got unknown version number " << version << " (expected 2)\n";
+               // TRANSLATORS: Error message when input file has an unsupported version number. {} is the found version number.
+               std::cerr << formatText(gettext("ERROR: Got unknown version number {} (expected 2)"), version) << "\n";
                std::exit(1);
             }
             versionOkay = true;
@@ -134,7 +142,8 @@ static unsigned long long extractVectors(InputFile&               inputFile,
             outputLine++;
          }
          else {
-            std::cerr << "ERROR: Missing \"version\" entry in input file!\n";
+            // TRANSLATORS: Error message when the first line of the input file is not a "version" header.
+            std::cerr << gettext("ERROR: Missing \"version\" entry in input file!") << "\n";
             std::exit(1);
          }
       }
@@ -204,12 +213,14 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                         splitName = vName.substr(lastSpace + 1);
                         vName.erase(lastSpace);
                      }
-                     std::cout << "Adding vector \"" << vName << "\", split \""
-                               << splitName << "\" of object " << objectName << " ...\n";
+                     // TRANSLATORS: Status message when adding a vector with split parameter. Placeholders: {} 1: vector name, 2: split parameter, 3: object name.
+                     std::cout << formatText(gettext("Adding vector \"{}\", split \"{}\" of object {} ..."),
+                                             vName, splitName, objectName) << "\n";
                   }
                   else {
-                     std::cout << "Adding vector \"" << vName << "\" of object "
-                               << objectName << " ...\n";
+                     // TRANSLATORS: Status message when adding a vector without split parameter. Placeholders: {} 1: vector name, 2: object name.
+                     std::cout << formatText(gettext("Adding vector \"{}\" of object {} ..."),
+                                             vName, objectName) << "\n";
                   }
 
                   vectorMap.emplace(vectorID, VectorMetadata {
@@ -220,8 +231,9 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                }
             }
             else {
-               std::cerr << "ERROR: Unexpected vector definition on input file "
-                         << inputFile.getLine() << "!\n";
+               // TRANSLATORS: Error message when a vector definition line cannot be parsed. {} is the line number.
+               std::cerr << formatText(gettext("ERROR: Unexpected vector definition on input file {}!"),
+                                       inputFile.getLine()) << "\n";
                std::exit(1);
             }
          }
@@ -233,15 +245,16 @@ static unsigned long long extractVectors(InputFile&               inputFile,
       std::ranges::count_if(vectorsToExtract, [](const VectorInfo& v) { return v.found; })
    );
    if((uniqueFoundPrefixes < vectorsToExtract.size()) && !vectorsToExtract.empty()) {
-      std::cerr << "WARNING: Found only " << uniqueFoundPrefixes << " of "
-                << vectorsToExtract.size() << " specified!\n";
+      // TRANSLATORS: Warning message when fewer vector prefixes matched than requested. Placeholders: {} 1: matched count, 2: requested count.
+      std::cerr << formatText(gettext("WARNING: Found only {} of {} specified!"),
+                              uniqueFoundPrefixes, vectorsToExtract.size()) << "\n";
    }
 
    return outputLine;
 }
 
 
-// ###### Version #==========================================================
+// ###### Version ###########################################################
 [[noreturn]] static void version()
 {
    std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n";
@@ -265,16 +278,18 @@ static void usage(const char* program, const int exitCode)
    const std::string manpage(std::string("\x1b[1m") +
                              std::filesystem::path(program).stem().string() +
                              std::string("\x1b[0m"));
-   const std::string homepage(std::string("[\x1b[1m\x1b]8;;") +
+   const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
                               std::string(PROJECT_HOMEPAGE_URL) +
                               "\a" + std::string(PROJECT_HOMEPAGE_URL) + "\a" +
-                              std::string("\x1b]8;;\a\x1b[0m]"));
-   const std::string repository(std::string("[\x1b[1m\x1b]8;;") +
+                              std::string("\x1b]8;;\a\x1b[0m"));
+   const std::string repository(std::string("\x1b[1m\x1b]8;;") +
                                 std::string(PROJECT_SOURCE_URL) +
                                 "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
-                                std::string("\x1b]8;;\a\x1b[0m]"));
+                                std::string("\x1b]8;;\a\x1b[0m"));
 
-   std::cerr << HEADER("Usage:") << "\n"
+   // TRANSLATORS: Command-line syntax message prefix:
+   // "Usage: <program> [options]".
+   std::cerr << HEADER(gettext("Usage:")) << "\n"
              << CMD(program) << " "
                 ARG("input_file") " " ARG("output_file") "\n"
                    ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
@@ -288,7 +303,10 @@ static void usage(const char* program, const int exitCode)
              << CMD(program) << "\n"
                    ENTRY(OPT("-v") PIPE OPT("--version"))
              << "\n"
-             << formatText("For further information, see the man page for {}, read the documentation at {}, examine the source code at {}, or consult your favourite LLM.",
+             // TRANSLATORS: Informational message at the end of usage:
+             // "For further information, see the man page for <manpage>, read the documentation at [<url>], examine the source code at [<url>], or consult your favourite LLM.".
+             // Placeholders: {} 1: manpage, 2: homepage URL, 3: repository URL.
+             << formatText(gettext("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM."),
                            manpage, homepage, repository) << "\n";
    std::exit(exitCode);
 }
@@ -298,6 +316,33 @@ static void usage(const char* program, const int exitCode)
 // ###### Main program ======================================================
 int main(int argc, char** argv)
 {
+   // ====== Initialise locale support ======================================
+   if(std::setlocale(LC_ALL, "") == nullptr) {
+      std::setlocale(LC_ALL, "C.UTF-8");
+   }
+   std::setlocale(LC_NUMERIC, "C");   // Use "." for fractional numbers!
+
+   // ====== Initialise i18n support ========================================
+#if defined(ENABLE_NLS)
+#if !defined(_WIN32)
+   const char* textdomaindir     = std::getenv("TEXTDOMAINDIR");
+#else
+   char*       textdomaindir     = nullptr;
+   size_t      textdomaindirsize = 0;
+   _dupenv_s(&textdomaindir, &textdomaindirsize, "TEXTDOMAINDIR");
+#endif
+   bindtextdomain("netperfmeter",
+                  ( ((textdomaindir) && (textdomaindir[0] != 0x00)) ?
+                       textdomaindir : PROJECT_LOCALEDIR ));
+#if defined(_WIN32)
+   if(textdomaindir) {
+       free(textdomaindir);
+   }
+#endif
+   bind_textdomain_codeset("netperfmeter", "UTF-8");
+   textdomain("netperfmeter");
+#endif
+
    bool                    addLineNumbers      = false;
    int                     explicitLevel       = -1;
    const char*             separator           = "\t";
@@ -373,14 +418,18 @@ int main(int argc, char** argv)
    unsigned int compressionLevel = 0;
    if(explicitLevel >= 0) {
       if(!isValidCompressionLevel(outputFileFormat, explicitLevel)) {
-         std::cerr << "ERROR: Compression level " << explicitLevel
-                   << " is invalid for format " << getFormatName(outputFileFormat) << "!\n";
+         // TRANSLATORS: Error message when requested compression level is invalid for the output format. Placeholders: {} 1: compression level, 2: format name.
+         std::cerr << formatText(gettext("ERROR: Compression level {} is invalid for format {}!"),
+                                 explicitLevel, getFormatName(outputFileFormat)) << "\n";
          if(outputFileFormat == FileFormat::Plain) {
-            std::cerr << "Compression level for Plain format must be 0.\n";
+            // TRANSLATORS: Hint that Plain (uncompressed) output only accepts compression level 0.
+            std::cerr << gettext("Compression level for Plain format must be 0.") << "\n";
          }
          else {
-            std::cerr << "Allowed range: " << getMinCompressionLevel(outputFileFormat)
-                      << " to " << getMaxCompressionLevel(outputFileFormat) << "\n";
+            // TRANSLATORS: Allowed compression level range hint. Placeholders: {} 1: minimum level, 2: maximum level.
+            std::cerr << formatText(gettext("Allowed range: {} to {}"),
+                                    getMinCompressionLevel(outputFileFormat),
+                                    getMaxCompressionLevel(outputFileFormat)) << "\n";
          }
          std::exit(1);
       }
@@ -393,10 +442,17 @@ int main(int argc, char** argv)
    // ====== Print information ==============================================
    if(!quietMode) {
       std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n"
-                << "* Vector Splitting:  " << (vectorSplittingMode ? "on" : "off") << "\n"
-                << "* Input Format:      " << getFormatName(inputFileFormat) << "\n"
-                << "* Output Format:     " << getFormatName(outputFileFormat) << "\n"
-                << "* Compression Level: " << compressionLevel << "\n"
+                // TRANSLATORS: Status label for vector name splitting mode ("on" or "off"). {} is "on" or "off".
+                << formatText(gettext("* Vector Splitting:  {}"),
+                              // TRANSLATORS: Boolean state label when an option is enabled.
+                              // TRANSLATORS: Boolean state label when an option is disabled.
+                              vectorSplittingMode ? gettext("on") : gettext("off")) << "\n"
+                // TRANSLATORS: Status label for detected input file compression format. {} is format name.
+                << formatText(gettext("* Input Format:      {}"), getFormatName(inputFileFormat)) << "\n"
+                // TRANSLATORS: Status label for detected output file compression format. {} is format name.
+                << formatText(gettext("* Output Format:     {}"), getFormatName(outputFileFormat)) << "\n"
+                // TRANSLATORS: Status label for selected output compression level. {} is level number.
+                << formatText(gettext("* Compression Level: {}"), compressionLevel) << "\n"
                 << "\n";
    }
 
@@ -438,7 +494,8 @@ int main(int argc, char** argv)
       outputFile.finish(true, &in, &out);
 
       if(!quietMode) {
-         std::cout << "Wrote " << lines << " lines";
+         // TRANSLATORS: Summary message showing number of written output lines. {} is the line count.
+         std::cout << formatText(gettext("Wrote {} lines"), lines);
          if(in > 0) {
             std::cout << " (" << in << " -> " << out << " - "
                       << (static_cast<double>(out) * 100.0 / static_cast<double>(in)) << "%)";
