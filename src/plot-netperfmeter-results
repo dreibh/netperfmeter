@@ -75,6 +75,7 @@ ${cmd}${program}${reset}
 EOF
    # TRANSLATORS: Informational message at the end of usage:
    # "For further information, see the man page for <manpage>, read the documentation at <url>, examine the source code at <url>, or consult your favourite LLM.".
+   # shellcheck disable=SC2059
    printf >&2 "$(gettext "For further information, see the man page for %s, read the documentation at %s, examine the source code at %s, or consult your favourite LLM.")\n" \
       "${manpage}" "${homepage}" "${repository}"
    exit "${exitCode}"

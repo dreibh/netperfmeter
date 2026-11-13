@@ -882,9 +882,8 @@ int main(int argc, char** argv)
       std::cout << "CreateSummary " << CREATESUMMARY_VERSION << "\n"
                 // TRANSLATORS: Status label for interactive mode ("on" or "off"). {} is "on" or "off".
                 << formatText(gettext("* Interactive Mode:  {}"),
-                              // TRANSLATORS: Boolean state label when an option is enabled.
-                              // TRANSLATORS: Boolean state label when an option is disabled.
-                              interactiveMode ? gettext("on") : gettext("off")) << "\n"
+                              interactiveMode ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
+                                              : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off")) << "\n"
                 // TRANSLATORS: Status label for selected output file compression format. {} is format name.
                 << formatText(gettext("* Output Format:     {}"), getFormatName(outputFormat)) << "\n"
                 // TRANSLATORS: Status label for selected output compression level. {} is level number.
@@ -893,10 +892,12 @@ int main(int argc, char** argv)
                 << formatText(gettext("* Separator:         \"{}\""), separator) << "\n"
                 // TRANSLATORS: Status label for output line numbering ("on" or "off"). {} is "on" or "off".
                 << formatText(gettext("* Line Numbers:      {}"),
-                              addLineNumbers ? gettext("on") : gettext("off")) << "\n"
+                              addLineNumbers ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
+                                             : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off")) << "\n"
                 // TRANSLATORS: Status label for scalar name splitting mode ("on" or "off"). {} is "on" or "off".
                 << formatText(gettext("* Scalar Splitting:  {}"),
-                              scalarSplittingMode ? gettext("on") : gettext("off")) << "\n"
+                              scalarSplittingMode ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
+                                                  : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off")) << "\n"
                 << "\n";
    }
 

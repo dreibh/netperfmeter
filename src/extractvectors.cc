@@ -449,9 +449,8 @@ int main(int argc, char** argv)
       std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n"
                 // TRANSLATORS: Status label for vector name splitting mode ("on" or "off"). {} is "on" or "off".
                 << formatText(gettext("* Vector Splitting:  {}"),
-                              // TRANSLATORS: Boolean state label when an option is enabled.
-                              // TRANSLATORS: Boolean state label when an option is disabled.
-                              vectorSplittingMode ? gettext("on") : gettext("off")) << "\n"
+                              vectorSplittingMode ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
+                                                  : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off")) << "\n"
                 // TRANSLATORS: Status label for detected input file compression format. {} is format name.
                 << formatText(gettext("* Input Format:      {}"), getFormatName(inputFileFormat)) << "\n"
                 // TRANSLATORS: Status label for detected output file compression format. {} is format name.

@@ -36,7 +36,7 @@ SCRIPTS="$(
 (
    find . -path '*/.*' -type d -prune \
       -o \( \
-            \( -type f -perm -100 ! -name "*~" \) \
+            \( -type f -perm -100 ! -name "*~" ! -name "*.versioned" \) \
             -o -name "*.bash-completion" \
          \) -print
 ) | while read -r name ; do

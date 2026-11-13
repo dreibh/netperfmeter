@@ -378,9 +378,8 @@ int main(int argc, char** argv)
                 << formatText(gettext("* Separator:         \"{}\""), separator) << "\n"
                 // TRANSLATORS: Status label for output line numbering ("yes" or "no"). {} is "yes" or "no".
                 << formatText(gettext("* Line Numbers:      {}"),
-                              // TRANSLATORS: Boolean state label ("yes").
-                              // TRANSLATORS: Boolean state label ("no").
-                              withLineNumbers ? gettext("yes") : gettext("no")) << "\n"
+                              withLineNumbers ? /* TRANSLATORS: Boolean state label ("yes"). */ gettext("yes")
+                                              : /* TRANSLATORS: Boolean state label ("no"). */  gettext("no")) << "\n"
                 << "\n";
    }
 
