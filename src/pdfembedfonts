@@ -22,6 +22,13 @@
 # Bash options:
 set -euo pipefail
 
+# gettext options:
+export TEXTDOMAIN="pdfembedfonts"
+[[ "@CMAKE_INSTALL_FULL_DATADIR@" != @* ]] && export TEXTDOMAINDIR="${TEXTDOMAINDIR:-@CMAKE_INSTALL_FULL_DATADIR@/locale}"
+
+# shellcheck disable=SC1091
+. gettext.sh
+
 
 # ------ BEGIN-OF-USAGE-BLOCK ------
 # ###### Usage ##############################################################
@@ -36,10 +43,19 @@ usage () {
    local reset=$'\x1b[0m'
    local progname="${program##*/}"
    local manpage="${cmd}${progname%.*}${reset}"
-   local homepage=$'[\x1b[1m\x1b]8;;@PROJECT_HOMEPAGE_URL@\a@PROJECT_HOMEPAGE_URL@\a\x1b]8;;\a\x1b[0m]'
-   local repository=$'[\x1b[1m\x1b]8;;@PROJECT_SOURCE_URL@\a@PROJECT_SOURCE_URL@\a\x1b]8;;\a\x1b[0m]'
+   local lrm=""
+   local rlm=""
+   # TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
+   if [ "$(gettext "LTR")" = "RTL" ] ; then
+      lrm=$'\xe2\x80\x8e'
+      rlm=$'\xe2\x80\x8f'
+   fi
+   local homepage="${lrm}"$'[\x1b[1m\x1b]8;;@PROJECT_HOMEPAGE_URL@\a@PROJECT_HOMEPAGE_URL@\a\x1b]8;;\a\x1b[0m]'"${rlm}"
+   local repository="${lrm}"$'[\x1b[1m\x1b]8;;@PROJECT_SOURCE_URL@\a@PROJECT_SOURCE_URL@\a\x1b]8;;\a\x1b[0m]'"${rlm}"
+   # TRANSLATORS: Command-line syntax message prefix:
+   # "Usage: <program> [options]".
    cat >&2 <<EOF
-${header}Usage:${reset}
+${header}$(gettext "Usage:")${reset}
 ${cmd}${program}${reset} ${arg}input_pdf${reset} ${arg}output_pdf${reset}
 	${syn}[${reset}${opt}-O${reset} ${syn}|${reset} ${opt}--optimise${reset} ${syn}|${reset} ${opt}--optimize${reset}${syn}]${reset}
 ${cmd}${program}${reset}
@@ -48,7 +64,9 @@ ${cmd}${program}${reset}
 	${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}
 
 EOF
-   printf >&2 "For further information, see the man page for %s, read the documentation at %s, examine the source code at %s, or consult your favourite LLM.""\n" \
+   # TRANSLATORS: Informational message at the end of usage:
+   # "For further information, see the man page for <manpage>, read the documentation at <url>, examine the source code at <url>, or consult your favourite LLM.".
+   printf >&2 "$(gettext "For further information, see the man page for %s, read the documentation at %s, examine the source code at %s, or consult your favourite LLM.")\n" \
       "${manpage}" "${homepage}" "${repository}"
    exit "${exitCode}"
 }
@@ -88,7 +106,8 @@ case "${UNAME}" in
       ;;
 esac
 if "${GETOPT}" -T >/dev/null 2>&1 || [[ $? -ne 4 ]]; then
-   echo >&2 "ERROR: Enhanced/GNU getopt is required!"
+   gettext >&2 "ERROR: Enhanced/GNU getopt is required!"
+   echo >&2
    exit 1
 fi
 options="$(${GETOPT} -o Ohv --long optimise,optimize,help,version -a -- "$@")"
@@ -124,7 +143,9 @@ fi
 INPUT_PDF="$1"
 OUTPUT_PDF="$2"
 if [ ! -e "${INPUT_PDF}" ] ; then
-   echo >&2 "ERROR: PDF file ${INPUT_PDF} does not exist!"
+   # TRANSLATORS: Error message when the input PDF file cannot be found. ${INPUT_PDF} is the file path.
+   eval_gettext >&2 "ERROR: PDF file \${INPUT_PDF} does not exist!"
+   echo >&2
    exit 1
 fi
 

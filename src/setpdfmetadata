@@ -22,12 +22,38 @@
 use strict;
 use warnings;
 use utf8;
-use POSIX qw(strftime getuid);
+use POSIX qw(strftime getuid setlocale LC_ALL LC_NUMERIC);
 use Encode;
 use Getopt::Long qw(:config bundling no_ignore_case);
 use PDF::API2;
 use subs qw(updatePDFMetadataRecursion);
 use subs qw(updatePDFMetadata);
+
+# ====== Initialise locale and i18n support =================================
+if (!defined(setlocale(LC_ALL, ""))) {
+   setlocale(LC_ALL, "C.UTF-8");
+}
+setlocale(LC_NUMERIC, "C");
+
+BEGIN {
+   if (eval { require Locale::gettext; Locale::gettext->import(); 1 }) {
+      my $localeDir = '@CMAKE_INSTALL_FULL_DATADIR@/locale';
+      if (defined($ENV{'TEXTDOMAINDIR'}) && $ENV{'TEXTDOMAINDIR'} ne '') {
+         $localeDir = $ENV{'TEXTDOMAINDIR'};
+      }
+      elsif ($localeDir =~ /^\@/) {
+         $localeDir = '/usr/share/locale';
+      }
+      bindtextdomain('netperfmeter', $localeDir);
+      if (defined(&Locale::gettext::bind_textdomain_codeset)) {
+         Locale::gettext::bind_textdomain_codeset('netperfmeter', 'UTF-8');
+      }
+      textdomain('netperfmeter');
+   }
+   else {
+      *gettext = sub ($) { return $_[0]; };
+   }
+}
 
 
 # ###### Get next command line ##############################################
@@ -159,11 +185,18 @@ sub usage($$) {
    my $progname = (split(m{/}, $program))[-1];
    $progname =~ s{\.[^.]+$}{};
    my $manpage    = "${cmd}${progname}${reset}";
-   my $homepage   = "[${cmd}\x1b]8;;\@PROJECT_HOMEPAGE_URL\@\a\@PROJECT_HOMEPAGE_URL\@\a\x1b]8;;\a${reset}]";
-   my $repository = "[${cmd}\x1b]8;;\@PROJECT_SOURCE_URL\@\a\@PROJECT_SOURCE_URL\@\a\x1b]8;;\a${reset}]";
+   # TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
+   my $rtl = (gettext("LTR") eq "RTL");
+   my $lrm = ($rtl ? "\xe2\x80\x8e" : "");
+   my $rlm = ($rtl ? "\xe2\x80\x8f" : "");
+   my $homepage   = "${lrm}[${cmd}\x1b]8;;\@PROJECT_HOMEPAGE_URL\@\a\@PROJECT_HOMEPAGE_URL\@\a\x1b]8;;\a${reset}]${rlm}";
+   my $repository = "${lrm}[${cmd}\x1b]8;;\@PROJECT_SOURCE_URL\@\a\@PROJECT_SOURCE_URL\@\a\x1b]8;;\a${reset}]${rlm}";
 
+   # TRANSLATORS: Command-line syntax message prefix:
+   # "Usage: <program> [options]".
+   my $usageHeader = gettext("Usage:");
    print STDERR <<EOF;
-${header}Usage:${reset}
+${header}${usageHeader}${reset}
 ${cmd}${program}${reset} ${arg}input_pdf${reset} ${arg}metadata_file${reset} ${arg}output_pdf${reset}
 ${cmd}${program}${reset}
 	${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}
@@ -171,7 +204,9 @@ ${cmd}${program}${reset}
 	${syn}[${reset}${opt}-v${reset} ${syn}|${reset} ${opt}--version${reset}${syn}]${reset}
 
 EOF
-   printf STDERR ("For further information, see the man page for %s, read the documentation at %s, examine the source code at %s, or consult your favourite LLM.\n",
+   # TRANSLATORS: Informational message at the end of usage:
+   # "For further information, see the man page for <manpage>, read the documentation at <url>, examine the source code at <url>, or consult your favourite LLM.".
+   printf STDERR (gettext("For further information, see the man page for %s, read the documentation at %s, examine the source code at %s, or consult your favourite LLM.\n"),
                   $manpage, $homepage, $repository);
    exit($exitCode);
 }
@@ -214,11 +249,13 @@ my $outputPDFName     = $ARGV[2];
 
 my $pdfFile = PDF::API2->open($inputPDFName);
 if (!$pdfFile) {
-   die("ERROR: Unable to open PDF file \"$inputPDFName\"\n");
+   # TRANSLATORS: Error message when the input PDF file cannot be opened. %s is the file path.
+   die(sprintf(gettext("ERROR: Unable to open PDF file \"%s\"\n"), $inputPDFName));
 }
 
 open(my $metadataFile, "<", $inputMetadataName) or
-   die("ERROR: Unable to open metadata file \"$inputMetadataName\": $!\n");
+   # TRANSLATORS: Error message when the metadata file cannot be opened. Placeholders: %s 1: file path, 2: system error string.
+   die(sprintf(gettext("ERROR: Unable to open metadata file \"%s\": %s\n"), $inputMetadataName, $!));
 
 # ====== Set default author and producer ====================================
 my $userID = POSIX::getuid();
