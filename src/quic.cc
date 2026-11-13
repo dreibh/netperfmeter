@@ -35,11 +35,17 @@
 
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <type_traits>
 
 
 namespace {
+
+// Maps active QUIC control socket descriptor -> needs MSG_QUIC_STREAM_NEW on next send
+std::mutex          gQuicControlMutex;
+std::map<int, bool> gQuicControlSockets;
 
 struct CredentialsDeleter
 {
@@ -290,6 +296,67 @@ int quicClientHandshake(const int sd, const QuicTlsConfig& config)
       }
    }
    return error;
+}
+
+
+// ###### Configure QUIC control socket parameters ##########################
+bool configureQuicControlSocket(const int sd, const unsigned int idleTimeoutMs)
+{
+   if(idleTimeoutMs > 0) {
+      quic_transport_param param;
+      socklen_t            paramLength = sizeof(param);
+      std::memset(&param, 0, sizeof(param));
+      param.remote = 0;
+      if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_TRANSPORT_PARAM, &param, &paramLength) < 0) {
+         return false;
+      }
+      param.max_idle_timeout = static_cast<uint64_t>(idleTimeoutMs) * 1000ULL;
+      if(ext_setsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_TRANSPORT_PARAM, &param, paramLength) < 0) {
+         return false;
+      }
+   }
+   return true;
+}
+
+
+// ###### Register QUIC control socket ######################################
+void quicRegisterControlSocket(const int sd, const bool isClient)
+{
+   std::lock_guard<std::mutex> lock(gQuicControlMutex);
+   gQuicControlSockets[sd] = isClient;
+}
+
+
+// ###### Deregister QUIC control socket ####################################
+void quicDeregisterControlSocket(const int sd)
+{
+   std::lock_guard<std::mutex> lock(gQuicControlMutex);
+   gQuicControlSockets.erase(sd);
+}
+
+
+// ###### Check whether socket descriptor is a QUIC control socket ##########
+bool quicIsControlSocket(const int sd)
+{
+   std::lock_guard<std::mutex> lock(gQuicControlMutex);
+   return gQuicControlSockets.find(sd) != gQuicControlSockets.end();
+}
+
+
+// ###### Send control message over QUIC bidirectional stream 0 #############
+ssize_t quicSendControlMessage(const int sd, const void* buffer, const size_t length)
+{
+   uint32_t flags = 0;
+   {
+      std::lock_guard<std::mutex> lock(gQuicControlMutex);
+      const auto found = gQuicControlSockets.find(sd);
+      if((found != gQuicControlSockets.end()) && found->second) {
+         flags         = MSG_QUIC_STREAM_NEW;
+         found->second = false;
+      }
+   }
+   // Stream ID 0 = client-initiated bidirectional stream ((0 << 2) | 0)
+   return quic_sendmsg(sd, buffer, length, 0, flags);
 }
 
 #endif

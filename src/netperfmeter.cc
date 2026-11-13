@@ -98,6 +98,10 @@ static int              gPassiveControlTCP     = true;
 #if defined(HAVE_MPTCP)
 static int              gPassiveControlMPTCP   = false;
 #endif
+#if defined(HAVE_QUIC)
+static int              gPassiveControlQUIC    = true;
+static int              gControlSocketQUIC     = -1;
+#endif
 static int              gControlSocket         = -1;
 static int              gControlSocketTCP      = -1;
 #if defined(__OpenBSD__)
@@ -197,6 +201,7 @@ static void usage(const char* program, const int exitCode)
                 ARG("local_port") "\n"
                    ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-X") PIPE OPT("--no-control-over-sctp"))
                    ENTRY(OPT("-y") PIPE OPT("--control-over-tcp") PIPE OPT("-Y") PIPE OPT("--no-control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp") PIPE OPT("-W") PIPE OPT("--no-control-over-mptcp"))
+                   ENTRY(OPT("-z") PIPE OPT("--control-over-quic") PIPE OPT("-Z") PIPE OPT("--no-control-over-quic"))
                    ENTRY(OPT("-L") " " ARG("address[,address,...]") PIPE OPT("--local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-l") " " ARG("address[,address,...]") PIPE OPT("--control-local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-K") " " ARG("key_file") PIPE OPT("--tls-key") " " ARG("key_file"))
@@ -215,7 +220,7 @@ static void usage(const char* program, const int exitCode)
                    ENTRY(OPT("-!") PIPE OPT("--verbose"))
              << CMD(program) << " "
                 ARG("remote_endpoint:remote_port") "\n"
-                   ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-y") PIPE OPT("--control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp"))
+                   ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-y") PIPE OPT("--control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp") PIPE OPT("-z") PIPE OPT("--control-over-quic"))
                    ENTRY(OPT("-L") " " ARG("address[,address,...]") PIPE OPT("--local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-l") " " ARG("address[,address,...]") PIPE OPT("--control-local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-K") " " ARG("key_file") PIPE OPT("--tls-key") " " ARG("key_file"))
@@ -274,6 +279,8 @@ static bool handleGlobalParameters(int argc, char** argv)
       { "no-control-over-tcp",           no_argument,       0, 'Y'    },
       { "control-over-mptcp",            no_argument,       0, 'w'    },
       { "no-control-over-mptcp",         no_argument,       0, 'W'    },
+      { "control-over-quic",             no_argument,       0, 'z'    },
+      { "no-control-over-quic",          no_argument,       0, 'Z'    },
       { "local",                         required_argument, 0, 'L'    },
       { "controllocal",                  required_argument, 0, 'l'    },   // deprecated
       { "control-local",                 required_argument, 0, 'l'    },
@@ -320,7 +327,7 @@ static bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while((option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:I:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1) {
+   while((option = getopt_long_only(argc, argv, "xXyYwWzZL:l:6T:o:i:N:C:S:V:A:P:K:J:I:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1) {
       switch(option) {
          case 'x':
 #if defined(HAVE_SCTP)
@@ -365,6 +372,25 @@ static bool handleGlobalParameters(int argc, char** argv)
          case 'W':
 #if defined(HAVE_MPTCP)
             gPassiveControlMPTCP   = false;
+#endif
+          break;
+         case 'z':
+#if defined(HAVE_QUIC)
+            gActiveControlProtocol = IPPROTO_QUIC;
+            gPassiveControlQUIC    = true;
+#else
+            // TRANSLATORS: Error message when QUIC protocol support was disabled at compile time.
+            std::cerr << gettext("ERROR: QUIC support is not compiled in!") << "\n";
+            exit(1);
+#endif
+          break;
+         case 'Z':
+#if defined(HAVE_QUIC)
+            gPassiveControlQUIC    = false;
+#else
+            // TRANSLATORS: Error message when QUIC protocol support was disabled at compile time.
+            std::cerr << gettext("ERROR: QUIC support is not compiled in!") << "\n";
+            exit(1);
 #endif
           break;
          case 'L':
@@ -611,8 +637,11 @@ static bool handleGlobalParameters(int argc, char** argv)
        (!gPassiveControlSCTP) &&
 #endif
        (!gPassiveControlTCP)
+#if defined(HAVE_QUIC)
+       && (!gPassiveControlQUIC)
+#endif
      ) {
-      // TRANSLATORS: Error message when all control protocols (SCTP, TCP, MPTCP) are disabled.
+      // TRANSLATORS: Error message when all control protocols (SCTP, TCP, MPTCP, QUIC) are disabled.
       std::cerr << gettext("ERROR: At least one control channel protocol must be enabled!") << "\n";
       exit(1);
    }
@@ -1286,7 +1315,7 @@ static void addToPollFDs(pollfd* pollFDs, const int fd, nfds_t& n, int* index = 
 static bool mainLoop(const bool     isActiveMode,
                      const uint64_t stopAt)
 {
-   pollfd             fds[5 + gMessageReader.size()];
+   pollfd             fds[8 + gMessageReader.size()];
    nfds_t             n       = 0;
    int                tcpID   = -1;
 #if defined(__OpenBSD__)
@@ -1414,6 +1443,53 @@ static bool mainLoop(const bool     isActiveMode,
                }
             }
 #endif
+#if defined(HAVE_QUIC)
+            else if( (isActiveMode == false) &&
+                     (fds[controlID].fd == gControlSocketQUIC) ) {
+               const int newSD = ext_accept(gControlSocketQUIC, nullptr, 0);
+               if(newSD >= 0) {
+                  LOG_TRACE
+                  // TRANSLATORS: Log message on incoming QUIC control connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
+                  stdlog << formatText(gettext("Accept on QUIC control socket {} -> new control connection {}"), gControlSocketQUIC, newSD) << "\n";
+                  LOG_END
+
+                  uint8_t      sessionKey[64];
+                  unsigned int sessionKeyLength = sizeof(sessionKey);
+                  if(ext_getsockopt(newSD,
+                                    SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
+                                    &sessionKey, &sessionKeyLength) == 0) {
+                     QuicTlsConfig tlsConfig;
+                     tlsConfig.alpn             = ALPN_NETPERFMETER_CONTROL;
+                     tlsConfig.caFile           = gQUICCA;
+                     tlsConfig.certFile         = gQUICCertificate;
+                     tlsConfig.keyFile          = gQUICKey;
+                     tlsConfig.sessionKey       = sessionKey;
+                     tlsConfig.sessionKeyLength = sessionKeyLength;
+
+                     if(quicServerHandshake(newSD, tlsConfig) == 0) {
+                        quicRegisterControlSocket(newSD, false);
+                        gMessageReader.registerSocket(IPPROTO_QUIC, newSD);
+                     }
+                     else {
+                        ext_close(newSD);
+                     }
+                  }
+                  else {
+                     LOG_WARNING
+                     // TRANSLATORS: Warning when retrieving QUIC session ticket fails. {} is strerror() message.
+                     stdlog << formatText(gettext("getsockopt(QUIC_SOCKOPT_SESSION_TICKET): {}"), strerror(errno)) << "\n";
+                     LOG_END
+                     ext_close(newSD);
+                  }
+               }
+               else {
+                  LOG_ERROR
+                  // TRANSLATORS: Error message when accept() fails on QUIC control socket. Placeholders: {} 1: listening socket fd, 2: strerror() message.
+                  stdlog << formatText(gettext("Accept on QUIC control socket {} failed: {}!"), gControlSocketQUIC, strerror(errno)) << "\n";
+                  LOG_END
+               }
+            }
+#endif
             else {
                const bool controlOkay = handleNetPerfMeterControlMessage(
                                            &gMessageReader, fds[controlID].fd);
@@ -1424,6 +1500,9 @@ static bool mainLoop(const bool     isActiveMode,
                   // Make sure to deregister all flows belonging to this
                   // control connection!
                   handleControlAssocShutdown(fds[controlID].fd);
+#if defined(HAVE_QUIC)
+                  quicDeregisterControlSocket(fds[controlID].fd);
+#endif
                   gMessageReader.deregisterSocket(fds[controlID].fd);
                   ext_close(fds[controlID].fd);
                }
@@ -1650,7 +1729,11 @@ static void passiveMode(const uint16_t localPort)
       }
       else {
          if( (errno != EPROTONOSUPPORT) ||
-             (gPassiveControlTCP == false) ) {
+             ((gPassiveControlTCP == false)
+#if defined(HAVE_QUIC)
+              && (!gPassiveControlQUIC || (gQUICCertificate == nullptr) || (gQUICKey == nullptr))
+#endif
+             ) ) {
             LOG_FATAL
             // TRANSLATORS: Fatal error when binding SCTP control socket. Placeholders: {} 1: port number, 2: strerror() message.
             stdlog << formatText(gettext("Unable to create and bind SCTP control socket on port {}: {}!"),
@@ -1787,6 +1870,74 @@ static void passiveMode(const uint16_t localPort)
          gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP6);
       }
 #endif
+   }
+
+   // ====== Initialize QUIC control socket =================================
+#if defined(HAVE_QUIC)
+   if(gPassiveControlQUIC) {
+      if((gQUICCertificate != nullptr) && (gQUICKey != nullptr)) {
+         gControlSocketQUIC = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_QUIC,
+                                                  localPort + 1,
+                                                  gLocalControlAddresses,
+                                                  (const sockaddr_union*)&gLocalControlAddressArray,
+                                                  false, gBindV6Only);
+         if(gControlSocketQUIC >= 0) {
+            if(ext_setsockopt(gControlSocketQUIC, SOL_QUIC, QUIC_SOCKOPT_ALPN,
+                              ALPN_NETPERFMETER_CONTROL, strlen(ALPN_NETPERFMETER_CONTROL)) < 0) {
+               LOG_FATAL
+               // TRANSLATORS: Error setting QUIC Application-Layer Protocol Negotiation string. Placeholders: {} 1: socket fd, 2: strerror() message.
+               stdlog << formatText(gettext("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC control socket {}: {}!"),
+                                    gControlSocketQUIC, strerror(errno)) << "\n";
+               LOG_END_FATAL
+            }
+            configureQuicControlSocket(gControlSocketQUIC, gControlHBInterval * gControlHBAssocMaxRtx);
+            if(ext_listen(gControlSocketQUIC, 100) < 0) {
+               LOG_FATAL
+               // TRANSLATORS: Error putting QUIC control socket into listening mode. Placeholders: {} 1: socket descriptor, 2: strerror() message.
+               stdlog << formatText(gettext("Unable to enable listening on QUIC control socket {}: {}!"),
+                                    gControlSocketQUIC, strerror(errno)) << "\n";
+               LOG_END_FATAL
+            }
+            gMessageReader.registerSocket(IPPROTO_QUIC, gControlSocketQUIC);
+         }
+         else {
+            if( (errno != EPROTONOSUPPORT) ||
+                ((gPassiveControlTCP == false) && (gControlSocket < 0)) ) {
+               LOG_FATAL
+               // TRANSLATORS: Fatal error when binding QUIC control socket. Placeholders: {} 1: port number, 2: strerror() message.
+               stdlog << formatText(gettext("Unable to create and bind QUIC control socket on port {}: {}!"),
+                                    localPort + 1, strerror(errno)) << "\n";
+               LOG_END_FATAL
+            }
+            LOG_WARNING
+            // TRANSLATORS: Warning when QUIC control channel is unavailable on the host system. Placeholders: {} 1: strerror() message, 2: port number.
+            stdlog << formatText(gettext("QUIC is unavailable ({}); disabling QUIC control socket on port {}!"),
+                                 strerror(errno), localPort + 1) << "\n";
+            LOG_END
+         }
+      }
+      else {
+         LOG_INFO
+         // TRANSLATORS: Informational note when QUIC control listener is skipped because --tls-cert and --tls-key were not given. {} is port number.
+         stdlog << formatText(gettext("QUIC requires --tls-cert and --tls-key; disabling QUIC control socket on port {}!"),
+                              localPort + 1) << "\n";
+         LOG_END
+      }
+   }
+#endif
+
+   if((gControlSocket < 0) && (gControlSocketTCP < 0)
+#if defined(__OpenBSD__)
+      && (gControlSocketTCP6 < 0)
+#endif
+#if defined(HAVE_QUIC)
+      && (gControlSocketQUIC < 0)
+#endif
+     ) {
+      LOG_FATAL
+      // TRANSLATORS: Fatal error when no control channel socket could be initialized in passive mode.
+      stdlog << gettext("No control channel socket is available!") << "\n";
+      LOG_END_FATAL
    }
 
    // ====== Initialize data socket for each protocol =======================
@@ -2056,6 +2207,14 @@ static void passiveMode(const uint16_t localPort)
       }
 #endif
    }
+#if defined(HAVE_QUIC)
+   if(gControlSocketQUIC >= 0) {
+      if(controlProtocols.size() > 0) {
+         controlProtocols += "/";
+      }
+      controlProtocols += "QUIC";
+   }
+#endif
 #if defined(HAVE_SCTP)
    std::string dataProtocols1("SCTP/TCP/UDP");
 #else
@@ -2098,6 +2257,9 @@ static void passiveMode(const uint16_t localPort)
 #if defined(__OpenBSD__)
           << "- TCP6 Control = " << gControlSocketTCP6 << "\n"
 #endif
+#if defined(HAVE_QUIC)
+          << "- QUIC Control = " << gControlSocketQUIC << "\n"
+#endif
           << "- TCP Data     = " << gTCPSocket         << "\n"
 #if defined(__OpenBSD__)
           << "- TCP6 Data    = " << gTCP6Socket        << "\n"
@@ -2138,6 +2300,12 @@ static void passiveMode(const uint16_t localPort)
 
 
    // ====== Clean up =======================================================
+#if defined(HAVE_QUIC)
+   if(gControlSocketQUIC >= 0) {
+      gMessageReader.deregisterSocket(gControlSocketQUIC);
+      ext_close(gControlSocketQUIC);
+   }
+#endif
 #if defined(__OpenBSD__)
    if(gControlSocketTCP6 >= 0) {
       gMessageReader.deregisterSocket(gControlSocketTCP6);
@@ -2227,6 +2395,11 @@ static void activeMode(const char* remoteEndpoint)
          controlProtocol = "MPTCP";
        break;
 #endif
+#if defined(HAVE_QUIC)
+      case IPPROTO_QUIC:
+         controlProtocol = "QUIC";
+       break;
+#endif
    }
 
    LOG_INFO
@@ -2240,12 +2413,17 @@ static void activeMode(const char* remoteEndpoint)
    // TRANSLATORS: Active mode display label for remote control address.
    stdlog << "\n" << gettext("- Control Address = ");
    printAddress(stdlog, &controlAddress.sa, true);
-   // TRANSLATORS: Status indication while establishing control channel. {} is protocol name (SCTP, TCP, MPTCP).
+   // TRANSLATORS: Status indication while establishing control channel. {} is protocol name (SCTP, TCP, MPTCP, QUIC).
    stdlog << formatText(gettext(" - connecting via {} ..."), controlProtocol) << "\n";
    LOG_END
 
    // ====== Initialize control socket ======================================
-   gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, SOCK_STREAM, gActiveControlProtocol,
+   const int controlSocketType =
+#if defined(HAVE_QUIC)
+      (gActiveControlProtocol == IPPROTO_QUIC) ? SOCK_DGRAM :
+#endif
+      SOCK_STREAM;
+   gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, controlSocketType, gActiveControlProtocol,
                                         0, gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                         false, gBindV6Only);
    if(gControlSocket < 0) {
@@ -2284,6 +2462,27 @@ static void activeMode(const char* remoteEndpoint)
       }
       LOG_END_FATAL
    }
+#if defined(HAVE_QUIC)
+   if(gActiveControlProtocol == IPPROTO_QUIC) {
+      configureQuicControlSocket(gControlSocket, gControlHBInterval * gControlHBAssocMaxRtx);
+
+      QuicTlsConfig tlsConfig;
+      tlsConfig.alpn     = ALPN_NETPERFMETER_CONTROL;
+      tlsConfig.hostname = gQUICHostname;
+      tlsConfig.caFile   = gQUICCA;
+      tlsConfig.certFile = gQUICCertificate;
+      tlsConfig.keyFile  = gQUICKey;
+
+      if(quicClientHandshake(gControlSocket, tlsConfig) != 0) {
+         LOG_FATAL
+         // TRANSLATORS: Fatal error when QUIC TLS handshake fails on active control connection.
+         stdlog << gettext("Unable to complete QUIC handshake on control connection!") << "\n";
+         LOG_END_FATAL
+      }
+      quicRegisterControlSocket(gControlSocket, true);
+   }
+   else
+#endif
 #if defined(HAVE_SCTP)
    if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_paddrparams paddrparams;
@@ -2445,6 +2644,14 @@ static void activeMode(const char* remoteEndpoint)
       stdlog << gettext("Unable to stop measurement and download the results!") << "\n";
       LOG_END_FATAL
    }
+
+#if defined(HAVE_QUIC)
+   if(gActiveControlProtocol == IPPROTO_QUIC) {
+      quicDeregisterControlSocket(gControlSocket);
+   }
+#endif
+   gMessageReader.deregisterSocket(gControlSocket);
+   ext_close(gControlSocket);
 }
 
 

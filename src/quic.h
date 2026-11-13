@@ -37,6 +37,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <sys/types.h>
 
 struct QuicTlsConfig
 {
@@ -55,6 +56,12 @@ struct QuicTlsConfig
 
 int quicServerHandshake(int sd, const QuicTlsConfig& config);
 int quicClientHandshake(int sd, const QuicTlsConfig& config);
+
+bool configureQuicControlSocket(int sd, unsigned int idleTimeoutMs);
+void quicRegisterControlSocket(int sd, bool isClient);
+void quicDeregisterControlSocket(int sd);
+bool quicIsControlSocket(int sd);
+ssize_t quicSendControlMessage(int sd, const void* buffer, size_t length);
 
 #endif
 

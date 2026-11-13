@@ -41,6 +41,8 @@
 .br
 .Op Fl y | Fl \-control\:\-over\:\-tcp | Fl Y | Fl \-no\:\-control\:\-over\:\-tcp | Fl w | Fl \-control\:\-over\:\-mptcp | Fl W | Fl \-no\:\-control\:\-over\:\-mptcp
 .br
+.Op Fl z | Fl \-control\:\-over\:\-quic | Fl Z | Fl \-no\:\-control\:\-over\:\-quic
+.br
 .Op Fl L Ar address[\:,address,...] | Fl \-local Ar address[\:,address,...]
 .br
 .Op Fl l Ar address[\:,address,...] | Fl \-control\:\-local Ar address[\:,address,...]
@@ -73,7 +75,7 @@
 .Op Fl ! | Fl \-verbose
 .Nm netperfmeter Ar remote\_endpoint:remote\_port
 .br
-.Op Fl x | Fl \-control\:\-over\:\-sctp | Fl y | Fl \-control\:\-over\:\-tcp | Fl w | Fl \-control\:\-over\:\-mptcp
+.Op Fl x | Fl \-control\:\-over\:\-sctp | Fl y | Fl \-control\:\-over\:\-tcp | Fl w | Fl \-control\:\-over\:\-mptcp | Fl z | Fl \-control\:\-over\:\-quic
 .br
 .Op Fl L Ar address[\:,address,...] | Fl \-local Ar address[\:,address,...]
 .br
@@ -167,7 +169,7 @@ On the active side, this option uses SCTP for the control connection to the pass
 .It Fl X | Fl \-no\:\-control\:\-over\:\-sctp
 On the passive side, this option disables incoming control connections via SCTP.
 .It Fl y | Fl \-control\:\-over\:\-tcp
-On the passive side, this option enables accepting control connections via TCP (default). It enables TCP in addition to other protocols for the control transport. Note: By default, both \-\- SCTP and TCP \-\- are enabled on the passive side.
+On the passive side, this option enables accepting control connections via TCP (default). It enables TCP in addition to other protocols for the control transport. Note: By default, SCTP, TCP, and QUIC (when TLS certificate and key are provided) are enabled on the passive side.
 On the active side, this option uses TCP for the control connection to the passive side. This may be necessary for NAT traversal or due to restrictive firewalls.
 .It Fl Y | Fl \-no\:\-control\:\-over\:\-tcp
 On the passive side, this option disables incoming control connections via TCP. This implicitly also disables control connections over MPTCP.
@@ -176,11 +178,16 @@ On the passive side, this option enables accepting control connections via MPTCP
 On the active side, this option uses MPTCP for the control connection to the passive side.
 .It Fl W | Fl \-no\:\-control\:\-over\:\-mptcp
 On the passive side, this option disables incoming control connections via MPTCP. However, it does not deactivate TCP!
+.It Fl z | Fl \-control\:\-over\:\-quic
+On the passive side, this option enables accepting control connections via QUIC (default when \-\-tls\-cert and \-\-tls\-key are provided). It enables QUIC in addition to other protocols for the control transport on local\_port+1.
+On the active side, this option uses QUIC for the control connection to the passive side (using \-\-tls\-ca, \-\-tls\-hostname, and optionally \-\-tls\-cert and \-\-tls\-key).
+.It Fl Z | Fl \-no\:\-control\:\-over\:\-quic
+On the passive side, this option disables incoming control connections via QUIC.
 .It Fl L Ar address[\:,address,...] | Fl \-local Ar address[\:,address,...]
 Specifies address(es) of the local data endpoint. For TCP, UDP and DCCP, only the first address is used!
 On an active node, this option applies to the following flows, i.e. it must be set before specifying a flow!
 .It Fl l Ar address[\:,address,...] | Fl \-control\:\-local Ar address[\:,address,...]
-Specifies address(es) of the local control endpoint (SCTP or TCP). For TCP, only the first address is used!
+Specifies address(es) of the local control endpoint (SCTP, TCP, MPTCP, or QUIC). For TCP, MPTCP, and QUIC, only the first address is used!
 .It Fl K Ar key\_file | Fl \-tls\-key Ar key\_file
 Specifies the TLS private key file for QUIC authentication.
 On the passive side, this option is required for QUIC.
@@ -193,7 +200,7 @@ On the passive side, this option is required for QUIC, and the certificate must 
 On the active side, this option is optional and provides the client certificate for mutual TLS (mTLS) authentication (X.509 Extended Key Usage: TLS Web Client Authentication).
 .It Fl I Ar ca\_certificate\_file | Fl \-tls\-ca Ar ca\_certificate\_file
 Specifies the TLS root CA certificate file for QUIC authentication.
-On the active side, this option is required for QUIC to verify the passive side's server certificate.
+On the active side, this option is optional: when specified, the passive side's server certificate is verified against the given CA truststore (e.g. for private or self\-signed CAs); when omitted, the system CA truststore is used.
 On the passive side, this option is optional: when specified, the passive side requests and verifies a client certificate against the given CA truststore (enabling mutual TLS / mTLS authentication); when omitted, only server authentication is performed.
 .It Fl H Ar hostname | Fl \-tls\-hostname Ar hostname
 Specifies the TLS certificate hostname for QUIC authentication. It is used by the active side.
@@ -203,7 +210,7 @@ Sets the heartbeat interval (in ms) for the control connection. Minimum: 1000; M
 .It Fl \-control\:\-hbpathmaxrtx Ar count
 Sets the per-path heartbeat retransmission limit for the control connection. Minimum: 1; Maximum: 1000000; Default: 3.
 .It Fl \-control\:\-hbassocmaxrtx Ar count
-Sets the per-association heartbeat retransmission limit for the control connection. It only applied to control connections over SCTP. Minimum: 1; Maximum: 1000000; Default: 3.
+Sets the per-association heartbeat retransmission limit for the control connection (also scales the QUIC control idle timeout). Minimum: 1; Maximum: 1000000; Default: 6.
 .It Fl 6 | Fl \-v6only
 Use sockets with IPv6 only (by setting IPV6\_V6ONLY socket option).
 .It Fl \-display
@@ -367,6 +374,8 @@ At t=60s, start flow "Gamma" over the TCP connection (same parameters as flow "A
 At t=300s, stop the measurement.
 .It netperfmeter 172.31.33.2:9000 \-control\:\-over\:\-tcp \-tcp const2:const1000
 Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. The control connection uses TCP instead of SCTP.
+.It netperfmeter 172.31.33.2:9000 \-control\:\-over\:\-quic \-tls\-hostname my\-server.domain \-tls\-ca my\-ca.crt \-quic const2:const1000
+Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. Both the control connection and the data flow use QUIC.
 .It netperfmeter 172.31.33.2:9000 \-sctp const0:const0:uniform20,30:uniform900,1100
 SCTP traffic with some variation.
 .It netperfmeter 172.31.33.2:9000 \-udp const0\:const0\:const25\:const2500\:onoff=+pareto0.166667,\:1.5,\:+pareto0.166667,\:1.5,\:repeat

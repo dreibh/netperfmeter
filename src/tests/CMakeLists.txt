@@ -192,6 +192,8 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
          LIST(APPEND TEST_LABELS "no-${CMAKE_MATCH_1}")
       ELSEIF(ARG STREQUAL "--control-over-sctp")
          LIST(APPEND TEST_LABELS "control-sctp")
+      ELSEIF(ARG STREQUAL "--control-over-quic")
+         LIST(APPEND TEST_LABELS "control-quic")
       ENDIF()
    ENDFOREACH()
 
@@ -264,7 +266,7 @@ ADD_NETPERFMETER_FAIL_TEST(fail_no_args)
 
 # Unknown or malformed options must exit with code 1
 ADD_NETPERFMETER_FAIL_TEST(fail_invalid_option    --non-existent-option)
-ADD_NETPERFMETER_FAIL_TEST(fail_invalid_short_opt -Z)
+ADD_NETPERFMETER_FAIL_TEST(fail_invalid_short_opt -Q)
 
 
 #############################################################################
@@ -1673,6 +1675,33 @@ IF (HAVE_SCTP_FOR_TESTS)
       -sctp const10:const1000:const10:const1000
       -tcp  const10:const1000:const10:const1000
       -udp  const10:const1000:const10:const1000)
+ENDIF()
+
+
+# ====== 7. Control Channel Over QUIC =======================================
+# Control channel using QUIC with QUIC data flow over IPv4 and IPv6
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_ctrl_quic_bidi_ipv4
+   127.0.0.1 quic const10:const1000:const10:const1000 plain 3 --control-over-quic)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_ctrl_quic_bidi_ipv6
+   ::1       quic const10:const1000:const10:const1000 plain 3 --control-over-quic)
+
+# Control channel using QUIC with TCP data flow
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_ctrl_quic_bidi_ipv4
+   127.0.0.1 tcp  const10:const1000:const10:const1000 plain 3 --control-over-quic)
+
+# Control channel using QUIC with UDP data flow
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_ctrl_quic_bidi_ipv4
+   127.0.0.1 udp  const10:const1000:const10:const1000 plain 3 --control-over-quic)
+
+# 2 QUIC streams within 1 connection with control channel over QUIC
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2streams_ctrl_quic
+   127.0.0.1 quic const10:const1000:const10:const1000 plain 3
+   -quic const10:const500:const10:const500 --control-over-quic)
+
+IF (HAVE_SCTP_FOR_TESTS)
+   # Control channel using QUIC with SCTP data flow
+   ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ctrl_quic_bidi_ipv4
+      127.0.0.1 sctp const10:const1000:const10:const1000 plain 3 --control-over-quic)
 ENDIF()
 
 
