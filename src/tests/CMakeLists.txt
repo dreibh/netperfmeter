@@ -322,6 +322,31 @@ IF(WITH_PLOT_PROGRAMS)
 ENDIF()
 
 
+IF(TARGET combinesummaries AND TARGET netperfmeter)
+   GET_NEXT_TEST_PORT(PLOT_TEST_PORT)
+   SET(PLOT_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/../plot-netperfmeter-results.versioned")
+   IF(NOT EXISTS "${PLOT_SCRIPT}")
+      SET(PLOT_SCRIPT "${PROJECT_BINARY_DIR}/src/plot-netperfmeter-results.versioned")
+   ENDIF()
+
+   ADD_TEST(
+      NAME util_plot_netperfmeter_results
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_plot_netperfmeter_results.sh
+         "${PLOT_SCRIPT}"
+         $<TARGET_FILE:combinesummaries>
+         "${CMAKE_CURRENT_SOURCE_DIR}/.."
+         $<TARGET_FILE:netperfmeter>
+         ${PLOT_TEST_PORT}
+   )
+   SET_TESTS_PROPERTIES(util_plot_netperfmeter_results PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;script;utility;plot-netperfmeter-results"
+      TIMEOUT 45
+   )
+ENDIF()
+
+
 #############################################################################
 #### FLOW INTEGRATION TESTS (TCP & UDP)                                  ####
 #############################################################################
