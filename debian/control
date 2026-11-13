@@ -10,8 +10,10 @@ Build-Depends: cmake,
                ghostscript,
                graphicsmagick,
                libbz2-dev,
+               libpdf-api2-perl,
                libsctp-dev (>= 1.0.5),
-               pdf2svg
+               pdf2svg,
+               perl (>= 5.8.0)
 Standards-Version: 4.7.4
 Rules-Requires-Root: no
 
