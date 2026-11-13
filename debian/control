@@ -11,9 +11,12 @@ Build-Depends: cmake,
                graphicsmagick,
                libbz2-dev,
                liblzma-dev,
+               libpdf-api2-perl,
                libsctp-dev,
+               libsctp-dev (>= 1.0.5),
                libzstd-dev,
                pdf2svg,
+               perl (>= 5.8.0),
                zlib1g-dev
 Standards-Version: 4.7.4
 Rules-Requires-Root: no

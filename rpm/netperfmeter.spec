@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.14
+Version: 2.0.15~rc0
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -18,6 +18,8 @@ BuildRequires: GraphicsMagick
 BuildRequires: libzstd-devel
 BuildRequires: lksctp-tools-devel
 BuildRequires: mupdf
+BuildRequires: perl >= 5.8.0
+BuildRequires: perl-PDF-API2
 BuildRequires: valgrind-devel
 
 Requires: %{name}-common = %{version}-%{release}
@@ -73,6 +75,9 @@ for directory in %{_bindir} %{_datadir}/netperfmeter ; do
       {} +
 done
 # ===========================================================================
+
+%check
+%ctest
 
 %files
 %{_bindir}/combinesummaries

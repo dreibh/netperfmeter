@@ -484,11 +484,11 @@ sudo service netperfmeter-module-loader disable
 
   Make sure that the server name matches the information in the server certificate provided by the passive instance. TLS is verifying it, and the TLS handshake will fail (as intended) if it does not match!
 
-  In case of problems with TLS session establishment, `GNUTLS_DEBUG_LEVEL=<LEVEL>` can be set to let GnuTLS provide debugging information, e.g.:
+  Note: In case of problems with TLS session establishment, `GNUTLS_DEBUG_LEVEL=<LEVEL>` can be set to let GnuTLS provide debugging information, e.g.:
 
-  ```bash
-  GNUTLS_DEBUG_LEVEL=5 netperfmeter ...
-  ```
+    ```bash
+    GNUTLS_DEBUG_LEVEL=5 netperfmeter ...
+    ```
 
 * See [Wireshark](#-wireshark-dissector-for-netperfmeter-packets) for details on how to examine the NetPerfMeter QUIC traffic with Wireshark!
 

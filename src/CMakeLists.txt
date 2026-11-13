@@ -301,7 +301,6 @@ IF (WITH_PLOT_PROGRAMS)
            DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
            RENAME      pdfembedfonts)
 
-
    CONFIGURE_FILE(setpdfmetadata setpdfmetadata.versioned @ONLY)
    SET_PROPERTY(DIRECTORY APPEND PROPERTY ADDITIONAL_CLEAN_FILES setpdfmetadata.versioned)
    INSTALL(PROGRAMS    ${CMAKE_CURRENT_BINARY_DIR}/setpdfmetadata.versioned
