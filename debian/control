@@ -7,16 +7,18 @@ Vcs-Git: https://github.com/dreibh/netperfmeter.git
 Vcs-Browser: https://github.com/dreibh/netperfmeter
 Build-Depends: cmake,
                debhelper-compat (= 13),
+               gettext,
                ghostscript,
                graphicsmagick,
                libbz2-dev,
+               liblocale-gettext-perl,
                liblzma-dev,
                libpdf-api2-perl,
-               libsctp-dev,
                libsctp-dev (>= 1.0.5),
                libzstd-dev,
                pdf2svg,
                perl (>= 5.8.0),
+               qpdf,
                zlib1g-dev
 Standards-Version: 4.7.4
 Rules-Requires-Root: no
@@ -175,7 +177,9 @@ Description: Network Performance Meter (server service)
 
 Package: pdfproctools
 Architecture: all
-Depends: ghostscript,
+Depends: gettext-base,
+         ghostscript,
+         liblocale-gettext-perl,
          libpdf-api2-perl,
          perl (>= 5.8.0),
          qpdf,
@@ -195,7 +199,8 @@ Description: PDF Processing Tools
 Package: netperfmeter-plotting
 Architecture: all
 Recommends: netperfmeter-examples
-Depends: pdfproctools,
+Depends: gettext-base,
+         pdfproctools,
          r-base-core,
          r-cran-bit64,
          r-cran-data.table,

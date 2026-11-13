@@ -21,6 +21,7 @@ BuildRequires: libzstd-devel
 BuildRequires: lksctp-tools-devel
 BuildRequires: mupdf
 BuildRequires: perl >= 5.8.0
+BuildRequires: perl(Locale::gettext)
 BuildRequires: perl-PDF-API2
 BuildRequires: valgrind-devel
 
@@ -67,6 +68,7 @@ This package contains the measurement program.
 
 %install
 %cmake_install
+%find_lang %{name}
 
 # ====== Apply shebang fix for scripts ======================================
 for directory in %{_bindir} %{_datadir}/netperfmeter ; do
@@ -179,7 +181,7 @@ Wireshark network protocol analyser provides out-of-the-box support for
 analysing NetPerfMeter packet traffic.
 This package contains common NetPerfMeter files.
 
-%files common
+%files common -f %{name}.lang
 %dir %attr(0755, root, root) %{_datadir}/icons/hicolor
 %dir %attr(0755, root, root) %{_datadir}/icons/hicolor/*
 %dir %attr(0755, root, root) %{_datadir}/icons/hicolor/*/apps
@@ -268,8 +270,11 @@ This package sets up a service running a NetPerfMeter server instance.
 Summary: PDF Processing Tools
 Group: Applications/Internet
 BuildArch: noarch
+Requires: (gettext-envsubst or gettext)
+Requires: (gettext-runtime or gettext)
 Requires: ghostscript
 Requires: perl >= 5.8.0
+Requires: perl(Locale::gettext)
 Requires: perl-PDF-API2
 Requires: qpdf
 
@@ -296,7 +301,10 @@ Summary: Network Performance Meter (plotting program)
 Group: Applications/Internet
 BuildArch: noarch
 Requires: %{name} = %{version}-%{release}
+Requires: %{name}-common = %{version}-%{release}
 Requires: %{name}-pdfproctools = %{version}-%{release}
+Requires: (gettext-envsubst or gettext)
+Requires: (gettext-runtime or gettext)
 Requires: R-bit64
 Requires: R-core
 Requires: R-data.table
