@@ -14,7 +14,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -29,11 +29,19 @@
 
 #include <cctype>
 #include <chrono>
+#include <clocale>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <format>
 #include <getopt.h>
 #include <iostream>
+
+#if defined(ENABLE_NLS)
+#include <libintl.h>
+#else
+#define gettext(s) (s)
+#endif
 
 #if defined(HAVE_LIBIBERTY)
 #include <libiberty.h>
@@ -48,9 +56,14 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 
 // ###### Modern C++20 string formatting ###################################
 template<typename... Args>
-inline std::string formatText(const std::string_view fmt, Args&&... args)
+inline std::string formatText(const std::string_view fmt, const Args&... args)
 {
-   return std::vformat(fmt, std::make_format_args(args...));
+   try {
+      return std::vformat(fmt, std::make_format_args(args...));
+   }
+   catch(const std::format_error&) {
+      return std::string(fmt);
+   }
 }
 
 
@@ -58,7 +71,7 @@ inline std::string formatText(const std::string_view fmt, Args&&... args)
 [[ noreturn ]] static void version()
 {
    std::cerr << "GetAbsTime" << " " << GETABSTIME_VERSION << "\n";
-   exit(0);
+   std::exit(0);
 }
 
 
@@ -78,23 +91,28 @@ static void usage(const char* program, const int exitCode)
    const std::string manpage(std::string("\x1b[1m") +
                              std::filesystem::path(program).stem().string() +
                              std::string("\x1b[0m"));
-   const std::string homepage(std::string("[\x1b[1m\x1b]8;;") +
+   const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
                               std::string(PROJECT_HOMEPAGE_URL) +
                               "\a" + std::string(PROJECT_HOMEPAGE_URL) + "\a" +
-                              std::string("\x1b]8;;\a\x1b[0m]"));
-   const std::string repository(std::string("[\x1b[1m\x1b]8;;") +
+                              std::string("\x1b]8;;\a\x1b[0m"));
+   const std::string repository(std::string("\x1b[1m\x1b]8;;") +
                                 std::string(PROJECT_SOURCE_URL) +
                                 "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
-                                std::string("\x1b]8;;\a\x1b[0m]"));
+                                std::string("\x1b]8;;\a\x1b[0m"));
 
-   std::cerr << HEADER("Usage:") << "\n"
+   // TRANSLATORS: Command-line syntax message prefix:
+   // "Usage: <program> [options]".
+   std::cerr << HEADER(gettext("Usage:")) << "\n"
              << CMD(program) << "\n"
              << CMD(program) << "\n"
                    ENTRY(OPT("-h") PIPE OPT("--help"))
              << CMD(program) << "\n"
                    ENTRY(OPT("-v") PIPE OPT("--version"))
              << "\n"
-             << formatText("For further information, see the man page for {}, read the documentation at {}, examine the source code at {}, or consult your favourite LLM.",
+             // TRANSLATORS: Informational message at the end of usage:
+             // "For further information, see the man page for <manpage>, read the documentation at [<url>], examine the source code at [<url>], or consult your favourite LLM.".
+             // Placeholders: {} 1: manpage, 2: homepage URL, 3: repository URL.
+             << formatText(gettext("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM."),
                            manpage, homepage, repository) << "\n";
    std::exit(exitCode);
 }
@@ -114,6 +132,33 @@ static unsigned long long getMicroTime()
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
+   // ====== Initialise locale support ======================================
+   if(std::setlocale(LC_ALL, "") == nullptr) {
+      std::setlocale(LC_ALL, "C.UTF-8");
+   }
+   std::setlocale(LC_NUMERIC, "C");   // Use "." for fractional numbers!
+
+   // ====== Initialise i18n support ========================================
+#if defined(ENABLE_NLS)
+#if !defined(_WIN32)
+   const char* textdomaindir     = std::getenv("TEXTDOMAINDIR");
+#else
+   char*       textdomaindir     = nullptr;
+   size_t      textdomaindirsize = 0;
+   _dupenv_s(&textdomaindir, &textdomaindirsize, "TEXTDOMAINDIR");
+#endif
+   bindtextdomain("netperfmeter",
+                  ( ((textdomaindir) && (textdomaindir[0] != 0x00)) ?
+                       textdomaindir : PROJECT_LOCALEDIR ));
+#if defined(_WIN32)
+   if(textdomaindir) {
+       free(textdomaindir);
+   }
+#endif
+   bind_textdomain_codeset("netperfmeter", "UTF-8");
+   textdomain("netperfmeter");
+#endif
+
    // ====== Handle command-line arguments ==================================
    const static struct option long_options[] = {
       { "help",    no_argument, 0, 'h' },
@@ -144,7 +189,8 @@ int main(int argc, char** argv)
       }
    }
    if(optind < argc) {
-      std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
+      // TRANSLATORS: Error message when an unexpected positional argument or invalid option is given. {} is the argument.
+      std::cerr << formatText(gettext("ERROR: Invalid option {}!"), argv[optind]) << "\n";
       usage(argv[0], 1);
    }
 

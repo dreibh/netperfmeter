@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <clocale>
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
@@ -38,6 +39,12 @@
 #include <string_view>
 #include <getopt.h>
 #include <unistd.h>
+
+#if defined(ENABLE_NLS)
+#include <libintl.h>
+#else
+#define gettext(s) (s)
+#endif
 
 #if defined(HAVE_LIBIBERTY)
 #include <libiberty.h>
@@ -194,16 +201,18 @@ static void usage(const char* program, const int exitCode)
    const std::string manpage(std::string("\x1b[1m") +
                              std::filesystem::path(program).stem().string() +
                              std::string("\x1b[0m"));
-   const std::string homepage(std::string("[\x1b[1m\x1b]8;;") +
+   const std::string homepage(std::string("\x1b[1m\x1b]8;;") +
                               std::string(PROJECT_HOMEPAGE_URL) +
                               "\a" + std::string(PROJECT_HOMEPAGE_URL) + "\a" +
-                              std::string("\x1b]8;;\a\x1b[0m]"));
-   const std::string repository(std::string("[\x1b[1m\x1b]8;;") +
+                              std::string("\x1b]8;;\a\x1b[0m"));
+   const std::string repository(std::string("\x1b[1m\x1b]8;;") +
                                 std::string(PROJECT_SOURCE_URL) +
                                 "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
-                                std::string("\x1b]8;;\a\x1b[0m]"));
+                                std::string("\x1b]8;;\a\x1b[0m"));
 
-   std::cerr << HEADER("Usage:") << "\n"
+   // TRANSLATORS: Command-line syntax message prefix:
+   // "Usage: <program> [options]".
+   std::cerr << HEADER(gettext("Usage:")) << "\n"
              << CMD(program) << " "
                 ARG("output_file") "\n"
                    ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
@@ -216,7 +225,10 @@ static void usage(const char* program, const int exitCode)
              << CMD(program) << "\n"
                    ENTRY(OPT("-v") PIPE OPT("--version"))
              << "\n"
-             << formatText("For further information, see the man page for {}, read the documentation at {}, examine the source code at {}, or consult your favourite LLM.",
+             // TRANSLATORS: Informational message at the end of usage:
+             // "For further information, see the man page for <manpage>, read the documentation at [<url>], examine the source code at [<url>], or consult your favourite LLM.".
+             // Placeholders: {} 1: manpage, 2: homepage URL, 3: repository URL.
+             << formatText(gettext("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM."),
                            manpage, homepage, repository) << "\n";
    std::exit(exitCode);
 }
@@ -226,6 +238,33 @@ static void usage(const char* program, const int exitCode)
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
+   // ====== Initialise locale support ======================================
+   if(std::setlocale(LC_ALL, "") == nullptr) {
+      std::setlocale(LC_ALL, "C.UTF-8");
+   }
+   std::setlocale(LC_NUMERIC, "C");   // Use "." for fractional numbers!
+
+   // ====== Initialise i18n support ========================================
+#if defined(ENABLE_NLS)
+#if !defined(_WIN32)
+   const char* textdomaindir     = std::getenv("TEXTDOMAINDIR");
+#else
+   char*       textdomaindir     = nullptr;
+   size_t      textdomaindirsize = 0;
+   _dupenv_s(&textdomaindir, &textdomaindirsize, "TEXTDOMAINDIR");
+#endif
+   bindtextdomain("netperfmeter",
+                  ( ((textdomaindir) && (textdomaindir[0] != 0x00)) ?
+                       textdomaindir : PROJECT_LOCALEDIR ));
+#if defined(_WIN32)
+   if(textdomaindir) {
+       free(textdomaindir);
+   }
+#endif
+   bind_textdomain_codeset("netperfmeter", "UTF-8");
+   textdomain("netperfmeter");
+#endif
+
    bool        quietMode       = false;
    bool        withLineNumbers = false;
    int         explicitLevel   = -1;
@@ -286,12 +325,14 @@ int main(int argc, char** argv)
    if(optind < argc) {
       varNames = argv[optind++];
       if(!checkColumns(varNames)) {
-         std::cerr << "ERROR: Invalid quotation in variable names string!\n";
+         // TRANSLATORS: Error message when variable_names contains unbalanced quotation marks.
+         std::cerr << gettext("ERROR: Invalid quotation in variable names string!") << "\n";
          std::exit(1);
       }
    }
    if(optind < argc) {
-      std::cerr << "ERROR: Invalid option " << argv[optind] << "!\n";
+      // TRANSLATORS: Error message when an unexpected positional argument or invalid option is given. {} is the argument.
+      std::cerr << formatText(gettext("ERROR: Invalid option {}!"), argv[optind]) << "\n";
       usage(argv[0], 1);
    }
 
@@ -300,14 +341,18 @@ int main(int argc, char** argv)
    unsigned int compressionLevel = 0;
    if(explicitLevel >= 0) {
       if(!isValidCompressionLevel(outputFileFormat, explicitLevel)) {
-         std::cerr << "ERROR: Compression level " << explicitLevel
-                   << " is invalid for format " << getFormatName(outputFileFormat) << "!\n";
+         // TRANSLATORS: Error message when requested compression level is invalid for the output format. Placeholders: {} 1: compression level, 2: format name.
+         std::cerr << formatText(gettext("ERROR: Compression level {} is invalid for format {}!"),
+                                 explicitLevel, getFormatName(outputFileFormat)) << "\n";
          if(outputFileFormat == FileFormat::Plain) {
-            std::cerr << "Compression level for Plain format must be 0.\n";
+            // TRANSLATORS: Hint that Plain (uncompressed) output only accepts compression level 0.
+            std::cerr << gettext("Compression level for Plain format must be 0.") << "\n";
          }
          else {
-            std::cerr << "Allowed range: " << getMinCompressionLevel(outputFileFormat)
-                      << " to " << getMaxCompressionLevel(outputFileFormat) << "\n";
+            // TRANSLATORS: Allowed compression level range hint. Placeholders: {} 1: minimum level, 2: maximum level.
+            std::cerr << formatText(gettext("Allowed range: {} to {}"),
+                                    getMinCompressionLevel(outputFileFormat),
+                                    getMaxCompressionLevel(outputFileFormat)) << "\n";
          }
          std::exit(1);
       }
@@ -320,10 +365,17 @@ int main(int argc, char** argv)
    // ====== Print information ==============================================
    if(!quietMode) {
       std::cout << "CombineSummaries " << COMBINESUMMARIES_VERSION << "\n"
-                << "* Output Format:     " << getFormatName(outputFileFormat) << "\n"
-                << "* Compression Level: " << compressionLevel << "\n"
-                << "* Separator:         \"" << separator << "\"\n"
-                << "* Line Numbers:      " << (withLineNumbers ? "yes" : "no") << "\n"
+                // TRANSLATORS: Status label for detected output file compression format. {} is format name.
+                << formatText(gettext("* Output Format:     {}"), getFormatName(outputFileFormat)) << "\n"
+                // TRANSLATORS: Status label for selected output compression level. {} is level number.
+                << formatText(gettext("* Compression Level: {}"), compressionLevel) << "\n"
+                // TRANSLATORS: Status label for output column separator. {} is separator string.
+                << formatText(gettext("* Separator:         \"{}\""), separator) << "\n"
+                // TRANSLATORS: Status label for output line numbering ("yes" or "no"). {} is "yes" or "no".
+                << formatText(gettext("* Line Numbers:      {}"),
+                              // TRANSLATORS: Boolean state label ("yes").
+                              // TRANSLATORS: Boolean state label ("no").
+                              withLineNumbers ? gettext("yes") : gettext("no")) << "\n"
                 << "\n";
    }
 
@@ -359,13 +411,15 @@ int main(int argc, char** argv)
                varValues = varValues.substr(1, varValues.size() - 2);
             }
             if(!checkColumns(varValues)) {
-               std::cerr << "ERROR: Invalid quotation in variable values string!\n";
+               // TRANSLATORS: Error message when --values contains unbalanced quotation marks.
+               std::cerr << gettext("ERROR: Invalid quotation in variable values string!") << "\n";
                std::exit(1);
             }
          }
          else if(line.starts_with("--input=")) {
             if(varValues.empty()) {
-               std::cerr << "ERROR: No values given (parameter --values=...)!\n";
+               // TRANSLATORS: Error message when --input is specified without a preceding --values setting.
+               std::cerr << gettext("ERROR: No values given (parameter --values=...)!") << "\n";
                std::exit(1);
             }
             const std::string inputFilePath = simulationsDirectory + "/" + std::string(line.substr(8));
@@ -381,7 +435,8 @@ int main(int argc, char** argv)
                varNames = varNames.substr(1, varNames.size() - 2);
             }
             if(!checkColumns(varNames)) {
-               std::cerr << "ERROR: Invalid quotation in variable names string!\n";
+               // TRANSLATORS: Error message when variable_names contains unbalanced quotation marks.
+               std::cerr << gettext("ERROR: Invalid quotation in variable names string!") << "\n";
                std::exit(1);
             }
          }
@@ -389,7 +444,8 @@ int main(int argc, char** argv)
             simulationsDirectory = line.substr(23);
          }
          else {
-            std::cerr << "ERROR: Invalid command!\n";
+            // TRANSLATORS: Error message when an unrecognized command is read from standard input.
+            std::cerr << gettext("ERROR: Invalid command!") << "\n";
             std::exit(1);
          }
 
@@ -404,7 +460,8 @@ int main(int argc, char** argv)
       outputFile.finish(true, &in, &out);
 
       if(!quietMode) {
-         std::cout << "\nWrote " << outputLineNumber << " lines";
+         // TRANSLATORS: Summary message showing number of written output lines. {} is the line count.
+         std::cout << "\n" << formatText(gettext("Wrote {} lines"), outputLineNumber);
          if(in > 0) {
             std::cout << " (" << in << " -> " << out << " - "
                       << (static_cast<double>(out) * 100.0 / static_cast<double>(in)) << "%)";

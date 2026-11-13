@@ -14,12 +14,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
-
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
-
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -29,6 +29,7 @@
 
 #include <cctype>
 #include <chrono>
+#include <clocale>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -39,6 +40,12 @@
 #include <getopt.h>
 #include <iostream>
 #include <unistd.h>
+
+#if defined(ENABLE_NLS)
+#include <libintl.h>
+#else
+#define gettext(s) (s)
+#endif
 
 #if defined(HAVE_LIBIBERTY)
 #include <libiberty.h>
@@ -76,9 +83,14 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 
 // ###### Modern C++20 string formatting ###################################
 template<typename... Args>
-inline std::string formatText(const std::string_view fmt, Args&&... args)
+inline std::string formatText(const std::string_view fmt, const Args&... args)
 {
-   return std::vformat(fmt, std::make_format_args(args...));
+   try {
+      return std::vformat(fmt, std::make_format_args(args...));
+   }
+   catch(const std::format_error&) {
+      return std::string(fmt);
+   }
 }
 
 
@@ -86,7 +98,7 @@ inline std::string formatText(const std::string_view fmt, Args&&... args)
 [[ noreturn ]] static void version()
 {
    std::cerr << "RuntimeEstimator" << " " << RUNTIMEESTIMATOR_VERSION << "\n";
-   exit(0);
+   std::exit(0);
 }
 
 
@@ -115,7 +127,9 @@ static void usage(const char* program, const int exitCode)
                                 "\a" + std::string(PROJECT_SOURCE_URL) + "\a" +
                                 std::string("\x1b]8;;\a\x1b[0m]"));
 
-   std::cerr << HEADER("Usage:") << "\n"
+   // TRANSLATORS: Command-line syntax message prefix:
+   // "Usage: <program> [options]".
+   std::cerr << HEADER(gettext("Usage:")) << "\n"
              << CMD(program) << " "
                 ARG("start_file") " " ARG("total_runs") " " ARG("current_run") "\n"
              << CMD(program) << "\n"
@@ -123,7 +137,10 @@ static void usage(const char* program, const int exitCode)
              << CMD(program) << "\n"
                    ENTRY(OPT("-v") PIPE OPT("--version"))
              << "\n"
-             << formatText("For further information, see the man page for {}, read the documentation at {}, examine the source code at {}, or consult your favourite LLM.",
+             // TRANSLATORS: Informational message at the end of usage:
+             // "For further information, see the man page for <manpage>, read the documentation at [<url>], examine the source code at [<url>], or consult your favourite LLM.".
+             // Placeholders: {} 1: manpage, 2: homepage URL, 3: repository URL.
+             << formatText(gettext("For further information, see the man page for {}, read the documentation at [{}], examine the source code at [{}], or consult your favourite LLM."),
                            manpage, homepage, repository) << "\n";
    std::exit(exitCode);
 }
@@ -133,6 +150,33 @@ static void usage(const char* program, const int exitCode)
 // ###### Main program ######################################################
 int main(int argc, char** argv)
 {
+   // ====== Initialise locale support ======================================
+   if(std::setlocale(LC_ALL, "") == nullptr) {
+      std::setlocale(LC_ALL, "C.UTF-8");
+   }
+   std::setlocale(LC_NUMERIC, "C");   // Use "." for fractional numbers!
+
+   // ====== Initialise i18n support ========================================
+#if defined(ENABLE_NLS)
+#if !defined(_WIN32)
+   const char* textdomaindir     = std::getenv("TEXTDOMAINDIR");
+#else
+   char*       textdomaindir     = nullptr;
+   size_t      textdomaindirsize = 0;
+   _dupenv_s(&textdomaindir, &textdomaindirsize, "TEXTDOMAINDIR");
+#endif
+   bindtextdomain("netperfmeter",
+                  ( ((textdomaindir) && (textdomaindir[0] != 0x00)) ?
+                       textdomaindir : PROJECT_LOCALEDIR ));
+#if defined(_WIN32)
+   if(textdomaindir) {
+       free(textdomaindir);
+   }
+#endif
+   bind_textdomain_codeset("netperfmeter", "UTF-8");
+   textdomain("netperfmeter");
+#endif
+
    // ====== Handle command-line arguments ==================================
    const static struct option long_options[] = {
       { "help",    no_argument, 0, 'h' },
@@ -176,29 +220,33 @@ int main(int argc, char** argv)
 
    value = strtol(totalRunsStr, &endptr, 10);
    if( (endptr == totalRunsStr) || (*endptr != 0x00) || (value < 1) ) {
-      std::cerr << "ERROR: Invalid total runs parameter (must be >= 1)!\n";
-      exit(1);
+      // TRANSLATORS: Error message when total_runs argument is invalid or less than 1.
+      std::cerr << gettext("ERROR: Invalid total runs parameter (must be >= 1)!") << "\n";
+      std::exit(1);
    }
    const unsigned int totalRuns = (unsigned int)value;
 
    value = strtol(currentRunStr, &endptr, 10);
    if( (endptr == currentRunStr) || (*endptr != 0x00) || (value < 0) ) {
-      std::cerr << "ERROR: Invalid current run parameter (must be >= 0)!\n";
-      exit(1);
+      // TRANSLATORS: Error message when current_run argument is invalid or negative.
+      std::cerr << gettext("ERROR: Invalid current run parameter (must be >= 0)!") << "\n";
+      std::exit(1);
    }
    const unsigned int currentRun = (unsigned int)value;
 
    if(currentRun > totalRuns) {
-      std::cerr << "ERROR: Current run must be less or equal to total runs!\n";
-      exit(1);
+      // TRANSLATORS: Error message when current_run exceeds total_runs.
+      std::cerr << gettext("ERROR: Current run must be less or equal to total runs!") << "\n";
+      std::exit(1);
    }
 
    // ====== Initialise (Run 0) =============================================
    if(currentRun == 0) {
       std::ofstream stream(startFileName, std::ios::binary | std::ios::trunc);
       if(!stream.is_open()) {
-         std::cerr << "ERROR: Unable to create file <" << startFileName << ">!\n";
-         exit(1);
+         // TRANSLATORS: Error message when the start timestamp file cannot be created. {} is the file path.
+         std::cerr << formatText(gettext("ERROR: Unable to create file <{}>!"), startFileName) << "\n";
+         std::exit(1);
       }
       const std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
       const uint64_t nowMicroseconds = static_cast<uint64_t>(
@@ -206,23 +254,29 @@ int main(int argc, char** argv)
       );
       const uint64_t nowToWrite = htobe64(nowMicroseconds);
       if(!stream.write(reinterpret_cast<const char*>(&nowToWrite), sizeof(nowToWrite))) {
-         std::cerr << "ERROR: Unable to write timestamp to file <" << startFileName << ">!\n";
-         exit(1);
+         // TRANSLATORS: Error message when writing the start timestamp fails. {} is the file path.
+         std::cerr << formatText(gettext("ERROR: Unable to write timestamp to file <{}>!"), startFileName) << "\n";
+         std::exit(1);
       }
-      printf("\x1b[34m##### ESTIMATION: - [0 of %u - 0.00%%]\x1b[0m\n", totalRuns);
+      // TRANSLATORS: Runtime estimation status line on initial run 0. {} is total_runs.
+      std::cout << "\x1b[34m##### "
+                << formatText(gettext("ESTIMATION: - [0 of {} - 0.00%]"), totalRuns)
+                << "\x1b[0m\n";
    }
 
    // ====== Estimate runtime (Run > 0) =====================================
    else {
       std::ifstream stream(startFileName, std::ios::binary);
       if(!stream.is_open()) {
-         std::cerr << "ERROR: Unable to open file <" << startFileName << ">!\n";
-         exit(1);
+         // TRANSLATORS: Error message when the start timestamp file cannot be opened. {} is the file path.
+         std::cerr << formatText(gettext("ERROR: Unable to open file <{}>!"), startFileName) << "\n";
+         std::exit(1);
       }
       uint64_t timeStampRead;
       if(!stream.read(reinterpret_cast<char*>(&timeStampRead), sizeof(timeStampRead))) {
-         std::cerr << "ERROR: Unable to read timestamp from file <" << startFileName << ">!\n";
-         exit(1);
+         // TRANSLATORS: Error message when reading the start timestamp fails. {} is the file path.
+         std::cerr << formatText(gettext("ERROR: Unable to read timestamp from file <{}>!"), startFileName) << "\n";
+         std::exit(1);
       }
       const uint64_t startTimeStamp = be64toh(timeStampRead);
 
@@ -250,7 +304,7 @@ int main(int argc, char** argv)
       const struct tm*  timeptr   = std::localtime(&timeStamp);
 
       char str[64];
-      std::strftime(str, sizeof(str), "ESTIMATION: %d-%b-%Y %H:%M:%S", timeptr);
+      std::strftime(str, sizeof(str), "%d-%b-%Y %H:%M:%S", timeptr);
 
       const uint64_t estimatedEndTimeUs = static_cast<uint64_t>(
          std::chrono::duration_cast<std::chrono::microseconds>(
@@ -259,10 +313,16 @@ int main(int argc, char** argv)
       const double remainingMinutes =
          std::chrono::duration_cast<std::chrono::duration<double, std::ratio<60>>>(estimatedRuntime).count();
 
-      printf("\x1b[34m##### %s.%04u (in %1.2f minutes)  [%u of %u - %1.2f%%]\x1b[0m\n",
-             str, static_cast<unsigned int>((estimatedEndTimeUs % 1000000ULL) / 100ULL),
-             remainingMinutes,
-             currentRun, totalRuns, (100.0 * currentRun) / (double)totalRuns);
+      // TRANSLATORS: Runtime estimation status line. Placeholders: {} 1: date/time string, 2: sub-second fraction (4 digits), 3: remaining minutes, 4: current run, 5: total runs, 6: percentage complete.
+      std::cout << "\x1b[34m##### "
+                << formatText(gettext("ESTIMATION: {}.{:04} (in {:.2f} minutes)  [{} of {} - {:.2f}%]"),
+                              str,
+                              static_cast<unsigned int>((estimatedEndTimeUs % 1000000ULL) / 100ULL),
+                              remainingMinutes,
+                              currentRun,
+                              totalRuns,
+                              (100.0 * currentRun) / static_cast<double>(totalRuns))
+                << "\x1b[0m\n";
    }
 
    return 0;
