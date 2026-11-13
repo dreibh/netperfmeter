@@ -62,16 +62,22 @@ ENDFUNCTION()
 
 
 # ###### Helper for expected failures (expected return code: non-zero) ######
-FUNCTION(ADD_NETPERFMETER_FAIL_TEST TEST_NAME)
+FUNCTION(ADD_PROGRAM_FAIL_TEST TEST_NAME TARGET_NAME)
    ADD_TEST(
       NAME ${TEST_NAME}
-      COMMAND $<TARGET_FILE:netperfmeter> ${ARGN}
+      COMMAND $<TARGET_FILE:${TARGET_NAME}> ${ARGN}
    )
    SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
       WILL_FAIL TRUE
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
-      LABELS "negative;error;netperfmeter"
+      LABELS "negative;error;${TARGET_NAME}"
    )
+ENDFUNCTION()
+
+
+# ###### Backward-compatible wrapper for NetPerfMeter failure tests #########
+FUNCTION(ADD_NETPERFMETER_FAIL_TEST TEST_NAME)
+   ADD_PROGRAM_FAIL_TEST(${TEST_NAME} netperfmeter ${ARGN})
 ENDFUNCTION()
 
 
@@ -259,6 +265,61 @@ ADD_NETPERFMETER_FAIL_TEST(fail_no_args)
 # Unknown or malformed options must exit with code 1
 ADD_NETPERFMETER_FAIL_TEST(fail_invalid_option    --non-existent-option)
 ADD_NETPERFMETER_FAIL_TEST(fail_invalid_short_opt -Z)
+
+
+#############################################################################
+#### UTILITY TOOL TESTS                                                  ####
+#############################################################################
+
+IF(TARGET getabstime)
+   ADD_TEST(
+      NAME util_getabstime_timestamp
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_getabstime.sh
+         $<TARGET_FILE:getabstime>
+   )
+   SET_TESTS_PROPERTIES(util_getabstime_timestamp PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;utility;getabstime"
+      TIMEOUT 15
+   )
+ENDIF()
+
+IF(WITH_PLOT_PROGRAMS)
+   SET(PDFEMBEDFONTS_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/../pdfembedfonts.versioned")
+   IF(NOT EXISTS "${PDFEMBEDFONTS_SCRIPT}")
+      SET(PDFEMBEDFONTS_SCRIPT "${PROJECT_BINARY_DIR}/src/pdfembedfonts.versioned")
+   ENDIF()
+
+   ADD_TEST(
+      NAME util_pdfembedfonts_embed
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_pdfembedfonts.sh
+         "${PDFEMBEDFONTS_SCRIPT}"
+   )
+   SET_TESTS_PROPERTIES(util_pdfembedfonts_embed PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;script;utility;pdfembedfonts"
+      TIMEOUT 30
+   )
+
+   SET(SETPDFMETADATA_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/../setpdfmetadata.versioned")
+   IF(NOT EXISTS "${SETPDFMETADATA_SCRIPT}")
+      SET(SETPDFMETADATA_SCRIPT "${PROJECT_BINARY_DIR}/src/setpdfmetadata.versioned")
+   ENDIF()
+
+   ADD_TEST(
+      NAME util_setpdfmetadata_update
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_setpdfmetadata.sh
+         "${SETPDFMETADATA_SCRIPT}"
+   )
+   SET_TESTS_PROPERTIES(util_setpdfmetadata_update PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;script;utility;setpdfmetadata"
+      TIMEOUT 15
+   )
+ENDIF()
 
 
 #############################################################################
