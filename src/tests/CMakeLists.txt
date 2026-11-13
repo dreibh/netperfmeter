@@ -271,6 +271,34 @@ ADD_NETPERFMETER_FAIL_TEST(fail_invalid_short_opt -Z)
 #### UTILITY TOOL TESTS                                                  ####
 #############################################################################
 
+IF(TARGET createsummary)
+   ADD_TEST(
+      NAME util_createsummary_summarize
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_createsummary.sh
+         $<TARGET_FILE:createsummary>
+   )
+   SET_TESTS_PROPERTIES(util_createsummary_summarize PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;utility;createsummary"
+      TIMEOUT 15
+   )
+ENDIF()
+
+IF(TARGET combinesummaries)
+   ADD_TEST(
+      NAME util_combinesummaries_combine
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_combinesummaries.sh
+         $<TARGET_FILE:combinesummaries>
+   )
+   SET_TESTS_PROPERTIES(util_combinesummaries_combine PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;utility;combinesummaries"
+      TIMEOUT 15
+   )
+ENDIF()
+
 IF(TARGET extractvectors)
    ADD_TEST(
       NAME util_extractvectors_extract
