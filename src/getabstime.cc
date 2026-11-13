@@ -152,7 +152,7 @@ int main(int argc, char** argv)
    size_t      textdomaindirsize = 0;
    _dupenv_s(&textdomaindir, &textdomaindirsize, "TEXTDOMAINDIR");
 #endif
-   bindtextdomain("netperfmeter",
+   bindtextdomain("getabstime",
                   ( ((textdomaindir) && (textdomaindir[0] != 0x00)) ?
                        textdomaindir : PROJECT_LOCALEDIR ));
 #if defined(_WIN32)
@@ -160,8 +160,8 @@ int main(int argc, char** argv)
        free(textdomaindir);
    }
 #endif
-   bind_textdomain_codeset("netperfmeter", "UTF-8");
-   textdomain("netperfmeter");
+   bind_textdomain_codeset("getabstime", "UTF-8");
+   textdomain("getabstime");
 #endif
 
    // ====== Handle command-line arguments ==================================
