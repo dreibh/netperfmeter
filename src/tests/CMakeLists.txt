@@ -285,17 +285,38 @@ IF(TARGET getabstime)
    )
 ENDIF()
 
+IF(WITH_PLOT_PROGRAMS)
+   SET(PDFEMBEDFONTS_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/../pdfembedfonts.versioned")
+   IF(NOT EXISTS "${PDFEMBEDFONTS_SCRIPT}")
+      SET(PDFEMBEDFONTS_SCRIPT "${PROJECT_BINARY_DIR}/src/pdfembedfonts.versioned")
+   ENDIF()
 
-IF(TARGET runtimeestimator)
    ADD_TEST(
-      NAME util_runtimeestimator_batch
-      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_runtimeestimator.sh
-         $<TARGET_FILE:runtimeestimator>
+      NAME util_pdfembedfonts_embed
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_pdfembedfonts.sh
+         "${PDFEMBEDFONTS_SCRIPT}"
    )
-   SET_TESTS_PROPERTIES(util_runtimeestimator_batch PROPERTIES
+   SET_TESTS_PROPERTIES(util_pdfembedfonts_embed PROPERTIES
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
       FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
-      LABELS "cli;utility;runtimeestimator"
+      LABELS "cli;script;utility;pdfembedfonts"
+      TIMEOUT 30
+   )
+
+   SET(SETPDFMETADATA_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/../setpdfmetadata.versioned")
+   IF(NOT EXISTS "${SETPDFMETADATA_SCRIPT}")
+      SET(SETPDFMETADATA_SCRIPT "${PROJECT_BINARY_DIR}/src/setpdfmetadata.versioned")
+   ENDIF()
+
+   ADD_TEST(
+      NAME util_setpdfmetadata_update
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_setpdfmetadata.sh
+         "${SETPDFMETADATA_SCRIPT}"
+   )
+   SET_TESTS_PROPERTIES(util_setpdfmetadata_update PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;script;utility;setpdfmetadata"
       TIMEOUT 15
    )
 ENDIF()
