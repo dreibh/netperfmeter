@@ -15,6 +15,7 @@ share/bash-completion/completions/createsummary
 share/bash-completion/completions/extractvectors
 share/bash-completion/completions/getabstime
 share/bash-completion/completions/netperfmeter
+share/bash-completion/completions/netperfmeter-module-loader
 share/bash-completion/completions/runtimeestimator
 %%PLOT_PROGRAMS%%share/bash-completion/completions/pdfembedfonts
 %%PLOT_PROGRAMS%%share/bash-completion/completions/plot-netperfmeter-results

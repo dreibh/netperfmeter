@@ -3,7 +3,7 @@ DISTVERSION=	2.0.14
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.nntb.no/~dreibh/netperfmeter/download/
 
-MAINTAINER=	dreibh@simula.no
+MAINTAINER=	thomas.dreibholz@gmail.com
 COMMENT=	Network Performance Meter
 WWW=		https://www.nntb.no/~dreibh/netperfmeter/
 
