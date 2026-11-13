@@ -1,5 +1,5 @@
 PORTNAME=	netperfmeter
-DISTVERSION=	2.0.14
+DISTVERSION=	2.0.15~rc0
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.nntb.no/~dreibh/netperfmeter/download/
 
@@ -10,7 +10,7 @@ WWW=		https://www.nntb.no/~dreibh/netperfmeter/
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
-USES=		cmake shared-mime-info shebangfix tar:xz
+USES=		cmake:testing shared-mime-info shebangfix tar:xz
 
 SHEBANG_FILES=	src/pdfembedfonts src/plot-netperfmeter-results \
 		src/setpdfmetadata
