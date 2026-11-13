@@ -15,6 +15,8 @@ BuildRequires: ghostscript
 BuildRequires: GraphicsMagick
 BuildRequires: lksctp-tools-devel
 BuildRequires: mupdf
+BuildRequires: perl >= 5.8.0
+BuildRequires: perl-PDF-API2
 BuildRequires: valgrind-devel
 
 Requires: %{name}-common = %{version}-%{release}

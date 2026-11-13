@@ -3,6 +3,8 @@ netperfmeter (2.0.15~rc0-1ubuntu1) unstable; urgency=medium
   * New upstream release.
   * debian/tests: Removed obsolete tests. NetPerfMeter now provides a CTest
                   test suite, instead of applying simple Debian-only tests.
+  * debian/control: Updated build dependencies for running test CTest
+                    test suite.
 
  -- Thomas Dreibholz <dreibh@simula.no>  Fri, 13 Nov 2026 10:35:42 +0100
 
