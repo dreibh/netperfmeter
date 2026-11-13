@@ -62,16 +62,22 @@ ENDFUNCTION()
 
 
 # ###### Helper for expected failures (expected return code: non-zero) ######
-FUNCTION(ADD_NETPERFMETER_FAIL_TEST TEST_NAME)
+FUNCTION(ADD_PROGRAM_FAIL_TEST TEST_NAME TARGET_NAME)
    ADD_TEST(
       NAME ${TEST_NAME}
-      COMMAND $<TARGET_FILE:netperfmeter> ${ARGN}
+      COMMAND $<TARGET_FILE:${TARGET_NAME}> ${ARGN}
    )
    SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
       WILL_FAIL TRUE
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
-      LABELS "negative;error;netperfmeter"
+      LABELS "negative;error;${TARGET_NAME}"
    )
+ENDFUNCTION()
+
+
+# ###### Backward-compatible wrapper for NetPerfMeter failure tests #########
+FUNCTION(ADD_NETPERFMETER_FAIL_TEST TEST_NAME)
+   ADD_PROGRAM_FAIL_TEST(${TEST_NAME} netperfmeter ${ARGN})
 ENDFUNCTION()
 
 
@@ -262,6 +268,25 @@ ADD_NETPERFMETER_FAIL_TEST(fail_invalid_short_opt -Z)
 
 
 #############################################################################
+#### UTILITY TOOL TESTS                                                  ####
+#############################################################################
+
+IF(TARGET getabstime)
+   ADD_TEST(
+      NAME util_getabstime_timestamp
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_getabstime.sh
+         $<TARGET_FILE:getabstime>
+   )
+   SET_TESTS_PROPERTIES(util_getabstime_timestamp PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;utility;getabstime"
+      TIMEOUT 15
+   )
+ENDIF()
+
+
+#############################################################################
 #### FLOW INTEGRATION TESTS (TCP & UDP)                                  ####
 #############################################################################
 
@@ -287,10 +312,10 @@ ADD_NETPERFMETER_FLOW_TEST(flow_udp_download_ipv4 127.0.0.1 udp const0:const0:co
 ADD_NETPERFMETER_FLOW_TEST(flow_udp_download_ipv6 ::1       udp const0:const0:const10:const1000 plain)
 
 # ====== 4. Compression Formats Matrix ======================================
-# ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_gz  127.0.0.1 tcp const10:const1000:const10:const1000 gz)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_gz  127.0.0.1 tcp const10:const1000:const10:const1000 gz)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_bz2 127.0.0.1 tcp const10:const1000:const10:const1000 bz2)
-# ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_xz  127.0.0.1 tcp const10:const1000:const10:const1000 xz)
-# ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_zst 127.0.0.1 tcp const10:const1000:const10:const1000 zst)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_xz  127.0.0.1 tcp const10:const1000:const10:const1000 xz)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_format_zst 127.0.0.1 tcp const10:const1000:const10:const1000 zst)
 
 # ====== 5. Output Combinations (Without Scalars and/or Vectors) ============
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_no_scalar  127.0.0.1 tcp const10:const1000:const10:const1000 plain 2 --no-scalar)
@@ -987,10 +1012,10 @@ ADD_NETPERFMETER_FLOW_TEST(flow_udp_ctrl_sctp_bidi_ipv4  127.0.0.1 udp  const10:
 
 # ====== 5. Compression Formats Matrix ======================================
 # Verify scalar/vector compressed stream logging (gzip, bzip2, xz, zstd)
-# ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_gz  127.0.0.1 sctp const10:const1000:const10:const1000 gz)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_gz  127.0.0.1 sctp const10:const1000:const10:const1000 gz)
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_bz2 127.0.0.1 sctp const10:const1000:const10:const1000 bz2)
-# ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_xz  127.0.0.1 sctp const10:const1000:const10:const1000 xz)
-# ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_zst 127.0.0.1 sctp const10:const1000:const10:const1000 zst)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_xz  127.0.0.1 sctp const10:const1000:const10:const1000 xz)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_format_zst 127.0.0.1 sctp const10:const1000:const10:const1000 zst)
 
 # ====== 6. Output Combinations (Without Scalars and/or Vectors) ============
 # Verify CLI suppression flags (--no-scalar, --no-vector)
