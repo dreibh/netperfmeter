@@ -181,17 +181,10 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
 #endif
 #if defined(HAVE_QUIC)
    else if(flow->getTrafficSpec().Protocol == IPPROTO_QUIC) {
-      int64_t  sid;
-      uint32_t flags;
-      if(flow->isAcceptedIncomingFlow()) {   // from passive side (server)
-         sid   = (static_cast<int64_t>(flow->getStreamID()) << 2) | QUIC_STREAM_TYPE_SERVER_MASK | QUIC_STREAM_TYPE_UNI_MASK;
-         flags = ((flow->getFirstTransmission() == 0) && isFrameBegin) ? MSG_QUIC_STREAM_NEW : 0;
-      }
-      else {
-         sid   = (static_cast<int64_t>(flow->getStreamID()) << 2) | QUIC_STREAM_TYPE_UNI_MASK;
-         flags = 0;   // already created by Identify procedure!
-      }
-      sent = quic_sendmsg(flow->getSocketDescriptor(), outputBuffer, bytesToSend, sid, flags);
+      // Both active and passive sides use the client-initiated bidirectional
+      // stream created by NETPERFMETER_IDENTIFY_FLOW ((StreamID << 2) | 0).
+      const int64_t sid = static_cast<int64_t>(flow->getStreamID()) << 2;
+      sent = quic_sendmsg(flow->getSocketDescriptor(), outputBuffer, bytesToSend, sid, 0);
    }
 #endif
    else {
