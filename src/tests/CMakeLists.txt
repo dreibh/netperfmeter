@@ -286,6 +286,21 @@ IF(TARGET getabstime)
 ENDIF()
 
 
+IF(TARGET runtimeestimator)
+   ADD_TEST(
+      NAME util_runtimeestimator_batch
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_runtimeestimator.sh
+         $<TARGET_FILE:runtimeestimator>
+   )
+   SET_TESTS_PROPERTIES(util_runtimeestimator_batch PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;utility;runtimeestimator"
+      TIMEOUT 15
+   )
+ENDIF()
+
+
 #############################################################################
 #### FLOW INTEGRATION TESTS (TCP & UDP)                                  ####
 #############################################################################
