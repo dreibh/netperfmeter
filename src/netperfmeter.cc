@@ -30,12 +30,13 @@
 #include "assure.h"
 #include "flow.h"
 #include "control.h"
-#include "loglevel.h"
-#include "transfer.h"
-#include "package-version.h"
-#include "tools.h"
 #include "fileio.h"
+#include "loglevel.h"
+#include "package-version.h"
 #include "outputfile.h"
+#include "tools.h"
+#include "transfer.h"
+#include "quic.h"
 
 #include <cerrno>
 #include <clocale>
@@ -992,193 +993,6 @@ static const char* parseTrafficSpecOption(const char*      parameters,
 }
 
 
-#if defined(HAVE_QUIC)
-// ###### QUIC server handshake #############################################
-static int server_handshake(int          sd,
-                            const char*  alpns,
-                            const char*  tlsCAFile,
-                            const char*  tlsCertFile,
-                            const char*  tlsKeyFile,
-                            uint8_t*     sessionKey,
-                            unsigned int sessionKeyLength)
-{
-   gnutls_certificate_credentials_t credentials;
-   gnutls_session_t                 session;
-   gnutls_datum_t                   skey = { sessionKey, sessionKeyLength };
-   int                              error;
-
-   error = gnutls_certificate_allocate_credentials(&credentials);
-   if(!error) {
-      if(tlsCAFile != nullptr) {
-         const int loadedCAs =
-            gnutls_certificate_set_x509_trust_file(credentials,
-                                                   tlsCAFile, GNUTLS_X509_FMT_PEM);
-         if(loadedCAs <= 0) {
-            LOG_ERROR
-            // TRANSLATORS: Error message when TLS CA certificate fails to load. {} is the file path.
-            stdlog << formatText(gettext("Loading CA certificate from {} failed"), tlsCAFile) << "\n";
-            LOG_END
-            gnutls_certificate_free_credentials(credentials);
-            return -1;
-         }
-      }
-
-      error = gnutls_certificate_set_x509_key_file(credentials,
-                                                   tlsCertFile, tlsKeyFile,
-                                                   GNUTLS_X509_FMT_PEM);
-      if(!error) {
-         error = gnutls_init(&session,
-                             GNUTLS_SERVER|
-                             GNUTLS_NO_AUTO_SEND_TICKET|
-                             GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
-         if(!error) {
-            error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
-            if(!error) {
-               if(tlsCAFile != nullptr) {
-                  gnutls_certificate_server_set_request(session, GNUTLS_CERT_REQUEST);
-                  gnutls_session_set_verify_cert(session, nullptr, 0);
-               }
-               error = gnutls_session_ticket_enable_server(session, &skey);
-               if(!error) {
-                  error = gnutls_record_set_max_early_data_size(session, 0xffffffffu);
-                  if(!error) {
-                     error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
-                     if( (!error) && (alpns != NULL) ) {
-                        error = quic_session_set_alpn(session, alpns, strlen(alpns));
-                     }
-                     if(!error) {
-                        gnutls_transport_set_int(session, sd);
-                        error = quic_handshake(session);
-                        if( (!error) && (alpns != NULL) ) {
-                           size_t alpnLength;
-                           char   alpn[64];
-                           alpnLength = sizeof(alpn);
-                           error = quic_session_get_alpn(session, alpn, &alpnLength);
-                        }
-                     }
-                  }
-               }
-            }
-         }
-         gnutls_deinit(session);
-      }
-      gnutls_certificate_free_credentials(credentials);
-   }
-
-   if(error) {
-      LOG_ERROR
-      // TRANSLATORS: Error message when TLS setup fails. {} is the GnuTLS error string.
-      stdlog << formatText(gettext("TLS setup failed: {}"), gnutls_strerror(error)) << "\n";
-      if(error < 0) {
-         quic_connection_close closeInfo;
-         socklen_t             closeInfoLength = sizeof(closeInfo);
-         memset(&closeInfo, 0, sizeof(closeInfo));
-         if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONNECTION_CLOSE,
-                           &closeInfo, &closeInfoLength) == 0) {
-            closeInfo.phrase[sizeof(closeInfo.phrase) - 1] = 0x00;
-            // TRANSLATORS: Error details when a QUIC connection is closed during handshake. Placeholders: {} 1: error code, 2: frame type, 3: reason phrase.
-            stdlog << formatText(gettext("QUIC connection closed: errcode={}, frame={}, phrase=\"{}\""),
-                                 closeInfo.errcode, static_cast<unsigned int>(closeInfo.frame),
-                                 reinterpret_cast<const char*>(closeInfo.phrase)) << "\n";
-         }
-      }
-      LOG_END
-   }
-   return error;
-}
-
-
-// ###### QUIC client handshake #############################################
-static int client_handshake(int            sd,
-                            const char*    alpns,
-                            const char*    host,
-                            const char*    tlsCAFile,
-                            const char*    tlsCertFile,
-                            const char*    tlsKeyFile,
-                            const uint8_t* ticketIn,
-                            size_t         ticketInLength,
-                            uint8_t*       ticketOut,
-                            size_t*        ticketOutLength)
-{
-   gnutls_certificate_credentials_t credentials;
-   gnutls_session_t                 session;
-   int                              error;
-
-   error = gnutls_certificate_allocate_credentials(&credentials);
-   if(!error) {
-      int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
-      if(loadedCAs <= 0) {
-         // TRANSLATORS: Error message when TLS CA certificate fails to load. {} is the file path.
-         std::cerr << formatText(gettext("ERROR: Loading CA certificate from {} failed"), ((tlsCAFile != nullptr) ? tlsCAFile : "(none)")) << "\n";
-         gnutls_certificate_free_credentials(credentials);
-         return -1;
-      }
-
-      if((tlsCertFile != nullptr) && (tlsKeyFile != nullptr)) {
-         error = gnutls_certificate_set_x509_key_file(credentials,
-                                                      tlsCertFile, tlsKeyFile,
-                                                      GNUTLS_X509_FMT_PEM);
-         if(error < 0) {
-            // TRANSLATORS: Error message when TLS client certificate/key fails to load. Placeholders: {} 1: cert path, 2: key path, 3: GnuTLS error string.
-            std::cerr << formatText(gettext("ERROR: Loading client certificate from {} and key from {} failed: {}"),
-                                    tlsCertFile, tlsKeyFile, gnutls_strerror(error)) << "\n";
-            gnutls_certificate_free_credentials(credentials);
-            return -1;
-         }
-      }
-
-      error = gnutls_init(&session, GNUTLS_CLIENT|GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
-      if(!error) {
-         error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
-         if(!error) {
-            error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
-         }
-         if( (!error) && (alpns != NULL) ) {
-            error = quic_session_set_alpn(session, alpns, strlen(alpns));
-         }
-         if(!error) {
-            error = gnutls_server_name_set(session, GNUTLS_NAME_DNS, host, (host != NULL) ? strlen(host) : 0);
-         }
-         if(!error) {
-            gnutls_session_set_verify_cert(session, host, 0);
-            gnutls_transport_set_int(session, sd);
-            if(ticketIn != NULL) {
-               error = quic_session_set_data(session, ticketIn, ticketInLength);
-            }
-            if(!error) {
-               error = quic_handshake(session);
-            }
-            if( (!error) && (ticketOut != NULL) ) {
-               error =  quic_session_get_data(session, ticketOut, ticketOutLength);
-            }
-         }
-         gnutls_deinit(session);
-      }
-      gnutls_certificate_free_credentials(credentials);
-   }
-
-   if(error) {
-      // TRANSLATORS: Error message when TLS setup fails. {} is the GnuTLS error string.
-      std::cerr << formatText(gettext("ERROR: TLS setup failed: {}"), gnutls_strerror(error)) << "\n";
-      if(error < 0) {
-         quic_connection_close closeInfo;
-         socklen_t             closeInfoLength = sizeof(closeInfo);
-         memset(&closeInfo, 0, sizeof(closeInfo));
-         if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONNECTION_CLOSE,
-                           &closeInfo, &closeInfoLength) == 0) {
-            closeInfo.phrase[sizeof(closeInfo.phrase) - 1] = 0x00;
-            // TRANSLATORS: Error details when a QUIC connection is closed during handshake. Placeholders: {} 1: error code, 2: frame type, 3: reason phrase.
-            std::cerr << formatText(gettext("ERROR: QUIC connection closed: errcode={}, frame={}, phrase=\"{}\""),
-                                    closeInfo.errcode, static_cast<unsigned int>(closeInfo.frame),
-                                    reinterpret_cast<const char*>(closeInfo.phrase)) << "\n";
-         }
-      }
-   }
-   return error;
-}
-#endif
-
-
 // ###### Create Flow for new flow ##########################################
 static Flow* createFlow(Flow*                  previousFlow,
                         const char*            parameters,
@@ -1419,7 +1233,7 @@ static Flow* createFlow(Flow*                  previousFlow,
       stdlog << "okay <sd=" << socketDescriptor << ">\n";
       LOG_END
 
-      // ====== QUIC handshake ==============================================
+// ====== QUIC handshake ==============================================
 #if defined(HAVE_QUIC)
       if(trafficSpec.Protocol == IPPROTO_QUIC) {
          LOG_TRACE
@@ -1431,10 +1245,14 @@ static Flow* createFlow(Flow*                  previousFlow,
                 << ">\n";
          LOG_END
 
-         if(client_handshake(socketDescriptor,
-                             ALPN_NETPERFMETER_DATA, gQUICHostname, gQUICCA,
-                             gQUICCertificate, gQUICKey,
-                             nullptr, 0, nullptr, nullptr) != 0) {
+         QuicTlsConfig tlsConfig;
+         tlsConfig.alpn     = ALPN_NETPERFMETER_DATA;
+         tlsConfig.hostname = gQUICHostname;
+         tlsConfig.caFile   = gQUICCA;
+         tlsConfig.certFile = gQUICCertificate;
+         tlsConfig.keyFile  = gQUICKey;
+
+         if(quicClientHandshake(socketDescriptor, tlsConfig) != 0) {
             exit(1);
          }
       }
@@ -1691,9 +1509,7 @@ static bool mainLoop(const bool     isActiveMode,
             LOG_TRACE
             // TRANSLATORS: Log message on incoming QUIC data connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
             stdlog << formatText(gettext("Accept on QUIC data socket {} -> new QUIC data connection {}"), gQUICSocket, newSD) << "\n";
-            LOG_END
-            LOG_TRACE
-            stdlog << "server handshake <sd=" << gQUICSocket
+            stdlog << "server handshake <sd=" << newSD
                    << ", K="  << ((gQUICKey != nullptr) ? gQUICKey : "(none)")
                    << ", C="  << ((gQUICCertificate != nullptr) ? gQUICCertificate : "(none)")
                    << ", CA=" << ((gQUICCA != nullptr) ? gQUICCA : "(none)")
@@ -1705,13 +1521,15 @@ static bool mainLoop(const bool     isActiveMode,
             if(ext_getsockopt(newSD,
                               SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
                               &sessionKey, &sessionKeyLength) == 0) {
-               if(server_handshake(newSD, ALPN_NETPERFMETER_DATA,
-                                   gQUICCA, gQUICCertificate, gQUICKey,
-                                   sessionKey, sessionKeyLength) == 0) {
-                  LOG_TRACE
-                  // TRANSLATORS: Log message on incoming QUIC data connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
-                  stdlog << formatText(gettext("Accept on QUIC data socket {} -> new QUIC data connection {}"), gQUICSocket, newSD) << "\n";
-                  LOG_END
+               QuicTlsConfig tlsConfig;
+               tlsConfig.alpn             = ALPN_NETPERFMETER_DATA;
+               tlsConfig.caFile           = gQUICCA;
+               tlsConfig.certFile         = gQUICCertificate;
+               tlsConfig.keyFile          = gQUICKey;
+               tlsConfig.sessionKey       = sessionKey;
+               tlsConfig.sessionKeyLength = sessionKeyLength;
+
+               if(quicServerHandshake(newSD, tlsConfig) == 0) {
                   FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
                }
                else {
@@ -1728,7 +1546,6 @@ static bool mainLoop(const bool     isActiveMode,
          }
       }
 #endif
-
    }
 
    // ====== Stop-time reached ==============================================
@@ -2117,41 +1934,50 @@ static void passiveMode(const uint16_t localPort)
    }
 #endif
 
-   // ------ QUIC -----------------------------------------------------------
+// ------ QUIC -----------------------------------------------------------
 #if defined(HAVE_QUIC)
-   gQUICSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_QUIC, localPort - 1,
-                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
-   // NOTE: It is necessary to set the ALPN before enabling the listening mode!
-   if(gQUICSocket < 0) {
-      LOG_INFO
-      // TRANSLATORS: Informational note when QUIC is unavailable. Placeholders: {} 1: strerror() message, 2: port number.
-      stdlog << formatText(gettext("QUIC is unavailable ({}); disabling QUIC socket on port {}!"),
-                           strerror(errno), localPort - 1) << "\n";
-      LOG_END
+   if((gQUICCertificate != nullptr) && (gQUICKey != nullptr)) {
+      gQUICSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_QUIC, localPort - 1,
+                                        gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
+      // NOTE: It is necessary to set the ALPN before enabling the listening mode!
+      if(gQUICSocket < 0) {
+         LOG_INFO
+         // TRANSLATORS: Informational note when QUIC is unavailable. Placeholders: {} 1: strerror() message, 2: port number.
+         stdlog << formatText(gettext("QUIC is unavailable ({}); disabling QUIC socket on port {}!"),
+                              strerror(errno), localPort - 1) << "\n";
+         LOG_END
+      }
+      else {
+         if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
+                           ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
+            LOG_FATAL
+            // TRANSLATORS: Error setting QUIC Application-Layer Protocol Negotiation string. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket {}: {}!"),
+                                 gQUICSocket, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+         if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
+            LOG_FATAL
+            // TRANSLATORS: Error setting QUIC socket buffer sizes. Placeholders: {} 1: socket descriptor, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to configure buffer sizes on QUIC socket {}: {}!"),
+                                 gQUICSocket, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+         if(ext_listen(gQUICSocket, 100) < 0) {
+            LOG_FATAL
+            // TRANSLATORS: Error putting QUIC socket into listening mode. Placeholders: {} 1: socket descriptor, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to enable listening on QUIC socket {}: {}!"),
+                                 gQUICSocket, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+      }
    }
    else {
-      if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
-                        ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
-         LOG_FATAL
-         // TRANSLATORS: Error setting QUIC Application-Layer Protocol Negotiation string. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket {}: {}!"),
-                              gQUICSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
-      if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
-         LOG_FATAL
-         // TRANSLATORS: Error setting QUIC socket buffer sizes. Placeholders: {} 1: socket descriptor, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to configure buffer sizes on QUIC socket {}: {}!"),
-                              gQUICSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
-      if(ext_listen(gQUICSocket, 100) < 0) {
-         LOG_FATAL
-         // TRANSLATORS: Error putting QUIC socket into listening mode. Placeholders: {} 1: socket descriptor, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to enable listening on QUIC socket {}: {}!"),
-                              gQUICSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
+      LOG_INFO
+      // TRANSLATORS: Informational note when QUIC listener is skipped because --tls-cert and --tls-key were not given. {} is port number.
+      stdlog << formatText(gettext("QUIC requires --tls-cert and --tls-key; disabling QUIC socket on port {}!"),
+                           localPort - 1) << "\n";
+      LOG_END
    }
 #endif
 
@@ -2242,12 +2068,12 @@ static void passiveMode(const uint16_t localPort)
    }
 #endif
 #if defined(HAVE_MPTCP)
-   if(gMPTCPSocket > 0) {
+   if(gMPTCPSocket >= 0) {
       dataProtocols2 += "MPTCP";
    }
 #endif
 #if defined(HAVE_QUIC)
-   if(gQUICSocket > 0) {
+   if(gQUICSocket >= 0) {
       if(dataProtocols2.size() > 0) {
          dataProtocols2 += "/";
       }

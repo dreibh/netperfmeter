@@ -159,6 +159,8 @@ ADD_EXECUTABLE(netperfmeter
    mutex.h
    netperfmeter.cc
    netperfmeterpackets.h
+   quic.cc
+   quic.h
    thread.cc
    thread.h
    tools.cc
@@ -170,6 +172,7 @@ TARGET_INCLUDE_DIRECTORIES(netperfmeter
                            PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                    ${SCTP_INCLUDE_DIR}
                                    ${QUIC_INCLUDE_DIR}
+                                   ${GNUTLS_INCLUDE_DIR}
                                    ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(netperfmeter

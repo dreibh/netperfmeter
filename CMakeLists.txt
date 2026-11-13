@@ -500,35 +500,48 @@ int main (int argc, char** argv)
    volatile int domain = IPPROTO_QUIC;
    return 0;
 }"
-HAVE_QUIC)
+HAVE_LINUX_QUIC_H)
 
-IF (HAVE_QUIC)
+IF (HAVE_LINUX_QUIC_H)
    FIND_LIBRARY(QUIC_LIBRARY NAMES quic)
-   IF (QUIC_LIBRARY)
+   FIND_PATH(QUIC_INCLUDE_DIR NAMES netinet/quic.h)
+   IF (QUIC_LIBRARY AND QUIC_INCLUDE_DIR)
       FIND_LIBRARY(GNUTLS_LIBRARY NAMES gnutls)
-      IF (NOT GNUTLS_LIBRARY)
+      FIND_PATH(GNUTLS_INCLUDE_DIR NAMES gnutls/gnutls.h)
+      IF (NOT GNUTLS_LIBRARY OR NOT GNUTLS_INCLUDE_DIR)
          MESSAGE(FATAL_ERROR
                "Cannot find GnuTLS library (which is required for QUIC)! Try:\n"
                " * Ubuntu/Debian: sudo apt install -y libgnutls28-dev\n"
-               " * Fedora:        sudo dnf install -y  gnutls-devel\n"
+               " * Fedora:        sudo dnf install -y gnutls-devel\n"
                " * OpenSUSE:      sudo zypper install -y libgnutls-devel\n"
                " * Alpine:        sudo apk add gnutls-dev\n"
                " * FreeBSD:       sudo pkg install -y gnutls\n"
+               " * NetBSD:        sudo pkgin -y install gnutls\n"
+               " * OpenBSD:       sudo pkg_add gnutls\n"
+               " * Solaris:       sudo pkg install library/gnutls\n"
                " * Apple:         brew install gnutls")
-      ENDIF()
-      LIST(APPEND QUIC_LIBRARY ${GNUTLS_LIBRARY})
-      ADD_DEFINITIONS(-DHAVE_QUIC)
+        ENDIF()
 
-      # ------ Test whether a QUIC socket can be created --------------------
+      SET(CMAKE_REQUIRED_INCLUDES_BACKUP  ${CMAKE_REQUIRED_INCLUDES})
       SET(CMAKE_REQUIRED_LIBRARIES_BACKUP ${CMAKE_REQUIRED_LIBRARIES})
-      IF (QUIC_LIBRARY)
-         LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${QUIC_LIBRARY})
-      ENDIF()
+      LIST(APPEND CMAKE_REQUIRED_INCLUDES  ${QUIC_INCLUDE_DIR} ${GNUTLS_INCLUDE_DIR})
+      LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${QUIC_LIBRARY} ${GNUTLS_LIBRARY})
       IF (SOCKET_LIBRARY)
          LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${SOCKET_LIBRARY})
       ENDIF()
 
-      CHECK_C_SOURCE_RUNS("
+      CHECK_SYMBOL_EXISTS(quic_handshake "netinet/quic.h" HAVE_QUIC_HANDSHAKE)
+
+      IF (HAVE_QUIC_HANDSHAKE)
+         LIST(APPEND QUIC_LIBRARY ${GNUTLS_LIBRARY})
+         ADD_DEFINITIONS(-DHAVE_QUIC)
+         MESSAGE(STATUS "QUIC support found (libquic + GnuTLS):")
+         MESSAGE(STATUS " QUIC_LIBRARY:       ${QUIC_LIBRARY}")
+         MESSAGE(STATUS " QUIC_INCLUDE_DIR:   ${QUIC_INCLUDE_DIR}")
+         MESSAGE(STATUS " GNUTLS_INCLUDE_DIR: ${GNUTLS_INCLUDE_DIR}")
+
+         # ------ Test whether a QUIC socket can be created -----------------
+         CHECK_C_SOURCE_RUNS("
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -547,21 +560,25 @@ int main (int argc, char** argv)
    close(sd);
    return 0;
 }"
-      HAVE_QUIC_SOCKET)
+         HAVE_QUIC_SOCKET)
 
-      SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_BACKUP})
-
-      IF (HAVE_QUIC_SOCKET)
-         MESSAGE(STATUS "Kernel QUIC socket creation successful: QUIC is available for tests")
-         SET(HAVE_QUIC_FOR_TESTS TRUE CACHE INTERNAL "QUIC socket creation supported for tests")
-         ADD_DEFINITIONS(-DHAVE_QUIC_SOCKET)
+         IF (HAVE_QUIC_SOCKET)
+            MESSAGE(STATUS "Kernel QUIC socket creation successful: QUIC is available for tests")
+            SET(HAVE_QUIC_FOR_TESTS TRUE CACHE INTERNAL "QUIC socket creation supported for tests")
+            ADD_DEFINITIONS(-DHAVE_QUIC_SOCKET)
+         ELSE()
+            MESSAGE(STATUS "Kernel QUIC socket creation failed: QUIC is NOT available for tests")
+            SET(HAVE_QUIC_FOR_TESTS FALSE CACHE INTERNAL "QUIC socket creation supported for tests")
+         ENDIF()
       ELSE()
-         MESSAGE(STATUS "Kernel QUIC socket creation failed: QUIC is NOT available for tests")
+         MESSAGE(WARNING "libquic headers/library found, but quic_handshake() is unavailable!")
          SET(HAVE_QUIC_FOR_TESTS FALSE CACHE INTERNAL "QUIC socket creation supported for tests")
       ENDIF()
 
+      SET(CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES_BACKUP})
+      SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_BACKUP})
    ELSE()
-      MESSAGE(WARNING "QUIC is available, but libquic is not!")
+      MESSAGE(WARNING "QUIC kernel header is available, but libquic is not!")
       SET(HAVE_QUIC_FOR_TESTS FALSE CACHE INTERNAL "QUIC socket creation supported for tests")
    ENDIF()
 ELSE()
