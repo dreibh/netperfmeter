@@ -30,7 +30,7 @@ PROJECT(netperfmeter LANGUAGES C CXX)
 
 SET(BUILD_MAJOR "2")
 SET(BUILD_MINOR "0")
-SET(BUILD_PATCH "14")
+SET(BUILD_PATCH "15~rc0")
 SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
 
 
@@ -44,6 +44,13 @@ INCLUDE(CheckCSourceRuns)
 INCLUDE(CheckIncludeFile)
 INCLUDE(CheckStructHasMember)
 INCLUDE(GNUInstallDirs)
+
+
+#############################################################################
+#### TESTING                                                             ####
+#############################################################################
+
+INCLUDE(CTest)
 
 
 #############################################################################
@@ -283,6 +290,49 @@ IF (WITH_KERNEL_SCTP)
       ENDIF()
    ENDIF()
 
+   # ------ Test whether an SCTP socket can be created ----------------------
+   IF (HAVE_NETINET_SCTP_H)
+      SET(CMAKE_REQUIRED_LIBRARIES_BACKUP ${CMAKE_REQUIRED_LIBRARIES})
+      IF (SCTP_LIBRARY)
+         LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${SCTP_LIBRARY})
+      ENDIF()
+      IF (SOCKET_LIBRARY)
+         LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${SOCKET_LIBRARY})
+      ENDIF()
+
+      CHECK_C_SOURCE_RUNS("
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <netinet/sctp.h>
+
+int main (int argc, char** argv)
+{
+   int sd = socket(AF_INET, SOCK_SEQPACKET, IPPROTO_SCTP);
+   if(sd < 0) {
+      sd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
+   }
+   if(sd < 0) {
+      return 1;
+   }
+   close(sd);
+   return 0;
+}"
+      HAVE_SCTP_SOCKET)
+
+      SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_BACKUP})
+
+      IF (HAVE_SCTP_SOCKET)
+         MESSAGE(STATUS "Kernel SCTP socket creation successful: SCTP is available for tests")
+         SET(HAVE_SCTP_FOR_TESTS TRUE CACHE INTERNAL "SCTP socket creation supported for tests")
+         ADD_DEFINITIONS(-DHAVE_SCTP_SOCKET)
+      ELSE()
+         MESSAGE(STATUS "Kernel SCTP socket creation failed: SCTP is NOT available for tests")
+         SET(HAVE_SCTP_FOR_TESTS FALSE CACHE INTERNAL "SCTP socket creation supported for tests")
+      ENDIF()
+   ENDIF()
+
 ELSE()
    # ====== SCTPLIB User-Space SCTP =========================================
    CHECK_INCLUDE_FILE(sctp.h HAVE_SCTPLIB_SCTP_H)
@@ -347,7 +397,6 @@ IF (HAVE_MPTCP)
    ADD_DEFINITIONS(-DHAVE_MPTCP)
 ENDIF()
 
-
 # ====== QUIC support =======================================================
 CHECK_C_SOURCE_COMPILES("
 #include <sys/socket.h>
@@ -377,9 +426,54 @@ IF (HAVE_QUIC)
       ENDIF()
       LIST(APPEND QUIC_LIBRARY ${GNUTLS_LIBRARY})
       ADD_DEFINITIONS(-DHAVE_QUIC)
+
+      # ------ Test whether a QUIC socket can be created --------------------
+      SET(CMAKE_REQUIRED_LIBRARIES_BACKUP ${CMAKE_REQUIRED_LIBRARIES})
+      IF (QUIC_LIBRARY)
+         LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${QUIC_LIBRARY})
+      ENDIF()
+      IF (SOCKET_LIBRARY)
+         LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${SOCKET_LIBRARY})
+      ENDIF()
+
+      CHECK_C_SOURCE_RUNS("
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <linux/quic.h>
+
+int main (int argc, char** argv)
+{
+   int sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_QUIC);
+   if(sd < 0) {
+      sd = socket(AF_INET, SOCK_STREAM, IPPROTO_QUIC);
+   }
+   if(sd < 0) {
+      return 1;
+   }
+   close(sd);
+   return 0;
+}"
+      HAVE_QUIC_SOCKET)
+
+      SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_BACKUP})
+
+      IF (HAVE_QUIC_SOCKET)
+         MESSAGE(STATUS "Kernel QUIC socket creation successful: QUIC is available for tests")
+         SET(HAVE_QUIC_FOR_TESTS TRUE CACHE INTERNAL "QUIC socket creation supported for tests")
+         ADD_DEFINITIONS(-DHAVE_QUIC_SOCKET)
+      ELSE()
+         MESSAGE(STATUS "Kernel QUIC socket creation failed: QUIC is NOT available for tests")
+         SET(HAVE_QUIC_FOR_TESTS FALSE CACHE INTERNAL "QUIC socket creation supported for tests")
+      ENDIF()
+
    ELSE()
       MESSAGE(WARNING "QUIC is available, but libquic is not!")
+      SET(HAVE_QUIC_FOR_TESTS FALSE CACHE INTERNAL "QUIC socket creation supported for tests")
    ENDIF()
+ELSE()
+   SET(HAVE_QUIC_FOR_TESTS FALSE CACHE INTERNAL "QUIC socket creation supported for tests")
 ENDIF()
 
 # ====== Graphics tools for icons and logo ==================================

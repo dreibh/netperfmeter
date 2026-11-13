@@ -1,0 +1,7 @@
+#!/bin/sh
+cmake .
+make
+J=$(( $(nproc) * 4 ))
+while ctest -j$J --output-on-failure ; do
+   sleep 1
+done

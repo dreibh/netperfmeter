@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.0.14
+Version: 2.0.15~rc0
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
 License: GPL-3.0-or-later
@@ -70,6 +70,9 @@ for directory in %{_bindir} %{_datadir}/netperfmeter ; do
       {} +
 done
 # ===========================================================================
+
+%check
+%ctest
 
 %files
 %{_bindir}/combinesummaries
