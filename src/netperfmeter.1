@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd November 12, 2026
+.Dd November 13, 2026
 .Dt NetPerfMeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -156,7 +156,7 @@ is a network performance meter for the TCP, MPTCP, UDP, DCCP, SCTP and QUIC tran
 The following arguments can be provided:
 .Bl -tag -width indent
 .It Ar local\_port
-The port number for the passive side's data socket for TCP, UDP, DCCP, SCTP. For MPTCP, the port number will be local\_port\-1, to allow for both TCP and MPTCP connections. The port number of the control socket will be local\_port+1.
+The port number for the passive side's data socket for TCP, UDP, DCCP, SCTP. For MPTCP and QUIC, the port number will be local\_port\-1, to allow for both TCP/MPTCP and UDP/QUIC connections simultaneously. The port number of the control socket will be local\_port+1.
 Specifying a port number turns NetPerfMeter into passive mode, i.e. it will wait for incoming connections.
 .It Ar remote\_endpoint:remote\_port
 Specifies the passive endpoint to connect to (number as given for local\_port on the passive instance).
@@ -331,7 +331,7 @@ Set debug mode for flow (default: off). Note: this is for debugging and testing 
 .It v6only
 Use socket with IPv6 only (by setting IPV6\_V6ONLY socket option).
 .It cc=name
-Set congestion control name (TCP and MPTCP for Linux only).
+Set congestion control name (TCP and MPTCP for Linux only. QUIC supports default, reno, and cubic).
 .It cmt=off | cmt | cmtrpv1 | cmtrpv2 | like\-mptcp | mptcp\-like | mptcp
 Configures usage of Concurrent Multipath Transfer (CMT): off (turned off; default), cmt (independent paths), cmtrpv1 (CMT/RPv1), cmtrpv2 (CMT/RPv2), mptcp/like\-mptcp/mptcp\-like (MPTCP), 0\-255 (custom value).
 Currently only supported by CMT\-SCTP on FreeBSD systems and MPTCP on Linux systems. Note: CMT for MPTCP always uses MPTCP congestion control.
