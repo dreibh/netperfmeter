@@ -271,6 +271,20 @@ ADD_NETPERFMETER_FAIL_TEST(fail_invalid_short_opt -Z)
 #### UTILITY TOOL TESTS                                                  ####
 #############################################################################
 
+IF(TARGET extractvectors)
+   ADD_TEST(
+      NAME util_extractvectors_extract
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_extractvectors.sh
+         $<TARGET_FILE:extractvectors>
+   )
+   SET_TESTS_PROPERTIES(util_extractvectors_extract PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;utility;extractvectors"
+      TIMEOUT 15
+   )
+ENDIF()
+
 IF(TARGET getabstime)
    ADD_TEST(
       NAME util_getabstime_timestamp
