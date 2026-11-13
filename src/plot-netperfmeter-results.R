@@ -158,13 +158,12 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle,
    cat(sep="", pdfMetadataPage + 1, ": Plotting ", title, " ...\n")
 
    if(plotOwnFile) {
-      names   <- unlist(strsplit(title, " "))
-      pdfName <- paste(sep="", pdfFilePrefix, "-")
-      for(i in 1:length(names)) {
-         pdfName <- paste(sep="", pdfName, names[i])
-      }
-      pdfName <- paste(sep="", pdfName, ".pdf")
-      cat(pdfName,"\n")
+      safeTitle <- gsub(" ", "", title)
+      safeTitle <- gsub("''", "", safeTitle)
+      safeTitle <- gsub("/", "-", safeTitle)
+      safeTitle <- gsub("[^A-Za-z0-9._()-]", "_", safeTitle)
+      pdfName   <- paste(sep="", pdfFilePrefix, "-", safeTitle, ".pdf")
+      cat(pdfName, "\n")
       pdf(pdfName, width=plotWidth, height=plotHeight, paper=plotPaper,
           family=plotFontFamily, pointsize=plotPointSize)
    }
@@ -191,7 +190,15 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle,
 
    if(plotOwnFile) {
       dev.off()
-      processPDFbyGhostscript(pdfName)
+      tmpPdfName <- paste(sep="", pdfName, "-TEMP.pdf")
+      file.rename(pdfName, tmpPdfName)
+      cmd <- paste(sep="", "pdfembedfonts ", shQuote(tmpPdfName), " ", shQuote(pdfName), " -optimize",
+                           " || mv ", shQuote(tmpPdfName), " ", shQuote(pdfName))
+      ret <- system(cmd)
+      if(ret != 0) {
+         stop(gettextf("status %d in running command '%s'", ret, cmd))
+      }
+      unlink(tmpPdfName)
    }
    else {
       nextPageInPDFMetadata()
