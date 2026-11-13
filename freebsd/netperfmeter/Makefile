@@ -10,7 +10,11 @@ WWW=		https://www.nntb.no/~dreibh/netperfmeter/
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
-USES=		cmake:testing shared-mime-info shebangfix tar:xz
+TEST_DEPENDS=	p5-PDF-API2>=0:textproc/p5-PDF-API2
+
+USES=		cmake:testing perl5 shared-mime-info shebangfix tar:xz
+
+USE_PERL5=	test
 
 SHEBANG_FILES=	src/pdfembedfonts src/plot-netperfmeter-results \
 		src/setpdfmetadata
@@ -45,7 +49,8 @@ PLOT_PROGRAMS_RUN_DEPENDS=	R-cran-bit64>0:devel/R-cran-bit64 \
 				R-cran-data.table>0:devel/R-cran-data.table \
 				R-cran-dplyr>0:math/R-cran-dplyr \
 				R-cran-ggplot2>0:graphics/R-cran-ggplot2 \
-				R-cran-R.utils>0:devel/R-cran-R.utils
+				R-cran-R.utils>0:devel/R-cran-R.utils \
+				p5-PDF-API2>=0:textproc/p5-PDF-API2
 PLOT_PROGRAMS_CMAKE_BOOL=	WITH_PLOT_PROGRAMS
 
 .include <bsd.port.mk>
