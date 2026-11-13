@@ -198,7 +198,7 @@ class Flow : public Thread
    void deactivate(const bool asyncStop = false);
 
    protected:
-   virtual void run();
+   virtual void run() override;
 
 
    // ====== Private Methods ================================================

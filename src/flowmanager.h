@@ -125,7 +125,7 @@ class FlowManager : public Thread
 
    // ====== Protected Methods ==============================================
    protected:
-   void run();
+   virtual void run() override;
 
 
    // ====== Private Methods ================================================
