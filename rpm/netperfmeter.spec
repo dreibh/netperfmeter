@@ -23,7 +23,8 @@ BuildRequires: mupdf
 BuildRequires: perl >= 5.8.0
 BuildRequires: perl(Locale::gettext)
 BuildRequires: perl-PDF-API2
-BuildRequires: valgrind-devel
+BuildRequires: qpdf
+BuildRequires: zstd
 
 Requires: %{name}-common = %{version}-%{release}
 Requires: findutils

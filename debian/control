@@ -19,7 +19,8 @@ Build-Depends: cmake,
                pdf2svg,
                perl (>= 5.8.0),
                qpdf,
-               zlib1g-dev
+               zlib1g-dev,
+               zstd
 Standards-Version: 4.7.4
 Rules-Requires-Root: no
 
