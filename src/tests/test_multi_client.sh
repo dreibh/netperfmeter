@@ -45,15 +45,51 @@ esac
 
 TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'npm_multi_test')
 SERVER_PID=""
+CLIENT1_PID=""
+CLIENT2_PID=""
+CLIENT3_PID=""
+CLIENT4_PID=""
 
-cleanup() {
-    if [ -n "${SERVER_PID}" ] && kill -0 "${SERVER_PID}" 2>/dev/null; then
-        kill -INT "${SERVER_PID}" 2>/dev/null || true
-        wait "${SERVER_PID}" 2>/dev/null || true
+cleanup_processes() {
+    for _pid in ${CLIENT1_PID} ${CLIENT2_PID} ${CLIENT3_PID} ${CLIENT4_PID} ${SERVER_PID}; do
+        if [ -n "${_pid}" ] && kill -0 "${_pid}" 2>/dev/null; then
+            kill -TERM "${_pid}" 2>/dev/null || true
+        fi
+    done
+    for _pid in ${CLIENT1_PID} ${CLIENT2_PID} ${CLIENT3_PID} ${CLIENT4_PID} ${SERVER_PID}; do
+        if [ -n "${_pid}" ]; then
+            wait "${_pid}" 2>/dev/null || true
+        fi
+    done
+    CLIENT1_PID=""
+    CLIENT2_PID=""
+    CLIENT3_PID=""
+    CLIENT4_PID=""
+    SERVER_PID=""
+    if [ -n "${TMP_DIR}" ] && [ -d "${TMP_DIR}" ]; then
+        rm -rf "${TMP_DIR}"
     fi
-    rm -rf "${TMP_DIR}"
 }
-trap cleanup EXIT INT TERM
+
+cleanup_exit() {
+    trap - EXIT INT TERM
+    cleanup_processes
+}
+
+cleanup_signal() {
+    _sig="$1"
+    trap - EXIT INT TERM
+    cleanup_processes
+    if [ "${_sig}" = "INT" ]; then
+        exit 130
+    else
+        exit 143
+    fi
+}
+
+trap cleanup_exit EXIT
+trap 'cleanup_signal INT' INT
+trap 'cleanup_signal TERM' TERM
 
 # ====== Readiness Probe ====================================================
 wait_for_listener() {
@@ -166,7 +202,9 @@ case "${SCENARIO}" in
         CLIENT2_PID=$!
 
         wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
         wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
         ;;
 
     # 2. Staggered overlapping clients: Client 2 finishes and tears down while Client 1 is mid-flight
@@ -178,14 +216,27 @@ case "${SCENARIO}" in
         CLIENT2_PID=$!
 
         wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
         wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
         ;;
 
     # 3. Sequential session reuse: 3 client generations run back-to-back against the same server
     sequential_session_reuse)
-        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=2 -tcp const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 || CLIENT1_RC=$?
-        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=2 -udp const10:const1000:const10:const1000 >"${TMP_DIR}/client2.log" 2>&1 || CLIENT2_RC=$?
-        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=2 -tcp const10:const1000:const10:const1000 >"${TMP_DIR}/client3.log" 2>&1 || CLIENT3_RC=$?
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=2 -tcp const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
+
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=2 -udp const10:const1000:const10:const1000 >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=2 -tcp const10:const1000:const10:const1000 >"${TMP_DIR}/client3.log" 2>&1 &
+        CLIENT3_PID=$!
+        wait "${CLIENT3_PID}" || CLIENT3_RC=$?
+        CLIENT3_PID=""
         ;;
 
     # 4. Two clients running simultaneously over IPv6
@@ -196,7 +247,9 @@ case "${SCENARIO}" in
         CLIENT2_PID=$!
 
         wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
         wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
         ;;
 
     # 5. Tri-protocol concurrent stress: 3 clients (SCTP multistream + TCP/UDP + 2x UDP)
@@ -212,8 +265,11 @@ case "${SCENARIO}" in
         CLIENT3_PID=$!
 
         wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
         wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
         wait "${CLIENT3_PID}" || CLIENT3_RC=$?
+        CLIENT3_PID=""
         ;;
 
     # 6. Two clients simultaneously running QUIC flows
@@ -226,7 +282,9 @@ case "${SCENARIO}" in
         CLIENT2_PID=$!
 
         wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
         wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
         ;;
 
     # 7. Staggered overlapping clients over QUIC
@@ -240,7 +298,9 @@ case "${SCENARIO}" in
         CLIENT2_PID=$!
 
         wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
         wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
         ;;
 
     # 8. Quad-protocol concurrent stress: 4 clients (QUIC + SCTP + TCP + UDP)
@@ -259,9 +319,13 @@ case "${SCENARIO}" in
         CLIENT4_PID=$!
 
         wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
         wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
         wait "${CLIENT3_PID}" || CLIENT3_RC=$?
+        CLIENT3_PID=""
         wait "${CLIENT4_PID}" || CLIENT4_RC=$?
+        CLIENT4_PID=""
         ;;
 
     *)
