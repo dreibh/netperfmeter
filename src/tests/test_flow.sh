@@ -890,6 +890,7 @@ run_attempt() {
 
     TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'npm_test')
     SERVER_PID=""
+    CLIENT_PID=""
 
     stop_server() {
         if [ -n "${SERVER_PID}" ]; then
@@ -1013,7 +1014,7 @@ EOF
         fi
     fi
 
-    # 3. Run active node (client)
+    # 3. Run active node (client) in background and wait so signals interrupt immediately
     SCALAR_ARG=""
     VECTOR_ARG=""
     if [ "${ENABLE_SCALAR}" -eq 1 ]; then
@@ -1025,7 +1026,7 @@ EOF
 
     # General options precede flow specifications, allowing extra stream specs
     # passed in ${STREAM_ARGS} to follow "-${PROTOCOL}" "${SPEC}"
-    if ! "${NETPERFMETER}" "${TARGET}:${PORT}" \
+    "${NETPERFMETER}" "${TARGET}:${PORT}" \
         ${CLIENT_CONTROL_ARG} \
         ${CLIENT_TLS_ARGS} \
         -runtime="${RUNTIME}" \
@@ -1036,8 +1037,15 @@ EOF
         "-${PROTOCOL}" "${SPEC}" \
         ${STREAM_ARGS} \
         ${EXTRA_CONN_ARGS} \
-        >"${TMP_DIR}/client.log" 2>&1; then
-        echo "FAIL: Active instance exited with an error." >&2
+        >"${TMP_DIR}/client.log" 2>&1 &
+    CLIENT_PID=$!
+
+    _client_rc=0
+    wait "${CLIENT_PID}" || _client_rc=$?
+    CLIENT_PID=""
+
+    if [ "${_client_rc}" -ne 0 ]; then
+        echo "FAIL: Active instance exited with an error (exit code ${_client_rc})." >&2
         cat "${TMP_DIR}/client.log" >&2
         stop_server || true
         return 1
@@ -1096,13 +1104,45 @@ EOF
 # ====== Main Execution Loop with Retries ==================================
 TMP_DIR=""
 SERVER_PID=""
+CLIENT_PID=""
+
+cleanup_processes() {
+    for _pid in ${CLIENT_PID} ${SERVER_PID}; do
+        if [ -n "${_pid}" ] && kill -0 "${_pid}" 2>/dev/null; then
+            kill -TERM "${_pid}" 2>/dev/null || true
+        fi
+    done
+    for _pid in ${CLIENT_PID} ${SERVER_PID}; do
+        if [ -n "${_pid}" ]; then
+            wait "${_pid}" 2>/dev/null || true
+        fi
+    done
+    CLIENT_PID=""
+    SERVER_PID=""
+}
+
 cleanup_exit() {
-    if [ -n "${SERVER_PID}" ] && kill -0 "${SERVER_PID}" 2>/dev/null; then
-        kill -INT "${SERVER_PID}" 2>/dev/null || true
-        wait "${SERVER_PID}" 2>/dev/null || true
+    trap - EXIT INT TERM
+    cleanup_processes
+}
+
+cleanup_signal() {
+    _sig="$1"
+    trap - EXIT INT TERM
+    cleanup_processes
+    if [ -n "${TMP_DIR}" ] && [ -d "${TMP_DIR}" ]; then
+        rm -rf "${TMP_DIR}"
+    fi
+    if [ "${_sig}" = "INT" ]; then
+        exit 130
+    else
+        exit 143
     fi
 }
-trap cleanup_exit EXIT INT TERM
+
+trap cleanup_exit EXIT
+trap 'cleanup_signal INT' INT
+trap 'cleanup_signal TERM' TERM
 
 ATTEMPT=1
 SUCCESS=0
@@ -1114,11 +1154,13 @@ while [ "${ATTEMPT}" -le "${MAX_RETRIES}" ]; do
     if [ "${_attempt_rc}" -eq 0 ]; then
         SUCCESS=1
         rm -rf "${TMP_DIR}"
+        TMP_DIR=""
         break
     elif [ "${_attempt_rc}" -eq 2 ]; then
         echo "WARNING: Attempt ${ATTEMPT}/${MAX_RETRIES} for ${PROTOCOL} flow (${SPEC}) failed due to statistical outlier in random distribution." >&2
         if [ "${ATTEMPT}" -lt "${MAX_RETRIES}" ]; then
             rm -rf "${TMP_DIR}"
+            TMP_DIR=""
             sleep 1
         else
             echo "All ${MAX_RETRIES} attempts failed; artifacts preserved in ${TMP_DIR}" >&2
