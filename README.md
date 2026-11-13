@@ -35,7 +35,7 @@ Of course, this support includes the possibility to parametrise various protocol
 
 Furthermore, each flow is able to apply its specific traffic behaviour:
 
-   * Each flow may use its own Transport Layer protocol (i.e., UDP, DCCP, TCP, MPTCP or SCTP).
+   * Each flow may use its own Transport Layer protocol (i.e., UDP, DCCP, TCP, MPTCP, SCTP or QUIC).
    * Bidirectional data transfer is possible, with individual parameters for each direction.
    * Flows may either be saturated (i.e., try to send as much as possible) or non-saturated. In the latter case, a frame rate and a frame size have to be configured. Both may be distributed randomly, using a certain distribution (like uniform, negative exponential, etc.). This feature allows mimicking multimedia traffic.
    * For the stream-oriented SCTP, an independent traffic configuration is possible for each stream.
@@ -400,25 +400,28 @@ sudo service netperfmeter-module-loader disable
 
 ### QUIC Communication
 
-[QUIC](https://www.rfc-editor.org/rfc/rfc9000.html) uses built-in security based on [Transport Layer Security&nbsp;(TLS)](https://www.internetsociety.org/deploy360/tls/basics/). To use QUIC, it is therefore necessary to properly set up TLS first. Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
+[QUIC](https://www.rfc-editor.org/rfc/rfc9000.html) uses built-in security based on [Transport Layer Security&nbsp;(TLS)](https://www.internetsociety.org/deploy360/tls/basics/). To use QUIC, it is therefore necessary to properly set up TLS first. NetPerfMeter supports both **server-only TLS authentication** and **mutual TLS&nbsp;(mTLS) authentication** (where the passive side also requests and verifies a client certificate). Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
 
 * Install [Linux Kernel QUIC](https://github.com/lxin/quic) and load the QUIC kernel module. Also see the helper script [install-linux-quic](https://github.com/dreibh/netperfmeter/blob/master/src/install-linux-quic).
 
 * Build NetPerfMeter from sources (see [Build from Sources](#build-from-sources)). Make sure that Linux Kernel QUIC is detected during the CMake configuration!
 
-* Generate a key and corresponding [X.509](https://www.geeksforgeeks.org/computer-networks/public-key-infrastructure/) TLS certificate for the server. For details, see e.g., the various documentations and tutorials for [OpenSSL](https://www.openssl.org/), [Gnu TLS](https://www.gnutls.org/), or [NSS](https://nss-crypto.org/). Also, the directory [`src/quic-setup`](src/quic-setup) provides some example scripts. The following commands use these scripts to generate a test certification authority *TestCA*, signing a server certificate for server *server.domain.example* (with the local machine's IP addresses in SubjectAltName):
+* Generate keys and corresponding [X.509](https://www.geeksforgeeks.org/computer-networks/public-key-infrastructure/) TLS certificates for the server (and optionally for the client when using mTLS). For details, see e.g., the various documentations and tutorials for [OpenSSL](https://www.openssl.org/), [Gnu TLS](https://www.gnutls.org/), or [NSS](https://nss-crypto.org/). Also, the directory [`src/quic-setup`](src/quic-setup) provides some example scripts. The following commands use these scripts to generate a test certification authority *TestCA*, signing a server certificate for *server.domain.example* (with the local machine's IP addresses in SubjectAltName) and an optional client certificate for *client.domain.example*:
 
   ```bash
   cd src/quic-setup
   ./generate-test-certificates TestCA -K 4096 -k 4096 --server --san LOCAL server.domain.example
-  ./generate-test-certificates TestCA -K 4096 -k 4096 --client --san LOCAL client.domain.example
+  # Optional, for mutual TLS (mTLS) client authentication:
+  ./generate-test-certificates TestCA -K 4096 -k 4096 --client client.domain.example
   ```
 
   These commands generate the following files:
 
   * `TestCA/TestLevel1/certs/TestLevel1.crt`: The top-level CA certificate.
-  * `TestCA/server.domain.example/server.domain.example.key`: The server key.
+  * `TestCA/server.domain.example/server.domain.example.key`: The server private key.
   * `TestCA/server.domain.example/server.domain.example.crt`: The corresponding server certificate.
+  * `TestCA/client.domain.example/client.domain.example.key`: The client private key (for mTLS).
+  * `TestCA/client.domain.example/client.domain.example.crt`: The corresponding client certificate (for mTLS).
 
   The [X.509-Tools](https://www.nntb.no/~dreibh/system-tools/index.html#x.509-tools) from the [System-Tools](https://www.nntb.no/~dreibh/system-tools/) package provide further helpful utilities to handle X.509 certificates. Particularly, [Check-Certificate](https://www.nntb.no/~dreibh/system-tools/#check-certificate) verifies a certificate and its chain from a trusted CA certificate. With X.509-Tools installed, the server certificate can be verified using the CA certificate:
 
@@ -428,37 +431,56 @@ sudo service netperfmeter-module-loader disable
      TestCA/server.domain.example/server.domain.example.crt
   ```
 
-* Run a passive instance (i.e., server side), using base port 9000, and specifying server key, server certificate, as well as root CA certificate:
+* Run a passive instance (i.e., server side), using base port 9000:
 
-  ```bash
-  netperfmeter 9000 \
-     -tls-key  $DIRECTORY/TestCA/server.domain.example/server.domain.example.key \
-     -tls-cert $DIRECTORY/TestCA/server.domain.example/server.domain.example.crt \
-     -tls-ca   $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt
-  ```
+  - **Server-only TLS authentication** (specifying `-tls-key` and `-tls-cert` only):
+
+    ```bash
+    netperfmeter 9000 \
+       -tls-key  $DIRECTORY/TestCA/server.domain.example/server.domain.example.key \
+       -tls-cert $DIRECTORY/TestCA/server.domain.example/server.domain.example.crt
+    ```
+
+  - **Mutual TLS&nbsp;(mTLS) authentication** (additionally specifying `-tls-ca` to request and verify a client certificate against the given CA truststore):
+
+    ```bash
+    netperfmeter 9000 \
+       -tls-key  $DIRECTORY/TestCA/server.domain.example/server.domain.example.key \
+       -tls-cert $DIRECTORY/TestCA/server.domain.example/server.domain.example.crt \
+       -tls-ca   $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt
+    ```
 
   with `DIRECTORY` the path where `TestCA` is located.
 
-* Run an active instance (i.e., client side), with bidirectional QUIC flow, specifying the TLS hostname of the server for certificate validation and providing the client certificate for mutual TLS authentication (mTLS):
+* Run an active instance (i.e., client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation:
 
   - Active to passive instance: constant 10&nbsp;frames/s, constant 128&nbsp;B/frame;
   - Passive to active instance: constant 25&nbsp;frames/s, constant 1200&nbsp;B/frame.
 
-  ```bash
-  netperfmeter $SERVER:9000 \
-     -tls-hostname server.domain.example \
-     -tls-ca       $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt \
-     -tls-key      $DIRECTORY/TestCA/client.domain.example/client.domain.example.key \
-     -tls-cert     $DIRECTORY/TestCA/client.domain.example/client.domain.example.crt \
-     -quic         const10:const128:const25:const1200
-  ```
+  - **Server-only TLS authentication** (specifying `-tls-hostname` and `-tls-ca`):
+
+    ```bash
+    netperfmeter $SERVER:9000 \
+       -tls-hostname server.domain.example \
+       -tls-ca $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt \
+       -quic const10:const128:const25:const1200
+    ```
+
+  - **Mutual TLS&nbsp;(mTLS) authentication** (additionally specifying `-tls-key` and `-tls-cert` together):
+
+    ```bash
+    netperfmeter $SERVER:9000 \
+       -tls-hostname server.domain.example \
+       -tls-ca   $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt \
+       -tls-key  $DIRECTORY/TestCA/client.domain.example/client.domain.example.key \
+       -tls-cert $DIRECTORY/TestCA/client.domain.example/client.domain.example.crt \
+       -quic const10:const128:const25:const1200
+    ```
 
   with:
 
   * `DIRECTORY` the path where `TestCA` is located;
   * `SERVER` the IP address of the passive instance.
-
-  If the passive side is started without `-tls-ca`, it performs standard server-only authentication and `-tls-key` and `-tls-cert` can be omitted on the active side.
 
   Make sure that the server name matches the information in the server certificate provided by the passive instance. TLS is verifying it, and the TLS handshake will fail (as intended) if it does not match!
 
