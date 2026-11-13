@@ -154,7 +154,7 @@ if [ ! -s "${WORK_DIR}/measurement.config" ]; then
 fi
 
 # If R is not installed on a minimal build host, provide a fallback R stub that
-# validates arguments and emits a minimal valid PDF so shell & combinesummaries
+# validates arguments and emits minimal valid PDFs so shell & combinesummaries
 # logic are still exercised end-to-end.
 HAS_REAL_R=1
 if ! command -v R >/dev/null 2>&1; then
@@ -175,11 +175,17 @@ for _arg in "$@"; do
     esac
 done
 PDF_PREFIX=$(printf '%s\n' "${ARGS_BLOCK}" | sed -n 's/.*pdfFilePrefix="\([^"]*\)".*/\1/p')
+OWN_FILE=$(printf '%s\n' "${ARGS_BLOCK}" | sed -n 's/.*plotOwnFile=\([A-Z]*\).*/\1/p')
 if [ -z "${PDF_PREFIX}" ]; then
     echo "Mock R missing pdfFilePrefix in args: ${ARGS_BLOCK}" >&2
     exit 1
 fi
-printf '%%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%%%EOF\n' > "${PDF_PREFIX}.pdf"
+if [ "${OWN_FILE}" = "TRUE" ]; then
+    printf '%%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%%%EOF\n' > "${PDF_PREFIX}-Plot1.pdf"
+    printf '%%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%%%EOF\n' > "${PDF_PREFIX}-Plot2.pdf"
+else
+    printf '%%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%%%EOF\n' > "${PDF_PREFIX}.pdf"
+fi
 EOF
     chmod +x "${MOCK_BIN}/R"
     PATH="${MOCK_BIN}:${PATH}"
@@ -212,6 +218,29 @@ verify_pdf_file() {
     ' "${_pdf}"
 }
 
+verify_own_pdf_files() {
+    _prefix="$1"
+    if [ -e "${_prefix}.pdf" ]; then
+        echo "FAIL: Combined PDF '${_prefix}.pdf' should not be created when -w / --own-file is enabled." >&2
+        exit 1
+    fi
+
+    _count=0
+    for _f in "${_prefix}"-*.pdf; do
+        if [ ! -e "${_f}" ]; then
+            echo "FAIL: No individual per-plot PDF files (${_prefix}-*.pdf) were created." >&2
+            exit 1
+        fi
+        verify_pdf_file "${_f}"
+        _count=$((_count + 1))
+    done
+
+    if [ "${_count}" -lt 2 ]; then
+        echo "FAIL: Expected multiple individual per-plot PDF files, found ${_count}." >&2
+        exit 1
+    fi
+}
+
 # ====== 3. Default plotting run (cleans up intermediate .data.bz2 files) ===
 (
     cd "${WORK_DIR}"
@@ -225,13 +254,13 @@ verify_pdf_file() {
 
 verify_pdf_file "${WORK_DIR}/measurement.pdf"
 
-if [ -e "${WORK_DIR}/measurement-summary.data.bz2" ] || [ -e "${WORK_DIR}/measurement-flows.data.bz2" ]; then
+if [ -e "${DATA_DIR:-${WORK_DIR}}/measurement-summary.data.bz2" ] || [ -e "${WORK_DIR}/measurement-flows.data.bz2" ]; then
     echo "FAIL: Temporary .data.bz2 summary files were not cleaned up when -k was omitted." >&2
     exit 1
 fi
 
-# ====== 4. Run with -k / --keep-summaries, -p / --per-flow-plots, -w ======
-rm -f "${WORK_DIR}/measurement.pdf"
+# ====== 4. Run with -k -p -w (kept summaries + per-flow + own PDF files) ==
+rm -f "${WORK_DIR}"/measurement*.pdf
 (
     cd "${WORK_DIR}"
     if ! "${PLOT_SCRIPT}" -k -p -w "measurement.config" >"${TMP_DIR}/plot_opts.out" 2>"${TMP_DIR}/plot_opts.err"; then
@@ -242,7 +271,7 @@ rm -f "${WORK_DIR}/measurement.pdf"
     fi
 )
 
-verify_pdf_file "${WORK_DIR}/measurement.pdf"
+verify_own_pdf_files "${WORK_DIR}/measurement"
 
 # Verify intermediate BZip2 tables were kept and contain valid combined data
 for _sum in "${WORK_DIR}/measurement-summary.data.bz2" "${WORK_DIR}/measurement-flows.data.bz2"; do
@@ -262,20 +291,39 @@ if ! bzip2 -dc "${WORK_DIR}/measurement-flows.data.bz2" | grep -q "FlowName"; th
     exit 1
 fi
 
-# Also test long option aliases (--keep-summaries --per-flow-plots --own-file)
-rm -f "${WORK_DIR}/measurement.pdf" "${WORK_DIR}/measurement-summary.data.bz2" "${WORK_DIR}/measurement-flows.data.bz2"
+# ====== 5. Long option aliases (--keep-summaries, --per-flow-plots, --own-file)
+# Test --keep-summaries --per-flow-plots in combined PDF mode (exercises per-flow
+# outline bookmarks in setpdfmetadata without duplicating 46 Ghostscript runs)
+rm -f "${WORK_DIR}"/measurement*.pdf "${WORK_DIR}/measurement-summary.data.bz2" "${WORK_DIR}/measurement-flows.data.bz2"
 (
     cd "${WORK_DIR}"
-    if ! "${PLOT_SCRIPT}" --keep-summaries --per-flow-plots --own-file "measurement.config" >"${TMP_DIR}/plot_long.out" 2>"${TMP_DIR}/plot_long.err"; then
-        echo "FAIL: plot-netperfmeter-results long options failed." >&2
-        cat "${TMP_DIR}/plot_long.out" >&2
-        cat "${TMP_DIR}/plot_long.err" >&2
+    if ! "${PLOT_SCRIPT}" --keep-summaries --per-flow-plots "measurement.config" >"${TMP_DIR}/plot_long_pf.out" 2>"${TMP_DIR}/plot_long_pf.err"; then
+        echo "FAIL: plot-netperfmeter-results --keep-summaries --per-flow-plots failed." >&2
+        cat "${TMP_DIR}/plot_long_pf.out" >&2
+        cat "${TMP_DIR}/plot_long_pf.err" >&2
         exit 1
     fi
 )
 verify_pdf_file "${WORK_DIR}/measurement.pdf"
+if [ ! -s "${WORK_DIR}/measurement-summary.data.bz2" ] || [ ! -s "${WORK_DIR}/measurement-flows.data.bz2" ]; then
+    echo "FAIL: --keep-summaries did not preserve .data.bz2 files." >&2
+    exit 1
+fi
 
-# ====== 5. Negative / error handling tests ================================
+# Test --own-file long option alias (node-level own PDFs)
+rm -f "${WORK_DIR}"/measurement*.pdf "${WORK_DIR}/measurement-summary.data.bz2" "${WORK_DIR}/measurement-flows.data.bz2"
+(
+    cd "${WORK_DIR}"
+    if ! "${PLOT_SCRIPT}" --own-file "measurement.config" >"${TMP_DIR}/plot_long_own.out" 2>"${TMP_DIR}/plot_long_own.err"; then
+        echo "FAIL: plot-netperfmeter-results --own-file failed." >&2
+        cat "${TMP_DIR}/plot_long_own.out" >&2
+        cat "${TMP_DIR}/plot_long_own.err" >&2
+        exit 1
+    fi
+)
+verify_own_pdf_files "${WORK_DIR}/measurement"
+
+# ====== 6. Negative / error handling tests ================================
 run_expect_fail() {
     _expected_regex="$1"
     shift
