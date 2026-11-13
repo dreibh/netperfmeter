@@ -191,6 +191,9 @@ static void usage(const char* program, const int exitCode)
                    ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-y") PIPE OPT("--control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp"))
                    ENTRY(OPT("-L") " " ARG("address[,address,...]") PIPE OPT("--local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-l") " " ARG("address[,address,...]") PIPE OPT("--control-local") " " ARG("address[,address,...]"))
+                   ENTRY(OPT("-K") " " ARG("key_file") PIPE OPT("--tls-key") " " ARG("key_file"))
+                   ENTRY(OPT("-J") " " ARG("certificate_file") PIPE OPT("--tls-cert") " " ARG("certificate_file"))
+                   ENTRY(OPT("-I") " " ARG("ca_certificate_file") PIPE OPT("--tls-ca") " " ARG("ca_certificate_file"))
                    ENTRY(OPT("-H") " " ARG("hostname") PIPE OPT("--tls-hostname") " " ARG("hostname"))
                    ENTRY(OPT("--control-hbinterval") " " ARG("milliseconds"))
                    ENTRY(OPT("--control-hbpathmaxrtx") " " ARG("count"))
@@ -285,7 +288,7 @@ static bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:I:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
 #if defined(HAVE_SCTP)
@@ -575,6 +578,14 @@ static bool handleGlobalParameters(int argc, char** argv)
       std::cerr << "ERROR: At least one control channel protocol must be enabled!" << "\n";
       exit(1);
    }
+
+#if defined(HAVE_QUIC)
+   if( ((gQUICCertificate != nullptr) && (gQUICKey == nullptr)) ||
+       ((gQUICCertificate == nullptr) && (gQUICKey != nullptr)) ) {
+      std::cerr << "ERROR: Both --tls-cert and --tls-key must be specified together!" << "\n";
+      exit(1);
+   }
+#endif
 
    return true;
 }
@@ -938,16 +949,17 @@ static int server_handshake(int          sd,
 
    error = gnutls_certificate_allocate_credentials(&credentials);
    if(!error) {
-      const int loadedCAs =
-         gnutls_certificate_set_x509_trust_file(credentials,
-                                                tlsCAFile, GNUTLS_X509_FMT_PEM);
-      if(loadedCAs <= 0) {
-         LOG_ERROR
-         stdlog << "Loading CA certificate from "
-                << ((tlsCAFile != nullptr) ? tlsCAFile : "(none)") << " failed\n";
-         LOG_END
-         gnutls_certificate_free_credentials(credentials);
-         return -1;
+      if(tlsCAFile != nullptr) {
+         const int loadedCAs =
+            gnutls_certificate_set_x509_trust_file(credentials,
+                                                   tlsCAFile, GNUTLS_X509_FMT_PEM);
+         if(loadedCAs <= 0) {
+            LOG_ERROR
+            stdlog << "Loading CA certificate from " << tlsCAFile << " failed\n";
+            LOG_END
+            gnutls_certificate_free_credentials(credentials);
+            return -1;
+         }
       }
 
       error = gnutls_certificate_set_x509_key_file(credentials,
@@ -961,6 +973,10 @@ static int server_handshake(int          sd,
          if(!error) {
             error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
             if(!error) {
+               if(tlsCAFile != nullptr) {
+                  gnutls_certificate_server_set_request(session, GNUTLS_CERT_REQUEST);
+                  gnutls_session_set_verify_cert(session, nullptr, 0);
+               }
                error = gnutls_session_ticket_enable_server(session, &skey);
                if(!error) {
                   error = gnutls_record_set_max_early_data_size(session, 0xffffffffu);
@@ -991,6 +1007,18 @@ static int server_handshake(int          sd,
    if(error) {
       LOG_ERROR
       stdlog << "TLS setup failed: " << gnutls_strerror(error) << "\n";
+      if(error < 0) {
+         quic_connection_close closeInfo;
+         socklen_t             closeInfoLength = sizeof(closeInfo);
+         memset(&closeInfo, 0, sizeof(closeInfo));
+         if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONNECTION_CLOSE,
+                           &closeInfo, &closeInfoLength) == 0) {
+            closeInfo.phrase[sizeof(closeInfo.phrase) - 1] = 0x00;
+            stdlog << format("QUIC connection closed: errcode=%u, frame=%u, phrase=\"%s\"",
+                             closeInfo.errcode, (unsigned int)closeInfo.frame,
+                             (const char*)closeInfo.phrase) << "\n";
+         }
+      }
       LOG_END
    }
    return error;
@@ -1002,6 +1030,8 @@ static int client_handshake(int            sd,
                             const char*    alpns,
                             const char*    host,
                             const char*    tlsCAFile,
+                            const char*    tlsCertFile,
+                            const char*    tlsKeyFile,
                             const uint8_t* ticketIn,
                             size_t         ticketInLength,
                             uint8_t*       ticketOut,
@@ -1020,6 +1050,20 @@ static int client_handshake(int            sd,
          gnutls_certificate_free_credentials(credentials);
          return -1;
       }
+
+      if((tlsCertFile != nullptr) && (tlsKeyFile != nullptr)) {
+         error = gnutls_certificate_set_x509_key_file(credentials,
+                                                      tlsCertFile, tlsKeyFile,
+                                                      GNUTLS_X509_FMT_PEM);
+         if(error < 0) {
+            std::cerr << "ERROR: Loading client certificate from " << tlsCertFile
+                      << " and key from " << tlsKeyFile
+                      << " failed: " << gnutls_strerror(error) << "\n";
+            gnutls_certificate_free_credentials(credentials);
+            return -1;
+         }
+      }
+
       error = gnutls_init(&session, GNUTLS_CLIENT|GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
       if(!error) {
          error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
@@ -1052,6 +1096,18 @@ static int client_handshake(int            sd,
 
    if(error) {
       std::cerr << "ERROR: TLS setup failed: " << gnutls_strerror(error) << "\n";
+      if(error < 0) {
+         quic_connection_close closeInfo;
+         socklen_t             closeInfoLength = sizeof(closeInfo);
+         memset(&closeInfo, 0, sizeof(closeInfo));
+         if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONNECTION_CLOSE,
+                           &closeInfo, &closeInfoLength) == 0) {
+            closeInfo.phrase[sizeof(closeInfo.phrase) - 1] = 0x00;
+            std::cerr << format("ERROR: QUIC connection closed: errcode=%u, frame=%u, phrase=\"%s\"",
+                                closeInfo.errcode, (unsigned int)closeInfo.frame,
+                                (const char*)closeInfo.phrase) << "\n";
+         }
+      }
    }
    return error;
 }
@@ -1307,11 +1363,16 @@ static Flow* createFlow(Flow*                  previousFlow,
       if(trafficSpec.Protocol == IPPROTO_QUIC) {
          LOG_TRACE
          stdlog << "client handshake <sd=" << socketDescriptor
-                << ", CA=" << gQUICCA << " H=" << gQUICHostname << ">\n";
+                << ", K="  << ((gQUICKey != nullptr) ? gQUICKey : "(none)")
+                << ", C="  << ((gQUICCertificate != nullptr) ? gQUICCertificate : "(none)")
+                << ", CA=" << ((gQUICCA != nullptr) ? gQUICCA : "(none)")
+                << ", H="  << ((gQUICHostname != nullptr) ? gQUICHostname : "(none)")
+                << ">\n";
          LOG_END
 
          if(client_handshake(socketDescriptor,
                              ALPN_NETPERFMETER_DATA, gQUICHostname, gQUICCA,
+                             gQUICCertificate, gQUICKey,
                              nullptr, 0, nullptr, nullptr) != 0) {
             exit(1);
          }

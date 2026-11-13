@@ -216,6 +216,12 @@ _netperfmeter()
 --local
 -l
 --control-local
+-K
+--tls-key
+-J
+--tls-cert
+-I
+--tls-ca
 -H
 --tls-hostname
 --control-hbinterval
