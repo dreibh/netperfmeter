@@ -34,7 +34,7 @@
     <uri>https://www.simula.no/people/dreibh</uri>
    </address>
   </author>
-  <date day="24" month="October" year="2026" />
+  <date day="13" month="November" year="2026" />
   <area>Transport</area>
   <workgroup>Network Working Group</workgroup>
   <keyword>Internet-Draft</keyword>
@@ -132,7 +132,7 @@
      </li>
      <li>
       Stream: A subchannel or stream within a multi-stream association (e.g.,
-      SCTP stream or QUIC unidirectional stream).
+      SCTP stream or QUIC bidirectional stream).
      </li>
     </ul>
    </section>
@@ -164,17 +164,19 @@
 |      (Client)       |                      |      (Server)       |
 +---------------------+                      +---------------------+
 | NPMP-CONTROL Client |<=== Control Channel ===>| NPMP-CONTROL Server |
-|                     |     (SCTP or TCP)    |                     |
+|                     | (SCTP/TCP/MPTCP/QUIC)|                     |
 |  NPMP-DATA Sender/  |<==== Data Channel(s) ==>|  NPMP-DATA Sender/  |
 |      Receiver       |   (TCP/MPTCP/UDP/    |      Receiver       |
 +---------------------+    SCTP/DCCP/QUIC)   +---------------------+
     ]]></artwork>
     <t>
      The Control Channel operates over a reliable connection-oriented transport
-     protocol (by default SCTP using PPID 36, or TCP). It remains active for the
-     entire duration of the session to ensure reliable delivery of management
-     commands. The Data Channel encompasses all data flows generated according
-     to the traffic specifications, utilizing any supported transport protocol:
+     protocol (by default SCTP using PPID 36, or TCP, MPTCP, or QUIC using ALPN
+     "netperfmeter/control" over client-initiated bidirectional stream 0). It
+     remains active for the entire duration of the session to ensure reliable
+     delivery of management commands. The Data Channel encompasses all data
+     flows generated according to the traffic specifications, utilizing any
+     supported transport protocol:
     </t>
     <ul spacing="normal">
      <li>TCP: Transmission Control Protocol <xref target="RFC9293" />.</li>
@@ -182,7 +184,7 @@
      <li>UDP: User Datagram Protocol <xref target="RFC0768" />.</li>
      <li>SCTP: Stream Control Transmission Protocol <xref target="RFC9260" />, including Partial Reliability (PR-SCTP) <xref target="RFC3758" />.</li>
      <li>DCCP: Datagram Congestion Control Protocol <xref target="RFC4340" />, including CCID 2 <xref target="RFC4341" /> and CCID 3 <xref target="RFC4342" />.</li>
-     <li>QUIC: QUIC Transport Protocol <xref target="RFC9000" /> over TLS <xref target="RFC9001" />.</li>
+     <li>QUIC: QUIC Transport Protocol <xref target="RFC9000" /> over TLS <xref target="RFC9001" /> (using ALPN "netperfmeter/data" over client-initiated bidirectional streams).</li>
     </ul>
    </section>
    <section toc="default">
@@ -213,6 +215,12 @@
       <tr>
        <td align="left">NPMP-CONTROL</td>
        <td align="left">TCP / MPTCP</td>
+       <td align="left">BP + 1 (9001)</td>
+       <td align="left">-</td>
+      </tr>
+      <tr>
+       <td align="left">NPMP-CONTROL</td>
+       <td align="left">QUIC</td>
        <td align="left">BP + 1 (9001)</td>
        <td align="left">netperfmeter/control</td>
       </tr>
@@ -638,8 +646,11 @@ J = J + (1/16) * (|diff| - J)
    <t>
     When operating across public or untrusted networks, the Control Channel
     <bcp14>SHOULD</bcp14> be protected by network-layer security (IPsec) or
-    transport-layer security. QUIC data channels <bcp14>MUST</bcp14> enforce
-    mutual TLS certificate authentication as specified in <xref target="RFC9001" />.
+    transport-layer security (such as running NPMP-CONTROL over QUIC). QUIC
+    control and data channels <bcp14>MUST</bcp14> authenticate the passive
+    node using X.509 server certificates over TLS 1.3 <xref target="RFC9001" />,
+    and <bcp14>MAY</bcp14> additionally enforce mutual TLS (mTLS) client
+    certificate authentication.
    </t>
   </section>
   <section toc="default">
