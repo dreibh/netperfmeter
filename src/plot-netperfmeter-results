@@ -30,7 +30,7 @@
 set -euo pipefail
 
 # gettext options:
-export TEXTDOMAIN="plot-plot-netperfmeter-results"
+export TEXTDOMAIN="plot-netperfmeter-results"
 [[ "@CMAKE_INSTALL_FULL_DATADIR@" != @* ]] && export TEXTDOMAINDIR="${TEXTDOMAINDIR:-@CMAKE_INSTALL_FULL_DATADIR@/locale}"
 
 # shellcheck disable=SC1091
@@ -63,15 +63,10 @@ usage () {
    # "Usage: <program> [options]".
    cat >&2 <<EOF
 ${header}$(gettext "Usage:")${reset}
-${cmd}${program}${reset}
-	${syn}[${reset}${opt}-b${reset} ${syn}|${reset} ${opt}--batch${reset} ${syn}|${reset} ${opt}-i${reset} ${syn}|${reset} ${opt}--interactive${reset}${syn}]${reset}
-	${syn}[${reset}${opt}-c${reset} ${arg}level${reset} ${syn}|${reset} ${opt}--compress${reset} ${arg}level${reset}${syn}]${reset}
-	${syn}[${reset}${opt}-s${reset} ${arg}separator${reset} ${syn}|${reset} ${opt}--separator${reset} ${arg}separator${reset}${syn}]${reset}
-	${syn}[${reset}${opt}-l${reset} ${syn}|${reset} ${opt}--line-numbers${reset} ${syn}|${reset} ${opt}-n${reset} ${syn}|${reset} ${opt}--no-line-numbers${reset}${syn}]${reset}
-	${syn}[${reset}${opt}-p${reset} ${syn}|${reset} ${opt}--split${reset} ${syn}|${reset} ${opt}-a${reset} ${syn}|${reset} ${opt}--no-split${reset}${syn}]${reset}
-	${syn}[${reset}${opt}-r${reset} ${syn}|${reset} ${opt}--ignore-scalar-file-errors${reset}${syn}]${reset}
-	${syn}[${reset}${opt}-q${reset} ${syn}|${reset} ${opt}--quiet${reset}${syn}]${reset}
-	${syn}[${reset}${arg}variable_names${reset}${syn}]${reset}
+${cmd}${program}${reset} ${arg}config_name${reset}
+	${syn}[${reset}${opt}-w${reset} ${syn}|${reset} ${opt}--own-file${reset} ${syn}|${reset} ${opt}--ownfile${reset}${syn}]${reset}
+	${syn}[${reset}${opt}-k${reset} ${syn}|${reset} ${opt}--keep-summaries${reset}${syn}]${reset}
+	${syn}[${reset}${opt}-p${reset} ${syn}|${reset} ${opt}--per-flow-plots${reset}${syn}]${reset}
 ${cmd}${program}${reset}
 	${syn}[${reset}${opt}-h${reset} ${syn}|${reset} ${opt}--help${reset}${syn}]${reset}
 ${cmd}${program}${reset}
@@ -223,6 +218,12 @@ for searchPath in ${SEARCH_PATHS} ; do
       break
    fi
 done
+if ! command -v "${COMBINESUMMARIES}" >/dev/null 2>&1 ; then
+   # TRANSLATORS: Error message when combinesummaries executable cannot be found.
+   gettext >&2 "ERROR: Cannot find combinesummaries!"
+   echo >&2
+   exit 1
+fi
 
 SUMMARY_NAME="${OUTPUT_PREFIX}-summary.data.bz2"
 (
