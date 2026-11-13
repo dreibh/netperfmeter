@@ -26,12 +26,15 @@
 # Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.10)
-PROJECT(netperfmeter LANGUAGES C CXX)
-
 SET(BUILD_MAJOR "2")
 SET(BUILD_MINOR "0")
 SET(BUILD_PATCH "15~rc0")
-SET(BUILD_VERSION ${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH})
+STRING(REGEX MATCH "^[0-9]+(\\.[0-9]+)?(\\.[0-9]+)?(\\.[0-9]+)?" CMAKE_COMPAT_VERSION "${BUILD_MAJOR}.${BUILD_MINOR}.${BUILD_PATCH}")
+PROJECT(netperfmeter
+        VERSION      "${CMAKE_COMPAT_VERSION}"
+        LANGUAGES    C CXX
+        HOMEPAGE_URL "https://www.nntb.no/~dreibh/netperfmeter")
+SET(PROJECT_SOURCE_URL "https://github.com/dreibh/netperfmeter")
 
 
 #############################################################################
