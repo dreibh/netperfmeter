@@ -136,8 +136,7 @@ Description: Network Performance Meter (server service)
 
 Package: pdfproctools
 Architecture: all
-Depends: ghostscript,
-         libpdf-api2-perl,
+Depends: libpdf-api2-perl,
          perl (>= 5.8.0),
          qpdf,
          ${misc:Depends},
