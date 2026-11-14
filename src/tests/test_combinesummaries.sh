@@ -252,7 +252,7 @@ fi
 # ====== 4. Edge cases: empty file, header-only file, escaped quotes & default compression
 OUT_EDGE="${TMP_DIR}/combined_edge.data"
 CMD_EDGE="${TMP_DIR}/cmd_edge.txt"
-printf -- '--simulationsdirectory=%s\n--varnames="Protocol\tNote"\n--values="NONE\t\"empty\""\n--input=empty.data\n--values="HDR\t\"only\""\n--input=header_only.data\n--values="TCP\t\"ok\""\n--input=part1.data\n' \
+printf -- '--simulationsdirectory=%s\n--varnames="Protocol\tNote"\n--values="NONE\t\\"empty\\""\n--input=empty.data\n--values="HDR\t\\"only\\""\n--input=header_only.data\n--values="TCP\t\\"ok\\""\n--input=part1.data\n' \
     "${SIM_DIR}" > "${CMD_EDGE}"
 
 run_expect_ok "${CMD_EDGE}" "${TMP_DIR}/edge.out" "${TMP_DIR}/edge.err" -q "${OUT_EDGE}"
