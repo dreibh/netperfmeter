@@ -136,7 +136,13 @@ void Flow::print(std::ostream& os, const bool printStatistics)
    std::stringstream ss;
 
    lock();
-   if(TrafficSpec.Protocol != IPPROTO_SCTP) {
+   const bool isMultiStream =
+      (TrafficSpec.Protocol == IPPROTO_SCTP)
+#if defined(HAVE_QUIC)
+      || (TrafficSpec.Protocol == IPPROTO_QUIC)
+#endif
+      ;
+   if(!isMultiStream) {
       // TRANSLATORS: Flow summary header. Placeholders: {} 1: protocol name, 2: flow ID, 3: flow description, {:x} 4: measurement ID (hex).
       ss << formatText(gettext("+ {} Flow (Flow #{} \"{}\" of Measurement ${:x}):"),
                        getProtocolName(TrafficSpec.Protocol),
@@ -144,13 +150,11 @@ void Flow::print(std::ostream& os, const bool printStatistics)
                        MeasurementID) << "\n";
    }
    else {
-      // TRANSLATORS: SCTP association flow header. Placeholders: {} 1: protocol name, {:x} 2: measurement ID (hex).
+      // TRANSLATORS: Multi-stream flow header (SCTP association or QUIC connection). Placeholders: {} 1: protocol name, {:x} 2: measurement ID (hex).
       ss << formatText(gettext("+ {} Flow (of Measurement ${:x}):"),
                        getProtocolName(TrafficSpec.Protocol),
                        MeasurementID) << "\n";
-   }
-   if(TrafficSpec.Protocol == IPPROTO_SCTP) {
-      // TRANSLATORS: SCTP stream description inside an association. Placeholders: {} 1: stream ID, 2: flow ID, 3: flow description, {:x} 4: measurement ID (hex).
+      // TRANSLATORS: Stream description inside a multi-stream flow. Placeholders: {} 1: stream ID, 2: flow ID, 3: flow description, {:x} 4: measurement ID (hex).
       ss << formatText(gettext("   o Stream #{} (Flow ID #{} \"{}\" of Measurement ${:x}):"),
                        StreamID,
                        FlowID, TrafficSpec.Description,
