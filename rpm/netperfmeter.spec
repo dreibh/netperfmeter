@@ -19,7 +19,7 @@ BuildRequires: glibc-langpack-en
 BuildRequires: GraphicsMagick
 BuildRequires: libzstd-devel
 BuildRequires: lksctp-tools-devel
-BuildRequires: mupdf
+BuildRequires: pdf2svg
 BuildRequires: perl >= 5.8.0
 BuildRequires: perl(Locale::gettext)
 BuildRequires: perl-PDF-API2

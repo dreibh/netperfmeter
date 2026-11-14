@@ -159,6 +159,8 @@ ADD_EXECUTABLE(netperfmeter
    mutex.h
    netperfmeter.cc
    netperfmeterpackets.h
+   outputfile.cc
+   outputfile.h
    quic.cc
    quic.h
    thread.cc

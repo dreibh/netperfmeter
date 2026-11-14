@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd November 13, 2026
+.Dd November 14, 2026
 .Dt NetPerfMeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -169,7 +169,7 @@ On the active side, this option uses SCTP for the control connection to the pass
 .It Fl X | Fl \-no\:\-control\:\-over\:\-sctp
 On the passive side, this option disables incoming control connections via SCTP.
 .It Fl y | Fl \-control\:\-over\:\-tcp
-On the passive side, this option enables accepting control connections via TCP (default). It enables TCP in addition to other protocols for the control transport. Note: By default, SCTP, TCP, and QUIC (when TLS certificate and key are provided) are enabled on the passive side.
+On the passive side, this option enables accepting control connections via TCP (default). It enables TCP in addition to other protocols for the control transport. Note: By default, both \-\- SCTP and TCP \-\- are enabled on the passive side.
 On the active side, this option uses TCP for the control connection to the passive side. This may be necessary for NAT traversal or due to restrictive firewalls.
 .It Fl Y | Fl \-no\:\-control\:\-over\:\-tcp
 On the passive side, this option disables incoming control connections via TCP. This implicitly also disables control connections over MPTCP.
@@ -179,8 +179,8 @@ On the active side, this option uses MPTCP for the control connection to the pas
 .It Fl W | Fl \-no\:\-control\:\-over\:\-mptcp
 On the passive side, this option disables incoming control connections via MPTCP. However, it does not deactivate TCP!
 .It Fl z | Fl \-control\:\-over\:\-quic
-On the passive side, this option enables accepting control connections via QUIC (default when \-\-tls\-cert and \-\-tls\-key are provided). It enables QUIC in addition to other protocols for the control transport on local\_port+1.
-On the active side, this option uses QUIC for the control connection to the passive side (using \-\-tls\-ca, \-\-tls\-hostname, and optionally \-\-tls\-cert and \-\-tls\-key).
+On the passive side, this option enables accepting control connections via QUIC (default when \-\-tls\-key and \-\-tls\-cert are specified). It enables QUIC in addition to other protocols for the control transport.
+On the active side, this option uses QUIC for the control connection to the passive side.
 .It Fl Z | Fl \-no\:\-control\:\-over\:\-quic
 On the passive side, this option disables incoming control connections via QUIC.
 .It Fl L Ar address[\:,address,...] | Fl \-local Ar address[\:,address,...]
@@ -200,7 +200,7 @@ On the passive side, this option is required for QUIC, and the certificate must 
 On the active side, this option is optional and provides the client certificate for mutual TLS (mTLS) authentication (X.509 Extended Key Usage: TLS Web Client Authentication).
 .It Fl I Ar ca\_certificate\_file | Fl \-tls\-ca Ar ca\_certificate\_file
 Specifies the TLS root CA certificate file for QUIC authentication.
-On the active side, this option is optional: when specified, the passive side's server certificate is verified against the given CA truststore (e.g. for private or self\-signed CAs); when omitted, the system CA truststore is used.
+On the active side, this option is optional for QUIC and specifies the CA certificate used to verify the passive side's server certificate (if omitted, the system CA truststore is used).
 On the passive side, this option is optional: when specified, the passive side requests and verifies a client certificate against the given CA truststore (enabling mutual TLS / mTLS authentication); when omitted, only server authentication is performed.
 .It Fl H Ar hostname | Fl \-tls\-hostname Ar hostname
 Specifies the TLS certificate hostname for QUIC authentication. It is used by the active side.
@@ -210,7 +210,7 @@ Sets the heartbeat interval (in ms) for the control connection. Minimum: 1000; M
 .It Fl \-control\:\-hbpathmaxrtx Ar count
 Sets the per-path heartbeat retransmission limit for the control connection. Minimum: 1; Maximum: 1000000; Default: 3.
 .It Fl \-control\:\-hbassocmaxrtx Ar count
-Sets the per-association heartbeat retransmission limit for the control connection (also scales the QUIC control idle timeout). Minimum: 1; Maximum: 1000000; Default: 6.
+Sets the per-association heartbeat retransmission limit for the control connection (for SCTP, and used to derive the idle timeout for QUIC). Minimum: 1; Maximum: 1000000; Default: 6.
 .It Fl 6 | Fl \-v6only
 Use sockets with IPv6 only (by setting IPV6\_V6ONLY socket option).
 .It Fl \-display
@@ -338,7 +338,7 @@ Set debug mode for flow (default: off). Note: this is for debugging and testing 
 .It v6only
 Use socket with IPv6 only (by setting IPV6\_V6ONLY socket option).
 .It cc=name
-Set congestion control name (TCP and MPTCP for Linux only. QUIC supports default, reno, and cubic).
+Set congestion control name (TCP and MPTCP for Linux only).
 .It cmt=off | cmt | cmtrpv1 | cmtrpv2 | like\-mptcp | mptcp\-like | mptcp
 Configures usage of Concurrent Multipath Transfer (CMT): off (turned off; default), cmt (independent paths), cmtrpv1 (CMT/RPv1), cmtrpv2 (CMT/RPv2), mptcp/like\-mptcp/mptcp\-like (MPTCP), 0\-255 (custom value).
 Currently only supported by CMT\-SCTP on FreeBSD systems and MPTCP on Linux systems. Note: CMT for MPTCP always uses MPTCP congestion control.
@@ -374,8 +374,6 @@ At t=60s, start flow "Gamma" over the TCP connection (same parameters as flow "A
 At t=300s, stop the measurement.
 .It netperfmeter 172.31.33.2:9000 \-control\:\-over\:\-tcp \-tcp const2:const1000
 Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. The control connection uses TCP instead of SCTP.
-.It netperfmeter 172.31.33.2:9000 \-control\:\-over\:\-quic \-tls\-hostname my\-server.domain \-tls\-ca my\-ca.crt \-quic const2:const1000
-Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. Both the control connection and the data flow use QUIC.
 .It netperfmeter 172.31.33.2:9000 \-sctp const0:const0:uniform20,30:uniform900,1100
 SCTP traffic with some variation.
 .It netperfmeter 172.31.33.2:9000 \-udp const0\:const0\:const25\:const2500\:onoff=+pareto0.166667,\:1.5,\:+pareto0.166667,\:1.5,\:repeat
@@ -385,8 +383,8 @@ Start in passive mode, with mutual TLS (mTLS) setup for QUIC (omitting \-tls\-ca
 See
 .Lk https:\://\:www.nntb.no/\:\(tidreibh/\:netperfmeter/\:#quic-communication "QUIC Communication on the NetPerfMeter Homepage"
 for details about QUIC usage!
-.It netperfmeter 172.31.33.2:9000 \-tls\-hostname my\-server.domain \-tls\-ca my\-ca.crt \-tls\-key my\-client.key \-tls\-cert my\-client.crt \-quic const10:const128:const25:const1200
-Start in active mode, i.e. establish connection to 172.31.33.2, port 9000, using mutual TLS (mTLS) for QUIC. Set TLS server name of 172.31.33.2 to my-server.domain and authenticate the client with my-client.crt and my-client.key (\-tls\-key and \-tls\-cert may be omitted if the passive side does not require client certificates).
+.It netperfmeter 172.31.33.2:9000 \-control\:\-over\:\-quic \-tls\-hostname my\-server.domain \-tls\-ca my\-ca.crt \-tls\-key my\-client.key \-tls\-cert my\-client.crt \-quic const10:const128:const25:const1200
+Start in active mode, i.e. establish connection to 172.31.33.2, port 9000, using QUIC for both the control channel and data flow with mutual TLS (mTLS). Set TLS server name of 172.31.33.2 to my-server.domain and authenticate the client with my-client.crt and my-client.key (\-tls\-key and \-tls\-cert may be omitted if the passive side does not require client certificates, and \-tls\-ca may be omitted to use the system CA truststore).
 See
 .Lk https:\://\:www.nntb.no/\:\(tidreibh/\:netperfmeter/\:#quic-communication "QUIC Communication on the NetPerfMeter Homepage"
 for details about QUIC usage!
