@@ -19,7 +19,6 @@ BuildRequires: pdf2svg
 BuildRequires: perl >= 5.8.0
 BuildRequires: perl-PDF-API2
 BuildRequires: qpdf
-BuildRequires: valgrind-devel
 
 Requires: %{name}-common = %{version}-%{release}
 Requires: findutils
