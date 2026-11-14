@@ -84,6 +84,7 @@ static inline std::string formatText(std::string_view formatString, const Args&.
 #include "inputfile.h"
 #include "outputfile.h"
 #include "package-version.h"
+#include "propertyformatter.h"
 
 
 // ====== Statistics Key and Storage ========================================
@@ -134,7 +135,6 @@ static inline void removeScenarioName(std::string& str)
 }
 
 
-// ###### Parse floating-point value portably ###############################
 // ###### Parse floating-point value portably (libstdc++ & FreeBSD libc++) ==
 template<typename T = double>
 static inline bool parseDouble(std::string_view sv, T& value)
@@ -924,26 +924,38 @@ int main(int argc, char** argv)
 
    // ====== Print information ==============================================
    if(!quietMode) {
-      std::cout << "CreateSummary " << CREATESUMMARY_VERSION << "\n"
-                // TRANSLATORS: Status label for interactive mode ("on" or "off"). {} is "on" or "off".
-                << formatText(gettext("* Interactive Mode:  {}"),
-                              interactiveMode ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
-                                              : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off")) << "\n"
-                // TRANSLATORS: Status label for selected output file compression format. {} is format name.
-                << formatText(gettext("* Output Format:     {}"), getFormatName(outputFormat)) << "\n"
-                // TRANSLATORS: Status label for selected output compression level. {} is level number.
-                << formatText(gettext("* Compression Level: {}"), compressionLevel) << "\n"
-                // TRANSLATORS: Status label for output column separator. {} is separator string.
-                << formatText(gettext("* Separator:         \"{}\""), separator) << "\n"
-                // TRANSLATORS: Status label for output line numbering ("on" or "off"). {} is "on" or "off".
-                << formatText(gettext("* Line Numbers:      {}"),
-                              addLineNumbers ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
-                                             : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off")) << "\n"
-                // TRANSLATORS: Status label for scalar name splitting mode ("on" or "off"). {} is "on" or "off".
-                << formatText(gettext("* Scalar Splitting:  {}"),
-                              scalarSplittingMode ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
-                                                  : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off")) << "\n"
-                << "\n";
+      // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
+      const bool rtl = (std::string_view(gettext("LTR")) == "RTL");
+      PropertyFormatter formatter("   ", { "", "- ", "+ " }, "=", rtl);
+      formatter.addLine(0, formatText("CreateSummary {}", CREATESUMMARY_VERSION));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for interactive mode.
+                    gettext("Interactive Mode"),
+                    interactiveMode ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
+                                    : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off"));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for selected output file compression format.
+                    gettext("Output Format"),
+                    std::string(getFormatName(outputFormat)));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for selected output compression level.
+                    gettext("Compression Level"),
+                    std::to_string(compressionLevel));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for output column separator.
+                    gettext("Separator"),
+                    formatText("\"{}\"", separator));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for output line numbering.
+                    gettext("Line Numbers"),
+                    addLineNumbers ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
+                                   : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off"));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for scalar name splitting mode.
+                    gettext("Scalar Splitting"),
+                    scalarSplittingMode ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
+                                        : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off"));
+      std::cout << formatter << "\n";
    }
 
    if(interactiveMode) {

@@ -78,6 +78,7 @@ static inline std::string formatText(const std::string_view fmt, const Args&...)
 #include "inputfile.h"
 #include "outputfile.h"
 #include "package-version.h"
+#include "propertyformatter.h"
 
 
 // ###### Check columns for proper quotation ################################
@@ -369,18 +370,28 @@ int main(int argc, char** argv)
 
    // ====== Print information ==============================================
    if(!quietMode) {
-      std::cout << "CombineSummaries " << COMBINESUMMARIES_VERSION << "\n"
-                // TRANSLATORS: Status label for detected output file compression format. {} is format name.
-                << formatText(gettext("* Output Format:     {}"), getFormatName(outputFileFormat)) << "\n"
-                // TRANSLATORS: Status label for selected output compression level. {} is level number.
-                << formatText(gettext("* Compression Level: {}"), compressionLevel) << "\n"
-                // TRANSLATORS: Status label for output column separator. {} is separator string.
-                << formatText(gettext("* Separator:         \"{}\""), separator) << "\n"
-                // TRANSLATORS: Status label for output line numbering ("yes" or "no"). {} is "yes" or "no".
-                << formatText(gettext("* Line Numbers:      {}"),
-                              withLineNumbers ? /* TRANSLATORS: Boolean state label ("yes"). */ gettext("yes")
-                                              : /* TRANSLATORS: Boolean state label ("no"). */  gettext("no")) << "\n"
-                << "\n";
+      // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
+      const bool rtl = (std::string_view(gettext("LTR")) == "RTL");
+      PropertyFormatter formatter("   ", { "", "- ", "+ " }, "=", rtl);
+      formatter.addLine(0, formatText("CombineSummaries {}", COMBINESUMMARIES_VERSION));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for detected output file compression format.
+                    gettext("Output Format"),
+                    std::string(getFormatName(outputFileFormat)));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for selected output compression level.
+                    gettext("Compression Level"),
+                    std::to_string(compressionLevel));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for output column separator.
+                    gettext("Separator"),
+                    formatText("\"{}\"", separator));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for output line numbering.
+                    gettext("Line Numbers"),
+                    withLineNumbers ? /* TRANSLATORS: Boolean state label ("yes"). */ gettext("yes")
+                                    : /* TRANSLATORS: Boolean state label ("no"). */  gettext("no"));
+      std::cout << formatter << "\n";
    }
 
    // ====== Open output file and process input =============================

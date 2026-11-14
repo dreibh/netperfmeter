@@ -234,11 +234,11 @@ ADD_EXECUTABLE(createsummary
    debug.h
 )
 TARGET_INCLUDE_DIRECTORIES(createsummary
-                           PRIVATE libpropertyformatter
-                                   ${Intl_INCLUDE_DIRS}
+                           PRIVATE ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(createsummary
-                      PRIVATE libfileio-${libraryType}
+                      PRIVATE libpropertyformatter
+                              libfileio-${libraryType}
                               ${Intl_LIBRARIES}
                               ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     createsummary   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -252,11 +252,11 @@ ADD_EXECUTABLE(combinesummaries
    combinesummaries.cc
 )
 TARGET_INCLUDE_DIRECTORIES(combinesummaries
-                           PRIVATE libpropertyformatter
-                                   ${Intl_INCLUDE_DIRS}
+                           PRIVATE ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(combinesummaries
-                      PRIVATE libfileio-${libraryType}
+                      PRIVATE libpropertyformatter
+                              libfileio-${libraryType}
                               ${Intl_LIBRARIES}
                               ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     combinesummaries   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -273,7 +273,8 @@ TARGET_INCLUDE_DIRECTORIES(extractvectors
                            PRIVATE ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(extractvectors
-                      PRIVATE libfileio-${libraryType}
+                      PRIVATE libpropertyformatter
+                              libfileio-${libraryType}
                               ${Intl_LIBRARIES}
                               ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     extractvectors  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

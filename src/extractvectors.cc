@@ -81,6 +81,7 @@ static inline std::string formatText(const std::string_view fmt, const Args&...)
 #include "inputfile.h"
 #include "outputfile.h"
 #include "package-version.h"
+#include "propertyformatter.h"
 
 
 struct VectorInfo
@@ -185,9 +186,9 @@ static unsigned long long extractVectors(InputFile&               inputFile,
          else if(std::strncmp(inBuffer, "vector ", 7) == 0) {
             char objectName[1024];
             char vectorName[1024];
-            if((std::sscanf(inBuffer, "vector %u %1022s \"%1022[^\\\"]\" ETV",
+            if((std::sscanf(inBuffer, "vector %u %1022s \"%1022[^\"]\" ETV",
                             &vectorID, objectName, vectorName) == 3) ||
-               (std::sscanf(inBuffer, "vector %u %1022s %1022[^\\\"] ETV",
+               (std::sscanf(inBuffer, "vector %u %1022s %1022[^\"] ETV",
                             &vectorID, objectName, vectorName) == 3)) {
                bool includeVector = vectorsToExtract.empty();
                bool splitMode     = defaultVectorSplittingMode;
@@ -446,18 +447,28 @@ int main(int argc, char** argv)
 
    // ====== Print information ==============================================
    if(!quietMode) {
-      std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n"
-                // TRANSLATORS: Status label for vector name splitting mode ("on" or "off"). {} is "on" or "off".
-                << formatText(gettext("* Vector Splitting:  {}"),
-                              vectorSplittingMode ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
-                                                  : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off")) << "\n"
-                // TRANSLATORS: Status label for detected input file compression format. {} is format name.
-                << formatText(gettext("* Input Format:      {}"), getFormatName(inputFileFormat)) << "\n"
-                // TRANSLATORS: Status label for detected output file compression format. {} is format name.
-                << formatText(gettext("* Output Format:     {}"), getFormatName(outputFileFormat)) << "\n"
-                // TRANSLATORS: Status label for selected output compression level. {} is level number.
-                << formatText(gettext("* Compression Level: {}"), compressionLevel) << "\n"
-                << "\n";
+      // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
+      const bool rtl = (std::string_view(gettext("LTR")) == "RTL");
+      PropertyFormatter formatter("   ", { "", "- ", "+ " }, "=", rtl);
+      formatter.addLine(0, formatText("ExtractVectors {}", EXTRACTVECTORS_VERSION));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for vector name splitting mode.
+                    gettext("Vector Splitting"),
+                    vectorSplittingMode ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
+                                        : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off"));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for detected input file compression format.
+                    gettext("Input Format"),
+                    std::string(getFormatName(inputFileFormat)));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for detected output file compression format.
+                    gettext("Output Format"),
+                    std::string(getFormatName(outputFileFormat)));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for selected output compression level.
+                    gettext("Compression Level"),
+                    std::to_string(compressionLevel));
+      std::cout << formatter << "\n";
    }
 
    // ====== Parse vector name prefixes =====================================
