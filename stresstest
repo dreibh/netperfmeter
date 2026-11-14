@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -eu
 cmake .
 make
 J=$(( $(nproc) * 4 ))
