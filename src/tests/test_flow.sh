@@ -44,6 +44,7 @@ ENABLE_VECTOR=1
 ENABLE_MTLS=1
 MAX_RETRIES=1
 CONTROL_OVER_SCTP=0
+CONTROL_OVER_QUIC=0
 EXPECTED_FLOWS=1
 GENERAL_EXTRA_ARGS=""
 STREAM_ARGS=""
@@ -68,6 +69,7 @@ if [ "$#" -ge 7 ]; then
             --no-mtls)                    ENABLE_MTLS=0 ;;
             --retries=*|--max-retries=*)  MAX_RETRIES="${1#*=}" ;;
             --control-over-sctp|-control-over-sctp) CONTROL_OVER_SCTP=1 ;;
+            --control-over-quic|-control-over-quic) CONTROL_OVER_QUIC=1 ;;
             --stream|-stream)
                 # Additional stream within the current association
                 _spec="$2"
@@ -819,7 +821,7 @@ check_vector() {
     done
 }
 
-# ====== Listener Readiness Probe (TCP & SCTP via Perl) =====================
+# ====== Listener Readiness Probe (TCP, SCTP & QUIC) ========================
 wait_for_listener() {
     _host="$1"
     _port="$2"
@@ -837,7 +839,11 @@ wait_for_listener() {
             return 1
         fi
 
-        if [ "${_proto}" = "sctp" ]; then
+        if [ "${_proto}" = "quic" ]; then
+            if [ -s "${TMP_DIR}/server.log" ] && grep -q "Control Channel = " "${TMP_DIR}/server.log"; then
+                return 0
+            fi
+        elif [ "${_proto}" = "sctp" ]; then
             if perl -e '
                 use strict;
                 use warnings;
@@ -924,11 +930,15 @@ run_attempt() {
         return 0
     }
 
-    # Check if QUIC is used in any flow
+    # Check if QUIC is used in any data flow or for the control channel
     HAS_QUIC=0
-    case "${ALL_FLOW_PROTOS}" in
-        *quic*) HAS_QUIC=1 ;;
-    esac
+    if [ "${CONTROL_OVER_QUIC}" -eq 1 ]; then
+        HAS_QUIC=1
+    else
+        case "${ALL_FLOW_PROTOS}" in
+            *quic*) HAS_QUIC=1 ;;
+        esac
+    fi
 
     SERVER_TLS_ARGS=""
     CLIENT_TLS_ARGS=""
@@ -987,7 +997,11 @@ EOF
     fi
 
     # 1. Start passive node
-    if [ "${CONTROL_OVER_SCTP}" -eq 1 ]; then
+    if [ "${CONTROL_OVER_QUIC}" -eq 1 ]; then
+        SERVER_CONTROL_ARGS="-no-control-over-tcp -no-control-over-sctp -control-over-quic"
+        CLIENT_CONTROL_ARG="-control-over-quic"
+        CTRL_PROBE_PROTO="quic"
+    elif [ "${CONTROL_OVER_SCTP}" -eq 1 ]; then
         SERVER_CONTROL_ARGS="-control-over-tcp -control-over-sctp"
         CLIENT_CONTROL_ARG="-control-over-sctp"
         CTRL_PROBE_PROTO="sctp"
