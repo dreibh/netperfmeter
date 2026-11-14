@@ -146,7 +146,7 @@
 .Sy FLOWSPEC:
 .br
 .na
-.Ar outgoing_frame_rate\:outgoing_frame_size\:incoming_frame_rate\:incoming_frame_size\:option\:...
+.Ar outgoing_frame_rate:\:outgoing_frame_size:\:incoming_frame_rate:\:incoming_frame_size:\:option:\:...
 .ad b
 .\" ###### Description ######################################################
 .Sh DESCRIPTION
@@ -271,11 +271,11 @@ Establish a new QUIC connection. The streams of this connection must be specifie
 .It FLOWSPEC
 Specifies a new flow. The format is:
 .na
-.Ar outgoing_frame_rate\:outgoing_frame_size\:incoming_frame_rate\:incoming_frame_size\:option\:...
+.Ar outgoing_frame_rate:\:outgoing_frame_size:\:incoming_frame_rate:\:incoming_frame_size:\:option:\:...
 .ad b
 .Pp
 The first four parameters
-.Pq Ar outgoing_frame_rate\:outgoing_frame_size\:incoming_frame_rate\:incoming_frame_size
+.Pq Ar outgoing_frame_rate:\:outgoing_frame_size:\:incoming_frame_rate:\:incoming_frame_size
 may be substituted by the option "default", creating a flow with some more or less useful default parameters.
 .Bl -tag -width indent
 .It outgoing\_frame\_rate
@@ -360,7 +360,7 @@ Some netperfmeter usage examples:
 .Bl -tag -width indent
 .It netperfmeter 9000
 Start in passive mode, i.e. accepting connections, on port 9000.
-.It netperfmeter 172.31.33.2:9000 \-config=output.config \-vector=output\-*.vec.bz2 \-scalar=output\-*.sca.bz2 \-sctp const5\:exp1000\:const3\:exp500\:description="Alpha"\:onoff=+10 const5\:exp1000\:const3\:exp500\:description="Beta"\:onoff=+30 \-tcp const5\:exp1000\:const3\:exp500\:description="Gamma"\:onoff=+60 \-runtime=300
+.It netperfmeter 172.31.33.2:9000 \-config=output.config \-vector=output\-*.vec.bz2 \-scalar=output\-*.sca.bz2 \-sctp const5:\:exp1000:\:const3:\:exp500:\:description="Alpha":\:onoff=+10 const5:\:exp1000:\:const3:\:exp500:\:description="Beta":\:onoff=+30 \-tcp const5:\:exp1000:\:const3:\:exp500:\:description="Gamma":\:onoff=+60 \-runtime=300
 Start in active mode, i.e. establish connection to 172.31.33.2, port 9000.
 Frames will be segmented into messages of up to 4096 bytes.
 Write configuration to output\-*.config.
@@ -376,7 +376,7 @@ At t=300s, stop the measurement.
 Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. The control connection uses TCP instead of SCTP.
 .It netperfmeter 172.31.33.2:9000 \-sctp const0:const0:uniform20,30:uniform900,1100
 SCTP traffic with some variation.
-.It netperfmeter 172.31.33.2:9000 \-udp const0\:const0\:const25\:const2500\:onoff=+pareto0.166667,\:1.5,\:+pareto0.166667,\:1.5,\:repeat
+.It netperfmeter 172.31.33.2:9000 \-udp const0:\:const0:\:const25:\:const2500:\:onoff=+pareto0.166667,\:1.5,\:+pareto0.166667,\:1.5,\:repeat
 Some on-off background traffic with Pareto distribution.
 .It netperfmeter 9000 \-tls\-key my\-server.key \-tls\-cert my\-server.crt \-tls\-ca my\-ca.crt
 Start in passive mode, with mutual TLS (mTLS) setup for QUIC (omitting \-tls\-ca disables client certificate verification and uses server-only TLS authentication).
