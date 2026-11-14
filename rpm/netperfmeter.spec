@@ -276,13 +276,19 @@ This package sets up a service running a NetPerfMeter server instance.
 Summary: PDF Processing Tools
 Group: Applications/Internet
 BuildArch: noarch
+<<<<<<< HEAD
 Requires: (gettext-envsubst or gettext)
 Requires: (gettext-runtime or gettext)
+=======
+>>>>>>> origin/master
 Requires: perl-interpreter
 Requires: perl(strict)
 Requires: perl(subs)
 Requires: perl(warnings)
+<<<<<<< HEAD
 Requires: perl(Locale::gettext)
+=======
+>>>>>>> origin/master
 Requires: perl-PDF-API2
 Requires: qpdf
 
