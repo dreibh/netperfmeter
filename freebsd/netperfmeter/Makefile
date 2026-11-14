@@ -11,7 +11,7 @@ LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
 TEST_DEPENDS=	p5-PDF-API2>=0:textproc/p5-PDF-API2 \
-		qpdf
+		qpdf:print/qpdf
 
 USES=		cmake:testing perl5 shared-mime-info shebangfix tar:xz
 
@@ -48,13 +48,11 @@ ICONS_BUILD_DEPENDS=		gm:graphics/GraphicsMagick \
 ICONS_USES=			ghostscript
 ICONS_CMAKE_BOOL=		WITH_ICONS
 
-PLOT_PROGRAMS_RUN_DEPENDS=	R-cran-bit64>0:devel/R-cran-bit64 \
-				R-cran-data.table>0:devel/R-cran-data.table \
+PLOT_PROGRAMS_RUN_DEPENDS=	R-cran-data.table>0:devel/R-cran-data.table \
 				R-cran-dplyr>0:math/R-cran-dplyr \
 				R-cran-ggplot2>0:graphics/R-cran-ggplot2 \
-				R-cran-R.utils>0:devel/R-cran-R.utils \
 				p5-PDF-API2>=0:textproc/p5-PDF-API2 \
-				qpdf
+				qpdf:print/qpdf
 PLOT_PROGRAMS_CMAKE_BOOL=	WITH_PLOT_PROGRAMS
 
 .include <bsd.port.mk>
