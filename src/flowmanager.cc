@@ -1018,12 +1018,13 @@ void FlowManager::run()
                                                                protocol, entry->fd);
                   if(!dataOkay) {
                      // Close the broken connection!
+                     const int brokenSD = FlowSet[i]->SocketDescriptor;
                      LOG_WARNING
                      stdlog << format("Closing disconnected socket %d!",
-                                      FlowSet[i]->SocketDescriptor) << "\n";
+                                      brokenSD) << "\n";
                      LOG_END
                      const bool deregisteredFromReader =
-                        Reader.deregisterSocket(FlowSet[i]->SocketDescriptor);
+                        Reader.deregisterSocket(brokenSD);
                      if( (protocol != IPPROTO_SCTP)
 #if defined(HAVE_QUIC)
                          && (protocol != IPPROTO_QUIC)
@@ -1035,8 +1036,14 @@ void FlowManager::run()
                         assure(deregisteredFromReader);
                      }
                      if(deregisteredFromReader) {
-                        ext_close(FlowSet[i]->SocketDescriptor);
+                        ext_close(brokenSD);
                         FlowSet[i]->SocketDescriptor = -1;
+                        FlowSet[i]->OutputStatus     = Flow::Off;
+                        FlowSet[i]->stop();
+                        if((!FlowSet[i]->isAcceptedIncomingFlow()) &&
+                           (FlowSet[i]->getTrafficSpec().ErrorOnAbort)) {
+                           sendBreak(true);
+                        }
                      }
                   }
                }
