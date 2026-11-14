@@ -10,13 +10,16 @@ WWW=		https://www.nntb.no/~dreibh/netperfmeter/
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
-TEST_DEPENDS=	p5-PDF-API2>=0:textproc/p5-PDF-API2
+TEST_DEPENDS=	p5-PDF-API2>=0:textproc/p5-PDF-API2 \
+		qpdf
 
 USES=		cmake:testing perl5 shared-mime-info shebangfix tar:xz
 
 USE_PERL5=	test
 
-SHEBANG_FILES=	src/pdfembedfonts src/plot-netperfmeter-results \
+SHEBANG_FILES=	src/netperfmeter-module-loader \
+                src/pdfembedfonts \
+                src/plot-netperfmeter-results \
 		src/setpdfmetadata
 
 # Work-around for build issue on ARM:
@@ -41,7 +44,7 @@ EXAMPLE_RESULTS_CMAKE_BOOL=	WITH_EXAMPLE_RESULTS
 EXAMPLE_SCRIPTS_CMAKE_BOOL=	WITH_EXAMPLE_SCRIPTS
 
 ICONS_BUILD_DEPENDS=		gm:graphics/GraphicsMagick \
-				mutool:graphics/mupdf
+				pdf2svg:graphics/pdf2svg
 ICONS_USES=			ghostscript
 ICONS_CMAKE_BOOL=		WITH_ICONS
 
@@ -50,7 +53,8 @@ PLOT_PROGRAMS_RUN_DEPENDS=	R-cran-bit64>0:devel/R-cran-bit64 \
 				R-cran-dplyr>0:math/R-cran-dplyr \
 				R-cran-ggplot2>0:graphics/R-cran-ggplot2 \
 				R-cran-R.utils>0:devel/R-cran-R.utils \
-				p5-PDF-API2>=0:textproc/p5-PDF-API2
+				p5-PDF-API2>=0:textproc/p5-PDF-API2 \
+				qpdf
 PLOT_PROGRAMS_CMAKE_BOOL=	WITH_PLOT_PROGRAMS
 
 .include <bsd.port.mk>
