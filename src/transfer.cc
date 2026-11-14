@@ -87,6 +87,13 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
                                     const uint64_t           byteOffset,
                                     size_t                   bytesToSend)
 {
+   flow->lock();
+   const int sd = flow->getSocketDescriptor();
+   flow->unlock();
+   if(sd < 0) {
+      return -1;
+   }
+
    char  outputBuffer[MAXIMUM_MESSAGE_SIZE];
    auto* dataMsg = reinterpret_cast<NetPerfMeterDataMessage*>(&outputBuffer);
 
@@ -132,17 +139,17 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
          flags |= MSG_MORE;   // Accumulate chunks belonging to the frame
       }
 #endif
-      sent = ext_send(flow->getSocketDescriptor(), outputBuffer, bytesToSend, flags);
+      sent = ext_send(sd, outputBuffer, bytesToSend, flags);
    }
    else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
       if(flow->isRemoteAddressValid()) {
-         sent = ext_sendto(flow->getSocketDescriptor(),
+         sent = ext_sendto(sd,
                            outputBuffer, bytesToSend, 0,
                            flow->getRemoteAddress(),
                            getSocklen(flow->getRemoteAddress()));
       }
       else {
-         sent = ext_send(flow->getSocketDescriptor(),
+         sent = ext_send(sd,
                          outputBuffer, bytesToSend, 0);
       }
    }
@@ -174,7 +181,7 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
             sinfo.sinfo_flags |= SCTP_UNORDERED;
          }
       }
-      sent = sctp_send(flow->getSocketDescriptor(),
+      sent = sctp_send(sd,
                        outputBuffer, bytesToSend,
                        &sinfo, 0);
    }
@@ -184,26 +191,29 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
       // Both active and passive sides use the client-initiated bidirectional
       // stream created by NETPERFMETER_IDENTIFY_FLOW ((StreamID << 2) | 0).
       const int64_t sid = static_cast<int64_t>(flow->getStreamID()) << 2;
-      sent = quic_sendmsg(flow->getSocketDescriptor(), outputBuffer, bytesToSend, sid, 0);
+      sent = quic_sendmsg(sd, outputBuffer, bytesToSend, sid, 0);
    }
 #endif
    else {
-      sent = ext_send(flow->getSocketDescriptor(), outputBuffer, bytesToSend, 0);
+      sent = ext_send(sd, outputBuffer, bytesToSend, 0);
    }
 
    // ====== Check, whether flow has been aborted unintentionally ===========
    if( (sent < 0) &&
        (errno != EAGAIN) &&
+       (errno != EWOULDBLOCK) &&
        (!flow->isAcceptedIncomingFlow()) &&
        (flow->getTrafficSpec().ErrorOnAbort) &&
        (flow->getOutputStatus() == Flow::On) &&
        (!flow->isStopping()) ) {
-      LOG_FATAL
+      LOG_ERROR
       // TRANSLATORS: Error message when a data flow is unexpectedly terminated. Placeholders: {} 1: flow ID, 2: socket descriptor, 3: strerror() message.
       stdlog << formatText(gettext("Flow #{} on socket {} has been aborted: {}!"),
-                           flow->getFlowID(), flow->getSocketDescriptor(),
+                           flow->getFlowID(), sd,
                            strerror(errno)) << "\n";
-      LOG_END_FATAL
+      LOG_END
+      flow->stop();
+      sendBreak(true);
    }
 
    return sent;
