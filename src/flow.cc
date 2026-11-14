@@ -133,7 +133,9 @@ bool Flow::setMeasurement(Measurement* measurement)
 // ###### Print Flow ########################################################
 void Flow::print(std::ostream& os, const bool printStatistics)
 {
-   std::stringstream ss;
+   // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
+   const bool rtl = (std::string_view(gettext("LTR")) == "RTL");
+   PropertyFormatter formatter("   ", { "", "- ", "+ ", "* " }, "=", rtl);
 
    lock();
    const bool isMultiStream =
@@ -144,32 +146,35 @@ void Flow::print(std::ostream& os, const bool printStatistics)
       ;
    if(!isMultiStream) {
       // TRANSLATORS: Flow summary header. Placeholders: {} 1: protocol name, 2: flow ID, 3: flow description, {:x} 4: measurement ID (hex).
-      ss << formatText(gettext("+ {} Flow (Flow #{} \"{}\" of Measurement ${:x}):"),
-                       getProtocolName(TrafficSpec.Protocol),
-                       FlowID, TrafficSpec.Description,
-                       MeasurementID) << "\n";
+      formatter.addLine(0, formatText(gettext("+ {} Flow (Flow #{} \"{}\" of Measurement ${:x}):"),
+                                      getProtocolName(TrafficSpec.Protocol),
+                                      FlowID, TrafficSpec.Description,
+                                      MeasurementID));
    }
    else {
       // TRANSLATORS: Multi-stream flow header (SCTP association or QUIC connection). Placeholders: {} 1: protocol name, {:x} 2: measurement ID (hex).
-      ss << formatText(gettext("+ {} Flow (of Measurement ${:x}):"),
-                       getProtocolName(TrafficSpec.Protocol),
-                       MeasurementID) << "\n";
+      formatter.addLine(0, formatText(gettext("+ {} Flow (of Measurement ${:x}):"),
+                                      getProtocolName(TrafficSpec.Protocol),
+                                      MeasurementID));
       // TRANSLATORS: Stream description inside a multi-stream flow. Placeholders: {} 1: stream ID, 2: flow ID, 3: flow description, {:x} 4: measurement ID (hex).
-      ss << formatText(gettext("   o Stream #{} (Flow ID #{} \"{}\" of Measurement ${:x}):"),
-                       StreamID,
-                       FlowID, TrafficSpec.Description,
-                       MeasurementID) << "\n";
+      formatter.addLine(1, formatText(gettext("Stream #{} (Flow ID #{} \"{}\" of Measurement ${:x}):"),
+                                      StreamID,
+                                      FlowID, TrafficSpec.Description,
+                                      MeasurementID));
    }
-   TrafficSpec.print(ss);
+
+   const size_t baseLevel = isMultiStream ? 2 : 1;
+   TrafficSpec.print(formatter, baseLevel);
 
    if(printStatistics) {
-      CurrentBandwidthStats.print(ss,
+      CurrentBandwidthStats.print(formatter,
                                   std::chrono::duration<double>(std::chrono::microseconds(LastTransmission - FirstTransmission)).count(),
-                                  std::chrono::duration<double>(std::chrono::microseconds(LastReception - FirstReception)).count());
+                                  std::chrono::duration<double>(std::chrono::microseconds(LastReception - FirstReception)).count(),
+                                  baseLevel);
    }
    unlock();
 
-   os << ss.str();
+   os << formatter;
 }
 
 

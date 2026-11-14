@@ -30,6 +30,22 @@
 #include "flowtrafficspec.h"
 #include "tools.h"
 
+#include <sstream>
+#include <string_view>
+
+
+// ###### Format configuration entry as string ##############################
+static std::string formatEntry(const double* valueArray, const uint8_t rng)
+{
+   std::ostringstream oss;
+   FlowTrafficSpec::showEntry(oss, valueArray, rng);
+   std::string result = oss.str();
+   while(!result.empty() && result.back() == ' ') {
+      result.pop_back();
+   }
+   return result;
+}
+
 
 // ###### Show configuration entry (value + random number generator) ########
 void FlowTrafficSpec::showEntry(std::ostream& os,
@@ -69,95 +85,97 @@ void FlowTrafficSpec::showEntry(std::ostream& os,
 }
 
 
-// ###### Print FlowTrafficSpec #############################################
-void FlowTrafficSpec::print(std::ostream& os) const
+// ###### Print FlowTrafficSpec into PropertyFormatter ######################
+void FlowTrafficSpec::print(PropertyFormatter& formatter, const size_t level) const
 {
-   // TRANSLATORS: Socket receive buffer size. Placeholder: {} is buffer size in bytes.
-   os << formatText(gettext(" - Receive Buffer Size: {}"), RcvBufferSize) << "\n";
-   // TRANSLATORS: Socket send buffer size. Placeholder: {} is buffer size in bytes.
-   os << formatText(gettext(" - Send Buffer Size:    {}"), SndBufferSize) << "\n";
-   // TRANSLATORS: Maximum message size in bytes. Placeholder: {} is size in bytes.
-   os << formatText(gettext(" - Max. Message Size:   {}"), MaxMsgSize) << "\n";
-   // TRANSLATORS: Defragmentation timeout in milliseconds. Placeholder: {} is duration in ms.
-   os << formatText(gettext(" - Defragment Timeout:  {} ms"), DefragmentTimeout / 1000ULL) << "\n";
+   // TRANSLATORS: Socket receive buffer size label.
+   formatter.add(level, gettext("Receive Buffer Size"), std::to_string(RcvBufferSize));
+   // TRANSLATORS: Socket send buffer size label.
+   formatter.add(level, gettext("Send Buffer Size"), std::to_string(SndBufferSize));
+   // TRANSLATORS: Maximum message size in bytes label.
+   formatter.add(level, gettext("Max. Message Size"), std::to_string(MaxMsgSize));
+   // TRANSLATORS: Defragmentation timeout label.
+   formatter.add(level, gettext("Defragment Timeout"),
+                 // TRANSLATORS: Defragmentation timeout value in milliseconds. Placeholder: {} is duration in ms.
+                 formatText(gettext("{} ms"), DefragmentTimeout / 1000ULL));
    // TRANSLATORS: Outbound frame transmission rate label.
-   os << gettext(" - Outbound Frame Rate: ");
-   showEntry(os, static_cast<const double*>(OutboundFrameRate), OutboundFrameRateRng);
+   formatter.add(level, gettext("Outbound Frame Rate"),
+                 formatEntry(static_cast<const double*>(OutboundFrameRate), OutboundFrameRateRng));
    // TRANSLATORS: Outbound frame size label.
-   os << "\n" << gettext(" - Outbound Frame Size: ");
-   showEntry(os, static_cast<const double*>(OutboundFrameSize), OutboundFrameSizeRng);
+   formatter.add(level, gettext("Outbound Frame Size"),
+                 formatEntry(static_cast<const double*>(OutboundFrameSize), OutboundFrameSizeRng));
    // TRANSLATORS: Inbound frame rate label.
-   os << "\n" << gettext(" - Inbound Frame Rate:  ");
-   showEntry(os, static_cast<const double*>(InboundFrameRate), InboundFrameRateRng);
+   formatter.add(level, gettext("Inbound Frame Rate"),
+                 formatEntry(static_cast<const double*>(InboundFrameRate), InboundFrameRateRng));
    // TRANSLATORS: Inbound frame size label.
-   os << "\n" << gettext(" - Inbound Frame Size:  ");
-   showEntry(os, static_cast<const double*>(InboundFrameSize), InboundFrameSizeRng);
-   os << "\n";
+   formatter.add(level, gettext("Inbound Frame Size"),
+                 formatEntry(static_cast<const double*>(InboundFrameSize), InboundFrameSizeRng));
+
    if(Protocol == IPPROTO_SCTP) {
-      // TRANSLATORS: SCTP ordered delivery mode percentage. Placeholder: {} is percentage string.
-      os << formatText(gettext(" - Ordered Mode:        {}"), formatText("{:1.3f}%", 100.0 * OrderedMode)) << "\n";
-      // TRANSLATORS: SCTP reliable delivery mode percentage. Placeholder: {} is percentage string.
-      os << formatText(gettext(" - Reliable Mode:       {}"), formatText("{:1.3f}%", 100.0 * ReliableMode)) << "\n";
-      // TRANSLATORS: Parameter label for SCTP retransmissions.
-      os << gettext(" - Retransmissions:     ");
+      // TRANSLATORS: SCTP ordered delivery mode percentage label.
+      formatter.add(level, gettext("Ordered Mode"), formatText("{:1.3f}%", 100.0 * OrderedMode));
+      // TRANSLATORS: SCTP reliable delivery mode percentage label.
+      formatter.add(level, gettext("Reliable Mode"), formatText("{:1.3f}%", 100.0 * ReliableMode));
+
+      std::string rtxValue;
       if((RetransmissionTrialsInMS) && (RetransmissionTrials == static_cast<uint32_t>(-1))) {
          // TRANSLATORS: Indicator for unlimited retransmissions.
-         os << gettext("unlimited");
+         rtxValue = gettext("unlimited");
       }
       else if(RetransmissionTrialsInMS) {
          // TRANSLATORS: SCTP retransmission timeout in milliseconds. Placeholder: {} is duration in ms.
-         os << formatText(gettext("{} ms"), RetransmissionTrials);
+         rtxValue = formatText(gettext("{} ms"), RetransmissionTrials);
       }
       else {
          // TRANSLATORS: SCTP retransmission attempt count. Placeholder: {} is trial count.
-         os << formatText(gettext("{} trials"), RetransmissionTrials);
+         rtxValue = formatText(gettext("{} trials"), RetransmissionTrials);
       }
-      os << "\n";
+      // TRANSLATORS: Parameter label for SCTP retransmissions.
+      formatter.add(level, gettext("Retransmissions"), std::move(rtxValue));
    }
 
-   // TRANSLATORS: Label for on/off traffic patterns.
-   os << gettext(" - On/Off:              { ");
    if(!OnOffEvents.empty()) {
+      // TRANSLATORS: Label for on/off traffic patterns.
+      formatter.add(level, gettext("On/Off"), "");
       bool start = true;
-      for(std::vector<OnOffEvent>::const_iterator iterator = OnOffEvents.begin();
-          iterator != OnOffEvents.end(); iterator++) {
-         os << "\n" << "         ";
-         if(start) {
-            // TRANSLATORS: On-period prefix indicator for on/off traffic pattern.
-            os << gettext("🟢on:  ");
-         }
-         else {
-            // TRANSLATORS: Off-period prefix indicator for on/off traffic pattern.
-            os << gettext("🔴off: ");
-         }
-         showEntry(os, static_cast<const double*>((*iterator).ValueArray), (*iterator).RandNumGen);
+      for(const auto& event : OnOffEvents) {
+         formatter.add(level + 1,
+                       start ?
+                          // TRANSLATORS: On-period label for on/off traffic pattern.
+                          gettext("🟢on") :
+                          // TRANSLATORS: Off-period label for on/off traffic pattern.
+                          gettext("🔴off"),
+                       formatEntry(static_cast<const double*>(event.ValueArray), event.RandNumGen));
          start = !start;
       }
    }
    else {
-      os << "*0 ";
+      // TRANSLATORS: Label for on/off traffic patterns.
+      formatter.add(level, gettext("On/Off"), "{ *0 }");
    }
-   os << "}\n"
-      // TRANSLATORS: Parameter label for repeating on/off traffic pattern. Placeholder: {} is yes/no.
-      << formatText(gettext(" - Repeat On/Off:       {}"), RepeatOnOff ? gettext("yes") : gettext("no")) << "\n";
+   // TRANSLATORS: Parameter label for repeating on/off traffic pattern.
+   formatter.add(level, gettext("Repeat On/Off"), RepeatOnOff ? gettext("yes") : gettext("no"));
+   // TRANSLATORS: Error on abort configuration parameter label.
+   formatter.add(level, gettext("Error on Abort"), ErrorOnAbort ? gettext("yes") : gettext("no"));
 
-   // TRANSLATORS: Error on abort configuration parameter label. Placeholder: {} is yes/no.
-   os << formatText(gettext(" - Error on Abort:      {}"), ErrorOnAbort ? gettext("yes") : gettext("no")) << "\n";
    if((Protocol == IPPROTO_SCTP) || (Protocol == IPPROTO_TCP)
 #if defined(HAVE_MPTCP)
       || (Protocol == IPPROTO_MPTCP)
 #endif
      ) {
-      // TRANSLATORS: TCP/SCTP Nagle algorithm status (No Delay). Placeholder: {} is yes/no.
-      os << formatText(gettext(" - No Delay:            {}"), NoDelay ? gettext("yes") : gettext("no")) << "\n";
+      // TRANSLATORS: TCP/SCTP Nagle algorithm status (No Delay) label.
+      formatter.add(level, gettext("No Delay"), NoDelay ? gettext("yes") : gettext("no"));
    }
    if((Protocol == IPPROTO_TCP)
 #if defined(HAVE_MPTCP)
       || (Protocol == IPPROTO_MPTCP)
 #endif
+#if defined(HAVE_QUIC)
+      || (Protocol == IPPROTO_QUIC)
+#endif
      ) {
-      // TRANSLATORS: Congestion control algorithm label. Placeholder: {} is the algorithm name.
-      os << formatText(gettext(" - Congestion Control:  {}"), CongestionControl) << "\n";
+      // TRANSLATORS: Congestion control algorithm label.
+      formatter.add(level, gettext("Congestion Control"), CongestionControl);
    }
    if(Protocol == IPPROTO_SCTP) {
       std::string cmtMode;
@@ -182,15 +200,29 @@ void FlowTrafficSpec::print(std::ostream& os) const
             cmtMode = "";
             break;
       }
-      // TRANSLATORS: Concurrent Multipath Transfer setting. Placeholders: {} 1: CMT number, 2: CMT mode name.
-      os << formatText(gettext(" - CMT:                 #{} {}"), static_cast<unsigned int>(CMT), cmtMode) << "\n";
+      // TRANSLATORS: Concurrent Multipath Transfer setting label.
+      formatter.add(level, gettext("CMT"),
+                    cmtMode.empty()
+                       ? formatText("#{}", static_cast<unsigned int>(CMT))
+                       : formatText("#{} {}", static_cast<unsigned int>(CMT), cmtMode));
    }
 #if defined(HAVE_DCCP)
    if(Protocol == IPPROTO_DCCP) {
-      // TRANSLATORS: DCCP Congestion Control ID setting. Placeholder: {} is CCID number.
-      os << formatText(gettext(" - CCID:                #{}"), static_cast<unsigned int>(CCID)) << "\n";
+      // TRANSLATORS: DCCP Congestion Control ID setting label.
+      formatter.add(level, gettext("CCID"), formatText("#{}", static_cast<unsigned int>(CCID)));
    }
 #endif
+}
+
+
+// ###### Print FlowTrafficSpec #############################################
+void FlowTrafficSpec::print(std::ostream& os) const
+{
+   // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
+   const bool rtl = (std::string_view(gettext("LTR")) == "RTL");
+   PropertyFormatter formatter("   ", { "", "- ", "+ ", "* " }, "=", rtl);
+   print(formatter, 1);
+   os << formatter;
 }
 
 

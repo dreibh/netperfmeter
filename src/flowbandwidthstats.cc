@@ -30,6 +30,9 @@
 #include "flowbandwidthstats.h"
 #include "tools.h"
 
+#include <algorithm>
+#include <string_view>
+
 
 // ###### "+" operator ######################################################
 FlowBandwidthStats operator+(const FlowBandwidthStats& s1,
@@ -71,10 +74,73 @@ FlowBandwidthStats operator-(const FlowBandwidthStats& s1,
 }
 
 
-// ###### Print FlowBandwidthStats ##########################################
-void FlowBandwidthStats::print(std::ostream& os,
-                               const double  transmissionDuration,
-                               const double  receptionDuration) const
+// ###### Add one traffic direction/loss block to PropertyFormatter #########
+static void addTrafficSection(PropertyFormatter& formatter,
+                              const size_t       level,
+                              const char*        sectionTitle,
+                              const double       duration,
+                              const uint64_t     bytes,   const uint64_t byteRate,
+                              const uint64_t     bits,    const uint64_t bitRate,
+                              const uint64_t     packets, const uint64_t packetRate,
+                              const uint64_t     frames,  const uint64_t frameRate)
+{
+   formatter.addLine(level, sectionTitle);
+   // TRANSLATORS: Measurement duration label.
+   formatter.add(level + 1, gettext("Duration"),
+                 // TRANSLATORS: Measurement duration value in seconds. Placeholder: {} is duration in seconds.
+                 formatText(gettext("{} s"), duration));
+
+   struct RateRow {
+      const char* label;
+      std::string total;
+      std::string rate;
+   };
+   const RateRow rows[4] = {
+      // TRANSLATORS: Byte statistics label.
+      { gettext("Bytes"),
+        // TRANSLATORS: Byte count. Placeholder: {} is total bytes.
+        formatText(gettext("{} B"), bytes),
+        // TRANSLATORS: Byte rate. Placeholder: {} is byte rate in B/s.
+        formatText(gettext("{} B/s"), byteRate) },
+      // TRANSLATORS: Bit statistics label.
+      { gettext("Bits"),
+        // TRANSLATORS: Bit count. Placeholder: {} is total bits.
+        formatText(gettext("{} bit"), bits),
+        // TRANSLATORS: Bit rate. Placeholder: {} is bit rate in bit/s.
+        formatText(gettext("{} bit/s"), bitRate) },
+      // TRANSLATORS: Packet statistics label.
+      { gettext("Packets"),
+        // TRANSLATORS: Packet count. Placeholder: {} is total packets.
+        formatText(gettext("{} packets"), packets),
+        // TRANSLATORS: Packet rate. Placeholder: {} is packet rate in packets/s.
+        formatText(gettext("{} packets/s"), packetRate) },
+      // TRANSLATORS: Frame statistics label.
+      { gettext("Frames"),
+        // TRANSLATORS: Frame count. Placeholder: {} is total frames.
+        formatText(gettext("{} frames"), frames),
+        // TRANSLATORS: Frame rate. Placeholder: {} is frame rate in frames/s.
+        formatText(gettext("{} frames/s"), frameRate) }
+   };
+
+   size_t maxTotalLen = 0;
+   for(const auto& row : rows) {
+      maxTotalLen = std::max(maxTotalLen, row.total.size());
+   }
+   for(const auto& row : rows) {
+      std::string paddedTotal = row.total;
+      if(paddedTotal.size() < maxTotalLen) {
+         paddedTotal.append(maxTotalLen - paddedTotal.size(), ' ');
+      }
+      formatter.add(level + 1, row.label, formatText("{} -> {}", paddedTotal, row.rate));
+   }
+}
+
+
+// ###### Print FlowBandwidthStats into PropertyFormatter ###################
+void FlowBandwidthStats::print(PropertyFormatter& formatter,
+                               const double       transmissionDuration,
+                               const double       receptionDuration,
+                               const size_t       level) const
 {
    const uint64_t transmittedBits       = 8 * TransmittedBytes;
    const uint64_t transmittedBitRate    = calculateRate(transmittedBits, transmissionDuration);
@@ -103,44 +169,45 @@ void FlowBandwidthStats::print(std::ostream& os,
    const uint64_t lostFrames            = LostFrames;
    const uint64_t lostFrameRate         = calculateRate(lostFrames, receptionDuration);
 
-   // TRANSLATORS: Bandwidth statistics section header for transmitted traffic.
-   os << gettext(" - Transmission:") << "\n"
-      // TRANSLATORS: Measurement duration. Placeholder: {} is duration in seconds.
-      << formatText(gettext("  * Duration:         {} s"), transmissionDuration) << "\n"
-      // TRANSLATORS: Transmitted byte statistics. Placeholders: {} 1: total bytes, 2: byte rate in B/s.
-      << formatText(gettext("  * Bytes:            {} B\t-> {} B/s"), transmittedBytes, transmittedByteRate) << "\n"
-      // TRANSLATORS: Transmitted bit statistics. Placeholders: {} 1: total bits, 2: bit rate in bit/s.
-      << formatText(gettext("  * Bits:             {} bit\t-> {} bit/s"), transmittedBits, transmittedBitRate) << "\n"
-      // TRANSLATORS: Transmitted packet statistics. Placeholders: {} 1: total packets, 2: packet rate in packets/s.
-      << formatText(gettext("  * Packets:          {} packets\t-> {} packets/s"), transmittedPackets, transmittedPacketRate) << "\n"
-      // TRANSLATORS: Transmitted frame statistics. Placeholders: {} 1: total frames, 2: frame rate in frames/s.
-      << formatText(gettext("  * Frames:           {} frames\t-> {} frames/s"), transmittedFrames, transmittedFrameRate) << "\n";
+   addTrafficSection(formatter, level,
+                     // TRANSLATORS: Bandwidth statistics section header for transmitted traffic.
+                     gettext("Transmission:"),
+                     transmissionDuration,
+                     transmittedBytes, transmittedByteRate,
+                     transmittedBits, transmittedBitRate,
+                     transmittedPackets, transmittedPacketRate,
+                     transmittedFrames, transmittedFrameRate);
 
-   // TRANSLATORS: Bandwidth statistics section header for received traffic.
-   os << gettext(" - Reception:") << "\n"
-      // TRANSLATORS: Measurement duration. Placeholder: {} is duration in seconds.
-      << formatText(gettext("  * Duration:         {} s"), receptionDuration) << "\n"
-      // TRANSLATORS: Received byte statistics. Placeholders: {} 1: total bytes, 2: byte rate in B/s.
-      << formatText(gettext("  * Bytes:            {} B\t-> {} B/s"), receivedBytes, receivedByteRate) << "\n"
-      // TRANSLATORS: Received bit statistics. Placeholders: {} 1: total bits, 2: bit rate in bit/s.
-      << formatText(gettext("  * Bits:             {} bit\t-> {} bit/s"), receivedBits, receivedBitRate) << "\n"
-      // TRANSLATORS: Received packet statistics. Placeholders: {} 1: total packets, 2: packet rate in packets/s.
-      << formatText(gettext("  * Packets:          {} packets\t-> {} packets/s"), receivedPackets, receivedPacketRate) << "\n"
-      // TRANSLATORS: Received frame statistics. Placeholders: {} 1: total frames, 2: frame rate in frames/s.
-      << formatText(gettext("  * Frames:           {} frames\t-> {} frames/s"), receivedFrames, receivedFrameRate) << "\n";
+   addTrafficSection(formatter, level,
+                     // TRANSLATORS: Bandwidth statistics section header for received traffic.
+                     gettext("Reception:"),
+                     receptionDuration,
+                     receivedBytes, receivedByteRate,
+                     receivedBits, receivedBitRate,
+                     receivedPackets, receivedPacketRate,
+                     receivedFrames, receivedFrameRate);
 
-   // TRANSLATORS: Bandwidth statistics section header for lost traffic.
-   os << gettext(" - Loss:") << "\n"
-      // TRANSLATORS: Measurement duration. Placeholder: {} is duration in seconds.
-      << formatText(gettext("  * Duration:         {} s"), receptionDuration) << "\n"
-      // TRANSLATORS: Lost byte statistics. Placeholders: {} 1: total bytes, 2: byte rate in B/s.
-      << formatText(gettext("  * Bytes:            {} B\t-> {} B/s"), lostBytes, lostByteRate) << "\n"
-      // TRANSLATORS: Lost bit statistics. Placeholders: {} 1: total bits, 2: bit rate in bit/s.
-      << formatText(gettext("  * Bits:             {} bit\t-> {} bit/s"), lostBits, lostBitRate) << "\n"
-      // TRANSLATORS: Lost packet statistics. Placeholders: {} 1: total packets, 2: packet rate in packets/s.
-      << formatText(gettext("  * Packets:          {} packets\t-> {} packets/s"), lostPackets, lostPacketRate) << "\n"
-      // TRANSLATORS: Lost frame statistics. Placeholders: {} 1: total frames, 2: frame rate in frames/s.
-      << formatText(gettext("  * Frames:           {} frames\t-> {} frames/s"), lostFrames, lostFrameRate) << "\n";
+   addTrafficSection(formatter, level,
+                     // TRANSLATORS: Bandwidth statistics section header for lost traffic.
+                     gettext("Loss:"),
+                     receptionDuration,
+                     lostBytes, lostByteRate,
+                     lostBits, lostBitRate,
+                     lostPackets, lostPacketRate,
+                     lostFrames, lostFrameRate);
+}
+
+
+// ###### Print FlowBandwidthStats ##########################################
+void FlowBandwidthStats::print(std::ostream& os,
+                               const double  transmissionDuration,
+                               const double  receptionDuration) const
+{
+   // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
+   const bool rtl = (std::string_view(gettext("LTR")) == "RTL");
+   PropertyFormatter formatter("   ", { "", "- ", "+ ", "* " }, "=", rtl);
+   print(formatter, transmissionDuration, receptionDuration, 1);
+   os << formatter;
 }
 
 

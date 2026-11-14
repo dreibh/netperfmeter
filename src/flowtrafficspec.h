@@ -31,8 +31,10 @@
 #define FLOWTRAFFICSPEC_H
 
 #include "netperfmeterpackets.h"
+#include "propertyformatter.h"
 #include "tools.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -53,6 +55,7 @@ class FlowTrafficSpec
    FlowTrafficSpec() = default;
    ~FlowTrafficSpec() = default;
 
+   void print(PropertyFormatter& formatter, const size_t level = 1) const;
    void print(std::ostream& os) const;
    void reset();
 

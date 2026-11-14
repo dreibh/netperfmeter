@@ -29,12 +29,15 @@
 
 #include "assure.h"
 #include "defragmenter.h"
+#include "propertyformatter.h"
 #include "tools.h"
 
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <map>
+#include <string>
+#include <string_view>
 
 
 // ###### Constructor #######################################################
@@ -71,27 +74,32 @@ Defragmenter::~Defragmenter()
 // ###### Print FragmentSet #################################################
 void Defragmenter::print(std::ostream& os)
 {
-   os << "FragmentSet:" << "\n";
+   // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
+   const bool rtl = (std::string_view(gettext("LTR")) == "RTL");
+   PropertyFormatter formatter("   ", { "", "- ", "+ " }, "=", rtl);
+
+   formatter.addLine(0, "FragmentSet:");
    for(std::map<uint32_t, Frame*>::iterator frameIterator = FrameSet.begin();
        frameIterator != FrameSet.end(); frameIterator++) {
       Frame* frame = frameIterator->second;
-      os << formatText("   - Frame {}, LastUpdate={}:",
-                       frame->FrameID, frame->LastUpdate) << "\n";
+      formatter.addLine(1, formatText("Frame {}, LastUpdate={}:",
+                                      frame->FrameID, frame->LastUpdate));
 
       for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
           fragmentIterator != frame->FragmentSet.end(); fragmentIterator++) {
          Fragment* fragment = fragmentIterator->second;
-         os << formatText("      + Fragment {}:\tByteSeq={}, Length={}",
-                          fragment->PacketSeqNumber, fragment->ByteSeqNumber, fragment->Length) << "   ";
+         std::string details = formatText("ByteSeq={}, Length={}",
+                                          fragment->ByteSeqNumber, fragment->Length);
          if(fragment->Flags & NPMDF_FRAME_BEGIN) {
-            os << "<Begin> ";
+            details += " <Begin>";
          }
          if(fragment->Flags & NPMDF_FRAME_END) {
-            os << "<End> ";
+            details += " <End>";
          }
-         os << "\n";
+         formatter.add(2, formatText("Fragment {}", fragment->PacketSeqNumber), std::move(details));
       }
    }
+   os << formatter;
 }
 
 

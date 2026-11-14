@@ -36,6 +36,7 @@
 #include "outputfile.h"
 #include "tools.h"
 #include "transfer.h"
+#include "propertyformatter.h"
 #include "quic.h"
 
 #include <cerrno>
@@ -52,6 +53,7 @@
 #include <netinet/tcp.h>
 #include <poll.h>
 #include <signal.h>
+#include <sstream>
 #include <unistd.h>
 
 #if !defined(HAVE_SCTP)
@@ -258,7 +260,7 @@ static void usage(const char* program, const int exitCode)
              << CMD(program) << "\n"
                    ENTRY(OPT("-v") PIPE OPT("--version"))
              << CMD("FLOWSPEC:") << " "
-                ARG("outgoing_frame_rateoutgoing_frame_sizeincoming_frame_rateincoming_frame_sizeoption...") "\n"
+                ARG("outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option:...") "\n"
              << "\n"
              // TRANSLATORS: Informational message at the end of usage:
              // "For further information, see the man page for <manpage>, read the documentation at <url>, examine the source code at <url>, or consult your favourite LLM.".
@@ -659,58 +661,78 @@ static bool handleGlobalParameters(int argc, char** argv)
 }
 
 
+// ###### Create RTL-aware PropertyFormatter ################################
+static PropertyFormatter makePropertyFormatter(
+   std::string              indent    = "   ",
+   std::vector<std::string> prefixes  = { "", "- ", "+ " },
+   std::string              separator = "=")
+{
+   // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
+   const bool rtl = (std::string_view(gettext("LTR")) == "RTL");
+   return PropertyFormatter(std::move(indent), std::move(prefixes), std::move(separator), rtl);
+}
+
+
+// ###### Format socket address list ########################################
+static std::string formatAddressList(const sockaddr_union* addresses, const unsigned int count)
+{
+   if(count == 0) {
+      // TRANSLATORS: Indicates listening or binding on all available interfaces (INADDR_ANY / in6addr_any).
+      return gettext("(any)");
+   }
+   std::ostringstream oss;
+   for(unsigned int i = 0; i < count; i++) {
+      if(i > 0) {
+         oss << ", ";
+      }
+      printAddress(oss, &addresses[i].sa, false);
+   }
+   return oss.str();
+}
+
+
 // ###### Print global parameter settings ###################################
 static void printGlobalParameters()
 {
    LOG_INFO
-   // TRANSLATORS: Header for printing active global configuration parameters.
-   stdlog << gettext("Global Parameters:") << "\n"
-          // TRANSLATORS: Parameter label for test duration.
-          << gettext(" - Runtime                   = ");
-   if(gRuntime >= 0.0) {
-      stdlog << gRuntime << " s\n";
-   }
-   else {
-      // TRANSLATORS: Indication that the test runs until interrupted by the user.
-      stdlog << gettext("until manual stop") << "\n";
-   }
-   // TRANSLATORS: Parameter label for log level. {} is the log level number.
-   stdlog << formatText(gettext(" - Minimum Logging Level     = {}"), gLogLevel) << "\n"
-          // TRANSLATORS: Parameter label for client/active node name. {} is the name string.
-          << formatText(gettext(" - Active Node Name          = {}"), gActiveNodeName) << "\n"
-          // TRANSLATORS: Parameter label for server/passive node name. {} is the name string.
-          << formatText(gettext(" - Passive Node Name         = {}"), gPassiveNodeName) << "\n"
-          // TRANSLATORS: Parameter label for local IP addresses bound for data flows.
-          << gettext(" - Local Data Address(es)    = ");
-   if(gLocalDataAddresses > 0) {
-      for(unsigned int i = 0; i < gLocalDataAddresses; i++) {
-         if(i > 0) {
-            stdlog << ", ";
-         }
-         printAddress(stdlog, &gLocalDataAddressArray[i].sa, false);
+   {
+      PropertyFormatter formatter = makePropertyFormatter();
+
+      // TRANSLATORS: Header for printing active global configuration parameters.
+      formatter.addLine(0, gettext("Global Parameters:"));
+
+      std::string runtimeValue;
+      if(gRuntime >= 0.0) {
+         // TRANSLATORS: Runtime duration in seconds. {} is the number of seconds.
+         runtimeValue = formatText(gettext("{} s"), gRuntime);
       }
-   }
-   else {
-      // TRANSLATORS: Indicates listening or binding on all available interfaces (INADDR_ANY / in6addr_any).
-      stdlog << gettext("(any)");
-   }
-   // TRANSLATORS: Parameter label for local IP addresses bound for control connections.
-   stdlog << "\n" << gettext(" - Local Control Address(es) = ");
-   if(gLocalControlAddresses > 0) {
-      for(unsigned int i = 0; i < gLocalControlAddresses; i++) {
-         if(i > 0) {
-            stdlog << ", ";
-         }
-         printAddress(stdlog, &gLocalControlAddressArray[i].sa, false);
+      else {
+         // TRANSLATORS: Indication that the test runs until interrupted by the user.
+         runtimeValue = gettext("until manual stop");
       }
+      // TRANSLATORS: Parameter label for test duration.
+      formatter.add(1, gettext("Runtime"), std::move(runtimeValue));
+
+      // TRANSLATORS: Parameter label for log level.
+      formatter.add(1, gettext("Minimum Logging Level"), std::to_string(gLogLevel));
+      // TRANSLATORS: Parameter label for client/active node name.
+      formatter.add(1, gettext("Active Node Name"), gActiveNodeName);
+      // TRANSLATORS: Parameter label for server/passive node name.
+      formatter.add(1, gettext("Passive Node Name"), gPassiveNodeName);
+      // TRANSLATORS: Parameter label for local IP addresses bound for data flows.
+      formatter.add(1, gettext("Local Data Address(es)"),
+                    formatAddressList(gLocalDataAddressArray, gLocalDataAddresses));
+      // TRANSLATORS: Parameter label for local IP addresses bound for control connections.
+      formatter.add(1, gettext("Local Control Address(es)"),
+                    formatAddressList(gLocalControlAddressArray, gLocalControlAddresses));
+      formatter.add(1,
+                    /* TRANSLATORS: Parameter label for control channel heartbeat parameters. */
+                    gettext("Control Heartbeats"),
+                    /* TRANSLATORS: Control heartbeat parameters value. Placeholders: {} 1: path max retransmissions, 2: association max retransmissions, 3: interval in ms. */
+                    formatText(gettext("{} per path / {} per association / {} ms"),
+                               gControlHBPathMaxRtx, gControlHBAssocMaxRtx, gControlHBInterval));
+      stdlog << formatter;
    }
-   else {
-      // TRANSLATORS: Indicates listening or binding on all available interfaces (INADDR_ANY / in6addr_any).
-      stdlog << gettext("(any)");
-   }
-   // TRANSLATORS: Placeholders: {} 1: path max retransmissions, 2: association max retransmissions, 3: interval in ms.
-   stdlog << "\n" << formatText(gettext(" - Control Heartbeats        = {} per path / {} per association / {} ms"),
-                                gControlHBPathMaxRtx, gControlHBAssocMaxRtx, gControlHBInterval) << "\n";
    LOG_END
 }
 
@@ -2189,7 +2211,6 @@ static void passiveMode(const uint16_t localPort)
 #endif
 
    // ====== Print status ===================================================
-   LOG_INFO
    std::string controlProtocols;
 #if defined(HAVE_SCTP)
    if(gControlSocket >= 0) {
@@ -2243,44 +2264,56 @@ static void passiveMode(const uint16_t localPort)
       // TRANSLATORS: Append clause for additional listening ports (e.g. ", and MPTCP on port 8999"). Placeholders: {} 1: protocol list, 2: port number.
       dataProtocols2 = formatText(gettext(", and {} on port {}"), dataProtocols2.c_str(), localPort - 1);
    }
-   // TRANSLATORS: Passive mode startup summary banner.
-   stdlog << gettext("Passive Mode: Waiting for incoming connections:") << "\n"
-          // TRANSLATORS: Passive mode control channel status line. Placeholders: {} 1: protocol name(s), 2: port number.
-          << formatText(gettext(" - Control Channel = {} on port {}"), controlProtocols, localPort + 1) << "\n"
-          // TRANSLATORS: Passive mode data channel status line. Placeholders: {} 1: primary protocols, 2: base port, 3: secondary protocol append clause.
-          << formatText(gettext(" - Data Channel    = {} on port {}{}"), dataProtocols1, localPort, dataProtocols2) << "\n";
+   LOG_INFO
+   {
+      PropertyFormatter formatter = makePropertyFormatter();
+      // TRANSLATORS: Passive mode startup summary banner.
+      formatter.addLine(0, gettext("Passive Mode: Waiting for incoming connections:"));
+      // TRANSLATORS: Passive mode control channel label.
+      formatter.add(1, gettext("Control Channel"),
+                    // TRANSLATORS: Passive mode control channel status value. Placeholders: {} 1: protocol name(s), 2: port number.
+                    formatText(gettext("{} on port {}"), controlProtocols, localPort + 1));
+      // TRANSLATORS: Passive mode data channel label.
+      formatter.add(1, gettext("Data Channel"),
+                    // TRANSLATORS: Passive mode data channel status value. Placeholders: {} 1: primary protocols, 2: base port, 3: secondary protocol append clause.
+                    formatText(gettext("{} on port {}{}"), dataProtocols1, localPort, dataProtocols2));
+      stdlog << formatter;
+   }
    LOG_END
    LOG_TRACE
-   stdlog << "Sockets:\n"
-          << "- SCTP Control = " << gControlSocket     << "\n"
-          << "- TCP Control  = " << gControlSocketTCP  << "\n"
+   {
+      PropertyFormatter formatter = makePropertyFormatter();
+      formatter.addLine(0, "Sockets:");
+      formatter.add(1, "SCTP Control", std::to_string(gControlSocket));
+      formatter.add(1, "TCP Control",  std::to_string(gControlSocketTCP));
 #if defined(__OpenBSD__)
-          << "- TCP6 Control = " << gControlSocketTCP6 << "\n"
+      formatter.add(1, "TCP6 Control", std::to_string(gControlSocketTCP6));
 #endif
 #if defined(HAVE_QUIC)
-          << "- QUIC Control = " << gControlSocketQUIC << "\n"
+      formatter.add(1, "QUIC Control", std::to_string(gControlSocketQUIC));
 #endif
-          << "- TCP Data     = " << gTCPSocket         << "\n"
+      formatter.add(1, "TCP Data",     std::to_string(gTCPSocket));
 #if defined(__OpenBSD__)
-          << "- TCP6 Data    = " << gTCP6Socket        << "\n"
+      formatter.add(1, "TCP6 Data",    std::to_string(gTCP6Socket));
 #endif
 #if defined(HAVE_MPTCP)
-          << "- MPTCP Data   = " << gMPTCPSocket       << "\n"
+      formatter.add(1, "MPTCP Data",   std::to_string(gMPTCPSocket));
 #endif
-          << "- UDP Data     = " << gUDPSocket         << "\n"
+      formatter.add(1, "UDP Data",     std::to_string(gUDPSocket));
 #if defined(__OpenBSD__)
-          << "- UDP6 Data    = " << gUDP6Socket        << "\n"
+      formatter.add(1, "UDP6 Data",    std::to_string(gUDP6Socket));
 #endif
 #if defined(HAVE_SCTP)
-          << "- SCTP Data    = " << gSCTPSocket        << "\n"
+      formatter.add(1, "SCTP Data",    std::to_string(gSCTPSocket));
 #endif
 #if defined(HAVE_DCCP)
-          << "- DCCP Data    = " << gDCCPSocket        << "\n"
+      formatter.add(1, "DCCP Data",    std::to_string(gDCCPSocket));
 #endif
 #if defined(HAVE_QUIC)
-          << "- QUIC Data    = " << gQUICSocket        << "\n"
+      formatter.add(1, "QUIC Data",    std::to_string(gQUICSocket));
 #endif
-          ;
+      stdlog << formatter;
+   }
    LOG_END
 
 
@@ -2403,18 +2436,28 @@ static void activeMode(const char* remoteEndpoint)
    }
 
    LOG_INFO
-   // TRANSLATORS: Header for active mode test execution.
-   stdlog << gettext("Active Mode:") << "\n"
-          // TRANSLATORS: Hexadecimal measurement ID display. {:x} is the hex value.
-          << formatText(gettext("- Measurement ID  = ${:x}"), measurementID) << "\n"
-          // TRANSLATORS: Active mode display label for remote target address.
-          << gettext("- Remote Address  = ");
-   printAddress(stdlog, &remoteAddress.sa, true);
-   // TRANSLATORS: Active mode display label for remote control address.
-   stdlog << "\n" << gettext("- Control Address = ");
-   printAddress(stdlog, &controlAddress.sa, true);
-   // TRANSLATORS: Status indication while establishing control channel. {} is protocol name (SCTP, TCP, MPTCP, QUIC).
-   stdlog << formatText(gettext(" - connecting via {} ..."), controlProtocol) << "\n";
+   {
+      PropertyFormatter formatter = makePropertyFormatter();
+      // TRANSLATORS: Header for active mode test execution.
+      formatter.addLine(0, gettext("Active Mode:"));
+      // TRANSLATORS: Active mode display label for hexadecimal measurement ID.
+      formatter.add(1, gettext("Measurement ID"),
+                    formatText("${:x}", measurementID));
+
+      std::ostringstream remoteAddrStream;
+      printAddress(remoteAddrStream, &remoteAddress.sa, true);
+      // TRANSLATORS: Active mode display label for remote target address.
+      formatter.add(1, gettext("Remote Address"), remoteAddrStream.str());
+
+      std::ostringstream controlAddrStream;
+      printAddress(controlAddrStream, &controlAddress.sa, true);
+      // TRANSLATORS: Status indication while establishing control channel. {} is protocol name (SCTP, TCP, MPTCP, QUIC).
+      controlAddrStream << formatText(gettext(" - connecting via {} ..."), controlProtocol);
+      // TRANSLATORS: Active mode display label for remote control address.
+      formatter.add(1, gettext("Control Address"), controlAddrStream.str());
+
+      stdlog << formatter;
+   }
    LOG_END
 
    // ====== Initialize control socket ======================================
@@ -2706,9 +2749,8 @@ int main(int argc, char** argv)
    // TRANSLATORS: Main startup banner. Placeholders: {} 1: package version, 2: operational mode ("Active Mode" or "Passive Mode").
    stdlog << formatText(gettext("Network Performance Meter {} in {}"),
                         PROJECT_VERSION,
-                        // TRANSLATORS: Operational mode label for receiver/server instance.
-                        // TRANSLATORS: Operational mode label for sender/client instance.
-                        inPassiveMode ? gettext("Passive Mode") : gettext("Active Mode")) << "\n";
+                        inPassiveMode ? /* TRANSLATORS: Operational mode label for receiver/server instance. */ gettext("Passive Mode")
+                                      : /* TRANSLATORS: Operational mode label for sender/client instance. */   gettext("Active Mode")) << "\n";
    LOG_END
 
    // ====== Run active or passive instance =================================

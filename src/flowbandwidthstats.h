@@ -30,7 +30,10 @@
 #ifndef FLOWBANDWIDTHSTATS_H
 #define FLOWBANDWIDTHSTATS_H
 
+#include "propertyformatter.h"
+
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -43,6 +46,10 @@ class FlowBandwidthStats
    FlowBandwidthStats() = default;
    ~FlowBandwidthStats() = default;
 
+   void print(PropertyFormatter& formatter,
+              const double       transmissionDuration,
+              const double       receptionDuration,
+              const size_t       level = 1) const;
    void print(std::ostream& os,
               const double  transmissionDuration,
               const double  receptionDuration) const;
