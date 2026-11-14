@@ -30,16 +30,20 @@
 #include <algorithm>
 #include <cassert>
 #include <cctype>
+#include <cerrno>
 #include <charconv>
 #include <clocale>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
 #include <map>
 #include <string>
 #include <string_view>
 #include <vector>
+#include <version>
 #include <getopt.h>
 
 #if defined(ENABLE_NLS)
@@ -126,6 +130,49 @@ static inline void removeScenarioName(std::string& str)
    const auto dotPos = str.find('.');
    if(dotPos != std::string::npos) {
       str.erase(0, dotPos + 1);
+   }
+}
+
+
+// ###### Parse floating-point value portably ###############################
+// ###### Parse floating-point value portably (libstdc++ & FreeBSD libc++) ==
+template<typename T = double>
+static inline bool parseDouble(std::string_view sv, T& value)
+{
+   if(sv.empty() || std::isspace(static_cast<unsigned char>(sv.front())) || (sv.front() == '+')) {
+      return false;
+   }
+#if defined(__cpp_lib_to_chars) && (__cpp_lib_to_chars >= 201611L)
+   if constexpr (requires(const char* first, const char* last, T& out) {
+      std::from_chars(first, last, out, std::chars_format::general);
+   }) {
+      const auto [ptr, ec] = std::from_chars(sv.data(), sv.data() + sv.size(), value, std::chars_format::general);
+      return (ec == std::errc{});
+   }
+   else
+#endif
+   {
+      // Fallback for standard libraries without floating-point std::from_chars (e.g. FreeBSD libc++)
+      char stackBuf[128];
+      std::string heapBuf;
+      const char* cstr = nullptr;
+      if(sv.size() < sizeof(stackBuf)) {
+         std::memcpy(stackBuf, sv.data(), sv.size());
+         stackBuf[sv.size()] = '\0';
+         cstr = stackBuf;
+      }
+      else {
+         heapBuf.assign(sv.data(), sv.size());
+         cstr = heapBuf.c_str();
+      }
+      errno = 0;
+      char* endPtr = nullptr;
+      const double parsed = std::strtod(cstr, &endPtr);
+      if((endPtr == cstr) || ((errno == ERANGE) && std::isinf(parsed))) {
+         return false;
+      }
+      value = static_cast<T>(parsed);
+      return true;
    }
 }
 
@@ -427,8 +474,7 @@ static bool handleScalarFile(const std::string& varValues,
             }
 
             double value = 0.0;
-            auto [ptr, ec] = std::from_chars(rem.data(), rem.data() + rem.size(), value, std::chars_format::general);
-            if(ec != std::errc{}) {
+            if(!parseDouble(rem, value)) {
                // TRANSLATORS: Parse error when a numeric value is missing or invalid. Placeholders: {} 1: file name, 2: line number.
                std::cerr << formatText(gettext("ERROR: File \"{}\", line {} - Value expected!"),
                                        fileName, inputFile.getLine()) << "\n";
@@ -459,8 +505,7 @@ static bool handleScalarFile(const std::string& varValues,
                      rem.remove_prefix(1);
                   }
                   double value = 0.0;
-                  auto [ptr, ec] = std::from_chars(rem.data(), rem.data() + rem.size(), value, std::chars_format::general);
-                  if(ec != std::errc{}) {
+                  if(!parseDouble(rem, value)) {
                      // TRANSLATORS: Parse error when a numeric value is missing or invalid. Placeholders: {} 1: file name, 2: line number.
                      std::cerr << formatText(gettext("ERROR: File \"{}\", line {} - Value expected!"),
                                              fileName, inputFile.getLine()) << "\n";
