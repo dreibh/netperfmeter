@@ -223,9 +223,11 @@ ADD_EXECUTABLE(createsummary
    debug.h
 )
 TARGET_INCLUDE_DIRECTORIES(createsummary
-                           PRIVATE ${LIBIBERTY_INCLUDE_DIR})
+                           PRIVATE ${Intl_INCLUDE_DIRS}
+                                   ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(createsummary
                       PRIVATE libfileio-${libraryType}
+                              ${Intl_LIBRARIES}
                               ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     createsummary   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       createsummary.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
@@ -238,9 +240,11 @@ ADD_EXECUTABLE(combinesummaries
    combinesummaries.cc
 )
 TARGET_INCLUDE_DIRECTORIES(combinesummaries
-                           PRIVATE ${LIBIBERTY_INCLUDE_DIR})
+                           PRIVATE ${Intl_INCLUDE_DIRS}
+                                   ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(combinesummaries
                       PRIVATE libfileio-${libraryType}
+                              ${Intl_LIBRARIES}
                               ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     combinesummaries   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       combinesummaries.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
@@ -253,9 +257,11 @@ ADD_EXECUTABLE(extractvectors
    extractvectors.cc
 )
 TARGET_INCLUDE_DIRECTORIES(extractvectors
-                           PRIVATE ${LIBIBERTY_INCLUDE_DIR})
+                           PRIVATE ${Intl_INCLUDE_DIRS}
+                                   ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(extractvectors
                       PRIVATE libfileio-${libraryType}
+                              ${Intl_LIBRARIES}
                               ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS     extractvectors  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES       extractvectors.1 DESTINATION        ${CMAKE_INSTALL_MANDIR}/man1)
@@ -265,8 +271,12 @@ INSTALL(FILES       extractvectors.bash-completion
 
 # ====== Runtime Estimator Tool =============================================
 ADD_EXECUTABLE(runtimeestimator runtimeestimator.cc)
-TARGET_INCLUDE_DIRECTORIES(runtimeestimator PRIVATE ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(runtimeestimator PRIVATE ${LIBIBERTY_LIBRARY})
+TARGET_INCLUDE_DIRECTORIES(runtimeestimator 
+                           PRIVATE ${Intl_INCLUDE_DIRS}
+                                   ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(runtimeestimator 
+                      PRIVATE ${Intl_LIBRARIES}
+                              ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS runtimeestimator   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   runtimeestimator.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       runtimeestimator.bash-completion
@@ -275,8 +285,12 @@ INSTALL(FILES       runtimeestimator.bash-completion
 
 # ====== getabstime =========================================================
 ADD_EXECUTABLE(getabstime getabstime.cc)
-TARGET_INCLUDE_DIRECTORIES(getabstime PRIVATE ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(getabstime PRIVATE ${LIBIBERTY_LIBRARY})
+TARGET_INCLUDE_DIRECTORIES(getabstime 
+                           PRIVATE ${Intl_INCLUDE_DIRS}
+                                   ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(getabstime
+                      PRIVATE ${Intl_LIBRARIES}
+                              ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS getabstime   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   getabstime.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES       getabstime.bash-completion
