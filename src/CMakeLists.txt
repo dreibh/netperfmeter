@@ -41,6 +41,16 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 #### LIBRARIES                                                           ####
 #############################################################################
 
+# ====== libpropertyformatter ===============================================
+ADD_LIBRARY(libpropertyformatter STATIC
+            displaywidth.cc
+            propertyformatter.cc)
+TARGET_INCLUDE_DIRECTORIES(libpropertyformatter
+                           PRIVATE ${Intl_INCLUDE_DIRS})
+TARGET_LINK_LIBRARIES(libpropertyformatter PRIVATE
+                      ${Intl_LIBRARIES})
+
+
 # ====== libfileio ==========================================================
 LIST(APPEND libfileio_headers
    fileio.h
@@ -176,7 +186,8 @@ TARGET_INCLUDE_DIRECTORIES(netperfmeter
                                    ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(netperfmeter
-                      PRIVATE libfileio-${libraryType}
+                      PRIVATE libpropertyformatter
+                              libfileio-${libraryType}
                               ${SCTP_LIBRARY}
                               ${QUIC_LIBRARY}
                               ${Intl_LIBRARIES}
