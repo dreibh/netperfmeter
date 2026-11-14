@@ -234,7 +234,8 @@ ADD_EXECUTABLE(createsummary
    debug.h
 )
 TARGET_INCLUDE_DIRECTORIES(createsummary
-                           PRIVATE ${Intl_INCLUDE_DIRS}
+                           PRIVATE libpropertyformatter
+                                   ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(createsummary
                       PRIVATE libfileio-${libraryType}
@@ -251,7 +252,8 @@ ADD_EXECUTABLE(combinesummaries
    combinesummaries.cc
 )
 TARGET_INCLUDE_DIRECTORIES(combinesummaries
-                           PRIVATE ${Intl_INCLUDE_DIRS}
+                           PRIVATE libpropertyformatter
+                                   ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(combinesummaries
                       PRIVATE libfileio-${libraryType}
@@ -282,10 +284,10 @@ INSTALL(FILES       extractvectors.bash-completion
 
 # ====== Runtime Estimator Tool =============================================
 ADD_EXECUTABLE(runtimeestimator runtimeestimator.cc)
-TARGET_INCLUDE_DIRECTORIES(runtimeestimator 
+TARGET_INCLUDE_DIRECTORIES(runtimeestimator
                            PRIVATE ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(runtimeestimator 
+TARGET_LINK_LIBRARIES(runtimeestimator
                       PRIVATE ${Intl_LIBRARIES}
                               ${LIBIBERTY_LIBRARY})
 INSTALL(TARGETS runtimeestimator   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -296,7 +298,7 @@ INSTALL(FILES       runtimeestimator.bash-completion
 
 # ====== getabstime =========================================================
 ADD_EXECUTABLE(getabstime getabstime.cc)
-TARGET_INCLUDE_DIRECTORIES(getabstime 
+TARGET_INCLUDE_DIRECTORIES(getabstime
                            PRIVATE ${Intl_INCLUDE_DIRS}
                                    ${LIBIBERTY_INCLUDE_DIR})
 TARGET_LINK_LIBRARIES(getabstime
