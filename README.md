@@ -622,40 +622,40 @@ Some examples:
   - Vector files (i.e., time series) for each flow, from active and passive side:
 
     + Flow 0 (TCP flow):
-      [`active-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000000-0000.vec),
-      [`passive-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000000-0000.vec).
+      [`multi-active-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000000-0000.vec),
+      [`multi-passive-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000000-0000.vec).
 
     + Flow 1 (MPTCP flow):
-      [`active-00000001-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000001-0000.vec),
-      [`passive-00000001-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000001-0000.vec).
+      [`multi-active-00000001-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000001-0000.vec),
+      [`multi-passive-00000001-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000001-0000.vec).
 
     + Flow 2 (UDP flow):
-      [`active-00000002-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000002-0000.vec),
-      [`passive-00000002-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000002-0000.vec).
+      [`multi-active-00000002-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000002-0000.vec),
+      [`multi-passive-00000002-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000002-0000.vec).
 
     + Flow 3 (DCCP flow):
-      [`active-00000003-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000003-0000.vec),
-      [`passive-00000003-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000003-0000.vec).
+      [`multi-active-00000003-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000003-0000.vec),
+      [`multi-passive-00000003-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000003-0000.vec).
 
     + Flow 4 (SCTP flow for SCTP stream 0):
-      [`active-00000004-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000004-0000.vec),
-      [`passive-00000004-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000004-0000.vec).
+      [`multi-active-00000004-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000004-0000.vec),
+      [`multi-passive-00000004-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000004-0000.vec).
 
     + Flow 5 (SCTP flow for SCTP stream 1):
-      [`active-00000005-0001.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000005-0001.vec),
-      [`passive-00000005-0001.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000005-0001.vec).
+      [`multi-active-00000005-0001.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000005-0001.vec),
+      [`multi-passive-00000005-0001.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000005-0001.vec).
 
     + Flow 6 (SCTP flow for SCTP stream 2):
-      [`active-00000006-0002.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000006-0002.vec),
-      [`passive-00000006-0002.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000006-0002.vec).
+      [`multi-active-00000006-0002.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000006-0002.vec),
+      [`multi-passive-00000006-0002.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000006-0002.vec).
 
     + Flow 7 (SCTP flow for SCTP stream 3):
-      [`active-00000007-0003.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000007-0003.vec),
-      [`passive-00000007-0003.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000007-0003.vec).
+      [`multi-active-00000007-0003.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000007-0003.vec),
+      [`multi-passive-00000007-0003.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000007-0003.vec).
 
     + Flow 8 (SCTP flow for SCTP stream 4):
-      [`active-00000008-0004.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000008-0004.vec),
-      [`passive-00000008-0004.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000008-0004.vec).
+      [`multi-active-00000008-0004.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000008-0004.vec),
+      [`multi-passive-00000008-0004.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000008-0004.vec).
 
    The vector file format is a table, which can be read with CSV import of tools like [GNU&nbsp;R](https://www.r-project.org/), [LibreOffice](https://www.libreoffice.org/), etc.
 
