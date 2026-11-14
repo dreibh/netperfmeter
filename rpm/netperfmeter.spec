@@ -209,7 +209,6 @@ This package sets up a service running a NetPerfMeter server instance.
 %files service
 %{_prefix}/lib/systemd/system/netperfmeter.service
 %config(noreplace) %{_sysconfdir}/netperfmeter.conf
-%{_sysconfdir}/netperfmeter.conf
 
 
 %package pdfproctools
