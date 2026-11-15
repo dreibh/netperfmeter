@@ -2,6 +2,7 @@ usr/bin/combinesummaries
 usr/bin/createsummary
 usr/bin/extractvectors
 usr/bin/getabstime
+usr/bin/getrelativepath
 usr/bin/netperfmeter
 usr/bin/netperfmeter-module-loader
 usr/bin/runtimeestimator
@@ -10,6 +11,7 @@ usr/share/bash-completion/completions/combinesummaries
 usr/share/bash-completion/completions/createsummary
 usr/share/bash-completion/completions/extractvectors
 usr/share/bash-completion/completions/getabstime
+usr/share/bash-completion/completions/getrelativepath
 usr/share/bash-completion/completions/netperfmeter
 usr/share/bash-completion/completions/netperfmeter-module-loader
 usr/share/bash-completion/completions/runtimeestimator

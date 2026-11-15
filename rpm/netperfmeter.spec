@@ -96,6 +96,7 @@ done
 %{_bindir}/createsummary
 %{_bindir}/extractvectors
 %{_bindir}/getabstime
+%{_bindir}/getrelativepath
 %{_bindir}/netperfmeter
 %{_bindir}/netperfmeter-module-loader
 %{_bindir}/runtimeestimator
@@ -103,6 +104,7 @@ done
 %{_datadir}/bash-completion/completions/createsummary
 %{_datadir}/bash-completion/completions/extractvectors
 %{_datadir}/bash-completion/completions/getabstime
+%{_datadir}/bash-completion/completions/getrelativepath
 %{_datadir}/bash-completion/completions/netperfmeter
 %{_datadir}/bash-completion/completions/netperfmeter-module-loader
 %{_datadir}/bash-completion/completions/runtimeestimator
@@ -110,6 +112,7 @@ done
 %{_mandir}/man1/createsummary.1.gz
 %{_mandir}/man1/extractvectors.1.gz
 %{_mandir}/man1/getabstime.1.gz
+%{_mandir}/man1/getrelativepath.1.gz
 %{_mandir}/man1/netperfmeter.1.gz
 %{_mandir}/man1/netperfmeter-module-loader.1.gz
 %{_mandir}/man1/runtimeestimator.1.gz
