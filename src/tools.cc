@@ -37,6 +37,7 @@
 #include <cstring>
 #include <cctype>
 #include <ext_socket.h>
+#include <format>
 #include <netdb.h>
 #include <net/if.h>
 #include <netinet/in.h>
@@ -92,7 +93,7 @@ void printTimeStamp(std::ostream& os)
 
    char str[64];
    strftime(str, sizeof(str), "%d-%b-%Y %H:%M:%S", &timeinfo);
-   os << str << formatText(".{:04d}: ", static_cast<unsigned int>((totalUs % 1000000) / 100));
+   os << str << std::format(".{:04d}: ", static_cast<unsigned int>((totalUs % 1000000) / 100));
 }
 
 
@@ -285,7 +286,7 @@ bool address2string(const struct sockaddr* address,
       case AF_INET: {
          const auto* ipv4 = reinterpret_cast<const struct sockaddr_in*>(address);
          const std::string formatted = port ?
-            formatText("{}:{}", inet_ntoa(ipv4->sin_addr), be16toh(ipv4->sin_port)) :
+            std::format("{}:{}", inet_ntoa(ipv4->sin_addr), be16toh(ipv4->sin_port)) :
             std::string(inet_ntoa(ipv4->sin_addr));
          strlcpy(buffer, formatted.c_str(), length);
          return true;
@@ -306,8 +307,8 @@ bool address2string(const struct sockaddr* address,
          }
          if(inet_ntop(AF_INET6, &ipv6->sin6_addr, str, sizeof(str)) != nullptr) {
             const std::string formatted = port ?
-               formatText("[{}{}]:{}", str, scope, be16toh(ipv6->sin6_port)) :
-               formatText("{}{}", str, scope);
+               std::format("[{}{}]:{}", str, scope, be16toh(ipv6->sin6_port)) :
+               std::format("{}{}", str, scope);
             strlcpy(buffer, formatted.c_str(), length);
             return true;
          }

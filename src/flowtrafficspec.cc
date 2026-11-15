@@ -113,9 +113,13 @@ void FlowTrafficSpec::print(PropertyFormatter& formatter, const size_t level) co
 
    if(Protocol == IPPROTO_SCTP) {
       // TRANSLATORS: SCTP ordered delivery mode percentage label.
-      formatter.add(level, gettext("Ordered Mode"), formatText("{:1.3f}%", 100.0 * OrderedMode));
+      formatter.add(level, gettext("Ordered Mode"),
+                    // TRANSLATORS: Percentage value format. Placeholder: {:1.3f} is percentage value.
+                    formatText(gettext("{:1.3f}%"), 100.0 * OrderedMode));
       // TRANSLATORS: SCTP reliable delivery mode percentage label.
-      formatter.add(level, gettext("Reliable Mode"), formatText("{:1.3f}%", 100.0 * ReliableMode));
+      formatter.add(level, gettext("Reliable Mode"),
+                    // TRANSLATORS: Percentage value format. Placeholder: {:1.3f} is percentage value.
+                    formatText(gettext("{:1.3f}%"), 100.0 * ReliableMode));
 
       std::string rtxValue;
       if((RetransmissionTrialsInMS) && (RetransmissionTrials == static_cast<uint32_t>(-1))) {
@@ -203,13 +207,17 @@ void FlowTrafficSpec::print(PropertyFormatter& formatter, const size_t level) co
       // TRANSLATORS: Concurrent Multipath Transfer setting label.
       formatter.add(level, gettext("CMT"),
                     cmtMode.empty()
-                       ? formatText("#{}", static_cast<unsigned int>(CMT))
-                       : formatText("#{} {}", static_cast<unsigned int>(CMT), cmtMode));
+                       ? /* TRANSLATORS: Numeric identifier prefix (e.g. "#1"). Placeholder: {} is the numeric ID. */
+                         formatText(gettext("#{}"), static_cast<unsigned int>(CMT))
+                       : /* TRANSLATORS: Numeric identifier prefix with mode name (e.g. "#1 (CMT)"). Placeholders: {} 1: numeric ID, 2: mode description. */
+                         formatText(gettext("#{} {}"), static_cast<unsigned int>(CMT), cmtMode));
    }
 #if defined(HAVE_DCCP)
    if(Protocol == IPPROTO_DCCP) {
       // TRANSLATORS: DCCP Congestion Control ID setting label.
-      formatter.add(level, gettext("CCID"), formatText("#{}", static_cast<unsigned int>(CCID)));
+      formatter.add(level, gettext("CCID"),
+                    // TRANSLATORS: Numeric identifier prefix (e.g. "#1"). Placeholder: {} is the numeric ID.
+                    formatText(gettext("#{}"), static_cast<unsigned int>(CCID)));
    }
 #endif
 }

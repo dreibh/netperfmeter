@@ -39,6 +39,7 @@
 #include <cstdint>
 #include <cstring>
 #include <fcntl.h>
+#include <format>
 #include <netinet/tcp.h>
 #include <poll.h>
 #include <set>
@@ -309,7 +310,7 @@ bool FlowManager::beginMeasurement(const int        controlSocket,
                         // Active node: write directly to target file path
                         flowVectorName = flow->getNodeOutputName(
                            vectorNamePattern, "active",
-                           formatText("-{:08x}-{:04x}", flow->FlowID, flow->StreamID));
+                           std::format("-{:08x}-{:04x}", flow->FlowID, flow->StreamID));
                      }
                      // Passive node: flowVectorName is empty -> buffers in std::tmpfile()
                      flow->initializeVectorFile(
@@ -333,8 +334,9 @@ bool FlowManager::beginMeasurement(const int        controlSocket,
       }
       catch(const OutputFileException& ex) {
          LOG_ERROR
-         stdlog << formatText("ERROR: Failed to prepare output files for measurement ${:x}: {}!\n",
-                              measurementID, ex.what());
+         // TRANSLATORS: Error message when output files cannot be prepared for a measurement. Placeholders: {:x} 1: measurement ID (hex), {} 2: error message.
+         stdlog << formatText(gettext("ERROR: Failed to prepare output files for measurement ${:x}: {}!"),
+                              measurementID, ex.what()) << "\n";
          LOG_END
          delete measurement;
          measurement = nullptr;
@@ -342,8 +344,9 @@ bool FlowManager::beginMeasurement(const int        controlSocket,
       }
       catch(const std::exception& ex) {
          LOG_ERROR
-         stdlog << formatText("ERROR: Failed to prepare measurement ${:x}: {}!\n",
-                              measurementID, ex.what());
+         // TRANSLATORS: Error message when preparing a measurement fails. Placeholders: {:x} 1: measurement ID (hex), {} 2: error message.
+         stdlog << formatText(gettext("ERROR: Failed to prepare measurement ${:x}: {}!"),
+                              measurementID, ex.what()) << "\n";
          LOG_END
          delete measurement;
          measurement = nullptr;
@@ -492,7 +495,7 @@ void FlowManager::printMeasurements(std::ostream& os)
    os << gettext("Measurements:") << "\n";
    for(std::map<std::pair<int, uint64_t>, Measurement*>::iterator iterator = MeasurementSet.begin();
        iterator != MeasurementSet.end(); iterator++) {
-      os << "   - " << formatText("{:x} -> ptr={}", iterator->first.second, static_cast<const void*>(iterator->second)) << "\n";
+      os << "   - " << std::format("{:x} -> ptr={}", iterator->first.second, static_cast<const void*>(iterator->second)) << "\n";
    }
 }
 

@@ -38,6 +38,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <format>
 
 
 // ##########################################################################
@@ -155,8 +156,9 @@ static bool downloadOutputFile(MessageReader* messageReader,
          }
          catch(const std::exception& ex) {
             LOG_ERROR
-            stdlog << formatText("ERROR: Failed to transform downloaded BZip2 file <{}> to target format: {}!\n",
-                                 fileName, ex.what());
+            // TRANSLATORS: Error message when transforming a downloaded BZip2 file to the requested output format fails. Placeholders: {} 1: file name, 2: error message.
+            stdlog << formatText(gettext("ERROR: Failed to transform downloaded BZip2 file <{}> to target format: {}!"),
+                                 fileName, ex.what()) << "\n";
             LOG_END
             return false;
          }
@@ -176,7 +178,7 @@ static bool downloadResults(MessageReader*     messageReader,
    const std::string outputName =
       Flow::getNodeOutputName(
          namePattern, "passive",
-         formatText("-{:08x}-{:04x}", flow->getFlowID(), flow->getStreamID()));
+         std::format("-{:08x}-{:04x}", flow->getFlowID(), flow->getStreamID()));
 
    LOG_INFO
    // TRANSLATORS: Log message when beginning download of flow results. Placeholders: {} 1: file path, 2: socket descriptor.
@@ -274,7 +276,7 @@ bool performNetPerfMeterAddFlow(MessageReader*   messageReader,
    addFlowMsg->NDiffPorts = htobe16(0);
 
    LOG_TRACE
-   stdlog << formatText("<R1 sd={}>\n", controlSocket);
+   stdlog << std::format("<R1 sd={}>\n", controlSocket);
    LOG_END
    if(sendControlMessage(controlSocket, addFlowMsg, addFlowMsgSize) <= 0) {
       LOG_ERROR
@@ -287,7 +289,7 @@ bool performNetPerfMeterAddFlow(MessageReader*   messageReader,
 
    // ====== Wait for NETPERFMETER_ACKNOWLEDGE ==============================
    LOG_TRACE
-   stdlog << formatText("<R2 sd={}>\n", controlSocket);
+   stdlog << std::format("<R2 sd={}>\n", controlSocket);
    LOG_END
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    flow->getMeasurementID(),
@@ -353,7 +355,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader*   messageReader,
       }
 
       LOG_TRACE
-      stdlog << formatText("<R3 sd={} trial={}/{}>\n", controlSocket, trial, maxTrials);
+      stdlog << std::format("<R3 sd={} trial={}/{}>\n", controlSocket, trial, maxTrials);
       LOG_END
 #if defined(HAVE_SCTP)
       if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
@@ -381,7 +383,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader*   messageReader,
          }
       }
       LOG_TRACE
-      stdlog << formatText("<R4 sd={} trial={}/{}>\n", controlSocket, trial, maxTrials);
+      stdlog << std::format("<R4 sd={} trial={}/{}>\n", controlSocket, trial, maxTrials);
       LOG_END
       if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                       flow->getMeasurementID(),
@@ -464,10 +466,10 @@ bool performNetPerfMeterStart(MessageReader*   messageReader,
          fprintf(configFile, "FLOW%u_CC=\"%s\"\n",                           flow->getFlowID(), flow->getTrafficSpec().CongestionControl.c_str());
          fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(),
                               Flow::getNodeOutputName(vectorNamePattern, "active",
-                                 formatText("-{:08x}-{:04x}", flow->getFlowID(), flow->getStreamID())).c_str());
+                                 std::format("-{:08x}-{:04x}", flow->getFlowID(), flow->getStreamID())).c_str());
          fprintf(configFile, "FLOW%u_VECTOR_PASSIVE_NODE=\"%s\"\n\n",        flow->getFlowID(),
                               Flow::getNodeOutputName(vectorNamePattern, "passive",
-                                 formatText("-{:08x}-{:04x}", flow->getFlowID(), flow->getStreamID())).c_str());
+                                 std::format("-{:08x}-{:04x}", flow->getFlowID(), flow->getStreamID())).c_str());
       }
 
       FlowManager::getFlowManager()->unlock();
@@ -514,14 +516,14 @@ bool performNetPerfMeterStart(MessageReader*   messageReader,
          return false;
       }
       LOG_TRACE
-      stdlog << formatText("<wait sd={}>\n", controlSocket);
+      stdlog << std::format("<wait sd={}>\n", controlSocket);
       LOG_END
       if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                       measurementID, 0, 0) == false) {
          return false;
       }
       LOG_TRACE
-      stdlog << formatText("<okay sd={}>\n", controlSocket);
+      stdlog << std::format("<okay sd={}>\n", controlSocket);
       LOG_END
       return true;
    }
@@ -556,7 +558,7 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
    removeFlowMsg.StreamID      = htobe16(flow->getStreamID());
 
    LOG_TRACE
-   stdlog << formatText("<flow {}>\n", flow->getFlowID());
+   stdlog << std::format("<flow {}>\n", flow->getFlowID());
    LOG_END
    if(sendControlMessage(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg)) <= 0) {
       return false;
@@ -605,7 +607,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       return false;
    }
    LOG_TRACE
-   stdlog << formatText("<wait sd={}>\n", controlSocket);
+   stdlog << std::format("<wait sd={}>\n", controlSocket);
    LOG_END
    if(awaitNetPerfMeterAcknowledge(messageReader, controlSocket,
                                    measurementID, 0, 0) == false) {
@@ -627,7 +629,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
          return false;
       }
       LOG_TRACE
-      stdlog << formatText("<okay sd={}>\n", controlSocket);
+      stdlog << std::format("<okay sd={}>\n", controlSocket);
       LOG_END
    }
 
@@ -645,7 +647,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
          return false;
       }
       LOG_TRACE
-      stdlog << formatText("<okay sd={}>\n", controlSocket);
+      stdlog << std::format("<okay sd={}>\n", controlSocket);
       LOG_END
    }
 
@@ -749,7 +751,7 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
 
    const uint32_t status = be32toh(ackMsg.Status);
    LOG_TRACE
-   stdlog << formatText("<status={} sd={}>\n", status, controlSocket);
+   stdlog << std::format("<status={} sd={}>\n", status, controlSocket);
    LOG_END
    return status == NETPERFMETER_STATUS_OKAY;
 }

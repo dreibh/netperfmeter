@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <format>
 #include <map>
 #include <string>
 #include <string_view>
@@ -82,21 +83,21 @@ void Defragmenter::print(std::ostream& os)
    for(std::map<uint32_t, Frame*>::iterator frameIterator = FrameSet.begin();
        frameIterator != FrameSet.end(); frameIterator++) {
       Frame* frame = frameIterator->second;
-      formatter.addLine(1, formatText("Frame {}, LastUpdate={}:",
-                                      frame->FrameID, frame->LastUpdate));
+      formatter.addLine(1, std::format("Frame {}, LastUpdate={}:",
+                                       frame->FrameID, frame->LastUpdate));
 
       for(std::map<uint64_t, Fragment*>::iterator fragmentIterator = frame->FragmentSet.begin();
           fragmentIterator != frame->FragmentSet.end(); fragmentIterator++) {
          Fragment* fragment = fragmentIterator->second;
-         std::string details = formatText("ByteSeq={}, Length={}",
-                                          fragment->ByteSeqNumber, fragment->Length);
+         std::string details = std::format("ByteSeq={}, Length={}",
+                                           fragment->ByteSeqNumber, fragment->Length);
          if(fragment->Flags & NPMDF_FRAME_BEGIN) {
             details += " <Begin>";
          }
          if(fragment->Flags & NPMDF_FRAME_END) {
             details += " <End>";
          }
-         formatter.add(2, formatText("Fragment {}", fragment->PacketSeqNumber), std::move(details));
+         formatter.add(2, std::format("Fragment {}", fragment->PacketSeqNumber), std::move(details));
       }
    }
    os << formatter;

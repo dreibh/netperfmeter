@@ -2442,7 +2442,8 @@ static void activeMode(const char* remoteEndpoint)
       formatter.addLine(0, gettext("Active Mode:"));
       // TRANSLATORS: Active mode display label for hexadecimal measurement ID.
       formatter.add(1, gettext("Measurement ID"),
-                    formatText("${:x}", measurementID));
+                    // TRANSLATORS: Hexadecimal measurement ID format (e.g. "$1a2b3c4d"). Placeholder: {:x} is hex measurement ID.
+                    formatText(gettext("${:x}"), measurementID));
 
       std::ostringstream remoteAddrStream;
       printAddress(remoteAddrStream, &remoteAddress.sa, true);
