@@ -311,6 +311,20 @@ INSTALL(FILES       getabstime.bash-completion
         DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
         RENAME      getabstime)
 
+# ====== getrelativepath ====================================================
+ADD_EXECUTABLE(getrelativepath getrelativepath.cc)
+TARGET_INCLUDE_DIRECTORIES(getrelativepath
+                           PRIVATE ${Intl_INCLUDE_DIRS}
+                                   ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(getrelativepath
+                      PRIVATE ${Intl_LIBRARIES}
+                              ${LIBIBERTY_LIBRARY})
+INSTALL(TARGETS getrelativepath   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+INSTALL(FILES   getrelativepath.1 DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
+INSTALL(FILES       getrelativepath.bash-completion
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+        RENAME      getrelativepath)
+
 # ====== Plot Programs ======================================================
 IF (WITH_PLOT_PROGRAMS)
    CONFIGURE_FILE(plot-netperfmeter-results plot-netperfmeter-results.versioned @ONLY)
