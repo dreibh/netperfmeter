@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 23, 2026
+.Dd November 15, 2026
 .Dt createsummary 1
 .Os createsummary
 .\" ###### Name #############################################################
@@ -94,9 +94,13 @@ The following arguments and options may be provided:
 .It Ar variable_names
 A space\-separated list of output variable names to be added to the output data tables.
 .It Fl b | Fl \-batch
-Run in batch mode. The program is aborted on errors.
+Run in batch mode: suppresses
+.Dq Ready>
+prompts and per\-entry progress messages, and aborts immediately on invalid input commands. By default, batch mode is enabled automatically when standard input is not a terminal.
 .It Fl i | Fl \-interactive
-Run in interactive mode (default). On errors, the program is continued.
+Run in interactive mode: prints
+.Dq Ready>
+prompts and per\-entry progress messages, and continues after invalid input commands. By default, interactive mode is enabled automatically when standard input is a terminal.
 .It Fl F Ar format | Fl \-format Ar format
 Sets the output compression format. Allowed values are:
 .Cm plain ,
