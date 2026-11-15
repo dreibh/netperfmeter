@@ -34,7 +34,9 @@ PROJECT(netperfmeter
         VERSION      "${CMAKE_COMPAT_VERSION}"
         LANGUAGES    C CXX
         HOMEPAGE_URL "https://www.nntb.no/~dreibh/netperfmeter")
-SET(PROJECT_SOURCE_URL "https://github.com/dreibh/netperfmeter")
+SET(PROJECT_SOURCE_URL     "https://github.com/dreibh/netperfmeter")
+SET(PROJECT_BUGTRACKER_URL "https://github.com/dreibh/netperfmeter/issues")
+SET(PROJECT_COPYRIGHT      "Copyright (C) 2013-2026 by Thomas Dreibholz")
 
 SET(CMAKE_CXX_STANDARD          20)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
