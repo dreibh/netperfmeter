@@ -1,0 +1,116 @@
+.\" ==========================================================================
+.\"         _   _      _   ____            __ __  __      _
+.\"        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
+.\"        |  \| |/ _ \ __| |_) / _ \ '__| |_| |\/| |/ _ \ __/ _ \ '__|
+.\"        | |\  |  __/ |_|  __/  __/ |  |  _| |  | |  __/ ||  __/ |
+.\"        |_| \_|\___|\__|_|   \___|_|  |_| |_|  |_|\___|\__\___|_|
+.\"
+.\"                  NetPerfMeter -- Network Performance Meter
+.\"                 Copyright (C) 2009-2026 by Thomas Dreibholz
+.\" ==========================================================================
+.\"
+.\" This program is free software: you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation, either version 3 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
+.\"
+.\" Contact:  dreibh@simula.no
+.\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
+.\"
+.\" ###### Setup ############################################################
+.Dd November 15, 2026
+.Dt getrelativepath 1
+.Os getrelativepath
+.\" ###### Name #############################################################
+.Sh NAME
+.Nm getrelativepath
+.Nd Relative Path Computation Tool
+.\" ###### Synopsis #########################################################
+.Sh SYNOPSIS
+.Nm getrelativepath
+.Ar from_path to_path
+.Nm getrelativepath
+.Op Fl h | Fl \-help
+.Nm getrelativepath
+.Op Fl v | Fl \-version
+.\" ###### Description ######################################################
+.Sh DESCRIPTION
+.Nm getrelativepath
+computes and prints the relative path from
+.Ar from_path
+to
+.Ar to_path .
+Symbolic links as well as
+.Pa .
+and
+.Pa ..
+path components are resolved against the filesystem, and the resulting relative path is written to standard output.
+.Pp
+.\" ###### Arguments ########################################################
+.Sh ARGUMENTS
+The following arguments and options may be provided:
+.Bl -tag -width indent
+.It Ar from_path
+The starting (base) path.
+.It Ar to_path
+The target (destination) path.
+.It Fl h | Fl \-help
+Prints command\-line help.
+.It Fl v | Fl \-version
+Prints program version.
+.El
+.\" ###### Exit status ######################################################
+.Sh EXIT STATUS
+The
+.Nm
+tool exits with 0 on success, and >0 in case of an error.
+.\" ###### Examples #########################################################
+.Sh EXAMPLES
+Compute the relative path to an ancestor directory:
+.Bd -literal
+getrelativepath ~/src/netperfmeter/src/tests ~/src/netperfmeter/
+.Ed
+.Pp
+Output:
+.Bd -literal
+\&../..
+.Ed
+.Pp
+Compute the relative path to a sibling directory:
+.Bd -literal
+getrelativepath ~/src/netperfmeter/src/tests ~/src/netperfmeter/examples
+.Ed
+.Pp
+Output:
+.Bd -literal
+\&../../examples
+.Ed
+.Pp
+Compute the relative path to a subdirectory:
+.Bd -literal
+getrelativepath ~/src/netperfmeter ~/src/netperfmeter/src/tests
+.Ed
+.Pp
+Output:
+.Bd -literal
+src/tests
+.Ed
+.\" ###### See also #########################################################
+.Sh SEE ALSO
+.Xr realpath 1
+.\" ###### Notes ############################################################
+.Sh NOTES
+This program is part of NetPerfMeter. The latest version of NetPerfMeter can be found on the NetPerfMeter Homepage at
+.Lk https://www.nntb.no/\(tidreibh/netperfmeter/ "NetPerfMeter Homepage" .
+.\" ###### Authors ##########################################################
+.Sh AUTHORS
+Thomas Dreibholz,
+.Lk https://www.nntb.no/\(tidreibh "Homepage"
