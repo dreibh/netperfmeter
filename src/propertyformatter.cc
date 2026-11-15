@@ -156,16 +156,16 @@ void PropertyFormatter::print(std::ostream& os) const
    for(const auto& entry : Entries) {
       if(!entry.hasSeparator) {
          if(IsRtl) {
-            // Space + RLM binds the RTL mark to cell 0, forcing RTL paragraph direction:
             const size_t totalIndentWidth = entry.level * computeDisplayWidth(Indent);
             if(totalIndentWidth > 0) {
+               // Space + RLM binds the RTL mark to cell 0, forcing RTL paragraph direction:
                os << ' ' << utf8Rlm;
                for(size_t i = 1; i < totalIndentWidth; ++i) {
                   os << ' ';
                }
             }
             else {
-               os << ' ' << utf8Rlm;
+               os << utf8Rlm;
             }
 
             if(entry.level < Prefixes.size()) {
@@ -181,7 +181,11 @@ void PropertyFormatter::print(std::ostream& os) const
             }
          }
 
-         os << entry.key << '\n';
+         os << entry.key;
+         if(IsRtl) {
+            os << utf8Rlm;
+         }
+         os << '\n';
          continue;
       }
 
@@ -207,16 +211,25 @@ void PropertyFormatter::print(std::ostream& os) const
       }
 
       if(entry.value.empty()) {
-         os << ' ' << Separator << '\n';
+         if(!Separator.empty()) {
+            os << ' ' << Separator;
+         }
+         os << '\n';
       }
       else {
-         os << ' ' << Separator << ' ';
+         if(!Separator.empty()) {
+            os << ' ' << Separator << ' ';
+         }
+         else {
+            os << ' ';
+         }
 
-         const size_t prefixWidth  = (entry.level < Prefixes.size()) ?
+         const size_t prefixWidth    = (entry.level < Prefixes.size()) ?
             computeDisplayWidth(Prefixes[entry.level]) : 0;
-         const size_t indentWidth  = entry.level * computeDisplayWidth(Indent);
-         const size_t leadingWidth = indentWidth + prefixWidth + maxKeyWidth +
-                                        1 + computeDisplayWidth(Separator) + 1;
+         const size_t indentWidth    = entry.level * computeDisplayWidth(Indent);
+         const size_t separatorWidth = Separator.empty() ?
+            1 : (1 + computeDisplayWidth(Separator) + 1);
+         const size_t leadingWidth   = indentWidth + prefixWidth + maxKeyWidth + separatorWidth;
 
          printMultilineValue(os, entry.value, leadingWidth, IsRtl);
       }
@@ -270,8 +283,9 @@ void PropertyFormatter::printMultilineValue(std::ostream&      os,
       }
 
       if(!line.empty()) {
-         // Technical values (IPs, formulas, brackets, error strings) start with ASCII (< 0x80):
-         const bool valIsLTR = rtl && startsWithAscii(line);
+         // Pure technical/ASCII values (IPs, formulas, untranslated strings) get LRM isolation;
+         // localized strings containing RTL script characters keep natural RTL flow:
+         const bool valIsLTR = rtl && isLtrValue(line);
          if(valIsLTR) {
             os << utf8Lrm << line << utf8Lrm;
          }
@@ -285,16 +299,34 @@ void PropertyFormatter::printMultilineValue(std::ostream&      os,
 }
 
 
-// ###### Check if string starts with ASCII character #######################
-bool PropertyFormatter::startsWithAscii(std::string_view sv) noexcept
+// ###### Check if code point belongs to an RTL script ######################
+bool PropertyFormatter::isRtlCodePoint(char32_t codePoint) noexcept
 {
-   size_t offset = 0;
+   return ((codePoint >= 0x0590) && (codePoint <= 0x08ff)) || // Hebrew, Arabic, Syriac, Thaana, etc.
+          ((codePoint >= 0xfb1d) && (codePoint <= 0xfdff)) || // Hebrew & Arabic Presentation Forms-A
+          ((codePoint >= 0xfe70) && (codePoint <= 0xfeff));   // Arabic Presentation Forms-B
+}
+
+
+// ###### Check if value line is purely LTR (no RTL characters) #############
+bool PropertyFormatter::isLtrValue(std::string_view sv) noexcept
+{
+   bool   hasAscii = false;
+   size_t offset   = 0;
+
    while(offset < sv.size()) {
       if(sv[offset] == 0x1b) {
          offset = skipAnsiSequence(sv, offset);
          continue;
       }
-      return static_cast<unsigned char>(sv[offset]) < 0x80;
+
+      const char32_t codePoint = decodeNextUtf8(sv, offset);
+      if(isRtlCodePoint(codePoint)) {
+         return false;
+      }
+      if(!hasAscii && (codePoint > 0x20) && (codePoint < 0x80)) {
+         hasAscii = true;
+      }
    }
-   return false;
+   return hasAscii;
 }
