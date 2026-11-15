@@ -31,6 +31,7 @@
 #include <cctype>
 #include <clocale>
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -38,7 +39,12 @@
 #include <string>
 #include <string_view>
 #include <getopt.h>
+
+#if !defined(_WIN32)
 #include <unistd.h>
+#else
+#include <io.h>
+#endif
 
 #if defined(ENABLE_NLS)
 #include <libintl.h>
@@ -222,6 +228,7 @@ static void usage(const char* program, const int exitCode)
    std::cerr << HEADER(gettext("Usage:")) << "\n"
              << CMD(program) << " "
                 ARG("output_file") "\n"
+                   ENTRY(OPT("-b") PIPE OPT("--batch") PIPE OPT("-i") PIPE OPT("--interactive"))
                    ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
                    ENTRY(OPT("-s") " " ARG("separator") PIPE OPT("--separator") " " ARG("separator"))
                    ENTRY(OPT("-l") PIPE OPT("--line-numbers") PIPE OPT("-n") PIPE OPT("--no-line-numbers"))
@@ -271,6 +278,11 @@ int main(int argc, char** argv)
    textdomain("combinesummaries");
 #endif
 
+#if !defined(_WIN32)
+   bool        interactiveMode = (isatty(STDIN_FILENO) != 0);
+#else
+   bool        interactiveMode = (_isatty(_fileno(stdin)) != 0);
+#endif
    bool        quietMode       = false;
    bool        withLineNumbers = false;
    int         explicitLevel   = -1;
@@ -278,6 +290,9 @@ int main(int argc, char** argv)
 
    // ====== Handle command-line arguments ==================================
    static const struct option long_options[] = {
+      { "interactive",     no_argument,       nullptr, 'i' },
+      { "batch",           no_argument,       nullptr, 'b' },
+
       { "compress",        required_argument, nullptr, 'c' },
       { "separator",       required_argument, nullptr, 's' },
       { "line-numbers",    no_argument,       nullptr, 'l' },
@@ -291,8 +306,14 @@ int main(int argc, char** argv)
 
    int option = 0;
    int longIndex = 0;
-   while((option = getopt_long_only(argc, argv, "c:s:lnqhv", long_options, &longIndex)) != -1) {
+   while((option = getopt_long_only(argc, argv, "ibc:s:lnqhv", long_options, &longIndex)) != -1) {
       switch(option) {
+         case 'i':
+            interactiveMode = true;
+            break;
+         case 'b':
+            interactiveMode = false;
+            break;
          case 'c':
             explicitLevel = std::atoi(optarg);
             break;
@@ -375,6 +396,11 @@ int main(int argc, char** argv)
       PropertyFormatter formatter("   ", { "", "- ", "+ " }, "=", rtl);
       formatter.addLine(0, formatText("CombineSummaries {}", COMBINESUMMARIES_VERSION));
       formatter.add(1,
+                    // TRANSLATORS: Status label for interactive mode.
+                    gettext("Interactive Mode"),
+                    interactiveMode ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
+                                    : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off"));
+      formatter.add(1,
                     // TRANSLATORS: Status label for detected output file compression format.
                     gettext("Output Format"),
                     std::string(getFormatName(outputFileFormat)));
@@ -404,8 +430,12 @@ int main(int argc, char** argv)
       std::string        simulationsDirectory = ".";
       std::string        line;
 
-      if(!quietMode) {
+      if(interactiveMode) {
          std::cout << "Ready> " << std::flush;
+      }
+      else if(!quietMode) {
+         // TRANSLATORS: Status message in batch mode when starting to read commands from standard input.
+         std::cout << gettext("Processing input ...") << "\n";
       }
 
       while(std::getline(std::cin, line)) {
@@ -414,7 +444,7 @@ int main(int argc, char** argv)
          }
 
          if(line.empty()) {
-            if(!quietMode) {
+            if(interactiveMode) {
                std::cout << "Ready> " << std::flush;
             }
             continue;
@@ -459,24 +489,37 @@ int main(int argc, char** argv)
             simulationsDirectory = line.substr(23);
          }
          else {
-            // TRANSLATORS: Error message when an unrecognized command is read from standard input.
-            std::cerr << gettext("ERROR: Invalid command!") << "\n";
-            std::exit(1);
+            // TRANSLATORS: Error message when an unrecognized command is read from standard input. {} is the command line.
+            std::cerr << formatText(gettext("ERROR: Invalid command \"{}\"!"), line) << "\n"
+                      // TRANSLATORS: Header for stdin command syntax examples.
+                      << gettext("Examples:") << "\n"
+                      << "   --simulationsdirectory=MySimulationsDirectory\n"
+                      << "   --varnames=Alpha Beta Gamma\n"
+                      << "   --values=alpha100 beta200 gamma300\n"
+                      << "   --input=Results/scalar-file.data.bz2\n"
+                      << "   (Ctrl-D, EOF)\n";
+            if(!interactiveMode) {
+               std::exit(1);
+            }
          }
 
-         if(!quietMode) {
+         if(interactiveMode) {
             std::cout << "Ready> " << std::flush;
          }
       }
 
       // ====== Close output file ===========================================
+      if(interactiveMode) {
+         std::cout << "\n\n";
+      }
+
       unsigned long long in = 0;
       unsigned long long out = 0;
       outputFile.finish(true, &in, &out);
 
       if(!quietMode) {
          // TRANSLATORS: Summary message showing number of written output lines. {} is the line count.
-         std::cout << "\n" << formatText(gettext("Wrote {} lines"), outputLineNumber);
+         std::cout << formatText(gettext("Wrote {} lines"), outputLineNumber);
          if(in > 0) {
             std::cout << " (" << in << " -> " << out << " - "
                       << (static_cast<double>(out) * 100.0 / static_cast<double>(in)) << "%)";

@@ -1,4 +1,5 @@
 # shellcheck shell=bash
+# kate: syntax Bash;
 # ==========================================================================
 #         _   _      _   ____            __ __  __      _
 #        | \ | | ___| |_|  _ \ ___ _ __ / _|  \/  | ___| |_ ___ _ __
@@ -48,92 +49,100 @@ _combinesummaries()
       cword="${COMP_CWORD}"
    fi
 
-   if [ "${cword}" -eq 1 ] && [[ "${cur}" != -* ]] ; then
-      _filedir
-      return
-   else
-      case "${prev}" in
-         -c | --compress)
-            compopt -o nosort 2>/dev/null || true   # No sorting (Bash >= 4.4)
-
-            # Find output file name from command line
-            local outfile=""
-            local i
-            local skip=0
-            for ((i = 1; i < ${#COMP_WORDS[@]}; i++)); do
-               if ((skip)); then
-                  skip=0
-                  continue
-               fi
-               local w="${COMP_WORDS[i]}"
-               if [[ "$i" -eq "$COMP_CWORD" ]]; then
-                  continue
-               fi
-               case "$w" in
-                  -c | --compress | -s | --separator)
-                     skip=1
-                     ;;
-                  --compress=* | --separator=*)
-                     ;;
-                  -*)
-                     ;;
-                  *)
-                     outfile="$w"
-                     break
-                     ;;
-               esac
-            done
-
-            local format=""
-            local ext="${outfile##*.}"
-            case "${ext,,}" in
-               bz2)
-                  format="bz2"
-                  ;;
-               gz)
-                  format="gzip"
-                  ;;
-               xz | lzma)
-                  format="xz"
-                  ;;
-               zst | zstd)
-                  format="zstd"
-                  ;;
-               "")
-                  format=""
-                  ;;
-               *)
-                  format="plain"
-                  ;;
-            esac
-
-            case "${format}" in
-               plain)
-                  mapfile -t COMPREPLY < <(compgen -W "0" -- "${cur}")
-                  ;;
-               zstd)
-                  mapfile -t COMPREPLY < <(compgen -W "{1..22}" -- "${cur}")
-                  ;;
-               gzip | xz)
-                  mapfile -t COMPREPLY < <(compgen -W "{0..9}" -- "${cur}")
-                  ;;
-               bz2)
-                  mapfile -t COMPREPLY < <(compgen -W "{1..9}" -- "${cur}")
-                  ;;
-               *)
-                  mapfile -t COMPREPLY < <(compgen -W "{0..22}" -- "${cur}")
-                  ;;
-            esac
-            return
+   # Find output file name from command line (if already specified)
+   local outfile=""
+   local i
+   local skip=0
+   for ((i = 1; i < ${#COMP_WORDS[@]}; i++)); do
+      if ((skip)); then
+         skip=0
+         continue
+      fi
+      local w="${COMP_WORDS[i]}"
+      if [[ "$i" -eq "$COMP_CWORD" ]]; then
+         continue
+      fi
+      case "$w" in
+         -c | --compress | -s | --separator)
+            skip=1
             ;;
-         -s | --separator)
-            return
+         --compress=* | --separator=*)
+            ;;
+         -*)
+            ;;
+         *)
+            outfile="$w"
+            break
             ;;
       esac
+   done
+
+   case "${prev}" in
+      -c | --compress)
+         compopt -o nosort 2>/dev/null || true   # No sorting (Bash >= 4.4)
+
+         local format=""
+         local ext="${outfile##*.}"
+         case "${ext,,}" in
+            bz2)
+               format="bz2"
+               ;;
+            gz)
+               format="gzip"
+               ;;
+            xz | lzma)
+               format="xz"
+               ;;
+            zst | zstd)
+               format="zstd"
+               ;;
+            "")
+               format=""
+               ;;
+            *)
+               format="plain"
+               ;;
+         esac
+
+         case "${format}" in
+            plain)
+               mapfile -t COMPREPLY < <(compgen -W "0" -- "${cur}")
+               ;;
+            zstd)
+               mapfile -t COMPREPLY < <(compgen -W "{1..22}" -- "${cur}")
+               ;;
+            gzip | xz)
+               mapfile -t COMPREPLY < <(compgen -W "{0..9}" -- "${cur}")
+               ;;
+            bz2)
+               mapfile -t COMPREPLY < <(compgen -W "{1..9}" -- "${cur}")
+               ;;
+            *)
+               mapfile -t COMPREPLY < <(compgen -W "{0..22}" -- "${cur}")
+               ;;
+         esac
+         return
+         ;;
+      -s | --separator)
+         return
+         ;;
+   esac
+
+   if [[ -z "${outfile}" ]] && [[ "${cur}" != -* ]] ; then
+      if declare -F _filedir >/dev/null; then
+         _filedir
+      else
+         mapfile -t COMPREPLY < <(compgen -f -- "${cur}")
+      fi
+      return
    fi
 
    # ====== All options =====================================================
    local opts="
+-b
+--batch
+-i
+--interactive
 -c
 --compress
 -s

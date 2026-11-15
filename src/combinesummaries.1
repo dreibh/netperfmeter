@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 23, 2026
+.Dd November 15, 2026
 .Dt combinesummaries 1
 .Os combinesummaries
 .\" ###### Name #############################################################
@@ -37,6 +37,8 @@
 .Sh SYNOPSIS
 .Nm combinesummaries
 .Ar output_file
+.br
+.Op Fl b | Fl \-batch | Fl i | Fl \-interactive
 .br
 .Op Fl c Ar level | Fl \-compress Ar level
 .br
@@ -77,6 +79,14 @@ The following arguments and options may be provided:
 The name of the output file to be created. The compression format is detected automatically from the file extension (e.g. .bz2, .gz, .xz, or .zst).
 .It Ar variable_names
 A space\-separated list of output variable names to be added to the output data tables.
+.It Fl b | Fl \-batch
+Runs in batch mode: suppresses
+.Dq Ready>
+prompts and aborts immediately on invalid input commands. By default, batch mode is enabled automatically when standard input is not a terminal.
+.It Fl i | Fl \-interactive
+Runs in interactive mode: prints
+.Dq Ready>
+prompts and continues after invalid input commands. By default, interactive mode is enabled automatically when standard input is a terminal.
 .It Fl c Ar level | Fl \-compress Ar level
 Sets the compression level. The valid range depends on the output format (e.g. 1\-9 for BZip2, 1\-22 for Zstandard, 0 for Plain). If not specified, the format's default compression level is used.
 .It Fl s Ar separator | Fl \-separator Ar separator
