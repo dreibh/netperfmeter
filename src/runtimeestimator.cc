@@ -39,6 +39,7 @@
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
+#include <string>
 #include <unistd.h>
 
 #if defined(ENABLE_NLS)
@@ -245,6 +246,8 @@ int main(int argc, char** argv)
       std::exit(1);
    }
 
+   std::string estimation = "-";
+
    // ====== Initialise (Run 0) =============================================
    if(currentRun == 0) {
       std::ofstream stream(startFileName, std::ios::binary | std::ios::trunc);
@@ -263,10 +266,6 @@ int main(int argc, char** argv)
          std::cerr << formatText(gettext("ERROR: Unable to write timestamp to file <{}>!"), startFileName) << "\n";
          std::exit(1);
       }
-      // TRANSLATORS: Runtime estimation status line on initial run 0. {} is total_runs.
-      std::cout << "\x1b[34m##### "
-                << formatText(gettext("ESTIMATION: - [0 of {} - 0.00%]"), totalRuns)
-                << "\x1b[0m\n";
    }
 
    // ====== Estimate runtime (Run > 0) =====================================
@@ -318,17 +317,22 @@ int main(int argc, char** argv)
       const double remainingMinutes =
          std::chrono::duration_cast<std::chrono::duration<double, std::ratio<60>>>(estimatedRuntime).count();
 
-      // TRANSLATORS: Runtime estimation status line. Placeholders: {} 1: date/time string, 2: sub-second fraction (4 digits), 3: remaining minutes, 4: current run, 5: total runs, 6: percentage complete.
-      std::cout << "\x1b[34m##### "
-                << formatText(gettext("ESTIMATION: {}.{:04} (in {:.2f} minutes)  [{} of {} - {:.2f}%]"),
+      // TRANSLATORS: Estimated completion timestamp and remaining duration. Placeholders: {} 1: date/time string, {:04} 2: sub-second fraction (4 digits), {:.2f} 3: remaining minutes.
+      estimation = formatText(gettext("{}.{:04} (in {:.2f} minutes)"),
                               str,
                               static_cast<unsigned int>((estimatedEndTimeUs % 1000000ULL) / 100ULL),
-                              remainingMinutes,
-                              currentRun,
-                              totalRuns,
-                              (100.0 * currentRun) / static_cast<double>(totalRuns))
-                << "\x1b[0m\n";
+                              remainingMinutes);
    }
+
+   // ====== Print estimation ===============================================
+   // TRANSLATORS: Runtime estimation status line. Placeholders: {} 1: estimated completion time (or "-" on initial run), {} 2: current run, {} 3: total runs, {:.2f} 4: percentage complete.
+   const std::string statusLine = formatText(
+      gettext("ESTIMATION: {} [{} of {} - {:.2f}%]"),
+      estimation,
+      currentRun,
+      totalRuns,
+      (100.0 * currentRun) / static_cast<double>(totalRuns));
+   std::cout << "\x1b[34m##### " << statusLine << "\x1b[0m\n";
 
    return 0;
 }
