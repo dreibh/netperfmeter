@@ -1769,6 +1769,7 @@ static void passiveMode(const uint16_t localPort)
          LOG_WARNING
          // TRANSLATORS: Warning when SCTP is unavailable on the host system.
          stdlog << gettext("WARNING: SCTP is not available => no control connections via SCTP possible!") << "\n"
+                // TRANSLATORS: Hint explaining how to disable SCTP control connections via command-line option.
                 << gettext("SCTP can be disabled by -X|--no-control-over-sctp.") << "\n";
          LOG_END
       }

@@ -206,7 +206,7 @@ ${cmd}${program}${reset}
 EOF
    # TRANSLATORS: Informational message at the end of usage:
    # "For further information, see the man page for <manpage>, read the documentation at <url>, examine the source code at <url>, or consult your favourite LLM.".
-   printf STDERR (gettext("For further information, see the man page for %s, read the documentation at %s, examine the source code at %s, or consult your favourite LLM.\n"),
+   printf STDERR (gettext("For further information, see the man page for %s, read the documentation at %s, examine the source code at %s, or consult your favourite LLM.") . "\n",
                   $manpage, $homepage, $repository);
    exit($exitCode);
 }
@@ -250,12 +250,12 @@ my $outputPDFName     = $ARGV[2];
 my $pdfFile = PDF::API2->open($inputPDFName);
 if (!$pdfFile) {
    # TRANSLATORS: Error message when the input PDF file cannot be opened. %s is the file path.
-   die(sprintf(gettext("ERROR: Unable to open PDF file \"%s\"\n"), $inputPDFName));
+   die(sprintf(gettext("ERROR: Unable to open PDF file \"%s\""), $inputPDFName) . "\n");
 }
 
 open(my $metadataFile, "<", $inputMetadataName) or
    # TRANSLATORS: Error message when the metadata file cannot be opened. Placeholders: %s 1: file path, 2: system error string.
-   die(sprintf(gettext("ERROR: Unable to open metadata file \"%s\": %s\n"), $inputMetadataName, $!));
+   die(sprintf(gettext("ERROR: Unable to open metadata file \"%s\": %s"), $inputMetadataName, $!) . "\n");
 
 # ====== Set default author and producer ====================================
 my $userID = POSIX::getuid();

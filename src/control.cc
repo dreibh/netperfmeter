@@ -542,6 +542,7 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
    }
    catch(const OutputFileException& ex) {
       LOG_ERROR
+      // TRANSLATORS: Error message when finishing/closing a flow's vector output file fails. Placeholders: {} 1: file name, 2: error message.
       stdlog << formatText(gettext("ERROR: Failed to finish vector file <{}>: {}!"),
                            flow->getVectorFile().getName(), ex.getReason()) << "\n";
       LOG_END
@@ -837,6 +838,7 @@ static bool uploadResults(const int controlSocket,
    }
    catch(const OutputFileException& ex) {
       LOG_ERROR
+      // TRANSLATORS: Error message when finishing/closing a flow's vector output file fails. Placeholders: {} 1: file name, 2: error message.
       stdlog << formatText(gettext("ERROR: Failed to finish vector file <{}>: {}!"),
                            flow->getVectorFile().getName(), ex.getReason()) << "\n";
       LOG_END
@@ -1007,6 +1009,7 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
       }
       catch(const OutputFileException& ex) {
          LOG_ERROR
+         // TRANSLATORS: Error message when finishing/closing a flow's vector output file fails. Placeholders: {} 1: file name, 2: error message.
          stdlog << formatText(gettext("ERROR: Failed to finish vector file <{}>: {}!"),
                               flow->getVectorFile().getName(), ex.getReason()) << "\n";
          LOG_END
@@ -1123,6 +1126,7 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
       }
       catch(const OutputFileException& ex) {
          LOG_ERROR
+         // TRANSLATORS: Error message when finishing/closing a measurement's output files fails. Placeholder: {} is error message.
          stdlog << formatText(gettext("ERROR: Failed to finish measurement output files: {}!"),
                               ex.getReason()) << "\n";
          LOG_END

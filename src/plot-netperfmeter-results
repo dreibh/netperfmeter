@@ -116,6 +116,7 @@ case "${UNAME}" in
       ;;
 esac
 if [ -z "${GETOPT}" ] || "${GETOPT}" -T >/dev/null 2>&1 || [[ $? -ne 4 ]]; then
+   # TRANSLATORS: Error message when GNU/enhanced getopt is not available on the system.
    gettext >&2 "ERROR: Enhanced/GNU getopt is required!"
    echo >&2
    exit 1

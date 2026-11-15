@@ -39,6 +39,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <format>
 #include <iostream>
 #include <map>
 #include <string>
@@ -67,8 +68,6 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 }
 #endif
 
-#if __has_include(<format>)
-#include <format>
 template<typename... Args>
 static inline std::string formatText(std::string_view formatString, const Args&... arguments)
 {
@@ -79,13 +78,6 @@ static inline std::string formatText(std::string_view formatString, const Args&.
       return std::string(formatString);
    }
 }
-#else
-template<typename... Args>
-static inline std::string formatText(std::string_view formatString, const Args&...)
-{
-   return std::string(formatString);
-}
-#endif
 
 #include "fileio.h"
 #include "inputfile.h"
@@ -941,7 +933,7 @@ int main(int argc, char** argv)
       // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
       const bool rtl = (std::string_view(gettext("LTR")) == "RTL");
       PropertyFormatter formatter("   ", { "", "- ", "+ " }, "=", rtl);
-      formatter.addLine(0, formatText("CreateSummary {}", CREATESUMMARY_VERSION));
+      formatter.addLine(0, std::format("CreateSummary {}", CREATESUMMARY_VERSION));
       formatter.add(1,
                     // TRANSLATORS: Status label for interactive mode.
                     gettext("Interactive Mode"),
@@ -958,7 +950,7 @@ int main(int argc, char** argv)
       formatter.add(1,
                     // TRANSLATORS: Status label for output column separator.
                     gettext("Separator"),
-                    formatText("\"{}\"", separator));
+                    std::format("\"{}\"", separator));
       formatter.add(1,
                     // TRANSLATORS: Status label for output line numbering.
                     gettext("Line Numbers"),

@@ -35,6 +35,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <format>
 #include <iostream>
 #include <map>
 #include <string>
@@ -57,8 +58,6 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 }
 #endif
 
-#if __has_include(<format>)
-#include <format>
 template<typename... Args>
 static inline std::string formatText(const std::string_view fmt, const Args&... args)
 {
@@ -69,13 +68,6 @@ static inline std::string formatText(const std::string_view fmt, const Args&... 
       return std::string(fmt);
    }
 }
-#else
-template<typename... Args>
-static inline std::string formatText(const std::string_view fmt, const Args&...)
-{
-   return std::string(fmt);
-}
-#endif
 
 #include "fileio.h"
 #include "inputfile.h"
@@ -450,7 +442,7 @@ int main(int argc, char** argv)
       // TRANSLATORS: Text direction: LTR (Left-to-Right) or RTL (Right-to-Left)
       const bool rtl = (std::string_view(gettext("LTR")) == "RTL");
       PropertyFormatter formatter("   ", { "", "- ", "+ " }, "=", rtl);
-      formatter.addLine(0, formatText("ExtractVectors {}", EXTRACTVECTORS_VERSION));
+      formatter.addLine(0, std::format("ExtractVectors {}", EXTRACTVECTORS_VERSION));
       formatter.add(1,
                     // TRANSLATORS: Status label for vector name splitting mode.
                     gettext("Vector Splitting"),

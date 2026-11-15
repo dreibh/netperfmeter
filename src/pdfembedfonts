@@ -76,7 +76,7 @@ EOF
 
 # ###### Version ############################################################
 version () {
-   echo "System-Info @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@"
+   echo "PDFEmbedFonts @PROJECT_VERSION_MAJOR@.@PROJECT_VERSION_MINOR@.@PROJECT_VERSION_PATCH@"
    exit 0
 }
 
@@ -107,6 +107,7 @@ case "${UNAME}" in
       ;;
 esac
 if "${GETOPT}" -T >/dev/null 2>&1 || [[ $? -ne 4 ]]; then
+   # TRANSLATORS: Error message when GNU/enhanced getopt is not available on the system.
    gettext >&2 "ERROR: Enhanced/GNU getopt is required!"
    echo >&2
    exit 1

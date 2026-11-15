@@ -131,7 +131,8 @@ static void addTrafficSection(PropertyFormatter& formatter,
       if(paddedTotal.size() < maxTotalLen) {
          paddedTotal.append(maxTotalLen - paddedTotal.size(), ' ');
       }
-      formatter.add(level + 1, row.label, formatText("{} -> {}", paddedTotal, row.rate));
+      // TRANSLATORS: Format combining total count and rate (e.g. "1000 B -> 500 B/s"). Placeholders: {} 1: total value with unit, 2: rate value with unit. RTL languages may reverse the arrow.
+      formatter.add(level + 1, row.label, formatText(gettext("{} -> {}"), paddedTotal, row.rate));
    }
 }
 

@@ -527,7 +527,7 @@ int createSocket(const int             family,
 #if defined(HAVE_MPTCP)
    if((protocol == IPPROTO_MPTCP) && (localAddresses > 1)) {
       // TRANSLATORS: Warning about multipath TCP limitations when multiple local addresses are provided.
-      std::cerr << gettext("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
+      std::cerr << gettext("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...") << "\n";
    }
 #endif
 
@@ -571,7 +571,7 @@ int bindSocket(const int             sd,
 #if defined(HAVE_MPTCP)
    if((protocol == IPPROTO_MPTCP) && (localAddresses > 1)) {
       // TRANSLATORS: Warning about multipath TCP limitations when multiple local addresses are provided.
-      std::cerr << gettext("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
+      std::cerr << gettext("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...") << "\n";
       localAddressCount = 0;
    }
 #endif
@@ -735,8 +735,10 @@ bool breakDetected()
 {
    if(DetectedBreak && !PrintedBreak) {
       if(!Quiet) {
-         // TRANSLATORS: Signal notification printed on the first SIGINT. {} is the signal number (SIGINT=2).
-         std::cerr << formatText(gettext("\x1b[0m\n*** Break ***    Signal #{}\n\n"), SIGINT);
+         std::cerr << "\x1b[0m\n"
+                   // TRANSLATORS: Signal notification printed on the first SIGINT. {} is the signal number (SIGINT=2).
+                   << formatText(gettext("*** Break ***    Signal #{}"), SIGINT)
+                   << "\n\n";
       }
       PrintedBreak = true;
    }
