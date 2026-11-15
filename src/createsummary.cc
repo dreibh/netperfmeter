@@ -35,6 +35,7 @@
 #include <clocale>
 #include <cmath>
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -45,6 +46,12 @@
 #include <vector>
 #include <version>
 #include <getopt.h>
+
+#if !defined(_WIN32)
+#include <unistd.h>
+#else
+#include <io.h>
+#endif
 
 #if defined(ENABLE_NLS)
 #include <libintl.h>
@@ -620,6 +627,7 @@ static void dumpScalars(const std::string& resultsDirectory,
                         const FileFormat   outputFormat,
                         const unsigned int compressionLevel,
                         const bool         interactiveMode,
+                        const bool         quietMode,
                         const char*        separator,
                         const bool         addLineNumbers)
 {
@@ -647,8 +655,8 @@ static void dumpScalars(const std::string& resultsDirectory,
          if(interactiveMode) {
             // TRANSLATORS: Progress status when starting to write a scalar output table. {} is the scalar name.
             std::cout << formatText(gettext("Statistics \"{}\" ..."), key.scalarName);
+            std::cout.flush();
          }
-         std::cout.flush();
 
          outputFile.initialize(fileName, outputFormat, compressionLevel);
          lineNumber = 1;
@@ -682,13 +690,15 @@ static void dumpScalars(const std::string& resultsDirectory,
                    totalIn, totalOut, totalLines, totalFiles,
                    interactiveMode);
 
-   // TRANSLATORS: Final summary showing total lines written across all generated scalar files. Placeholders: {} 1: line count, 2: file count.
-   std::cout << formatText(gettext("Wrote {} lines into {} files"), totalLines, totalFiles);
-   if(totalIn > 0) {
-      std::cout << ", " << totalIn << " -> " << totalOut << " - "
-                << (static_cast<double>(totalOut) * 100.0 / static_cast<double>(totalIn)) << "%";
+   if(!quietMode) {
+      // TRANSLATORS: Final summary showing total lines written across all generated scalar files. Placeholders: {} 1: line count, 2: file count.
+      std::cout << formatText(gettext("Wrote {} lines into {} files"), totalLines, totalFiles);
+      if(totalIn > 0) {
+         std::cout << ", " << totalIn << " -> " << totalOut << " - "
+                   << (static_cast<double>(totalOut) * 100.0 / static_cast<double>(totalIn)) << "%";
+      }
+      std::cout << "\n";
    }
-   std::cout << "\n";
 }
 
 
@@ -791,7 +801,11 @@ int main(int argc, char** argv)
    FileFormat   outputFormat           = FileFormat::BZip2;
    int          explicitLevel          = -1;
    const char*  separator              = "\t";
-   bool         interactiveMode        = true;
+#if !defined(_WIN32)
+   bool         interactiveMode        = (isatty(STDIN_FILENO) != 0);
+#else
+   bool         interactiveMode        = (_isatty(_fileno(stdin)) != 0);
+#endif
    bool         addLineNumbers         = false;
    bool         scalarSplittingMode    = false;
    bool         quietMode              = false;
@@ -961,7 +975,7 @@ int main(int argc, char** argv)
    if(interactiveMode) {
       std::cout << "Ready> " << std::flush;
    }
-   else {
+   else if(!quietMode) {
       // TRANSLATORS: Status message in batch mode when starting to read commands from standard input.
       std::cout << gettext("Processing input ...") << "\n";
    }
@@ -1089,10 +1103,13 @@ int main(int argc, char** argv)
    }
 
    try {
-      // TRANSLATORS: Status message before writing summary tables to disk.
-      std::cout << gettext("Writing scalar files...") << "\n";
+      if(!quietMode) {
+         // TRANSLATORS: Status message before writing summary tables to disk.
+         std::cout << gettext("Writing scalar files...") << "\n";
+      }
       dumpScalars(resultsDirectory, varNames, outputFormat,
-                  compressionLevel, interactiveMode, separator, addLineNumbers);
+                  compressionLevel, interactiveMode, quietMode,
+                  separator, addLineNumbers);
    }
    catch(const OutputFileException& exception) {
       std::cerr << "ERROR: " << exception.what() << "\n";
