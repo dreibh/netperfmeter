@@ -19,6 +19,8 @@ The [Wireshark](https://www.wireshark.org/) network protocol analyser provides o
  A NetPerfMeter Run with an SCTP Flow
 </p>
 
+NetPerfMeter provides internationalisation&nbsp;(i18n) support using [GNU gettext](https://www.gnu.org/software/gettext/). That is, translation files for the output of the programs are supported. You can support the project by contributing translations for your language. See [Internationalisation&nbsp;(I18N)](#internationalisation) for details!
+
 
 ## Design Goals and Features
 
@@ -1178,6 +1180,36 @@ Contributions:
 ## Release Versions
 
 See [https://www.nntb.no/~dreibh/netperfmeter/#current-stable-release](https://www.nntb.no/~dreibh/netperfmeter/#current-stable-release) for release packages!
+
+
+# 🌏 Internationalisation
+
+To provide a translation of NetPerfMeter into your language, apply the following steps:
+
+1. Build NetPerfMeter from the Git sources (see [Development Version](#development-version)), i.e.&nbsp;use the "master" branch with the latest development version. The build will create a `.pot` (translation template) file under [`po`](po).
+
+2. Create a new Git branch for your translations, e.g.&nbsp;`my_username/translations_language_XX` (with `XX` the language code for your language, e.g. `da` for Danish):
+
+   ```bash
+   git branch my_username/translations_language_XX
+   git checkout my_username/translations_language_XX
+   ```
+
+3. Take a look at the existing `.po` files (translations files) in [`po/de`](po/de) (German) and [`po/nb`](po/nb) (Bokmål) as examples, e.g.&nbsp;[`po/de/netperfmeter.po`](po/de/netperfmeter.po) or [`po/nb/netperfmeter.po`](po/nb/netperfmeter.po). Then, prepare a translation for your language `XX` under [`po`](po):
+
+   ```bash
+   mkdir -p XX
+   msginit --input netperfmeter.pot \
+           --locale XX.UTF-8 \
+           --output-file XX/netperfmeter.po
+   git add XX/netperfmeter.po
+   ```
+
+4. Add your translations into `XX/netperfmeter.po`, with a text editor or PO file editor like [Poedit](https://poedit.com/).
+
+5. Test, commit and push your changes.
+
+6. Finally, make a pull request: [https://github.com/dreibh/netperfmeter/pulls](https://github.com/dreibh/netperfmeter/pulls).
 
 
 # 🖋️ Citing NetPerfMeter in Publications
