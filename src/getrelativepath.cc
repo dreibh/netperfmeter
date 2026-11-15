@@ -109,7 +109,8 @@ static void usage(const char* program, const int exitCode)
    // TRANSLATORS: Command-line syntax message prefix:
    // "Usage: <program> [options]".
    std::cerr << HEADER(gettext("Usage:")) << "\n"
-             << CMD(program) << " " << ARG("from_path") << " " << ARG("to_path") << "\n"
+             << CMD(program) << " "
+                ARG("from_path") " " ARG("to_path") "\n"
              << CMD(program) << "\n"
                    ENTRY(OPT("-h") PIPE OPT("--help"))
              << CMD(program) << "\n"
