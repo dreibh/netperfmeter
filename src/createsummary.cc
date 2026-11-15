@@ -1004,13 +1004,13 @@ int main(int argc, char** argv)
             scalarFileError = true;
             if(!logFileName.empty()) {
                // TRANSLATORS: Reference to the simulation log file after a scalar file error. {} is the log file path.
-               std::cerr << formatText(gettext(" => see logfile {}"), logFileName) << "\n";
+               std::cerr << formatText(gettext(" => see logfile {}"), simulationsDirectory + "/" + logFileName) << "\n";
             }
             if(!statusFileName.empty()) {
                // TRANSLATORS: Notice that the simulation status file was deleted after a scalar file error.
-               std::cerr << gettext(" Removing status file; restart simulation to re-create this run!") << "\n";
+               std::cerr << gettext("Removing status file; restart simulation to re-create this run!") << "\n";
                std::error_code ec;
-               std::filesystem::remove(statusFileName, ec);
+               std::filesystem::remove(simulationsDirectory + "/" + statusFileName, ec);
             }
          }
          varValues.clear();
