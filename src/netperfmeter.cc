@@ -2496,6 +2496,11 @@ static void activeMode(const char* remoteEndpoint)
       }
    }
 #endif
+#if defined(HAVE_QUIC)
+   if(gActiveControlProtocol == IPPROTO_QUIC) {
+      configureQuicControlSocket(gControlSocket, gControlHBInterval * gControlHBAssocMaxRtx);
+   }
+#endif
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
       LOG_FATAL
       // TRANSLATORS: Fatal error when connecting to remote control endpoint. {} is strerror() message.
@@ -2509,8 +2514,6 @@ static void activeMode(const char* remoteEndpoint)
    }
 #if defined(HAVE_QUIC)
    if(gActiveControlProtocol == IPPROTO_QUIC) {
-      configureQuicControlSocket(gControlSocket, gControlHBInterval * gControlHBAssocMaxRtx);
-
       QuicTlsConfig tlsConfig;
       tlsConfig.alpn     = ALPN_NETPERFMETER_CONTROL;
       tlsConfig.hostname = gQUICHostname;
