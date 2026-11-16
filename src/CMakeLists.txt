@@ -74,6 +74,8 @@ ADD_EXECUTABLE(netperfmeter
    netperfmeterpackets.h
    outputfile.cc
    outputfile.h
+   quic.cc
+   quic.h
    thread.cc
    thread.h
    tools.cc
@@ -81,8 +83,23 @@ ADD_EXECUTABLE(netperfmeter
    transfer.cc
    transfer.h
 )
-TARGET_INCLUDE_DIRECTORIES(netperfmeter PRIVATE ${BZ2_INCLUDE_DIR} ${SCTP_INCLUDE_DIR} ${QUIC_INCLUDE_DIR} ${LIBIBERTY_INCLUDE_DIR})
-TARGET_LINK_LIBRARIES(netperfmeter PRIVATE ${BZ2_LIBRARY} ${SCTP_LIBRARY} ${QUIC_LIBRARY} ${LIBIBERTY_LIBRARY} ${KSTAT_LIBRARY} ${SOCKET_LIBRARY} ${CMAKE_THREAD_LIBS_INIT})
+TARGET_INCLUDE_DIRECTORIES(netperfmeter
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+                                   ${BZ2_INCLUDE_DIR}
+                                   ${SCTP_INCLUDE_DIR}
+                                   ${QUIC_INCLUDE_DIR}
+                                   ${GNUTLS_INCLUDE_DIR}
+                                   ${Intl_INCLUDE_DIRS}
+                                   ${LIBIBERTY_INCLUDE_DIR})
+TARGET_LINK_LIBRARIES(netperfmeter
+                      PRIVATE ${BZ2_LIBRARY}
+                              ${SCTP_LIBRARY}
+                              ${QUIC_LIBRARY}
+                              ${Intl_LIBRARIES}
+                              ${LIBIBERTY_LIBRARY}
+                              ${KSTAT_LIBRARY}
+                              ${SOCKET_LIBRARY}
+                              ${CMAKE_THREAD_LIBS_INIT})
 INSTALL(TARGETS netperfmeter     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 INSTALL(FILES   netperfmeter.1   DESTINATION         ${CMAKE_INSTALL_MANDIR}/man1)
 INSTALL(FILES   netperfmeter.xml DESTINATION         ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)

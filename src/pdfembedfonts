@@ -50,7 +50,7 @@ EOF
 
 # ###### Version ############################################################
 version () {
-   echo "System-Info @BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
+   echo "PDFEmbedFonts @BUILD_MAJOR@.@BUILD_MINOR@.@BUILD_PATCH@"
    exit 0
 }
 

@@ -126,7 +126,13 @@ void Flow::print(std::ostream& os, const bool printStatistics)
    std::stringstream ss;
 
    lock();
-   if(TrafficSpec.Protocol != IPPROTO_SCTP) {
+   const bool isMultiStream =
+      (TrafficSpec.Protocol == IPPROTO_SCTP)
+#if defined(HAVE_QUIC)
+      || (TrafficSpec.Protocol == IPPROTO_QUIC)
+#endif
+      ;
+   if(!isMultiStream) {
       ss << format("+ %s Flow (Flow #%u \"%s\" of Measurement $%llx):",
                    getProtocolName(TrafficSpec.Protocol),
                    FlowID, TrafficSpec.Description.c_str(),
@@ -136,8 +142,6 @@ void Flow::print(std::ostream& os, const bool printStatistics)
       ss << format("+ %s Flow (of Measurement $%llx):",
                    getProtocolName(TrafficSpec.Protocol),
                    MeasurementID) << "\n";
-   }
-   if(TrafficSpec.Protocol == IPPROTO_SCTP) {
       ss << format("   o Stream #%u (Flow ID #%u \"%s\" of Measurement $%llx):",
                    StreamID,
                    FlowID, TrafficSpec.Description.c_str(),

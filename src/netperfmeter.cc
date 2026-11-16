@@ -31,6 +31,7 @@
 #include "flow.h"
 #include "control.h"
 #include "loglevel.h"
+#include "quic.h"
 #include "transfer.h"
 #include "package-version.h"
 
@@ -90,6 +91,10 @@ static int              gActiveControlProtocol = IPPROTO_TCP;
 static int              gPassiveControlTCP     = true;
 #if defined(HAVE_MPTCP)
 static int              gPassiveControlMPTCP   = false;
+#endif
+#if defined(HAVE_QUIC)
+static bool             gPassiveControlQUIC    = true;
+static int              gControlSocketQUIC     = -1;
 #endif
 static int              gControlSocket         = -1;
 static int              gControlSocketTCP      = -1;
@@ -170,6 +175,7 @@ static void usage(const char* program, const int exitCode)
                 ARG("local_port") "\n"
                    ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-X") PIPE OPT("--no-control-over-sctp"))
                    ENTRY(OPT("-y") PIPE OPT("--control-over-tcp") PIPE OPT("-Y") PIPE OPT("--no-control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp") PIPE OPT("-W") PIPE OPT("--no-control-over-mptcp"))
+                   ENTRY(OPT("-z") PIPE OPT("--control-over-quic") PIPE OPT("-Z") PIPE OPT("--no-control-over-quic"))
                    ENTRY(OPT("-L") " " ARG("address[,address,...]") PIPE OPT("--local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-l") " " ARG("address[,address,...]") PIPE OPT("--control-local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-K") " " ARG("key_file") PIPE OPT("--tls-key") " " ARG("key_file"))
@@ -188,7 +194,7 @@ static void usage(const char* program, const int exitCode)
                    ENTRY(OPT("-!") PIPE OPT("--verbose"))
              << CMD(program) << " "
                 ARG("remote_endpoint:remote_port") "\n"
-                   ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-y") PIPE OPT("--control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp"))
+                   ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("--control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp") PIPE OPT("-z") PIPE OPT("--control-over-quic"))
                    ENTRY(OPT("-L") " " ARG("address[,address,...]") PIPE OPT("--local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-l") " " ARG("address[,address,...]") PIPE OPT("--control-local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-K") " " ARG("key_file") PIPE OPT("--tls-key") " " ARG("key_file"))
@@ -242,6 +248,8 @@ static bool handleGlobalParameters(int argc, char** argv)
       { "no-control-over-tcp",           no_argument,       0, 'Y'    },
       { "control-over-mptcp",            no_argument,       0, 'w'    },
       { "no-control-over-mptcp",         no_argument,       0, 'W'    },
+      { "control-over-quic",             no_argument,       0, 'z'    },
+      { "no-control-over-quic",          no_argument,       0, 'Z'    },
       { "local",                         required_argument, 0, 'L'    },
       { "controllocal",                  required_argument, 0, 'l'    },   // deprecated
       { "control-local",                 required_argument, 0, 'l'    },
@@ -288,7 +296,7 @@ static bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWL:l:6T:o:i:N:C:S:V:A:P:K:J:I:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(argc, argv, "xXyYwWzZL:l:6T:o:i:N:C:S:V:A:P:K:J:I:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
 #if defined(HAVE_SCTP)
@@ -330,6 +338,20 @@ static bool handleGlobalParameters(int argc, char** argv)
          case 'W':
 #if defined(HAVE_MPTCP)
             gPassiveControlMPTCP   = false;
+#endif
+          break;
+         case 'z':
+#if defined(HAVE_QUIC)
+            gActiveControlProtocol = IPPROTO_QUIC;
+            gPassiveControlQUIC    = true;
+#else
+            std::cerr << "ERROR: QUIC support is not compiled in!" << "\n";
+            exit(1);
+#endif
+          break;
+         case 'Z':
+#if defined(HAVE_QUIC)
+            gPassiveControlQUIC    = false;
 #endif
           break;
          case 'L':
@@ -569,23 +591,27 @@ static bool handleGlobalParameters(int argc, char** argv)
       }
    }
 
-   if(
-#if defined(HAVE_SCTP)
-       (!gPassiveControlSCTP) &&
-#endif
-       (!gPassiveControlTCP)
-     ) {
-      std::cerr << "ERROR: At least one control channel protocol must be enabled!" << "\n";
-      exit(1);
-   }
-
 #if defined(HAVE_QUIC)
    if( ((gQUICCertificate != nullptr) && (gQUICKey == nullptr)) ||
        ((gQUICCertificate == nullptr) && (gQUICKey != nullptr)) ) {
       std::cerr << "ERROR: Both --tls-cert and --tls-key must be specified together!" << "\n";
       exit(1);
    }
+   const bool hasPassiveQUIC = gPassiveControlQUIC && (gQUICCertificate != nullptr) && (gQUICKey != nullptr);
+#else
+   const bool hasPassiveQUIC = false;
 #endif
+
+   if(
+#if defined(HAVE_SCTP)
+       (!gPassiveControlSCTP) &&
+#endif
+       (!gPassiveControlTCP) &&
+       (!hasPassiveQUIC)
+     ) {
+      std::cerr << "ERROR: At least one control channel protocol must be enabled!" << "\n";
+      exit(1);
+   }
 
    return true;
 }
@@ -932,188 +958,6 @@ static const char* parseTrafficSpecOption(const char*      parameters,
 }
 
 
-#if defined(HAVE_QUIC)
-// ###### QUIC server handshake #############################################
-static int server_handshake(int          sd,
-                            const char*  alpns,
-                            const char*  tlsCAFile,
-                            const char*  tlsCertFile,
-                            const char*  tlsKeyFile,
-                            uint8_t*     sessionKey,
-                            unsigned int sessionKeyLength)
-{
-   gnutls_certificate_credentials_t credentials;
-   gnutls_session_t                 session;
-   gnutls_datum_t                   skey = { sessionKey, sessionKeyLength };
-   int                              error;
-
-   error = gnutls_certificate_allocate_credentials(&credentials);
-   if(!error) {
-      if(tlsCAFile != nullptr) {
-         const int loadedCAs =
-            gnutls_certificate_set_x509_trust_file(credentials,
-                                                   tlsCAFile, GNUTLS_X509_FMT_PEM);
-         if(loadedCAs <= 0) {
-            LOG_ERROR
-            stdlog << "Loading CA certificate from " << tlsCAFile << " failed\n";
-            LOG_END
-            gnutls_certificate_free_credentials(credentials);
-            return -1;
-         }
-      }
-
-      error = gnutls_certificate_set_x509_key_file(credentials,
-                                                   tlsCertFile, tlsKeyFile,
-                                                   GNUTLS_X509_FMT_PEM);
-      if(!error) {
-         error = gnutls_init(&session,
-                             GNUTLS_SERVER|
-                             GNUTLS_NO_AUTO_SEND_TICKET|
-                             GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
-         if(!error) {
-            error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
-            if(!error) {
-               if(tlsCAFile != nullptr) {
-                  gnutls_certificate_server_set_request(session, GNUTLS_CERT_REQUEST);
-                  gnutls_session_set_verify_cert(session, nullptr, 0);
-               }
-               error = gnutls_session_ticket_enable_server(session, &skey);
-               if(!error) {
-                  error = gnutls_record_set_max_early_data_size(session, 0xffffffffu);
-                  if(!error) {
-                     error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
-                     if( (!error) && (alpns != NULL) ) {
-                        error = quic_session_set_alpn(session, alpns, strlen(alpns));
-                     }
-                     if(!error) {
-                        gnutls_transport_set_int(session, sd);
-                        error = quic_handshake(session);
-                        if( (!error) && (alpns != NULL) ) {
-                           size_t alpnLength;
-                           char   alpn[64];
-                           alpnLength = sizeof(alpn);
-                           error = quic_session_get_alpn(session, alpn, &alpnLength);
-                        }
-                     }
-                  }
-               }
-            }
-         }
-         gnutls_deinit(session);
-      }
-      gnutls_certificate_free_credentials(credentials);
-   }
-
-   if(error) {
-      LOG_ERROR
-      stdlog << "TLS setup failed: " << gnutls_strerror(error) << "\n";
-      if(error < 0) {
-         quic_connection_close closeInfo;
-         socklen_t             closeInfoLength = sizeof(closeInfo);
-         memset(&closeInfo, 0, sizeof(closeInfo));
-         if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONNECTION_CLOSE,
-                           &closeInfo, &closeInfoLength) == 0) {
-            closeInfo.phrase[sizeof(closeInfo.phrase) - 1] = 0x00;
-            stdlog << format("QUIC connection closed: errcode=%u, frame=%u, phrase=\"%s\"",
-                             closeInfo.errcode, (unsigned int)closeInfo.frame,
-                             (const char*)closeInfo.phrase) << "\n";
-         }
-      }
-      LOG_END
-   }
-   return error;
-}
-
-
-// ###### QUIC client handshake #############################################
-static int client_handshake(int            sd,
-                            const char*    alpns,
-                            const char*    host,
-                            const char*    tlsCAFile,
-                            const char*    tlsCertFile,
-                            const char*    tlsKeyFile,
-                            const uint8_t* ticketIn,
-                            size_t         ticketInLength,
-                            uint8_t*       ticketOut,
-                            size_t*        ticketOutLength)
-{
-   gnutls_certificate_credentials_t credentials;
-   gnutls_session_t                 session;
-   int                              error;
-
-   error = gnutls_certificate_allocate_credentials(&credentials);
-   if(!error) {
-      int loadedCAs = gnutls_certificate_set_x509_trust_file(credentials, tlsCAFile, GNUTLS_X509_FMT_PEM);
-      if(loadedCAs <= 0) {
-         std::cerr << "ERROR: Loading CA certificate from "
-                   << ((tlsCAFile != nullptr) ? tlsCAFile : "(none)") << " failed\n";
-         gnutls_certificate_free_credentials(credentials);
-         return -1;
-      }
-
-      if((tlsCertFile != nullptr) && (tlsKeyFile != nullptr)) {
-         error = gnutls_certificate_set_x509_key_file(credentials,
-                                                      tlsCertFile, tlsKeyFile,
-                                                      GNUTLS_X509_FMT_PEM);
-         if(error < 0) {
-            std::cerr << "ERROR: Loading client certificate from " << tlsCertFile
-                      << " and key from " << tlsKeyFile
-                      << " failed: " << gnutls_strerror(error) << "\n";
-            gnutls_certificate_free_credentials(credentials);
-            return -1;
-         }
-      }
-
-      error = gnutls_init(&session, GNUTLS_CLIENT|GNUTLS_ENABLE_EARLY_DATA|GNUTLS_NO_END_OF_EARLY_DATA);
-      if(!error) {
-         error = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, credentials);
-         if(!error) {
-            error = gnutls_priority_set_direct(session, QUIC_PRIORITY, NULL);
-         }
-         if( (!error) && (alpns != NULL) ) {
-            error = quic_session_set_alpn(session, alpns, strlen(alpns));
-         }
-         if(!error) {
-            error = gnutls_server_name_set(session, GNUTLS_NAME_DNS, host, (host != NULL) ? strlen(host) : 0);
-         }
-         if(!error) {
-            gnutls_session_set_verify_cert(session, host, 0);
-            gnutls_transport_set_int(session, sd);
-            if(ticketIn != NULL) {
-               error = quic_session_set_data(session, ticketIn, ticketInLength);
-            }
-            if(!error) {
-               error = quic_handshake(session);
-            }
-            if( (!error) && (ticketOut != NULL) ) {
-               error =  quic_session_get_data(session, ticketOut, ticketOutLength);
-            }
-         }
-         gnutls_deinit(session);
-      }
-      gnutls_certificate_free_credentials(credentials);
-   }
-
-   if(error) {
-      std::cerr << "ERROR: TLS setup failed: " << gnutls_strerror(error) << "\n";
-      if(error < 0) {
-         quic_connection_close closeInfo;
-         socklen_t             closeInfoLength = sizeof(closeInfo);
-         memset(&closeInfo, 0, sizeof(closeInfo));
-         if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONNECTION_CLOSE,
-                           &closeInfo, &closeInfoLength) == 0) {
-            closeInfo.phrase[sizeof(closeInfo.phrase) - 1] = 0x00;
-            std::cerr << format("ERROR: QUIC connection closed: errcode=%u, frame=%u, phrase=\"%s\"",
-                                closeInfo.errcode, (unsigned int)closeInfo.frame,
-                                (const char*)closeInfo.phrase) << "\n";
-         }
-      }
-   }
-   return error;
-}
-#endif
-
-
 // ###### Create Flow for new flow ##########################################
 static Flow* createFlow(Flow*                  previousFlow,
                         const char*            parameters,
@@ -1370,10 +1214,10 @@ static Flow* createFlow(Flow*                  previousFlow,
                 << ">\n";
          LOG_END
 
-         if(client_handshake(socketDescriptor,
-                             ALPN_NETPERFMETER_DATA, gQUICHostname, gQUICCA,
-                             gQUICCertificate, gQUICKey,
-                             nullptr, 0, nullptr, nullptr) != 0) {
+         if(quicClientHandshake(socketDescriptor,
+                                ALPN_NETPERFMETER_DATA, gQUICHostname, gQUICCA,
+                                gQUICCertificate, gQUICKey,
+                                nullptr, 0, nullptr, nullptr) != 0) {
             exit(1);
          }
       }
@@ -1407,7 +1251,7 @@ static void addToPollFDs(pollfd* pollFDs, const int fd, nfds_t& n, int* index = 
 static bool mainLoop(const bool               isActiveMode,
                      const unsigned long long stopAt)
 {
-   pollfd             fds[5 + gMessageReader.size()];
+   pollfd             fds[16 + gMessageReader.size()];
    nfds_t             n       = 0;
    int                tcpID   = -1;
 #if defined(__OpenBSD__)
@@ -1534,16 +1378,62 @@ static bool mainLoop(const bool               isActiveMode,
                }
             }
 #endif
+#if defined(HAVE_QUIC)
+            else if( (isActiveMode == false) &&
+                     (fds[controlID].fd == gControlSocketQUIC) ) {
+               const int newSD = ext_accept(gControlSocketQUIC, nullptr, 0);
+               if(newSD >= 0) {
+                  LOG_TRACE
+                  stdlog << format("Accept on QUIC control socket %d -> new control connection %d",
+                                   gControlSocketQUIC, newSD) << "\n";
+                  LOG_END
+
+                  uint8_t      sessionKey[64];
+                  unsigned int sessionKeyLength = sizeof(sessionKey);
+                  if(ext_getsockopt(newSD,
+                                    SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
+                                    &sessionKey, &sessionKeyLength) == 0) {
+                     if(quicServerHandshake(newSD, ALPN_NETPERFMETER_CONTROL,
+                                            gQUICCA, gQUICCertificate, gQUICKey,
+                                            sessionKey, sessionKeyLength) == 0) {
+                        quicRegisterControlSocket(newSD, false);
+                        gMessageReader.registerSocket(IPPROTO_QUIC, newSD);
+                     }
+                     else {
+                        ext_close(newSD);
+                     }
+                  }
+                  else {
+                     LOG_WARNING
+                     stdlog << format("getsockopt(QUIC_SOCKOPT_SESSION_TICKET): %s\n", strerror(errno));
+                     LOG_END
+                     ext_close(newSD);
+                  }
+               }
+               else {
+                  LOG_ERROR
+                  stdlog << format("Accept on QUIC control socket %d failed: %s!",
+                                   gControlSocketQUIC, strerror(errno)) << "\n";
+                  LOG_END
+               }
+            }
+#endif
             else {
                const bool controlOkay = handleNetPerfMeterControlMessage(
                                            &gMessageReader, fds[controlID].fd);
                if(!controlOkay) {
                   if(isActiveMode) {
+#if defined(HAVE_QUIC)
+                     quicDeregisterControlSocket(fds[controlID].fd);
+#endif
                      return false;
                   }
                   // Make sure to deregister all flows belonging to this
                   // control connection!
                   handleControlAssocShutdown(fds[controlID].fd);
+#if defined(HAVE_QUIC)
+                  quicDeregisterControlSocket(fds[controlID].fd);
+#endif
                   gMessageReader.deregisterSocket(fds[controlID].fd);
                   ext_close(fds[controlID].fd);
                }
@@ -1643,9 +1533,9 @@ static bool mainLoop(const bool               isActiveMode,
             if(ext_getsockopt(newSD,
                               SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
                               &sessionKey, &sessionKeyLength) == 0) {
-               if(server_handshake(newSD, ALPN_NETPERFMETER_DATA,
-                                   gQUICCA, gQUICCertificate, gQUICKey,
-                                   sessionKey, sessionKeyLength) == 0) {
+               if(quicServerHandshake(newSD, ALPN_NETPERFMETER_DATA,
+                                      gQUICCA, gQUICCertificate, gQUICKey,
+                                      sessionKey, sessionKeyLength) == 0) {
                   LOG_TRACE
                   stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
                                    gQUICSocket, newSD) << "\n";
@@ -1694,6 +1584,46 @@ static void passiveMode(const uint16_t localPort)
       LOG_END
       ext_close(testSD);
    }
+
+   // ====== Initialize QUIC control socket =================================
+#if defined(HAVE_QUIC)
+   if(gPassiveControlQUIC && (gQUICCertificate != nullptr) && (gQUICKey != nullptr)) {
+      gControlSocketQUIC = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_QUIC,
+                                               localPort + 1,
+                                               gLocalControlAddresses,
+                                               (const sockaddr_union*)&gLocalControlAddressArray,
+                                               false, gBindV6Only);
+      if(gControlSocketQUIC < 0) {
+         LOG_INFO
+         stdlog << format("QUIC is unavailable (%s); disabling QUIC control socket on port %d!",
+                          strerror(errno), localPort + 1) << "\n";
+         LOG_END
+      }
+      else {
+         if(ext_setsockopt(gControlSocketQUIC, SOL_QUIC, QUIC_SOCKOPT_ALPN,
+                           ALPN_NETPERFMETER_CONTROL, strlen(ALPN_NETPERFMETER_CONTROL)) < 0) {
+            LOG_FATAL
+            stdlog << format("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC control socket %d: %s!",
+                             gControlSocketQUIC, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+         const unsigned int idleTimeoutMs = gControlHBInterval * gControlHBAssocMaxRtx;
+         if(!configureQuicControlSocket(gControlSocketQUIC, idleTimeoutMs)) {
+            LOG_WARNING
+            stdlog << format("Unable to configure idle timeout on QUIC control socket %d: %s!",
+                             gControlSocketQUIC, strerror(errno)) << "\n";
+            LOG_END
+         }
+         if(ext_listen(gControlSocketQUIC, 100) < 0) {
+            LOG_FATAL
+            stdlog << format("Unable to enable listening on QUIC control socket %d: %s!",
+                             gControlSocketQUIC, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+         gMessageReader.registerSocket(IPPROTO_QUIC, gControlSocketQUIC);
+      }
+   }
+#endif
 
    // ====== Initialize SCTP control socket =================================
 #if defined(HAVE_SCTP)
@@ -1767,7 +1697,11 @@ static void passiveMode(const uint16_t localPort)
       }
       else {
          if( (errno != EPROTONOSUPPORT) ||
-             (gPassiveControlTCP == false) ) {
+             ((gPassiveControlTCP == false)
+#if defined(HAVE_QUIC)
+              && (gControlSocketQUIC < 0)
+#endif
+             ) ) {
             LOG_FATAL
             stdlog << format("Unable to create and bind SCTP control socket on port %d: %s!",
                              localPort + 1, strerror(errno)) << "\n";
@@ -2105,7 +2039,12 @@ static void passiveMode(const uint16_t localPort)
 
    }
    else {
-      if( (errno != EPROTONOSUPPORT) || (gPassiveControlTCP == false) ) {
+      if( (errno != EPROTONOSUPPORT) ||
+          ((gPassiveControlTCP == false)
+#if defined(HAVE_QUIC)
+           && (gControlSocketQUIC < 0)
+#endif
+          ) ) {
          LOG_FATAL
          stdlog << format("Unable to create and bind SCTP socket on port %d: %s!",
                           localPort, strerror(errno)) << "\n";
@@ -2133,6 +2072,14 @@ static void passiveMode(const uint16_t localPort)
       }
 #endif
    }
+#if defined(HAVE_QUIC)
+   if(gControlSocketQUIC >= 0) {
+      if(controlProtocols.size() > 0) {
+         controlProtocols += "/";
+      }
+      controlProtocols += "QUIC";
+   }
+#endif
 #if defined(HAVE_SCTP)
    std::string dataProtocols1("SCTP/TCP/UDP");
 #else
@@ -2175,6 +2122,9 @@ static void passiveMode(const uint16_t localPort)
 #if defined(__OpenBSD__)
           << "- TCP6 Control = " << gControlSocketTCP6 << "\n"
 #endif
+#if defined(HAVE_QUIC)
+          << "- QUIC Control = " << gControlSocketQUIC << "\n"
+#endif
           << "- TCP Data     = " << gTCPSocket         << "\n"
 #if defined(__OpenBSD__)
           << "- TCP6 Data    = " << gTCP6Socket        << "\n"
@@ -2215,6 +2165,12 @@ static void passiveMode(const uint16_t localPort)
 
 
    // ====== Clean up =======================================================
+#if defined(HAVE_QUIC)
+   if(gControlSocketQUIC >= 0) {
+      gMessageReader.deregisterSocket(gControlSocketQUIC);
+      ext_close(gControlSocketQUIC);
+   }
+#endif
 #if defined(__OpenBSD__)
    if(gControlSocketTCP6 >= 0) {
       gMessageReader.deregisterSocket(gControlSocketTCP6);
@@ -2303,6 +2259,11 @@ static void activeMode(const char* remoteEndpoint)
          controlProtocol = "MPTCP";
        break;
 #endif
+#if defined(HAVE_QUIC)
+      case IPPROTO_QUIC:
+         controlProtocol = "QUIC";
+       break;
+#endif
    }
 
    LOG_INFO
@@ -2317,7 +2278,12 @@ static void activeMode(const char* remoteEndpoint)
    LOG_END
 
    // ====== Initialize control socket ======================================
-   gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, SOCK_STREAM, gActiveControlProtocol,
+   const int controlSocketType =
+#if defined(HAVE_QUIC)
+      (gActiveControlProtocol == IPPROTO_QUIC) ? SOCK_DGRAM :
+#endif
+      SOCK_STREAM;
+   gControlSocket = createAndBindSocket(controlAddress.sa.sa_family, controlSocketType, gActiveControlProtocol,
                                         0, gLocalControlAddresses, (const sockaddr_union*)&gLocalControlAddressArray,
                                         false, gBindV6Only);
    if(gControlSocket < 0) {
@@ -2342,6 +2308,17 @@ static void activeMode(const char* remoteEndpoint)
       }
    }
 #endif
+#if defined(HAVE_QUIC)
+   if(gActiveControlProtocol == IPPROTO_QUIC) {
+      const unsigned int idleTimeoutMs = gControlHBInterval * gControlHBAssocMaxRtx;
+      if(!configureQuicControlSocket(gControlSocket, idleTimeoutMs)) {
+         LOG_WARNING
+         stdlog << format("Unable to configure idle timeout on QUIC control socket %d: %s!",
+                          gControlSocket, strerror(errno)) << "\n";
+         LOG_END
+      }
+   }
+#endif
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
       LOG_FATAL
       stdlog << format("Unable to establish control association: %s!",
@@ -2351,6 +2328,20 @@ static void activeMode(const char* remoteEndpoint)
       }
       LOG_END_FATAL
    }
+#if defined(HAVE_QUIC)
+   if(gActiveControlProtocol == IPPROTO_QUIC) {
+      if(quicClientHandshake(gControlSocket,
+                             ALPN_NETPERFMETER_CONTROL, gQUICHostname, gQUICCA,
+                             gQUICCertificate, gQUICKey,
+                             nullptr, 0, nullptr, nullptr) != 0) {
+         LOG_FATAL
+         stdlog << "Unable to establish QUIC control session!" << "\n";
+         LOG_END_FATAL
+      }
+      quicRegisterControlSocket(gControlSocket, true);
+   }
+   else
+#endif
 #if defined(HAVE_SCTP)
    if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_paddrparams paddrparams;
@@ -2502,6 +2493,11 @@ static void activeMode(const char* remoteEndpoint)
       stdlog << "Unable to stop measurement and download the results!\n";
       LOG_END_FATAL
    }
+#if defined(HAVE_QUIC)
+   if(gActiveControlProtocol == IPPROTO_QUIC) {
+      quicDeregisterControlSocket(gControlSocket);
+   }
+#endif
 }
 
 

@@ -102,6 +102,16 @@ ln -s "${COMBINESUMMARIES_BIN}" "${WORK_DIR}/combinesummaries"
 ln -s "${PLOT_R_DIR}/plot-netperfmeter-results.R" "${WORK_DIR}/plot-netperfmeter-results.R"
 ln -s "${PLOT_R_DIR}/plotter.R" "${WORK_DIR}/plotter.R"
 
+PLOT_SCRIPT_DIR=$(dirname "${PLOT_SCRIPT}")
+for _helper in pdfembedfonts setpdfmetadata; do
+    if [ -f "${PLOT_SCRIPT_DIR}/${_helper}.versioned" ]; then
+        ln -s "${PLOT_SCRIPT_DIR}/${_helper}.versioned" "${WORK_DIR}/${_helper}"
+    fi
+done
+
+PATH="${WORK_DIR}:${PATH}"
+export PATH
+
 # ====== 2. Generate authentic NetPerfMeter .config and .vec files =========
 # Run inside WORK_DIR with relative filenames so measurement.config records
 # relative vector paths, matching combinesummaries' default "--simulationsdirectory=."

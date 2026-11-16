@@ -232,10 +232,14 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 #endif
 #if defined(HAVE_QUIC)
       else if(socket->Protocol == IPPROTO_QUIC) {
+         int64_t  sid   = 0;
          uint32_t flags = 0;
          received = quic_recvmsg(socket->SocketDescriptor,
                                  (char*)&socket->MessageBuffer[socket->BytesRead], bytesToRead,
-                                 streamID, &flags);
+                                 &sid, &flags);
+         if(streamID != nullptr) {
+            *streamID = sid;
+         }
       }
 #endif
       else {

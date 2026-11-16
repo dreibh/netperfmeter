@@ -30,6 +30,7 @@
 #include "assure.h"
 #include "control.h"
 #include "loglevel.h"
+#include "quic.h"
 #include "tools.h"
 
 #include <cmath>
@@ -43,8 +44,22 @@
 
 #define UNRELIABLE_IDENTIFY_MAX_TRIALS     5   // UDP, DCCP
 #define UNRELIABLE_IDENTIFY_TIMEOUT     2000   // UDP, DCCP
-#define RELIABLE_IDENTIFY_MAX_TRIALS       1   // TCP+MPTCP, SCTP
-#define RELIABLE_IDENTIFY_TIMEOUT      10000   // TCP+MPTCP, SCTP
+#define RELIABLE_IDENTIFY_MAX_TRIALS       1   // TCP+MPTCP, SCTP, QUIC
+#define RELIABLE_IDENTIFY_TIMEOUT      10000   // TCP+MPTCP, SCTP, QUIC
+
+
+// ###### Send message over control socket (TCP, MPTCP, SCTP, or QUIC) ######
+static ssize_t sendControlMessage(const int    controlSocket,
+                                  const void*  buffer,
+                                  const size_t length)
+{
+#if defined(HAVE_QUIC)
+   if(quicIsControlSocket(controlSocket)) {
+      return quicSendControlMessage(controlSocket, buffer, length);
+   }
+#endif
+   return ext_send(controlSocket, buffer, length, 0);
+}
 
 
 // ###### Download file #####################################################
@@ -230,7 +245,7 @@ bool performNetPerfMeterAddFlow(MessageReader* messageReader,
    LOG_TRACE
    stdlog << format("<R1 sd=%d>", controlSocket) << "\n";
    LOG_END
-   if(ext_send(controlSocket, addFlowMsg, addFlowMsgSize, 0) <= 0) {
+   if(sendControlMessage(controlSocket, addFlowMsg, addFlowMsgSize) <= 0) {
       LOG_ERROR
       stdlog << format("Sending message failed on socket %d: %s!",
                        controlSocket, strerror(errno)) << "\n";
@@ -270,12 +285,15 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
 #if defined(HAVE_MPTCP)
        && (flow->getTrafficSpec().Protocol != IPPROTO_MPTCP)
 #endif
+#if defined(HAVE_QUIC)
+       && (flow->getTrafficSpec().Protocol != IPPROTO_QUIC)
+#endif
      ) {
       maxTrials = UNRELIABLE_IDENTIFY_MAX_TRIALS;
       timeout   = UNRELIABLE_IDENTIFY_TIMEOUT;
    }
    else {
-      // SCTP and TCP are reliable transport protocols
+      // SCTP, TCP/MPTCP, and QUIC are reliable transport protocols
       // => no retransmissions necessary!
       maxTrials = RELIABLE_IDENTIFY_MAX_TRIALS;
       timeout   = RELIABLE_IDENTIFY_TIMEOUT;
@@ -312,7 +330,7 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
 #endif
 #if defined(HAVE_QUIC)
       else if(flow->getTrafficSpec().Protocol == IPPROTO_QUIC) {
-         const int64_t sid    = ((int64_t)flow->getStreamID() << 2) | QUIC_STREAM_TYPE_UNI_MASK;
+         const int64_t sid    = (int64_t)flow->getStreamID() << 2;
          const uint32_t flags = MSG_QUIC_STREAM_NEW;
          if(quic_sendmsg(flow->getSocketDescriptor(), &identifyMsg, sizeof(identifyMsg), sid, flags) <= 0) {
             return false;
@@ -448,7 +466,7 @@ bool performNetPerfMeterStart(MessageReader*         messageReader,
       stdlog << format("Starting measurement $%llx on socket %d ...",
                        (unsigned long long)measurementID, controlSocket) << "\n";
       LOG_END
-      if(ext_send(controlSocket, &startMsg, sizeof(startMsg), 0) < 0) {
+      if(sendControlMessage(controlSocket, &startMsg, sizeof(startMsg)) < 0) {
          return false;
       }
       LOG_TRACE
@@ -486,7 +504,7 @@ static bool sendNetPerfMeterRemoveFlow(MessageReader* messageReader,
    LOG_TRACE
    stdlog << format("<flow %u>", flow->getFlowID()) << "\n";
    LOG_END
-   if(ext_send(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg), 0) <= 0) {
+   if(sendControlMessage(controlSocket, &removeFlowMsg, sizeof(removeFlowMsg)) <= 0) {
       return false;
    }
    if(measurement->getVectorNamePattern() != "") {
@@ -528,7 +546,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
    stdlog << format("Stopping measurement on socket %d ...",
                     controlSocket) << "\n";
    LOG_END
-   if(ext_send(controlSocket, &stopMsg, sizeof(stopMsg), 0) < 0) {
+   if(sendControlMessage(controlSocket, &stopMsg, sizeof(stopMsg)) < 0) {
       return false;
    }
    LOG_TRACE
@@ -718,7 +736,7 @@ static bool uploadOutputFile(const int         controlSocket,
       }
 
       // ====== Transmit chunk ==============================================
-      if(ext_send(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes, 0) < 0) {
+      if(sendControlMessage(controlSocket, resultsMsg, sizeof(NetPerfMeterResults) + bytes) < 0) {
          LOG_ERROR
          stdlog << format("Unable to upload results on socket %d: %s!",
                           controlSocket, strerror(errno)) << "\n";
@@ -1170,5 +1188,5 @@ bool sendNetPerfMeterAcknowledge(int            controlSocket,
    ackMsg.Padding       = 0x0000;
    ackMsg.Status        = htobe32(status);
 
-   return ext_send(controlSocket, &ackMsg, sizeof(ackMsg), 0) > 0;
+   return sendControlMessage(controlSocket, &ackMsg, sizeof(ackMsg)) > 0;
 }

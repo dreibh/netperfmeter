@@ -38,7 +38,7 @@ Furthermore, each flow is able to apply its specific traffic behaviour:
    * Each flow may use its own Transport Layer protocol (i.e., UDP, DCCP, TCP, MPTCP, SCTP or QUIC).
    * Bidirectional data transfer is possible, with individual parameters for each direction.
    * Flows may either be saturated (i.e., try to send as much as possible) or non-saturated. In the latter case, a frame rate and a frame size have to be configured. Both may be distributed randomly, using a certain distribution (like uniform, negative exponential, etc.). This feature allows mimicking multimedia traffic.
-   * For the stream-oriented SCTP, an independent traffic configuration is possible for each stream.
+   * For the stream-oriented SCTP and QUIC, an independent traffic configuration is possible for each stream.
    * Support for on-off traffic is provided by allowing users to specify a sequence of time stamps when to start, stop and restart a flow or stream.
    * Also, for SCTP, it is possible to configure partial reliability (see [RFC&nbsp;3758](https://www.rfc-editor.org/rfc/rfc3758.html)) as well as ordered and unordered delivery (see [RFC&nbsp;9260](https://www.rfc-editor.org/rfc/rfc9260.html)).
 
@@ -78,7 +78,7 @@ Note that the [Wireshark](https://www.wireshark.org/) network protocol analyser 
 
 ## Measurement Setup
 
-A new measurement run setup is initiated by the active NetPerfMeter instance by establishing an NPMP-CONTROL association to the passive instance first. The NPMP-CONTROL association by default uses SCTP for transport. If SCTP is not possible in the underlying networks (e.g., due to firewalling restrictions), it is optionally possible to use TCP for the NPMP-CONTROL association instead. Then, the configured NPMP-DATA connections are established by their configured Transport Layer protocols. For the connection-less UDP, the message transfer is just started. The passive NetPerfMeter instance is informed about the identification and parameters of each new flow by using NPMP-CONTROL&nbsp;Add&nbsp;Flow messages. On startup of the NPMP-DATA flow, an NPMP-DATA&nbsp;Identify message allows the mapping of a newly incoming connection to a configured flow by the passive instance. It acknowledges each newly set up flow by an NPMP-CONTROL&nbsp;Acknowledge message. After setting up all flows, the scenario is ready to start the measurement run.
+A new measurement run setup is initiated by the active NetPerfMeter instance by establishing an NPMP-CONTROL association to the passive instance first. The NPMP-CONTROL association by default uses SCTP for transport. If SCTP is not possible in the underlying networks (e.g., due to firewalling restrictions), it is optionally possible to use TCP, MPTCP, or QUIC for the NPMP-CONTROL association instead. Then, the configured NPMP-DATA connections are established by their configured Transport Layer protocols. For the connection-less UDP, the message transfer is just started. The passive NetPerfMeter instance is informed about the identification and parameters of each new flow by using NPMP-CONTROL&nbsp;Add&nbsp;Flow messages. On startup of the NPMP-DATA flow, an NPMP-DATA&nbsp;Identify message allows the mapping of a newly incoming connection to a configured flow by the passive instance. It acknowledges each newly set up flow by an NPMP-CONTROL&nbsp;Acknowledge message. After setting up all flows, the scenario is ready to start the measurement run.
 
 
 ## Measurement Run
@@ -104,7 +104,7 @@ All result data is compressed by using BZip2 compression (see [bzip2](https://so
 
 ## Measurement Execution, Result Post-Processing and Visualisation
 
-By using shell scripts, it is possible to apply NetPerfMeter for parameter studies, i.e., to create a set of runs for each input parameter combination. For example, a script could iterate over a send buffer size&nbsp;σ from&nbsp;64&nbsp;KiB to 192&nbsp;KiB in steps of 64&nbsp;KiB as well as a path bandwidth&nbsp;ρ from&nbsp;10&nbsp;Mbit/s to 100&nbsp;Mbit/s in steps of&nbsp;10&nbsp;Mbit/s and perform 5&nbsp;measurement runs for each parameter combination.
+By using shell scripts, it is possible to apply NetPerfMeter for parameter studies, i.e., to create a set of runs for each input parameter combination. For example, a script could iterate over a send buffer size&nbsp;σ from&nbsp;64&nbsp;KiB to 192&nbsp;KiB in steps of 64&nbsp;KiB as well as a path bandwidth&nbsp;ρ from&nbsp;10&nbsp;Mbit/s to 100&nbsp;Mbit/s in steps of 10&nbsp;Mbit/s and perform 5&nbsp;measurement runs for each parameter combination.
 
 When all measurement runs have eventually been processed, the results have to be visualised for analysis and interpretation. The NetPerfMeter package provides support to visualise the scalar results, which are distributed over the scalar files written by measurement runs. Therefore, the first step necessary is to bring the data from the various scalar files into an appropriate form for further post-processing. This step is denoted as *Summarisation*; an introduction is also provided in "[SimProcTC – The Design and Realization of a Powerful Tool-Chain for OMNeT++ Simulations](https://www.nntb.no/~dreibh/netperfmeter/#Publications-OMNeT__Workshop2009)".
 
@@ -119,7 +119,7 @@ Having all relevant scalars stored in memory, a data file – which can be proce
 
 ## Preparations
 
-NetPerfMeter by default uses the SCTP protocol for control communication (which can be changed by the `-control-over-tcp` option, see later). It may be useful to allow loading the SCTP kernel module first, if not already enabled. The following code blocks show how to enable it permanently.
+NetPerfMeter by default uses the SCTP protocol for control communication (which can be changed by the `-control-over-tcp`, `-control-over-mptcp`, or `-control-over-quic` options, see later). It may be useful to allow loading the SCTP kernel module first, if not already enabled. The following code blocks show how to enable it permanently.
 
 ### SCTP on Linux
 
@@ -178,16 +178,16 @@ NetPerfMeter's usage of protocols and ports depends on the base port parameter o
 | Protocol   | NPMP-DATA      | NPMP-CONTROL   |
 | ---------- | -------------- | -------------- |
 | TCP        | _BASE_         | _BASE_ + 1     |
-| MPTCP      | _BASE_ - 1     | —              |
-| UDP        | _BASE_         | _BASE_ + 1     |
-| SCTP       | _BASE_         | _BASE_         |
+| MPTCP      | _BASE_ - 1     | _BASE_ + 1     |
+| UDP        | _BASE_         | —              |
+| SCTP       | _BASE_         | _BASE_ + 1     |
 | DCCP       | _BASE_         | —              |
-| QUIC (UDP) | _BASE_ - 1     | —              |
+| QUIC (UDP) | _BASE_ - 1     | _BASE_ + 1     |
 
 Notes:
 
 * To allow TCP and MPTCP simultaneously, there is NPMP-DATA with TCP (port _BASE_) and MPTCP (port _BASE_ - 1).
-* To allow UDP and QUIC simultaneously, there is NPMP-DATA with UDP (port _BASE_) and QUIC (port _BASE_ - 1).
+* To allow UDP and QUIC simultaneously, there is NPMP-DATA with UDP (port _BASE_) and QUIC (port _BASE_ - 1), while NPMP-CONTROL over QUIC uses port _BASE_ + 1.
 
 For the following examples, the base port is usually set to 9000.
 
@@ -202,7 +202,7 @@ For the following examples, the base port is usually set to 9000.
   netperfmeter 9000
   ```
 
-  NetPerfMeter supports SCTP and TCP for the NPMP-CONTROL control communication. By default, the passive side accepts incoming control connections on both protocols. In case of unavailability of SCTP, e.g., the SCTP kernel module is not loaded, a warning is printed. Obviously, control communication in this case will only be possible via TCP.
+  NetPerfMeter supports SCTP, TCP (or MPTCP), and QUIC for the NPMP-CONTROL control communication. By default, the passive side accepts incoming control connections on SCTP, TCP, and — when `--tls-key` and `--tls-cert` are provided — QUIC. In case of unavailability of SCTP, e.g., the SCTP kernel module is not loaded, a warning is printed. Obviously, control communication in this case will only be possible via TCP (or QUIC if TLS credentials are configured).
 
 
 * Run a passive instance (i.e., server side), using base port 9000, and allowing NPMP-CONTROL control communication only over TCP (this disables checking for SCTP, and the warning if unavailable):
@@ -301,13 +301,13 @@ sudo service netperfmeter-module-loader disable
 
   The flow parameter specifies a saturated flow (frame rate&nbsp;0 – send as much as possible) with a constant frame size of 1400&nbsp;B. The first block specifies the direction from active (client) to passive (server) instance, the second block specifies the direction from passive (server) to active (client) instance.
 
-  ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP (or MPTCP) instead (to be shown in the next example, using the `-control-over-tcp` option):
+  ⚠️Important: By default, SCTP transport is used for the NPMP-CONTROL control communication. In certain setups, this can cause problems. In this case, it may be necessary to use control over TCP, MPTCP, or QUIC instead (to be shown in the next example, using the `-control-over-tcp` option):
 
   - Firewalls blocking SCTP traffic, e.g., many public Wi-Fi networks.
   - Routing over NAT/PAT may not work well due to lack of support for SCTP.
   - The Docker daemon, by default, creates a local interface <em>dummy0</em> with IP address&nbsp;172.17.0.1 for the default [bridge network setup](https://docs.docker.com/engine/network/drivers/bridge/). If this is enabled on active and passive side, the SCTP out-of-the-blue&nbsp;(OOTB) message handling causes the SCTP association to be aborted, since both devices have an identical IP&nbsp;address.
 
-  In case of connectivity problems try control over TCP as shown next.
+  In case of connectivity problems try control over TCP (or QUIC) as shown next.
 
 * Run an active instance (i.e., client side), with a saturated bidirectional TCP flow, using NPMP-CONTROL control communication over TCP.
 
@@ -400,7 +400,7 @@ sudo service netperfmeter-module-loader disable
 
 ### QUIC Communication
 
-[QUIC](https://www.rfc-editor.org/rfc/rfc9000.html) uses built-in security based on [Transport Layer Security&nbsp;(TLS)](https://www.internetsociety.org/deploy360/tls/basics/). To use QUIC, it is therefore necessary to properly set up TLS first. NetPerfMeter supports both **server-only TLS authentication** and **mutual TLS&nbsp;(mTLS) authentication** (where the passive side also requests and verifies a client certificate). Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
+[QUIC](https://www.rfc-editor.org/rfc/rfc9000.html) uses built-in security based on [Transport Layer Security&nbsp;(TLS)](https://www.internetsociety.org/deploy360/tls/basics/). To use QUIC (for NPMP-DATA data flows and/or for the NPMP-CONTROL control channel via `-control-over-quic`), it is therefore necessary to properly set up TLS first. NetPerfMeter supports both **server-only TLS authentication** and **mutual TLS&nbsp;(mTLS) authentication** (where the passive side also requests and verifies a client certificate). Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
 
 * Install [Linux Kernel QUIC](https://github.com/lxin/quic) and load the QUIC kernel module. Also see the helper script [install-linux-quic](https://github.com/dreibh/netperfmeter/blob/master/src/install-linux-quic).
 
@@ -431,7 +431,7 @@ sudo service netperfmeter-module-loader disable
      TestCA/server.domain.example/server.domain.example.crt
   ```
 
-* Run a passive instance (i.e., server side), using base port 9000:
+* Run a passive instance (i.e., server side), using base port 9000 (listening for QUIC data on port 8999 and QUIC control on port 9001 unless `-no-control-over-quic` is specified):
 
   - **Server-only TLS authentication** (specifying `-tls-key` and `-tls-cert` only):
 
@@ -452,8 +452,7 @@ sudo service netperfmeter-module-loader disable
 
   with `DIRECTORY` the path where `TestCA` is located.
 
-
-* Run an active instance (i.e., client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation:
+* Run an active instance (i.e., client side), with bidirectional QUIC flow, and specifying the TLS hostname of the server for certificate validation (if `-tls-ca` is omitted, the system CA truststore is used):
 
   - Active to passive instance: constant 10&nbsp;frames/s, constant 128&nbsp;B/frame;
   - Passive to active instance: constant 25&nbsp;frames/s, constant 1200&nbsp;B/frame.
@@ -471,6 +470,18 @@ sudo service netperfmeter-module-loader disable
 
     ```bash
     netperfmeter $SERVER:9000 \
+       -tls-hostname server.domain.example \
+       -tls-ca   $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt \
+       -tls-key  $DIRECTORY/TestCA/client.domain.example/client.domain.example.key \
+       -tls-cert $DIRECTORY/TestCA/client.domain.example/client.domain.example.crt \
+       -quic const10:const128:const25:const1200
+    ```
+
+  - **Using QUIC for the NPMP-CONTROL control channel as well** (adding `-control-over-quic`, or short `-z`):
+
+    ```bash
+    netperfmeter $SERVER:9000 \
+       -control-over-quic \
        -tls-hostname server.domain.example \
        -tls-ca   $DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt \
        -tls-key  $DIRECTORY/TestCA/client.domain.example/client.domain.example.key \
@@ -611,40 +622,40 @@ Some examples:
   - Vector files (i.e., time series) for each flow, from active and passive side:
 
     + Flow 0 (TCP flow):
-      [`active-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000000-0000.vec),
-      [`passive-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000000-0000.vec).
+      [`multi-active-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000000-0000.vec),
+      [`multi-passive-00000000-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000000-0000.vec).
 
     + Flow 1 (MPTCP flow):
-      [`active-00000001-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000001-0000.vec),
-      [`passive-00000001-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000001-0000.vec).
+      [`multi-active-00000001-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000001-0000.vec),
+      [`multi-passive-00000001-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000001-0000.vec).
 
     + Flow 2 (UDP flow):
-      [`active-00000002-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000002-0000.vec),
-      [`passive-00000002-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000002-0000.vec).
+      [`multi-active-00000002-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000002-0000.vec),
+      [`multi-passive-00000002-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000002-0000.vec).
 
     + Flow 3 (DCCP flow):
-      [`active-00000003-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000003-0000.vec),
-      [`passive-00000003-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000003-0000.vec).
+      [`multi-active-00000003-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000003-0000.vec),
+      [`multi-passive-00000003-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000003-0000.vec).
 
     + Flow 4 (SCTP flow for SCTP stream 0):
-      [`active-00000004-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000004-0000.vec),
-      [`passive-00000004-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000004-0000.vec).
+      [`multi-active-00000004-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000004-0000.vec),
+      [`multi-passive-00000004-0000.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000004-0000.vec).
 
     + Flow 5 (SCTP flow for SCTP stream 1):
-      [`active-00000005-0001.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000005-0001.vec),
-      [`passive-00000005-0001.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000005-0001.vec).
+      [`multi-active-00000005-0001.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000005-0001.vec),
+      [`multi-passive-00000005-0001.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000005-0001.vec).
 
     + Flow 6 (SCTP flow for SCTP stream 2):
-      [`active-00000006-0002.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000006-0002.vec),
-      [`passive-00000006-0002.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000006-0002.vec).
+      [`multi-active-00000006-0002.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000006-0002.vec),
+      [`multi-passive-00000006-0002.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000006-0002.vec).
 
     + Flow 7 (SCTP flow for SCTP stream 3):
-      [`active-00000007-0003.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000007-0003.vec),
-      [`passive-00000007-0003.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000007-0003.vec).
+      [`multi-active-00000007-0003.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000007-0003.vec),
+      [`multi-passive-00000007-0003.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000007-0003.vec).
 
     + Flow 8 (SCTP flow for SCTP stream 4):
-      [`active-00000008-0004.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000008-0004.vec),
-      [`passive-00000008-0004.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000008-0004.vec).
+      [`multi-active-00000008-0004.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-active-00000008-0004.vec),
+      [`multi-passive-00000008-0004.vec`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi-passive-00000008-0004.vec).
 
    The vector file format is a table, which can be read with CSV import of tools like [GNU&nbsp;R](https://www.r-project.org/), [LibreOffice](https://www.libreoffice.org/), etc.
 
@@ -686,7 +697,7 @@ Some examples:
 
     + SCTP, port 9000 and 9001 (data and control traffic over SCTP);
     + TCP, port 8999, 9000 and 9001 (data and control traffic over TCP and MPTCP);
-    + UDP, port 8999 and 9000 (data traffic over QUIC and UDP);
+    + UDP, port 8999, 9000 and 9001 (data and control traffic over QUIC, and data traffic over UDP);
     + DCCP, port 9000 (`ip proto 33`; PCAP filtering does not support DCCP).
 
 * Run [Wireshark](https://www.wireshark.org/) network protocol analyser to display the packet flow of the <a href="#active-multi">multi-flows example</a> above in PCAP file [`multi.pcap.gz`](https://github.com/dreibh/netperfmeter/blob/master/src/results-examples/multi.pcap.gz):

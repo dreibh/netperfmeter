@@ -16,10 +16,17 @@ BuildRequires: GraphicsMagick
 BuildRequires: libzstd-devel
 BuildRequires: lksctp-tools-devel
 BuildRequires: pdf2svg
-BuildRequires: perl >= 5.8.0
+BuildRequires: perl-interpreter
+BuildRequires: perl(IO::Socket::IP)
+BuildRequires: perl(strict)
+BuildRequires: perl(subs)
+BuildRequires: perl(warnings)
 BuildRequires: perl-PDF-API2
 BuildRequires: qpdf
-BuildRequires: valgrind-devel
+BuildRequires: R-core
+BuildRequires: R-data.table
+BuildRequires: R-dplyr
+BuildRequires: R-ggplot2
 
 Requires: %{name}-common = %{version}-%{release}
 Requires: findutils
@@ -210,15 +217,16 @@ This package sets up a service running a NetPerfMeter server instance.
 %files service
 %{_prefix}/lib/systemd/system/netperfmeter.service
 %config(noreplace) %{_sysconfdir}/netperfmeter.conf
-%{_sysconfdir}/netperfmeter.conf
 
 
 %package pdfproctools
 Summary: PDF Processing Tools
 Group: Applications/Internet
 BuildArch: noarch
-Requires: ghostscript
-Requires: perl >= 5.8.0
+Requires: perl-interpreter
+Requires: perl(strict)
+Requires: perl(subs)
+Requires: perl(warnings)
 Requires: perl-PDF-API2
 Requires: qpdf
 

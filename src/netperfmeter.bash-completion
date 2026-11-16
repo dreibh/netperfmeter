@@ -212,6 +212,8 @@ _netperfmeter()
 --control-over-tcp
 -w
 --control-over-mptcp
+-z
+--control-over-quic
 -L
 --local
 -l
@@ -293,6 +295,10 @@ _netperfmeter()
 --control-over-mptcp
 -W
 --no-control-over-mptcp
+-z
+--control-over-quic
+-Z
+--no-control-over-quic
 -L
 --local
 -l
