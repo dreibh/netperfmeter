@@ -47,7 +47,7 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cerr << "GetAbsTime" << " " << GETABSTIME_VERSION << "\n";
+   std::cout << "GetAbsTime" << " " << GETABSTIME_VERSION << "\n";
    exit(0);
 }
 

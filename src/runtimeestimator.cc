@@ -75,7 +75,7 @@ int getopt_long_only(int argc, char* const* argv, const char* optstring,
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cerr << "RuntimeEstimator" << " " << RUNTIMEESTIMATOR_VERSION << "\n";
+   std::cout << "RuntimeEstimator" << " " << RUNTIMEESTIMATOR_VERSION << "\n";
    exit(0);
 }
 
