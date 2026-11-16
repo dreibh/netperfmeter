@@ -49,14 +49,15 @@ CLIENT1_PID=""
 CLIENT2_PID=""
 CLIENT3_PID=""
 CLIENT4_PID=""
+CLIENT5_PID=""
 
 cleanup_processes() {
-    for _pid in ${CLIENT1_PID} ${CLIENT2_PID} ${CLIENT3_PID} ${CLIENT4_PID} ${SERVER_PID}; do
+    for _pid in ${CLIENT1_PID} ${CLIENT2_PID} ${CLIENT3_PID} ${CLIENT4_PID} ${CLIENT5_PID} ${SERVER_PID}; do
         if [ -n "${_pid}" ] && kill -0 "${_pid}" 2>/dev/null; then
             kill -TERM "${_pid}" 2>/dev/null || true
         fi
     done
-    for _pid in ${CLIENT1_PID} ${CLIENT2_PID} ${CLIENT3_PID} ${CLIENT4_PID} ${SERVER_PID}; do
+    for _pid in ${CLIENT1_PID} ${CLIENT2_PID} ${CLIENT3_PID} ${CLIENT4_PID} ${CLIENT5_PID} ${SERVER_PID}; do
         if [ -n "${_pid}" ]; then
             wait "${_pid}" 2>/dev/null || true
         fi
@@ -65,6 +66,7 @@ cleanup_processes() {
     CLIENT2_PID=""
     CLIENT3_PID=""
     CLIENT4_PID=""
+    CLIENT5_PID=""
     SERVER_PID=""
     if [ -n "${TMP_DIR}" ] && [ -d "${TMP_DIR}" ]; then
         rm -rf "${TMP_DIR}"
@@ -129,7 +131,7 @@ SERVER_TLS_ARGS=""
 CLIENT_TLS_ARGS=""
 
 case "${SCENARIO}" in
-    *quic*|*all_protocols*)
+    *quic*|*all_protocols*|*5clients*)
         CA_KEY="${TMP_DIR}/test_ca.key"
         CA_CRT="${TMP_DIR}/test_ca.crt"
         SRV_KEY="${TMP_DIR}/test_server.key"
@@ -181,7 +183,7 @@ esac
 # ====== Start Server =======================================================
 SERVER_CONTROL_ARGS="-control-over-tcp"
 case "${SCENARIO}" in
-    *mptcp*) SERVER_CONTROL_ARGS="-control-over-tcp -control-over-mptcp" ;;
+    *mptcp*|*5clients*) SERVER_CONTROL_ARGS="-control-over-tcp -control-over-mptcp" ;;
 esac
 "${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} ${SERVER_TLS_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
 SERVER_PID=$!
@@ -194,6 +196,7 @@ CLIENT1_RC=0
 CLIENT2_RC=0
 CLIENT3_RC=0
 CLIENT4_RC=0
+CLIENT5_RC=0
 
 # ====== Execute Scenario ===================================================
 case "${SCENARIO}" in
@@ -326,7 +329,32 @@ case "${SCENARIO}" in
         CLIENT3_PID=""
         ;;
 
-    # 9. Two clients simultaneously running QUIC flows
+    # 9. Quad-protocol concurrent stress: 4 clients (MPTCP + SCTP + TCP + UDP)
+    concurrent_4clients_mptcp_sctp_tcp_udp)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-mptcp -runtime=4 \
+            -mptcp const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=4 \
+            -sctp const10:const1000:const10:const1000 >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=4 \
+            -tcp const10:const1000:const10:const1000 >"${TMP_DIR}/client3.log" 2>&1 &
+        CLIENT3_PID=$!
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=4 \
+            -udp const10:const1000:const10:const1000 >"${TMP_DIR}/client4.log" 2>&1 &
+        CLIENT4_PID=$!
+
+        wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        wait "${CLIENT3_PID}" || CLIENT3_RC=$?
+        CLIENT3_PID=""
+        wait "${CLIENT4_PID}" || CLIENT4_RC=$?
+        CLIENT4_PID=""
+        ;;
+
+    # 10. Two clients simultaneously running QUIC flows
     concurrent_2clients_quic)
         "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} -runtime=3 \
             -quic const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
@@ -341,7 +369,7 @@ case "${SCENARIO}" in
         CLIENT2_PID=""
         ;;
 
-    # 10. Staggered overlapping clients over QUIC
+    # 11. Staggered overlapping clients over QUIC
     staggered_overlap_quic)
         "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} -runtime=5 \
             -quic const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
@@ -357,7 +385,7 @@ case "${SCENARIO}" in
         CLIENT1_PID=""
         ;;
 
-    # 11. Quad-protocol concurrent stress: 4 clients (QUIC + SCTP + TCP + UDP)
+    # 12. Quad-protocol concurrent stress: 4 clients (QUIC + SCTP + TCP + UDP)
     concurrent_4clients_all_protocols)
         "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} -runtime=4 \
             -quic const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
@@ -382,6 +410,36 @@ case "${SCENARIO}" in
         CLIENT4_PID=""
         ;;
 
+    # 13. Penta-protocol concurrent stress: 5 clients (QUIC + MPTCP + SCTP + TCP + UDP)
+    concurrent_5clients_all_protocols)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} -runtime=4 \
+            -quic const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-mptcp -runtime=4 \
+            -mptcp const10:const1000:const10:const1000 >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=4 \
+            -sctp const10:const1000:const10:const1000 >"${TMP_DIR}/client3.log" 2>&1 &
+        CLIENT3_PID=$!
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=4 \
+            -tcp const10:const1000:const10:const1000 >"${TMP_DIR}/client4.log" 2>&1 &
+        CLIENT4_PID=$!
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=4 \
+            -udp const10:const1000:const10:const1000 >"${TMP_DIR}/client5.log" 2>&1 &
+        CLIENT5_PID=$!
+
+        wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        wait "${CLIENT3_PID}" || CLIENT3_RC=$?
+        CLIENT3_PID=""
+        wait "${CLIENT4_PID}" || CLIENT4_RC=$?
+        CLIENT4_PID=""
+        wait "${CLIENT5_PID}" || CLIENT5_RC=$?
+        CLIENT5_PID=""
+        ;;
+
     *)
         echo "FAIL: Unknown scenario '${SCENARIO}'" >&2
         exit 1
@@ -389,7 +447,7 @@ case "${SCENARIO}" in
 esac
 
 # ====== Check Client Results ==============================================
-for _c in 1 2 3 4; do
+for _c in 1 2 3 4 5; do
     eval "_rc=\$CLIENT${_c}_RC"
     if [ "${_rc}" -ne 0 ]; then
         echo "FAIL: Client ${_c} exited with error code ${_rc}." >&2

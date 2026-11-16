@@ -1169,9 +1169,25 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_2connections_ipv6
    ::1       mptcp const10:const1000:const10:const1000 plain 3
    -mptcp const10:const1000:const10:const1000)
 
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_4connections_ipv6
+   ::1       mptcp const10:const1000:const10:const1000 plain 5
+   -mptcp const10:const1000:const10:const1000
+   -mptcp const10:const1000:const10:const1000
+   -mptcp const10:const1000:const10:const1000)
+
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_heterogeneous_rates_sizes
    127.0.0.1 mptcp const25:const100:const25:const100:nodelay=on plain 5
    -mptcp const10:const1400:const10:const1400)
+
+# Asymmetric split: Flow 0 upload-only MPTCP, Flow 1 download-only MPTCP
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_split_upload_download
+   127.0.0.1 mptcp const15:const1000:const0:const0 plain 3
+   -mptcp const0:const0:const15:const1000)
+
+# Interleaved On-Off bursts across 2 MPTCP connections
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_interleaved_onoff
+   127.0.0.1 mptcp const20:const1000:const0:const0:onoff=1,2 plain 4
+   -mptcp const20:const1000:const0:const0:onoff=2,3)
 
 # Simultaneous MPTCP (port-1) and regular TCP (port) connections
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_tcp_cross_traffic
@@ -1456,6 +1472,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_udp_ctrl_sctp_bidi_ipv4  127.0.0.1 udp  const10:
 IF (HAVE_MPTCP_FOR_TESTS)
    # Control channel using SCTP with MPTCP data flow
    ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_ctrl_sctp_bidi_ipv4 127.0.0.1 mptcp const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+
+   # Control channel using MPTCP with SCTP data flow
+   ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ctrl_mptcp_bidi_ipv4 127.0.0.1 sctp  const10:const1000:const10:const1000 plain 2 --control-over-mptcp)
 
    # Quad-protocol concurrency: MPTCP + SCTP + TCP + UDP - 5s
    ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_sctp_tcp_udp_cross
@@ -2018,6 +2037,13 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_tcp_udp_cross
    -tcp const10:const1000:const10:const1000
    -udp const10:const1000:const10:const1000)
 
+IF (HAVE_MPTCP_FOR_TESTS)
+   # Competing MPTCP + QUIC connections
+   ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_quic_cross_traffic
+      127.0.0.1 mptcp const10:const1000:const10:const1000 plain 3
+      -quic const10:const1000:const10:const1000)
+ENDIF()
+
 IF (HAVE_SCTP_FOR_TESTS)
    # Full quad-protocol concurrency (QUIC + SCTP + TCP + UDP) - 5s
    ADD_NETPERFMETER_FLOW_TEST(flow_multi_all_protocols_concurrent
@@ -2068,6 +2094,10 @@ IF (HAVE_MPTCP_FOR_TESTS)
    # Control channel using QUIC with MPTCP data flow
    ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_ctrl_quic_bidi_ipv4
       127.0.0.1 mptcp const10:const1000:const10:const1000 plain 3 --control-over-quic)
+
+   # Control channel using MPTCP with QUIC data flow
+   ADD_NETPERFMETER_FLOW_TEST(flow_quic_ctrl_mptcp_bidi_ipv4
+      127.0.0.1 quic  const10:const1000:const10:const1000 plain 3 --control-over-mptcp)
 ENDIF()
 
 
@@ -2379,9 +2409,13 @@ ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_ipv6
 
 # 5. MPTCP Multi-Client Scenarios
 IF (HAVE_MPTCP_FOR_TESTS)
-   # Two clients simultaneously running MPTCP flows
+   # Two clients simultaneously running MPTCP flows over IPv4
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_mptcp
       127.0.0.1 concurrent_2clients_mptcp)
+
+   # Two clients simultaneously running MPTCP flows over IPv6
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_mptcp_ipv6
+      ::1 concurrent_2clients_mptcp)
 
    # Staggered overlapping clients over MPTCP
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_staggered_overlap_mptcp
@@ -2398,7 +2432,13 @@ IF (HAVE_SCTP_FOR_TESTS)
       127.0.0.1 concurrent_3clients_mixed)
 ENDIF()
 
-# 7. QUIC Multi-Client Scenarios
+# 7. Quad-protocol concurrent stress: 4 clients (MPTCP + SCTP + TCP + UDP)
+IF (HAVE_MPTCP_FOR_TESTS AND HAVE_SCTP_FOR_TESTS)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_4clients_mptcp_sctp_tcp_udp
+      127.0.0.1 concurrent_4clients_mptcp_sctp_tcp_udp)
+ENDIF()
+
+# 8. QUIC Multi-Client Scenarios
 IF (HAVE_QUIC_FOR_TESTS)
    # Two clients simultaneously running QUIC flows
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_quic
@@ -2409,8 +2449,14 @@ IF (HAVE_QUIC_FOR_TESTS)
       127.0.0.1 staggered_overlap_quic)
 ENDIF()
 
-# 8. Quad-protocol concurrent stress: 4 clients (QUIC + SCTP + TCP + UDP)
+# 9. Quad-protocol concurrent stress: 4 clients (QUIC + SCTP + TCP + UDP)
 IF (HAVE_SCTP_FOR_TESTS AND HAVE_QUIC_FOR_TESTS)
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_4clients_all_protocols
       127.0.0.1 concurrent_4clients_all_protocols)
+ENDIF()
+
+# 10. Penta-protocol concurrent stress: 5 clients (QUIC + MPTCP + SCTP + TCP + UDP)
+IF (HAVE_MPTCP_FOR_TESTS AND HAVE_SCTP_FOR_TESTS AND HAVE_QUIC_FOR_TESTS)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_5clients_all_protocols
+      127.0.0.1 concurrent_5clients_all_protocols)
 ENDIF()
