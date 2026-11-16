@@ -47,6 +47,11 @@ CONTROL_OVER_SCTP=0
 CONTROL_OVER_MPTCP=0
 CONTROL_OVER_QUIC=0
 EXPECTED_FLOWS=1
+FLOW_COUNT=1
+VERIFY_LOGFILE=0
+VERIFY_LOGAPPEND=0
+EXPECT_CONFIG=""
+SERVER_EXTRA_ARGS=""
 GENERAL_EXTRA_ARGS=""
 STREAM_ARGS=""
 EXTRA_CONN_ARGS=""
@@ -72,10 +77,25 @@ if [ "$#" -ge 7 ]; then
             --control-over-sctp|-control-over-sctp)   CONTROL_OVER_SCTP=1 ;;
             --control-over-mptcp|-control-over-mptcp) CONTROL_OVER_MPTCP=1 ;;
             --control-over-quic|-control-over-quic)   CONTROL_OVER_QUIC=1 ;;
+            --verify-logfile)             VERIFY_LOGFILE=1 ;;
+            --verify-logappend)           VERIFY_LOGAPPEND=1 ;;
+            --expect-config=*)            EXPECT_CONFIG="${1#*=}" ;;
+            --expect-config)              EXPECT_CONFIG="$2"; shift ;;
+            --server-arg=*)               SERVER_EXTRA_ARGS="${SERVER_EXTRA_ARGS} ${1#*=}" ;;
+            --server-arg)                 SERVER_EXTRA_ARGS="${SERVER_EXTRA_ARGS} $2"; shift ;;
+            -N|--count)
+                FLOW_COUNT="$2"
+                GENERAL_EXTRA_ARGS="${GENERAL_EXTRA_ARGS} $1 $2"
+                shift
+                ;;
+            --count=*)
+                FLOW_COUNT="${1#*=}"
+                GENERAL_EXTRA_ARGS="${GENERAL_EXTRA_ARGS} $1"
+                ;;
             --stream|-stream)
-                # Additional stream within the current association
+                # Additional stream within the current association/connection
                 _spec="$2"
-                ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};sctp"
+                ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};${PROTOCOL}"
                 ALL_FLOW_SPECS="${ALL_FLOW_SPECS};${_spec}"
                 EXPECTED_FLOWS=$((EXPECTED_FLOWS + 1))
                 case "${_spec}" in
@@ -107,6 +127,20 @@ if [ "$#" -ge 7 ]; then
     done
 fi
 
+# Replicate flow specs/protos if -N / --count > 1 was specified
+if [ "${FLOW_COUNT}" -gt 1 ]; then
+    _base_protos="${ALL_FLOW_PROTOS}"
+    _base_specs="${ALL_FLOW_SPECS}"
+    _base_flows="${EXPECTED_FLOWS}"
+    _rep=1
+    while [ "${_rep}" -lt "${FLOW_COUNT}" ]; do
+        ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};${_base_protos}"
+        ALL_FLOW_SPECS="${ALL_FLOW_SPECS};${_base_specs}"
+        EXPECTED_FLOWS=$((EXPECTED_FLOWS + _base_flows))
+        _rep=$((_rep + 1))
+    done
+fi
+
 CONTROL_PORT=$((PORT + 1))
 
 case "${FORMAT}" in
@@ -128,6 +162,7 @@ parse_mean() {
     _dist="$1"
     perl -e '
         my $d = $ARGV[0] // "0";
+        $d =~ s/^\+//;
         if ($d =~ /^const([0-9.]+)/) { print $1; }
         elsif ($d =~ /^uniform([0-9.]+),([0-9.]+)/) { print (($1 + $2) / 2.0); }
         elsif ($d =~ /^exp([0-9.]+)/) { print $1; }
@@ -140,85 +175,58 @@ parse_mean() {
     ' "${_dist}"
 }
 
-compute_on_time() {
-    _dur_str="$1"
-    _rt="$2"
-    if [ -z "${_dur_str}" ]; then
-        echo "${_rt}"
-        return 0
-    fi
-    perl -e '
-        my ($dur_str, $rt) = @ARGV;
-        if (!$dur_str) { print $rt; exit 0; }
-        my @durs = split(/,/, $dur_str);
-        my $on_time = 0.0;
-        my $state = 0;
-        my $prev_t = 0.0;
-        my $cum_t = 0.0;
-        foreach my $d (@durs) {
-            $cum_t += ($d + 0);
-            my $t = ($cum_t < $rt) ? $cum_t : ($rt + 0);
-            if ($t > $prev_t) {
-                $on_time += ($t - $prev_t) if $state == 1;
-                $prev_t = $t;
-            }
-            $state = 1 - $state;
-            last if $cum_t >= $rt;
-        }
-        if ($prev_t < $rt && $state == 1) {
-            $on_time += ($rt - $prev_t);
-        }
-        print $on_time;
-    ' "${_dur_str}" "${_rt}"
-}
-
 # Deduce global TX and RX expectations aggregated across ALL flows
 GLOBAL_ACTIVE_EXPECT_TX=0
 GLOBAL_ACTIVE_EXPECT_RX=0
 GLOBAL_ACTIVE_FRAG_TX=0
 GLOBAL_ACTIVE_FRAG_RX=0
+HAS_DEFAULT_FLOW=0
 
 OLD_IFS="$IFS"
 IFS=";"
 for _fspec in ${ALL_FLOW_SPECS}; do
     IFS=":"
     set -- ${_fspec}
-    _o_rate="${1:-0}"
-    _o_size="${2:-0}"
-    _i_rate="${3:-0}"
-    _i_size="${4:-0}"
+    _first="${1:-0}"
 
-    _f_maxmsgsize=0
-    _f_onoff=""
-    shift 4 2>/dev/null || true
-    while [ "$#" -gt 0 ]; do
-        case "$1" in
-            maxmsgsize=*) _f_maxmsgsize="${1#maxmsgsize=}" ;;
-            onoff=*|events=*) _f_onoff="${1#*=}" ;;
+    if [ "${_first}" = "default" ]; then
+        HAS_DEFAULT_FLOW=1
+    else
+        _o_rate="${1:-0}"
+        _o_size="${2:-0}"
+        _i_rate="${3:-0}"
+        _i_size="${4:-0}"
+
+        _f_maxmsgsize=0
+        shift 4 2>/dev/null || true
+        while [ "$#" -gt 0 ]; do
+            case "$1" in
+                maxmsgsize=*) _f_maxmsgsize="${1#maxmsgsize=}" ;;
+            esac
+            shift
+        done
+
+        # A flow is active if its frame size > 0 (supports both constant/stochastic rate and saturated const0 bulk)
+        case "${_o_size}" in
+            0|const0) ;;
+            *)
+                GLOBAL_ACTIVE_EXPECT_TX=1
+                if [ "${_f_maxmsgsize}" -gt 0 ] && perl -e "exit(!($(parse_mean "${_o_size}") > ${_f_maxmsgsize}))"; then
+                    GLOBAL_ACTIVE_FRAG_TX=1
+                fi
+                ;;
         esac
-        shift
-    done
 
-    # A flow is active if its frame size > 0 (supports both constant/stochastic rate and saturated const0 bulk)
-    case "${_o_size}" in
-        0|const0) ;;
-        *)
-            GLOBAL_ACTIVE_EXPECT_TX=1
-            if [ "${_f_maxmsgsize}" -gt 0 ] && perl -e "exit(!($(parse_mean "${_o_size}") > ${_f_maxmsgsize}))"; then
-                GLOBAL_ACTIVE_FRAG_TX=1
-            fi
-            ;;
-    esac
-
-    case "${_i_size}" in
-        0|const0) ;;
-        *)
-            GLOBAL_ACTIVE_EXPECT_RX=1
-            if [ "${_f_maxmsgsize}" -gt 0 ] && perl -e "exit(!($(parse_mean "${_i_size}") > ${_f_maxmsgsize}))"; then
-                GLOBAL_ACTIVE_FRAG_RX=1
-            fi
-            ;;
-    esac
+        case "${_i_size}" in
+            0|const0) ;;
+            *)
+                GLOBAL_ACTIVE_EXPECT_RX=1
+                if [ "${_f_maxmsgsize}" -gt 0 ] && perl -e "exit(!($(parse_mean "${_i_size}") > ${_f_maxmsgsize}))"; then
+                    GLOBAL_ACTIVE_FRAG_RX=1
+                fi
+                ;;
+        esac
+    fi
     IFS=";"
 done
 IFS="$OLD_IFS"
@@ -273,6 +281,7 @@ check_scalar() {
         sub parse_mean {
             my ($dist) = @_;
             return 0 if !$dist || $dist eq "0";
+            $dist =~ s/^\+//;
             if ($dist =~ /^const([0-9.]+)/) { return $1 + 0; }
             elsif ($dist =~ /^uniform([0-9.]+),([0-9.]+)/) { return ($1 + $2) / 2.0; }
             elsif ($dist =~ /^exp([0-9.]+)/) { return $1 + 0; }
@@ -280,6 +289,7 @@ check_scalar() {
                 my ($k, $a) = ($1 + 0, $2 + 0);
                 return $a > 1.0 ? ($a * $k) / ($a - 1.0) : $k;
             } elsif ($dist =~ /^(?:trunc)?normal([0-9.]+),([0-9.]+)/) { return $1 + 0; }
+            elsif ($dist =~ /^([0-9.]+)$/) { return $1 + 0; }
             return 0;
         }
 
@@ -306,28 +316,61 @@ check_scalar() {
             return (0, 0);
         }
 
+        sub tokenize_onoff {
+            my ($dur_str) = @_;
+            my @raw = split(/,/, $dur_str);
+            my $repeat = 0;
+            if (@raw && $raw[-1] eq "repeat") {
+                $repeat = 1;
+                pop @raw;
+            }
+            my @tokens;
+            while (@raw) {
+                my $tok = shift @raw;
+                if ($tok =~ /^\+?(?:uniform|pareto|normal|truncnormal)[0-9.]+$/ && @raw && $raw[0] =~ /^[0-9.]+$/) {
+                    $tok .= "," . shift(@raw);
+                }
+                push @tokens, $tok;
+            }
+            return (\@tokens, $repeat);
+        }
+
         sub compute_on_time {
             my ($dur_str, $rt) = @_;
-            return $rt if !$dur_str;
-            my @durs = split(/,/, $dur_str);
+            return ($rt, 0) if !$dur_str;
+            my ($toks_ref, $repeat) = tokenize_onoff($dur_str);
+            return ($rt, 0) if !@$toks_ref;
+
+            my $has_random = 0;
+            my @durs;
+            foreach my $tok (@$toks_ref) {
+                $has_random = 1 if $tok =~ /(?:exp|pareto|uniform|truncnormal|normal)/;
+                push @durs, parse_mean($tok);
+            }
+
             my $on_time = 0.0;
             my $state = 0;
             my $prev_t = 0.0;
             my $cum_t = 0.0;
-            foreach my $d (@durs) {
-                $cum_t += ($d + 0);
-                my $t = ($cum_t < $rt) ? $cum_t : ($rt + 0);
-                if ($t > $prev_t) {
-                    $on_time += ($t - $prev_t) if $state == 1;
-                    $prev_t = $t;
+            my $safety = 0;
+            while ($cum_t < $rt && $safety < 10000) {
+                foreach my $d (@durs) {
+                    $safety++;
+                    $cum_t += $d;
+                    my $t = ($cum_t < $rt) ? $cum_t : ($rt + 0);
+                    if ($t > $prev_t) {
+                        $on_time += ($t - $prev_t) if $state == 1;
+                        $prev_t = $t;
+                    }
+                    $state = 1 - $state;
+                    last if $cum_t >= $rt || $safety >= 10000;
                 }
-                $state = 1 - $state;
-                last if $cum_t >= $rt;
+                last unless $repeat;
             }
             if ($prev_t < $rt && $state == 1) {
                 $on_time += ($rt - $prev_t);
             }
-            return $on_time;
+            return ($on_time, $has_random);
         }
 
         while (<STDIN>) {
@@ -369,25 +412,58 @@ check_scalar() {
 
         # Validate each flow object individually against its respective spec
         for (my $idx = 0; $idx < $expected_flows; $idx++) {
-            my ($flow_obj) = grep { /\.flow\[$idx\]$/ } keys %stats;
+            my $spec = $flow_specs[$idx];
+            my $proto = $flow_protos[$idx] // "tcp";
+
+            my ($is_default, $out_r, $out_s, $in_r, $in_s, @opts);
+            if ($spec =~ /^default(?::(.*))?$/) {
+                $is_default = 1;
+                @opts = defined($1) ? split(/:/, $1) : ();
+            } else {
+                $is_default = 0;
+                ($out_r, $out_s, $in_r, $in_s, @opts) = split(/:/, $spec);
+                $out_r //= "0"; $out_s //= "0"; $in_r //= "0"; $in_s //= "0";
+            }
+
+            my ($maxmsgsize, $onoff_str, $expected_id) = (0, "", $idx);
+            foreach my $opt (@opts) {
+                if ($opt =~ /^maxmsgsize=(\d+)/) { $maxmsgsize = $1 + 0; }
+                elsif ($opt =~ /^(?:onoff|events)=(.+)/) { $onoff_str = $1; }
+                elsif ($opt =~ /^id=(\d+)/) { $expected_id = $1 + 0; }
+            }
+
+            my ($flow_obj) = grep { /\.flow\[$expected_id\]$/ } keys %stats;
             if (!$flow_obj) {
-                warn "FAIL in $filename: Missing metrics for flow[$idx]\n";
+                warn "FAIL in $filename: Missing metrics for flow[$expected_id]\n";
                 $fatal_errors++;
                 next;
             }
 
-            my $spec = $flow_specs[$idx];
-            my $proto = $flow_protos[$idx] // "tcp";
-            my ($out_r, $out_s, $in_r, $in_s, @opts) = split(/:/, $spec);
-            $out_r //= "0"; $out_s //= "0"; $in_r //= "0"; $in_s //= "0";
-
-            my ($maxmsgsize, $onoff_str) = (0, "");
-            foreach my $opt (@opts) {
-                if ($opt =~ /^maxmsgsize=(\d+)/) { $maxmsgsize = $1 + 0; }
-                elsif ($opt =~ /^(?:onoff|events)=(.+)/) { $onoff_str = $1; }
+            if ($is_default) {
+                foreach my $dir ("Transmitted", "Received") {
+                    my $b = $stats{$flow_obj}{$dir}{Bytes} // 0;
+                    my $p = $stats{$flow_obj}{$dir}{Packets} // 0;
+                    my $f = $stats{$flow_obj}{$dir}{Frames} // 0;
+                    if ($b < $p || $p < $f) {
+                        warn "FAIL in $filename ($flow_obj): Default flow invariant violation in $dir (B=$b, P=$p, F=$f)\n";
+                        $fatal_errors++;
+                    }
+                    if (($b > 0 || $p > 0 || $f > 0) && ($b <= 0 || $p <= 0 || $f <= 0)) {
+                        warn "FAIL in $filename ($flow_obj): Default flow partial counters in $dir (B=$b, P=$p, F=$f)\n";
+                        $fatal_errors++;
+                    }
+                }
+                my $tot_b = ($stats{$flow_obj}{Transmitted}{Bytes}   // 0) + ($stats{$flow_obj}{Received}{Bytes}   // 0);
+                my $tot_p = ($stats{$flow_obj}{Transmitted}{Packets} // 0) + ($stats{$flow_obj}{Received}{Packets} // 0);
+                my $tot_f = ($stats{$flow_obj}{Transmitted}{Frames}  // 0) + ($stats{$flow_obj}{Received}{Frames}  // 0);
+                if ($tot_b <= 0 || $tot_p <= 0 || $tot_f <= 0) {
+                    warn "FAIL in $filename ($flow_obj): Default flow transferred no data (B=$tot_b, P=$tot_p, F=$tot_f)\n";
+                    $fatal_errors++;
+                }
+                next;
             }
 
-            my $on_time = compute_on_time($onoff_str, $runtime + 0);
+            my ($on_time, $onoff_is_random) = compute_on_time($onoff_str, $runtime + 0);
             my $out_active = (!($out_s =~ /^(?:0|const0)$/)) ? 1 : 0;
             my $in_active  = (!($in_s  =~ /^(?:0|const0)$/)) ? 1 : 0;
 
@@ -421,7 +497,7 @@ check_scalar() {
 
                 my $is_rand_r = ($dist_r =~ /^(?:exp|pareto|uniform|truncnormal|normal)/);
                 my $is_rand_s = ($dist_s =~ /^(?:exp|pareto|uniform|truncnormal|normal)/);
-                my $flow_has_random = ($is_rand_r || $is_rand_s);
+                my $flow_has_random = ($is_rand_r || $is_rand_s || $onoff_is_random);
 
                 if ($expected) {
                     if ($b <= 0 || $p <= 0 || $f <= 0) {
@@ -466,11 +542,12 @@ check_scalar() {
                         my $cont_frames = $target_rate * $runtime;
                         my $expected_onoff_frames = $target_rate * $on_time;
 
-                        if ($on_time < $runtime) {
+                        if ($on_time < ($runtime * 0.85)) {
                             my $upper_bound = $cont_frames * 0.90;
                             if ($f > $upper_bound) {
                                 warn "FAIL in $filename ($flow_obj): On-off flow transmitted $f frames, expected < $upper_bound\n";
-                                $fatal_errors++;
+                                if ($flow_has_random) { $stat_errors++; }
+                                else { $fatal_errors++; }
                             }
                         }
 
@@ -559,6 +636,7 @@ check_vector() {
     _frag_tx="$4"
     _frag_rx="$5"
     _all_specs="$6"
+    _has_default="${7:-0}"
 
     _global_file="${TMP_DIR}/test-${_role}.vec${EXT}"
     if [ ! -s "${_global_file}" ]; then
@@ -588,7 +666,7 @@ check_vector() {
             use strict;
             use warnings;
 
-            my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx, $all_specs_str, $role) = @ARGV;
+            my ($filename, $expect_tx, $expect_rx, $frag_tx, $frag_rx, $all_specs_str, $role, $has_default) = @ARGV;
             my $line_num = 0;
             my $is_flow_vector = 0;
             my $data_rows = 0;
@@ -600,32 +678,75 @@ check_vector() {
             my @flow_specs = split(/;/, $all_specs_str);
             my %flow_onoff;
             for (my $i = 0; $i < @flow_specs; $i++) {
-                if ($flow_specs[$i] =~ /(?:onoff|events)=([^:]+)/) {
-                    $flow_onoff{$i} = $1;
+                my $fid = $i;
+                if ($flow_specs[$i] =~ /(?:^|:)id=(\d+)/) {
+                    $fid = $1 + 0;
                 }
+                if ($flow_specs[$i] =~ /(?:onoff|events)=([^:]+)/) {
+                    $flow_onoff{$fid} = $1;
+                }
+            }
+
+            sub tokenize_onoff {
+                my ($dur_str) = @_;
+                my @raw = split(/,/, $dur_str);
+                my $repeat = 0;
+                if (@raw && $raw[-1] eq "repeat") {
+                    $repeat = 1;
+                    pop @raw;
+                }
+                my @tokens;
+                while (@raw) {
+                    my $tok = shift @raw;
+                    if ($tok =~ /^\+?(?:uniform|pareto|normal|truncnormal)[0-9.]+$/ && @raw && $raw[0] =~ /^[0-9.]+$/) {
+                        $tok .= "," . shift(@raw);
+                    }
+                    push @tokens, $tok;
+                }
+                return (\@tokens, $repeat);
+            }
+
+            sub build_onoff_deltas {
+                my ($dur_str) = @_;
+                my ($toks_ref, $repeat) = tokenize_onoff($dur_str);
+                my @durs;
+                foreach my $tok (@$toks_ref) {
+                    $tok =~ s/^\+//;
+                    return (undef, $repeat) unless $tok =~ /^[0-9.]+$/;
+                    push @durs, $tok + 0;
+                }
+                return (\@durs, $repeat);
             }
 
             sub interval_active_time {
                 my ($dur_str, $t_start, $t_end) = @_;
                 return ($t_end - $t_start) if !$dur_str;
-                my @durs = split(/,/, $dur_str);
+                my ($durs_ref, $repeat) = build_onoff_deltas($dur_str);
+                return ($t_end - $t_start) if !defined($durs_ref) || !@$durs_ref;
+                my @durs = @$durs_ref;
+
                 my $state = 0;
                 my $prev_t = 0.0;
                 my $cum_t = 0.0;
                 my $act = 0.0;
+                my $safety = 0;
 
-                foreach my $d (@durs) {
-                    $cum_t += ($d + 0);
-                    if ($cum_t > $t_start) {
-                        my $sub_start = ($t_start > $prev_t) ? $t_start : $prev_t;
-                        my $sub_end   = ($t_end < $cum_t)     ? $t_end   : $cum_t;
-                        if ($sub_end > $sub_start && $state == 1) {
-                            $act += ($sub_end - $sub_start);
+                while ($cum_t < $t_end && $safety < 10000) {
+                    foreach my $d (@durs) {
+                        $safety++;
+                        $cum_t += $d;
+                        if ($cum_t > $t_start) {
+                            my $sub_start = ($t_start > $prev_t) ? $t_start : $prev_t;
+                            my $sub_end   = ($t_end < $cum_t)     ? $t_end   : $cum_t;
+                            if ($sub_end > $sub_start && $state == 1) {
+                                $act += ($sub_end - $sub_start);
+                            }
                         }
+                        $prev_t = $cum_t;
+                        $state = 1 - $state;
+                        last if $cum_t >= $t_end || $safety >= 10000;
                     }
-                    $prev_t = $cum_t;
-                    $state = 1 - $state;
-                    last if $cum_t >= $t_end;
+                    last unless $repeat;
                 }
                 if ($prev_t < $t_end && $state == 1) {
                     my $sub_start = ($t_start > $prev_t) ? $t_start : $prev_t;
@@ -637,19 +758,26 @@ check_vector() {
             sub is_near_active_boundary {
                 my ($dur_str, $t_start) = @_;
                 return 0 if !$dur_str;
-                my @durs = split(/,/, $dur_str);
+                my ($durs_ref, $repeat) = build_onoff_deltas($dur_str);
+                return 1 if !defined($durs_ref);
+                my @durs = @$durs_ref;
+
                 my $state = 0;
                 my $cum_t = 0.0;
-
-                foreach my $d (@durs) {
-                    $cum_t += ($d + 0);
-                    if ($state == 1) {
-                        # Transition from ON -> OFF at $cum_t; allow up to 250ms scheduler jitter under load
-                        if ($t_start >= $cum_t && ($t_start - $cum_t) <= 0.250) {
-                            return 1;
+                my $safety = 0;
+                while ($cum_t <= ($t_start + 1.0) && $safety < 10000) {
+                    foreach my $d (@durs) {
+                        $safety++;
+                        $cum_t += $d;
+                        if ($state == 1) {
+                            # Transition from ON -> OFF at $cum_t; allow up to 250ms scheduler jitter under load
+                            if ($t_start >= $cum_t && ($t_start - $cum_t) <= 0.250) {
+                                return 1;
+                            }
                         }
+                        $state = 1 - $state;
                     }
-                    $state = 1 - $state;
+                    last unless $repeat;
                 }
                 return 0;
             }
@@ -743,7 +871,7 @@ check_vector() {
                     # On-off silence check during OFF intervals (checked per-flow, skip Total aggregate)
                     if ($flow_id >= 0 && defined $flow_onoff{$flow_id}) {
                         my $onoff_spec = $flow_onoff{$flow_id};
-                        if ($action eq "Sent" && $role eq "active" && $interval > 0) {
+                        if ($action eq "Sent" && $interval > 0) {
                             my $t_start = ($rel_time > $interval) ? ($rel_time - $interval) : 0.0;
                             my $t_end   = $rel_time;
                             my $act     = interval_active_time($onoff_spec, $t_start, $t_end);
@@ -787,34 +915,53 @@ check_vector() {
             }
 
             if (!$is_flow_vector) {
-                foreach my $dir ("Sent", "Received") {
-                    my $expected  = ($dir eq "Sent") ? $expect_tx : $expect_rx;
-                    my $expect_fg = ($dir eq "Sent") ? $frag_tx   : $frag_rx;
-
-                    my $b = $max_b{$dir} // 0;
-                    my $p = $max_p{$dir} // 0;
-                    my $f = $max_f{$dir} // 0;
-
-                    if ($expected) {
-                        if ($b <= 0 || $p <= 0 || $f <= 0) {
-                            warn "FAIL in $filename (line $line_num): Expected max $dir B/P/F > 0 (got B=$b, P=$p, F=$f)\n";
+                if ($has_default) {
+                    foreach my $dir ("Sent", "Received") {
+                        my $b = $max_b{$dir} // 0;
+                        my $p = $max_p{$dir} // 0;
+                        my $f = $max_f{$dir} // 0;
+                        if (($b > 0 || $p > 0 || $f > 0) && ($b <= 0 || $p <= 0 || $f <= 0)) {
+                            warn "FAIL in $filename (line $line_num): Partial $dir vector metrics for default flow (B=$b, P=$p, F=$f)\n";
                             $errors++;
                         }
-                        if ($expect_fg && $p <= $f) {
-                            warn "FAIL in $filename (line $line_num): Expected $dir Packets ($p) > Frames ($f) under fragmentation\n";
-                            $errors++;
-                        }
-                    } else {
-                        if ($b != 0 || $p != 0 || $f != 0) {
-                            warn "FAIL in $filename (line $line_num): Expected zero $dir traffic (got B=$b, P=$p, F=$f)\n";
-                            $errors++;
+                    }
+                    my $tot_b = ($max_b{Sent} // 0) + ($max_b{Received} // 0);
+                    my $tot_p = ($max_p{Sent} // 0) + ($max_p{Received} // 0);
+                    my $tot_f = ($max_f{Sent} // 0) + ($max_f{Received} // 0);
+                    if ($tot_b <= 0 || $tot_p <= 0 || $tot_f <= 0) {
+                        warn "FAIL in $filename (line $line_num): Expected non-zero vector traffic for default flow (B=$tot_b, P=$tot_p, F=$tot_f)\n";
+                        $errors++;
+                    }
+                } else {
+                    foreach my $dir ("Sent", "Received") {
+                        my $expected  = ($dir eq "Sent") ? $expect_tx : $expect_rx;
+                        my $expect_fg = ($dir eq "Sent") ? $frag_tx   : $frag_rx;
+
+                        my $b = $max_b{$dir} // 0;
+                        my $p = $max_p{$dir} // 0;
+                        my $f = $max_f{$dir} // 0;
+
+                        if ($expected) {
+                            if ($b <= 0 || $p <= 0 || $f <= 0) {
+                                warn "FAIL in $filename (line $line_num): Expected max $dir B/P/F > 0 (got B=$b, P=$p, F=$f)\n";
+                                $errors++;
+                            }
+                            if ($expect_fg && $p <= $f) {
+                                warn "FAIL in $filename (line $line_num): Expected $dir Packets ($p) > Frames ($f) under fragmentation\n";
+                                $errors++;
+                            }
+                        } else {
+                            if ($b != 0 || $p != 0 || $f != 0) {
+                                warn "FAIL in $filename (line $line_num): Expected zero $dir traffic (got B=$b, P=$p, F=$f)\n";
+                                $errors++;
+                            }
                         }
                     }
                 }
             }
 
             exit($errors ? 1 : 0);
-        ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}" "${_all_specs}" "${_role}"; then
+        ' "${_file}" "${_expect_tx}" "${_expect_rx}" "${_frag_tx}" "${_frag_rx}" "${_all_specs}" "${_role}" "${_has_default}"; then
             echo "FAIL: Vector verification failed for '${_file}'." >&2
             echo "--- Content of ${_file} ---" >&2
             decompress_cat "${_file}" >&2
@@ -998,6 +1145,18 @@ EOF
         fi
     fi
 
+    SERVER_LOG_ARGS=""
+    CLIENT_LOG_ARGS=""
+    if [ "${VERIFY_LOGFILE}" -eq 1 ]; then
+        SERVER_LOG_ARGS="--loglevel=2 --logfile=${TMP_DIR}/server_custom.log"
+        CLIENT_LOG_ARGS="--loglevel=2 --logfile=${TMP_DIR}/client_custom.log"
+    elif [ "${VERIFY_LOGAPPEND}" -eq 1 ]; then
+        printf "SENTINEL_SERVER_HEADER\n" >"${TMP_DIR}/server_append.log"
+        printf "SENTINEL_CLIENT_HEADER\n" >"${TMP_DIR}/client_append.log"
+        SERVER_LOG_ARGS="--loglevel=2 --logappend=${TMP_DIR}/server_append.log"
+        CLIENT_LOG_ARGS="--loglevel=2 --logappend=${TMP_DIR}/client_append.log"
+    fi
+
     # 1. Start passive node
     if [ "${CONTROL_OVER_QUIC}" -eq 1 ]; then
         SERVER_CONTROL_ARGS="-no-control-over-tcp -no-control-over-sctp -control-over-quic"
@@ -1017,7 +1176,7 @@ EOF
         CTRL_PROBE_PROTO="tcp"
     fi
 
-    "${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} ${SERVER_TLS_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
+    "${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} ${SERVER_TLS_ARGS} ${SERVER_LOG_ARGS} ${SERVER_EXTRA_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
     SERVER_PID=$!
 
     # 2. Wait until control channel (PORT + 1) is ready
@@ -1054,6 +1213,7 @@ EOF
     "${NETPERFMETER}" "${TARGET}:${PORT}" \
         ${CLIENT_CONTROL_ARG} \
         ${CLIENT_TLS_ARGS} \
+        ${CLIENT_LOG_ARGS} \
         -runtime="${RUNTIME}" \
         --config="${TMP_DIR}/test.config" \
         ${SCALAR_ARG} \
@@ -1081,10 +1241,42 @@ EOF
         return 1
     fi
 
+    # Verify custom logfile / logappend behavior if requested
+    if [ "${VERIFY_LOGFILE}" -eq 1 ]; then
+        if [ ! -s "${TMP_DIR}/server_custom.log" ] || [ ! -s "${TMP_DIR}/client_custom.log" ]; then
+            echo "FAIL: --logfile output file(s) missing or empty." >&2
+            return 1
+        fi
+        if grep -q "Network Performance Meter" "${TMP_DIR}/server.log" "${TMP_DIR}/client.log"; then
+            echo "FAIL: Console output was not suppressed when --logfile was specified." >&2
+            return 1
+        fi
+    fi
+
+    if [ "${VERIFY_LOGAPPEND}" -eq 1 ]; then
+        if ! grep -q "SENTINEL_SERVER_HEADER" "${TMP_DIR}/server_append.log" || \
+           ! grep -q "Network Performance Meter" "${TMP_DIR}/server_append.log"; then
+            echo "FAIL: --logappend did not preserve existing server log content and append new logs." >&2
+            return 1
+        fi
+        if ! grep -q "SENTINEL_CLIENT_HEADER" "${TMP_DIR}/client_append.log" || \
+           ! grep -q "Network Performance Meter" "${TMP_DIR}/client_append.log"; then
+            echo "FAIL: --logappend did not preserve existing client log content and append new logs." >&2
+            return 1
+        fi
+    fi
+
     # 4. Verify Configuration output (--config)
     if [ ! -s "${TMP_DIR}/test.config" ]; then
         echo "FAIL: Configuration file (--config) missing or empty." >&2
         return 1
+    fi
+    if [ -n "${EXPECT_CONFIG}" ]; then
+        if ! grep -qE "${EXPECT_CONFIG}" "${TMP_DIR}/test.config"; then
+            echo "FAIL: Configuration file did not match expected pattern '${EXPECT_CONFIG}'." >&2
+            cat "${TMP_DIR}/test.config" >&2
+            return 1
+        fi
     fi
 
     # 5. Verify Scalar outputs
@@ -1109,10 +1301,10 @@ EOF
 
     # 6. Verify Vector outputs
     if [ "${ENABLE_VECTOR}" -eq 1 ]; then
-        if ! check_vector "active"  "${GLOBAL_ACTIVE_EXPECT_TX}"  "${GLOBAL_ACTIVE_EXPECT_RX}"  "${GLOBAL_ACTIVE_FRAG_TX}"  "${GLOBAL_ACTIVE_FRAG_RX}" "${ALL_FLOW_SPECS}"; then
+        if ! check_vector "active"  "${GLOBAL_ACTIVE_EXPECT_TX}"  "${GLOBAL_ACTIVE_EXPECT_RX}"  "${GLOBAL_ACTIVE_FRAG_TX}"  "${GLOBAL_ACTIVE_FRAG_RX}" "${ALL_FLOW_SPECS}" "${HAS_DEFAULT_FLOW}"; then
             return 1
         fi
-        if ! check_vector "passive" "${GLOBAL_PASSIVE_EXPECT_TX}" "${GLOBAL_PASSIVE_EXPECT_RX}" "${GLOBAL_PASSIVE_FRAG_TX}" "${GLOBAL_PASSIVE_FRAG_RX}" "${ALL_FLOW_SPECS}"; then
+        if ! check_vector "passive" "${GLOBAL_PASSIVE_EXPECT_TX}" "${GLOBAL_PASSIVE_EXPECT_RX}" "${GLOBAL_PASSIVE_FRAG_TX}" "${GLOBAL_PASSIVE_FRAG_RX}" "${ALL_FLOW_SPECS}" "${HAS_DEFAULT_FLOW}"; then
             return 1
         fi
     else
