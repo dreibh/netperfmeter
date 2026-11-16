@@ -44,6 +44,7 @@ ENABLE_VECTOR=1
 ENABLE_MTLS=1
 MAX_RETRIES=1
 CONTROL_OVER_SCTP=0
+CONTROL_OVER_MPTCP=0
 CONTROL_OVER_QUIC=0
 EXPECTED_FLOWS=1
 GENERAL_EXTRA_ARGS=""
@@ -68,8 +69,9 @@ if [ "$#" -ge 7 ]; then
             --no-vector|--without-vector) ENABLE_VECTOR=0 ;;
             --no-mtls)                    ENABLE_MTLS=0 ;;
             --retries=*|--max-retries=*)  MAX_RETRIES="${1#*=}" ;;
-            --control-over-sctp|-control-over-sctp) CONTROL_OVER_SCTP=1 ;;
-            --control-over-quic|-control-over-quic) CONTROL_OVER_QUIC=1 ;;
+            --control-over-sctp|-control-over-sctp)   CONTROL_OVER_SCTP=1 ;;
+            --control-over-mptcp|-control-over-mptcp) CONTROL_OVER_MPTCP=1 ;;
+            --control-over-quic|-control-over-quic)   CONTROL_OVER_QUIC=1 ;;
             --stream|-stream)
                 # Additional stream within the current association
                 _spec="$2"
@@ -84,7 +86,7 @@ if [ "$#" -ge 7 ]; then
                 STREAM_ARGS="${STREAM_ARGS} ${_spec}"
                 shift
                 ;;
-            -tcp|-udp|-sctp|-quic)
+            -tcp|-mptcp|-udp|-sctp|-quic)
                 # Additional separate transport connection / flow
                 _proto="${1#-}"
                 _spec="$2"
@@ -821,7 +823,7 @@ check_vector() {
     done
 }
 
-# ====== Listener Readiness Probe (TCP, SCTP & QUIC) ========================
+# ====== Listener Readiness Probe (TCP, MPTCP, SCTP & QUIC) =================
 wait_for_listener() {
     _host="$1"
     _port="$2"
@@ -1005,6 +1007,10 @@ EOF
         SERVER_CONTROL_ARGS="-control-over-tcp -control-over-sctp"
         CLIENT_CONTROL_ARG="-control-over-sctp"
         CTRL_PROBE_PROTO="sctp"
+    elif [ "${CONTROL_OVER_MPTCP}" -eq 1 ]; then
+        SERVER_CONTROL_ARGS="-control-over-tcp -control-over-mptcp -no-control-over-sctp"
+        CLIENT_CONTROL_ARG="-control-over-mptcp"
+        CTRL_PROBE_PROTO="tcp"
     else
         SERVER_CONTROL_ARGS="-control-over-tcp -no-control-over-sctp"
         CLIENT_CONTROL_ARG="-control-over-tcp"
@@ -1023,6 +1029,11 @@ EOF
     # For connection-oriented data flows, also wait for data port readiness
     if [ "${PROTOCOL}" = "tcp" ] || [ "${PROTOCOL}" = "sctp" ]; then
         if ! wait_for_listener "${ADDRESS}" "${PORT}" "${PROTOCOL}" 5; then
+            stop_server || true
+            return 1
+        fi
+    elif [ "${PROTOCOL}" = "mptcp" ]; then
+        if ! wait_for_listener "${ADDRESS}" "$((PORT - 1))" "tcp" 5; then
             stop_server || true
             return 1
         fi

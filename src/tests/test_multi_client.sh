@@ -180,6 +180,9 @@ esac
 
 # ====== Start Server =======================================================
 SERVER_CONTROL_ARGS="-control-over-tcp"
+case "${SCENARIO}" in
+    *mptcp*) SERVER_CONTROL_ARGS="-control-over-tcp -control-over-mptcp" ;;
+esac
 "${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} ${SERVER_TLS_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
 SERVER_PID=$!
 
@@ -272,7 +275,58 @@ case "${SCENARIO}" in
         CLIENT3_PID=""
         ;;
 
-    # 6. Two clients simultaneously running QUIC flows
+    # 6. Two clients simultaneously running MPTCP flows
+    concurrent_2clients_mptcp)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-mptcp -runtime=3 \
+            -mptcp const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-mptcp -runtime=3 \
+            -mptcp const10:const1000:const10:const1000 >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+
+        wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        ;;
+
+    # 7. Staggered overlapping clients over MPTCP
+    staggered_overlap_mptcp)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-mptcp -runtime=5 \
+            -mptcp const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        sleep 1
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-mptcp -runtime=2 \
+            -mptcp const10:const1000:const10:const1000 >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
+        ;;
+
+    # 8. Tri-protocol concurrent stress: 3 clients (MPTCP + TCP + UDP)
+    concurrent_3clients_mptcp_tcp_udp)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-mptcp -runtime=4 \
+            -mptcp const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=4 \
+            -tcp const10:const1000:const10:const1000 >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=4 \
+            -udp const10:const1000:const10:const1000 >"${TMP_DIR}/client3.log" 2>&1 &
+        CLIENT3_PID=$!
+
+        wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        wait "${CLIENT3_PID}" || CLIENT3_RC=$?
+        CLIENT3_PID=""
+        ;;
+
+    # 9. Two clients simultaneously running QUIC flows
     concurrent_2clients_quic)
         "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} -runtime=3 \
             -quic const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
@@ -287,7 +341,7 @@ case "${SCENARIO}" in
         CLIENT2_PID=""
         ;;
 
-    # 7. Staggered overlapping clients over QUIC
+    # 10. Staggered overlapping clients over QUIC
     staggered_overlap_quic)
         "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} -runtime=5 \
             -quic const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &
@@ -303,7 +357,7 @@ case "${SCENARIO}" in
         CLIENT1_PID=""
         ;;
 
-    # 8. Quad-protocol concurrent stress: 4 clients (QUIC + SCTP + TCP + UDP)
+    # 11. Quad-protocol concurrent stress: 4 clients (QUIC + SCTP + TCP + UDP)
     concurrent_4clients_all_protocols)
         "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} -runtime=4 \
             -quic const10:const1000:const10:const1000 >"${TMP_DIR}/client1.log" 2>&1 &

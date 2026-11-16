@@ -192,6 +192,8 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
          LIST(APPEND TEST_LABELS "no-${CMAKE_MATCH_1}")
       ELSEIF(ARG STREQUAL "--control-over-sctp")
          LIST(APPEND TEST_LABELS "control-sctp")
+      ELSEIF(ARG STREQUAL "--control-over-mptcp")
+         LIST(APPEND TEST_LABELS "control-mptcp")
       ELSEIF(ARG STREQUAL "--control-over-quic")
          LIST(APPEND TEST_LABELS "control-quic")
       ENDIF()
@@ -1084,6 +1086,121 @@ ADD_NETPERFMETER_FLOW_TEST(profile_ai_federated_weights_frag
 
 
 #############################################################################
+#### MPTCP FLOW INTEGRATION TESTS (RFC 8684)                             ####
+#############################################################################
+
+IF (HAVE_MPTCP_FOR_TESTS)
+
+# ====== 1. Bidirectional Flows =============================================
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_bidi_ipv4 127.0.0.1 mptcp const10:const1000:const10:const1000 plain)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_bidi_ipv6 ::1       mptcp const10:const1000:const10:const1000 plain)
+
+# ====== 2. Upload-Only Flows (Active -> Passive) ===========================
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_upload_ipv4 127.0.0.1 mptcp const10:const1000:const0:const0 plain)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_upload_ipv6 ::1       mptcp const10:const1000:const0:const0 plain)
+
+# ====== 3. Download-Only Flows (Passive -> Active) =========================
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_download_ipv4 127.0.0.1 mptcp const0:const0:const10:const1000 plain)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_download_ipv6 ::1       mptcp const0:const0:const10:const1000 plain)
+
+# ====== 4. Control Channel Over MPTCP & Legacy cmt=mptcp Option ============
+# Control channel using MPTCP with MPTCP data flow
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_ctrl_mptcp_bidi_ipv4
+   127.0.0.1 mptcp const10:const1000:const10:const1000 plain 2 --control-over-mptcp)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_ctrl_mptcp_bidi_ipv6
+   ::1       mptcp const10:const1000:const10:const1000 plain 2 --control-over-mptcp)
+
+# Control channel using MPTCP with TCP data flow
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_ctrl_mptcp_bidi_ipv4
+   127.0.0.1 tcp   const10:const1000:const10:const1000 plain 2 --control-over-mptcp)
+
+# Control channel using MPTCP with UDP data flow
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_ctrl_mptcp_bidi_ipv4
+   127.0.0.1 udp   const10:const1000:const10:const1000 plain 2 --control-over-mptcp)
+
+# Backwards compatibility alias: -tcp ...:cmt=mptcp creates an MPTCP connection
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_cmt_alias_ipv4
+   127.0.0.1 tcp   const10:const1000:const10:const1000:cmt=mptcp plain 2)
+
+# ====== 5. Compression Formats & Output Suppression ========================
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_format_bz2 127.0.0.1 mptcp const10:const1000:const10:const1000 bz2)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_no_scalar  127.0.0.1 mptcp const10:const1000:const10:const1000 plain 2 --no-scalar)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_no_vector  127.0.0.1 mptcp const10:const1000:const10:const1000 plain 2 --no-vector)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_no_outputs 127.0.0.1 mptcp const10:const1000:const10:const1000 plain 2 --no-scalar --no-vector)
+
+# ====== 6. Framing and Defragmentation (maxmsgsize & frame sizes) ==========
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_framing_small      127.0.0.1 mptcp const10:const1000:const10:const1000:maxmsgsize=250  plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_framing_medium     127.0.0.1 mptcp const10:const4000:const10:const4000:maxmsgsize=1000 plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_framing_large      127.0.0.1 mptcp const10:const8000:const10:const8000:maxmsgsize=1400 plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_framing_asymmetric 127.0.0.1 mptcp const10:const4000:const10:const1000:maxmsgsize=500  plain 2)
+
+# ====== 7. On-Off Flow Schedule Tests ======================================
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_onoff_single_burst_ipv4
+   127.0.0.1 mptcp const20:const1000:const0:const0:onoff=1,3 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_onoff_single_burst_ipv6
+   ::1       mptcp const20:const1000:const0:const0:onoff=1,3 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_onoff_multiburst_ipv4
+   127.0.0.1 mptcp const20:const1000:const0:const0:onoff=1,2,3,4 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_onoff_delayed_start
+   127.0.0.1 mptcp const20:const1000:const0:const0:onoff=2 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_onoff_fragmented
+   127.0.0.1 mptcp const20:const3000:const0:const0:onoff=1,3:maxmsgsize=1000 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_onoff_exp_size
+   127.0.0.1 mptcp const20:exp1000:const0:const0:onoff=1,4 plain 6)
+
+# ====== 8. Random Distribution Tests (VBR Flows) ===========================
+ADD_NETPERFMETER_FLOW_TEST(dist_mptcp_uniform     127.0.0.1 mptcp uniform15,25:uniform800,1200:uniform15,25:uniform800,1200 plain 8)
+ADD_NETPERFMETER_FLOW_TEST(dist_mptcp_exp         127.0.0.1 mptcp const20:exp1000:const20:exp1000 plain 8)
+ADD_NETPERFMETER_FLOW_TEST(dist_mptcp_truncnormal 127.0.0.1 mptcp truncnormal20,2:truncnormal1000,100:truncnormal20,2:truncnormal1000,100 plain 8)
+ADD_NETPERFMETER_FLOW_TEST(dist_mptcp_pareto      127.0.0.1 mptcp pareto15,3:pareto667,3:pareto15,3:pareto667,3 plain 8)
+
+# ====== 9. MPTCP Multi-Connection & Cross-Protocol Concurrency =============
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_2connections_ipv4
+   127.0.0.1 mptcp const10:const1000:const10:const1000 plain 3
+   -mptcp const10:const1000:const10:const1000)
+
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_4connections_ipv4
+   127.0.0.1 mptcp const10:const1000:const10:const1000 plain 5
+   -mptcp const10:const1000:const10:const1000
+   -mptcp const10:const1000:const10:const1000
+   -mptcp const10:const1000:const10:const1000)
+
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_2connections_ipv6
+   ::1       mptcp const10:const1000:const10:const1000 plain 3
+   -mptcp const10:const1000:const10:const1000)
+
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_heterogeneous_rates_sizes
+   127.0.0.1 mptcp const25:const100:const25:const100:nodelay=on plain 5
+   -mptcp const10:const1400:const10:const1400)
+
+# Simultaneous MPTCP (port-1) and regular TCP (port) connections
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_tcp_cross_traffic
+   127.0.0.1 mptcp const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000)
+
+# Competing MPTCP + UDP flows
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_udp_cross_traffic
+   127.0.0.1 mptcp const10:const1000:const10:const1000 plain 3
+   -udp const10:const1000:const10:const1000)
+
+# Concurrent MPTCP + TCP + UDP competing flows
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_tcp_udp_cross
+   127.0.0.1 mptcp const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000
+   -udp const10:const1000:const10:const1000)
+
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_2connections_ctrl_mptcp
+   127.0.0.1 mptcp const10:const1000:const10:const1000 plain 3
+   -mptcp const10:const1000:const10:const1000 --control-over-mptcp)
+
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_2connections_fragmented
+   127.0.0.1 mptcp const10:const1000:const10:const1000:maxmsgsize=250 plain 3
+   -mptcp const10:const1000:const10:const1000:maxmsgsize=250)
+
+ENDIF()
+
+
+#############################################################################
 #### SCTP FLOW INTEGRATION TESTS                                         ####
 #############################################################################
 
@@ -1114,6 +1231,18 @@ ADD_NETPERFMETER_FLOW_TEST(flow_tcp_ctrl_sctp_bidi_ipv4  127.0.0.1 tcp  const10:
 
 # Control channel using SCTP with UDP data flow
 ADD_NETPERFMETER_FLOW_TEST(flow_udp_ctrl_sctp_bidi_ipv4  127.0.0.1 udp  const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+
+IF (HAVE_MPTCP_FOR_TESTS)
+   # Control channel using SCTP with MPTCP data flow
+   ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_ctrl_sctp_bidi_ipv4 127.0.0.1 mptcp const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+
+   # Quad-protocol concurrency: MPTCP + SCTP + TCP + UDP - 5s
+   ADD_NETPERFMETER_FLOW_TEST(flow_multi_mptcp_sctp_tcp_udp_cross
+      127.0.0.1 mptcp const10:const1000:const10:const1000 plain 5
+      -sctp const10:const1000:const10:const1000
+      -tcp  const10:const1000:const10:const1000
+      -udp  const10:const1000:const10:const1000)
+ENDIF()
 
 # ====== 5. Compression Formats Matrix ======================================
 # Verify scalar/vector compressed stream logging (gzip, bzip2, xz, zstd)
@@ -1677,6 +1806,16 @@ IF (HAVE_SCTP_FOR_TESTS)
       -udp  const10:const1000:const10:const1000)
 ENDIF()
 
+IF (HAVE_SCTP_FOR_TESTS AND HAVE_MPTCP_FOR_TESTS)
+   # Full 5-protocol concurrency (QUIC + MPTCP + SCTP + TCP + UDP) - 5s
+   ADD_NETPERFMETER_FLOW_TEST(flow_multi_all_5_protocols_concurrent
+      127.0.0.1 quic const10:const1000:const10:const1000 plain 5
+      -mptcp const10:const1000:const10:const1000
+      -sctp  const10:const1000:const10:const1000
+      -tcp   const10:const1000:const10:const1000
+      -udp   const10:const1000:const10:const1000)
+ENDIF()
+
 
 # ====== 7. Control Channel Over QUIC =======================================
 # Control channel using QUIC with QUIC data flow over IPv4 and IPv6
@@ -1702,6 +1841,12 @@ IF (HAVE_SCTP_FOR_TESTS)
    # Control channel using QUIC with SCTP data flow
    ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ctrl_quic_bidi_ipv4
       127.0.0.1 sctp const10:const1000:const10:const1000 plain 3 --control-over-quic)
+ENDIF()
+
+IF (HAVE_MPTCP_FOR_TESTS)
+   # Control channel using QUIC with MPTCP data flow
+   ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_ctrl_quic_bidi_ipv4
+      127.0.0.1 mptcp const10:const1000:const10:const1000 plain 3 --control-over-quic)
 ENDIF()
 
 
@@ -1946,7 +2091,29 @@ ADD_NETPERFMETER_FLOW_TEST(flow_tcp_saturated_upload_segmented
    127.0.0.1 tcp const0:const32000:const0:const0:maxmsgsize=1400 plain 3)
 
 
-# ====== 2. Saturated SCTP Flows with Multi-Message Chunking ================
+# ====== 2. Saturated MPTCP Flows with Message Segmentation =================
+IF (HAVE_MPTCP_FOR_TESTS)
+
+# 16 KB frames segmented into 1,400 B messages (~12 messages per frame), saturated
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_saturated_large_frames
+   127.0.0.1 mptcp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3)
+
+# 64 KB jumbo frames segmented into 1,400 B messages (~46 messages per frame), saturated
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_saturated_jumbo_frames
+   127.0.0.1 mptcp const0:const65536:const0:const65536:maxmsgsize=1400 plain 3)
+
+# Saturated upload-only MPTCP with large framed messages
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_saturated_upload_segmented
+   127.0.0.1 mptcp const0:const32000:const0:const0:maxmsgsize=1400 plain 3)
+
+# Saturated MPTCP with control channel running over MPTCP
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_saturated_ctrl_mptcp
+   127.0.0.1 mptcp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3 --control-over-mptcp)
+
+ENDIF()
+
+
+# ====== 3. Saturated SCTP Flows with Multi-Message Chunking ================
 IF (HAVE_SCTP_FOR_TESTS)
 
 # Saturated SCTP bidirectional transfer: 16 KB frames fragmented into 1,400 B chunks
@@ -1989,13 +2156,28 @@ ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_sequential_session_reuse
 ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_ipv6
    ::1 concurrent_2clients_ipv6)
 
-# 5. Tri-protocol concurrent stress: 3 clients (SCTP multistream + TCP/UDP + 2x UDP)
+# 5. MPTCP Multi-Client Scenarios
+IF (HAVE_MPTCP_FOR_TESTS)
+   # Two clients simultaneously running MPTCP flows
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_mptcp
+      127.0.0.1 concurrent_2clients_mptcp)
+
+   # Staggered overlapping clients over MPTCP
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_staggered_overlap_mptcp
+      127.0.0.1 staggered_overlap_mptcp)
+
+   # Tri-protocol concurrent stress: 3 clients (MPTCP + TCP + UDP)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_3clients_mptcp_tcp_udp
+      127.0.0.1 concurrent_3clients_mptcp_tcp_udp)
+ENDIF()
+
+# 6. Tri-protocol concurrent stress: 3 clients (SCTP multistream + TCP/UDP + 2x UDP)
 IF (HAVE_SCTP_FOR_TESTS)
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_3clients_mixed
       127.0.0.1 concurrent_3clients_mixed)
 ENDIF()
 
-# 6. QUIC Multi-Client Scenarios
+# 7. QUIC Multi-Client Scenarios
 IF (HAVE_QUIC_FOR_TESTS)
    # Two clients simultaneously running QUIC flows
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_2clients_quic
@@ -2006,7 +2188,7 @@ IF (HAVE_QUIC_FOR_TESTS)
       127.0.0.1 staggered_overlap_quic)
 ENDIF()
 
-# 7. Quad-protocol concurrent stress: 4 clients (QUIC + SCTP + TCP + UDP)
+# 8. Quad-protocol concurrent stress: 4 clients (QUIC + SCTP + TCP + UDP)
 IF (HAVE_SCTP_FOR_TESTS AND HAVE_QUIC_FOR_TESTS)
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_4clients_all_protocols
       127.0.0.1 concurrent_4clients_all_protocols)
