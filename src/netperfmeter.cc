@@ -1947,7 +1947,7 @@ static void passiveMode(const uint16_t localPort)
    }
    else {
       const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
-      if(ext_setsockopt(gDCCPSocket, IPPROTO_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
+      if(ext_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_FATAL
          stdlog << format("Unable to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket %d: %s!",
                           (unsigned int)be32toh(service[0]), gDCCPSocket, strerror(errno)) << "\n";

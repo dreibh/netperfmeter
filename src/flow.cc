@@ -559,7 +559,7 @@ bool Flow::configureSocket(const int socketDescriptor)
    else if(TrafficSpec.Protocol == IPPROTO_DCCP) {
       const uint8_t value = TrafficSpec.CCID;
       if(value != 0) {
-         if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
+         if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_CCID, &value, sizeof(value)) < 0) {
             LOG_WARNING
             stdlog << format("Unable to configure CCID %u (DCCP_SOCKOPT_CCID option) on DCCP socket %d: %s!",
                              (unsigned int)value, socketDescriptor, strerror(errno)) << "\n";
@@ -567,7 +567,7 @@ bool Flow::configureSocket(const int socketDescriptor)
          }
       }
       const uint32_t service[1] = { htobe32(SC_NETPERFMETER_DATA) };
-      if(ext_setsockopt(socketDescriptor, IPPROTO_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
+      if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_SERVICE, &service, sizeof(service)) < 0) {
          LOG_ERROR
          stdlog << format("Unable to configure DCCP service code %u (DCCP_SOCKOPT_SERVICE option) on DCCP socket %d: %s!",
                           (unsigned int)be32toh(service[0]), socketDescriptor, strerror(errno)) << "\n";
