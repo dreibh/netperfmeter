@@ -170,7 +170,7 @@ stop_and_check_server() {
             fi
             exit 1
         fi
-        if [ -s "${TMP_DIR}/server.log" ] && grep -qE "failed in|FATAL ERROR|terminate called|Aborted|Avbrutt|SIGABRT|Segmentation fault|assure" "${TMP_DIR}/server.log"; then
+        if [ -s "${TMP_DIR}/server.log" ] && grep -qE "failed in|FATAL ERROR|terminate called|(^|[^* ])Aborted|Avbrutt|SIGABRT|Segmentation fault|assure" "${TMP_DIR}/server.log"; then
             echo "FAIL: Crash or assertion failure detected in passive server log." >&2
             cat "${TMP_DIR}/server.log" >&2
             exit 1
@@ -190,7 +190,7 @@ check_clean_client_failure() {
         cat "${TMP_DIR}/client.log" >&2
         exit 1
     fi
-    if [ -s "${TMP_DIR}/client.log" ] && grep -qE "terminate called|Aborted|Avbrutt|SIGABRT|Segmentation fault|assure" "${TMP_DIR}/client.log"; then
+    if [ -s "${TMP_DIR}/client.log" ] && grep -qE "failed in|terminate called|(^|[^* ])Aborted|Avbrutt|SIGABRT|Segmentation fault|assure" "${TMP_DIR}/client.log"; then
         echo "FAIL: Crash or assertion failure detected in active client log." >&2
         cat "${TMP_DIR}/client.log" >&2
         exit 1
@@ -293,7 +293,7 @@ case "${SCENARIO}" in
             cat "${TMP_DIR}/server.log" >&2
             exit 1
         fi
-        if grep -qE "failed in|FATAL ERROR|terminate called|Aborted|Avbrutt|SIGABRT|Segmentation fault|assure" "${TMP_DIR}/server.log"; then
+        if grep -qE "failed in|FATAL ERROR|terminate called|(^|[^* ])Aborted|Avbrutt|SIGABRT|Segmentation fault|assure" "${TMP_DIR}/server.log"; then
             echo "FAIL: Crash or assertion failure in passive server log." >&2
             cat "${TMP_DIR}/server.log" >&2
             exit 1

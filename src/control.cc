@@ -577,19 +577,26 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
                              int            controlSocket,
                              const uint64_t measurementID)
 {
-   // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
-   std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
-   while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
-      Flow* flow = *iterator;
-      flow->deactivate(true);
-      iterator++;
-   }
    Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(controlSocket,
                                                                              measurementID);
-   assure(measurement != nullptr);
-   measurement->writeScalarStatistics(getMonotonicMicroTime().value);
+   if(measurement != nullptr) {
+      // ====== Stop flows ==================================================
+      std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+      while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
+         Flow* flow = *iterator;
+         if(flow->getMeasurementID() == measurementID) {
+            flow->deactivate(true);
+         }
+         iterator++;
+      }
+      measurement->writeScalarStatistics(getMonotonicMicroTime().value);
+   }
    FlowManager::getFlowManager()->unlock();
+
+   if(measurement == nullptr) {
+      return false;
+   }
 
    // ====== Tell passive node to stop measurement ==========================
    NetPerfMeterStopMessage stopMsg;
@@ -671,11 +678,11 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       }
    }
 
-   iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+   // ====== Delete flows ===================================================
+   std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
    while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
       Flow* flow = *iterator;
       if(flow->getMeasurementID() == measurementID) {
-         flow->deactivate(false);
          delete flow;
          iterator = FlowManager::getFlowManager()->getFlowSet().begin();
          continue;
