@@ -520,19 +520,26 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
                              int            controlSocket,
                              const uint64_t measurementID)
 {
-   // ====== Stop flows =====================================================
    FlowManager::getFlowManager()->lock();
-   std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
-   while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
-      Flow* flow = *iterator;
-      flow->deactivate(true);
-      iterator++;
-   }
    Measurement* measurement = FlowManager::getFlowManager()->findMeasurement(controlSocket,
                                                                              measurementID);
-   assure(measurement != nullptr);
-   measurement->writeScalarStatistics(getMicroTime());
+   if(measurement != nullptr) {
+      // ====== Stop flows ==================================================
+      std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+      while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
+         Flow* flow = *iterator;
+         if(flow->getMeasurementID() == measurementID) {
+            flow->deactivate(true);
+         }
+         iterator++;
+      }
+      measurement->writeScalarStatistics(getMicroTime());
+   }
    FlowManager::getFlowManager()->unlock();
+
+   if(measurement == nullptr) {
+      return false;
+   }
 
    // ====== Tell passive node to stop measurement ==========================
    NetPerfMeterStopMessage stopMsg;
@@ -567,7 +574,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
                        vectorName.c_str(), controlSocket) << "\n";
       LOG_END
       if(downloadOutputFile(messageReader, controlSocket, vectorName.c_str()) == false) {
-         delete measurement;
+         FlowManager::getFlowManager()->removeAllMeasurements(controlSocket);
          return false;
       }
       LOG_TRACE
@@ -584,7 +591,7 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
                        scalarName.c_str(), controlSocket) << "\n";
       LOG_END
       if(downloadOutputFile(messageReader, controlSocket, scalarName.c_str()) == false) {
-         delete measurement;
+         FlowManager::getFlowManager()->removeAllMeasurements(controlSocket);
          return false;
       }
       LOG_TRACE
@@ -602,7 +609,8 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       if(flow->getMeasurementID() == measurementID) {
          if(sendNetPerfMeterRemoveFlow(messageReader, controlSocket,
                                        measurement, flow) == false) {
-            delete measurement;
+            FlowManager::getFlowManager()->unlock();
+            FlowManager::getFlowManager()->removeAllMeasurements(controlSocket);
             return false;
          }
          LOG_INFO
@@ -611,11 +619,11 @@ bool performNetPerfMeterStop(MessageReader* messageReader,
       }
    }
 
-   iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+   // ====== Delete flows ===================================================
+   std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
    while(iterator != FlowManager::getFlowManager()->getFlowSet().end()) {
       Flow* flow = *iterator;
       if(flow->getMeasurementID() == measurementID) {
-         flow->deactivate(false);
          delete flow;
          iterator = FlowManager::getFlowManager()->getFlowSet().begin();
          continue;
@@ -992,24 +1000,24 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
    bool         success     = false;
    Measurement* measurement =
       FlowManager::getFlowManager()->findMeasurement(controlSocket, measurementID);
-   if(measurement) {
+   if(measurement != nullptr) {
+      FlowManager::getFlowManager()->finishMeasurement(controlSocket, measurementID);
       measurement->lock();
       measurement->writeScalarStatistics(getMicroTime());
       success = measurement->finish(false);
       measurement->unlock();
-   }
 
-   // ====== Remove pointer to Measurement from its flows ===================
-   for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
-      iterator != FlowManager::getFlowManager()->getFlowSet().end();
-      iterator++) {
-      Flow* flow = *iterator;
-      if(flow->getMeasurement() == measurement) {
-         flow->setMeasurement(nullptr);
-         flow->deactivate(true);
+      // ====== Remove pointer to Measurement from its flows ================
+      for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
+         iterator != FlowManager::getFlowManager()->getFlowSet().end();
+         iterator++) {
+         Flow* flow = *iterator;
+         if(flow->getMeasurement() == measurement) {
+            flow->setMeasurement(nullptr);
+            flow->deactivate(true);
+         }
       }
    }
-   FlowManager::getFlowManager()->finishMeasurement(controlSocket, measurementID);
    FlowManager::getFlowManager()->unlock();
 
    // ====== Acknowledge result =============================================

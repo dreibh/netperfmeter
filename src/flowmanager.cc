@@ -423,17 +423,17 @@ void FlowManager::removeAllMeasurements(const int controlSocket)
       }
    }
 
-   // 2. Remove and delete the flows:
+   // 2. Remove and delete all flows belonging to this control socket or its measurements:
    std::vector<Flow*>::iterator flowIterator = FlowSet.begin();
    while(flowIterator != FlowSet.end()) {
       Flow* flow = *flowIterator;
-      if(flow->getControlSocketDescriptor() == controlSocket) {
-         flowIterator = FlowSet.erase(flowIterator);
+      if( (flow->getControlSocketDescriptor() == controlSocket) ||
+          (findMeasurement(controlSocket, flow->getMeasurementID()) != nullptr) ) {
          delete flow;
+         flowIterator = FlowSet.begin();
+         continue;
       }
-      else {
-         flowIterator++;
-      }
+      flowIterator++;
    }
 
    // 3. Remove and delete the measurements:

@@ -269,6 +269,36 @@ FUNCTION(ADD_NETPERFMETER_SERVER_ABORT_TEST TEST_NAME ADDRESS MODE)
 ENDFUNCTION()
 
 
+# ###### Helper for Protocol & Runtime Edge Case Tests ######################
+# ###### Helper for Protocol & Runtime Edge Case Tests ######################
+FUNCTION(ADD_NETPERFMETER_EDGE_CASE_TEST TEST_NAME ADDRESS SCENARIO)
+   GET_NEXT_TEST_PORT(TEST_PORT)
+
+   ADD_TEST(
+      NAME ${TEST_NAME}
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_edge_cases.sh
+         $<TARGET_FILE:netperfmeter>
+         ${TEST_PORT}
+         ${ADDRESS}
+         ${SCENARIO}
+   )
+
+   SET(TEST_LABELS "flow;edge-case;integration")
+   IF(ADDRESS STREQUAL "::1")
+      LIST(APPEND TEST_LABELS "ipv6")
+   ELSE()
+      LIST(APPEND TEST_LABELS "ipv4")
+   ENDIF()
+
+   SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;FAIL:;Avbrutt;Aborted;assure"
+      LABELS "${TEST_LABELS}"
+      TIMEOUT 60
+   )
+ENDFUNCTION()
+
+
 #############################################################################
 #### BASIC CLI OPTIONS                                                   ####
 #############################################################################
@@ -331,6 +361,24 @@ IF (HAVE_QUIC_FOR_TESTS)
    ADD_NETPERFMETER_FAIL_TEST(fail_tls_cert_without_key 9000 --tls-cert nonexistent.crt)
 ENDIF()
 
+
+#############################################################################
+#### UTILITY TOOL TESTS                                                  ####
+#############################################################################
+
+IF(TARGET getabstime)
+   ADD_TEST(
+      NAME util_getabstime_timestamp
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_getabstime.sh
+         $<TARGET_FILE:getabstime>
+   )
+   SET_TESTS_PROPERTIES(util_getabstime_timestamp PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;utility;getabstime"
+      TIMEOUT 15
+   )
+ENDIF()
 
 SET(MODULE_LOADER_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/../netperfmeter-module-loader.versioned")
 IF(NOT EXISTS "${MODULE_LOADER_SCRIPT}")
@@ -2616,4 +2664,48 @@ ENDIF()
 IF (HAVE_MPTCP_FOR_TESTS AND HAVE_SCTP_FOR_TESTS AND HAVE_QUIC_FOR_TESTS)
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_cleanup_concurrent_5clients_all_protocols
       127.0.0.1 concurrent_5clients_all_protocols)
+ENDIF()
+
+
+#############################################################################
+#### PROTOCOL & RUNTIME EDGE CASE TESTS                                  ####
+#############################################################################
+
+# 1. Passive server automatic shutdown upon -runtime expiration
+ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_runtime_expiration
+   127.0.0.1 passive_runtime_expiration)
+
+# 2. Control-channel heartbeat dead-peer timeout on stalled SCTP control socket
+IF (HAVE_SCTP_FOR_TESTS)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_heartbeat_timeout
+      127.0.0.1 control_heartbeat_timeout)
+ENDIF()
+
+# 3. Passive control-protocol disable flags (-Y, -X, -W, -Z)
+ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_disable_ctrl_tcp
+   127.0.0.1 passive_disable_ctrl_tcp)
+
+IF (HAVE_MPTCP_FOR_TESTS)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_disable_ctrl_mptcp
+      127.0.0.1 passive_disable_ctrl_mptcp)
+ENDIF()
+
+IF (HAVE_SCTP_FOR_TESTS)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_disable_ctrl_sctp
+      127.0.0.1 passive_disable_ctrl_sctp)
+ENDIF()
+
+IF (HAVE_QUIC_FOR_TESTS)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_disable_ctrl_quic
+      127.0.0.1 passive_disable_ctrl_quic)
+
+   # 4. QUIC TLS certificate, CA, hostname & PEM error cases
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_quic_tls_corrupt_pem
+      127.0.0.1 quic_tls_corrupt_pem)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_quic_tls_untrusted_ca
+      127.0.0.1 quic_tls_untrusted_ca)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_quic_tls_untrusted_client_cert
+      127.0.0.1 quic_tls_untrusted_client_cert)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_quic_tls_hostname_mismatch
+      127.0.0.1 quic_tls_hostname_mismatch)
 ENDIF()
