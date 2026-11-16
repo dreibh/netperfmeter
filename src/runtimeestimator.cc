@@ -27,7 +27,9 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include <algorithm>
 #include <cctype>
+#include <cerrno>
 #include <chrono>
 #include <clocale>
 #include <cstdint>
@@ -39,7 +41,6 @@
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
-#include <string>
 #include <unistd.h>
 
 #if defined(ENABLE_NLS)
@@ -95,10 +96,26 @@ inline std::string formatText(const std::string_view fmt, const Args&... args)
 }
 
 
+// ###### Parse unsigned integer value ######################################
+static bool parseUnsigned(const char* str, unsigned long& result)
+{
+   while(std::isspace(static_cast<unsigned char>(*str))) {
+      str++;
+   }
+   if((*str == '\0') || (*str == '-')) {
+      return false;
+   }
+   char* endptr = nullptr;
+   errno = 0;
+   result = std::strtoul(str, &endptr, 10);
+   return (endptr != str) && (*endptr == '\0') && (errno != ERANGE);
+}
+
+
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cerr << "RuntimeEstimator" << " " << RUNTIMEESTIMATOR_VERSION << "\n";
+   std::cout << "RuntimeEstimator" << " " << RUNTIMEESTIMATOR_VERSION << "\n";
    std::exit(0);
 }
 
@@ -185,9 +202,9 @@ int main(int argc, char** argv)
 
    // ====== Handle command-line arguments ==================================
    const static struct option long_options[] = {
-      { "help",    no_argument, 0, 'h' },
-      { "version", no_argument, 0, 'v' },
-      {  nullptr,  0,           0, 0   }
+      { "help",    no_argument, nullptr, 'h' },
+      { "version", no_argument, nullptr, 'v' },
+      { nullptr,   0,           nullptr, 0   }
    };
 
    int option;
@@ -196,20 +213,19 @@ int main(int argc, char** argv)
       switch(option) {
          case 'v':
             version();
-          break;
+            break;
          case 'h':
          case '?':
             // Exit with 0 on h/help, exit with 1 on '?' (unknown option):
             usage(argv[0], (option == 'h') ? 0 : 1);
-          break;
+            break;
          case '-':
-          break;
+            break;
          default:
             // This should not happen: wrong getopt parameters, or missing case?
             fprintf(stderr, "INTERNAL ERROR: Unhandled option c=%c code=%x!\n",
                     (isprint(option) ? (char)option : ' '), option);
             return 1;
-          break;
       }
    }
 
@@ -221,32 +237,25 @@ int main(int argc, char** argv)
    const char* totalRunsStr  = argv[optind++];
    const char* currentRunStr = argv[optind++];
 
-   char* endptr;
-   long  value;
-
-   value = strtol(totalRunsStr, &endptr, 10);
-   if( (endptr == totalRunsStr) || (*endptr != 0x00) || (value < 1) ) {
+   unsigned long totalRuns = 0;
+   if(!parseUnsigned(totalRunsStr, totalRuns) || (totalRuns < 1)) {
       // TRANSLATORS: Error message when total_runs argument is invalid or less than 1.
       std::cerr << gettext("ERROR: Invalid total runs parameter (must be >= 1)!") << "\n";
       std::exit(1);
    }
-   const unsigned int totalRuns = (unsigned int)value;
 
-   value = strtol(currentRunStr, &endptr, 10);
-   if( (endptr == currentRunStr) || (*endptr != 0x00) || (value < 0) ) {
+   unsigned long currentRun = 0;
+   if(!parseUnsigned(currentRunStr, currentRun)) {
       // TRANSLATORS: Error message when current_run argument is invalid or negative.
       std::cerr << gettext("ERROR: Invalid current run parameter (must be >= 0)!") << "\n";
       std::exit(1);
    }
-   const unsigned int currentRun = (unsigned int)value;
 
    if(currentRun > totalRuns) {
       // TRANSLATORS: Error message when current_run exceeds total_runs.
       std::cerr << gettext("ERROR: Current run must be less or equal to total runs!") << "\n";
       std::exit(1);
    }
-
-   std::string estimation = "-";
 
    // ====== Initialise (Run 0) =============================================
    if(currentRun == 0) {
@@ -266,6 +275,10 @@ int main(int argc, char** argv)
          std::cerr << formatText(gettext("ERROR: Unable to write timestamp to file <{}>!"), startFileName) << "\n";
          std::exit(1);
       }
+      // TRANSLATORS: Runtime estimation status line on initial run 0. {} is total_runs.
+      std::cout << "\x1b[34m##### "
+                << formatText(gettext("ESTIMATION: - [0 of {} - 0.00%]"), totalRuns)
+                << "\x1b[0m\n";
    }
 
    // ====== Estimate runtime (Run > 0) =====================================
@@ -314,25 +327,21 @@ int main(int argc, char** argv)
          std::chrono::duration_cast<std::chrono::microseconds>(
             estimatedEndTime.time_since_epoch()).count()
       );
-      const double remainingMinutes =
-         std::chrono::duration_cast<std::chrono::duration<double, std::ratio<60>>>(estimatedRuntime).count();
+      const double remainingMinutes = std::max(0.0,
+         std::chrono::duration_cast<std::chrono::duration<double, std::ratio<60>>>(estimatedRuntime).count()
+      );
 
-      // TRANSLATORS: Estimated completion timestamp and remaining duration. Placeholders: {} 1: date/time string, {:04} 2: sub-second fraction (4 digits), {:.2f} 3: remaining minutes.
-      estimation = formatText(gettext("{}.{:04} (in {:.2f} minutes)"),
+      // TRANSLATORS: Runtime estimation status line. Placeholders: {} 1: date/time string, 2: sub-second fraction (4 digits), 3: remaining minutes, 4: current run, 5: total runs, 6: percentage complete.
+      std::cout << "\x1b[34m##### "
+                << formatText(gettext("ESTIMATION: {}.{:04} (in {:.2f} minutes)  [{} of {} - {:.2f}%]"),
                               str,
                               static_cast<unsigned int>((estimatedEndTimeUs % 1000000ULL) / 100ULL),
-                              remainingMinutes);
+                              remainingMinutes,
+                              currentRun,
+                              totalRuns,
+                              (100.0 * static_cast<double>(currentRun)) / static_cast<double>(totalRuns))
+                << "\x1b[0m\n";
    }
-
-   // ====== Print estimation ===============================================
-   // TRANSLATORS: Runtime estimation status line. Placeholders: {} 1: estimated completion time (or "-" on initial run), {} 2: current run, {} 3: total runs, {:.2f} 4: percentage complete.
-   const std::string statusLine = formatText(
-      gettext("ESTIMATION: {} [{} of {} - {:.2f}%]"),
-      estimation,
-      currentRun,
-      totalRuns,
-      (100.0 * currentRun) / static_cast<double>(totalRuns));
-   std::cout << "\x1b[34m##### " << statusLine << "\x1b[0m\n";
 
    return 0;
 }
