@@ -858,7 +858,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cout << "CreateSummary" << " " << CREATESUMMARY_VERSION << "\n";
+   std::cout << "CreateSummary " << CREATESUMMARY_VERSION << "\n";
    exit(0);
 }
 

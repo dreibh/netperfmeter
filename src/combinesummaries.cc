@@ -148,7 +148,7 @@ void addDataFile(OutputFile&         outputFile,
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cout << "CombineSummaries" << " " << COMBINESUMMARIES_VERSION << "\n";
+   std::cout << "CombineSummaries " << COMBINESUMMARIES_VERSION << "\n";
    exit(0);
 }
 

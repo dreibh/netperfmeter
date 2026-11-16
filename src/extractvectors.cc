@@ -235,7 +235,7 @@ static unsigned long long extractVectors(InputFile&               inputFile,
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cout << "ExtractVectors" << " " << EXTRACTVECTORS_VERSION << "\n";
+   std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n";
    exit(0);
 }
 
