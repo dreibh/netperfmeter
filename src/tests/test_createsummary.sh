@@ -31,6 +31,9 @@
 
 set -eu
 
+LC_ALL=C.UTF-8
+export LC_ALL
+
 CREATESUMMARY="${1:-createsummary}"
 TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'npm_createsummary_test')
 
@@ -75,7 +78,7 @@ run_expect_ok() {
     fi
 
     if [ -s "${_err_file}" ]; then
-        echo "FAIL: Unexpected stderr output from '${CREATESUMMARIES:-$CREATESUMMARY} $*':" >&2
+        echo "FAIL: Unexpected stderr output from '${CREATESUMMARY} $*':" >&2
         cat "${_err_file}" >&2
         exit 1
     fi
@@ -173,7 +176,7 @@ cat << EOF > "${CMD_PLAIN}"
 EOF
 
 run_expect_ok "${CMD_PLAIN}" "${TMP_DIR}/plain.out" "${TMP_DIR}/plain.err" \
-    --batch --format plain --compress 0 --separator ";" --line-numbers --split --quiet
+    --batch --format plain --compress 0 --separator ";" --line-numbers --split
 
 if ! grep -q "Wrote 26 lines into 8 files" "${TMP_DIR}/plain.out"; then
     echo "FAIL: Expected 'Wrote 26 lines into 8 files' in stdout." >&2
@@ -393,6 +396,11 @@ for _pair in "bz2:.bz2:bzip2" "gz:.gz:gzip" "xz:.xz:xz" "zst:.zst:zstd"; do
     run_expect_ok "${_cmd_fmt}" "${TMP_DIR}/fmt_${_fmt}.out" "${TMP_DIR}/fmt_${_fmt}.err" \
         -b -F "${_fmt}" -c 1 -q "$(printf 'Protocol\tRate')"
 
+    if [ -s "${TMP_DIR}/fmt_${_fmt}.out" ]; then
+        echo "FAIL: Expected empty stdout when -q/--quiet was passed for ${_fmt}." >&2
+        exit 1
+    fi
+
     _out_file="${_res_fmt}/client.app-TotalBytesSent.data${_ext}"
     if [ ! -s "${_out_file}" ]; then
         echo "FAIL: Expected compressed output '${_out_file}' is missing or empty." >&2
@@ -480,8 +488,8 @@ fi
 # ====== 6. Error recovery (--ignore-scalar-file-errors via stdin + status/log files)
 RES_ERR_IGN="${TMP_DIR}/results_err_ign"
 mkdir -p "${RES_ERR_IGN}"
-STATUS_FILE="${TMP_DIR}/sim.status"
-LOG_FILE="${TMP_DIR}/sim.log"
+STATUS_FILE="${SIM_DIR}/sim.status"
+LOG_FILE="${SIM_DIR}/sim.log"
 printf "running\n" >"${STATUS_FILE}"
 printf "simulation log\n" >"${LOG_FILE}"
 
@@ -490,8 +498,8 @@ cat << EOF > "${CMD_ERR_IGN}"
 --simulationsdirectory=${SIM_DIR}
 --resultsdirectory=${RES_ERR_IGN}
 --ignore-scalar-file-errors
---logfile=${LOG_FILE}
---statusfile=${STATUS_FILE}
+--logfile=sim.log
+--statusfile=sim.status
 --values=BAD
 --input=non_existent.sca
 --values=GOOD

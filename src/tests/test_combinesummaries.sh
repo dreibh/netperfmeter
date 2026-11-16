@@ -31,6 +31,9 @@
 
 set -eu
 
+LC_ALL=C.UTF-8
+export LC_ALL
+
 COMBINESUMMARIES="${1:-combinesummaries}"
 TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'npm_combinesummaries_test')
 
@@ -138,7 +141,7 @@ TBL_EMPTY="${SIM_DIR}/empty.data"
 TBL_HEADER_ONLY="${SIM_DIR}/header_only.data"
 printf "RunNo\tThroughput\n" >"${TBL_HEADER_ONLY}"
 
-# ====== 2. Combine tables without line numbers (default TSV, verbose stdout, CRLF & blank stdin lines)
+# ====== 2. Combine tables in default batch mode (redirected stdin -> isatty() == 0)
 OUT_DEFAULT="${TMP_DIR}/combined_default.data"
 CMD_DEFAULT="${TMP_DIR}/cmd_default.txt"
 printf -- '--simulationsdirectory=%s\r\n\r\n--varnames="Protocol\tRate"\r\n--values="TCP\t10"\r\n--input=part1.data\r\n\n--values="UDP\t20"\r\n--input=part2.data\r\n' \
@@ -146,8 +149,14 @@ printf -- '--simulationsdirectory=%s\r\n\r\n--varnames="Protocol\tRate"\r\n--val
 
 run_expect_ok "${CMD_DEFAULT}" "${TMP_DIR}/def.out" "${TMP_DIR}/def.err" "${OUT_DEFAULT}"
 
-if ! grep -q "Ready> " "${TMP_DIR}/def.out"; then
-    echo "FAIL: Expected 'Ready> ' interactive prompts on stdout without -q." >&2
+if ! grep -q "Interactive Mode  = off" "${TMP_DIR}/def.out"; then
+    echo "FAIL: Expected 'Interactive Mode  = off' when stdin is not a tty." >&2
+    cat "${TMP_DIR}/def.out" >&2
+    exit 1
+fi
+
+if ! grep -q "Processing input \.\.\." "${TMP_DIR}/def.out"; then
+    echo "FAIL: Expected 'Processing input ...' in non-quiet batch mode." >&2
     cat "${TMP_DIR}/def.out" >&2
     exit 1
 fi
@@ -188,7 +197,43 @@ perl -e '
     exit 0;
 ' "${OUT_DEFAULT}"
 
-# ====== 3. Combine tables with line numbers (-l), custom separator (-s ";"), quiet (-q), positional varnames
+# ====== 3. Interactive mode (-i / --interactive) prompts & error resilience ====
+OUT_INTER="${TMP_DIR}/combined_inter.data"
+CMD_INTER="${TMP_DIR}/cmd_inter.txt"
+printf -- '--simulationsdirectory=%s\n\n--bogus-interactive-command\n--varnames="Protocol"\n--values="TCP"\n--input=part1.data\n' \
+    "${SIM_DIR}" > "${CMD_INTER}"
+
+if ! "${COMBINESUMMARIES}" -i "${OUT_INTER}" <"${CMD_INTER}" \
+    >"${TMP_DIR}/inter.out" 2>"${TMP_DIR}/inter.err"; then
+    echo "FAIL: Interactive mode (-i) should survive invalid stdin command." >&2
+    cat "${TMP_DIR}/inter.err" >&2
+    exit 1
+fi
+
+if ! grep -q "Interactive Mode  = on" "${TMP_DIR}/inter.out"; then
+    echo "FAIL: Expected 'Interactive Mode  = on' with -i." >&2
+    cat "${TMP_DIR}/inter.out" >&2
+    exit 1
+fi
+
+if ! grep -q "Ready> " "${TMP_DIR}/inter.out"; then
+    echo "FAIL: Expected 'Ready> ' interactive prompts on stdout with -i." >&2
+    cat "${TMP_DIR}/inter.out" >&2
+    exit 1
+fi
+
+if ! grep -q 'ERROR: Invalid command "--bogus-interactive-command"!' "${TMP_DIR}/inter.err"; then
+    echo "FAIL: Expected invalid command error on stderr in interactive mode." >&2
+    cat "${TMP_DIR}/inter.err" >&2
+    exit 1
+fi
+
+if [ ! -s "${OUT_INTER}" ]; then
+    echo "FAIL: Interactive mode did not write output file." >&2
+    exit 1
+fi
+
+# ====== 4. Combine tables with line numbers (-l), custom separator (-s ";"), quiet (-q), positional varnames
 OUT_LINENUM="${TMP_DIR}/combined_linenum.csv"
 CMD_LINENUM="${TMP_DIR}/cmd_linenum.txt"
 cat << EOF > "${CMD_LINENUM}"
@@ -249,7 +294,7 @@ if ! head -n 1 "${OUT_NOLINE}" | grep -qx "Protocol;Rate;RunNo;Throughput"; then
     exit 1
 fi
 
-# ====== 4. Edge cases: empty file, header-only file, escaped quotes & default compression
+# ====== 5. Edge cases: empty file, header-only file, escaped quotes & default compression
 OUT_EDGE="${TMP_DIR}/combined_edge.data"
 CMD_EDGE="${TMP_DIR}/cmd_edge.txt"
 printf -- '--simulationsdirectory=%s\n--varnames="Protocol\tNote"\n--values="NONE\t\\"empty\\""\n--input=empty.data\n--values="HDR\t\\"only\\""\n--input=header_only.data\n--values="TCP\t\\"ok\\""\n--input=part1.data\n' \
@@ -281,7 +326,7 @@ perl -e '
     exit 0;
 ' "${OUT_EDGE}"
 
-# ====== 5. Compression formats round-trip (.gz, .bz2, .xz, .zst) ===========
+# ====== 6. Compression formats round-trip (.gz, .bz2, .xz, .zst) ===========
 for _ext in gz bz2 xz zst; do
     _out_comp="${TMP_DIR}/combined.data.${_ext}"
     run_expect_ok "${CMD_DEFAULT}" "${TMP_DIR}/comp_${_ext}.out" "${TMP_DIR}/comp_${_ext}.err" \
@@ -326,7 +371,7 @@ for _pair in "gz:gzip" "bz2:bzip2" "xz:xz" "zst:zstd"; do
     fi
 done
 
-# ====== 6. Negative / error handling tests ================================
+# ====== 7. Negative / error handling tests ================================
 EMPTY_STDIN="${TMP_DIR}/empty_stdin.txt"
 : >"${EMPTY_STDIN}"
 
@@ -370,7 +415,7 @@ run_expect_fail "${CMD_CONSECUTIVE_INPUT}" 'ERROR: No values given \(parameter -
 # Invalid stdin command
 CMD_BAD_CMD="${TMP_DIR}/cmd_bad_cmd.txt"
 printf -- "--invalid-directive=123\n" >"${CMD_BAD_CMD}"
-run_expect_fail "${CMD_BAD_CMD}" "ERROR: Invalid command!" \
+run_expect_fail "${CMD_BAD_CMD}" 'ERROR: Invalid command "--invalid-directive=123"!' \
     -q "${TMP_DIR}/out.data" "Var1"
 
 # Non-existent input file
