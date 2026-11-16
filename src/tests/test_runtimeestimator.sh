@@ -31,6 +31,9 @@
 
 set -eu
 
+LC_ALL=C.UTF-8
+export LC_ALL
+
 RUNTIMEESTIMATOR="${1:-runtimeestimator}"
 TMP_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'npm_runtimeestimator_test')
 
@@ -286,6 +289,31 @@ SINGLE_FILE="${TMP_DIR}/single.dat"
 run_expect_ok "${TMP_DIR}/single0.out" "${TMP_DIR}/single0.err" "${SINGLE_FILE}" 1 0
 run_expect_ok "${TMP_DIR}/single1.out" "${TMP_DIR}/single1.err" "${SINGLE_FILE}" 1 1
 
+perl -e '
+    use strict;
+    use warnings;
+
+    my ($f0, $f1) = @ARGV;
+    open(my $fh0, "<", $f0) or die "Cannot open $f0: $!\n";
+    chomp(my $l0 = <$fh0>);
+    close($fh0);
+    $l0 =~ s/\e\[[0-9;]*m//g;
+    if ($l0 ne "##### ESTIMATION: - [0 of 1 - 0.00%]") {
+        warn "FAIL: Unexpected single run 0 output: \x27$l0\x27\n";
+        exit 1;
+    }
+
+    open(my $fh1, "<", $f1) or die "Cannot open $f1: $!\n";
+    chomp(my $l1 = <$fh1>);
+    close($fh1);
+    $l1 =~ s/\e\[[0-9;]*m//g;
+    if ($l1 !~ /\A##### ESTIMATION: \d{2}-[A-Za-z]{3}-\d{4} \d{2}:\d{2}:\d{2}\.\d{4} \(in 0\.00 minutes\)  \[1 of 1 - 100\.00%\]\z/) {
+        warn "FAIL: Unexpected single run 1 output: \x27$l1\x27\n";
+        exit 1;
+    }
+    exit 0;
+' "${TMP_DIR}/single0.out" "${TMP_DIR}/single1.out"
+
 # ====== 6. Negative / error handling tests ================================
 # Missing / wrong argument counts
 run_expect_fail "Usage:"
@@ -302,13 +330,19 @@ run_expect_fail "Usage:" "${START_FILE}" 10 -1
 # Invalid total_runs (must be >= 1; "--" terminates option parsing for "-5")
 run_expect_fail "ERROR: Invalid total runs parameter" "${START_FILE}" 0 0
 run_expect_fail "ERROR: Invalid total runs parameter" "${START_FILE}" -- -5 0
+run_expect_fail "ERROR: Invalid total runs parameter" "${START_FILE}" "" 0
+run_expect_fail "ERROR: Invalid total runs parameter" "${START_FILE}" "   " 0
 run_expect_fail "ERROR: Invalid total runs parameter" "${START_FILE}" abc 0
 run_expect_fail "ERROR: Invalid total runs parameter" "${START_FILE}" 10abc 0
+run_expect_fail "ERROR: Invalid total runs parameter" "${START_FILE}" 999999999999999999999999999999 0
 
 # Invalid current_run (must be >= 0; "--" terminates option parsing for "-1")
 run_expect_fail "ERROR: Invalid current run parameter" "${START_FILE}" 10 -- -1
+run_expect_fail "ERROR: Invalid current run parameter" "${START_FILE}" 10 ""
+run_expect_fail "ERROR: Invalid current run parameter" "${START_FILE}" 10 "   "
 run_expect_fail "ERROR: Invalid current run parameter" "${START_FILE}" 10 xyz
 run_expect_fail "ERROR: Invalid current run parameter" "${START_FILE}" 10 1xyz
+run_expect_fail "ERROR: Invalid current run parameter" "${START_FILE}" 10 999999999999999999999999999999
 
 # current_run > total_runs
 run_expect_fail "ERROR: Current run must be less or equal to total runs" "${START_FILE}" 10 11
@@ -319,7 +353,11 @@ run_expect_fail "ERROR: Unable to create file" "${TMP_DIR}/no_such_subdir/runtim
 # Non-existent start file on run > 0
 run_expect_fail "ERROR: Unable to open file" "${TMP_DIR}/does_not_exist.dat" 10 1
 
-# Truncated / empty start file (< 8 bytes) on run > 0
+# Empty (0-byte) and truncated (< 8 bytes) start files on run > 0
+EMPTY_FILE="${TMP_DIR}/empty.dat"
+: >"${EMPTY_FILE}"
+run_expect_fail "ERROR: Unable to read timestamp from file" "${EMPTY_FILE}" 10 1
+
 TRUNC_FILE="${TMP_DIR}/truncated.dat"
 printf "1234" >"${TRUNC_FILE}"
 run_expect_fail "ERROR: Unable to read timestamp from file" "${TRUNC_FILE}" 10 1
