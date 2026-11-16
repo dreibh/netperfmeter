@@ -115,7 +115,7 @@ static bool parseUnsigned(const char* str, unsigned long& result)
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cout << "RuntimeEstimator" << " " << RUNTIMEESTIMATOR_VERSION << "\n";
+   std::cout << "RuntimeEstimator " << RUNTIMEESTIMATOR_VERSION << "\n";
    std::exit(0);
 }
 

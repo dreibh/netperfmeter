@@ -160,8 +160,8 @@ static MessageReader gMessageReader;
 // ###### Version ###########################################################
 [[ noreturn ]] static void version()
 {
-   std::cerr << "NetPerfMeter " << PROJECT_VERSION << "\n";
-   exit(0);
+   std::cout << "NetPerfMeter " << PROJECT_VERSION << "\n";
+   std::exit(0);
 }
 
 
