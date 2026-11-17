@@ -508,6 +508,25 @@ bool setPort(struct sockaddr* address, uint16_t port)
 }
 
 
+// ###### Resolve socket address family #####################################
+static int resolveSocketFamily(const int             family,
+                               const int             protocol,
+                               const unsigned int    localAddresses,
+                               const sockaddr_union* localAddressArray)
+{
+   int socketFamily = family;
+   if(socketFamily == AF_UNSPEC) {
+      socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
+      if((localAddresses >= 1) && (localAddressArray != nullptr) &&
+         (protocol != IPPROTO_SCTP) &&
+         (localAddressArray[0].sa.sa_family == AF_INET)) {
+         socketFamily = AF_INET;
+      }
+   }
+   return socketFamily;
+}
+
+
 // ###### Create socket #####################################################
 int createSocket(const int             family,
                  const int             type,
@@ -515,22 +534,8 @@ int createSocket(const int             family,
                  const unsigned int    localAddresses,
                  const sockaddr_union* localAddressArray)
 {
-   int socketFamily = family;
-   if(socketFamily == AF_UNSPEC) {
-      socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
-      if((localAddresses == 1) && (protocol != IPPROTO_SCTP) &&
-         (localAddressArray[0].sa.sa_family == AF_INET)) {
-         socketFamily = AF_INET;
-      }
-   }
-
-#if defined(HAVE_MPTCP)
-   if((protocol == IPPROTO_MPTCP) && (localAddresses > 1)) {
-      // TRANSLATORS: Warning about multipath TCP limitations when multiple local addresses are provided.
-      std::cerr << gettext("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...") << "\n";
-   }
-#endif
-
+   const int socketFamily = resolveSocketFamily(family, protocol,
+                                                localAddresses, localAddressArray);
    return ext_socket(socketFamily, type, protocol);
 }
 
@@ -547,15 +552,8 @@ int bindSocket(const int             sd,
                const bool            bindV6Only)
 {
    unsigned int localAddressCount = localAddresses;
-
-   int socketFamily = family;
-   if(socketFamily == AF_UNSPEC) {
-      socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
-      if((localAddresses == 1) && (protocol != IPPROTO_SCTP) &&
-         (localAddressArray[0].sa.sa_family == AF_INET)) {
-         socketFamily = AF_INET;
-      }
-   }
+   const int    socketFamily      = resolveSocketFamily(family, protocol,
+                                                        localAddresses, localAddressArray);
 
    sockaddr_union anyAddress;
    memset(&anyAddress, 0, sizeof(anyAddress));
@@ -615,6 +613,7 @@ int bindSocket(const int             sd,
       else {
 #endif
          sockaddr_union localAddress;
+         memset(&localAddress, 0, sizeof(localAddress));
          if(localAddressArray[0].sa.sa_family == AF_INET) {
             memcpy(&localAddress, &localAddressArray[0].in, sizeof(sockaddr_in));
             localAddress.in.sin_port = htobe16(localPort);
