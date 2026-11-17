@@ -344,10 +344,6 @@ static bool handleGlobalParameters(int argc, char** argv)
          case 'X':
 #if defined(HAVE_SCTP)
             gPassiveControlSCTP    = false;
-#else
-            // TRANSLATORS: Error message when SCTP protocol support was disabled at compile time.
-            std::cerr << gettext("ERROR: SCTP support is not compiled in!") << "\n";
-            exit(1);
 #endif
           break;
          case 'y':
@@ -389,10 +385,6 @@ static bool handleGlobalParameters(int argc, char** argv)
          case 'Z':
 #if defined(HAVE_QUIC)
             gPassiveControlQUIC    = false;
-#else
-            // TRANSLATORS: Error message when QUIC protocol support was disabled at compile time.
-            std::cerr << gettext("ERROR: QUIC support is not compiled in!") << "\n";
-            exit(1);
 #endif
           break;
          case 'L':
