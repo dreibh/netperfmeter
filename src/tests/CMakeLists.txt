@@ -3067,10 +3067,12 @@ IF (HAVE_QUIC_FOR_TESTS)
 ENDIF()
 
 # 4. Passive control-protocol disable flags (-Y, -X, -W, -Z)
-ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_disable_ctrl_tcp
-   127.0.0.1 passive_disable_ctrl_tcp)
+IF (HAVE_SCTP_FOR_TESTS)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_disable_ctrl_tcp
+      127.0.0.1 passive_disable_ctrl_tcp)
+ENDIF()
 
-IF (HAVE_MPTCP_FOR_TESTS)
+IF (HAVE_MPTCP_FOR_TESTS AND HAVE_SCTP_FOR_TESTS)
    ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_disable_ctrl_mptcp
       127.0.0.1 passive_disable_ctrl_mptcp)
 ENDIF()
