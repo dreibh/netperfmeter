@@ -346,18 +346,30 @@ ADD_NETPERFMETER_FAIL_TEST(fail_invalid_control_local_addr 9000 -l 999.999.999.9
 ADD_NETPERFMETER_FAIL_TEST(fail_invalid_remote_port 127.0.0.1:0 -tcp default)
 ADD_NETPERFMETER_FAIL_TEST(fail_invalid_remote_host invalid..hostname.example:9000 -tcp default)
 
+# Unwritable log file paths must exit with code 1
+ADD_NETPERFMETER_FAIL_TEST(fail_invalid_logfile_path   127.0.0.1:9000 --logfile /nonexistent_dir_xyz/test.log -tcp default)
+ADD_NETPERFMETER_FAIL_TEST(fail_invalid_logappend_path 127.0.0.1:9000 --logappend /nonexistent_dir_xyz/test.log -tcp default)
+
 # Invalid FLOWSPEC syntax, unknown options, probabilities, onoff=...,repeat, and duplicate IDs
-ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_syntax       127.0.0.1:9000 -tcp invalid_spec)
-ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_unknown_option     127.0.0.1:9000 -tcp const10:const1000:const10:const1000:unknownopt=1)
-ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_ordered    127.0.0.1:9000 -tcp const10:const1000:const10:const1000:ordered=1.5)
-ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_reliable   127.0.0.1:9000 -tcp const10:const1000:const10:const1000:reliable=-0.1)
-ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_onoff_repeat 127.0.0.1:9000 -tcp const10:const1000:const10:const1000:onoff=1,2,3,repeat)
-ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_duplicate_id       127.0.0.1:9000 -tcp const10:const1000:const10:const1000:id=1 -tcp const10:const1000:const10:const1000:id=1)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_syntax          127.0.0.1:9000 -tcp invalid_spec)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_unknown_option        127.0.0.1:9000 -tcp const10:const1000:const10:const1000:unknownopt=1)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_ordered       127.0.0.1:9000 -tcp const10:const1000:const10:const1000:ordered=1.5)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_reliable      127.0.0.1:9000 -tcp const10:const1000:const10:const1000:reliable=-0.1)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_onoff_repeat    127.0.0.1:9000 -tcp const10:const1000:const10:const1000:onoff=1,2,3,repeat)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_onoff_repeat_nonrel     127.0.0.1:9000 -tcp const10:const1000:const10:const1000:onoff=1,2,repeat)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_duplicate_id          127.0.0.1:9000 -tcp const10:const1000:const10:const1000:id=1 -tcp const10:const1000:const10:const1000:id=1)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_cmt             127.0.0.1:9000 -tcp const10:const1000:const10:const1000:cmt=invalid)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_ccid            127.0.0.1:9000 -tcp const10:const1000:const10:const1000:ccid=invalid)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_nodelay         127.0.0.1:9000 -tcp const10:const1000:const10:const1000:nodelay=invalid)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_debug           127.0.0.1:9000 -tcp const10:const1000:const10:const1000:debug=invalid)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_error_on_abort  127.0.0.1:9000 -tcp const10:const1000:const10:const1000:error_on_abort=invalid)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_cc_too_long             127.0.0.1:9000 -tcp const10:const1000:const10:const1000:cc=abcdefghijklmnopqrstuvwxyz0123456789)
 
 IF (HAVE_QUIC_FOR_TESTS)
-   # Mismatched TLS private key / certificate options must exit with code 1
+   # Mismatched TLS private key / certificate options and unsupported QUIC CC must exit with code 1
    ADD_NETPERFMETER_FAIL_TEST(fail_tls_key_without_cert 9000 --tls-key nonexistent.key)
    ADD_NETPERFMETER_FAIL_TEST(fail_tls_cert_without_key 9000 --tls-cert nonexistent.crt)
+   ADD_NETPERFMETER_FAIL_TEST(fail_quic_invalid_cc      127.0.0.1:9000 -quic default:cc=bbr)
 ENDIF()
 
 
@@ -579,13 +591,21 @@ ADD_NETPERFMETER_FLOW_TEST(flow_udp_framing_asymmetric 127.0.0.1 udp const10:con
 ADD_NETPERFMETER_FLOW_TEST(flow_udp_defragtimeout      127.0.0.1 udp const10:const4000:const10:const4000:maxmsgsize=1000:defragtimeout=2500 plain 2)
 
 # ====== 8. CLI Flags & Per-Flow Option Overrides ===========================
-# Local data & control endpoint binding (-L / -l) over IPv4 and IPv6
+# Local data & control endpoint binding (-L / -l) over IPv4, IPv6, comma-separated list, and UDP
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_local_bind_ipv4
    127.0.0.1 tcp const10:const1000:const10:const1000 plain 2
    -L 127.0.0.1 -l 127.0.0.1 --server-arg -L --server-arg 127.0.0.1 --server-arg -l --server-arg 127.0.0.1)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_local_bind_ipv6
    ::1 tcp const10:const1000:const10:const1000 plain 2
    -L ::1 -l ::1 --server-arg -L --server-arg ::1 --server-arg -l --server-arg ::1)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_multi_local_bind_ipv4
+   127.0.0.1 tcp const10:const1000:const10:const1000 plain 2
+   -L 127.0.0.1,127.0.0.1 -l 127.0.0.1,127.0.0.1
+   --server-arg -L --server-arg 127.0.0.1,127.0.0.1
+   --server-arg -l --server-arg 127.0.0.1,127.0.0.1)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_local_bind_ipv4
+   127.0.0.1 udp const10:const1000:const10:const1000 plain 2
+   -L 127.0.0.1 -l 127.0.0.1 --server-arg -L --server-arg 127.0.0.1 --server-arg -l --server-arg 127.0.0.1)
 
 # IPv6-only mode (-6 / --v6only) on CLI and per-flow v6only option
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_v6only_cli
@@ -606,7 +626,7 @@ ADD_NETPERFMETER_FLOW_TEST(flow_tcp_global_buffers
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_perflow_buffers
    127.0.0.1 tcp const10:const1000:const10:const1000:sndbuf=65536:rcvbuf=65536 plain 2)
 
-# Custom flow id=, description=, congestion control cc=, and nodelay=off
+# Custom flow id=, description=, congestion control cc=, nodelay=off, and debug=on/off
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_custom_id_description
    127.0.0.1 tcp const10:const1000:const10:const1000:id=42:description=CustomFlow42 plain 2
    --expect-config "CustomFlow42")
@@ -614,6 +634,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_tcp_cc_cubic
    127.0.0.1 tcp const10:const1000:const10:const1000:cc=cubic plain 2)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_nodelay_off
    127.0.0.1 tcp const10:const1000:const10:const1000:nodelay=off plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_debug_on_off
+   127.0.0.1 tcp const10:const1000:const10:const1000:debug=on plain 2
+   -tcp const10:const1000:const10:const1000:debug=off)
 
 # Node names (-A / -P), control heartbeats, logging levels/colors/files, and display flags
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_node_names_and_heartbeats
@@ -1304,11 +1327,19 @@ ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_upload_ipv6 ::1       mptcp const10:const1
 ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_download_ipv4 127.0.0.1 mptcp const0:const0:const10:const1000 plain)
 ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_download_ipv6 ::1       mptcp const0:const0:const10:const1000 plain)
 
-# ====== 4. Default Shorthand, Control Channel Over MPTCP & cmt=mptcp =======
+# ====== 4. Default Shorthand, Control Channel Over MPTCP & Local Bind ======
 ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_default_shorthand
    127.0.0.1 mptcp default plain 2)
 ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_cc_cubic
    127.0.0.1 mptcp const10:const1000:const10:const1000:cc=cubic plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_local_bind_ipv4
+   127.0.0.1 mptcp const10:const1000:const10:const1000 plain 2
+   -L 127.0.0.1 -l 127.0.0.1
+   --server-arg -L --server-arg 127.0.0.1 --server-arg -l --server-arg 127.0.0.1)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_local_bind_ipv6
+   ::1 mptcp const10:const1000:const10:const1000 plain 2
+   -L ::1 -l ::1
+   --server-arg -L --server-arg ::1 --server-arg -l --server-arg ::1)
 
 # Control channel using MPTCP with MPTCP data flow
 ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_ctrl_mptcp_bidi_ipv4
@@ -1673,6 +1704,10 @@ ADD_NETPERFMETER_FLOW_TEST(flow_sctp_local_bind_ipv4
    127.0.0.1 sctp const10:const1000:const10:const1000 plain 2
    -L 127.0.0.1 -l 127.0.0.1
    --server-arg -L --server-arg 127.0.0.1 --server-arg -l --server-arg 127.0.0.1)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_local_bind_ipv6
+   ::1 sctp const10:const1000:const10:const1000 plain 2
+   -L ::1 -l ::1
+   --server-arg -L --server-arg ::1 --server-arg -l --server-arg ::1)
 
 # Control channel using SCTP with SCTP data flow
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ctrl_sctp_bidi_ipv4 127.0.0.1 sctp const10:const1000:const10:const1000 plain 2 --control-over-sctp)
@@ -2162,16 +2197,36 @@ IF (HAVE_QUIC_FOR_TESTS)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_bidi_ipv4 127.0.0.1 quic const10:const1000:const10:const1000 plain 3)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_bidi_ipv6 ::1       quic const10:const1000:const10:const1000 plain 3)
 
-# ====== 2. Server-Only TLS Authentication, Default Shorthand & CC ==========
+# ====== 2. Server-Only TLS Authentication, Default Shorthand, CC & Bind ====
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_server_auth_only_ipv4 127.0.0.1 quic const10:const1000:const10:const1000 plain 3 --no-mtls)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_server_auth_only_ipv6 ::1       quic const10:const1000:const10:const1000 plain 3 --no-mtls)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_default_shorthand     127.0.0.1 quic default plain 3)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_cc_cubic              127.0.0.1 quic const10:const1000:const10:const1000:cc=cubic plain 3)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_cc_reno               127.0.0.1 quic const10:const1000:const10:const1000:cc=reno plain 3)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_local_bind_ipv4
+   127.0.0.1 quic const10:const1000:const10:const1000 plain 3
+   -L 127.0.0.1 -l 127.0.0.1
+   --server-arg -L --server-arg 127.0.0.1 --server-arg -l --server-arg 127.0.0.1)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_local_bind_ipv6
+   ::1 quic const10:const1000:const10:const1000 plain 3
+   -L ::1 -l ::1
+   --server-arg -L --server-arg ::1 --server-arg -l --server-arg ::1)
 
 # ====== 3. Unidirectional QUIC Flows =======================================
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_upload_ipv4   127.0.0.1 quic const10:const1000:const0:const0 plain 3)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_upload_ipv6   ::1       quic const10:const1000:const0:const0 plain 3)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_download_ipv4 127.0.0.1 quic const0:const0:const10:const1000 plain 3)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_download_ipv6 ::1       quic const0:const0:const10:const1000 plain 3)
+
+# ====== 3b. Compression Formats, Output Suppression & Defragtimeout ========
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_format_gz     127.0.0.1 quic const10:const1000:const10:const1000 gz 3)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_format_bz2    127.0.0.1 quic const10:const1000:const10:const1000 bz2 3)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_format_xz     127.0.0.1 quic const10:const1000:const10:const1000 xz 3)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_format_zst    127.0.0.1 quic const10:const1000:const10:const1000 zst 3)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_no_scalar     127.0.0.1 quic const10:const1000:const10:const1000 plain 3 --no-scalar)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_no_vector     127.0.0.1 quic const10:const1000:const10:const1000 plain 3 --no-vector)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_no_outputs    127.0.0.1 quic const10:const1000:const10:const1000 plain 3 --no-scalar --no-vector)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_defragtimeout 127.0.0.1 quic const10:const4000:const10:const4000:maxmsgsize=1000:defragtimeout=2500 plain 3)
 
 # ====== 4. Homogeneous Multi-Connection QUIC Tests (Multiple Sockets) ======
 # 2 concurrent QUIC connections over IPv4 (2x 10 fps, 1000 B)
@@ -2282,6 +2337,17 @@ IF (HAVE_SCTP_FOR_TESTS AND HAVE_MPTCP_FOR_TESTS)
       127.0.0.1 quic const10:const1000:const10:const1000 plain 5
       -mptcp const10:const1000:const10:const1000
       -sctp  const10:const1000:const10:const1000
+      -tcp   const10:const1000:const10:const1000
+      -udp   const10:const1000:const10:const1000)
+ENDIF()
+
+IF (HAVE_SCTP_FOR_TESTS AND HAVE_MPTCP_FOR_TESTS AND HAVE_DCCP_FOR_TESTS)
+   # Full 6-protocol concurrency (QUIC + MPTCP + SCTP + DCCP + TCP + UDP) - 5s
+   ADD_NETPERFMETER_FLOW_TEST(flow_multi_all_6_protocols_concurrent
+      127.0.0.1 quic const10:const1000:const10:const1000 plain 5
+      -mptcp const10:const1000:const10:const1000
+      -sctp  const10:const1000:const10:const1000
+      -dccp  const10:const1000:const10:const1000
       -tcp   const10:const1000:const10:const1000
       -udp   const10:const1000:const10:const1000)
 ENDIF()
@@ -2579,6 +2645,11 @@ ADD_NETPERFMETER_FLOW_TEST(flow_dccp_local_bind_ipv4
 IF (HAVE_SCTP_FOR_TESTS)
    ADD_NETPERFMETER_FLOW_TEST(flow_dccp_ctrl_sctp_bidi_ipv4
       127.0.0.1 dccp const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+ENDIF()
+
+IF (HAVE_MPTCP_FOR_TESTS)
+   ADD_NETPERFMETER_FLOW_TEST(flow_dccp_ctrl_mptcp_bidi_ipv4
+      127.0.0.1 dccp const10:const1000:const10:const1000 plain 2 --control-over-mptcp)
 ENDIF()
 
 IF (HAVE_QUIC_FOR_TESTS)
@@ -2946,6 +3017,24 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2connections_saturated
 ENDIF()
 
 
+# ====== 5. Saturated DCCP Flows with Multi-Message Framing =================
+IF (HAVE_DCCP_FOR_TESTS)
+
+# Saturated DCCP bidirectional transfer: 16 KB frames fragmented into 1,400 B chunks
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_saturated_large_frames
+   127.0.0.1 dccp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3)
+
+# Saturated DCCP transfer with 64 KB jumbo frames fragmented into 1,400 B chunks
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_saturated_jumbo_frames
+   127.0.0.1 dccp const0:const65536:const0:const65536:maxmsgsize=1400 plain 3)
+
+# Saturated upload-only DCCP with large framed messages
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_saturated_upload_segmented
+   127.0.0.1 dccp const0:const32000:const0:const0:maxmsgsize=1400 plain 3)
+
+ENDIF()
+
+
 #############################################################################
 #### MID-SESSION SERVER ABORT REGRESSION TESTS                           ####
 #############################################################################
@@ -3040,13 +3129,25 @@ ENDIF()
 ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_runtime_expiration
    127.0.0.1 passive_runtime_expiration)
 
-# 2. Control-channel heartbeat dead-peer timeout on stalled SCTP control socket
+# 2. Graceful SIGINT interruption of active client mid-measurement
+ADD_NETPERFMETER_EDGE_CASE_TEST(edge_active_sigint_graceful_stop
+   127.0.0.1 active_sigint_graceful_stop)
+
+# 3. Control-channel mid-measurement abort / dead-peer timeout tests
+ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_tcp_abort
+   127.0.0.1 control_tcp_abort)
+
 IF (HAVE_SCTP_FOR_TESTS)
    ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_heartbeat_timeout
       127.0.0.1 control_heartbeat_timeout)
 ENDIF()
 
-# 3. Passive control-protocol disable flags (-Y, -X, -W, -Z)
+IF (HAVE_QUIC_FOR_TESTS)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_quic_abort
+      127.0.0.1 control_quic_abort)
+ENDIF()
+
+# 4. Passive control-protocol disable flags (-Y, -X, -W, -Z)
 ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_disable_ctrl_tcp
    127.0.0.1 passive_disable_ctrl_tcp)
 
@@ -3064,7 +3165,7 @@ IF (HAVE_QUIC_FOR_TESTS)
    ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_disable_ctrl_quic
       127.0.0.1 passive_disable_ctrl_quic)
 
-   # 4. QUIC TLS certificate, CA, hostname & PEM error cases
+   # 5. QUIC TLS certificate, CA, hostname & PEM error cases
    ADD_NETPERFMETER_EDGE_CASE_TEST(edge_quic_tls_corrupt_pem
       127.0.0.1 quic_tls_corrupt_pem)
    ADD_NETPERFMETER_EDGE_CASE_TEST(edge_quic_tls_untrusted_ca
