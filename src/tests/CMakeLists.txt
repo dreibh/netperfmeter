@@ -600,9 +600,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_tcp_local_bind_ipv6
    -L ::1 -l ::1 --server-arg -L --server-arg ::1 --server-arg -l --server-arg ::1)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_multi_local_bind_ipv4
    127.0.0.1 tcp const10:const1000:const10:const1000 plain 2
-   -L 127.0.0.1,127.0.0.1 -l 127.0.0.1,127.0.0.1
-   --server-arg -L --server-arg 127.0.0.1,127.0.0.1
-   --server-arg -l --server-arg 127.0.0.1,127.0.0.1)
+   -L 127.0.0.1,::1 -l 127.0.0.1,::1
+   --server-arg -L --server-arg 127.0.0.1,::1
+   --server-arg -l --server-arg 127.0.0.1,::1)
 ADD_NETPERFMETER_FLOW_TEST(flow_udp_local_bind_ipv4
    127.0.0.1 udp const10:const1000:const10:const1000 plain 2
    -L 127.0.0.1 -l 127.0.0.1 --server-arg -L --server-arg 127.0.0.1 --server-arg -l --server-arg 127.0.0.1)
@@ -1708,6 +1708,10 @@ ADD_NETPERFMETER_FLOW_TEST(flow_sctp_local_bind_ipv6
    ::1 sctp const10:const1000:const10:const1000 plain 2
    -L ::1 -l ::1
    --server-arg -L --server-arg ::1 --server-arg -l --server-arg ::1)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multihomed_local_bind
+   ::1 sctp const10:const1000:const10:const1000 plain 2
+   -L ::1,127.0.0.1 -l ::1,127.0.0.1 --control-over-sctp
+   --server-arg -L --server-arg ::1,127.0.0.1 --server-arg -l --server-arg ::1,127.0.0.1)
 
 # Control channel using SCTP with SCTP data flow
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ctrl_sctp_bidi_ipv4 127.0.0.1 sctp const10:const1000:const10:const1000 plain 2 --control-over-sctp)

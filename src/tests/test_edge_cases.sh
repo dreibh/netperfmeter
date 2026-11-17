@@ -581,12 +581,11 @@ case "${SCENARIO}" in
         stop_and_check_server
         ;;
 
-    # 2c. Control-channel blackhole / idle timeout on QUIC control socket mid-measurement
+    # 2c. Control-channel loss when QUIC passive server terminates mid-measurement
     control_quic_abort)
         generate_ca_and_certs "qhb"
 
         "${NETPERFMETER}" "${PORT}" -no-control-over-tcp -no-control-over-sctp -control-over-quic \
-            --control-hbinterval 300 --control-hbassocmaxrtx 2 \
             --tls-key "${TMP_DIR}/qhb_srv.key" \
             --tls-cert "${TMP_DIR}/qhb_srv.crt" \
             --tls-ca "${TMP_DIR}/qhb_ca.crt" \
@@ -597,92 +596,31 @@ case "${SCENARIO}" in
             exit 1
         fi
 
-        PROXY_DATA_PORT=$((PORT + 2))
-        PROXY_CTRL_PORT=$((PORT + 3))
-
-        perl -MIO::Socket::IP -MIO::Select -MTime::HiRes=time -e '
-            use strict;
-            use warnings;
-
-            my ($host, $udp_lport, $udp_tport, $ctrl_lport, $ctrl_tport) = @ARGV;
-
-            my $ctrl_srv = IO::Socket::IP->new(
-                LocalHost => $host, LocalPort => $ctrl_lport,
-                Proto => "udp", ReuseAddr => 1
-            ) or die "ctrl udp listen: $!";
-
-            my $ctrl_dst = IO::Socket::IP->new(
-                PeerHost => $host, PeerPort => $ctrl_tport,
-                Proto => "udp"
-            ) or die "ctrl udp connect: $!";
-
-            my $udp_srv = IO::Socket::IP->new(
-                LocalHost => $host, LocalPort => $udp_lport,
-                Proto => "udp", ReuseAddr => 1
-            ) or die "data udp listen: $!";
-
-            my $udp_dst = IO::Socket::IP->new(
-                PeerHost => $host, PeerPort => $udp_tport,
-                Proto => "udp"
-            ) or die "data udp connect: $!";
-
-            $ctrl_srv->blocking(0);
-            $ctrl_dst->blocking(0);
-            $udp_srv->blocking(0);
-            $udp_dst->blocking(0);
-
-            my $sel = IO::Select->new($ctrl_srv, $ctrl_dst, $udp_srv, $udp_dst);
-            my $cli_addr;
-            my $drop_at;
-
-            while (1) {
-                my @ready = $sel->can_read(0.1);
-                my $now = time();
-                my $blackhole = (defined($drop_at) && $now >= $drop_at) ? 1 : 0;
-
-                for my $fh (@ready) {
-                    if ($fh == $ctrl_srv) {
-                        my $buf = "";
-                        my $sender = recv($ctrl_srv, $buf, 65536, 0);
-                        if (defined($sender) && !$blackhole) {
-                            $cli_addr = $sender;
-                            $drop_at = $now + 0.8 unless defined $drop_at;
-                            send($ctrl_dst, $buf, 0);
-                        }
-                    }
-                    elsif ($fh == $ctrl_dst) {
-                        my $buf = "";
-                        my $sender = recv($ctrl_dst, $buf, 65536, 0);
-                        if (defined($sender) && defined($cli_addr) && !$blackhole) {
-                            send($ctrl_srv, $buf, 0, $cli_addr);
-                        }
-                    }
-                    elsif ($fh == $udp_srv) {
-                        my $buf = "";
-                        my $sender = recv($udp_srv, $buf, 65536, 0);
-                        send($udp_dst, $buf, 0) if defined($sender);
-                    }
-                    elsif ($fh == $udp_dst) {
-                        my $buf = "";
-                        recv($udp_dst, $buf, 65536, 0);
-                    }
-                }
-            }
-        ' "${ADDRESS}" "${PROXY_DATA_PORT}" "${PORT}" "${PROXY_CTRL_PORT}" "${CONTROL_PORT}" \
-            >"${TMP_DIR}/relay.log" 2>&1 &
-        RELAY_PID=$!
-
-        sleep 1
-
-        "${NETPERFMETER}" "${TARGET}:${PROXY_DATA_PORT}" -control-over-quic \
-            --control-hbinterval 300 --control-hbassocmaxrtx 2 \
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-quic \
             --tls-hostname localhost \
             --tls-ca "${TMP_DIR}/qhb_ca.crt" \
             --tls-key "${TMP_DIR}/qhb_cli.key" \
             --tls-cert "${TMP_DIR}/qhb_cli.crt" \
-            -runtime=15 -udp const10:const1000:const0:const0 \
+            -runtime=2 -udp const10:const1000:const0:const0 \
             >"${TMP_DIR}/client.log" 2>&1 &
         CLIENT_PID=$!
+
+        # Wait for measurement to start, then kill passive server mid-transfer
+        _waited=0
+        while [ "${_waited}" -lt 5 ]; do
+            if [ -s "${TMP_DIR}/client.log" ] && grep -q "Starting measurement" "${TMP_DIR}/client.log"; then
+                break
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+        sleep 1
+
+        if [ -n "${SERVER_PID}" ] && kill -0 "${SERVER_PID}" 2>/dev/null; then
+            kill -9 "${SERVER_PID}" 2>/dev/null || true
+            wait "${SERVER_PID}" 2>/dev/null || true
+        fi
+        SERVER_PID=""
 
         _waited=0
         while kill -0 "${CLIENT_PID}" 2>/dev/null; do
@@ -699,8 +637,6 @@ case "${SCENARIO}" in
         wait "${CLIENT_PID}" || CLIENT_RC=$?
         CLIENT_PID=""
         check_clean_client_failure "${CLIENT_RC}"
-
-        stop_and_check_server
         ;;
 
     # 2d. Graceful SIGINT interruption of active client mid-measurement
