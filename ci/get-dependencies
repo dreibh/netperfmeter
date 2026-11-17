@@ -48,7 +48,7 @@ except ImportError:
 
 
 # ###### Extract Deb file dependencies ######################################
-debDepLine : Final[re.Pattern[str]] = re.compile(r'^(.*:[ \t]*)(.*)$')
+debDepLine : Final[re.Pattern[str]] = re.compile(r'^([^:]+:[ \t]*)(.*)$')
 debDepItem : Final[re.Pattern[str]] = re.compile(r'^([a-zA-Z0-9-+\.]+)[\s]*(|\|.*|\(.*)[\s]*$')
 def extractDebDependencies(line   : str,
                            system : str) -> list[str]:
@@ -85,19 +85,21 @@ def extractDebDependencies(line   : str,
 
 
 # ###### Extract RPM spec dependencies ######################################
-rpmDepLine : Final[re.Pattern[str]] = re.compile(r'^(.*:[ \t]*)(.*)$')
-rpmDepItem : Final[re.Pattern[str]] = re.compile(r'^([a-zA-Z0-9-+\.]+)[\s]*(|or[ \t]*.*|\(.*)[\s]*$')
+rpmDepLine : Final[re.Pattern[str]] = re.compile(r'^([^:]+:[ \t]*)(.*)$')
 def extractRPMDependencies(line   : str,
                            system : str) -> list[str]:
 
-   dependencies : list[str]  = []
-   distribution : Final[str] = distro.codename()
+   dependencies : list[str] = []
 
-   # Remove "build-depends:", etc.:
+   # Remove "BuildRequires:", etc.:
    match : re.Match[str] | None = rpmDepLine.match(line)
    if match is not None:
-      dependency = match.group(2).strip()
-      dependencies.append(dependency)
+      raw = match.group(2).strip()
+      # Split comma-separated dependencies while keeping parenthesized expressions intact:
+      for item in re.split(r',(?![^()]*\))', raw):
+         dependency = item.strip()
+         if dependency:
+            dependencies.append(dependency)
 
    return dependencies
 
