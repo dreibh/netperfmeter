@@ -472,7 +472,7 @@ case "${SCENARIO}" in
                 SERVER_CTRL_ARGS="-control-over-tcp -no-control-over-sctp -no-control-over-quic"
                 CLIENT_CTRL_ARG="-control-over-quic"
                 SERVER_TLS_ARGS="--tls-key ${TMP_DIR}/qdis_srv.key --tls-cert ${TMP_DIR}/qdis_srv.crt --tls-ca ${TMP_DIR}/qdis_ca.crt"
-                CLIENT_TLS_ARGS="--tls-hostname localhost --tls-ca ${TMP_DIR}/qdis_ca.crt --tls-key ${TMP_DIR}/qdis_cli.key --tls-cert ${TMP_DIR}/qdis_cli.crt"
+                CLIENT_TLS_ARGS="--tls-hostname localhost --tls-ca ${TMP_DIR}/qdis_ca.crt --tls-key ${TMP_DIR}/qdis_cli.key --tls-cert ${TMP_DIR}/qdis_cli.crt --control-hbinterval 500 --control-hbassocmaxrtx 2"
                 ;;
         esac
 
