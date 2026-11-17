@@ -52,39 +52,42 @@ extern Mutex         gLogMutex;
 
 #define stdlog (*gStdLog)
 
-#define LOG_BEGIN(ansiColorSeq)   \
-   {                              \
-      loggingMutexLock();         \
-      if(gColorMode) {            \
-        *gStdLog << ansiColorSeq; \
-      }                           \
-      printTimeStamp(*gStdLog);
+#define LOG_BEGIN(level, ansiColorSeq)                          \
+   do {                                                         \
+      if(((level) >= MIN_LOGLEVEL) && (gLogLevel <= (level))) { \
+         loggingMutexLock();                                    \
+         if(gColorMode) {                                       \
+            *gStdLog << ansiColorSeq;                           \
+         }                                                      \
+         printTimeStamp(*gStdLog);
 
-#define LOG_END                   \
-      if(gColorMode) {            \
-        *gStdLog << "\x1b[0m";    \
-      }                           \
-      gStdLog->flush();           \
-      loggingMutexUnlock();       \
-   }
+#define LOG_END                                                 \
+         if(gColorMode) {                                       \
+            *gStdLog << "\x1b[0m";                              \
+         }                                                      \
+         gStdLog->flush();                                      \
+         loggingMutexUnlock();                                  \
+      }                                                         \
+   } while(0);
 
-#define LOG_END_FATAL                          \
-      *gStdLog << "FATAL ERROR - ABORTING!\n"; \
-      if(gColorMode) {                         \
-        *gStdLog << "\x1b[0m\x1b[2K";          \
-      }                                        \
-      gStdLog->flush();                        \
-      loggingMutexUnlock();                    \
-   }                                           \
-   exit(1);
+#define LOG_END_FATAL                                           \
+         *gStdLog << "FATAL ERROR - ABORTING!\n";               \
+         if(gColorMode) {                                       \
+            *gStdLog << "\x1b[0m\x1b[2K";                       \
+         }                                                      \
+         gStdLog->flush();                                      \
+         loggingMutexUnlock();                                  \
+      }                                                         \
+      exit(1);                                                  \
+   } while(0);
 
 
-#define LOG_FATAL   if((LOGLEVEL_FATAL   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_FATAL))   LOG_BEGIN("\x1b[37;41;1m")
-#define LOG_ERROR   if((LOGLEVEL_ERROR   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_ERROR))   LOG_BEGIN("\x1b[31;1m")
-#define LOG_WARNING if((LOGLEVEL_WARNING >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_WARNING)) LOG_BEGIN("\x1b[33m")
-#define LOG_INFO    if((LOGLEVEL_INFO    >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_INFO))    LOG_BEGIN("\x1b[34m")
-#define LOG_DEBUG   if((LOGLEVEL_DEBUG   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_DEBUG))   LOG_BEGIN("\x1b[36m")
-#define LOG_TRACE   if((LOGLEVEL_TRACE   >= MIN_LOGLEVEL) && (gLogLevel <= LOGLEVEL_TRACE))   LOG_BEGIN("\x1b[37m")
+#define LOG_FATAL   LOG_BEGIN(LOGLEVEL_FATAL,   "\x1b[37;41;1m")
+#define LOG_ERROR   LOG_BEGIN(LOGLEVEL_ERROR,   "\x1b[31;1m")
+#define LOG_WARNING LOG_BEGIN(LOGLEVEL_WARNING, "\x1b[33m")
+#define LOG_INFO    LOG_BEGIN(LOGLEVEL_INFO,    "\x1b[34m")
+#define LOG_DEBUG   LOG_BEGIN(LOGLEVEL_DEBUG,   "\x1b[36m")
+#define LOG_TRACE   LOG_BEGIN(LOGLEVEL_TRACE,   "\x1b[37m")
 
 
 bool initLogFile(const unsigned int logLevel,

@@ -317,8 +317,9 @@ bool performNetPerfMeterIdentifyFlow(MessageReader* messageReader,
       LOG_TRACE
       stdlog << format("<R3 sd=%d trial=%u/%u>", controlSocket, trial, maxTrials) << "\n";
       LOG_END
+      if(false) { }
 #if defined(HAVE_SCTP)
-      if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
+      else if(flow->getTrafficSpec().Protocol == IPPROTO_SCTP) {
          sctp_sndrcvinfo sinfo;
          memset(&sinfo, 0, sizeof(sinfo));
          sinfo.sinfo_stream = flow->getStreamID();
