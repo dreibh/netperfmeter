@@ -567,6 +567,25 @@ bool setPort(struct sockaddr* address, uint16_t port)
 }
 
 
+// ###### Resolve socket address family #####################################
+static int resolveSocketFamily(const int             family,
+                               const int             protocol,
+                               const unsigned int    localAddresses,
+                               const sockaddr_union* localAddressArray)
+{
+   int socketFamily = family;
+   if(socketFamily == AF_UNSPEC) {
+      socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
+      if((localAddresses >= 1) && (localAddressArray != nullptr) &&
+         (protocol != IPPROTO_SCTP) &&
+         (localAddressArray[0].sa.sa_family == AF_INET)) {
+         socketFamily = AF_INET;   // Restrict to IPv4!
+      }
+   }
+   return socketFamily;
+}
+
+
 // ###### Create socket #####################################################
 int createSocket(const int             family,
                  const int             type,
@@ -575,28 +594,11 @@ int createSocket(const int             family,
                  const sockaddr_union* localAddressArray)
 {
    // ====== Get family =====================================================
-   int socketFamily = family;
-   if(socketFamily == AF_UNSPEC) {
-      socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
-      if( (localAddresses == 1) &&
-          (protocol != IPPROTO_SCTP) &&
-          (localAddressArray[0].sa.sa_family == AF_INET) ) {
-         socketFamily = AF_INET;   // Restrict to IPv4!
-      }
-   }
-
-   // ====== Get protocol ===================================================
-   int socketProtocol = protocol;
-#if defined(HAVE_MPTCP)
-   if(socketProtocol == IPPROTO_MPTCP) {
-      if(localAddresses > 1) {
-         printf("WARNING: Currently, MPTCP does not support TCP_MULTIPATH_ADD. Binding to ANY address instead ...\n");
-      }
-   }
-#endif
+   const int socketFamily = resolveSocketFamily(family, protocol,
+                                                localAddresses, localAddressArray);
 
    // ====== Create socket ==================================================
-   int sd = ext_socket(socketFamily, type, socketProtocol);
+   int sd = ext_socket(socketFamily, type, protocol);
    if(sd < 0) {
       return -2;
    }
@@ -618,15 +620,8 @@ int bindSocket(const int             sd,
    unsigned int localAddressCount = localAddresses;
 
    // ====== Get family =====================================================
-   int socketFamily = family;
-   if(socketFamily == AF_UNSPEC) {
-      socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
-      if( (localAddresses == 1) &&
-          (protocol != IPPROTO_SCTP) &&
-          (localAddressArray[0].sa.sa_family == AF_INET) ) {
-         socketFamily = AF_INET;   // Restrict to IPv4!
-      }
-   }
+   const int socketFamily = resolveSocketFamily(family, protocol,
+                                                localAddresses, localAddressArray);
 
    // Prepare ANY address for the corresponding family
    sockaddr_union anyAddress;
@@ -701,8 +696,9 @@ int bindSocket(const int             sd,
       }
       else {
 #endif
-         // ====== Non-SCTP bind: bind to ANY address =======================
+         // ====== Non-SCTP bind: bind to primary address ===================
          sockaddr_union localAddress;
+         memset(&localAddress, 0, sizeof(localAddress));
          if(localAddressArray[0].sa.sa_family == AF_INET) {
             memcpy(&localAddress, (void*)&localAddressArray[0].in, sizeof(sockaddr_in));
             ((sockaddr_in*)&localAddress)->sin_port = htobe16(localPort);
