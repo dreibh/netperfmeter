@@ -310,9 +310,6 @@ static bool handleGlobalParameters(int argc, char** argv)
          case 'X':
 #if defined(HAVE_SCTP)
             gPassiveControlSCTP    = false;
-#else
-            std::cerr << "ERROR: SCTP support is not compiled in!" << "\n";
-            exit(1);
 #endif
           break;
          case 'y':
