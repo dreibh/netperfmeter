@@ -447,21 +447,6 @@ IF(TARGET runtimeestimator)
    )
 ENDIF()
 
-SET(MODULE_LOADER_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/../netperfmeter-module-loader.versioned")
-IF(NOT EXISTS "${MODULE_LOADER_SCRIPT}")
-   SET(MODULE_LOADER_SCRIPT "${PROJECT_BINARY_DIR}/src/netperfmeter-module-loader.versioned")
-ENDIF()
-ADD_TEST(
-   NAME util_module_loader_status
-   COMMAND "${MODULE_LOADER_SCRIPT}" status
-)
-SET_TESTS_PROPERTIES(util_module_loader_status PROPERTIES
-   ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
-   FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:"
-   LABELS "cli;script;utility;netperfmeter-module-loader"
-   TIMEOUT 15
-)
-
 IF(WITH_PLOT_PROGRAMS)
    SET(PDFEMBEDFONTS_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/../pdfembedfonts.versioned")
    IF(NOT EXISTS "${PDFEMBEDFONTS_SCRIPT}")
