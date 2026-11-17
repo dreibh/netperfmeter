@@ -915,7 +915,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
    else if(strncmp(parameters, "debug=", 6) == 0) {
       if(strncmp((const char*)&parameters[6], "on", 2) == 0) {
          trafficSpec.Debug = true;
-         // n = 6 + 2;
+         n = 6 + 2;
       }
       else if(strncmp((const char*)&parameters[6], "off", 3) == 0) {
          trafficSpec.Debug = false;
