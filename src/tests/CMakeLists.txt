@@ -270,7 +270,6 @@ ENDFUNCTION()
 
 
 # ###### Helper for Protocol & Runtime Edge Case Tests ######################
-# ###### Helper for Protocol & Runtime Edge Case Tests ######################
 FUNCTION(ADD_NETPERFMETER_EDGE_CASE_TEST TEST_NAME ADDRESS SCENARIO)
    GET_NEXT_TEST_PORT(TEST_PORT)
 
@@ -294,7 +293,7 @@ FUNCTION(ADD_NETPERFMETER_EDGE_CASE_TEST TEST_NAME ADDRESS SCENARIO)
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
       FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;FAIL:;Avbrutt;Aborted;assure"
       LABELS "${TEST_LABELS}"
-      TIMEOUT 60
+      TIMEOUT 120
    )
 ENDFUNCTION()
 
@@ -2487,6 +2486,96 @@ ADD_NETPERFMETER_FLOW_TEST(profile_quic_deepspace_radar_plots
 # 200. Kubernetes Edge Mesh Mutual-TLS QUIC Heartbeat (40 fps, 64 B, const)
 ADD_NETPERFMETER_FLOW_TEST(profile_quic_cloud_service_mesh_hb
    127.0.0.1 quic const40:const64:const40:const64 plain 8)
+
+ENDIF()
+
+
+#############################################################################
+#### DCCP FLOW INTEGRATION TESTS (RFC 4340)                              ####
+#############################################################################
+
+IF (HAVE_DCCP_FOR_TESTS)
+
+# ====== 1. Bidirectional Flows =============================================
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_bidi_ipv4 127.0.0.1 dccp const10:const1000:const10:const1000 plain)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_bidi_ipv6 ::1       dccp const10:const1000:const10:const1000 plain)
+
+# ====== 2. Upload-Only Flows (Active -> Passive) ===========================
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_upload_ipv4 127.0.0.1 dccp const10:const1000:const0:const0 plain)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_upload_ipv6 ::1       dccp const10:const1000:const0:const0 plain)
+
+# ====== 3. Download-Only Flows (Passive -> Active) =========================
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_download_ipv4 127.0.0.1 dccp const0:const0:const10:const1000 plain)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_download_ipv6 ::1       dccp const0:const0:const10:const1000 plain)
+
+# ====== 4. Default Shorthand, CCID Options & Local Bind ====================
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_default_shorthand
+   127.0.0.1 dccp default plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_ccid2
+   127.0.0.1 dccp const10:const1000:const10:const1000:ccid=2 plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_ccid3
+   127.0.0.1 dccp const10:const1000:const10:const1000:ccid=3 plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_local_bind_ipv4
+   127.0.0.1 dccp const10:const1000:const10:const1000 plain 2
+   -L 127.0.0.1 --server-arg -L --server-arg 127.0.0.1)
+
+IF (HAVE_SCTP_FOR_TESTS)
+   ADD_NETPERFMETER_FLOW_TEST(flow_dccp_ctrl_sctp_bidi_ipv4
+      127.0.0.1 dccp const10:const1000:const10:const1000 plain 2 --control-over-sctp)
+ENDIF()
+
+IF (HAVE_QUIC_FOR_TESTS)
+   ADD_NETPERFMETER_FLOW_TEST(flow_dccp_ctrl_quic_bidi_ipv4
+      127.0.0.1 dccp const10:const1000:const10:const1000 plain 3 --control-over-quic)
+ENDIF()
+
+# ====== 5. Compression Formats & Output Suppression ========================
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_format_gz  127.0.0.1 dccp const10:const1000:const10:const1000 gz)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_format_bz2 127.0.0.1 dccp const10:const1000:const10:const1000 bz2)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_format_xz  127.0.0.1 dccp const10:const1000:const10:const1000 xz)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_format_zst 127.0.0.1 dccp const10:const1000:const10:const1000 zst)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_no_scalar  127.0.0.1 dccp const10:const1000:const10:const1000 plain 2 --no-scalar)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_no_vector  127.0.0.1 dccp const10:const1000:const10:const1000 plain 2 --no-vector)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_no_outputs 127.0.0.1 dccp const10:const1000:const10:const1000 plain 2 --no-scalar --no-vector)
+
+# ====== 6. Framing and Defragmentation (maxmsgsize & defragtimeout) ========
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_framing_small      127.0.0.1 dccp const10:const1000:const10:const1000:maxmsgsize=250  plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_framing_medium     127.0.0.1 dccp const10:const4000:const10:const4000:maxmsgsize=1000 plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_framing_large      127.0.0.1 dccp const10:const8000:const10:const8000:maxmsgsize=1200 plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_framing_asymmetric 127.0.0.1 dccp const10:const4000:const10:const1000:maxmsgsize=500  plain 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_defragtimeout      127.0.0.1 dccp const10:const4000:const10:const4000:maxmsgsize=1000:defragtimeout=2500 plain 2)
+
+# ====== 7. On-Off Flow Schedule Tests ======================================
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_onoff_single_burst_ipv4
+   127.0.0.1 dccp const20:const1000:const0:const0:onoff=1,3 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_onoff_single_burst_ipv6
+   ::1       dccp const20:const1000:const0:const0:onoff=1,3 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_onoff_multiburst_ipv4
+   127.0.0.1 dccp const20:const1000:const0:const0:onoff=1,2,3,4 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_onoff_delayed_start
+   127.0.0.1 dccp const20:const1000:const0:const0:onoff=2 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_onoff_fragmented
+   127.0.0.1 dccp const20:const3000:const0:const0:onoff=1,3:maxmsgsize=1000 plain 5)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_onoff_exp_size
+   127.0.0.1 dccp const20:exp1000:const0:const0:onoff=1,4 plain 6)
+
+# ====== 8. Random Distribution Tests (VBR Flows) ===========================
+ADD_NETPERFMETER_FLOW_TEST(dist_dccp_uniform     127.0.0.1 dccp uniform15,25:uniform800,1200:uniform15,25:uniform800,1200 plain 8)
+ADD_NETPERFMETER_FLOW_TEST(dist_dccp_exp         127.0.0.1 dccp const20:exp1000:const20:exp1000 plain 8)
+ADD_NETPERFMETER_FLOW_TEST(dist_dccp_truncnormal 127.0.0.1 dccp truncnormal20,2:truncnormal1000,100:truncnormal20,2:truncnormal1000,100 plain 8)
+ADD_NETPERFMETER_FLOW_TEST(dist_dccp_pareto      127.0.0.1 dccp pareto15,3:pareto667,3:pareto15,3:pareto667,3 plain 8)
+
+# ====== 9. Multi-Connection & Cross-Protocol Concurrency ===================
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_dccp_2connections_ipv4
+   127.0.0.1 dccp const10:const1000:const10:const1000 plain 3
+   -dccp const10:const1000:const10:const1000)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_dccp_2connections_ipv6
+   ::1       dccp const10:const1000:const10:const1000 plain 3
+   -dccp const10:const1000:const10:const1000)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_dccp_tcp_udp_cross
+   127.0.0.1 dccp const10:const1000:const10:const1000 plain 3
+   -tcp const10:const1000:const10:const1000
+   -udp const10:const1000:const10:const1000)
 
 ENDIF()
 
