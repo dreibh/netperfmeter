@@ -472,6 +472,36 @@ HAVE_DCCP)
 
 IF (HAVE_DCCP)
    ADD_DEFINITIONS(-DHAVE_DCCP)
+
+   # ------ Test whether a DCCP socket can be created -----------------------
+   CHECK_C_SOURCE_RUNS("
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <linux/dccp.h>
+
+int main (int argc, char** argv)
+{
+   int sd = socket(AF_INET, SOCK_DCCP, IPPROTO_DCCP);
+   if(sd < 0) {
+      return 1;
+   }
+   close(sd);
+   return 0;
+}"
+   HAVE_DCCP_SOCKET)
+
+   IF (HAVE_DCCP_SOCKET)
+      MESSAGE(STATUS "Kernel DCCP socket creation successful: DCCP is available for tests")
+      SET(HAVE_DCCP_FOR_TESTS TRUE CACHE INTERNAL "DCCP socket creation supported for tests")
+      ADD_DEFINITIONS(-DHAVE_DCCP_SOCKET)
+   ELSE()
+      MESSAGE(STATUS "Kernel DCCP socket creation failed: DCCP is NOT available for tests")
+      SET(HAVE_DCCP_FOR_TESTS FALSE CACHE INTERNAL "DCCP socket creation supported for tests")
+   ENDIF()
+ELSE()
+   SET(HAVE_DCCP_FOR_TESTS FALSE CACHE INTERNAL "DCCP socket creation supported for tests")
 ENDIF()
 
 # ====== MPTCP support ======================================================
