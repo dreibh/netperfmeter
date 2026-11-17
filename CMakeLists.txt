@@ -359,13 +359,25 @@ IF (WITH_KERNEL_SCTP)
    ADD_DEFINITIONS(-DHAVE_KERNEL_SCTP)
 
    # ------ Kernel SCTP -----------------------------------------------------
-   CHECK_INCLUDE_FILE(netinet/sctp.h HAVE_NETINET_SCTP_H)
+   CHECK_C_SOURCE_COMPILES("
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/sctp.h>
+
+int main (int argc, char** argv)
+{
+   volatile int domain = IPPROTO_SCTP;
+   return 0;
+}"
+   HAVE_NETINET_SCTP_H)
+
    IF (HAVE_NETINET_SCTP_H)
       SET(SCTP_INCLUDE "netinet/sctp.h")
       ADD_DEFINITIONS(-DHAVE_SCTP -DHAVE_NETINET_SCTP_H)
    ENDIF()
 
-   # ------ Linux LK-SCTP library -------------------------------------------
+   # ------ Linux LK-SCTP / Solaris libsctp library -------------------------
    IF (CMAKE_SYSTEM_NAME MATCHES "Linux")
       MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
       FIND_LIBRARY(SCTP_LIBRARY sctp)
@@ -382,6 +394,15 @@ IF (WITH_KERNEL_SCTP)
                " * OpenSUSE:      sudo zypper install -y lksctp-tools-devel\n"
                " * Alpine:        sudo apk add lksctp-tools-dev\n")
       ENDIF()
+   ELSEIF (CMAKE_SYSTEM_NAME MATCHES "SunOS")
+      FIND_LIBRARY(SCTP_LIBRARY sctp)
+      IF (SCTP_LIBRARY)
+         MESSAGE(STATUS "Solaris SCTP library found: ${SCTP_LIBRARY}")
+      ELSE()
+         MESSAGE(FATAL_ERROR
+               "Cannot find Solaris SCTP library! Try:\n"
+               " * Solaris:       (always included as part of base system)\n")
+      ENDIF()
    ENDIF()
 
    # ------ Test whether an SCTP socket can be created ----------------------
@@ -392,6 +413,9 @@ IF (WITH_KERNEL_SCTP)
       ENDIF()
       IF (SOCKET_LIBRARY)
          LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${SOCKET_LIBRARY})
+      ENDIF()
+      IF (NSL_LIBRARY)
+         LIST(APPEND CMAKE_REQUIRED_LIBRARIES ${NSL_LIBRARY})
       ENDIF()
 
       CHECK_C_SOURCE_RUNS("
