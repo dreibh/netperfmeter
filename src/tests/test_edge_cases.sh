@@ -304,7 +304,7 @@ case "${SCENARIO}" in
         fi
         ;;
 
-    # 2. Control-channel abort (SCTP ABORT / SO_LINGER=0) mid-measurement
+    # 2a. Control-channel abort (SCTP ABORT / SO_LINGER=0) mid-measurement
     control_heartbeat_timeout)
         "${NETPERFMETER}" "${PORT}" -no-control-over-tcp -control-over-sctp \
             --control-hbinterval 200 --control-hbpathmaxrtx 1 --control-hbassocmaxrtx 2 \
@@ -441,6 +441,262 @@ case "${SCENARIO}" in
         wait "${CLIENT_PID}" || CLIENT_RC=$?
         CLIENT_PID=""
         check_clean_client_failure "${CLIENT_RC}"
+
+        stop_and_check_server
+        ;;
+
+    # 2b. Control-channel abort (TCP RST / SO_LINGER=0) mid-measurement
+    control_tcp_abort)
+        "${NETPERFMETER}" "${PORT}" -control-over-tcp -no-control-over-sctp -no-control-over-quic \
+            >"${TMP_DIR}/server.log" 2>&1 &
+        SERVER_PID=$!
+
+        if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+
+        PROXY_DATA_PORT=$((PORT + 2))
+        PROXY_CTRL_PORT=$((PORT + 3))
+
+        perl -MIO::Socket::IP -MIO::Select -MSocket=SOL_SOCKET,SO_LINGER -MTime::HiRes=time -e '
+            use strict;
+            use warnings;
+
+            my ($host, $udp_lport, $udp_tport, $tcp_lport, $tcp_tport) = @ARGV;
+
+            my $tcp_srv = IO::Socket::IP->new(
+                LocalHost => $host, LocalPort => $tcp_lport,
+                Proto => "tcp", Listen => 5, ReuseAddr => 1
+            ) or die "tcp listen: $!";
+
+            my $udp_srv = IO::Socket::IP->new(
+                LocalHost => $host, LocalPort => $udp_lport,
+                Proto => "udp", ReuseAddr => 1
+            ) or die "udp listen: $!";
+
+            my $udp_dst = IO::Socket::IP->new(
+                PeerHost => $host, PeerPort => $udp_tport,
+                Proto => "udp"
+            ) or die "udp connect: $!";
+
+            $tcp_srv->blocking(0);
+            $udp_srv->blocking(0);
+            $udp_dst->blocking(0);
+
+            my $sel = IO::Select->new($tcp_srv, $udp_srv, $udp_dst);
+            my %peer;
+            my $abort_at;
+
+            while (1) {
+                my @ready = $sel->can_read(0.1);
+                my $now = time();
+                if (defined($abort_at) && $now >= $abort_at) {
+                    for my $fh (keys %peer) {
+                        my $sock = $peer{$fh};
+                        next unless $sock;
+                        setsockopt($sock, SOL_SOCKET, SO_LINGER, pack("ii", 1, 0));
+                        close($sock);
+                    }
+                    exit 0;
+                }
+
+                for my $fh (@ready) {
+                    if ($fh == $tcp_srv) {
+                        my $cli = $tcp_srv->accept();
+                        next unless $cli;
+                        my $dst = IO::Socket::IP->new(
+                            PeerHost => $host, PeerPort => $tcp_tport,
+                            Proto => "tcp"
+                        );
+                        if (!$dst) {
+                            close($cli);
+                            next;
+                        }
+                        $cli->blocking(0);
+                        $dst->blocking(0);
+                        $peer{$cli} = $dst;
+                        $peer{$dst} = $cli;
+                        $sel->add($cli, $dst);
+                    }
+                    elsif ($fh == $udp_srv) {
+                        my $buf = "";
+                        my $sender = recv($udp_srv, $buf, 65536, 0);
+                        send($udp_dst, $buf, 0) if defined($sender);
+                    }
+                    elsif ($fh == $udp_dst) {
+                        my $buf = "";
+                        recv($udp_dst, $buf, 65536, 0);
+                    }
+                    elsif (exists $peer{$fh}) {
+                        my $dst = $peer{$fh};
+                        my $buf = "";
+                        my $n = sysread($fh, $buf, 65536);
+                        if (!defined($n) || $n <= 0) {
+                            $sel->remove($fh, $dst);
+                            delete $peer{$fh};
+                            delete $peer{$dst};
+                            close($fh);
+                            close($dst);
+                            next;
+                        }
+                        $abort_at = $now + 0.6 unless defined $abort_at;
+                        my $off = 0;
+                        while ($off < length($buf)) {
+                            my $w = syswrite($dst, $buf, length($buf) - $off, $off);
+                            last unless defined $w;
+                            $off += $w;
+                        }
+                    }
+                }
+            }
+        ' "${ADDRESS}" "${PROXY_DATA_PORT}" "${PORT}" "${PROXY_CTRL_PORT}" "${CONTROL_PORT}" \
+            >"${TMP_DIR}/relay.log" 2>&1 &
+        RELAY_PID=$!
+
+        if ! wait_for_listener "${ADDRESS}" "${PROXY_CTRL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+
+        "${NETPERFMETER}" "${TARGET}:${PROXY_DATA_PORT}" -control-over-tcp \
+            -runtime=15 -udp const10:const1000:const0:const0 \
+            >"${TMP_DIR}/client.log" 2>&1 &
+        CLIENT_PID=$!
+
+        _waited=0
+        while kill -0 "${CLIENT_PID}" 2>/dev/null; do
+            if [ "${_waited}" -ge 8 ]; then
+                echo "FAIL: Active client did not abort on lost TCP control connection within 8s." >&2
+                cat "${TMP_DIR}/client.log" >&2
+                exit 1
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+
+        CLIENT_RC=0
+        wait "${CLIENT_PID}" || CLIENT_RC=$?
+        CLIENT_PID=""
+        check_clean_client_failure "${CLIENT_RC}"
+
+        stop_and_check_server
+        ;;
+
+    # 2c. Control-channel loss when QUIC passive server terminates mid-measurement
+    control_quic_abort)
+        generate_ca_and_certs "qhb"
+
+        "${NETPERFMETER}" "${PORT}" -no-control-over-tcp -no-control-over-sctp -control-over-quic \
+            --tls-key "${TMP_DIR}/qhb_srv.key" \
+            --tls-cert "${TMP_DIR}/qhb_srv.crt" \
+            --tls-ca "${TMP_DIR}/qhb_ca.crt" \
+            >"${TMP_DIR}/server.log" 2>&1 &
+        SERVER_PID=$!
+
+        if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" "quic" 5; then
+            exit 1
+        fi
+
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-quic \
+            --tls-hostname localhost \
+            --tls-ca "${TMP_DIR}/qhb_ca.crt" \
+            --tls-key "${TMP_DIR}/qhb_cli.key" \
+            --tls-cert "${TMP_DIR}/qhb_cli.crt" \
+            -runtime=2 -udp const10:const1000:const0:const0 \
+            >"${TMP_DIR}/client.log" 2>&1 &
+        CLIENT_PID=$!
+
+        # Wait for measurement to start, then kill passive server mid-transfer
+        _waited=0
+        while [ "${_waited}" -lt 5 ]; do
+            if [ -s "${TMP_DIR}/client.log" ] && grep -q "Starting measurement" "${TMP_DIR}/client.log"; then
+                break
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+        sleep 1
+
+        if [ -n "${SERVER_PID}" ] && kill -0 "${SERVER_PID}" 2>/dev/null; then
+            kill -9 "${SERVER_PID}" 2>/dev/null || true
+            wait "${SERVER_PID}" 2>/dev/null || true
+        fi
+        SERVER_PID=""
+
+        _waited=0
+        while kill -0 "${CLIENT_PID}" 2>/dev/null; do
+            if [ "${_waited}" -ge 10 ]; then
+                echo "FAIL: Active client did not abort on lost QUIC control connection within 10s." >&2
+                cat "${TMP_DIR}/client.log" >&2
+                exit 1
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+
+        CLIENT_RC=0
+        wait "${CLIENT_PID}" || CLIENT_RC=$?
+        CLIENT_PID=""
+        check_clean_client_failure "${CLIENT_RC}"
+        ;;
+
+    # 2d. Graceful SIGINT interruption of active client mid-measurement
+    active_sigint_graceful_stop)
+        "${NETPERFMETER}" "${PORT}" -control-over-tcp -no-control-over-sctp -no-control-over-quic \
+            >"${TMP_DIR}/server.log" 2>&1 &
+        SERVER_PID=$!
+
+        if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+        if ! wait_for_listener "${ADDRESS}" "${PORT}" "tcp" 5; then
+            exit 1
+        fi
+
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=15 \
+            -scalar="${TMP_DIR}/sigint.sca" \
+            -vector="${TMP_DIR}/sigint.vec" \
+            -tcp const10:const1000:const10:const1000 \
+            >"${TMP_DIR}/client.log" 2>&1 &
+        CLIENT_PID=$!
+
+        # Wait for measurement to start and transfer data
+        _waited=0
+        while [ "${_waited}" -lt 5 ]; do
+            if [ -s "${TMP_DIR}/client.log" ] && grep -q "Starting measurement" "${TMP_DIR}/client.log"; then
+                break
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+        sleep 1
+
+        if ! kill -0 "${CLIENT_PID}" 2>/dev/null; then
+            echo "FAIL: Active client exited before SIGINT was sent." >&2
+            cat "${TMP_DIR}/client.log" >&2
+            exit 1
+        fi
+
+        kill -INT "${CLIENT_PID}" 2>/dev/null || true
+
+        CLIENT_RC=0
+        wait "${CLIENT_PID}" || CLIENT_RC=$?
+        CLIENT_PID=""
+
+        if [ "${CLIENT_RC}" -ne 0 ]; then
+            echo "FAIL: Active client exited with non-zero code ${CLIENT_RC} on SIGINT." >&2
+            cat "${TMP_DIR}/client.log" >&2
+            exit 1
+        fi
+        if grep -qE "failed in|FATAL ERROR|terminate called|(^|[^* ])Aborted|Avbrutt|SIGABRT|Segmentation fault|assure" "${TMP_DIR}/client.log"; then
+            echo "FAIL: Crash or assertion failure in active client log on SIGINT." >&2
+            cat "${TMP_DIR}/client.log" >&2
+            exit 1
+        fi
+        if [ ! -s "${TMP_DIR}/sigint-active.sca" ] || [ ! -s "${TMP_DIR}/sigint-passive.sca" ] ||
+           [ ! -s "${TMP_DIR}/sigint-active.vec" ] || [ ! -s "${TMP_DIR}/sigint-passive.vec" ]; then
+            echo "FAIL: Active/passive scalar or vector files missing after graceful SIGINT stop." >&2
+            exit 1
+        fi
 
         stop_and_check_server
         ;;
