@@ -414,6 +414,53 @@ ELSE()
    SET(HAVE_DCCP_FOR_TESTS FALSE CACHE INTERNAL "DCCP socket creation supported for tests")
 ENDIF()
 
+# ====== MPTCP support ======================================================
+CHECK_C_SOURCE_COMPILES("
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <linux/mptcp.h>
+
+int main (int argc, char** argv)
+{
+   volatile int domain = IPPROTO_MPTCP;
+   return 0;
+}"
+HAVE_MPTCP)
+
+IF (HAVE_MPTCP)
+   ADD_DEFINITIONS(-DHAVE_MPTCP)
+
+   # ------ Test whether an MPTCP socket can be created ---------------------
+   CHECK_C_SOURCE_RUNS("
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <linux/mptcp.h>
+
+int main (int argc, char** argv)
+{
+   int sd = socket(AF_INET, SOCK_STREAM, IPPROTO_MPTCP);
+   if(sd < 0) {
+      return 1;
+   }
+   close(sd);
+   return 0;
+}"
+   HAVE_MPTCP_SOCKET)
+
+   IF (HAVE_MPTCP_SOCKET)
+      MESSAGE(STATUS "Kernel MPTCP socket creation successful: MPTCP is available for tests")
+      SET(HAVE_MPTCP_FOR_TESTS TRUE CACHE INTERNAL "MPTCP socket creation supported for tests")
+      ADD_DEFINITIONS(-DHAVE_MPTCP_SOCKET)
+   ELSE()
+      MESSAGE(STATUS "Kernel MPTCP socket creation failed: MPTCP is NOT available for tests")
+      SET(HAVE_MPTCP_FOR_TESTS FALSE CACHE INTERNAL "MPTCP socket creation supported for tests")
+   ENDIF()
+ELSE()
+   SET(HAVE_MPTCP_FOR_TESTS FALSE CACHE INTERNAL "MPTCP socket creation supported for tests")
+ENDIF()
+
 # ====== QUIC support =======================================================
 CHECK_C_SOURCE_COMPILES("
 #include <sys/socket.h>
