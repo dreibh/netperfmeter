@@ -334,7 +334,7 @@ int main(int argc, char** argv)
       // TRANSLATORS: Runtime estimation status line. Placeholders: {} 1: date/time string, 2: sub-second fraction (4 digits), 3: remaining minutes, 4: current run, 5: total runs, 6: percentage complete.
       std::cout << "\x1b[34m##### "
                 << formatText(gettext("ESTIMATION: {}.{:04} (in {:.2f} minutes)  [{} of {} - {:.2f}%]"),
-                              str,
+                              std::string_view(str),
                               static_cast<unsigned int>((estimatedEndTimeUs % 1000000ULL) / 100ULL),
                               remainingMinutes,
                               currentRun,
