@@ -1057,7 +1057,11 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
    char            inputBuffer[65536];
    sockaddr_union  from;
    socklen_t       fromlen = sizeof(from);
+#if defined(MSG_DONTWAIT)
+   int             flags   = MSG_DONTWAIT;
+#else
    int             flags   = 0;
+#endif
 
    // ====== Read message (or fragment) =====================================
    const ssize_t received =
@@ -1087,6 +1091,7 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
           ((notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) ||
            (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP)) ) {
          handleControlAssocShutdown(controlSocket);
+         return false;
       }
    }
 

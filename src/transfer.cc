@@ -277,10 +277,14 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
                             const int                protocol,
                             const int                sd)
 {
-   char            inputBuffer[65536];
+   char            inputBuffer[MAXIMUM_MESSAGE_SIZE];
    sockaddr_union  from;
    socklen_t       fromlen  = sizeof(from);
+#if defined(MSG_DONTWAIT)
+   int             flags    = MSG_DONTWAIT;
+#else
    int             flags    = 0;
+#endif
    int64_t         streamID = 0;
 
    // ====== Read message (or fragment) =====================================
