@@ -38,6 +38,7 @@
 #include <iostream>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/proc.h>
@@ -325,23 +326,26 @@ void CPUStatus::update()
 #endif
 
    // ====== Calculate percentages ==========================================
+   std::vector<tick_t> diff(CpuStates);
    for(unsigned int i = 0; i < CPUs + 1; i++) {
       tick_t diffTotal = 0;
-      tick_t diff[CpuStates];
       for(unsigned int j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
-         diff[j] = CpuTimes[index] - OldCpuTimes[index];
+         diff[j] = (CpuTimes[index] >= OldCpuTimes[index]) ?
+                      (CpuTimes[index] - OldCpuTimes[index]) : 0;
          diffTotal += diff[j];
       }
       for(unsigned int j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
          if(diffTotal != 0) {   // Avoid division by zero!
-            Percentages[index] = 100.0 * (float)diff[j] / (float)diffTotal;
+            const float pct = static_cast<float>(
+               100.0 * static_cast<double>(diff[j]) / static_cast<double>(diffTotal));
+            Percentages[index] = std::min(100.0f, std::max(0.0f, pct));
          } else {
             // No ticks passed => 100% idle
-            Percentages[index] = (j == IDLE_INDEX) ? 100.0 : 0.0;
+            Percentages[index] = (j == IDLE_INDEX) ? 100.0f : 0.0f;
          }
-         assert( (Percentages[index] >= 0.0) && (Percentages[index] <= 100.0) );
+         assert((Percentages[index] >= 0.0f) && (Percentages[index] <= 100.0f));
       }
    }
 }
