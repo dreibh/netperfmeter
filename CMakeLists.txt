@@ -49,6 +49,7 @@ SET(CMAKE_CXX_EXTENSIONS        OFF)
 
 INCLUDE(CheckCCompilerFlag)
 INCLUDE(CheckCSourceCompiles)
+INCLUDE(CheckSymbolExists)
 INCLUDE(CheckCSourceRuns)
 INCLUDE(CheckIncludeFile)
 INCLUDE(CheckStructHasMember)
@@ -203,6 +204,7 @@ IF (HAVE_SS_LEN)
     ADD_DEFINITIONS(-DHAVE_SS_LEN)
 ENDIF()
 
+CHECK_SYMBOL_EXISTS(TCP_CONGESTION "netinet/tcp.h" HAVE_TCP_CONGESTION)
 
 # ====== IEEE floating-point numbers ========================================
 CHECK_C_SOURCE_RUNS("

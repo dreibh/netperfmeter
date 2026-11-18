@@ -615,8 +615,9 @@ ADD_NETPERFMETER_FLOW_TEST(flow_tcp_perflow_buffers
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_custom_id_description
    127.0.0.1 tcp const10:const1000:const10:const1000:id=42:description=CustomFlow42 plain 2
    --expect-config "CustomFlow42")
-ADD_NETPERFMETER_FLOW_TEST(flow_tcp_cc_cubic
-   127.0.0.1 tcp const10:const1000:const10:const1000:cc=cubic plain 2)
+IF (HAVE_TCP_CONGESTION)
+   ADD_NETPERFMETER_FLOW_TEST(flow_tcp_cc_cubic BASE_PORT_TCP plain tcp const10:const1000:const10:const1000:cc=cubic)
+ENDIF()
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_nodelay_off
    127.0.0.1 tcp const10:const1000:const10:const1000:nodelay=off plain 2)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_debug_on_off
