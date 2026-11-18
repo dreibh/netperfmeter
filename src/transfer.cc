@@ -159,15 +159,16 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_stream   = flow->getStreamID();
       sinfo.sinfo_ppid     = htobe32(PPID_NETPERFMETER_DATA);
-      if(flow->getTrafficSpec().ReliableMode < 1.0) {
+if(flow->getTrafficSpec().ReliableMode < 1.0) {
          const bool sendUnreliable = (randomDouble() > flow->getTrafficSpec().ReliableMode);
          if(sendUnreliable) {
-            sinfo.sinfo_timetolive = flow->getTrafficSpec().RetransmissionTrials;
             if(flow->getTrafficSpec().RetransmissionTrialsInMS) {
+               sinfo.sinfo_timetolive = flow->getTrafficSpec().RetransmissionTrials;
                sinfo.sinfo_flags |= SCTP_PR_SCTP_TTL;
             }
             else {
 #if defined(SCTP_PR_SCTP_RTX)
+               sinfo.sinfo_timetolive = flow->getTrafficSpec().RetransmissionTrials;
                sinfo.sinfo_flags |= SCTP_PR_SCTP_RTX;
 #else
 #warning SCTP option SCTP_PR_SCTP_RTX is not supported by the API of this system!

@@ -83,6 +83,28 @@
 
 #include "mutex.h"
 
+// SCTP compatibility definitions (for pre-RFC 6458 APIs such as Solaris/illumos)
+#if defined(HAVE_SCTP)
+#if !defined(SCTP_FUTURE_ASSOC)
+#define SCTP_FUTURE_ASSOC 0
+#endif
+#if !defined(SCTP_UNORDERED) && defined(MSG_UNORDERED)
+#define SCTP_UNORDERED MSG_UNORDERED
+#endif
+#if !defined(SCTP_ABORT) && defined(MSG_ABORT)
+#define SCTP_ABORT MSG_ABORT
+#endif
+#if !defined(SCTP_EOF) && defined(MSG_EOF)
+#define SCTP_EOF MSG_EOF
+#endif
+#if !defined(SCTP_ADDR_OVER) && defined(MSG_ADDR_OVER)
+#define SCTP_ADDR_OVER MSG_ADDR_OVER
+#endif
+#if !defined(SCTP_PR_SCTP_TTL) && defined(MSG_PR_SCTP)
+#define SCTP_PR_SCTP_TTL MSG_PR_SCTP
+#endif
+#endif
+
 // MPTCP definitions
 #if defined(HAVE_MPTCP)
 #include <linux/mptcp.h>
