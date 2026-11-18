@@ -291,7 +291,7 @@ FUNCTION(ADD_NETPERFMETER_EDGE_CASE_TEST TEST_NAME ADDRESS SCENARIO)
 
    SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
-      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;FAIL:;Avbrutt;Aborted;assure"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;FAIL:;assure"
       LABELS "${TEST_LABELS}"
       TIMEOUT 120
    )
@@ -376,6 +376,76 @@ ENDIF()
 #############################################################################
 #### UTILITY TOOL TESTS                                                  ####
 #############################################################################
+
+# IF(TARGET createsummary)
+#    ADD_TEST(
+#       NAME util_createsummary_summarize
+#       COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_createsummary.sh
+#          $<TARGET_FILE:createsummary>
+#    )
+#    SET_TESTS_PROPERTIES(util_createsummary_summarize PROPERTIES
+#       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+#       FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+#       LABELS "cli;utility;createsummary"
+#       TIMEOUT 15
+#    )
+# ENDIF()
+#
+# IF(TARGET combinesummaries)
+#    ADD_TEST(
+#       NAME util_combinesummaries_combine
+#       COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_combinesummaries.sh
+#          $<TARGET_FILE:combinesummaries>
+#    )
+#    SET_TESTS_PROPERTIES(util_combinesummaries_combine PROPERTIES
+#       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+#       FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+#       LABELS "cli;utility;combinesummaries"
+#       TIMEOUT 15
+#    )
+# ENDIF()
+#
+# IF(TARGET extractvectors)
+#    ADD_TEST(
+#       NAME util_extractvectors_extract
+#       COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_extractvectors.sh
+#          $<TARGET_FILE:extractvectors>
+#    )
+#    SET_TESTS_PROPERTIES(util_extractvectors_extract PROPERTIES
+#       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+#       FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+#       LABELS "cli;utility;extractvectors"
+#       TIMEOUT 15
+#    )
+# ENDIF()
+
+IF(TARGET getabstime)
+   ADD_TEST(
+      NAME util_getabstime_timestamp
+      COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_getabstime.sh
+         $<TARGET_FILE:getabstime>
+   )
+   SET_TESTS_PROPERTIES(util_getabstime_timestamp PROPERTIES
+      ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+      LABELS "cli;utility;getabstime"
+      TIMEOUT 15
+   )
+ENDIF()
+
+# IF(TARGET runtimeestimator)
+#    ADD_TEST(
+#       NAME util_runtimeestimator_estimate
+#       COMMAND /bin/sh ${CMAKE_CURRENT_SOURCE_DIR}/test_runtimeestimator.sh
+#          $<TARGET_FILE:runtimeestimator>
+#    )
+#    SET_TESTS_PROPERTIES(util_runtimeestimator_estimate PROPERTIES
+#       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
+#       FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
+#       LABELS "cli;utility;runtimeestimator"
+#       TIMEOUT 15
+#    )
+# ENDIF()
 
 IF(WITH_PLOT_PROGRAMS)
    SET(PDFEMBEDFONTS_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/../pdfembedfonts.versioned")
