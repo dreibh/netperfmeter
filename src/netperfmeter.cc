@@ -1350,6 +1350,18 @@ static bool mainLoop(const bool               isActiveMode,
                   stdlog << format("Accept on SCTP control socket %d -> new control connection %d",
                                    gControlSocket, newSD) << "\n";
                   LOG_END
+#if defined(HAVE_SCTP)
+                  sctp_sndrcvinfo sinfo;
+                  memset(&sinfo, 0, sizeof(sinfo));
+                  sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
+                  if(ext_setsockopt(newSD, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM,
+                                    &sinfo, sizeof(sinfo)) < 0) {
+                     LOG_WARNING
+                     stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
+                                      newSD, strerror(errno)) << "\n";
+                     LOG_END
+                  }
+#endif
                   gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
                }
                else {
@@ -1657,10 +1669,12 @@ static void passiveMode(const uint16_t localPort)
          sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM,
                            &sinfo, sizeof(sinfo)) < 0) {
-            LOG_FATAL
-            stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
-                             gControlSocket, strerror(errno)) << "\n";
-            LOG_END_FATAL
+            if(errno != ENOENT) {
+               LOG_FATAL
+               stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
+                                gControlSocket, strerror(errno)) << "\n";
+               LOG_END_FATAL
+            }
          }
 
          // ------ Set default peer parameters ---------------------------------
@@ -1675,10 +1689,10 @@ static void passiveMode(const uint16_t localPort)
          params.spp_pathmaxrxt        = gControlHBPathMaxRtx;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
                            &params, sizeof(params)) < 0) {
-            LOG_FATAL
+            LOG_WARNING
             stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
                              gControlSocket, strerror(errno)) << "\n";
-            LOG_END_FATAL
+            LOG_END
          }
 
          sctp_assocparams assocparams;
@@ -2333,11 +2347,15 @@ static void activeMode(const char* remoteEndpoint)
       LOG_END_FATAL
    }
 #if defined(HAVE_SCTP)
+   bool setSctpDefaultSendParam = false;
    if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) == 0) {
+         setSctpDefaultSendParam = true;
+      }
+      else if(errno != ENOENT) {
          LOG_FATAL
          stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
                           gControlSocket, strerror(errno)) << "\n";
@@ -2365,6 +2383,19 @@ static void activeMode(const char* remoteEndpoint)
       }
       LOG_END_FATAL
    }
+#if defined(HAVE_SCTP)
+   if((gActiveControlProtocol == IPPROTO_SCTP) && (!setSctpDefaultSendParam)) {
+      sctp_sndrcvinfo sinfo;
+      memset(&sinfo, 0, sizeof(sinfo));
+      sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
+         LOG_FATAL
+         stdlog << format("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket %d: %s!",
+                          gControlSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+   }
+#endif
 #if defined(HAVE_QUIC)
    if(gActiveControlProtocol == IPPROTO_QUIC) {
       if(quicClientHandshake(gControlSocket,
