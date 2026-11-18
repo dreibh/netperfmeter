@@ -686,45 +686,57 @@ int bindSocket(const int             sd,
 #if defined(HAVE_SCTP)
       if(protocol == IPPROTO_SCTP) {
          // ====== SCTP bind: bind to specified addresses ===================
-         char   buffer[localAddressCount * sizeof(sockaddr_union)];
-         char*  ptr = &buffer[0];
-         size_t firstAddrLen = 0;
-         for(unsigned int i = 0; i < localAddressCount; i++) {
-            size_t addrLen = 0;
-            if(localAddressArray[i].sa.sa_family == AF_INET) {
-#if defined(__sun) || defined(__sun__)
-               if(socketFamily == AF_INET6) {
-                  sockaddr_in6* mapped = (sockaddr_in6*)ptr;
-                  memset(mapped, 0, sizeof(sockaddr_in6));
-                  mapped->sin6_family = AF_INET6;
-                  mapped->sin6_port   = htobe16(localPort);
-                  mapped->sin6_addr.s6_addr[10] = 0xff;
-                  mapped->sin6_addr.s6_addr[11] = 0xff;
-                  memcpy(&mapped->sin6_addr.s6_addr[12], &localAddressArray[i].in.sin_addr, sizeof(struct in_addr));
+         char         buffer[localAddressCount * sizeof(sockaddr_union)];
+         char*        ptr          = &buffer[0];
+         size_t       firstAddrLen = 0;
+         unsigned int added        = 0;
+
+         // Place addresses matching socketFamily first so ext_bind() on an
+         // AF_INET6 socket always receives an AF_INET6 primary address:
+         for(int pass = 0; pass < 2; pass++) {
+            for(unsigned int i = 0; i < localAddressCount; i++) {
+               const bool matchesFamily = (localAddressArray[i].sa.sa_family == socketFamily);
+               if((pass == 0) != matchesFamily) {
+                  continue;
+               }
+               size_t addrLen = 0;
+               if(localAddressArray[i].sa.sa_family == AF_INET) {
+#if defined(__sun)
+                  if(socketFamily == AF_INET6) {
+                     sockaddr_in6* mapped = (sockaddr_in6*)ptr;
+                     memset(mapped, 0, sizeof(sockaddr_in6));
+                     mapped->sin6_family = AF_INET6;
+                     mapped->sin6_port   = htobe16(localPort);
+                     mapped->sin6_addr.s6_addr[10] = 0xff;
+                     mapped->sin6_addr.s6_addr[11] = 0xff;
+                     memcpy(&mapped->sin6_addr.s6_addr[12], &localAddressArray[i].in.sin_addr, sizeof(struct in_addr));
+                     addrLen = sizeof(sockaddr_in6);
+                  }
+                  else {
+#endif
+                     memcpy(ptr, (void*)&localAddressArray[i].in, sizeof(sockaddr_in));
+                     ((sockaddr_in*)ptr)->sin_port = htobe16(localPort);
+                     addrLen = sizeof(sockaddr_in);
+#if defined(__sun)
+                  }
+#endif
+               }
+               else if(localAddressArray[i].sa.sa_family == AF_INET6) {
+                  memcpy(ptr, (void*)&localAddressArray[i].in6, sizeof(sockaddr_in6));
+                  ((sockaddr_in6*)ptr)->sin6_port = htobe16(localPort);
                   addrLen = sizeof(sockaddr_in6);
                }
                else {
-#endif
-                  memcpy(ptr, (void*)&localAddressArray[i].in, sizeof(sockaddr_in));
-                  ((sockaddr_in*)ptr)->sin_port = htobe16(localPort);
-                  addrLen = sizeof(sockaddr_in);
-#if defined(__sun) || defined(__sun__)
+                  assert(false);
                }
-#endif
+               if(added == 0) {
+                  firstAddrLen = addrLen;
+               }
+               ptr += addrLen;
+               added++;
             }
-            else if(localAddressArray[i].sa.sa_family == AF_INET6) {
-               memcpy(ptr, (void*)&localAddressArray[i].in6, sizeof(sockaddr_in6));
-               ((sockaddr_in6*)ptr)->sin6_port = htobe16(localPort);
-               addrLen = sizeof(sockaddr_in6);
-            }
-            else {
-               assert(false);
-            }
-            if(i == 0) {
-               firstAddrLen = addrLen;
-            }
-            ptr += addrLen;
          }
+         assert(added == localAddressCount);
 
          if(ext_bind(sd, (const sockaddr*)&buffer[0], firstAddrLen) != 0) {
             return -3;
