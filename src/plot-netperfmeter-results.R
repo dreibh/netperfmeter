@@ -30,6 +30,32 @@ library("data.table", warn.conflicts = FALSE)
 library("dplyr",      warn.conflicts = FALSE)
 library("ggplot2")
 
+hasLinewidth <- (utils::packageVersion("ggplot2") >= "3.4.0")
+
+makeElementLine <- function(..., lw = NULL) {
+   args <- list(...)
+   if(!is.null(lw)) {
+      if(hasLinewidth) args$linewidth <- lw else args$size <- lw
+   }
+   do.call(element_line, args)
+}
+
+makeElementRect <- function(..., lw = NULL) {
+   args <- list(...)
+   if(!is.null(lw)) {
+      if(hasLinewidth) args$linewidth <- lw else args$size <- lw
+   }
+   do.call(element_rect, args)
+}
+
+makeGeomLine <- function(..., lw = NULL) {
+   args <- list(...)
+   if(!is.null(lw)) {
+      if(hasLinewidth) args$linewidth <- lw else args$size <- lw
+   }
+   do.call(geom_line, args)
+}
+
 
 # ###########################################################################
 # #### PDF Metadata Handling                                             ####
@@ -116,8 +142,8 @@ PLOTTHEME_PAPER <- theme(
 
    panel.border         = element_rect(colour = "black", fill = NA),
    panel.background     = element_blank(),
-   panel.grid.major     = element_line(color = "gray40", linewidth = 0.25, linetype = 1),
-   panel.grid.minor     = element_line(color = "gray20", linewidth = 0.10, linetype = 2)
+   panel.grid.major     = makeElementLine(color = "gray40", lw = 0.25, linetype = 1),
+   panel.grid.minor     = makeElementLine(color = "gray20", lw = 0.10, linetype = 2)
 )
 
 PLOTTHEME_FANCY <- theme(
@@ -141,8 +167,8 @@ PLOTTHEME_FANCY <- theme(
 
    panel.border         = element_rect(colour = "black", fill = NA),
    # panel.background     = element_blank(),
-   panel.grid.major     = element_line(color = "gray40", linewidth = 0.25, linetype = 1),
-   panel.grid.minor     = element_line(color = "gray20", linewidth = 0.10, linetype = 2)
+   panel.grid.major     = makeElementLine(color = "gray40", lw = 0.25, linetype = 1),
+   panel.grid.minor     = makeElementLine(color = "gray20", lw = 0.10, linetype = 2)
 )
 
 
@@ -177,8 +203,8 @@ createPlot <- function(dataSet, title, ySet, yTitle, baseColor, zSet, zTitle,
                    color = zSet,
                    linetype = vSet)) +
            PLOTTHEME_FANCY +
-           theme(panel.border = element_rect(colour = baseColor, fill = NA, linewidth = 2)) +
-           geom_line(linewidth = 1) +
+           theme(panel.border = makeElementRect(colour = baseColor, fill = NA, lw = 2)) +
+           makeGeomLine(lw = 1) +
            labs(title = title,
                 x     = "Time t [s]",
                 y     = yTitle,
