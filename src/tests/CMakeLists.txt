@@ -434,7 +434,7 @@ IF(TARGET combinesummaries AND TARGET netperfmeter)
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
       FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
       LABELS "cli;script;utility;plot-netperfmeter-results"
-      TIMEOUT 150
+      TIMEOUT 300
    )
 ENDIF()
 

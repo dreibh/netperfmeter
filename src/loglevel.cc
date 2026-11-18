@@ -30,6 +30,7 @@
 #include "loglevel.h"
 #include "tools.h"
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -59,7 +60,7 @@ bool initLogFile(const unsigned int logLevel,
          if(newLogFile->good()) {
             gStdLog = newLogFile;
             gCloseStdLog = true;
-            gLogLevel    = std::min(std::max(logLevel, MIN_LOGLEVEL), MAX_LOGLEVEL);
+            gLogLevel    = std::min(logLevel, MAX_LOGLEVEL);
             return true;
          }
          delete newLogFile;
