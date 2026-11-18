@@ -1161,6 +1161,16 @@ static Flow* createFlow(Flow*                  previousFlow,
       // ====== Establish connection ========================================
 #if defined(HAVE_SCTP)
       if(trafficSpec.Protocol == IPPROTO_SCTP) {
+#if defined(SCTP_PRSCTP)
+         const int prSctpOption = 1;
+         if(ext_setsockopt(socketDescriptor, IPPROTO_SCTP, SCTP_PRSCTP,
+                           &prSctpOption, sizeof(prSctpOption)) < 0) {
+            LOG_WARNING
+            stdlog << format("Unable to enable PR-SCTP (SCTP_PRSCTP option) on SCTP socket %d: %s!",
+                             socketDescriptor, strerror(errno)) << "\n";
+            LOG_END
+         }
+#endif
          // ------ Set SCTP stream parameters--------------------------------
          sctp_initmsg initmsg;
          memset((char*)&initmsg, 0 ,sizeof(initmsg));
@@ -1646,10 +1656,13 @@ static void passiveMode(const uint16_t localPort)
          // ------ Set default peer parameters ---------------------------------
          struct sctp_paddrparams params;
          memset(&params, 0, sizeof(params));
-         params.spp_assoc_id   = SCTP_FUTURE_ASSOC;
-         params.spp_flags      = SPP_HB_ENABLE;
-         params.spp_hbinterval = gControlHBInterval;
-         params.spp_pathmaxrxt = gControlHBPathMaxRtx;
+         params.spp_assoc_id          = SCTP_FUTURE_ASSOC;
+         params.spp_address.ss_family = checkIPv6() ? AF_INET6 : AF_INET;
+#if defined(SPP_HB_ENABLE)
+         params.spp_flags             = SPP_HB_ENABLE;
+#endif
+         params.spp_hbinterval        = gControlHBInterval;
+         params.spp_pathmaxrxt        = gControlHBPathMaxRtx;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
                            &params, sizeof(params)) < 0) {
             LOG_FATAL
@@ -1998,8 +2011,18 @@ static void passiveMode(const uint16_t localPort)
    gSCTPSocket = createAndBindSocket(AF_UNSPEC, SOCK_STREAM, IPPROTO_SCTP, localPort,
                                      gLocalDataAddresses,
                                      (const sockaddr_union*)&gLocalDataAddressArray,
-                                     true, gBindV6Only);
+                                     false, gBindV6Only);
    if(gSCTPSocket >= 0) {
+#if defined(SCTP_PRSCTP)
+      const int prSctpOption = 1;
+      if(ext_setsockopt(gSCTPSocket, IPPROTO_SCTP, SCTP_PRSCTP,
+                        &prSctpOption, sizeof(prSctpOption)) < 0) {
+         LOG_WARNING
+         stdlog << format("Unable to enable PR-SCTP (SCTP_PRSCTP option) on SCTP socket %d: %s!",
+                          gSCTPSocket, strerror(errno)) << "\n";
+         LOG_END
+      }
+#endif
 
       // ------ Set SCTP stream parameters-----------------------------------
       sctp_initmsg initmsg;
@@ -2030,6 +2053,13 @@ static void passiveMode(const uint16_t localPort)
       if(setBufferSizes(gSCTPSocket, gSndBufSize, gRcvBufSize) == false) {
          LOG_FATAL
          stdlog << format("Unable to configure buffer sizes on SCTP socket %d: %s!",
+                          gSCTPSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+
+      if(ext_listen(gSCTPSocket, 10) < 0) {
+         LOG_FATAL
+         stdlog << format("Unable to enable listening on SCTP socket %d: %s!",
                           gSCTPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
@@ -2343,9 +2373,13 @@ static void activeMode(const char* remoteEndpoint)
    if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_paddrparams paddrparams;
       memset(&paddrparams, 0, sizeof(paddrparams));
-      paddrparams.spp_flags      = SPP_HB_ENABLE;
-      paddrparams.spp_hbinterval = gControlHBInterval;
-      paddrparams.spp_pathmaxrxt = gControlHBPathMaxRtx;
+      paddrparams.spp_assoc_id          = SCTP_FUTURE_ASSOC;
+      paddrparams.spp_address.ss_family = controlAddress.sa.sa_family;
+#if defined(SPP_HB_ENABLE)
+      paddrparams.spp_flags             = SPP_HB_ENABLE;
+#endif
+      paddrparams.spp_hbinterval        = gControlHBInterval;
+      paddrparams.spp_pathmaxrxt        = gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddrparams, sizeof(paddrparams)) < 0) {
          LOG_WARNING
          stdlog << format("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket %d: %s!",
