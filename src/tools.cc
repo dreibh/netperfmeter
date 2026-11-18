@@ -676,9 +676,26 @@ int bindSocket(const int             sd,
          char*  ptr = &buffer[0];
          for(unsigned int i = 0;i < localAddressCount;i++) {
             if(localAddressArray[i].sa.sa_family == AF_INET) {
-               memcpy(ptr, (void*)&localAddressArray[i].in, sizeof(sockaddr_in));
-               ((sockaddr_in*)ptr)->sin_port = htobe16(localPort);
-               ptr += sizeof(sockaddr_in);
+#if defined(__sun) || defined(__sun__)
+               if(socketFamily == AF_INET6) {
+                  // Solaris/illumos sctp_bindx() on AF_INET6 requires IPv4-mapped IPv6 addresses:
+                  sockaddr_in6* mapped = (sockaddr_in6*)ptr;
+                  memset(mapped, 0, sizeof(sockaddr_in6));
+                  mapped->sin6_family = AF_INET6;
+                  mapped->sin6_port   = htobe16(localPort);
+                  mapped->sin6_addr.s6_addr[10] = 0xff;
+                  mapped->sin6_addr.s6_addr[11] = 0xff;
+                  memcpy(&mapped->sin6_addr.s6_addr[12], &localAddressArray[i].in.sin_addr, sizeof(struct in_addr));
+                  ptr += sizeof(sockaddr_in6);
+               }
+               else {
+#endif
+                  memcpy(ptr, (void*)&localAddressArray[i].in, sizeof(sockaddr_in));
+                  ((sockaddr_in*)ptr)->sin_port = htobe16(localPort);
+                  ptr += sizeof(sockaddr_in);
+#if defined(__sun) || defined(__sun__)
+               }
+#endif
             }
             else if(localAddressArray[i].sa.sa_family == AF_INET6) {
                memcpy(ptr, (void*)&localAddressArray[i].in6, sizeof(sockaddr_in6));

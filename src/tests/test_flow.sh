@@ -1003,17 +1003,15 @@ wait_for_listener() {
                 my $family = $is_v6 ? AF_INET6 : AF_INET;
                 my $proto = 132; # IPPROTO_SCTP
 
-                foreach my $sock_type (1, 5) {
-                    my $sock;
-                    if (socket($sock, $family, $sock_type, $proto)) {
-                        my $addr = $is_v6 ? sockaddr_in6($port, inet_pton(AF_INET6, $host))
-                                          : sockaddr_in($port, inet_aton($host));
-                        if (connect($sock, $addr)) {
-                            close($sock);
-                            exit 0;
-                        }
+                my $sock;
+                if (socket($sock, $family, SOCK_STREAM, $proto)) {
+                    my $addr = $is_v6 ? sockaddr_in6($port, inet_pton(AF_INET6, $host))
+                                      : sockaddr_in($port, inet_aton($host));
+                    if (connect($sock, $addr)) {
                         close($sock);
+                        exit 0;
                     }
+                    close($sock);
                 }
                 exit 1;
             ' "$_host" "$_port" 2>/dev/null; then
