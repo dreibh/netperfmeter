@@ -1766,7 +1766,7 @@ static void passiveMode(const uint16_t localPort)
          gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
       }
       else {
-         if( (errno != EPROTONOSUPPORT) ||
+         if( ((errno != EPROTONOSUPPORT) && (errno != EAFNOSUPPORT)) ||
              ((gPassiveControlTCP == false)
 #if defined(HAVE_QUIC)
               && (!gPassiveControlQUIC || (gQUICCertificate == nullptr) || (gQUICKey == nullptr))
@@ -2236,7 +2236,12 @@ static void passiveMode(const uint16_t localPort)
 
    }
    else {
-      if( (errno != EPROTONOSUPPORT) || (gPassiveControlTCP == false) ) {
+      if( ((errno != EPROTONOSUPPORT) && (errno != EAFNOSUPPORT)) ||
+          ((gPassiveControlTCP == false)
+#if defined(HAVE_QUIC)
+           && (gControlSocketQUIC < 0)
+#endif
+          ) ) {
          LOG_FATAL
          // TRANSLATORS: Fatal error when binding SCTP data socket. Placeholders: {} 1: port number, 2: strerror() message.
          stdlog << formatText(gettext("Unable to create and bind SCTP socket on port {}: {}!"),
