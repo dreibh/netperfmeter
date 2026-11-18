@@ -98,6 +98,7 @@ TARGET_LINK_LIBRARIES(netperfmeter
                               ${Intl_LIBRARIES}
                               ${LIBIBERTY_LIBRARY}
                               ${KSTAT_LIBRARY}
+                              ${NSL_LIBRARY}
                               ${SOCKET_LIBRARY}
                               ${CMAKE_THREAD_LIBS_INIT})
 INSTALL(TARGETS netperfmeter     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
