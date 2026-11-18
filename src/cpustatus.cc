@@ -40,6 +40,7 @@
 #include <iostream>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/proc.h>
@@ -367,13 +368,16 @@ void CPUStatus::update()
       tick_t diffTotal = 0;
       for(unsigned int j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
-         diff[j] = CpuTimes[index] - OldCpuTimes[index];
+         diff[j] = (CpuTimes[index] >= OldCpuTimes[index]) ?
+                      (CpuTimes[index] - OldCpuTimes[index]) : 0;
          diffTotal += diff[j];
       }
       for(unsigned int j = 0; j < CpuStates; j++) {
          const unsigned int index = (i * CpuStates) + j;
          if(diffTotal != 0) {   // Avoid division by zero!
-            Percentages[index] = static_cast<float>(100.0 * static_cast<double>(diff[j]) / static_cast<double>(diffTotal));
+            const float pct = static_cast<float>(
+               100.0 * static_cast<double>(diff[j]) / static_cast<double>(diffTotal));
+            Percentages[index] = std::min(100.0f, std::max(0.0f, pct));
          } else {
             // No ticks passed => 100% idle
             Percentages[index] = (j == IDLE_INDEX) ? 100.0f : 0.0f;

@@ -55,7 +55,7 @@ bool initLogFile(const unsigned int logLevel,
          if(newLogFile->good()) {
             gStdLog      = newLogFile;
             gCloseStdLog = true;
-            gLogLevel    = std::clamp(logLevel, MIN_LOGLEVEL, MAX_LOGLEVEL);
+            gLogLevel    = std::min(logLevel, MAX_LOGLEVEL);
             return true;
          }
          delete newLogFile;
