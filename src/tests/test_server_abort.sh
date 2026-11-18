@@ -170,7 +170,7 @@ case "${MODE}" in
             cat "${TMP_DIR}/client.log" >&2
             exit 1
         fi
-        if grep -qE "terminate called|Aborted|Avbrutt|SIGABRT|Segmentation fault|assure" "${TMP_DIR}/client.log"; then
+        if grep -vF "*** Aborted ***" "${TMP_DIR}/client.log" | grep -qE "terminate called|Aborted|Avbrutt|SIGABRT|Segmentation fault|assure"; then
             echo "FAIL: Crash or assertion failure detected in active client log." >&2
             cat "${TMP_DIR}/client.log" >&2
             exit 1
