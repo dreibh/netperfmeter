@@ -576,10 +576,24 @@ static int resolveSocketFamily(const int             family,
    int socketFamily = family;
    if(socketFamily == AF_UNSPEC) {
       socketFamily = checkIPv6() ? AF_INET6 : AF_INET;
-      if((localAddresses >= 1) && (localAddressArray != nullptr) &&
-         (protocol != IPPROTO_SCTP) &&
-         (localAddressArray[0].sa.sa_family == AF_INET)) {
-         socketFamily = AF_INET;   // Restrict to IPv4!
+      if((localAddresses >= 1) && (localAddressArray != nullptr)) {
+         if(protocol != IPPROTO_SCTP) {
+            if(localAddressArray[0].sa.sa_family == AF_INET) {
+               socketFamily = AF_INET;   // Restrict to IPv4!
+            }
+         }
+         else {
+            bool hasIPv6 = false;
+            for(unsigned int i = 0; i < localAddresses; i++) {
+               if(localAddressArray[i].sa.sa_family == AF_INET6) {
+                  hasIPv6 = true;
+                  break;
+               }
+            }
+            if(!hasIPv6) {
+               socketFamily = AF_INET;   // All bound addresses are IPv4
+            }
+         }
       }
    }
    return socketFamily;
@@ -674,11 +688,12 @@ int bindSocket(const int             sd,
          // ====== SCTP bind: bind to specified addresses ===================
          char   buffer[localAddressCount * sizeof(sockaddr_union)];
          char*  ptr = &buffer[0];
-         for(unsigned int i = 0;i < localAddressCount;i++) {
+         size_t firstAddrLen = 0;
+         for(unsigned int i = 0; i < localAddressCount; i++) {
+            size_t addrLen = 0;
             if(localAddressArray[i].sa.sa_family == AF_INET) {
 #if defined(__sun) || defined(__sun__)
                if(socketFamily == AF_INET6) {
-                  // Solaris/illumos sctp_bindx() on AF_INET6 requires IPv4-mapped IPv6 addresses:
                   sockaddr_in6* mapped = (sockaddr_in6*)ptr;
                   memset(mapped, 0, sizeof(sockaddr_in6));
                   mapped->sin6_family = AF_INET6;
@@ -686,13 +701,13 @@ int bindSocket(const int             sd,
                   mapped->sin6_addr.s6_addr[10] = 0xff;
                   mapped->sin6_addr.s6_addr[11] = 0xff;
                   memcpy(&mapped->sin6_addr.s6_addr[12], &localAddressArray[i].in.sin_addr, sizeof(struct in_addr));
-                  ptr += sizeof(sockaddr_in6);
+                  addrLen = sizeof(sockaddr_in6);
                }
                else {
 #endif
                   memcpy(ptr, (void*)&localAddressArray[i].in, sizeof(sockaddr_in));
                   ((sockaddr_in*)ptr)->sin_port = htobe16(localPort);
-                  ptr += sizeof(sockaddr_in);
+                  addrLen = sizeof(sockaddr_in);
 #if defined(__sun) || defined(__sun__)
                }
 #endif
@@ -700,15 +715,39 @@ int bindSocket(const int             sd,
             else if(localAddressArray[i].sa.sa_family == AF_INET6) {
                memcpy(ptr, (void*)&localAddressArray[i].in6, sizeof(sockaddr_in6));
                ((sockaddr_in6*)ptr)->sin6_port = htobe16(localPort);
-               ptr += sizeof(sockaddr_in6);
+               addrLen = sizeof(sockaddr_in6);
             }
             else {
                assert(false);
             }
+            if(i == 0) {
+               firstAddrLen = addrLen;
+            }
+            ptr += addrLen;
          }
-         if(sctp_bindx(sd, (sockaddr*)&buffer, (int)localAddressCount,
-                       SCTP_BINDX_ADD_ADDR) != 0) {
+
+         if(ext_bind(sd, (const sockaddr*)&buffer[0], firstAddrLen) != 0) {
             return -3;
+         }
+         if(localAddressCount > 1) {
+            if(localPort == 0) {
+               sockaddr_union boundAddr;
+               socklen_t      boundAddrLen = sizeof(boundAddr);
+               if(ext_getsockname(sd, &boundAddr.sa, &boundAddrLen) == 0) {
+                  const uint16_t assignedPort = getPort(&boundAddr.sa);
+                  char* addPtr = &buffer[0] + firstAddrLen;
+                  for(unsigned int i = 1; i < localAddressCount; i++) {
+                     setPort((sockaddr*)addPtr, assignedPort);
+                     addPtr += (((const sockaddr*)addPtr)->sa_family == AF_INET6) ?
+                                  sizeof(sockaddr_in6) : sizeof(sockaddr_in);
+                  }
+               }
+            }
+            if(sctp_bindx(sd, (sockaddr*)(&buffer[0] + firstAddrLen),
+                          (int)(localAddressCount - 1),
+                          SCTP_BINDX_ADD_ADDR) != 0) {
+               return -3;
+            }
          }
       }
       else {
