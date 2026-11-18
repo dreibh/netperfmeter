@@ -75,6 +75,7 @@ Flow::Flow(const uint64_t         measurementID,
    resetStatistics();
    LastOutboundSeqNumber    = static_cast<uint64_t>(-1);
    LastOutboundFrameID      = static_cast<uint32_t>(-1);
+   NextTransmissionEvent    = static_cast<uint64_t>(-1);
    NextStatusChangeEvent    = static_cast<uint64_t>(-1);
    OnOffEventPointer        = 0;
 
@@ -365,13 +366,15 @@ uint64_t Flow::scheduleNextTransmissionEvent()
    if(OutputStatus == On) {
       // ====== Saturated sender ============================================
       if((TrafficSpec.OutboundFrameSize[0] > 0.0) && (TrafficSpec.OutboundFrameRate[0] <= 0.0000001)) {
+         NextTransmissionEvent = 0;
          nextTransmissionEvent = 0;
       }
       // ====== Non-saturated sender ========================================
       else if((TrafficSpec.OutboundFrameSize[0] > 0.0) && (TrafficSpec.OutboundFrameRate[0] > 0.0000001)) {
          const double nextFrameRate = getRandomValue(static_cast<const double*>(TrafficSpec.OutboundFrameRate),
                                                      TrafficSpec.OutboundFrameRateRng);
-         nextTransmissionEvent = LastTransmission + static_cast<uint64_t>(rint(1000000.0 / nextFrameRate));
+         NextTransmissionEvent += static_cast<uint64_t>(rint(1000000.0 / nextFrameRate));
+         nextTransmissionEvent = NextTransmissionEvent;
       }
    }
    unlock();
@@ -422,9 +425,19 @@ void Flow::handleStatusChangeEvent(const uint64_t now)
 
       if(OutputStatus == Off) {
          OutputStatus = On;
+         if(TrafficSpec.outgoingFlowIsSaturated()) {
+            NextTransmissionEvent = 0;
+         }
+         else if(TrafficSpec.outgoingFlowIsNotSaturated()) {
+            NextTransmissionEvent = now;
+         }
+         else {
+            NextTransmissionEvent = static_cast<uint64_t>(-1);
+         }
       }
       else if(OutputStatus == On) {
-         OutputStatus = Off;
+         OutputStatus          = Off;
+         NextTransmissionEvent = static_cast<uint64_t>(-1);
       }
       else {
          abort();
@@ -442,14 +455,30 @@ void Flow::run()
 {
    signal(SIGPIPE, SIG_IGN);
 
-   scheduleNextStatusChangeEvent(getMonotonicMicroTime().value);
+   const uint64_t startTime = getMonotonicMicroTime().value;
+   scheduleNextStatusChangeEvent(startTime);
+   lock();
+   if(OutputStatus == Flow::On) {
+      if(TrafficSpec.outgoingFlowIsSaturated()) {
+         NextTransmissionEvent = 0;
+      }
+      else if(TrafficSpec.outgoingFlowIsNotSaturated()) {
+         NextTransmissionEvent = startTime;
+      }
+      else {
+         NextTransmissionEvent = static_cast<uint64_t>(-1);
+      }
+   }
+   unlock();
 
    bool result = true;
    do {
-      // ====== Schedule next status change event ===========================
-      MonotonicMicroTime now              = getMonotonicMicroTime();
-      const uint64_t     nextTransmission = scheduleNextTransmissionEvent();
-      uint64_t           nextEvent        = std::min(NextStatusChangeEvent, nextTransmission);
+      // ====== Schedule next event =========================================
+      MonotonicMicroTime now = getMonotonicMicroTime();
+      lock();
+      uint64_t nextTransmission = NextTransmissionEvent;
+      uint64_t nextEvent        = std::min(NextStatusChangeEvent, nextTransmission);
+      unlock();
 
       // ====== Wait until there is something to do =========================
       if(nextEvent > now.value) {
@@ -471,17 +500,21 @@ void Flow::run()
 
          // ====== Outgoing data (non-saturated sender) =====================
          else if(TrafficSpec.outgoingFlowIsNotSaturated()) {
-            const uint64_t lastEvent = LastTransmission;
             if(nextTransmission <= now.value) {
                do {
                   result = transmitFrame(this, now);
-                  if(now.value - lastEvent > 1000000ULL) {
+                  if(now.value - nextTransmission > 1000000ULL) {
                      // Time gap of more than 1s -> do not try to correct.
                      // But the next transmission needs to be scheduled!
+                     lock();
+                     NextTransmissionEvent = now.value;
+                     unlock();
                      scheduleNextTransmissionEvent();
                      break;
                   }
-               } while(scheduleNextTransmissionEvent() <= now.value);
+               } while((result == true) &&
+                       (!isStopping()) &&
+                       ((nextTransmission = scheduleNextTransmissionEvent()) <= std::min(now.value, NextStatusChangeEvent)));
 
                if(TrafficSpec.Protocol == IPPROTO_UDP) {
                   // Keep sending, even if there is a temporary failure.

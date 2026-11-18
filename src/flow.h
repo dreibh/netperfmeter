@@ -240,6 +240,7 @@ class Flow : public Thread
    FlowStatus         OutputStatus;
    uint32_t           LastOutboundFrameID;     // ID of last outbound frame
    uint64_t           LastOutboundSeqNumber;   // ID of last outbound packet
+   uint64_t           NextTransmissionEvent;
    uint64_t           NextStatusChangeEvent;
    size_t             OnOffEventPointer;
 
