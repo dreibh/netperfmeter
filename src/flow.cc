@@ -433,7 +433,7 @@ void Flow::run()
          int timeout = pollTimeout(now, 2,
                                    now + 1000000,
                                    nextEvent);
-         ext_poll_wrapper(nullptr, 0, timeout);
+         ext_poll(nullptr, 0, timeout);
          now = getMicroTime();
       }
 

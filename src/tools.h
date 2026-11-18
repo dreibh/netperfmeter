@@ -204,14 +204,4 @@ double randomNormal(const double mean, const double stddev);
 double randomTruncNormal(const double mean, const double stddev);
 double randomParetoDouble(const double location, const double shape);
 
-#if defined(__APPLE__)
-// Apple's poll() function is broken. We need a wrapper to select() here!
-int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time);
-#else
-inline int ext_poll_wrapper(struct pollfd* fdlist, long unsigned int count, int time)
-{
-   return ext_poll(fdlist, count, time);
-}
-#endif
-
 #endif
