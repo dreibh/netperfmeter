@@ -1716,7 +1716,7 @@ static void passiveMode(const uint16_t localPort)
          gMessageReader.registerSocket(IPPROTO_SCTP, gControlSocket);
       }
       else {
-         if( (errno != EPROTONOSUPPORT) ||
+         if( ((errno != EPROTONOSUPPORT) && (errno != EAFNOSUPPORT)) ||
              ((gPassiveControlTCP == false)
 #if defined(HAVE_QUIC)
               && (gControlSocketQUIC < 0)
@@ -2076,7 +2076,7 @@ static void passiveMode(const uint16_t localPort)
 
    }
    else {
-      if( (errno != EPROTONOSUPPORT) ||
+      if( ((errno != EPROTONOSUPPORT) && (errno != EAFNOSUPPORT)) ||
           ((gPassiveControlTCP == false)
 #if defined(HAVE_QUIC)
            && (gControlSocketQUIC < 0)
