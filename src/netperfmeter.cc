@@ -241,6 +241,16 @@ static void usage(const char* program, const int exitCode)
 // ###### Handle global command-line parameter ##############################
 static bool handleGlobalParameters(int argc, char** argv)
 {
+   int effectiveArgc = argc;
+   if((argc > 1) && (argv[1][0] != '-')) {
+      char* firstArg = argv[1];
+      for(int i = 1; i < argc - 1; i++) {
+         argv[i] = argv[i + 1];
+      }
+      argv[argc - 1] = firstArg;
+      effectiveArgc = argc - 1;
+   }
+
    const static struct option long_options[] = {
       { "control-over-sctp",             no_argument,       0, 'x'    },
       { "no-control-over-sctp",          no_argument,       0, 'X'    },
@@ -296,7 +306,7 @@ static bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(argc, argv, "xXyYwWzZL:l:6T:o:i:N:C:S:V:A:P:K:J:I:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(effectiveArgc, argv, "xXyYwWzZL:l:6T:o:i:N:C:S:V:A:P:K:J:I:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
 #if defined(HAVE_SCTP)
@@ -465,7 +475,7 @@ static bool handleGlobalParameters(int argc, char** argv)
                switch(option) {
                   case 's':
                      flow.Protocol = IPPROTO_SCTP;
-                     while( (optind < argc) && (argv[optind][0] != '-')) {
+                     while( (optind < effectiveArgc) && (argv[optind][0] != '-')) {
                         flow.Flows.push_back(argv[optind]);
                         optind++;
                      }
@@ -495,7 +505,7 @@ static bool handleGlobalParameters(int argc, char** argv)
                   case 'k':
 #if defined(HAVE_QUIC)
                      flow.Protocol = IPPROTO_QUIC;
-                     while( (optind < argc) && (argv[optind][0] != '-')) {
+                     while( (optind < effectiveArgc) && (argv[optind][0] != '-')) {
                         flow.Flows.push_back(argv[optind]);
                         optind++;
                      }
