@@ -163,10 +163,24 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       // ====== Find out the number of bytes to read ========================
       ssize_t received;
       size_t  bytesToRead;
-      if( (socket->Protocol == IPPROTO_TCP)
 #if defined(HAVE_SCTP)
-          || (socket->Protocol == IPPROTO_SCTP)
+      if(socket->Protocol == IPPROTO_SCTP) {
+         // SCTP preserves message boundaries (MSG_EOR) and never merges two
+         // messages or notifications into one recvmsg() call. Reading into
+         // the full remaining buffer avoids splitting SCTP notifications
+         // mid-header (where KAME/NetBSD SCTP may not set MSG_NOTIFICATION
+         // until MSG_EOR is reached).
+         if(socket->Status == Socket::MRS_StreamError) {
+            // An error occurred before. Reset and try again ...
+            socket->Status    = Socket::MRS_WaitingForHeader;
+            socket->BytesRead = 0;
+         }
+         bytesToRead = socket->MessageBufferSize - socket->BytesRead;
+         assure(bytesToRead + socket->BytesRead <= socket->MessageBufferSize);
+      }
+      else
 #endif
+      if( (socket->Protocol == IPPROTO_TCP)
 #if defined(HAVE_MPTCP)
           || (socket->Protocol == IPPROTO_MPTCP)
 #endif
@@ -175,7 +189,7 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 #endif
           || (false)   /* Avoid compile warning without any #ifdef case */
         ) {
-         // SCTP, TCP/MPTCP and QUIC can return partial messages upon recv() calls.
+         // TCP/MPTCP and QUIC can return partial messages upon recv() calls.
          // TCP/MPTCP and QUIC may even return multiple messages, if the buffer
          // size is large enough!
          if(socket->Status == Socket::MRS_WaitingForHeader) {
@@ -186,20 +200,8 @@ ssize_t MessageReader::receiveMessage(const int        sd,
             bytesToRead = socket->MessageSize - socket->BytesRead;
          }
          else {
-#if defined(HAVE_SCTP)
-            if(socket->Protocol == IPPROTO_SCTP) {
-               // An error occurred before. Reset and try again ...
-               socket->Status    = Socket::MRS_WaitingForHeader;
-               socket->BytesRead = 0;
-               bytesToRead       = sizeof(TLVHeader);
-            }
-            else {
-#endif
-               // Not useful to retry when synchronization has been lost!
-               return MRRM_STREAM_ERROR;
-#if defined(HAVE_SCTP)
-            }
-#endif
+            // Not useful to retry when synchronization has been lost!
+            return MRRM_STREAM_ERROR;
          }
          assure(bytesToRead + socket->BytesRead <= socket->MessageBufferSize);
       }
