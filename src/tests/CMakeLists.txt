@@ -546,7 +546,8 @@ ADD_NETPERFMETER_FLOW_TEST(flow_tcp_custom_id_description
    127.0.0.1 tcp const10:const1000:const10:const1000:id=42:description=CustomFlow42 plain 2
    --expect-config "CustomFlow42")
 IF (HAVE_TCP_CONGESTION)
-   ADD_NETPERFMETER_FLOW_TEST(flow_tcp_cc_cubic BASE_PORT_TCP plain tcp const10:const1000:const10:const1000:cc=cubic)
+   ADD_NETPERFMETER_FLOW_TEST(flow_tcp_cc_cubic
+      127.0.0.1 tcp const10:const1000:const10:const1000:cc=cubic plain 2)
 ENDIF()
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_nodelay_off
    127.0.0.1 tcp const10:const1000:const10:const1000:nodelay=off plain 2)
@@ -1246,8 +1247,10 @@ ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_download_ipv6 ::1       mptcp const0:const
 # ====== 4. Default Shorthand, Control Channel Over MPTCP & Local Bind ======
 ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_default_shorthand
    127.0.0.1 mptcp default plain 2)
-ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_cc_cubic
-   127.0.0.1 mptcp const10:const1000:const10:const1000:cc=cubic plain 2)
+IF (HAVE_TCP_CONGESTION)
+   ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_cc_cubic
+      127.0.0.1 mptcp const10:const1000:const10:const1000:cc=cubic plain 2)
+ENDIF()
 ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_local_bind_ipv4
    127.0.0.1 mptcp const10:const1000:const10:const1000 plain 2
    -L 127.0.0.1 -l 127.0.0.1
