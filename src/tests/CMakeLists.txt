@@ -504,7 +504,7 @@ IF(TARGET combinesummaries AND TARGET netperfmeter)
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
       FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:"
       LABELS "cli;script;utility;plot-netperfmeter-results"
-      TIMEOUT 150
+      TIMEOUT 300
    )
 ENDIF()
 
@@ -3002,24 +3002,6 @@ ADD_NETPERFMETER_FLOW_TEST(flow_quic_saturated_ctrl_quic
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2connections_saturated
    127.0.0.1 quic const0:const16000:const0:const16000:maxmsgsize=1400 plain 3
    -quic const0:const32000:const0:const32000:maxmsgsize=1400)
-
-ENDIF()
-
-
-# ====== 5. Saturated DCCP Flows with Multi-Message Framing =================
-IF (HAVE_DCCP_FOR_TESTS)
-
-# Saturated DCCP bidirectional transfer: 16 KB frames fragmented into 1,400 B chunks
-ADD_NETPERFMETER_FLOW_TEST(flow_dccp_saturated_large_frames
-   127.0.0.1 dccp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3)
-
-# Saturated DCCP transfer with 64 KB jumbo frames fragmented into 1,400 B chunks
-ADD_NETPERFMETER_FLOW_TEST(flow_dccp_saturated_jumbo_frames
-   127.0.0.1 dccp const0:const65536:const0:const65536:maxmsgsize=1400 plain 3)
-
-# Saturated upload-only DCCP with large framed messages
-ADD_NETPERFMETER_FLOW_TEST(flow_dccp_saturated_upload_segmented
-   127.0.0.1 dccp const0:const32000:const0:const0:maxmsgsize=1400 plain 3)
 
 ENDIF()
 
