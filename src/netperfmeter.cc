@@ -1424,7 +1424,7 @@ static bool mainLoop(const bool     isActiveMode,
       // ====== Incoming control message ====================================
       int controlID;
       for(controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
-         if(fds[controlID].revents & (POLLIN|POLLERR)) {
+         if(fds[controlID].revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
                const int newSD = ext_accept(gControlSocket, nullptr, 0);
@@ -1526,10 +1526,29 @@ static bool mainLoop(const bool     isActiveMode,
             }
 #endif
             else {
-               const bool controlOkay = handleNetPerfMeterControlMessage(
-                                           &gMessageReader, fds[controlID].fd);
+               int soError = 0;
+#if defined(__NetBSD__) && defined(HAVE_SCTP)
+               if(gMessageReader.getSocketProtocol(fds[controlID].fd) == IPPROTO_SCTP) {
+                  socklen_t soErrorLen = sizeof(soError);
+                  if(ext_getsockopt(fds[controlID].fd, SOL_SOCKET, SO_ERROR,
+                                    &soError, &soErrorLen) < 0) {
+                     soError = errno;
+                  }
+               }
+#endif
+               const bool socketBroken =
+                  (soError != 0) ||
+                  (fds[controlID].revents & (POLLERR|POLLNVAL)) ||
+                  ((fds[controlID].revents & POLLHUP) && !(fds[controlID].revents & POLLIN));
+               const bool controlOkay =
+                  (!socketBroken) ?
+                     handleNetPerfMeterControlMessage(&gMessageReader, fds[controlID].fd) :
+                     false;
                if(!controlOkay) {
                   if(isActiveMode) {
+#if defined(HAVE_QUIC)
+                     quicDeregisterControlSocket(fds[controlID].fd);
+#endif
                      return false;
                   }
                   // Make sure to deregister all flows belonging to this

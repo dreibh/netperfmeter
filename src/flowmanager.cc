@@ -1059,7 +1059,7 @@ void FlowManager::run()
       const SystemMicroTime nowSystem = getSystemMicroTime();
       if(result > 0) {
          // ------ Drain wakeup pipe ----------------------------------------
-         if(wakeupPollFD && (wakeupPollFD->revents & (POLLIN | POLLERR))) {
+         if(wakeupPollFD && (wakeupPollFD->revents & (POLLIN|POLLERR))) {
             char buffer[64];
             while(read(WakeupPipe[0], buffer, sizeof(buffer)) > 0) {
                // Drained
@@ -1073,16 +1073,33 @@ void FlowManager::run()
             if(entry) {
 
                // ====== Handle data message ================================
-               if(entry->revents & (POLLIN|POLLERR)) {
+               if(entry->revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) {
                   const int protocol = FlowSet[i]->getTrafficSpec().Protocol;
 #if defined(DEBUG_POLL)
                   std::cerr << "\tPOLLIN: flow " << FlowSet[i]->SocketDescriptor
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
 #endif
+                  int soError = 0;
+#if defined(__NetBSD__) && defined(HAVE_SCTP)
+                  if(protocol == IPPROTO_SCTP) {
+                     socklen_t soErrorLen = sizeof(soError);
+                     if(ext_getsockopt(entry->fd, SOL_SOCKET, SO_ERROR,
+                                       &soError, &soErrorLen) < 0) {
+                        soError = errno;
+                     }
+                  }
+#endif
+                  const bool socketBroken =
+                     (soError != 0) ||
+                     (entry->revents & (POLLERR|POLLNVAL)) ||
+                     ((entry->revents & POLLHUP) && !(entry->revents & POLLIN));
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
-                  const bool dataOkay = handleNetPerfMeterData(true, nowMonotonic, nowSystem,
-                                                               protocol, entry->fd);
+                  const bool dataOkay =
+                     (!socketBroken) ?
+                        handleNetPerfMeterData(true, nowMonotonic, nowSystem,
+                                               protocol, entry->fd) :
+                        false;
                   if(!dataOkay) {
                      // Close the broken connection!
                      const int brokenSD = FlowSet[i]->SocketDescriptor;
@@ -1131,14 +1148,31 @@ void FlowManager::run()
 
                   // ====== Handle data message =============================
                   if( (ud->ToBeRemoved == false) &&
-                      (entry->revents & (POLLIN|POLLERR)) ) {
+                      (entry->revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) ) {
 #if defined(DEBUG_POLL)
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                  << " protocol " << ud->Protocol << "\n";
 #endif
-                     const bool dataOkay = handleNetPerfMeterData(true, nowMonotonic, nowSystem,
-                                                                  ud->Protocol,
-                                                                  ud->SocketDescriptor);
+                     int soError = 0;
+#if defined(__NetBSD__) && defined(HAVE_SCTP)
+                     if(ud->Protocol == IPPROTO_SCTP) {
+                        socklen_t soErrorLen = sizeof(soError);
+                        if(ext_getsockopt(ud->SocketDescriptor, SOL_SOCKET, SO_ERROR,
+                                          &soError, &soErrorLen) < 0) {
+                           soError = errno;
+                        }
+                     }
+#endif
+                     const bool socketBroken =
+                        (soError != 0) ||
+                        (entry->revents & (POLLERR|POLLNVAL)) ||
+                        ((entry->revents & POLLHUP) && !(entry->revents & POLLIN));
+                     const bool dataOkay =
+                        (!socketBroken) ?
+                           handleNetPerfMeterData(true, nowMonotonic, nowSystem,
+                                                  ud->Protocol,
+                                                  ud->SocketDescriptor) :
+                           false;
                      if(!dataOkay) {
                         // Incoming connection has already been closed -> remove it!
                         LOG_WARNING
