@@ -1,6 +1,6 @@
 # Maintainer: Thomas Dreibholz <dreibh@simula.no>
 pkgname=netperfmeter
-pkgver=2.0.14
+pkgver=2.0.15
 pkgrel=1
 pkgdesc="Network performance meter for UDP, TCP, MPTCP, SCTP, DCCP and QUIC protocols"
 url="https://www.nntb.no/~dreibh/netperfmeter/"
@@ -95,7 +95,7 @@ _systemd() {
 
 pdfproctools() {
 	pkgdesc="PDF Processing Tools"
-	depends="ghostscript perl qpdf"
+	depends="ghostscript perl perl-pdf-api2 qpdf"
 
 	mkdir -p "$subpkgdir"/usr/bin
 	mv "$pkgdir/usr/bin/pdfembedfonts" "$subpkgdir/usr/bin/"
@@ -104,7 +104,7 @@ pdfproctools() {
 
 plotting() {
 	pkgdesc="Network Performance Meter (plotting program)"
-	depends="$pkgname=$pkgver-r$pkgrel $pkgname-pdfproctools=$pkgver-r$pkgrel r-core r-ggplot2"
+	depends="$pkgname=$pkgver-r$pkgrel $pkgname-pdfproctools=$pkgver-r$pkgrel r-core r-data.table r-dplyr r-ggplot2"
 
 	mkdir -p "$subpkgdir/usr/bin"
 	mv "$pkgdir/usr/bin/plot-netperfmeter-results" "$subpkgdir/usr/bin/"
@@ -130,5 +130,5 @@ _all() {
 }
 
 sha512sums="
-e6ec9b141ae1e8146a0a98c4ac55816f0394b2201d0517479bf87218000e5acdaf7c76b134277b1a7de856e34f29c9803dca01bab2e9e715ce50fbd94817d2da  netperfmeter-2.0.14.tar.xz
+60ec4c8f667311d195b4488d5e5b3c88f8df2d4fcb852774fb51ee7908a1d03037ad0e32f00254b791193fb26edd70c91e6a4bbfedba57796c65b4c1b81da75e  netperfmeter-2.0.15.tar.xz
 "

@@ -1,3 +1,665 @@
+commit 882a4738c855b3fcb37e86b55f14b68f3d5a6c98
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 18:17:18 2026 +0000
+
+    GNU Hurd fix.
+
+commit a360d16f205321237d176c706efd04c274d946ea
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 12:50:56 2026 +0100
+
+    Improved test.
+
+commit 3837e273c677b736456230ec517141059feb63f8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 11:42:39 2026 +0100
+
+    Removed test code.
+
+commit 68cec5468fda37e1b2bae7f5bf39aac951576ae6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 11:25:33 2026 +0100
+
+    Further NetBSD fixes.
+
+commit 20215140ea747542bed084e8a96969edaa805267
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 10:51:27 2026 +0100
+
+    Even more testing.
+
+commit f1175edde96873b14e65f54bff63b5d0769a9502
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 10:10:58 2026 +0100
+
+    More testing.
+
+commit 4d2b05e22c456ae93dbdf6aa87cf19d3d5c5d9bc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 10:03:46 2026 +0100
+
+    Flow handling improvements.
+
+commit 317e57a4791e355449ec4f7e955832c9b94ab1dd
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 09:56:41 2026 +0100
+
+    NetBSD sctp_recvmsg() parametrisation fix.
+
+commit ed12251459ed134db2a08e46b8c4cac3292cc9ff
+Merge: 001346e befcfc8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 21:10:52 2026 +0100
+
+    Merge branch 'master' of https://github.com/dreibh/netperfmeter
+
+commit 001346e5f09fdd3bca429da0c4901cf3e9f478d8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 21:02:29 2026 +0100
+
+    NetBSD SCTP socket options handling fix.
+
+commit 2de63cf2029ce41f09218c9e81c299352052a0b3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 21:02:08 2026 +0100
+
+    NetBSD fix.
+
+commit befcfc83b8b5246b82698bb4887b1b7faf6eeeec
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 20:24:18 2026 +0100
+
+    Updated CMakeLists.txt.
+
+commit 31c82c182c4dcfab1f73f0a13a6068d4d38d0b8f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 20:18:11 2026 +0100
+
+    Updated tests.
+
+commit 3a2c481df3fb924af90adcad7c696358c05cf6e3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 20:06:04 2026 +0100
+
+    NetBSD fix.
+
+commit b0ba40bd6f57bb3b762a9cdf733eb23805d546eb
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 20:05:44 2026 +0100
+
+    sctp_bindx() parametrisation improvements.
+
+commit 596123346644ee6f5a7bad155e8d8750720de541
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 19:44:19 2026 +0100
+
+    Improved test.
+
+commit 15866b3a1ffe73a05ec13b92026e8a78be5ff53b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 19:41:46 2026 +0100
+
+    OpenBSD test fix.
+
+commit 1e06923479fb6f91be52a1dc7e58f565137fd861
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 19:18:33 2026 +0100
+
+    Properly handling coarse timing of NetBSD and OpenBSD.
+
+commit c29b382219ea04b2e036ecb941a8ad5b0832b595
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 17:04:09 2026 +0100
+
+    Test fix: TCP CC change is only possible on systems supporting the TCP_CONGESTION socket option.
+
+commit b6f75f398d5c8d5ea4083a1d2c079433a8183dcc
+Merge: 296b859 1ffd301
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 15:02:09 2026 +0000
+
+    Merge branch 'master' of https://github.com/dreibh/netperfmeter
+
+commit 296b859891dc473cd96e830211ecc54a776c4ad2
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 15:01:49 2026 +0000
+
+    CPU status improvement.
+
+commit 1ffd301c3999c367ddc9d304ce682ec8e20671ef
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 16:01:01 2026 +0100
+
+    Minor clean-up.
+
+commit 6b8f29b14c3b4ee2987c53c883383ba1cb99e414
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 15:36:48 2026 +0100
+
+    Fix for libmusl getopt_long_only() support.
+
+commit e2bc34ee76e091aa9f326c73b99252891937f4f4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 14:31:26 2026 +0100
+
+    Increased test timeout.
+
+commit 66858ab89590f8f1152b35d54808049045561a2d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 13:56:21 2026 +0100
+
+    Updated tests.
+
+commit 1ca61f46c041859107c4dc980c8c4183446526f6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 12:29:29 2026 +0100
+
+    Compatibility fix to also work under old Ubuntu 22.04.
+
+commit 5788f255147da4c4ebe5d4fcb1bbe0d04188cee7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 11:58:50 2026 +0100
+
+    Got rid of the obsolete ext_poll() wrapper for Apple builds.
+
+commit 8e1f5a8cb5b69a6ea436d1762363ad5bbc3365ca
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 11:23:11 2026 +0100
+
+    Minor CMakeLists.txt update.
+
+commit 71dcf6fc7d0d4a0b98a560558aad72afcbcab28d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 09:55:49 2026 +0000
+
+    Another Solaris SCTP fix.
+
+commit e7598944922781ee81de067606a4f86a5c701195
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 08:59:47 2026 +0000
+
+    Further Solaris fixes.
+
+commit 4bda3f91b2401eb6ca5f46c14e3cd7fb3b3c3255
+Merge: 908fad1 eb3f7f8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 08:57:55 2026 +0100
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 908fad1158ce1c083199c4187e274edcbf914946
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 18 08:57:27 2026 +0100
+
+    Solaris SCTP fix.
+
+commit eb3f7f80ad5e808a1e4acac7e4a5f3b6aab9cf67
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 16:02:48 2026 +0000
+
+    Improved SCTP detection in CMakeLists.txt.
+
+commit 07b9242d49a79a61e2d400496bf7035020c51423
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 16:44:14 2026 +0100
+
+    Test fix.
+
+commit 3c7169bc850c1b15b15e71ecc3cdbaf8fbfc0308
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 16:31:15 2026 +0100
+
+    Bugfix: Fixed if { ... } block issues in certain build cases in combination with logging.
+
+commit 509ffd8a16253f4c6700957c13d2e326aa92af91
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 13:50:32 2026 +0100
+
+    Updated Fedora workflow.
+
+commit 6b2fbf4601b00661a728d2c247eb28525a5162aa
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 13:32:53 2026 +0100
+
+    Updated tests.
+
+commit dcc95869028e1d9692e86fcb06cd0086b0e83450
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 13:16:23 2026 +0100
+
+    Bugfix: --no-control-over-sctp is fine even without SCTP support compiled in.
+
+commit 9d004ba55c7d36c58d80b10505bc153266ff3f47
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 11:53:54 2026 +0100
+
+    Updated CI scripts
+
+commit 7bfdf82eb0ce40d7afd410d194d5fe730445f33f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 11:42:00 2026 +0100
+
+    Updated and improved tests.
+
+commit d0cc928b9ab092997445f5b536d6e8d78323e680
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 11:41:49 2026 +0100
+
+    Bugfix: IPv4/IPv6 multi-homing fixes for createSocket() and bindSocket().
+
+commit c1eefef44181f7f5a3581738b9f8e8c0cbd69d4f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 10:50:51 2026 +0100
+
+    Another CMakeLists.txt update.
+
+commit 95bf565f4d8147cc431009287a068dac591396fd
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 10:46:08 2026 +0100
+
+    Bugfix: Option parsing fix for debug=on.
+
+commit e08966a7c66256b9ed3739d23fc60bb40a611198
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 10:45:59 2026 +0100
+
+    Updated CMakeLists.txt.
+
+commit fd41b5340066388d4532dc10064d6fced71bddd0
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 17 10:45:45 2026 +0100
+
+    Improved tests.
+
+commit 22ebd20d1deeeb9eefb2f699b2ff5868714e211b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 16 23:54:30 2026 +0100
+
+    Improved test.
+
+commit 1e10344159fe6a14f685aaad9c03892ab4520701
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 16 23:43:18 2026 +0100
+
+    Bugfix: Measurement abort clean-up fix.
+
+commit e4896d8ce82e7ba14562ee7bdbd25b052bac6df9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 16 17:59:45 2026 +0100
+
+    Bugfix: Fixed DCCP options handling.
+
+commit 9e2c90083da11310dac3eeab15c4e006b5e54783
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 16 14:01:51 2026 +0100
+
+    Added MPTCP tests.
+
+commit f6aeff68c50563b4d27fdc205eee710d115ba703
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 16 13:25:29 2026 +0100
+
+    Further clean-ups.
+
+commit 605d66a15a32c0c9ee6bcba45669b39a02c8c188
+Merge: 49a3bff ea2fb2d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 16 13:12:17 2026 +0100
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 49a3bffd242cfc7282dfbd2a151dc52171cb48a5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 16 13:12:05 2026 +0100
+
+    Minor clean-ups.
+
+commit ea2fb2dea5f095f6147b8fe35f1141d058b3a61a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sun Nov 15 22:09:58 2026 +0100
+
+    String fix.
+
+commit f5c2d20fbd60f3487b5cc9c1b7d630f394be6f2c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 23:12:55 2026 +0100
+
+    Bugfix: Fixed client shutdown issue on server shutdown.
+
+commit e31b1922c54c94a0fed60214c4bd0f64f17295d1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 22:43:53 2026 +0100
+
+    Manpage fix.
+
+commit ea8518e560e5ee8ab0b3789b64f2721f4d8cf6b8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 15:57:11 2026 +0100
+
+    FreeBSD port dependency improvements.
+
+commit 783cd5fb2fe793032fb58391eecd8dda4a40059b
+Merge: 751e3f5 bb57ea7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 15:52:50 2026 +0100
+
+    Merge branch 'master' of https://github.com/dreibh/netperfmeter
+
+commit 751e3f514468fef0d1c789b70a352293c39a33a2
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 15:52:37 2026 +0100
+
+    RPM spec dependency improvements.
+
+commit bb57ea7c287b77c45a2c4f3318390ba754066a6e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 15:51:57 2026 +0100
+
+    Yet another dependency update.
+
+commit d6f08bc264dcfbc9166d2a89db7ea6dfee7eebf6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 15:45:41 2026 +0100
+
+    Dependency improvements.
+
+commit 70078d3c69b4fe9c627856831dc689f59b657b39
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 15:45:08 2026 +0100
+
+    Dependency improvements.
+
+commit 016b6921e36afb24188510f27c291d6700daafde
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 13:25:44 2026 +0100
+
+    RPM spec fix.
+
+commit 021cf8bf2ab6f44021799826ec594230f3b12b39
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 13:17:32 2026 +0100
+
+    RPM spec update.
+
+commit 3e21c497260a50903b199fb9e26435fc38d3ef57
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 13:03:45 2026 +0100
+
+    Updated helper script.
+
+commit 6d92b43758dc98419d5bbe7cd28a834c49161631
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 13:03:35 2026 +0100
+
+    Improved documentation.
+
+commit 72103cdcbec6ed292360d19f18542300c65f86f9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 12:45:06 2026 +0100
+
+    Updated shell completion.
+
+commit 10ad0188d573e6653c522fbafa440c6760f4cc54
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 12:43:31 2026 +0100
+
+    Updated manpage.
+
+commit 48c25acc5cd8cb025ef67e697a8c8f876858903d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 12:40:11 2026 +0100
+
+    Upgrade of the QUIC handling code with a backport from the development version. This also includes the support for QUIC on the control channel as well.
+
+commit 2a3f8b82a2c77e705ae2e56cab0045bd7a241826
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Sat Nov 14 11:34:33 2026 +0100
+
+    Minor clean-ups.
+
+commit 53ef6e5c94f60cf185c69c8350dd7219a049f111
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 16:25:03 2026 +0100
+
+    ShellCheck fixes.
+
+commit 7bc1f245289717cc9005291b605fccabb34f2a13
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 15:42:31 2026 +0100
+
+    Test dependency updates.
+
+commit f2c9ec417469548843c4769490d43f3989edb2d1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 13:52:49 2026 +0100
+
+    Bugfix: Fixed regression from code clean-up.
+
+commit 3dc39c6641c34efc480a10bd75157b6c9e1e80bf
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 13:49:16 2026 +0100
+
+    Improved tests.
+
+commit a12419bad558edd75f88131354cfe8c8bde52a1c
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 13:37:31 2026 +0100
+
+    Added tests for plot-netperfmeter-results.
+
+commit 1ae1dd9a19ccd1d9c34e00245e0e31ec20ce4278
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 13:27:05 2026 +0100
+
+    Also added tests for setpdfmetadata.
+
+commit 5b5fe9e54ddcaa182a69390cbfe42b279c847499
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 13:12:01 2026 +0100
+
+    Also added tests for runtimeestimator.
+
+commit 6d61a6a6b272b149babc71ad95d641a83966b8c5
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 13:11:09 2026 +0100
+
+    Updated build helper script.
+
+commit ad48b63850d5f54f5cf8667048532175283e5a1d
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 13:10:35 2026 +0100
+
+    Updated CI configuration
+
+commit 1e7104fe98a20f8af8145e44d78beb58506e2996
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 13:10:34 2026 +0100
+
+    Updated CI scripts
+
+commit b1cc28c865c76cb40e67bb0bc37118b23fee894a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 13:06:41 2026 +0100
+
+    Added tests for getabstime.
+
+commit 0863e82bb73384d7ec29c9707d82f94dba113d07
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 12:34:04 2026 +0100
+
+    Improved test scripts.
+
+commit be1bb9ee628cbb17bda91c1728c85a6605bb83ec
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 11:41:12 2026 +0100
+
+    Minor CMakeLists.txt clean-ups.
+
+commit 8cf6bc9afb57d610952fe23629e36da0241a6022
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 11:08:46 2026 +0100
+
+    Added CTest to FreeBSD port.
+
+commit 77cd95d899cf8debf7433eaabca6f5307dae0654
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 11:08:34 2026 +0100
+
+    Shebang fix.
+
+commit 3caf92b5ca29c08f1c6bd55a8ab1952c0ea3355b
+Merge: 8d88ab2 e69d9f1
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 10:57:24 2026 +0100
+
+    Merge branch 'master' of https://github.com/dreibh/netperfmeter
+
+commit 8d88ab29e4a7149d65a4751d58ff710deee66af8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 10:56:58 2026 +0100
+
+    FreeBSD compiler warning fix.
+
+commit e69d9f1773ebbb619551adf034801151187ee301
+Merge: 434f4ef 217f5c6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 10:53:05 2026 +0100
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 434f4ef4c7714f5d1896544d8e81caed73ceb3bf
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 10:52:53 2026 +0100
+
+    Dependency updates.
+
+commit 217f5c6305ba96010611788eb45a372e45ecb4a6
+Merge: 7586613 76db195
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 10:50:50 2026 +0100
+
+    Merge branch 'master' of https://github.com/dreibh/netperfmeter
+
+commit 75866131601a7c18f6d1e8670ed743b85563cbe9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 10:50:44 2026 +0100
+
+    Updated FreeBSD port.
+
+commit 76db195fb20f4aecfb9be349f9f5f1985b137b17
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 10:45:20 2026 +0100
+
+    Added CTest test suite.
+
+commit c31b3b45fe6cce03facbc650f512cb95566a4005
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 09:58:58 2026 +0100
+
+    Updated documentation.
+
+commit fc2a293e599b9794e8ff866bb177ccf5215f312b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 13 09:58:48 2026 +0100
+
+    QUIC support improvements.
+
+commit 2c1a49aa88d19ddf01667196a8b453f15a098c0a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 12 18:09:59 2026 +0100
+
+    Updated documentation.
+
+commit 637c6a18ff268a18c53ebd025919a7cf05bfa4f4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 11 19:58:08 2026 +0100
+
+    Bugfix: QUIC MSG_QUIC_STREAM_NEW may only be set on the first message of the first frame.
+
+commit b34ee058ef45bd7f1f10368f2c531b2727805b36
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 10 23:11:28 2026 +0100
+
+    Minor clean-up.
+
+commit 0011e5d91d9a5d036fdd01692ecf2aa7f6a7dc18
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 10 22:53:26 2026 +0100
+
+    Improved log messages.
+
+commit 7e925fe062a585d331aef58e3405183e893c8560
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 10 22:43:08 2026 +0100
+
+    Error message consistency improvements.
+
+commit 3614071aad7ad5e276f038e804c4c3b1241cb31e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 10 22:12:23 2026 +0100
+
+    Bugfix: QUIC options parametrisation fix.
+
+commit 3805a8fdfcd558c8ae3d9fde8fb83cf6e1b20573
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 10 21:31:50 2026 +0100
+
+    Using MSG_MORE for data messages over TCP if isFrameEnd == false.
+
+commit 13a937f2b47aa20de313bfdb41a4f900deca4039
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 10 20:55:59 2026 +0100
+
+    Bugfix: Fixed and simplified flow clean-up in FlowManager destructor.
+
+commit f2897fb7fa12c0e3fddf9a1dddefc98fa8afae97
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 10 19:23:34 2026 +0100
+
+    Bugfix: Fixed UDP flow removal in case of multiple UDP flows.
+
+commit d1c00e53cfbdf4db5154e326d6b8f35b753c7b4a
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 9 10:59:15 2026 +0100
+
+    Bugfix: Fixed flow identification for UDP multi-flow handling.
+
+commit 72dc4ae403f29b17311baae022b07386751c43f4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 6 16:41:37 2026 +0100
+
+    Bugfix: Fixes for SCTP multi-streaming association teardown and locking issue.
+
+commit c4efc607ef6e9bc59d6f267cda3366dfaf0c4325
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Oct 30 15:46:35 2026 +0100
+
+    Bugfix: Fixed issue with counting a successful frame transmission when sending a packet failed.
+
+commit d02d2e120a7d98495c8e1962f267c70359f66204
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 27 16:08:50 2026 +0100
+
+    Bugfix: Ensure that the last vector statistics is written before removing the flows.
+
+commit 53a915a1c9d613c7a223ec1cbb101c41f19bc6ec
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Oct 27 13:11:15 2026 +0100
+
+    Bugfix: Fix for using old byte sequence number in case of multiple fragments.
+
+commit 2304c0b355793bec0e908baef2578ea19bc7109e
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 26 11:18:27 2026 +0100
+
+    Packaging updates.
+
+commit 16e32024c0d4bf476c4906ff5c54edc4a068e0b8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Oct 26 11:11:20 2026 +0100
+
+    New release netperfmeter-2.0.14.
+
 commit 0e0d802a8f3218f882a0714784b4519a3de3f1ba
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Sun Oct 25 18:48:28 2026 +0100

@@ -1,4 +1,4 @@
-netperfmeter (2.0.15~rc0-1ubuntu1) unstable; urgency=medium
+netperfmeter (2.0.15-1ubuntu1) unstable; urgency=medium
 
   * New upstream release.
   * debian/tests: Removed obsolete tests. NetPerfMeter now provides a CTest
@@ -6,7 +6,7 @@ netperfmeter (2.0.15~rc0-1ubuntu1) unstable; urgency=medium
   * debian/control: Updated build dependencies for running test CTest
                     test suite.
 
- -- Thomas Dreibholz <dreibh@simula.no>  Fri, 13 Nov 2026 10:35:42 +0100
+ -- Thomas Dreibholz <dreibh@simula.no>  Thu, 19 Nov 2026 15:27:42 +0100
 
 netperfmeter (2.0.14-1ubuntu1) unstable; urgency=medium
 
