@@ -394,11 +394,6 @@ ssize_t MessageReader::receiveMessage(const int        sd,
       // ====== Handle read errors ==========================================
       else if(received < 0) {
          if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-#if defined(HAVE_SCTP)
-            if(socket->Protocol == IPPROTO_SCTP) {
-               return MRRM_SOCKET_ERROR;
-            }
-#endif
             return MRRM_PARTIAL_READ;
          }
          return MRRM_SOCKET_ERROR;
