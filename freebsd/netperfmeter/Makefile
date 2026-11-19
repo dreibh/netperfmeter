@@ -10,16 +10,21 @@ WWW=		https://www.nntb.no/~dreibh/netperfmeter/
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
-TEST_DEPENDS=	p5-PDF-API2>=0:textproc/p5-PDF-API2 \
+RUN_DEPENDS=	bash:shells/bash \
+		getopt>=0:misc/getopt
+TEST_DEPENDS=	bash:shells/bash \
+		getopt>=0:misc/getopt \
+		gs:print/ghostscript${GHOSTSCRIPT_DEFAULT:S/.//} \
+		p5-PDF-API2>=0:textproc/p5-PDF-API2 \
 		qpdf:print/qpdf
 
 USES=		cmake:testing perl5 shared-mime-info shebangfix tar:xz
-
+USE_LDCONFIG=	yes
 USE_PERL5=	test
 
 SHEBANG_FILES=	src/netperfmeter-module-loader \
-                src/pdfembedfonts \
-                src/plot-netperfmeter-results \
+		src/pdfembedfonts \
+		src/plot-netperfmeter-results \
 		src/setpdfmetadata
 
 # Work-around for build issue on ARM:
@@ -45,14 +50,16 @@ EXAMPLE_SCRIPTS_CMAKE_BOOL=	WITH_EXAMPLE_SCRIPTS
 
 ICONS_BUILD_DEPENDS=		gm:graphics/GraphicsMagick \
 				pdf2svg:graphics/pdf2svg
-ICONS_USES=			ghostscript
+ICONS_USES=			ghostscript:build
 ICONS_CMAKE_BOOL=		WITH_ICONS
 
 PLOT_PROGRAMS_RUN_DEPENDS=	R-cran-data.table>0:devel/R-cran-data.table \
 				R-cran-dplyr>0:math/R-cran-dplyr \
 				R-cran-ggplot2>0:graphics/R-cran-ggplot2 \
+				getopt:misc/getopt \
 				p5-PDF-API2>=0:textproc/p5-PDF-API2 \
 				qpdf:print/qpdf
+PLOT_PROGRAMS_USES=		ghostscript
 PLOT_PROGRAMS_CMAKE_BOOL=	WITH_PLOT_PROGRAMS
 
 .include <bsd.port.mk>
