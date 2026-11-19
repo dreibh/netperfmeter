@@ -113,7 +113,9 @@ ELSEIF (CMAKE_SYSTEM_NAME MATCHES "NetBSD")
    IF(NOT DEFINED CMAKE_INSTALL_RPATH_USE_LINK_PATH)
       SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
    ENDIF()
-   # SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
+   IF(NOT DEFINED CMAKE_INSTALL_RPATH)
+      SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
+   ENDIF()
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
    MESSAGE(STATUS "${CMAKE_SYSTEM_NAME} supported")
 ELSEIF (CMAKE_SYSTEM_NAME MATCHES "SunOS")
@@ -355,7 +357,7 @@ ELSE()
            " * NetBSD:        sudo pkgin -y install zstd\n"
            " * OpenBSD:       sudo pkg_add zstd\n"
            " * Solaris:       sudo pkg install compress/zstd\n"
-           " * Apple:         brew install zsdt")
+           " * Apple:         brew install zstd")
 ENDIF()
 
 # ====== SCTP support =======================================================
