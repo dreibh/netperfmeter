@@ -1012,10 +1012,20 @@ void FlowManager::run()
                   std::cerr << "\tPOLLIN: flow " << FlowSet[i]->SocketDescriptor
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
 #endif
+                  int soError = 0;
+#if defined(__NetBSD__) && defined(HAVE_SCTP)
+                  if(protocol == IPPROTO_SCTP) {
+                     socklen_t soErrorLen = sizeof(soError);
+                     if(ext_getsockopt(entry->fd, SOL_SOCKET, SO_ERROR,
+                                       &soError, &soErrorLen) < 0) {
+                        soError = errno;
+                     }
+                  }
+#endif
                   const bool socketBroken =
+                     (soError != 0) ||
                      (entry->revents & (POLLERR|POLLNVAL)) ||
-                     ((entry->revents & POLLHUP) &&
-                      (!(entry->revents & POLLIN) || (protocol == IPPROTO_SCTP)));
+                     ((entry->revents & POLLHUP) && !(entry->revents & POLLIN));
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
                   const bool dataOkay =
@@ -1068,7 +1078,6 @@ void FlowManager::run()
                const pollfd* entry = ud->PollFDEntry;
                if(entry) {
 
-
                   // ====== Handle data message =============================
                   if( (ud->ToBeRemoved == false) &&
                       (entry->revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) ) {
@@ -1076,10 +1085,20 @@ void FlowManager::run()
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                  << " protocol " << ud->Protocol << "\n";
 #endif
+                     int soError = 0;
+#if defined(__NetBSD__) && defined(HAVE_SCTP)
+                     if(ud->Protocol == IPPROTO_SCTP) {
+                        socklen_t soErrorLen = sizeof(soError);
+                        if(ext_getsockopt(ud->SocketDescriptor, SOL_SOCKET, SO_ERROR,
+                                          &soError, &soErrorLen) < 0) {
+                           soError = errno;
+                        }
+                     }
+#endif
                      const bool socketBroken =
+                        (soError != 0) ||
                         (entry->revents & (POLLERR|POLLNVAL)) ||
-                        ((entry->revents & POLLHUP) &&
-                         (!(entry->revents & POLLIN) || (ud->Protocol == IPPROTO_SCTP)));
+                        ((entry->revents & POLLHUP) && !(entry->revents & POLLIN));
                      const bool dataOkay =
                         (!socketBroken) ?
                            handleNetPerfMeterData(true, now, ud->Protocol, ud->SocketDescriptor) :

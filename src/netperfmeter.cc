@@ -1448,11 +1448,16 @@ static bool mainLoop(const bool               isActiveMode,
             }
 #endif
             else {
+               int       soError    = 0;
+               socklen_t soErrorLen = sizeof(soError);
+               if(ext_getsockopt(fds[controlID].fd, SOL_SOCKET, SO_ERROR,
+                                 &soError, &soErrorLen) < 0) {
+                  soError = errno;
+               }
                const bool socketBroken =
+                  (soError != 0) ||
                   (fds[controlID].revents & (POLLERR|POLLNVAL)) ||
-                  ((fds[controlID].revents & POLLHUP) &&
-                   (!(fds[controlID].revents & POLLIN) ||
-                    (isActiveMode && (gActiveControlProtocol == IPPROTO_SCTP))));
+                  ((fds[controlID].revents & POLLHUP) && !(fds[controlID].revents & POLLIN));
                const bool controlOkay =
                   (!socketBroken) ?
                      handleNetPerfMeterControlMessage(&gMessageReader, fds[controlID].fd) :
