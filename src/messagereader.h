@@ -68,6 +68,11 @@ class MessageReader
       return SocketMap.size();
    }
 
+   inline int getSocketProtocol(const int sd) const {
+      const std::map<int, Socket*>::const_iterator found = SocketMap.find(sd);
+      return (found != SocketMap.end()) ? found->second->Protocol : -1;
+   }
+
    // ====== Private Data ===================================================
    private:
    struct TLVHeader {
