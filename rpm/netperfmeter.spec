@@ -1,5 +1,5 @@
 Name: netperfmeter
-Version: 2.1.0
+Version: 2.0.15
 Release: 1
 Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP, DCCP and QUIC protocols
 License: GPL-3.0-or-later

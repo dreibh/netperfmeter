@@ -10,15 +10,18 @@ WWW=		https://www.nntb.no/~dreibh/netperfmeter/
 LICENSE=	GPLv3+
 LICENSE_FILE=	${WRKSRC}/COPYING
 
+LIB_DEPENDS=	libzstd.so:archivers/zstd
 RUN_DEPENDS=	bash:shells/bash \
 		getopt>=0:misc/getopt
 TEST_DEPENDS=	bash:shells/bash \
 		getopt>=0:misc/getopt \
 		gs:print/ghostscript${GHOSTSCRIPT_DEFAULT:S/.//} \
+		p5-Locale-gettext>=0:devel/p5-Locale-gettext \
 		p5-PDF-API2>=0:textproc/p5-PDF-API2 \
 		qpdf:print/qpdf
 
-USES=		cmake:testing perl5 shared-mime-info shebangfix tar:xz
+USES=		cmake:testing gettext-runtime gettext-tools perl5 \
+		shared-mime-info shebangfix tar:xz
 USE_LDCONFIG=	yes
 USE_PERL5=	test
 
@@ -56,7 +59,7 @@ ICONS_CMAKE_BOOL=		WITH_ICONS
 PLOT_PROGRAMS_RUN_DEPENDS=	R-cran-data.table>0:devel/R-cran-data.table \
 				R-cran-dplyr>0:math/R-cran-dplyr \
 				R-cran-ggplot2>0:graphics/R-cran-ggplot2 \
-				getopt:misc/getopt \
+				p5-Locale-gettext>=0:devel/p5-Locale-gettext \
 				p5-PDF-API2>=0:textproc/p5-PDF-API2 \
 				qpdf:print/qpdf
 PLOT_PROGRAMS_USES=		ghostscript
