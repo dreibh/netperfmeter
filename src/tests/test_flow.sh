@@ -106,9 +106,16 @@ if [ "$#" -ge 7 ]; then
                 STREAM_ARGS="${STREAM_ARGS} ${_spec}"
                 shift
                 ;;
-            -tcp|-mptcp|-udp|-sctp|-quic)
+            -tcp|-mptcp|-udp|-dccp|-sctp|-quic|--tcp|--mptcp|--udp|--dccp|--sctp|--quic|-t|-m|-u|-d|-s|-k)
                 # Additional separate transport connection / flow
-                _proto="${1#-}"
+                case "$1" in
+                    -t|-tcp|--tcp)     _proto="tcp"   ;;
+                    -m|-mptcp|--mptcp) _proto="mptcp" ;;
+                    -u|-udp|--udp)     _proto="udp"   ;;
+                    -d|-dccp|--dccp)   _proto="dccp"  ;;
+                    -s|-sctp|--sctp)   _proto="sctp"  ;;
+                    -k|-quic|--quic)   _proto="quic"  ;;
+                esac
                 _spec="$2"
                 ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};${_proto}"
                 ALL_FLOW_SPECS="${ALL_FLOW_SPECS};${_spec}"
