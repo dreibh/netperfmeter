@@ -992,7 +992,7 @@ void FlowManager::run()
       now = getMicroTime();
       if(result > 0) {
          // ------ Drain wakeup pipe ----------------------------------------
-         if(wakeupPollFD && (wakeupPollFD->revents & (POLLIN | POLLERR))) {
+         if(wakeupPollFD && (wakeupPollFD->revents & (POLLIN|POLLERR))) {
             char buffer[64];
             while(read(WakeupPipe[0], buffer, sizeof(buffer)) > 0) {
                // Drained
@@ -1006,16 +1006,23 @@ void FlowManager::run()
             if(entry) {
 
                // ====== Handle data message ================================
-               if(entry->revents & (POLLIN|POLLERR)) {
+               if(entry->revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) {
                   const int protocol = FlowSet[i]->getTrafficSpec().Protocol;
 #if defined(DEBUG_POLL)
                   std::cerr << "\tPOLLIN: flow " << FlowSet[i]->SocketDescriptor
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
 #endif
+                  const bool socketBroken =
+                     (entry->revents & (POLLERR|POLLNVAL)) ||
+                     ((entry->revents & POLLHUP) &&
+                      (!(entry->revents & POLLIN) || (protocol == IPPROTO_SCTP)));
                   // NOTE: FlowSet[i] may not be the actual Flow!
                   //       It may be another stream of the same SCTP assoc!
-                  const bool dataOkay = handleNetPerfMeterData(true, now,
-                                                               protocol, entry->fd);
+                  const bool dataOkay =
+                     (!socketBroken) ?
+                        handleNetPerfMeterData(true, now, protocol, entry->fd) :
+                        false;
+
                   if(!dataOkay) {
                      // Close the broken connection!
                      const int brokenSD = FlowSet[i]->SocketDescriptor;
@@ -1061,16 +1068,23 @@ void FlowManager::run()
                const pollfd* entry = ud->PollFDEntry;
                if(entry) {
 
+
                   // ====== Handle data message =============================
                   if( (ud->ToBeRemoved == false) &&
-                      (entry->revents & (POLLIN|POLLERR)) ) {
+                      (entry->revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) ) {
 #if defined(DEBUG_POLL)
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                  << " protocol " << ud->Protocol << "\n";
 #endif
-                     const bool dataOkay = handleNetPerfMeterData(true, now,
-                                                                  ud->Protocol,
-                                                                  ud->SocketDescriptor);
+                     const bool socketBroken =
+                        (entry->revents & (POLLERR|POLLNVAL)) ||
+                        ((entry->revents & POLLHUP) &&
+                         (!(entry->revents & POLLIN) || (ud->Protocol == IPPROTO_SCTP)));
+                     const bool dataOkay =
+                        (!socketBroken) ?
+                           handleNetPerfMeterData(true, now, ud->Protocol, ud->SocketDescriptor) :
+                           false;
+
                      if(!dataOkay) {
                         // Incoming connection has already been closed -> remove it!
                         LOG_WARNING

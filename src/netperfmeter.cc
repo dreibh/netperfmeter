@@ -1341,7 +1341,7 @@ static bool mainLoop(const bool               isActiveMode,
       // ====== Incoming control message ====================================
       int controlID;
       for(controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
-         if(fds[controlID].revents & (POLLIN|POLLERR)) {
+         if(fds[controlID].revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
                const int newSD = ext_accept(gControlSocket, nullptr, 0);
@@ -1448,8 +1448,15 @@ static bool mainLoop(const bool               isActiveMode,
             }
 #endif
             else {
-               const bool controlOkay = handleNetPerfMeterControlMessage(
-                                           &gMessageReader, fds[controlID].fd);
+               const bool socketBroken =
+                  (fds[controlID].revents & (POLLERR|POLLNVAL)) ||
+                  ((fds[controlID].revents & POLLHUP) &&
+                   (!(fds[controlID].revents & POLLIN) ||
+                    (isActiveMode && (gActiveControlProtocol == IPPROTO_SCTP))));
+               const bool controlOkay =
+                  (!socketBroken) ?
+                     handleNetPerfMeterControlMessage(&gMessageReader, fds[controlID].fd) :
+                     false;
                if(!controlOkay) {
                   if(isActiveMode) {
 #if defined(HAVE_QUIC)
