@@ -11,9 +11,10 @@ Build-Depends: cmake,
                graphicsmagick,
                libbz2-dev,
                libpdf-api2-perl,
-               libsctp-dev (>= 1.0.5),
+               libsctp-dev [linux-any],
                pdf2svg,
-               perl (>= 5.8.0),
+               perl,
+               procps,
                qpdf
 Standards-Version: 4.7.4
 Rules-Requires-Root: no
@@ -25,7 +26,7 @@ Depends: netperfmeter-common,
          ${shlibs:Depends}
 Recommends: hipercontracer,
             iproute2,
-            libgnutls28-dev,
+            libgnutls30t64 | libgnutls30,
             rsplib-tools,
             subnetcalc,
             tshark
@@ -136,8 +137,9 @@ Description: Network Performance Meter (server service)
 
 Package: pdfproctools
 Architecture: all
-Depends: libpdf-api2-perl,
-         perl (>= 5.8.0),
+Depends: ghostscript,
+         libpdf-api2-perl,
+         perl,
          qpdf,
          ${misc:Depends},
          ${perl:Depends}

@@ -1,7 +1,7 @@
 Name: netperfmeter
 Version: 2.0.15
 Release: 1
-Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
+Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP, DCCP and QUIC protocols
 License: GPL-3.0-or-later
 Group: Applications/Internet
 URL: https://www.nntb.no/~dreibh/netperfmeter/
@@ -22,15 +22,19 @@ BuildRequires: perl(strict)
 BuildRequires: perl(subs)
 BuildRequires: perl(warnings)
 BuildRequires: perl-PDF-API2
+BuildRequires: (procps-ng or procps)
 BuildRequires: qpdf
 BuildRequires: R-core
 BuildRequires: R-data.table
 BuildRequires: R-dplyr
 BuildRequires: R-ggplot2
+BuildRequires: util-linux
+BuildRequires: xz-devel
+BuildRequires: zlib-devel
 
 Requires: %{name}-common = %{version}-%{release}
 Requires: findutils
-Recommends: gnutls-devel
+Recommends: gnutls
 Recommends: hipercontracer
 Recommends: iputils
 Recommends: wireshark-cli
@@ -66,7 +70,16 @@ This package contains the measurement program.
 %setup -q
 
 %build
-%cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc -DWITH_ICONS=ON -DWITH_PLOT_PROGRAMS=ON -DWITH_EXAMPLE_SCRIPTS=ON -DWITH_EXAMPLE_RESULTS=ON
+%cmake \
+   -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+   -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
+   -DWITH_STATIC_LIBRARIES=OFF \
+   -DWITH_SHARED_LIBRARIES=ON \
+   -DWITH_I18N=ON \
+   -DWITH_ICONS=ON \
+   -DWITH_PLOT_PROGRAMS=ON \
+   -DWITH_EXAMPLE_SCRIPTS=ON \
+   -DWITH_EXAMPLE_RESULTS=ON
 %cmake_build
 
 %install
@@ -90,24 +103,43 @@ done
 %{_bindir}/createsummary
 %{_bindir}/extractvectors
 %{_bindir}/getabstime
+%{_bindir}/getrelativepath
 %{_bindir}/netperfmeter
 %{_bindir}/netperfmeter-module-loader
 %{_bindir}/runtimeestimator
+%{_libdir}/libfileio.so.*
 %{_datadir}/bash-completion/completions/combinesummaries
 %{_datadir}/bash-completion/completions/createsummary
 %{_datadir}/bash-completion/completions/extractvectors
 %{_datadir}/bash-completion/completions/getabstime
+%{_datadir}/bash-completion/completions/getrelativepath
 %{_datadir}/bash-completion/completions/netperfmeter
 %{_datadir}/bash-completion/completions/netperfmeter-module-loader
 %{_datadir}/bash-completion/completions/runtimeestimator
-%{_mandir}/man1/combinesummaries.1.gz
-%{_mandir}/man1/createsummary.1.gz
-%{_mandir}/man1/extractvectors.1.gz
-%{_mandir}/man1/getabstime.1.gz
-%{_mandir}/man1/netperfmeter.1.gz
-%{_mandir}/man1/netperfmeter-module-loader.1.gz
-%{_mandir}/man1/runtimeestimator.1.gz
+%{_mandir}/man1/combinesummaries.1*
+%{_mandir}/man1/createsummary.1*
+%{_mandir}/man1/extractvectors.1*
+%{_mandir}/man1/getabstime.1*
+%{_mandir}/man1/getrelativepath.1*
+%{_mandir}/man1/netperfmeter.1*
+%{_mandir}/man1/netperfmeter-module-loader.1*
+%{_mandir}/man1/runtimeestimator.1*
 %{_prefix}/lib/systemd/system/netperfmeter-module-loader.service
+
+
+%package devel
+Summary: Network Performance Meter (development files for libfileio)
+Group: Development/Libraries
+Requires: %{name}%{?_isa} = %{version}-%{release}
+
+%description devel
+Development headers, shared library symlink, and pkg-config metadata for
+NetPerfMeter's libfileio compressed file I/O library.
+
+%files devel
+%{_includedir}/fileio
+%{_libdir}/libfileio.so
+%{_libdir}/pkgconfig/libfileio.pc
 
 
 %package common
@@ -187,7 +219,7 @@ This package contains some NetPerfMeter example scripts and results files.
 
 
 %package service
-Summary: Network Performance Meter (common files)
+Summary: Network Performance Meter (server service)
 Group: Applications/Internet
 BuildArch: noarch
 Requires: %{name} = %{version}-%{release}
@@ -223,12 +255,14 @@ This package sets up a service running a NetPerfMeter server instance.
 Summary: PDF Processing Tools
 Group: Applications/Internet
 BuildArch: noarch
+Requires: ghostscript
 Requires: perl-interpreter
 Requires: perl(strict)
 Requires: perl(subs)
 Requires: perl(warnings)
 Requires: perl-PDF-API2
 Requires: qpdf
+Requires: util-linux
 
 %description pdfproctools
 This package contains tools for PDF file processing.
@@ -244,8 +278,8 @@ can also linearize the PDF file for online publication
 %{_bindir}/setpdfmetadata
 %{_datadir}/bash-completion/completions/pdfembedfonts
 %{_datadir}/bash-completion/completions/setpdfmetadata
-%{_mandir}/man1/pdfembedfonts.1.gz
-%{_mandir}/man1/setpdfmetadata.1.gz
+%{_mandir}/man1/pdfembedfonts.1*
+%{_mandir}/man1/setpdfmetadata.1*
 
 
 %package plotting
@@ -286,7 +320,7 @@ This package contains a plotting program for the results.
 %{_datadir}/bash-completion/completions/plot-netperfmeter-results
 %{_datadir}/netperfmeter/plot-netperfmeter-results.R
 %{_datadir}/netperfmeter/plotter.R
-%{_mandir}/man1/plot-netperfmeter-results.1.gz
+%{_mandir}/man1/plot-netperfmeter-results.1*
 
 
 %package all
