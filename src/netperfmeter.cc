@@ -1433,6 +1433,19 @@ static bool mainLoop(const bool     isActiveMode,
                   // TRANSLATORS: Log message on incoming SCTP control connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
                   stdlog << formatText(gettext("Accept on SCTP control socket {} -> new control connection {}"), gControlSocket, newSD) << "\n";
                   LOG_END
+#if defined(HAVE_SCTP)
+                  sctp_sndrcvinfo sinfo;
+                  memset(&sinfo, 0, sizeof(sinfo));
+                  sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
+                  if(ext_setsockopt(newSD, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM,
+                                    &sinfo, sizeof(sinfo)) < 0) {
+                     LOG_WARNING
+                     // TRANSLATORS: Error configuring SCTP control socket default send params. Placeholders: {} 1: socket fd, 2: strerror() message.
+                     stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket {}: {}!"),
+                                          newSD, strerror(errno)) << "\n";
+                     LOG_END
+                  }
+#endif
                   gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
                }
                else {
@@ -1724,10 +1737,12 @@ static void passiveMode(const uint16_t localPort)
          sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM,
                            &sinfo, sizeof(sinfo)) < 0) {
-            LOG_FATAL
-            // TRANSLATORS: Error configuring SCTP control socket default send params. Placeholders: {} 1: socket fd, 2: strerror() message.
-            stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket {}: {}!"), gControlSocket, strerror(errno)) << "\n";
-            LOG_END_FATAL
+            if(errno != ENOENT) {
+               LOG_FATAL
+               // TRANSLATORS: Error configuring SCTP control socket default send params. Placeholders: {} 1: socket fd, 2: strerror() message.
+               stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket {}: {}!"), gControlSocket, strerror(errno)) << "\n";
+               LOG_END_FATAL
+            }
          }
 
          // ------ Set default peer parameters ---------------------------------
@@ -1742,10 +1757,10 @@ static void passiveMode(const uint16_t localPort)
          params.spp_pathmaxrxt        = gControlHBPathMaxRtx;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
                            &params, sizeof(params)) < 0) {
-            LOG_FATAL
+            LOG_WARNING
             // TRANSLATORS: Error enabling SCTP heartbeats. Placeholders: {} 1: socket fd, 2: strerror() message.
             stdlog << formatText(gettext("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket {}: {}!"), gControlSocket, strerror(errno)) << "\n";
-            LOG_END_FATAL
+            LOG_END
          }
 
          sctp_assocparams assocparams;
@@ -2542,11 +2557,15 @@ static void activeMode(const char* remoteEndpoint)
       LOG_END_FATAL
    }
 #if defined(HAVE_SCTP)
+   bool setSctpDefaultSendParam = false;
    if(gActiveControlProtocol == IPPROTO_SCTP) {
       sctp_sndrcvinfo sinfo;
       memset(&sinfo, 0, sizeof(sinfo));
       sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) == 0) {
+         setSctpDefaultSendParam = true;
+      }
+      else if(errno != ENOENT) {
          LOG_FATAL
          // TRANSLATORS: Error configuring SCTP default send parameters. Placeholders: {} 1: socket fd, 2: strerror() message.
          stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket {}: {}!"),
@@ -2571,6 +2590,20 @@ static void activeMode(const char* remoteEndpoint)
       }
       LOG_END_FATAL
    }
+#if defined(HAVE_SCTP)
+   if((gActiveControlProtocol == IPPROTO_SCTP) && (!setSctpDefaultSendParam)) {
+      sctp_sndrcvinfo sinfo;
+      memset(&sinfo, 0, sizeof(sinfo));
+      sinfo.sinfo_ppid = htobe32(PPID_NETPERFMETER_CONTROL);
+      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_DEFAULT_SEND_PARAM, &sinfo, sizeof(sinfo)) < 0) {
+         LOG_FATAL
+         // TRANSLATORS: Error configuring SCTP default send parameters. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to configure default send parameters (SCTP_DEFAULT_SEND_PARAM option) on SCTP control socket {}: {}!"),
+                              gControlSocket, strerror(errno)) << "\n";
+         LOG_END_FATAL
+      }
+   }
+#endif
 #if defined(HAVE_QUIC)
    if(gActiveControlProtocol == IPPROTO_QUIC) {
       QuicTlsConfig tlsConfig;
