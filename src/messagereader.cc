@@ -149,10 +149,21 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 {
    Socket* socket = getSocket(sd);
    if(socket != nullptr) {
+      int flags = 0;
+      if(msgFlags == nullptr) {
+         msgFlags = &flags;
+      }
+      sockaddr_union dummyFrom;
+      socklen_t      dummyFromSize = sizeof(dummyFrom);
+      if((from == nullptr) || (fromSize == nullptr)) {
+         from     = &dummyFrom.sa;
+         fromSize = &dummyFromSize;
+      }
+
       // ===== UDP ==========================================================
       if(socket->Protocol == IPPROTO_UDP) {
          // For UDP, reading always returns a full message. There is no
-         // particul reading!
+         // partial reading!
          const ssize_t received =
             ext_recvfrom(socket->SocketDescriptor,
                          buffer, bufferSize,
@@ -212,7 +223,6 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 
 
       // ====== Read from socket ============================================
-      int flags;
       if(msgFlags == nullptr) {
          flags    = 0;
          msgFlags = &flags;
@@ -383,6 +393,14 @@ ssize_t MessageReader::receiveMessage(const int        sd,
 
       // ====== Handle read errors ==========================================
       else if(received < 0) {
+         if((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+#if defined(HAVE_SCTP)
+            if(socket->Protocol == IPPROTO_SCTP) {
+               return MRRM_SOCKET_ERROR;
+            }
+#endif
+            return MRRM_PARTIAL_READ;
+         }
          return MRRM_SOCKET_ERROR;
       }
 
