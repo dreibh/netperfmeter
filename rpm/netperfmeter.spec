@@ -1,7 +1,7 @@
 Name: netperfmeter
-Version: 2.0.15
+Version: 2.1.0
 Release: 1
-Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP and DCCP protocols
+Summary: Network performance meter for the UDP, TCP, MPTCP, SCTP, DCCP and QUIC protocols
 License: GPL-3.0-or-later
 Group: Applications/Internet
 URL: https://www.nntb.no/~dreibh/netperfmeter/
@@ -9,13 +9,11 @@ Source: https://www.nntb.no/~dreibh/netperfmeter/download/%{name}-%{version}.tar
 
 AutoReqProv: on
 BuildRequires: (bzip2-devel or libbz2-devel)
-BuildRequires: (xz-devel or liblzma-devel)
-BuildRequires: (zlib-devel or libz-devel)
 BuildRequires: cmake
 BuildRequires: gcc-c++
 BuildRequires: gettext
+BuildRequires: (gettext-devel or gettext-tools)
 BuildRequires: ghostscript
-BuildRequires: glibc-langpack-en
 BuildRequires: GraphicsMagick
 BuildRequires: libzstd-devel
 BuildRequires: lksctp-tools-devel
@@ -25,18 +23,20 @@ BuildRequires: perl(IO::Socket::IP)
 BuildRequires: perl(strict)
 BuildRequires: perl(subs)
 BuildRequires: perl(warnings)
-BuildRequires: perl(Locale::gettext)
 BuildRequires: perl-PDF-API2
+BuildRequires: (procps-ng or procps)
 BuildRequires: qpdf
 BuildRequires: R-core
 BuildRequires: R-data.table
 BuildRequires: R-dplyr
 BuildRequires: R-ggplot2
-BuildRequires: zstd
+BuildRequires: util-linux
+BuildRequires: xz-devel
+BuildRequires: zlib-devel
 
 Requires: %{name}-common = %{version}-%{release}
 Requires: findutils
-Recommends: gnutls-devel
+Recommends: gnutls
 Recommends: hipercontracer
 Recommends: iputils
 Recommends: wireshark-cli
@@ -72,11 +72,21 @@ This package contains the measurement program.
 %setup -q
 
 %build
-%cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc -DWITH_ICONS=ON -DWITH_PLOT_PROGRAMS=ON -DWITH_EXAMPLE_SCRIPTS=ON -DWITH_EXAMPLE_RESULTS=ON
+%cmake \
+   -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+   -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
+   -DWITH_STATIC_LIBRARIES=OFF \
+   -DWITH_SHARED_LIBRARIES=ON \
+   -DWITH_I18N=ON \
+   -DWITH_ICONS=ON \
+   -DWITH_PLOT_PROGRAMS=ON \
+   -DWITH_EXAMPLE_SCRIPTS=ON \
+   -DWITH_EXAMPLE_RESULTS=ON
 %cmake_build
 
 %install
 %cmake_install
+%find_lang %{name} --all-name
 
 # ====== Apply shebang fix for scripts ======================================
 for directory in %{_bindir} %{_datadir}/netperfmeter ; do
@@ -91,7 +101,7 @@ done
 %check
 %ctest
 
-%files
+%files -f %{name}.lang
 %{_bindir}/combinesummaries
 %{_bindir}/createsummary
 %{_bindir}/extractvectors
@@ -100,6 +110,7 @@ done
 %{_bindir}/netperfmeter
 %{_bindir}/netperfmeter-module-loader
 %{_bindir}/runtimeestimator
+%{_libdir}/libfileio.so.*
 %{_datadir}/bash-completion/completions/combinesummaries
 %{_datadir}/bash-completion/completions/createsummary
 %{_datadir}/bash-completion/completions/extractvectors
@@ -108,63 +119,29 @@ done
 %{_datadir}/bash-completion/completions/netperfmeter
 %{_datadir}/bash-completion/completions/netperfmeter-module-loader
 %{_datadir}/bash-completion/completions/runtimeestimator
-%{_mandir}/man1/combinesummaries.1.gz
-%{_mandir}/man1/createsummary.1.gz
-%{_mandir}/man1/extractvectors.1.gz
-%{_mandir}/man1/getabstime.1.gz
-%{_mandir}/man1/getrelativepath.1.gz
-%{_mandir}/man1/netperfmeter.1.gz
-%{_mandir}/man1/netperfmeter-module-loader.1.gz
-%{_mandir}/man1/runtimeestimator.1.gz
+%{_mandir}/man1/combinesummaries.1*
+%{_mandir}/man1/createsummary.1*
+%{_mandir}/man1/extractvectors.1*
+%{_mandir}/man1/getabstime.1*
+%{_mandir}/man1/getrelativepath.1*
+%{_mandir}/man1/netperfmeter.1*
+%{_mandir}/man1/netperfmeter-module-loader.1*
+%{_mandir}/man1/runtimeestimator.1*
 %{_prefix}/lib/systemd/system/netperfmeter-module-loader.service
 
 
-%package -n libfileio2
-Summary: File I/O helper library for NetPerfMeter
-Group: System/Libraries
-Provides: %{name}-libfileio = %{version}-%{release}
+%package devel
+Summary: Network Performance Meter (development files for libfileio)
+Group: Development/Libraries
+Requires: %{name}%{?_isa} = %{version}-%{release}
 
-%description -n libfileio2
-NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
-DCCP, and QUIC transport protocols over IPv4 and IPv6.
-.
-libfileio provides transparent input and output file handling supporting
-plain text and compressed formats (BZip2, GZip, XZ/LZMA, and Zstandard).
-.
-This package contains the shared runtime library.
+%description devel
+Development headers, shared library symlink, and pkg-config metadata for
+NetPerfMeter's libfileio compressed file I/O library.
 
-%post -n libfileio2 -p /sbin/ldconfig
-%postun -n libfileio2 -p /sbin/ldconfig
-
-%files -n libfileio2
-%{_libdir}/libfileio.so.*
-
-
-%package -n libfileio-devel
-Summary: Development files for the NetPerfMeter File I/O library
-Group: Development/Libraries/C and C++
-Requires: libfileio2 = %{version}-%{release}
-Requires: (bzip2-devel or libbz2-devel)
-Requires: (xz-devel or liblzma-devel)
-Requires: (zlib-devel or libz-devel)
-Requires: libzstd-devel
-Provides: %{name}-libfileio-devel = %{version}-%{release}
-
-%description -n libfileio-devel
-NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
-DCCP, and QUIC transport protocols over IPv4 and IPv6.
-.
-libfileio provides transparent input and output file handling supporting
-plain text and compressed formats (BZip2, GZip, XZ/LZMA, and Zstandard).
-.
-This package contains the development headers and library symlinks.
-
-%files -n libfileio-devel
-%{_includedir}/fileio/fileio.h
-%{_includedir}/fileio/inputfile.h
-%{_includedir}/fileio/outputfile.h
-%{_libdir}/libfileio*.so
-%{_libdir}/libfileio.a
+%files devel
+%{_includedir}/fileio
+%{_libdir}/libfileio.so
 %{_libdir}/pkgconfig/libfileio.pc
 
 
@@ -209,10 +186,12 @@ This package contains common NetPerfMeter files.
 Summary: Network Performance Meter (example scripts and results files)
 Group: Applications/Internet
 BuildArch: noarch
+Requires: R-bit64
 Requires: R-core
 Requires: R-data.table
 Requires: R-dplyr
 Requires: R-ggplot2
+Requires: R-R.utils
 
 %description examples
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
@@ -243,7 +222,7 @@ This package contains some NetPerfMeter example scripts and results files.
 
 
 %package service
-Summary: Network Performance Meter (common files)
+Summary: Network Performance Meter (server service)
 Group: Applications/Internet
 BuildArch: noarch
 Requires: %{name} = %{version}-%{release}
@@ -279,21 +258,14 @@ This package sets up a service running a NetPerfMeter server instance.
 Summary: PDF Processing Tools
 Group: Applications/Internet
 BuildArch: noarch
-<<<<<<< HEAD
-Requires: (gettext-envsubst or gettext)
-Requires: (gettext-runtime or gettext)
-=======
->>>>>>> origin/master
+Requires: ghostscript
 Requires: perl-interpreter
 Requires: perl(strict)
 Requires: perl(subs)
 Requires: perl(warnings)
-<<<<<<< HEAD
-Requires: perl(Locale::gettext)
-=======
->>>>>>> origin/master
 Requires: perl-PDF-API2
 Requires: qpdf
+Requires: util-linux
 
 %description pdfproctools
 This package contains tools for PDF file processing.
@@ -309,8 +281,8 @@ can also linearize the PDF file for online publication
 %{_bindir}/setpdfmetadata
 %{_datadir}/bash-completion/completions/pdfembedfonts
 %{_datadir}/bash-completion/completions/setpdfmetadata
-%{_mandir}/man1/pdfembedfonts.1.gz
-%{_mandir}/man1/setpdfmetadata.1.gz
+%{_mandir}/man1/pdfembedfonts.1*
+%{_mandir}/man1/setpdfmetadata.1*
 
 
 %package plotting
@@ -318,14 +290,13 @@ Summary: Network Performance Meter (plotting program)
 Group: Applications/Internet
 BuildArch: noarch
 Requires: %{name} = %{version}-%{release}
-Requires: %{name}-common = %{version}-%{release}
 Requires: %{name}-pdfproctools = %{version}-%{release}
-Requires: (gettext-envsubst or gettext)
-Requires: (gettext-runtime or gettext)
+Requires: R-bit64
 Requires: R-core
 Requires: R-data.table
 Requires: R-dplyr
 Requires: R-ggplot2
+Requires: R-R.utils
 Recommends: %{name}-examples = %{version}-%{release}
 
 %description plotting
@@ -352,7 +323,7 @@ This package contains a plotting program for the results.
 %{_datadir}/bash-completion/completions/plot-netperfmeter-results
 %{_datadir}/netperfmeter/plot-netperfmeter-results.R
 %{_datadir}/netperfmeter/plotter.R
-%{_mandir}/man1/plot-netperfmeter-results.1.gz
+%{_mandir}/man1/plot-netperfmeter-results.1*
 
 
 %package all
@@ -365,7 +336,6 @@ Requires: %{name}-examples = %{version}-%{release}
 Requires: %{name}-plotting = %{version}-%{release}
 Requires: %{name}-pdfproctools = %{version}-%{release}
 Requires: %{name}-service = %{version}-%{release}
-Requires: libfileio-devel = %{version}-%{release}
 
 %description all
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,

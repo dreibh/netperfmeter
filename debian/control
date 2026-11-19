@@ -5,8 +5,8 @@ Maintainer: Thomas Dreibholz <dreibh@simula.no>
 Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 Vcs-Git: https://github.com/dreibh/netperfmeter.git
 Vcs-Browser: https://github.com/dreibh/netperfmeter
-Build-Depends: debhelper-compat (= 13),
-               cmake,
+Build-Depends: cmake,
+               debhelper-compat (= 13),
                gettext,
                ghostscript,
                graphicsmagick,
@@ -14,10 +14,11 @@ Build-Depends: debhelper-compat (= 13),
                liblocale-gettext-perl,
                liblzma-dev,
                libpdf-api2-perl,
-               libsctp-dev (>= 1.0.5),
+               libsctp-dev [linux-any],
                libzstd-dev,
                pdf2svg,
-               perl (>= 5.8.0),
+               perl,
+               procps,
                qpdf,
                r-base-core,
                r-cran-data.table,
@@ -35,7 +36,7 @@ Depends: netperfmeter-common,
          ${shlibs:Depends}
 Recommends: hipercontracer,
             iproute2,
-            libgnutls28-dev,
+            libgnutls30t64 | libgnutls30,
             rsplib-tools,
             subnetcalc,
             tshark
@@ -181,9 +182,10 @@ Description: Network Performance Meter (server service)
 Package: pdfproctools
 Architecture: all
 Depends: gettext-base,
+         ghostscript,
          liblocale-gettext-perl,
          libpdf-api2-perl,
-         perl (>= 5.8.0),
+         perl,
          qpdf,
          ${misc:Depends},
          ${perl:Depends}
@@ -231,6 +233,7 @@ Description: Network Performance Meter (plotting program)
 Package: netperfmeter-all
 Architecture: all
 Depends: libfileio-dev,
+         libfileio2,
          netperfmeter,
          netperfmeter-common,
          netperfmeter-examples,
