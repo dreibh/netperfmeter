@@ -1793,14 +1793,6 @@ static void passiveMode(const uint16_t localPort)
                           localPort + 1, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
-      const int noDelayOption = 1;
-      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_NODELAY,
-                        (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
-         LOG_ERROR
-         stdlog << format("Unable to set TCP_NODELAY on TCP control socket %d: %s!",
-                          gControlSocketTCP, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
       const int keepAliveOption = 1;
       if(ext_setsockopt(gControlSocketTCP, SOL_SOCKET, SO_KEEPALIVE,
                         (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
@@ -1813,10 +1805,21 @@ static void passiveMode(const uint16_t localPort)
       const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPIDLE,
                         (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
-         LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket %d: %s!",
+#if defined(HAVE_MPTCP)
+         if((!gPassiveControlMPTCP) ||
+            ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
+#endif
+            LOG_ERROR
+            stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket %d: %s!",
+                             gControlSocketTCP, strerror(errno)) << "\n";
+            LOG_END_FATAL
+#if defined(HAVE_MPTCP)
+         }
+         LOG_WARNING
+         stdlog << format("Unable to set TCP_KEEPIDLE on MPTCP control socket %d: %s!",
                           gControlSocketTCP, strerror(errno)) << "\n";
-         LOG_END_FATAL
+         LOG_END
+#endif
       }
 #else
 #warning No TCP_KEEPIDLE option available!
@@ -1825,10 +1828,21 @@ static void passiveMode(const uint16_t localPort)
       const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPINTVL,
                         (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
-         LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket %d: %s!",
+#if defined(HAVE_MPTCP)
+         if((!gPassiveControlMPTCP) ||
+            ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
+#endif
+            LOG_ERROR
+            stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket %d: %s!",
+                             gControlSocketTCP, strerror(errno)) << "\n";
+            LOG_END_FATAL
+#if defined(HAVE_MPTCP)
+         }
+         LOG_WARNING
+         stdlog << format("Unable to set TCP_KEEPINTVL on MPTCP control socket %d: %s!",
                           gControlSocketTCP, strerror(errno)) << "\n";
-         LOG_END_FATAL
+         LOG_END
+#endif
       }
 #else
 #warning No TCP_KEEPINTVL option available!
@@ -1837,10 +1851,21 @@ static void passiveMode(const uint16_t localPort)
       const int keepCountOption = (int)gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPCNT,
                         (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
-         LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket %d: %s!",
+#if defined(HAVE_MPTCP)
+         if((!gPassiveControlMPTCP) ||
+            ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
+#endif
+            LOG_ERROR
+            stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket %d: %s!",
+                             gControlSocketTCP, strerror(errno)) << "\n";
+            LOG_END_FATAL
+#if defined(HAVE_MPTCP)
+         }
+         LOG_WARNING
+         stdlog << format("Unable to set TCP_KEEPCNT on MPTCP control socket %d: %s!",
                           gControlSocketTCP, strerror(errno)) << "\n";
-         LOG_END_FATAL
+         LOG_END
+#endif
       }
 #else
 #warning No TCP_KEEPCNT option available!
