@@ -13,7 +13,6 @@ BuildRequires: cmake
 BuildRequires: gcc-c++
 BuildRequires: ghostscript
 BuildRequires: GraphicsMagick
-BuildRequires: libzstd-devel
 BuildRequires: lksctp-tools-devel
 BuildRequires: pdf2svg
 BuildRequires: perl-interpreter
@@ -29,8 +28,6 @@ BuildRequires: R-data.table
 BuildRequires: R-dplyr
 BuildRequires: R-ggplot2
 BuildRequires: util-linux
-BuildRequires: xz-devel
-BuildRequires: zlib-devel
 
 Requires: %{name}-common = %{version}-%{release}
 Requires: findutils
@@ -73,9 +70,6 @@ This package contains the measurement program.
 %cmake \
    -DCMAKE_INSTALL_PREFIX:PATH=/usr \
    -DCMAKE_INSTALL_SYSCONFDIR:PATH=/etc \
-   -DWITH_STATIC_LIBRARIES=OFF \
-   -DWITH_SHARED_LIBRARIES=ON \
-   -DWITH_I18N=ON \
    -DWITH_ICONS=ON \
    -DWITH_PLOT_PROGRAMS=ON \
    -DWITH_EXAMPLE_SCRIPTS=ON \
@@ -103,16 +97,13 @@ done
 %{_bindir}/createsummary
 %{_bindir}/extractvectors
 %{_bindir}/getabstime
-%{_bindir}/getrelativepath
 %{_bindir}/netperfmeter
 %{_bindir}/netperfmeter-module-loader
 %{_bindir}/runtimeestimator
-%{_libdir}/libfileio.so.*
 %{_datadir}/bash-completion/completions/combinesummaries
 %{_datadir}/bash-completion/completions/createsummary
 %{_datadir}/bash-completion/completions/extractvectors
 %{_datadir}/bash-completion/completions/getabstime
-%{_datadir}/bash-completion/completions/getrelativepath
 %{_datadir}/bash-completion/completions/netperfmeter
 %{_datadir}/bash-completion/completions/netperfmeter-module-loader
 %{_datadir}/bash-completion/completions/runtimeestimator
@@ -120,26 +111,10 @@ done
 %{_mandir}/man1/createsummary.1*
 %{_mandir}/man1/extractvectors.1*
 %{_mandir}/man1/getabstime.1*
-%{_mandir}/man1/getrelativepath.1*
 %{_mandir}/man1/netperfmeter.1*
 %{_mandir}/man1/netperfmeter-module-loader.1*
 %{_mandir}/man1/runtimeestimator.1*
 %{_prefix}/lib/systemd/system/netperfmeter-module-loader.service
-
-
-%package devel
-Summary: Network Performance Meter (development files for libfileio)
-Group: Development/Libraries
-Requires: %{name}%{?_isa} = %{version}-%{release}
-
-%description devel
-Development headers, shared library symlink, and pkg-config metadata for
-NetPerfMeter's libfileio compressed file I/O library.
-
-%files devel
-%{_includedir}/fileio
-%{_libdir}/libfileio.so
-%{_libdir}/pkgconfig/libfileio.pc
 
 
 %package common

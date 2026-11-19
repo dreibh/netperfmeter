@@ -15,7 +15,11 @@ Build-Depends: cmake,
                pdf2svg,
                perl,
                procps,
-               qpdf
+               qpdf,
+               r-base-core,
+               r-cran-data.table,
+               r-cran-dplyr,
+               r-cran-ggplot2
 Standards-Version: 4.7.4
 Rules-Requires-Root: no
 
