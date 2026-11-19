@@ -1448,12 +1448,16 @@ static bool mainLoop(const bool               isActiveMode,
             }
 #endif
             else {
-               int       soError    = 0;
-               socklen_t soErrorLen = sizeof(soError);
-               if(ext_getsockopt(fds[controlID].fd, SOL_SOCKET, SO_ERROR,
-                                 &soError, &soErrorLen) < 0) {
-                  soError = errno;
+               int soError = 0;
+#if defined(__NetBSD__) && defined(HAVE_SCTP)
+               if(gMessageReader.getSocketProtocol(fds[controlID].fd) == IPPROTO_SCTP) {
+                  socklen_t soErrorLen = sizeof(soError);
+                  if(ext_getsockopt(fds[controlID].fd, SOL_SOCKET, SO_ERROR,
+                                    &soError, &soErrorLen) < 0) {
+                     soError = errno;
+                  }
                }
+#endif
                const bool socketBroken =
                   (soError != 0) ||
                   (fds[controlID].revents & (POLLERR|POLLNVAL)) ||
@@ -1462,6 +1466,7 @@ static bool mainLoop(const bool               isActiveMode,
                   (!socketBroken) ?
                      handleNetPerfMeterControlMessage(&gMessageReader, fds[controlID].fd) :
                      false;
+
                if(!controlOkay) {
                   if(isActiveMode) {
 #if defined(HAVE_QUIC)
