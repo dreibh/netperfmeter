@@ -637,6 +637,14 @@ bool Flow::configureSocket(const int socketDescriptor)
          LOG_END
          return false;
       }
+      const int txQlen = 128;
+      if(ext_setsockopt(socketDescriptor, SOL_DCCP, DCCP_SOCKOPT_QPOLICY_TXQLEN, &txQlen, sizeof(txQlen)) < 0) {
+         LOG_WARNING
+         // TRANSLATORS: Warning message when setsockopt(DCCP_SOCKOPT_QPOLICY_TXQLEN) fails. Placeholders: {} 1: queue length in packets, 2: socket fd, 3: strerror() message.
+         stdlog << formatText(gettext("Unable to configure DCCP TX queue length {} (DCCP_SOCKOPT_QPOLICY_TXQLEN option) on DCCP socket {}: {}!"),
+                              txQlen, socketDescriptor, strerror(errno)) << "\n";
+         LOG_END
+      }
    }
 #endif
 #if defined(HAVE_QUIC)
