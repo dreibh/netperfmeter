@@ -15,13 +15,12 @@ RUN_DEPENDS=	bash:shells/bash \
 		getopt>=0:misc/getopt
 TEST_DEPENDS=	bash:shells/bash \
 		getopt>=0:misc/getopt \
-		gs:print/ghostscript${GHOSTSCRIPT_DEFAULT:S/.//} \
 		p5-Locale-gettext>=0:devel/p5-Locale-gettext \
 		p5-PDF-API2>=0:textproc/p5-PDF-API2 \
 		qpdf:print/qpdf
 
-USES=		cmake:testing gettext-runtime gettext-tools perl5 \
-		shared-mime-info shebangfix tar:xz
+USES=		cmake:testing ghostscript perl5 shared-mime-info \
+		shebangfix tar:xz
 USE_LDCONFIG=	yes
 USE_PERL5=	test
 
@@ -62,7 +61,6 @@ PLOT_PROGRAMS_RUN_DEPENDS=	R-cran-data.table>0:devel/R-cran-data.table \
 				p5-Locale-gettext>=0:devel/p5-Locale-gettext \
 				p5-PDF-API2>=0:textproc/p5-PDF-API2 \
 				qpdf:print/qpdf
-PLOT_PROGRAMS_USES=		ghostscript
 PLOT_PROGRAMS_CMAKE_BOOL=	WITH_PLOT_PROGRAMS
 
 .include <bsd.port.mk>
