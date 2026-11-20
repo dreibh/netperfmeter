@@ -23,9 +23,7 @@ BuildRequires: perl(warnings)
 BuildRequires: perl-PDF-API2
 BuildRequires: (procps-ng or procps)
 BuildRequires: qpdf
-%if 0%{?suse_version}
-BuildRequires: R-base
-%else
+%if !0%{?suse_version}
 BuildRequires: R-core
 BuildRequires: R-data.table
 BuildRequires: R-dplyr
