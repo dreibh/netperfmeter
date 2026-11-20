@@ -1,3 +1,82 @@
+commit ce9f98e77e91dcd709a0905f19b272a1df038c82
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 20 13:15:29 2026 +0100
+
+    Packaging updates.
+
+commit 16b6bada7c215bedd2ce11ab572499908265f387
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 20 13:15:22 2026 +0100
+
+    Improved test.
+
+commit 3c1ef88adcbab69229a798f658d4b8db0e014908
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 20 12:42:59 2026 +0100
+
+    Improved RPM spec.
+
+commit f28ebe7cbb652bcea739c41dda3e2574ad382b77
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 20 12:39:17 2026 +0100
+
+    Improved CI script.
+
+commit da61d535a2b881544ea9dd9e88a2c326bea75182
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 20 10:55:05 2026 +0100
+
+    Improved documentation.
+
+commit 5f929310e7767036339b47992bfad237dcf27042
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 20 10:33:41 2026 +0100
+
+    DCCP fix: DCCP_SOCKOPT_QPOLICY_TXQLEN is required for frames exceeding 5 packets.
+
+commit 3303d127ea9ccd1508cae117abe1a85b66fe76fe
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 17:44:11 2026 +0100
+
+    Packaging updates.
+
+commit d65b474152d89903dd5cbdc39d45898b1fbf522b
+Merge: c89f846 6c0196b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 17:37:38 2026 +0100
+
+    Merge branch 'master' of github.com:dreibh/netperfmeter
+
+commit 6c0196b455c66127db09346e66604be85bf990de
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 17:37:17 2026 +0100
+
+    Improved FreeBSD port.
+
+commit c89f846845a3febc78aff8dd613346d43b4e087f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 17:16:13 2026 +0100
+
+    Packaging updates.
+
+commit 792b3787f939f90e9749775dfd3be64552305ced
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 16:09:06 2026 +0100
+
+    MPTCP compatibility fix for older Linux kernels.
+
+commit 9254f34e56dd4ad4d3c64b95e83811b97eeb961f
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 15:40:45 2026 +0100
+
+    Packaging updates.
+
+commit 6ee526fd498772b81cabb9a9b6947345b46916a4
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 19 15:27:44 2026 +0100
+
+    New release netperfmeter-2.0.15.
+
 commit 882a4738c855b3fcb37e86b55f14b68f3d5a6c98
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Wed Nov 18 18:17:18 2026 +0000

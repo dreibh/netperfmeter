@@ -163,11 +163,12 @@ if [ ! -s "${WORK_DIR}/measurement.config" ]; then
     exit 1
 fi
 
-# If R is not installed on a minimal build host, provide a fallback R stub that
-# validates arguments and emits minimal valid PDFs so shell & combinesummaries
-# logic are still exercised end-to-end.
+# If R or the required CRAN packages are not installed on a minimal build host,
+# provide a fallback R stub that validates arguments and emits minimal valid PDFs
+# so shell & combinesummaries logic are still exercised end-to-end.
 HAS_REAL_R=1
-if ! command -v R >/dev/null 2>&1; then
+if ! command -v R >/dev/null 2>&1 || \
+   ! R --vanilla -s -e 'library(data.table); library(dplyr); library(ggplot2)' >/dev/null 2>&1; then
     HAS_REAL_R=0
     MOCK_BIN="${TMP_DIR}/mock_bin"
     mkdir -p "${MOCK_BIN}"
