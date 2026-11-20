@@ -400,6 +400,10 @@ sudo service netperfmeter-module-loader disable
   - NetPerfMeter &ge;2.0 is required! Older versions &lt;2.0 only support the experimental Linux MTCP with incompatible API!
 
 
+### DCCP Communication
+
+Only Linux provides DCCP support at the moment. While the DCCP protocol was removed from the mainline kernel in version&nbsp;6.16, there is a module port for current kernels versions (e.g., 7.3.0) available. This module can also be installed conveniently using Dynamic Kernel Module Support&nbsp;(DKMS). See the [Linux DCCP](https://github.com/dreibh/linux-dccp) repositoy for details.
+
 ### QUIC Communication
 
 [QUIC](https://www.rfc-editor.org/rfc/rfc9000.html) uses built-in security based on [Transport Layer Security&nbsp;(TLS)](https://www.internetsociety.org/deploy360/tls/basics/). To use QUIC (for NPMP-DATA data flows and/or for the NPMP-CONTROL control channel via `-control-over-quic`), it is therefore necessary to properly set up TLS first. NetPerfMeter supports both **server-only TLS authentication** and **mutual TLS&nbsp;(mTLS) authentication** (where the passive side also requests and verifies a client certificate). Furthermore, NetPerfMeter has to be built with QUIC support. Currently, it supports [Linux Kernel QUIC](https://github.com/lxin/quic).
@@ -1232,6 +1236,8 @@ NetPerfMeter BibTeX entries can be found in [netperfmeter.bib](https://github.co
 * [Thomas Dreibholz's Multi-Path TCP (MPTCP) Page](https://www.nntb.no/~dreibh/mptcp/)
 * [Thomas Dreibholz's SCTP Page](https://www.nntb.no/~dreibh/sctp/)
 * [Michael Tüxen's SCTP page](https://www.sctp.de/)
+* [Linux DCCP](https://github.com/dreibh/linux-dccp)
+* [QUIC in Linux Kernel](https://github.com/lxin/quic)
 * [NorNet – A Real-World, Large-Scale Multi-Homing Testbed](https://www.nntb.no/)
 * [GAIA – Cyber Sovereignty](https://gaia.nntb.no/)
 * [NEAT – A New, Evolutive API and Transport-Layer Architecture for the Internet](https://neat.nntb.no/)
