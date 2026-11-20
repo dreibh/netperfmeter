@@ -15,7 +15,7 @@ BuildRequires: ghostscript
 BuildRequires: GraphicsMagick
 BuildRequires: lksctp-tools-devel
 BuildRequires: pdf2svg
-BuildRequires: perl-interpreter
+BuildRequires: (perl-interpreter or perl)
 BuildRequires: perl(IO::Socket::IP)
 BuildRequires: perl(strict)
 BuildRequires: perl(subs)
@@ -23,18 +23,22 @@ BuildRequires: perl(warnings)
 BuildRequires: perl-PDF-API2
 BuildRequires: (procps-ng or procps)
 BuildRequires: qpdf
+%if 0%{?suse_version}
+BuildRequires: R-base
+%else
 BuildRequires: R-core
 BuildRequires: R-data.table
 BuildRequires: R-dplyr
 BuildRequires: R-ggplot2
+%endif
 BuildRequires: util-linux
 
 Requires: %{name}-common = %{version}-%{release}
 Requires: findutils
-Recommends: gnutls
+Recommends: (gnutls or libgnutls30)
 Recommends: hipercontracer
 Recommends: iputils
-Recommends: wireshark-cli
+Recommends: (wireshark-cli or wireshark)
 Recommends: subnetcalc
 Suggests: %{name}-examples = %{version}-%{release}
 Suggests: %{name}-plotting = %{version}-%{release}
@@ -158,12 +162,17 @@ This package contains common NetPerfMeter files.
 Summary: Network Performance Meter (example scripts and results files)
 Group: Applications/Internet
 BuildArch: noarch
-Requires: R-bit64
+%if 0%{?suse_version}
+Requires: R-base
+Recommends: R-data.table
+Recommends: R-dplyr
+Recommends: R-ggplot2
+%else
 Requires: R-core
 Requires: R-data.table
 Requires: R-dplyr
 Requires: R-ggplot2
-Requires: R-R.utils
+%endif
 
 %description examples
 NetPerfMeter is a network performance meter for the TCP, MPTCP, SCTP, UDP,
@@ -231,7 +240,7 @@ Summary: PDF Processing Tools
 Group: Applications/Internet
 BuildArch: noarch
 Requires: ghostscript
-Requires: perl-interpreter
+Requires: (perl-interpreter or perl)
 Requires: perl(strict)
 Requires: perl(subs)
 Requires: perl(warnings)
@@ -263,12 +272,17 @@ Group: Applications/Internet
 BuildArch: noarch
 Requires: %{name} = %{version}-%{release}
 Requires: %{name}-pdfproctools = %{version}-%{release}
-Requires: R-bit64
+%if 0%{?suse_version}
+Requires: R-base
+Recommends: R-data.table
+Recommends: R-dplyr
+Recommends: R-ggplot2
+%else
 Requires: R-core
 Requires: R-data.table
 Requires: R-dplyr
 Requires: R-ggplot2
-Requires: R-R.utils
+%endif
 Recommends: %{name}-examples = %{version}-%{release}
 
 %description plotting
