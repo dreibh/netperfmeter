@@ -2035,6 +2035,13 @@ static void passiveMode(const uint16_t localPort)
                           gDCCPSocket, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
+      const int txQlen = 128;
+      if(ext_setsockopt(gDCCPSocket, SOL_DCCP, DCCP_SOCKOPT_QPOLICY_TXQLEN, &txQlen, sizeof(txQlen)) < 0) {
+         LOG_WARNING
+         stdlog << format("Unable to configure DCCP TX queue length %d (DCCP_SOCKOPT_QPOLICY_TXQLEN option) on DCCP socket %d: %s!",
+                          txQlen, gDCCPSocket, strerror(errno)) << "\n";
+         LOG_END
+      }
    }
 #endif
 
