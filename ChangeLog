@@ -1,3 +1,54 @@
+commit 7557bb8e08182bf2e67077d8a9f27309b9d55c8b
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 23 14:41:07 2026 +0100
+
+    Further build system improvements.
+
+commit 675eb048a9d82d31dcc1a5d64b9b3d6a5078f9dc
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 23 14:30:08 2026 +0100
+
+    Updated CI configuration
+
+commit 2c3a00e553743b2bf40865f5562ce2596bd877ea
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 23 14:30:07 2026 +0100
+
+    Updated CI scripts
+
+commit e8c8ec50180ecd755246a3ba46434b95c95497d6
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 23 14:27:56 2026 +0100
+
+    Packaging update.
+
+commit e385a7c8e4b29dcabf43884d732b911fc451e57c
+Merge: 3e0e654 3d79c52
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 20 15:50:06 2026 +0100
+
+    Merge pull request #7 from dirkmueller/fixes
+    
+    Fix FD leak
+
+commit 3e0e6545d85df08adf6be250a64838b0c6caccee
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 20 15:18:21 2026 +0100
+
+    Updated FreeBSD port.
+
+commit 298bd0ad7d94dff00e451f3046f39ae0c9da0cb7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 20 13:19:12 2026 +0100
+
+    Packaging updates.
+
+commit 4a73f6ad73116ffe0b7e6781834e7c52afa79463
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Fri Nov 20 13:15:43 2026 +0100
+
+    New release netperfmeter-2.0.16.
+
 commit ce9f98e77e91dcd709a0905f19b272a1df038c82
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Fri Nov 20 13:15:29 2026 +0100
@@ -1026,6 +1077,15 @@ Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Thu Oct 8 15:39:09 2026 +0200
 
     Updated GitHub workflows.
+
+commit 3d79c52b743393156471d3dcdb1e3aae2a4e990a
+Author: Dirk Müller <dirk@dmllr.de>
+Date:   Wed Oct 7 15:08:56 2026 +0200
+
+    Fix FD leak
+    
+    This is opened here in the constructor just to test whether it is
+    possible, however never closed and never used so far.
 
 commit ca74bd934a611a6dde2e8752495b3bbaf45c9ef5
 Author: Thomas Dreibholz <dreibh@simula.no>

@@ -75,15 +75,21 @@ class Netperfmeter < Formula
       (bin/"plot-netperfmeter-results").write_env_script libexec/"bin/plot-netperfmeter-results",
         R_LIBS_SITE: "#{libexec}/r-library"
     end
+
+    if build.with?("example-scripts") || build.with?("plot-programs")
+      (libexec/"post-install").write <<~SH
+        #!/bin/sh
+        set -eu
+        mkdir -p "#{libexec}/r-library"
+        exec "#{formula_opt_bin("r")}/Rscript" -e "install.packages(c('data.table', 'dplyr', 'ggplot2'), lib='#{libexec}/r-library', repos='https://cloud.r-project.org')"
+      SH
+      chmod 0755, libexec/"post-install"
+    end
   end
 
-  def post_install
-    if build.with?("example-scripts") || build.with?("plot-programs")
-      r_lib = libexec/"r-library"
-      r_lib.mkpath
-      system Formula["r"].opt_bin/"Rscript", "-e",
-        "install.packages(c('data.table', 'dplyr', 'ggplot2'), " \
-        "lib='#{r_lib}', repos='https://cloud.r-project.org')"
+  if build.with?("example-scripts") || build.with?("plot-programs")
+    post_install_steps do
+      run "post-install", base: :libexec
     end
   end
 
@@ -91,7 +97,7 @@ class Netperfmeter < Formula
     system bin/"netperfmeter", "--version"
     if build.with? "plot-programs"
       system bin/"setpdfmetadata", "--help"
-      system Formula["r"].opt_bin/"Rscript", "-e",
+      system formula_opt_bin("r")/"Rscript", "-e",
         ".libPaths(c('#{libexec}/r-library', .libPaths())); " \
         "library(data.table); library(dplyr); library(ggplot2)"
     end
