@@ -117,22 +117,32 @@ int pollTimeout(const unsigned long long now, const size_t n, ...)
 int safestrcpy(char* dest, const char* src, const size_t size)
 {
    assert(size > 0);
-   strncpy(dest, src, size);
-   dest[size - 1] = 0x00;
-   return strlen(dest) < size;
+   size_t i = 0;
+   while((i < size - 1) && (src[i] != 0x00)) {
+      dest[i] = src[i];
+      i++;
+   }
+   dest[i] = 0x00;
+   return (src[i] == 0x00);
 }
 
 
 // ###### Length-checking strcat() #########################################
 int safestrcat(char* dest, const char* src, const size_t size)
 {
-   const size_t l1 = strlen(dest);
-   const size_t l2 = strlen(src);
-
    assert(size > 0);
-   strncat(dest, src, size - l1 - 1);
-   dest[size - 1] = 0x00;
-   return l1 + l2 < size;
+   size_t i = 0;
+   while((i < size - 1) && (dest[i] != 0x00)) {
+      i++;
+   }
+   size_t j = 0;
+   while((i < size - 1) && (src[j] != 0x00)) {
+      dest[i] = src[j];
+      i++;
+      j++;
+   }
+   dest[i] = 0x00;
+   return (src[j] == 0x00);
 }
 
 
@@ -370,7 +380,7 @@ bool string2address(const char*           string,
    size_t hostLength;
    size_t i;
 
-   if(strlen(string) > sizeof(host)) {
+   if(strlen(string) >= sizeof(host)) {
       return false;
    }
    safestrcpy(host, string, sizeof(host));
@@ -471,6 +481,7 @@ bool string2address(const char*           string,
        break;
 
       default:
+         freeaddrinfo(res);
          return false;
    }
 
