@@ -30,6 +30,7 @@
 #include "tools.h"
 
 #include <arpa/inet.h>
+#include <atomic>
 #include <cassert>
 #include <cmath>
 #include <cstdarg>
@@ -38,6 +39,7 @@
 #include <cctype>
 #include <ext_socket.h>
 #include <format>
+#include <mutex>
 #include <netdb.h>
 #include <net/if.h>
 #include <netinet/in.h>
@@ -51,8 +53,14 @@
 
 // ###### Fallback implementation of strlcpy() ##############################
 #if !defined(HAVE_STRLCPY)
-size_t strlcpy(char* dest, const char* src, size_t size)
+size_t strlcpy(char* dest, const char* src, size_t size) noexcept
 {
+   if(src == nullptr) {
+      if(size > 0) {
+         dest[0] = 0x00;
+      }
+      return 0;
+   }
    const size_t src_len = strlen(src);
    if(size > 0) {
       const size_t copy_len = (src_len >= size) ? size - 1 : src_len;
@@ -66,8 +74,11 @@ size_t strlcpy(char* dest, const char* src, size_t size)
 
 // ###### Fallback implementation of strlcat() ##############################
 #if !defined(HAVE_STRLCAT)
-size_t strlcat(char* dest, const char* src, size_t size)
+size_t strlcat(char* dest, const char* src, size_t size) noexcept
 {
+   if(src == nullptr) {
+      return strlen(dest);
+   }
    const size_t dest_len = strlen(dest);
    const size_t src_len  = strlen(src);
    if(dest_len >= size) {
@@ -280,7 +291,6 @@ bool address2string(const struct sockaddr* address,
 {
    char str[128];
    char scope[IFNAMSIZ + 16];
-   char ifnamebuffer[IFNAMSIZ];
 
    switch(address->sa_family) {
       case AF_INET: {
@@ -295,9 +305,9 @@ bool address2string(const struct sockaddr* address,
       case AF_INET6: {
          const auto* ipv6 = reinterpret_cast<const struct sockaddr_in6*>(address);
          if(!hideScope && (IN6_IS_ADDR_LINKLOCAL(&ipv6->sin6_addr) || IN6_IS_ADDR_MC_LINKLOCAL(&ipv6->sin6_addr))) {
+            char ifnamebuffer[IFNAMSIZ];
             const char* ifname = if_indextoname(ipv6->sin6_scope_id, ifnamebuffer);
             if(ifname == nullptr) {
-               strlcpy(ifnamebuffer, "(BAD!)", sizeof(ifnamebuffer));
                return false;
             }
             snprintf(scope, sizeof(scope), "%%%s", ifname);
@@ -334,7 +344,7 @@ bool string2address(const char*           string,
    int  portNumber = 0;
    char* p1;
 
-   if(strlen(string) >= sizeof(host)) {
+   if((string == nullptr) || (strlen(string) >= sizeof(host))) {
       return false;
    }
    strlcpy(host, string, sizeof(host));
@@ -342,13 +352,24 @@ bool string2address(const char*           string,
 
    if(string[0] == '[') {
       p1 = strindex(host, ']');
-      if(p1 != nullptr) {
-         if((p1[1] == ':') || (p1[1] == '!')) {
-            strlcpy(port, &p1[2], sizeof(port));
-         }
-         memmove(host, &host[1], static_cast<size_t>(p1 - host - 1));
-         host[p1 - host - 1] = 0x00;
+      if(p1 == nullptr) {
+         return false;
       }
+      if(p1 <= host + 1) {
+         return false;
+      }
+      if((p1[1] == ':') || (p1[1] == '!')) {
+         if(p1[2] == 0x00) {
+            return false;
+         }
+         strlcpy(port, &p1[2], sizeof(port));
+      }
+      else if(p1[1] != 0x00) {
+         return false;
+      }
+      const size_t hostLen = static_cast<size_t>(p1 - host - 1);
+      memmove(host, &host[1], hostLen);
+      host[hostLen] = 0x00;
    }
    else if(readPort) {
       unsigned int colons = 0;
@@ -364,6 +385,9 @@ bool string2address(const char*           string,
          }
          if(p1 != nullptr) {
             p1[0] = 0x00;
+            if(p1[1] == 0x00) {
+               return false;
+            }
             strlcpy(port, &p1[1], sizeof(port));
          }
       }
@@ -751,28 +775,35 @@ double networkToDouble(network_double_t value)
 
 
 // ###### Break and Termination Handling ####################################
-static bool               DetectedBreak = false;
-static bool               PrintedBreak  = false;
-static bool               Quiet         = false;
-static pid_t              MainThreadPID = 0;
-static bool               PrintedKill   = false;
-static MonotonicMicroTime LastDetection = MonotonicMicroTime(static_cast<uint64_t>(-1));
+static std::atomic<bool>      DetectedBreak{false};
+static bool                   PrintedBreak{false};
+static std::atomic<bool>      Quiet{false};
+static std::atomic<pid_t>     MainThreadPID{0};
+static std::atomic<bool>      PrintedKill{false};
+static std::atomic<uint64_t>  LastDetectionUs{static_cast<uint64_t>(-1)};
 
 
 // ###### Break detector signal handler #####################################
 void breakDetector(int)
 {
-   DetectedBreak = true;
-   if(!PrintedKill) {
-      const MonotonicMicroTime now = getMonotonicMicroTime();
-      if(LastDetection.value == static_cast<uint64_t>(-1)) {
-         LastDetection = now;
-      }
-      else if(now - LastDetection >= 2000000ULL) {
-         PrintedKill = true;
-         // TRANSLATORS: Signal handler alert printed when SIGINT is caught twice within 2 seconds.
-         std::cerr << "\x1b[0m\n" << gettext("*** Kill ***") << "\n\n";
-         kill(MainThreadPID, SIGKILL);
+   DetectedBreak.store(true, std::memory_order_release);
+   if(!PrintedKill.load(std::memory_order_acquire)) {
+      struct timespec ts;
+      if(clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+         const uint64_t nowUs = (static_cast<uint64_t>(ts.tv_sec) * 1000000ULL) +
+                                (static_cast<uint64_t>(ts.tv_nsec) / 1000ULL);
+         uint64_t prevUs = LastDetectionUs.load(std::memory_order_acquire);
+         if(prevUs == static_cast<uint64_t>(-1)) {
+            LastDetectionUs.store(nowUs, std::memory_order_release);
+         }
+         else if((nowUs - prevUs) >= 2000000ULL) {
+            if(!PrintedKill.exchange(true, std::memory_order_acq_rel)) {
+               static constexpr char killMsg[] = "\x1b[0m\n*** Kill ***\n\n";
+               const ssize_t written = write(STDERR_FILENO, killMsg, sizeof(killMsg) - 1);
+               (void)written;
+               kill(MainThreadPID.load(std::memory_order_acquire), SIGKILL);
+            }
+         }
       }
    }
 }
@@ -781,12 +812,12 @@ void breakDetector(int)
 // ###### Install break detector ############################################
 void installBreakDetector()
 {
-   DetectedBreak = false;
-   PrintedBreak  = false;
-   Quiet         = false;
-   MainThreadPID = getpid();
-   PrintedKill   = false;
-   LastDetection = MonotonicMicroTime(static_cast<uint64_t>(-1));
+   DetectedBreak.store(false, std::memory_order_release);
+   PrintedBreak = false;
+   Quiet.store(false, std::memory_order_release);
+   MainThreadPID.store(getpid(), std::memory_order_release);
+   PrintedKill.store(false, std::memory_order_release);
+   LastDetectionUs.store(static_cast<uint64_t>(-1), std::memory_order_release);
    signal(SIGINT, &breakDetector);
 }
 
@@ -795,17 +826,18 @@ void installBreakDetector()
 void uninstallBreakDetector()
 {
    signal(SIGINT, SIG_DFL);
-   PrintedKill   = false;
-   LastDetection = MonotonicMicroTime(static_cast<uint64_t>(-1));
-   Quiet         = false;
+   PrintedKill.store(false, std::memory_order_release);
+   LastDetectionUs.store(static_cast<uint64_t>(-1), std::memory_order_release);
+   Quiet.store(false, std::memory_order_release);
 }
 
 
 // ###### Check whether break has been detected #############################
 bool breakDetected()
 {
-   if(DetectedBreak && !PrintedBreak) {
-      if(!Quiet) {
+   const bool broken = DetectedBreak.load(std::memory_order_acquire);
+   if(broken && !PrintedBreak) {
+      if(!Quiet.load(std::memory_order_acquire)) {
          std::cerr << "\x1b[0m\n"
                    // TRANSLATORS: Signal notification printed on the first SIGINT. {} is the signal number (SIGINT=2).
                    << formatText(gettext("*** Break ***    Signal #{}"), SIGINT)
@@ -813,15 +845,15 @@ bool breakDetected()
       }
       PrintedBreak = true;
    }
-   return DetectedBreak;
+   return broken;
 }
 
 
 // ###### Send break signal to main thread ##################################
 void sendBreak(const bool quiet)
 {
-   Quiet = quiet;
-   kill(MainThreadPID, SIGINT);
+   Quiet.store(quiet, std::memory_order_release);
+   kill(MainThreadPID.load(std::memory_order_acquire), SIGINT);
 }
 
 
@@ -852,7 +884,8 @@ const char* getRandomGeneratorName(const uint8_t rng)
    }
 }
 
-static FILE* RandomDevice = nullptr;
+static std::mutex RandomDeviceMutex;
+static FILE*      RandomDevice = nullptr;
 
 
 // ###### Generate 8-bit random integer #####################################
@@ -880,11 +913,14 @@ uint64_t random64()
 uint32_t random32()
 {
    uint32_t number;
-   if(RandomDevice == nullptr) {
-      RandomDevice = fopen("/dev/urandom", "r");
-   }
-   if((RandomDevice != nullptr) && (fread(&number, sizeof(number), 1, RandomDevice) == 1)) {
-      return number;
+   {
+      std::lock_guard<std::mutex> guard(RandomDeviceMutex);
+      if(RandomDevice == nullptr) {
+         RandomDevice = fopen("/dev/urandom", "r");
+      }
+      if((RandomDevice != nullptr) && (fread(&number, sizeof(number), 1, RandomDevice) == 1)) {
+         return number;
+      }
    }
    srandom(static_cast<unsigned int>(getSystemMicroTime().value & 0xffffffff));
    const uint16_t a = random() & 0xffff;

@@ -35,6 +35,7 @@
 #endif
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -193,19 +194,19 @@ int pollTimeout(const unsigned long long now, const size_t n, ...);
 
 // ###### String copy/cat (strlcpy/strlcat) #################################
 #if !defined(HAVE_STRLCPY)
-size_t strlcpy(char* dest, const char* src, size_t size);
+size_t strlcpy(char* dest, const char* src, size_t size) noexcept;
 #endif
 #if !defined(HAVE_STRLCAT)
-size_t strlcat(char* dest, const char* src, size_t size);
+size_t strlcat(char* dest, const char* src, size_t size) noexcept;
 #endif
 
 // Backward compatibility wrappers
-inline int safestrcpy(char* dest, const char* src, const size_t size)
+inline int safestrcpy(char* dest, const char* src, const size_t size) noexcept
 {
    return strlcpy(dest, src, size) < size;
 }
 
-inline int safestrcat(char* dest, const char* src, const size_t size)
+inline int safestrcat(char* dest, const char* src, const size_t size) noexcept
 {
    return strlcat(dest, src, size) < size;
 }
