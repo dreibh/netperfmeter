@@ -320,7 +320,13 @@ void Flow::deactivate(const bool asyncStop)
             // NOTE: There is only one UDP socket. We cannot close it here!
          }
          else {
-            ext_shutdown(SocketDescriptor, (TrafficSpec.Protocol == IPPROTO_TCP) ? SHUT_WR : SHUT_RDWR);
+            const bool isTCPOrMPTCP =
+                          (TrafficSpec.Protocol == IPPROTO_TCP)
+#if defined(HAVE_MPTCP)
+                          || (TrafficSpec.Protocol == IPPROTO_MPTCP)
+#endif
+                          ;
+            ext_shutdown(SocketDescriptor, isTCPOrMPTCP ? SHUT_WR : SHUT_RDWR);
          }
       }
 
