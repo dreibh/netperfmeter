@@ -1249,6 +1249,82 @@ static Flow* createFlow(Flow*                  previousFlow,
 }
 
 
+// ###### Configure TCP control socket keepalive options ####################
+static bool configureTCPControlSocket(const int sd, const bool isMPTCP = false)
+{
+   const int keepAliveOption = 1;
+   if(ext_setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE,
+                     (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
+      LOG_ERROR
+      stdlog << format("Unable to set SO_KEEPALIVE on TCP control socket %d: %s!",
+                       sd, strerror(errno)) << "\n";
+      LOG_END
+      return false;
+   }
+#if defined(TCP_KEEPIDLE) && !defined(__GNU__)
+   const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
+   if(ext_setsockopt(sd, IPPROTO_TCP, TCP_KEEPIDLE,
+                     (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
+      if((!isMPTCP) ||
+         ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
+         LOG_ERROR
+         stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket %d: %s!",
+                          sd, strerror(errno)) << "\n";
+         LOG_END
+         return false;
+      }
+      LOG_WARNING
+      stdlog << format("Unable to set TCP_KEEPIDLE on MPTCP control socket %d: %s!",
+                       sd, strerror(errno)) << "\n";
+      LOG_END
+   }
+#else
+#warning No TCP_KEEPIDLE option available!
+#endif
+#if defined(TCP_KEEPINTVL) && !defined(__GNU__)
+   const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
+   if(ext_setsockopt(sd, IPPROTO_TCP, TCP_KEEPINTVL,
+                     (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
+      if((!isMPTCP) ||
+         ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
+         LOG_ERROR
+         stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket %d: %s!",
+                          sd, strerror(errno)) << "\n";
+         LOG_END
+         return false;
+      }
+      LOG_WARNING
+      stdlog << format("Unable to set TCP_KEEPINTVL on MPTCP control socket %d: %s!",
+                       sd, strerror(errno)) << "\n";
+      LOG_END
+   }
+#else
+#warning No TCP_KEEPINTVL option available!
+#endif
+#if defined(TCP_KEEPCNT) && !defined(__GNU__)
+   const int keepCountOption = (int)gControlHBPathMaxRtx;
+   if(ext_setsockopt(sd, IPPROTO_TCP, TCP_KEEPCNT,
+                     (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
+      if((!isMPTCP) ||
+         ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
+         LOG_ERROR
+         stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket %d: %s!",
+                          sd, strerror(errno)) << "\n";
+         LOG_END
+         return false;
+      }
+      LOG_WARNING
+      stdlog << format("Unable to set TCP_KEEPCNT on MPTCP control socket %d: %s!",
+                       sd, strerror(errno)) << "\n";
+      LOG_END
+   }
+#else
+#warning No TCP_KEEPCNT option available!
+#endif
+   return true;
+}
+
+
 // ###### Initialize pollFD entry in main loop ##############################
 static void addToPollFDs(pollfd* pollFDs, const int fd, nfds_t& n, int* index = nullptr)
 {
@@ -1379,7 +1455,16 @@ static bool mainLoop(const bool               isActiveMode,
                   stdlog << format("Accept on TCP control socket %d -> new control connection %d",
                                    gControlSocketTCP, newSD) << "\n";
                   LOG_END
-                  gMessageReader.registerSocket(IPPROTO_TCP, newSD);
+                  if(configureTCPControlSocket(newSD
+#if defined(HAVE_MPTCP)
+                                               , gPassiveControlMPTCP
+#endif
+                                              )) {
+                     gMessageReader.registerSocket(IPPROTO_TCP, newSD);
+                  }
+                  else {
+                     ext_close(newSD);
+                  }
                }
                else {
                   LOG_ERROR
@@ -1397,7 +1482,16 @@ static bool mainLoop(const bool               isActiveMode,
                   stdlog << format("Accept on TCP6 control socket %d -> new control connection %d",
                                    gControlSocketTCP6, newSD) << "\n";
                   LOG_END
-                  gMessageReader.registerSocket(IPPROTO_TCP, newSD);
+                  if(configureTCPControlSocket(newSD
+#if defined(HAVE_MPTCP)
+                                               , gPassiveControlMPTCP
+#endif
+                                              )) {
+                     gMessageReader.registerSocket(IPPROTO_TCP, newSD);
+                  }
+                  else {
+                     ext_close(newSD);
+                  }
                }
                else {
                   LOG_ERROR
@@ -1793,83 +1887,6 @@ static void passiveMode(const uint16_t localPort)
                           localPort + 1, strerror(errno)) << "\n";
          LOG_END_FATAL
       }
-      const int keepAliveOption = 1;
-      if(ext_setsockopt(gControlSocketTCP, SOL_SOCKET, SO_KEEPALIVE,
-                        (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
-         LOG_ERROR
-         stdlog << format("Unable to set SO_KEEPALIVE on TCP control socket %d: %s!",
-                          gControlSocketTCP, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
-#if defined(TCP_KEEPIDLE) && !defined(__GNU__)
-      const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
-      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPIDLE,
-                        (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
-#if defined(HAVE_MPTCP)
-         if((!gPassiveControlMPTCP) ||
-            ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
-#endif
-            LOG_ERROR
-            stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket %d: %s!",
-                             gControlSocketTCP, strerror(errno)) << "\n";
-            LOG_END_FATAL
-#if defined(HAVE_MPTCP)
-         }
-         LOG_WARNING
-         stdlog << format("Unable to set TCP_KEEPIDLE on MPTCP control socket %d: %s!",
-                          gControlSocketTCP, strerror(errno)) << "\n";
-         LOG_END
-#endif
-      }
-#else
-#warning No TCP_KEEPIDLE option available!
-#endif
-#if defined(TCP_KEEPINTVL) && !defined(__GNU__)
-      const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
-      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPINTVL,
-                        (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
-#if defined(HAVE_MPTCP)
-         if((!gPassiveControlMPTCP) ||
-            ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
-#endif
-            LOG_ERROR
-            stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket %d: %s!",
-                             gControlSocketTCP, strerror(errno)) << "\n";
-            LOG_END_FATAL
-#if defined(HAVE_MPTCP)
-         }
-         LOG_WARNING
-         stdlog << format("Unable to set TCP_KEEPINTVL on MPTCP control socket %d: %s!",
-                          gControlSocketTCP, strerror(errno)) << "\n";
-         LOG_END
-#endif
-      }
-#else
-#warning No TCP_KEEPINTVL option available!
-#endif
-#if defined(TCP_KEEPCNT) && !defined(__GNU__)
-      const int keepCountOption = (int)gControlHBPathMaxRtx;
-      if(ext_setsockopt(gControlSocketTCP, IPPROTO_TCP, TCP_KEEPCNT,
-                        (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
-#if defined(HAVE_MPTCP)
-         if((!gPassiveControlMPTCP) ||
-            ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
-#endif
-            LOG_ERROR
-            stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket %d: %s!",
-                             gControlSocketTCP, strerror(errno)) << "\n";
-            LOG_END_FATAL
-#if defined(HAVE_MPTCP)
-         }
-         LOG_WARNING
-         stdlog << format("Unable to set TCP_KEEPCNT on MPTCP control socket %d: %s!",
-                          gControlSocketTCP, strerror(errno)) << "\n";
-         LOG_END
-#endif
-      }
-#else
-#warning No TCP_KEEPCNT option available!
-#endif
 
       gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
 
@@ -2491,50 +2508,9 @@ static void activeMode(const char* remoteEndpoint)
    else
 #endif
    if(gActiveControlProtocol == IPPROTO_TCP) {
-      const int keepAliveOption = 1;
-      if(ext_setsockopt(gControlSocket, SOL_SOCKET, SO_KEEPALIVE,
-                        (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
-         LOG_ERROR
-         stdlog << format("Unable to set SO_KEEPALIVE on TCP control socket %d: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
+      if(!configureTCPControlSocket(gControlSocket)) {
+         exit(1);
       }
-#if defined(TCP_KEEPIDLE) && !defined(__GNU__)
-      const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
-      if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPIDLE,
-                        (const char*)&keepIdleOption, sizeof(keepIdleOption)) < 0) {
-         LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPIDLE on TCP control socket %d: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
-#else
-#warning No TCP_KEEPIDLE option available!
-#endif
-#if defined(TCP_KEEPINTVL) && !defined(__GNU__)
-      const int keepIntervalOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
-      if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPINTVL,
-                        (const char*)&keepIntervalOption, sizeof(keepIntervalOption)) < 0) {
-         LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPINTVL on TCP control socket %d: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
-#else
-#warning No TCP_KEEPINTVL option available!
-#endif
-#if defined(TCP_KEEPCNT) && !defined(__GNU__)
-      const int keepCountOption = (int)gControlHBPathMaxRtx;
-      if(ext_setsockopt(gControlSocket, IPPROTO_TCP, TCP_KEEPCNT,
-                        (const char*)&keepCountOption, sizeof(keepCountOption)) < 0) {
-         LOG_ERROR
-         stdlog << format("Unable to set TCP_KEEPCNT on TCP control socket %d: %s!",
-                          gControlSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
-#else
-#warning No TCP_KEEPCNT option available!
-#endif
    }
 
    LOG_TRACE
