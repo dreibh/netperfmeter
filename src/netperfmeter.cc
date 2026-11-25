@@ -2507,8 +2507,17 @@ static void activeMode(const char* remoteEndpoint)
    }
    else
 #endif
-   if(gActiveControlProtocol == IPPROTO_TCP) {
-      if(!configureTCPControlSocket(gControlSocket)) {
+   if( (gActiveControlProtocol == IPPROTO_TCP)
+#if defined(HAVE_MPTCP)
+       || (gActiveControlProtocol == IPPROTO_MPTCP)
+#endif
+     ) {
+      if(!configureTCPControlSocket(gControlSocket
+#if defined(HAVE_MPTCP)
+                                    , (gActiveControlProtocol == IPPROTO_MPTCP)
+#endif
+                                   )) {
+         finishLogging();
          exit(1);
       }
    }
