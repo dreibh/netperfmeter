@@ -1004,6 +1004,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 #if defined(HAVE_DCCP)
          case IPPROTO_DCCP:
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 40;   // 1420B for IPv6 via 1500B MTU!
+            trafficSpec.OutboundFrameRate[0] = 25;
           break;
 #endif
 #if defined(HAVE_QUIC)
