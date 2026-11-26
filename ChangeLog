@@ -1,3 +1,57 @@
+commit c83c489ef3ddda902999e1955fccd3d6536a9964
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 26 11:17:18 2026 +0100
+
+    Bugfixes: Some QUIC, DCCP, and SCTP parameter handling fixes.
+
+commit 95b2b53fead9812282381c015d60d399c77b5a91
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Thu Nov 26 10:49:20 2026 +0100
+
+    Bugfix: DCCP default needs to set a frame rate as well.
+
+commit 6707d10eef4abc26ba2e3b229a0cb79c2f0bd3e7
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 25 17:56:33 2026 +0100
+
+    A few more fixes.
+
+commit 847c8717c2d124fb5b7290337ed4d46ca16db4f9
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 25 17:37:47 2026 +0100
+
+    Minor clean-up.
+
+commit 9eeb0eda35069b2d96cc3b4150ac6ba161ff72fb
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 25 17:20:43 2026 +0100
+
+    Bugfix: Fixed another missing case for MPTCP.
+
+commit accefacd7f451eba16cd51057a43d63e9e9a2df3
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 25 17:13:25 2026 +0100
+
+    Bugfix: NetBSD TCP control socket options fix.
+
+commit 0a29b2cfe55a03ff0d97e71aa309662e221bb4ff
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Wed Nov 25 16:44:58 2026 +0100
+
+    Bugfix: Also perform graceful shutdown for MPTCP.
+
+commit 76d187befb1dbbc973c06193e28ff0504335e9e8
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Tue Nov 24 09:37:38 2026 +0100
+
+    Packaging updates.
+
+commit 768c1b0f8f915c6fae373f6b60d19d3d84d72502
+Author: Thomas Dreibholz <dreibh@simula.no>
+Date:   Mon Nov 23 14:53:31 2026 +0100
+
+    New release netperfmeter-2.0.17.
+
 commit 7557bb8e08182bf2e67077d8a9f27309b9d55c8b
 Author: Thomas Dreibholz <dreibh@simula.no>
 Date:   Mon Nov 23 14:41:07 2026 +0100
