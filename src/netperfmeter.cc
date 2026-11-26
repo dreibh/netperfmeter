@@ -39,6 +39,7 @@
 #include "propertyformatter.h"
 #include "quic.h"
 
+#include <cctype>
 #include <cerrno>
 #include <clocale>
 #include <cmath>
@@ -101,7 +102,7 @@ static int              gPassiveControlTCP     = true;
 static int              gPassiveControlMPTCP   = false;
 #endif
 #if defined(HAVE_QUIC)
-static int              gPassiveControlQUIC    = true;
+static bool             gPassiveControlQUIC    = true;
 static int              gControlSocketQUIC     = -1;
 #endif
 static int              gControlSocket         = -1;
@@ -923,7 +924,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       else {
          // TRANSLATORS: Error message when error_on_abort is not on/off. {} is the input setting.
-         std::cerr << formatText(gettext("ERROR: Invalid \"error_on_abort\" setting: {}!"), (const char*)&parameters[4]) << "\n";
+         std::cerr << formatText(gettext("ERROR: Invalid \"error_on_abort\" setting: {}!"), (const char*)&parameters[15]) << "\n";
          exit(1);
       }
    }
@@ -1027,8 +1028,8 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       congestionControl[i] = 0x00;
       if( (parameters[3 + i] != ':') && (parameters[3 + i] != 0x00) ) {
          // TRANSLATORS: Error message when TCP congestion control algorithm name exceeds buffer size. {} is the name.
-         std::cerr << formatText(gettext("ERROR: Invalid \"cc\" setting: {} - name too long!"), (const char*)&parameters[8]) << "\n";
-          exit(1);
+         std::cerr << formatText(gettext("ERROR: Invalid \"cc\" setting: {} - name too long!"), (const char*)&parameters[3]) << "\n";
+         exit(1);
       }
       trafficSpec.CongestionControl = std::string((const char*)&congestionControl);
       n = 3 + strlen((const char*)&congestionControl);
@@ -1083,6 +1084,7 @@ static Flow* createFlow(Flow*                  previousFlow,
 #if defined(HAVE_DCCP)
          case IPPROTO_DCCP:
             trafficSpec.OutboundFrameSize[0] = 1500 - 40 - 40;   // 1420B for IPv6 via 1500B MTU!
+            trafficSpec.OutboundFrameRate[0] = 25;
           break;
 #endif
 #if defined(HAVE_QUIC)
@@ -1126,8 +1128,9 @@ static Flow* createFlow(Flow*                  previousFlow,
       trafficSpec.Protocol = IPPROTO_MPTCP;
    }
    if( (trafficSpec.Protocol == IPPROTO_MPTCP) && (trafficSpec.CMT != NPAF_LikeMPTCP) ) {
-      // TRANSLATORS: Warning when CMT option is incompatible with MPTCP. {} is the input setting.
-      std::cerr << formatText(gettext("WARNING: Invalid \"cmt\" setting: {} for MPTCP! Using default instead!"), (const char*)&parameters[4]) << "\n";
+      // TRANSLATORS: Error message when CMT option is incompatible with MPTCP. {} is the numeric CMT value.
+      std::cerr << formatText(gettext("ERROR: Invalid \"cmt\" setting ({}) for MPTCP!"),
+                              static_cast<unsigned int>(trafficSpec.CMT)) << "\n";
       exit(1);
    }
 #endif
@@ -1450,7 +1453,7 @@ static void addToPollFDs(pollfd* pollFDs, const int fd, nfds_t& n, int* index = 
 static bool mainLoop(const bool     isActiveMode,
                      const uint64_t stopAt)
 {
-   pollfd             fds[8 + gMessageReader.size()];
+   pollfd             fds[16 + gMessageReader.size()];
    nfds_t             n       = 0;
    int                tcpID   = -1;
 #if defined(__OpenBSD__)
@@ -2026,7 +2029,7 @@ static void passiveMode(const uint16_t localPort)
             gMessageReader.registerSocket(IPPROTO_QUIC, gControlSocketQUIC);
          }
          else {
-            if( (errno != EPROTONOSUPPORT) ||
+            if( ((errno != EPROTONOSUPPORT) && (errno != EAFNOSUPPORT)) ||
                 ((gPassiveControlTCP == false) && (gControlSocket < 0)) ) {
                LOG_FATAL
                // TRANSLATORS: Fatal error when binding QUIC control socket. Placeholders: {} 1: port number, 2: strerror() message.
@@ -2822,8 +2825,11 @@ static void activeMode(const char* remoteEndpoint)
       quicDeregisterControlSocket(gControlSocket);
    }
 #endif
-   gMessageReader.deregisterSocket(gControlSocket);
-   ext_close(gControlSocket);
+   if(gControlSocket >= 0) {
+      gMessageReader.deregisterSocket(gControlSocket);
+      ext_close(gControlSocket);
+      gControlSocket = -1;
+   }
 }
 
 

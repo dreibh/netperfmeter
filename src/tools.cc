@@ -32,11 +32,12 @@
 #include <arpa/inet.h>
 #include <atomic>
 #include <cassert>
+#include <cctype>
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <cctype>
+#include <ctime>
 #include <ext_socket.h>
 #include <format>
 #include <mutex>
@@ -56,13 +57,13 @@
 size_t strlcpy(char* dest, const char* src, size_t size) noexcept
 {
    if(src == nullptr) {
-      if(size > 0) {
+      if((dest != nullptr) && (size > 0)) {
          dest[0] = 0x00;
       }
       return 0;
    }
    const size_t src_len = strlen(src);
-   if(size > 0) {
+   if((dest != nullptr) && (size > 0)) {
       const size_t copy_len = (src_len >= size) ? size - 1 : src_len;
       memcpy(dest, src, copy_len);
       dest[copy_len] = 0x00;
@@ -76,12 +77,17 @@ size_t strlcpy(char* dest, const char* src, size_t size) noexcept
 #if !defined(HAVE_STRLCAT)
 size_t strlcat(char* dest, const char* src, size_t size) noexcept
 {
-   if(src == nullptr) {
-      return strlen(dest);
+   size_t dest_len = 0;
+   if(dest != nullptr) {
+      while((dest_len < size) && (dest[dest_len] != 0x00)) {
+         dest_len++;
+      }
    }
-   const size_t dest_len = strlen(dest);
-   const size_t src_len  = strlen(src);
-   if(dest_len >= size) {
+   if(src == nullptr) {
+      return dest_len;
+   }
+   const size_t src_len = strlen(src);
+   if((dest == nullptr) || (dest_len >= size)) {
       return size + src_len;
    }
    const size_t copy_len = (src_len >= size - dest_len) ? size - dest_len - 1 : src_len;
@@ -123,10 +129,12 @@ int pollTimeout(const unsigned long long now, const size_t n, ...)
    if(timeout == ~0ULL) {
       return -1;   // Infinite wait time
    }
-   const double delta = (double)timeout - (double)now;
+   const double delta = static_cast<double>(timeout) - static_cast<double>(now);
    if(delta <= 0.0) {
       return 0;    // Do not wait
    }
+   // Return wait time in milliseconds.
+   // NOTE: Return ceiling of the value, since 999ULL/1000ULL == 0!
    return static_cast<int>(ceil(delta / 1000.0));
 }
 
@@ -339,9 +347,9 @@ bool string2address(const char*           string,
                     union sockaddr_union* address,
                     const bool            readPort)
 {
-   char host[128];
-   char port[128];
-   int  portNumber = 0;
+   char  host[128];
+   char  port[128];
+   int   portNumber = 0;
    char* p1;
 
    if((string == nullptr) || (strlen(string) >= sizeof(host))) {
@@ -589,6 +597,8 @@ int bindSocket(const int             sd,
                const bool            listenMode,
                const bool            bindV6Only)
 {
+   (void)type;
+
    unsigned int localAddressCount = localAddresses;
    const int    socketFamily      = resolveSocketFamily(family, protocol,
                                                         localAddresses, localAddressArray);
@@ -598,10 +608,16 @@ int bindSocket(const int             sd,
    if(socketFamily == AF_INET6) {
       anyAddress.in6.sin6_family = AF_INET6;
       anyAddress.in6.sin6_port   = htobe16(localPort);
+#if defined(HAVE_SIN6_LEN)
+      anyAddress.in6.sin6_len    = sizeof(struct sockaddr_in6);
+#endif
    }
    else {
       anyAddress.in.sin_family = AF_INET;
       anyAddress.in.sin_port   = htobe16(localPort);
+#if defined(HAVE_SIN_LEN)
+      anyAddress.in.sin_len    = sizeof(struct sockaddr_in);
+#endif
    }
 
 #if defined(HAVE_MPTCP)
@@ -651,6 +667,9 @@ int bindSocket(const int             sd,
                      memset(mapped, 0, sizeof(sockaddr_in6));
                      mapped->sin6_family = AF_INET6;
                      mapped->sin6_port   = htobe16(localPort);
+#if defined(HAVE_SIN6_LEN)
+                     mapped->sin6_len    = sizeof(struct sockaddr_in6);
+#endif
                      mapped->sin6_addr.s6_addr[10] = 0xff;
                      mapped->sin6_addr.s6_addr[11] = 0xff;
                      memcpy(&mapped->sin6_addr.s6_addr[12], &localAddressArray[i].in.sin_addr, sizeof(struct in_addr));
@@ -718,6 +737,9 @@ int bindSocket(const int             sd,
             memcpy(&localAddress, &localAddressArray[0].in6, sizeof(sockaddr_in6));
             localAddress.in6.sin6_port = htobe16(localPort);
          }
+         else {
+            assert(false);
+         }
 
          if(ext_bind(sd, &localAddress.sa, getSocklen(&localAddress.sa)) != 0) {
             return -3;
@@ -775,12 +797,12 @@ double networkToDouble(network_double_t value)
 
 
 // ###### Break and Termination Handling ####################################
-static std::atomic<bool>      DetectedBreak{false};
-static bool                   PrintedBreak{false};
-static std::atomic<bool>      Quiet{false};
-static std::atomic<pid_t>     MainThreadPID{0};
-static std::atomic<bool>      PrintedKill{false};
-static std::atomic<uint64_t>  LastDetectionUs{static_cast<uint64_t>(-1)};
+static std::atomic<bool>     DetectedBreak{false};
+static bool                  PrintedBreak{false};
+static std::atomic<bool>     Quiet{false};
+static std::atomic<pid_t>    MainThreadPID{0};
+static std::atomic<bool>     PrintedKill{false};
+static std::atomic<uint64_t> LastDetectionUs{static_cast<uint64_t>(-1)};
 
 
 // ###### Break detector signal handler #####################################
@@ -876,16 +898,20 @@ double getRandomValue(const double* valueArray, const uint8_t rng)
 const char* getRandomGeneratorName(const uint8_t rng)
 {
    switch(rng) {
-      case RANDOM_CONSTANT:    return "constant";
-      case RANDOM_UNIFORM:     return "uniform";
-      case RANDOM_EXPONENTIAL: return "exponential";
-      case RANDOM_PARETO:      return "pareto";
-      default:                 return "(invalid!)";
+      case RANDOM_CONSTANT:         return "constant";
+      case RANDOM_UNIFORM:          return "uniform";
+      case RANDOM_EXPONENTIAL:      return "exponential";
+      case RANDOM_PARETO:           return "pareto";
+      case RANDOM_NORMAL:           return "normal";
+      case RANDOM_TRUNCATED_NORMAL: return "truncated normal";
+      default:                      return "(invalid!)";
    }
 }
 
 static std::mutex RandomDeviceMutex;
-static FILE*      RandomDevice = nullptr;
+static FILE*      RandomDevice      = nullptr;
+static bool       RandomTriedDevice = false;
+static bool       RandomClibSeeded  = false;
 
 
 // ###### Generate 8-bit random integer #####################################
@@ -913,16 +939,32 @@ uint64_t random64()
 uint32_t random32()
 {
    uint32_t number;
-   {
-      std::lock_guard<std::mutex> guard(RandomDeviceMutex);
-      if(RandomDevice == nullptr) {
-         RandomDevice = fopen("/dev/urandom", "r");
-      }
-      if((RandomDevice != nullptr) && (fread(&number, sizeof(number), 1, RandomDevice) == 1)) {
-         return number;
+   std::lock_guard<std::mutex> guard(RandomDeviceMutex);
+   if(!RandomTriedDevice) {
+      RandomTriedDevice = true;
+      RandomDevice      = fopen("/dev/urandom", "r");
+      if(RandomDevice != nullptr) {
+         if(fread(&number, sizeof(number), 1, RandomDevice) == 1) {
+            srandom(number);
+            RandomClibSeeded = true;
+            return number;
+         }
+         fclose(RandomDevice);
+         RandomDevice = nullptr;
       }
    }
-   srandom(static_cast<unsigned int>(getSystemMicroTime().value & 0xffffffff));
+   else if(RandomDevice != nullptr) {
+      if(fread(&number, sizeof(number), 1, RandomDevice) == 1) {
+         return number;
+      }
+      fclose(RandomDevice);
+      RandomDevice = nullptr;
+   }
+
+   if(!RandomClibSeeded) {
+      srandom(static_cast<unsigned int>(getSystemMicroTime().value & 0xffffffff));
+      RandomClibSeeded = true;
+   }
    const uint16_t a = random() & 0xffff;
    const uint16_t b = random() & 0xffff;
    return (static_cast<uint32_t>(a) << 16) | b;
@@ -939,6 +981,7 @@ double randomDouble()
 // ###### Generate negative exponential random double #######################
 double randomExpDouble(const double mean)
 {
+   // randomDouble() returns value in [0.0, 1.0), so 1.0 - randomDouble() avoids log(0.0):
    return -mean * log(1.0 - randomDouble());
 }
 
@@ -946,7 +989,7 @@ double randomExpDouble(const double mean)
 // ###### Generate normal distributed random double #########################
 double randomNormal(const double mean, const double stddev)
 {
-   const double u = randomDouble();
+   const double u = 1.0 - randomDouble();
    const double v = randomDouble();
    return mean + stddev * sqrt(-2.0 * log(u)) * cos(M_PI * 2.0 * v);
 }
