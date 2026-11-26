@@ -847,7 +847,7 @@ static const char* parseTrafficSpecOption(const char*      parameters,
          n = 15 + 3;
       }
       else {
-         std::cerr << "ERROR: Invalid \"error_on_abort\" setting: " << (const char*)&parameters[4] << "!\n";
+         std::cerr << "ERROR: Invalid \"error_on_abort\" setting: " << (const char*)&parameters[15] << "!\n";
          exit(1);
       }
    }
@@ -946,9 +946,9 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       }
       congestionControl[i] = 0x00;
       if( (parameters[3 + i] != ':') && (parameters[3 + i] != 0x00) ) {
-         std::cerr << "ERROR: Invalid \"cc\" setting: " << (const char*)&parameters[8]
+         std::cerr << "ERROR: Invalid \"cc\" setting: " << (const char*)&parameters[3]
                    << " - name too long!\n";
-          exit(1);
+         exit(1);
       }
       trafficSpec.CongestionControl = std::string((const char*)&congestionControl);
       n = 3 + strlen((const char*)&congestionControl);
@@ -1047,8 +1047,8 @@ static Flow* createFlow(Flow*                  previousFlow,
       trafficSpec.Protocol = IPPROTO_MPTCP;
    }
    if( (trafficSpec.Protocol == IPPROTO_MPTCP) && (trafficSpec.CMT != NPAF_LikeMPTCP) ) {
-      std::cerr << "WARNING: Invalid \"cmt\" setting: " << (const char*)&parameters[4]
-                << " for MPTCP! Using default instead!\n";
+      std::cerr << "ERROR: Invalid \"cmt\" setting (" << (unsigned int)trafficSpec.CMT
+                << ") for MPTCP!\n";
       exit(1);
    }
 #endif
@@ -1253,6 +1253,16 @@ static Flow* createFlow(Flow*                  previousFlow,
 // ###### Configure TCP control socket keepalive options ####################
 static bool configureTCPControlSocket(const int sd, const bool isMPTCP = false)
 {
+   (void)isMPTCP;
+   const int noDelayOption = 1;
+   if(ext_setsockopt(sd, IPPROTO_TCP, TCP_NODELAY,
+                     (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
+      LOG_ERROR
+      stdlog << format("Unable to set TCP_NODELAY on TCP control socket %d: %s!",
+                       sd, strerror(errno)) << "\n";
+      LOG_END
+      return false;
+   }
    const int keepAliveOption = 1;
    if(ext_setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE,
                      (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
@@ -1662,7 +1672,7 @@ static bool mainLoop(const bool               isActiveMode,
                              gQUICSocket, newSD) << "\n";
             LOG_END
             LOG_TRACE
-            stdlog << "server handshake <sd=" << gQUICSocket
+            stdlog << "server handshake <sd=" << newSD
                    << ", K="  << ((gQUICKey != nullptr) ? gQUICKey : "(none)")
                    << ", C="  << ((gQUICCertificate != nullptr) ? gQUICCertificate : "(none)")
                    << ", CA=" << ((gQUICCA != nullptr) ? gQUICCA : "(none)")
@@ -1677,10 +1687,6 @@ static bool mainLoop(const bool               isActiveMode,
                if(quicServerHandshake(newSD, ALPN_NETPERFMETER_DATA,
                                       gQUICCA, gQUICCertificate, gQUICKey,
                                       sessionKey, sessionKeyLength) == 0) {
-                  LOG_TRACE
-                  stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
-                                   gQUICSocket, newSD) << "\n";
-                  LOG_END
                   FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
                }
                else {
@@ -1910,17 +1916,24 @@ static void passiveMode(const uint16_t localPort)
                              localPort + 1, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
-         const int noDelayOption = 1;
-         if(ext_setsockopt(gControlSocketTCP6, IPPROTO_TCP, TCP_NODELAY,
-                           (const char*)&noDelayOption, sizeof(noDelayOption)) < 0) {
-            LOG_ERROR
-            stdlog << format("Unable to set TCP6_NODELAY on TCP6 control socket %d: %s!",
-                             gControlSocketTCP6, strerror(errno)) << "\n";
-            LOG_END_FATAL
-         }
          gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP6);
       }
 #endif
+   }
+
+   if( (gControlSocket < 0) &&
+       (gControlSocketTCP < 0)
+#if defined(__OpenBSD__)
+       && (gControlSocketTCP6 < 0)
+#endif
+#if defined(HAVE_QUIC)
+       && (gControlSocketQUIC < 0)
+#endif
+     ) {
+      LOG_FATAL
+      stdlog << format("Unable to create any control socket on port %d!",
+                       localPort + 1) << "\n";
+      LOG_END_FATAL
    }
 
    // ====== Initialize data socket for each protocol =======================
@@ -2027,6 +2040,7 @@ static void passiveMode(const uint16_t localPort)
       FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_UDP, gUDP6Socket);
    }
 #endif
+
    // ------ DCCP -----------------------------------------------------------
 #if defined(HAVE_DCCP)
    gDCCPSocket = createAndBindSocket(AF_UNSPEC, SOCK_DCCP, IPPROTO_DCCP, localPort,
@@ -2065,34 +2079,36 @@ static void passiveMode(const uint16_t localPort)
 
    // ------ QUIC -----------------------------------------------------------
 #if defined(HAVE_QUIC)
-   gQUICSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_QUIC, localPort - 1,
-                                     gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
-   // NOTE: It is necessary to set the ALPN before enabling the listening mode!
-   if(gQUICSocket < 0) {
-      LOG_INFO
-      stdlog << format("QUIC is unavailable (%s); disabling QUIC socket on port %d!",
-                       strerror(errno), localPort - 1) << "\n";
-      LOG_END
-   }
-   else {
-      if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
-                        ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
-         LOG_FATAL
-         stdlog << format("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket %d: %s!",
-                          gQUICSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
+   if((gQUICCertificate != nullptr) && (gQUICKey != nullptr)) {
+      gQUICSocket = createAndBindSocket(AF_UNSPEC, SOCK_DGRAM, IPPROTO_QUIC, localPort - 1,
+                                        gLocalDataAddresses, (const sockaddr_union*)&gLocalDataAddressArray, false, gBindV6Only);
+      // NOTE: It is necessary to set the ALPN before enabling the listening mode!
+      if(gQUICSocket < 0) {
+         LOG_INFO
+         stdlog << format("QUIC is unavailable (%s); disabling QUIC socket on port %d!",
+                          strerror(errno), localPort - 1) << "\n";
+         LOG_END
       }
-      if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
-         LOG_FATAL
-         stdlog << format("Unable to configure buffer sizes on QUIC socket %d: %s!",
-                          gQUICSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
-      }
-      if(ext_listen(gQUICSocket, 100) < 0) {
-         LOG_FATAL
-         stdlog << format("Unable to enable listening on QUIC socket %d: %s!",
-                          gQUICSocket, strerror(errno)) << "\n";
-         LOG_END_FATAL
+      else {
+         if(ext_setsockopt(gQUICSocket, SOL_QUIC, QUIC_SOCKOPT_ALPN,
+                           ALPN_NETPERFMETER_DATA, strlen(ALPN_NETPERFMETER_DATA)) < 0) {
+            LOG_FATAL
+            stdlog << format("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC socket %d: %s!",
+                             gQUICSocket, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+         if(setBufferSizes(gQUICSocket, gSndBufSize, gRcvBufSize) == false) {
+            LOG_FATAL
+            stdlog << format("Unable to configure buffer sizes on QUIC socket %d: %s!",
+                             gQUICSocket, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
+         if(ext_listen(gQUICSocket, 100) < 0) {
+            LOG_FATAL
+            stdlog << format("Unable to enable listening on QUIC socket %d: %s!",
+                             gQUICSocket, strerror(errno)) << "\n";
+            LOG_END_FATAL
+         }
       }
    }
 #endif
@@ -2210,12 +2226,12 @@ static void passiveMode(const uint16_t localPort)
    }
 #endif
 #if defined(HAVE_MPTCP)
-   if(gMPTCPSocket > 0) {
+   if(gMPTCPSocket >= 0) {
       dataProtocols2 += "MPTCP";
    }
 #endif
 #if defined(HAVE_QUIC)
-   if(gQUICSocket > 0) {
+   if(gQUICSocket >= 0) {
       if(dataProtocols2.size() > 0) {
          dataProtocols2 += "/";
       }
@@ -2608,6 +2624,11 @@ static void activeMode(const char* remoteEndpoint)
       quicDeregisterControlSocket(gControlSocket);
    }
 #endif
+   if(gControlSocket >= 0) {
+      gMessageReader.deregisterSocket(gControlSocket);
+      ext_close(gControlSocket);
+      gControlSocket = -1;
+   }
 }
 
 
