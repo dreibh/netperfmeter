@@ -222,7 +222,7 @@ static void usage(const char* program, const int exitCode)
                    ENTRY(OPT("-!") PIPE OPT("--verbose"))
              << CMD(program) << " "
                 ARG("remote_endpoint:remote_port") "\n"
-                   ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("--control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp") PIPE OPT("-z") PIPE OPT("--control-over-quic"))
+                   ENTRY(OPT("-x") PIPE OPT("--control-over-sctp") PIPE OPT("-y") PIPE OPT("--control-over-tcp") PIPE OPT("-w") PIPE OPT("--control-over-mptcp") PIPE OPT("-z") PIPE OPT("--control-over-quic"))
                    ENTRY(OPT("-L") " " ARG("address[,address,...]") PIPE OPT("--local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-l") " " ARG("address[,address,...]") PIPE OPT("--control-local") " " ARG("address[,address,...]"))
                    ENTRY(OPT("-K") " " ARG("key_file") PIPE OPT("--tls-key") " " ARG("key_file"))
@@ -263,8 +263,8 @@ static void usage(const char* program, const int exitCode)
                 ARG("outgoing_frame_rate:outgoing_frame_size:incoming_frame_rate:incoming_frame_size:option:...") "\n"
              << "\n"
              // TRANSLATORS: Informational message at the end of usage:
-             // "For further information, see the man page for <manpage>, read the documentation at <url>, examine the source code at <url>, or consult your favourite LLM.".
-             << formatText(gettext("For further information, see the man page for {}, read the documentation at {}, examine the source code at {}, or consult your favourite LLM."),
+             // {0} = manpage name, {1} = documentation URL, {2} = repository URL
+             << formatText(gettext("For further information, see the man page for {0}, read the documentation at {1}, examine the source code at {2}, or consult your favourite LLM."),
                            manpage, homepage, repository) << "\n";
    std::exit(exitCode);
 }
