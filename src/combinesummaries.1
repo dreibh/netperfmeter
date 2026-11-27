@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 22, 2026
+.Dd November 27, 2026
 .Dt combinesummaries 1
 .Os CombineSummaries
 .\" ###### Name #############################################################
@@ -36,10 +36,6 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm combinesummaries
-.Ar output\_file
-.br
-.Op Ar variable\_names
-.br
 .Op Fl c Ar level | Fl \-compress Ar level
 .br
 .Op Fl s Ar separator | Fl \-separator Ar separator
@@ -47,6 +43,9 @@
 .Op Fl l | Fl \-line\-numbers | Fl n | Fl \-no\-line\-numbers
 .br
 .Op Fl q | Fl \-quiet
+.br
+.Ar output\_file
+.Op Ar variable\_names
 .Nm combinesummaries
 .Op Fl h | Fl \-help
 .Nm combinesummaries

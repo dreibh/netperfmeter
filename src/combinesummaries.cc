@@ -299,13 +299,12 @@ void addDataFile(OutputFile&         outputFile,
 static void usage(const char* program, const int exitCode)
 {
    std::cerr << HEADER("Usage:") << "\n"
-             << CMD(program) << " "
-                ARG("output_file") "\n"
-                   ENTRY(ARG("variable_names"))
+             << CMD(program) << "\n"
                    ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
                    ENTRY(OPT("-s") " " ARG("separator") PIPE OPT("--separator") " " ARG("separator"))
                    ENTRY(OPT("-l") PIPE OPT("--line-numbers") PIPE OPT("-n") PIPE OPT("--no-line-numbers"))
                    ENTRY(OPT("-q") PIPE OPT("--quiet"))
+                   "\t" ARG("output_file") " " SYN("[") ARG("variable_names") SYN("]") "\n"
              << CMD(program) << "\n"
                    ENTRY(OPT("-h") PIPE OPT("--help"))
              << CMD(program) << "\n"

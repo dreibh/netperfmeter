@@ -27,6 +27,8 @@
  * Homepage: https://www.nntb.no/~dreibh/netperfmeter/
  */
 
+#include <cerrno>
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -35,7 +37,6 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <unistd.h>
 #include <vector>
 
 #if defined(HAVE_LIBIBERTY)
@@ -62,13 +63,137 @@ class VectorInfo
 };
 
 
+// ###### Parse OMNeT++ vector definition line ##############################
+// Format: vector <id> <object> <"quoted name"|unquoted_name> ETV
+static bool parseVectorDefinition(const std::string& line,
+                                  unsigned int&      vectorID,
+                                  std::string&       objectName,
+                                  std::string&       vectorName)
+{
+   if((line.size() < 7) ||
+      ((line.compare(0, 7, "vector ") != 0) &&
+       (line.compare(0, 7, "vector\t") != 0))) {
+      return false;
+   }
+
+   size_t pos = 7;
+   size_t end = line.size();
+   auto skipWS = [&]() {
+      while((pos < end) && ((line[pos] == ' ') || (line[pos] == '\t'))) {
+         pos++;
+      }
+   };
+
+   // 1. Vector ID (unsigned integer)
+   skipWS();
+   if(pos >= end) {
+      return false;
+   }
+   size_t idEnd = pos;
+   while((idEnd < end) && (line[idEnd] != ' ') && (line[idEnd] != '\t')) {
+      if(!isdigit(static_cast<unsigned char>(line[idEnd]))) {
+         return false;
+      }
+      idEnd++;
+   }
+   if(idEnd == pos) {
+      return false;
+   }
+   errno = 0;
+   char* endPtr = nullptr;
+   const std::string idStr = line.substr(pos, idEnd - pos);
+   const unsigned long parsedID = strtoul(idStr.c_str(), &endPtr, 10);
+   if((errno == ERANGE) || (endPtr != idStr.c_str() + idStr.size()) || (parsedID > UINT_MAX)) {
+      return false;
+   }
+   pos = idEnd;
+
+   // 2. Object name (quoted or unquoted token)
+   skipWS();
+   if(pos >= end) {
+      return false;
+   }
+   if(line[pos] == '"') {
+      pos++;
+      const size_t closeQuote = line.find('"', pos);
+      if(closeQuote == std::string::npos) {
+         return false;
+      }
+      objectName = line.substr(pos, closeQuote - pos);
+      pos = closeQuote + 1;
+      if((pos < end) && (line[pos] != ' ') && (line[pos] != '\t')) {
+         return false;
+      }
+   }
+   else {
+      size_t objEnd = pos;
+      while((objEnd < end) && (line[objEnd] != ' ') && (line[objEnd] != '\t')) {
+         objEnd++;
+      }
+      objectName = line.substr(pos, objEnd - pos);
+      pos = objEnd;
+   }
+   if(objectName.empty()) {
+      return false;
+   }
+
+   // 3. Vector name (quoted or unquoted) followed by "ETV"
+   skipWS();
+   while((end > pos) && ((line[end - 1] == ' ') || (line[end - 1] == '\t'))) {
+      end--;
+   }
+   if(pos >= end) {
+      return false;
+   }
+
+   if(line[pos] == '"') {
+      pos++;
+      const size_t closeQuote = line.find('"', pos);
+      if((closeQuote == std::string::npos) || (closeQuote >= end)) {
+         return false;
+      }
+      vectorName = line.substr(pos, closeQuote - pos);
+      pos = closeQuote + 1;
+      if((pos >= end) || ((line[pos] != ' ') && (line[pos] != '\t'))) {
+         return false;
+      }
+      skipWS();
+      if(line.compare(pos, end - pos, "ETV") != 0) {
+         return false;
+      }
+   }
+   else {
+      // Unquoted vector name must end with whitespace + "ETV"
+      if(((end - pos) < 4) || (line.compare(end - 3, 3, "ETV") != 0)) {
+         return false;
+      }
+      const char beforeETV = line[end - 4];
+      if((beforeETV != ' ') && (beforeETV != '\t')) {
+         return false;
+      }
+      end -= 3;
+      while((end > pos) && ((line[end - 1] == ' ') || (line[end - 1] == '\t'))) {
+         end--;
+      }
+      if((pos >= end) || (line.find('"', pos) < end)) {
+         return false;
+      }
+      vectorName = line.substr(pos, end - pos);
+   }
+
+   vectorID = static_cast<unsigned int>(parsedID);
+   return true;
+}
+
+
 // ###### Read and process data file ########################################
 static unsigned long long extractVectors(InputFile&               inputFile,
                                          OutputFile&              outputFile,
                                          const bool               defaultVectorSplittingMode,
                                          std::vector<VectorInfo>& vectorsToExtract,
                                          const bool               addLineNumbers,
-                                         const char*              separator)
+                                         const char*              separator,
+                                         const bool               quietMode)
 {
    std::map<unsigned int, const std::string> vectorToNameMap;
    std::map<unsigned int, const std::string> vectorToSplitMap;
@@ -84,6 +209,12 @@ static unsigned long long extractVectors(InputFile&               inputFile,
       const ssize_t bytesRead = inputFile.readLine(inBuffer, sizeof(inBuffer), eof);
       if((bytesRead < 0) || (eof)) {
          break;
+      }
+
+      // Strip any trailing \r from DOS line endings
+      size_t inLen = strlen(inBuffer);
+      if((inLen > 0) && (inBuffer[inLen - 1] == '\r')) {
+         inBuffer[--inLen] = 0x00;
       }
 
       // ====== Process line ================================================
@@ -114,16 +245,23 @@ static unsigned long long extractVectors(InputFile&               inputFile,
          unsigned int event;
          double       simTime;
          double       value;
-         int          n;
+         int          n = 0;
          if(sscanf(inBuffer, "%u %u %lf %lf%n",
                    &vectorID, &event, &simTime, &value, &n) == 4) {
+            const char* tail = &inBuffer[n];
+            while((*tail == ' ') || (*tail == '\t')) {
+               tail++;
+            }
+            if(*tail != 0x00) {
+               continue;
+            }
             std::map<unsigned int, const std::string>::iterator found =
                vectorToNameMap.find(vectorID);
             if(found != vectorToNameMap.end()) {
                if(addLineNumbers) {
                   snprintf(outBuffer, sizeof(outBuffer),
-                           "%u%s%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
-                           (unsigned int)outputLine,            separator,
+                           "%llu%s%lf%s%u%s\"%s\"%s\"%s\"%s\"%s\"%s%lf\n",
+                           outputLine,                          separator,
                            simTime,                             separator,
                            event,                               separator,
                            vectorToObjectMap[vectorID].c_str(), separator,
@@ -145,21 +283,20 @@ static unsigned long long extractVectors(InputFile&               inputFile,
          }
 
          // ====== Handle vector definition =================================
-         else if(strncmp(inBuffer, "vector ", 7) == 0) {
-            char objectName[1024];
-            char vectorName[1024];
-            if( (sscanf(inBuffer, "vector %u %1022s \"%1022[^\\\"]\" ETV",
-                        &vectorID, objectName, vectorName) == 3) ||
-                (sscanf(inBuffer, "vector %u %1022s %1022[^\\\"] ETV",
-                        &vectorID, objectName, vectorName) == 3) ) {
+         else if((strncmp(inBuffer, "vector ", 7) == 0) ||
+                 (strncmp(inBuffer, "vector\t", 7) == 0)) {
+            std::string objectName;
+            std::string vectorName;
+            if(parseVectorDefinition(std::string(inBuffer, inLen),
+                                     vectorID, objectName, vectorName)) {
                bool includeVector = (vectorsToExtract.size() == 0);
                bool splitMode     = defaultVectorSplittingMode;
                if(!includeVector) {
                   for(std::vector<VectorInfo>::iterator iterator = vectorsToExtract.begin();
                       iterator != vectorsToExtract.end(); iterator++) {
                      VectorInfo& vectorInfo = *iterator;
-                     if(strncmp(vectorInfo.VectorPrefix.c_str(),
-                                vectorName, vectorInfo.VectorPrefix.size()) == 0) {
+                     if(vectorName.compare(0, vectorInfo.VectorPrefix.size(),
+                                           vectorInfo.VectorPrefix) == 0) {
                         includeVector = true;
                         vectorInfo.Found = true;
                         if(vectorInfo.SplitMode) {
@@ -170,33 +307,35 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                }
 
                if(includeVector) {
-                  const char* splitName = "";
+                  std::string splitName;
                   if(splitMode) {
-                     for(int i = strlen(vectorName); i >= 0; i--) {
-                        if(vectorName[i] == ' ') {
-                           splitName     = &vectorName[i + 1];
-                           vectorName[i] = 0x00;
-                           break;
-                        }
+                     const size_t lastSpace = vectorName.rfind(' ');
+                     if(lastSpace != std::string::npos) {
+                        splitName = vectorName.substr(lastSpace + 1);
+                        vectorName.erase(lastSpace);
                      }
-                     std::cout << "Adding vector \"" << vectorName << "\", split \""
-                               << splitName << "\" of object " << objectName << " ...\n";
+                     if(!quietMode) {
+                        std::cout << "Adding vector \"" << vectorName << "\", split \""
+                                  << splitName << "\" of object " << objectName << " ...\n";
+                     }
                   }
                   else {
-                     std::cout << "Adding vector \"" << vectorName << "\" of object "
-                               << objectName << " ...\n";
+                     if(!quietMode) {
+                        std::cout << "Adding vector \"" << vectorName << "\" of object "
+                                  << objectName << " ...\n";
+                     }
                   }
 
                   vectorToNameMap.insert(std::pair<unsigned int, const std::string>(
-                     vectorID, std::string(vectorName)));
+                     vectorID, vectorName));
                   vectorToSplitMap.insert(std::pair<unsigned int, const std::string>(
-                     vectorID, std::string(splitName)));
+                     vectorID, splitName));
                   vectorToObjectMap.insert(std::pair<unsigned int, const std::string>(
-                     vectorID, std::string(objectName)));
+                     vectorID, objectName));
                }
             }
             else {
-               std::cerr << "ERROR: Unexpected vector definition on input file "
+               std::cerr << "ERROR: Unexpected vector definition on input line "
                          << inputFile.getLine() << "!\n";
                exit(1);
             }
@@ -255,15 +394,13 @@ static void usage(const char* program, const int exitCode)
 {
    std::cerr << HEADER("Usage:") << "\n"
              << CMD(program) << "\n"
-                   ENTRY(ARG("input_file"))
-                   ENTRY(ARG("output_file"))
-                   ENTRY(ARG("[!]vector_name_prefix"))
-                   ENTRY("...")
                    ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
                    ENTRY(OPT("-s") " " ARG("separator") PIPE OPT("--separator") " " ARG("separator"))
                    ENTRY(OPT("-l") PIPE OPT("--line-numbers") PIPE OPT("-n") PIPE OPT("--no-line-numbers"))
                    ENTRY(OPT("-p") PIPE OPT("--split") PIPE OPT("-a") PIPE OPT("--no-split"))
                    ENTRY(OPT("-q") PIPE OPT("--quiet"))
+                   "\t" ARG("input_file") " " ARG("output_file") "\n"
+                   ENTRY(ARG("[!]vector_name_prefix") " " SYN("[") "..." SYN("]"))
              << CMD(program) << "\n"
                    ENTRY(OPT("-h") PIPE OPT("--help"))
              << CMD(program) << "\n"
@@ -361,6 +498,8 @@ int main(int argc, char** argv)
       std::cout << "ExtractVectors " << EXTRACTVECTORS_VERSION << "\n"
                 << "* Vector Splitting:  " << (vectorSplittingMode  ? "on" : "off") << "\n"
                 << "* Compression Level: " << compressionLevel << "\n"
+                << "* Separator:         \"" << separator << "\"\n"
+                << "* Line Numbers:      " << (addLineNumbers ? "on" : "off") << "\n"
                 << "\n";
    }
 
@@ -404,7 +543,7 @@ int main(int argc, char** argv)
    const unsigned long long lines =
       extractVectors(inputFile, outputFile,
                      vectorSplittingMode, vectorsToExtract,
-                     addLineNumbers, separator);
+                     addLineNumbers, separator, quietMode);
 
 
    // ====== Close files ====================================================

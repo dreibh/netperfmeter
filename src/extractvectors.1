@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 22, 2026
+.Dd November 27, 2026
 .Dt extractvectors 1
 .Os ExtractVectors
 .\" ###### Name #############################################################
@@ -36,13 +36,6 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm extractvectors
-.Op Ar input\_file
-.br
-.Op Ar output\_file
-.br
-.Op Ar [!]vector\_name\_prefix
-.Op ...
-.br
 .Op Fl c Ar level | Fl \-compress Ar level
 .br
 .Op Fl s Ar separator | Fl \-separator Ar separator
@@ -52,6 +45,9 @@
 .Op Fl p | Fl \-split | Fl a | Fl \-no\-split
 .br
 .Op Fl q | Fl \-quiet
+.br
+.Ar input\_file output\_file
+.Op Ar [!]vector\_name\_prefix Op ...
 .Nm extractvectors
 .Op Fl h | Fl \-help
 .Nm extractvectors
@@ -65,9 +61,9 @@ is an extraction tool for vectors written by OMNeT++ to a data table. ExtractVec
 .Sh ARGUMENTS
 The following arguments may be provided:
 .Bl -tag -width indent
-.It Op Ar input\_file
+.It Ar input\_file
 The name of the input vector file.
-.It Op Ar output\_file
+.It Ar output\_file
 The name of the output data table to be created.
 .It Op Ar [!]vector\_name\_prefix
 Name prefix of vectors to be extracted. Multiple vector name prefixes may be specified. If no name prefix is given, all vectors will be extracted. A "!" in front of the name turns vector splitting for this prefix on (see \-\-split option below).
@@ -80,7 +76,7 @@ Add line numbers into the output table files, as usual for GNU R.
 .It Fl n | Fl \-no\-line\-numbers
 Do not add line numbers into the output table files, as usual for CSV (default).
 .It Fl p | Fl \-split
-Try to split the vector name ending in a number into the name part as well as the number. A vector output table is then generated for the name part, with the corresponding number in table column "Split". Example: Vectors "Throughput 1", ..., "Throughput 9" will be written into output table as vector column "Throughput", the number will be in table column "Split".
+Split the vector name at its last space into the name part and a trailing parameter. The name part is written into table column "Vector", and the trailing parameter into table column "Split". Examples: "Throughput 1" is split into Vector "Throughput" and Split "1"; "Congestion Window 2:Total" is split into Vector "Congestion Window" and Split "2:Total".
 \-\-split is a global option and applies to all vector name prefixes provided. To use vector name splitting for just a single prefix, prepend the prefix with "!".
 .It Fl a | Fl \-no\-split
 Turns vector splitting off (default).
