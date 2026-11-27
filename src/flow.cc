@@ -1218,6 +1218,10 @@ bool Flow::configureSocket(const int             socketDescriptor,
          LOG_END
          return false;
       }
+      const uint64_t hbIntervalMs  = TrafficSpec.HBInterval.value_or(15000U);
+      const uint64_t hbAssocMaxRtx = TrafficSpec.HBAssocMaxRtx.value_or(6U);
+      quicConfig.keepalive_probe_interval = static_cast<uint32_t>(
+         std::min<uint64_t>(hbIntervalMs * 1000ULL, UINT32_MAX));
       if(ext_setsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
          LOG_WARNING
          // TRANSLATORS: Warning message when setsockopt(QUIC_SOCKOPT_CONFIG) fails. Placeholders: {} 1: socket fd, 2: strerror() message.
@@ -1225,12 +1229,10 @@ bool Flow::configureSocket(const int             socketDescriptor,
                               socketDescriptor, strerror(errno)) << "\n";
          LOG_END
       }
-      if(TrafficSpec.HBInterval.has_value() || TrafficSpec.HBAssocMaxRtx.has_value()) {
-         const bool disableIdle = TrafficSpec.HBInterval.has_value() && (*TrafficSpec.HBInterval == 0);
-         const uint64_t idleTimeoutMs = disableIdle ? 0ULL :
-            (static_cast<uint64_t>(TrafficSpec.HBInterval.value_or(15000U)) *
-             static_cast<uint64_t>(TrafficSpec.HBAssocMaxRtx.value_or(6U)));
-         if(!configureQuicIdleTimeout(socketDescriptor, idleTimeoutMs, disableIdle)) {
+      if(!isAcceptedIncomingFlow()) {
+         const uint64_t idleTimeoutMs = (hbIntervalMs == 0) ? 0ULL :
+            (hbIntervalMs * hbAssocMaxRtx);
+         if(!configureQuicIdleTimeout(socketDescriptor, idleTimeoutMs, true)) {
             LOG_WARNING
             // TRANSLATORS: Warning when configuring QUIC idle timeout fails. Placeholders: {} 1: socket fd, 2: strerror() message.
             stdlog << formatText(gettext("Unable to configure QUIC idle timeout on QUIC socket {}: {}!"),

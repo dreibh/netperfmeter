@@ -117,6 +117,9 @@ class FlowManager : public Thread
    Flow* findFlow(const int      socketDescriptor,
                   const uint16_t streamID);
    Flow* findFlow(const struct sockaddr* from);
+   bool endOfInputForSocket(const int socketDescriptor,
+                            bool&     isAcceptedIncoming,
+                            uint32_t& firstFlowID);
 
 
    bool addMeasurement(const int controlSocket, Measurement* measurement);

@@ -225,7 +225,7 @@ Specifying 0 disables IPV6\_AUTOFLOWLABEL.
 Note: On Linux, custom flow labels cannot be set post\-accept() on accepted connection\-oriented passive sockets.
 Default: default.
 .It Fl \-control\:\-hbinterval Ar milliseconds
-Sets the heartbeat / keep\-alive interval (in ms) for the control connection. Setting 0 disables SCTP heartbeats (SPP\_HB\_DISABLE), TCP/MPTCP keep\-alives (SO\_KEEPALIVE=0), and the QUIC idle timeout. For TCP/MPTCP, non\-zero values are rounded to whole seconds (minimum 1 s). Range: 0\-86400000 (1 day); Default: 15000.
+Sets the heartbeat / keep\-alive interval (in ms) for the control connection (SCTP heartbeats, TCP/MPTCP keep\-alives, and QUIC PING keep\-alive probes). Setting 0 disables SCTP heartbeats (SPP\_HB\_DISABLE), TCP/MPTCP keep\-alives (SO\_KEEPALIVE=0), and QUIC keep\-alive probes and idle timeout. For TCP/MPTCP, non\-zero values are rounded to whole seconds (minimum 1 s). Range: 0\-86400000 (1 day); Default: 15000.
 .It Fl \-control\:\-hbpathmaxrtx Ar count
 Sets the per\-path heartbeat retransmission limit (SCTP) or TCP\_KEEPCNT probe count (TCP/MPTCP) for the control connection. Minimum: 1; Maximum: 1000000; Default: 3.
 .It Fl \-control\:\-hbassocmaxrtx Ar count
@@ -374,9 +374,9 @@ Specifying 0 disables IPV6\_AUTOFLOWLABEL.
 On the passive side, custom flow labels are supported per flow for UDP via sendmsg(); accepted connection\-oriented sockets log a warning when custom flow labels are unsupported by the OS.
 Flows sharing the same SCTP association or QUIC connection must use identical fl settings.
 .It hbinterval=Milliseconds
-Sets the per\-flow heartbeat / keep\-alive interval in milliseconds (0\-86400000) and signals it to the passive side.
-Setting 0 explicitly disables SCTP heartbeats (SPP\_HB\_DISABLE), TCP/MPTCP keep\-alives (SO\_KEEPALIVE=0), and QUIC idle timeout.
-Omitting this option leaves the OS/protocol default unchanged.
+Sets the per\-flow heartbeat / keep\-alive interval in milliseconds (0\-86400000) and signals it to the passive side (SCTP heartbeats, TCP/MPTCP keep\-alives, and QUIC PING keep\-alive probes).
+Setting 0 explicitly disables SCTP heartbeats (SPP\_HB\_DISABLE), TCP/MPTCP keep\-alives (SO\_KEEPALIVE=0), and QUIC keep\-alive probes and idle timeout.
+Omitting this option leaves the OS/protocol default unchanged (for QUIC flows, 15000 ms keep\-alive probes with a 90000 ms idle timeout).
 For TCP/MPTCP, non\-zero values are rounded to whole seconds (minimum 1 s).
 Flows sharing the same SCTP association or QUIC connection must use identical heartbeat settings.
 .It hbpathmaxrtx=Count

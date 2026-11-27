@@ -768,22 +768,24 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
                                   const int      timeout)
 {
    // ====== Wait until there is something to read or a timeout =============
-   struct pollfd pfd;
-   pfd.fd      = controlSocket;
-   pfd.events  = POLLIN;
-   pfd.revents = 0;
-   const int result = ext_poll(&pfd, 1, timeout);
-   if(result < 1) {
-      LOG_TRACE
-      stdlog << "<timeout>\n";
-      LOG_END
-      return false;
-   }
-   if((pfd.revents & (POLLERR|POLLNVAL)) || !(pfd.revents & POLLIN)) {
-      LOG_TRACE
-      stdlog << "<no answer>\n";
-      LOG_END
-      return false;
+   if(!messageReader->hasReadyMessage(controlSocket)) {
+      struct pollfd pfd;
+      pfd.fd      = controlSocket;
+      pfd.events  = POLLIN;
+      pfd.revents = 0;
+      const int result = ext_poll(&pfd, 1, timeout);
+      if(result < 1) {
+         LOG_TRACE
+         stdlog << "<timeout>\n";
+         LOG_END
+         return false;
+      }
+      if((pfd.revents & (POLLERR|POLLNVAL)) || !(pfd.revents & POLLIN)) {
+         LOG_TRACE
+         stdlog << "<no answer>\n";
+         LOG_END
+         return false;
+      }
    }
 
    // ====== Read NETPERFMETER_ACKNOWLEDGE message ==========================

@@ -383,7 +383,35 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
    // ====== Handle data ====================================================
    if(received > 0) {
 #if defined(HAVE_SCTP)
-      if(!(flags & MSG_NOTIFICATION)) {
+      if(flags & MSG_NOTIFICATION) {
+         const auto* notification = reinterpret_cast<const sctp_notification*>(&inputBuffer);
+         if((notification->sn_header.sn_type == SCTP_ASSOC_CHANGE) &&
+            ((notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) ||
+             (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP))) {
+            bool     isAcceptedIncoming = false;
+            uint32_t firstFlowID        = 0;
+            if(FlowManager::getFlowManager()->endOfInputForSocket(sd, isAcceptedIncoming, firstFlowID)) {
+               if(!isAcceptedIncoming || (notification->sn_assoc_change.sac_state == SCTP_COMM_LOST)) {
+                  LOG_WARNING
+                  // TRANSLATORS: Warning message when end of input is reached for an active flow. Placeholders: {} 1: flow ID, 2: socket descriptor.
+                  stdlog << formatText(gettext("End of input for flow #{} on socket {}!"),
+                                       firstFlowID, sd) << "\n";
+                  LOG_END
+               }
+               else {
+                  LOG_DEBUG
+                  // TRANSLATORS: Debug message when regular end of input is reached for an accepted incoming flow. Placeholders: {} 1: flow ID, 2: socket descriptor.
+                  stdlog << formatText(gettext("End of input for flow #{} on socket {}!"),
+                                       firstFlowID, sd) << "\n";
+                  LOG_END
+               }
+               return isAcceptedIncoming &&
+                      (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP);
+            }
+            return false;
+         }
+      }
+      else {
 #endif
          const auto* dataMsg     = reinterpret_cast<const NetPerfMeterDataMessage*>(&inputBuffer);
          const auto* identifyMsg = reinterpret_cast<const NetPerfMeterIdentifyMessage*>(&inputBuffer);
@@ -472,17 +500,17 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 #endif
    }
 
-   // ====== Handle error ===================================================
+   // ====== Handle EOF or error ============================================
    else {
-      Flow* flow = FlowManager::getFlowManager()->findFlow(sd, 0);
-      if(flow) {
-         flow->lock();
-         if(!flow->isAcceptedIncomingFlow()) {
-            // The outgoing flow on the active side is closed:
+      bool     isAcceptedIncoming = false;
+      uint32_t firstFlowID        = 0;
+      if(FlowManager::getFlowManager()->endOfInputForSocket(sd, isAcceptedIncoming, firstFlowID)) {
+         if(!isAcceptedIncoming || (received < 0)) {
+            // The outgoing flow on the active side is closed, or a socket/stream error occurred:
             LOG_WARNING
             // TRANSLATORS: Warning message when end of input is reached for an active flow. Placeholders: {} 1: flow ID, 2: socket descriptor.
             stdlog << formatText(gettext("End of input for flow #{} on socket {}!"),
-                                 flow->getFlowID(), sd) << "\n";
+                                 firstFlowID, sd) << "\n";
             LOG_END
          }
          else {
@@ -490,12 +518,12 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             LOG_DEBUG
             // TRANSLATORS: Debug message when regular end of input is reached for an accepted incoming flow. Placeholders: {} 1: flow ID, 2: socket descriptor.
             stdlog << formatText(gettext("End of input for flow #{} on socket {}!"),
-                                 flow->getFlowID(), sd) << "\n";
+                                 firstFlowID, sd) << "\n";
             LOG_END
          }
-         flow->unlock();
-         flow->endOfInput();
-         return flow->isAcceptedIncomingFlow();   // No error for incoming flow!
+         // Only clean EOF (received == 0) on an accepted incoming flow is non-fatal;
+         // socket/stream errors (received < 0) or active-side EOF must close the socket!
+         return isAcceptedIncoming && (received == 0);
       }
       else {
          LOG_WARNING

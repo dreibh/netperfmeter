@@ -1611,16 +1611,21 @@ static bool mainLoop(const bool     isActiveMode,
    addToPollFDs((pollfd*)&fds, gQUICSocket,    n, &quicID);
 #endif
    int    controlFDSet[gMessageReader.size()];
-   size_t controlFDs = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
-   const int controlIDMin = (int)n;
+   size_t controlFDs          = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
+   bool   hasBufferedControl  = false;
+   const int controlIDMin     = (int)n;
    for(size_t i = 0; i < controlFDs; i++) {
       addToPollFDs((pollfd*)&fds, controlFDSet[i], n, nullptr);
+      if(gMessageReader.hasReadyMessage(controlFDSet[i])) {
+         hasBufferedControl = true;
+      }
    }
    const int controlIDMax = (int)n - 1;
 
 
    // ====== Use poll() to wait for events ==================================
-   const int timeout = pollTimeout(nowMonotonic.value, 2,
+   const int timeout = hasBufferedControl ? 0 :
+                       pollTimeout(nowMonotonic.value, 2,
                                    stopAt,
                                    nowMonotonic.value + 1000000);
 
@@ -1632,12 +1637,13 @@ static bool mainLoop(const bool     isActiveMode,
    // ====== Handle socket events ===========================================
    nowMonotonic                    = getMonotonicMicroTime();   // Get current time.
    const SystemMicroTime nowSystem = getSystemMicroTime();
-   if(result > 0) {
+   if((result > 0) || hasBufferedControl) {
 
       // ====== Incoming control message ====================================
       int controlID;
       for(controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
-         if(fds[controlID].revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) {
+         const bool hasBuffered = gMessageReader.hasReadyMessage(fds[controlID].fd);
+         if((fds[controlID].revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) || hasBuffered) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
                sockaddr_union peerAddr;
@@ -1777,6 +1783,7 @@ static bool mainLoop(const bool     isActiveMode,
                      struct in6_addr dummyAddr  = {};
                      uint32_t        dummyVal   = 0;
                      applyControlQoS(newSD, (peerAddrLen > 0) ? &peerAddr : nullptr, true, dummyLease, dummyAddr, dummyVal);
+                     configureQuicControlSocket(newSD, gControlHBInterval, gControlHBAssocMaxRtx);
                      if(quicServerHandshake(newSD, tlsConfig) == 0) {
                         quicRegisterControlSocket(newSD, false);
                         gMessageReader.registerSocket(IPPROTO_QUIC, newSD);
@@ -1813,13 +1820,16 @@ static bool mainLoop(const bool     isActiveMode,
                }
 #endif
                const bool socketBroken =
-                  (soError != 0) ||
-                  (fds[controlID].revents & (POLLERR|POLLNVAL)) ||
-                  ((fds[controlID].revents & POLLHUP) && !(fds[controlID].revents & POLLIN));
-               const bool controlOkay =
-                  (!socketBroken) ?
-                     handleNetPerfMeterControlMessage(&gMessageReader, fds[controlID].fd) :
-                     false;
+                  (!hasBuffered) &&
+                  ((soError != 0) ||
+                   (fds[controlID].revents & (POLLERR|POLLNVAL)) ||
+                   ((fds[controlID].revents & POLLHUP) && !(fds[controlID].revents & POLLIN)));
+               bool controlOkay = !socketBroken;
+               if(controlOkay) {
+                  do {
+                     controlOkay = handleNetPerfMeterControlMessage(&gMessageReader, fds[controlID].fd);
+                  } while(controlOkay && gMessageReader.hasReadyMessage(fds[controlID].fd));
+               }
                if(!controlOkay) {
                   if(isActiveMode) {
 #if defined(HAVE_QUIC)
@@ -1938,6 +1948,7 @@ static bool mainLoop(const bool     isActiveMode,
                tlsConfig.sessionKey       = sessionKey;
                tlsConfig.sessionKeyLength = sessionKeyLength;
 
+               configureQuicKeepAlive(newSD, 15000U, 0U, true);
                if(quicServerHandshake(newSD, tlsConfig) == 0) {
                   FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
                }
@@ -2158,7 +2169,7 @@ static void passiveMode(const uint16_t localPort)
             if(gControlTrafficClass.has_value()) {
                setTrafficClass(gControlSocketQUIC, *gControlTrafficClass);
             }
-            configureQuicControlSocket(gControlSocketQUIC, gControlHBInterval * gControlHBAssocMaxRtx);
+            configureQuicControlSocket(gControlSocketQUIC, gControlHBInterval, gControlHBAssocMaxRtx);
             if(ext_listen(gControlSocketQUIC, 100) < 0) {
                LOG_FATAL
                // TRANSLATORS: Error putting QUIC control socket into listening mode. Placeholders: {} 1: socket descriptor, 2: strerror() message.
@@ -2390,6 +2401,7 @@ static void passiveMode(const uint16_t localPort)
                                  gQUICSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
+         configureQuicKeepAlive(gQUICSocket, 15000U, 0U, true);
          if(ext_listen(gQUICSocket, 100) < 0) {
             LOG_FATAL
             // TRANSLATORS: Error putting QUIC socket into listening mode. Placeholders: {} 1: socket descriptor, 2: strerror() message.
@@ -2779,7 +2791,7 @@ static void activeMode(const char* remoteEndpoint)
 #endif
 #if defined(HAVE_QUIC)
    if(gActiveControlProtocol == IPPROTO_QUIC) {
-      configureQuicControlSocket(gControlSocket, gControlHBInterval * gControlHBAssocMaxRtx);
+      configureQuicControlSocket(gControlSocket, gControlHBInterval, gControlHBAssocMaxRtx);
    }
 #endif
    if(!applyControlQoS(gControlSocket, &controlAddress, false,

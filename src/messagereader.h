@@ -34,7 +34,9 @@
 #include <cstdint>
 #include <ext_socket.h>
 #include <map>
+#include <mutex>
 #include <sys/types.h>
+#include <vector>
 
 
 #define MRRM_SOCKET_ERROR static_cast<ssize_t>(-1)
@@ -55,20 +57,23 @@ class MessageReader
                        const size_t maxMessageSize = 65535);
    bool deregisterSocket(const int sd);
 
-   ssize_t receiveMessage(const int        sd,
-                          void*            buffer,
-                          size_t           bufferSize,
-                          sockaddr*        from     = nullptr,
-                          socklen_t*       fromSize = nullptr,
-                          int64_t*         streamID = nullptr,
-                          int*             msgFlags = nullptr);
+   ssize_t receiveMessage(const int  sd,
+                          void*      buffer,
+                          size_t     bufferSize,
+                          sockaddr*  from     = nullptr,
+                          socklen_t* fromSize = nullptr,
+                          int64_t*   streamID = nullptr,
+                          int*       msgFlags = nullptr);
    size_t getAllSDs(int* sds, const size_t maxEntries);
+   bool hasReadyMessage(const int sd) const;
 
    inline size_t size() const {
+      std::lock_guard<std::recursive_mutex> guard(SocketMapMutex);
       return SocketMap.size();
    }
 
    inline int getSocketProtocol(const int sd) const {
+      std::lock_guard<std::recursive_mutex> guard(SocketMapMutex);
       const std::map<int, Socket*>::const_iterator found = SocketMap.find(sd);
       return (found != SocketMap.end()) ? found->second->Protocol : -1;
    }
@@ -81,21 +86,36 @@ class MessageReader
       uint16_t Length;
    } __attribute__((packed));
 
+   struct StreamBuffer {
+      std::vector<char> Data;
+      size_t            ReadOffset  = 0;
+      bool              StreamError = false;
+   };
+
    struct Socket {
       enum MessageReaderStatus {
          MRS_WaitingForHeader = 0,
          MRS_PartialRead      = 1,
          MRS_StreamError      = 2
       };
-      MessageReaderStatus Status;
-      int                 Protocol;
-      int                 SocketDescriptor;
-      unsigned int        UseCount;
-      char*               MessageBuffer;
-      size_t              MessageBufferSize;
-      size_t              MessageSize;
-      size_t              BytesRead;
+      MessageReaderStatus           Status;
+      int                           Protocol;
+      int                           SocketDescriptor;
+      unsigned int                  UseCount;
+      char*                         MessageBuffer;
+      size_t                        MessageBufferSize;
+      size_t                        MessageSize;
+      size_t                        BytesRead;
+      std::map<int64_t, StreamBuffer> StreamBuffers;
+      int64_t                       LastStreamID = -1;
    };
+
+   static bool isStreamBufferReady(const StreamBuffer& sb,
+                                   const size_t        maxMessageSize);
+   static ssize_t extractBufferedStreamMessage(Socket*      socket,
+                                               void*        buffer,
+                                               const size_t bufferSize,
+                                               int64_t*     streamID);
 
    inline Socket* getSocket(const int sd) {
       std::map<int, Socket*>::iterator found = SocketMap.find(sd);
@@ -105,7 +125,8 @@ class MessageReader
       return nullptr;
    }
 
-   std::map<int, Socket*> SocketMap;
+   mutable std::recursive_mutex SocketMapMutex;
+   std::map<int, Socket*>       SocketMap;
 };
 
 #endif // MESSAGEREADER_H

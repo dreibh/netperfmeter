@@ -58,7 +58,13 @@ int quicServerHandshake(int sd, const QuicTlsConfig& config);
 int quicClientHandshake(int sd, const QuicTlsConfig& config);
 
 bool configureQuicIdleTimeout(int sd, uint64_t idleTimeoutMs, bool allowZero = false);
-bool configureQuicControlSocket(int sd, unsigned int idleTimeoutMs);
+bool configureQuicKeepAlive(int      sd,
+                            uint64_t hbIntervalMs,
+                            uint64_t hbAssocMaxRtx,
+                            bool     setIdleTimeout = true);
+bool configureQuicControlSocket(int          sd,
+                                unsigned int hbIntervalMs,
+                                unsigned int hbAssocMaxRtx);
 void quicRegisterControlSocket(int sd, bool isClient);
 void quicDeregisterControlSocket(int sd);
 bool quicIsControlSocket(int sd);

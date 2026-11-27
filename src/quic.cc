@@ -33,6 +33,8 @@
 
 #include "loglevel.h"
 
+#include <algorithm>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -319,10 +321,45 @@ bool configureQuicIdleTimeout(const int sd, const uint64_t idleTimeoutMs, const 
 }
 
 
-// ###### Configure QUIC control socket parameters ##########################
-bool configureQuicControlSocket(const int sd, const unsigned int idleTimeoutMs)
+// ###### Configure QUIC keepalive probe interval & max_idle_timeout ########
+bool configureQuicKeepAlive(const int      sd,
+                            const uint64_t hbIntervalMs,
+                            const uint64_t hbAssocMaxRtx,
+                            const bool     setIdleTimeout)
 {
-   return configureQuicIdleTimeout(sd, static_cast<uint64_t>(idleTimeoutMs), true);
+   quic_config quicConfig;
+   socklen_t   quicConfigLength = sizeof(quicConfig);
+   std::memset(&quicConfig, 0, sizeof(quicConfig));
+   if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
+      return false;
+   }
+   const uint64_t probeIntervalUs = hbIntervalMs * 1000ULL;
+   quicConfig.keepalive_probe_interval = static_cast<uint32_t>(
+      std::min<uint64_t>(probeIntervalUs, UINT32_MAX));
+   if(ext_setsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
+      return false;
+   }
+
+   if(setIdleTimeout) {
+      const uint64_t idleTimeoutMs = (hbIntervalMs == 0) ? 0ULL :
+         (hbIntervalMs * hbAssocMaxRtx);
+      if(!configureQuicIdleTimeout(sd, idleTimeoutMs, true)) {
+         return false;
+      }
+   }
+   return true;
+}
+
+
+// ###### Configure QUIC control socket parameters ##########################
+bool configureQuicControlSocket(const int          sd,
+                                const unsigned int hbIntervalMs,
+                                const unsigned int hbAssocMaxRtx)
+{
+   return configureQuicKeepAlive(sd,
+                                 static_cast<uint64_t>(hbIntervalMs),
+                                 static_cast<uint64_t>(hbAssocMaxRtx),
+                                 true);
 }
 
 
