@@ -224,23 +224,153 @@ static void removeBrackets(char* str)
 }
 
 
-// ###### Check columns for proper quotation ################################
-static bool checkColumns(const std::string& values)
+// ###### Tokenize column list respecting double quotes & escapes ###########
+static bool tryTokenizeColumns(const std::string&        input,
+                               const std::string&        separator,
+                               std::vector<std::string>& tokens)
 {
-   bool         inQuotation    = false;
-   unsigned int quotationMarks = 0;
-   for(size_t i = 0; i < values.size(); i++) {
-      switch(values[i]) {
-         case '\\':
+   tokens.clear();
+   const bool hasCustomSep = (!separator.empty()) &&
+                             (separator != " ") &&
+                             (separator != "\t");
+
+   auto isWhitespace = [](const char c) -> bool {
+      return (c == ' ') || (c == '\t');
+   };
+
+   auto atSeparator = [&](const size_t pos) -> bool {
+      return hasCustomSep &&
+             (input.size() - pos >= separator.size()) &&
+             (input.compare(pos, separator.size(), separator) == 0);
+   };
+
+   auto atDelimiter = [&](const size_t pos) -> bool {
+      return (pos < input.size()) && (isWhitespace(input[pos]) || atSeparator(pos));
+   };
+
+   size_t i = 0;
+   while(i < input.size()) {
+      while(i < input.size()) {
+         if(isWhitespace(input[i])) {
             i++;
-          break;
-         case '"':
-            inQuotation = !inQuotation;
-            quotationMarks++;
-          break;
+         }
+         else if(atSeparator(i)) {
+            i += separator.size();
+         }
+         else {
+            break;
+         }
+      }
+      if(i >= input.size()) {
+         break;
+      }
+
+      if(input[i] == '"') {
+         const size_t start = i;
+         i++;
+         bool closed = false;
+         while(i < input.size()) {
+            if(input[i] == '\\') {
+               if(i + 1 >= input.size()) {
+                  return false;
+               }
+               i += 2;
+            }
+            else if(input[i] == '"') {
+               i++;
+               closed = true;
+               break;
+            }
+            else {
+               i++;
+            }
+         }
+         if(!closed) {
+            return false;
+         }
+         if((i < input.size()) && !atDelimiter(i)) {
+            return false;
+         }
+         tokens.push_back(input.substr(start, i - start));
+      }
+      else {
+         const size_t start = i;
+         while((i < input.size()) && !atDelimiter(i)) {
+            if(input[i] == '\\') {
+               if(i + 1 >= input.size()) {
+                  i++;
+                  break;
+               }
+               i += 2;
+            }
+            else if(input[i] == '"') {
+               return false;
+            }
+            else {
+               i++;
+            }
+         }
+         tokens.push_back(input.substr(start, i - start));
       }
    }
-   return ((quotationMarks & 1) == 0);
+
+   return true;
+}
+
+
+// ###### Validate and normalize column list to output separator ############
+static bool formatColumns(const std::string& input,
+                          const std::string& separator,
+                          std::string&       output,
+                          const bool         allowOuterUnwrap)
+{
+   std::vector<std::string> tokens;
+   const bool parsedDirectly = tryTokenizeColumns(input, separator, tokens);
+
+   if(!parsedDirectly) {
+      // Handle legacy outer-wrapped strings such as --values=""Active Instance"\t1"
+      if(allowOuterUnwrap && (input.size() >= 2) &&
+         (input.front() == '"') && (input.back() == '"')) {
+         if(!tryTokenizeColumns(input.substr(1, input.size() - 2), separator, tokens)) {
+            return false;
+         }
+      }
+      else {
+         return false;
+      }
+   }
+   else if(allowOuterUnwrap && (tokens.size() == 1) &&
+           (input.size() >= 2) && (input.front() == '"') && (input.back() == '"') &&
+           (tokens[0].size() == input.size())) {
+      // Unwrap a single outer-quoted wrapper around a separator-delimited list
+      // (e.g. --varnames="Protocol\tRate" or --values="TCP;10") or a single
+      // unspaced token (e.g. --values="host1.example"), while keeping a single
+      // quoted value containing spaces (e.g. --values="Test 1") intact.
+      const std::string inner = input.substr(1, input.size() - 2);
+      const bool hasNonSpaceSep =
+         (inner.find('\t') != std::string::npos) ||
+         ((!separator.empty()) && (separator != " ") &&
+          (inner.find(separator) != std::string::npos));
+      const bool hasSpace = (inner.find(' ') != std::string::npos);
+      if(hasNonSpaceSep) {
+         std::vector<std::string> innerTokens;
+         if(tryTokenizeColumns(inner, separator, innerTokens) && !innerTokens.empty()) {
+            tokens = std::move(innerTokens);
+         }
+      }
+      else if(!hasSpace && (inner.find('"') == std::string::npos) && !inner.empty()) {
+         tokens[0] = inner;
+      }
+   }
+
+   output.clear();
+   for(size_t i = 0; i < tokens.size(); i++) {
+      if(i > 0) {
+         output += separator;
+      }
+      output += tokens[i];
+   }
+   return true;
 }
 
 
@@ -275,6 +405,7 @@ static int safestrcat(char* dest, const char* src, const size_t size)
 // ###### Get aggregate data ################################################
 static unsigned int getAggregate(char*        objectName,
                                  char*        statName,
+                                 const char*  separator,
                                  char*        scalarName,
                                  const size_t scalarNameSize,
                                  char*        aggNames,
@@ -312,7 +443,8 @@ static unsigned int getAggregate(char*        objectName,
       segment[0] = 0x00;
       segment = &segment[1];
       // ====== Recursively process top segments ============================
-      levels = getAggregate(objectName, statName, scalarName, scalarNameSize,
+      levels = getAggregate(objectName, statName, separator,
+                            scalarName, scalarNameSize,
                             aggNames, aggNamesSize, aggValues, aggValuesSize,
                             false);
    }
@@ -338,7 +470,7 @@ static unsigned int getAggregate(char*        objectName,
    // ------ Extract aggregate and its value --------------
    if (i < (ssize_t)length - 1) {
      if(aggNames[0] != 0x00) {
-        safestrcat(aggNames, " ", aggNamesSize);
+        safestrcat(aggNames, separator, aggNamesSize);
      }
      if(scalarName[0] != 0x00) {
        safestrcat(aggNames, scalarName, aggNamesSize);
@@ -350,7 +482,7 @@ static unsigned int getAggregate(char*        objectName,
      char valueString[32];
      snprintf(valueString, sizeof(valueString), "%lu", value);
      if(aggValues[0] != 0x00) {
-        safestrcat(aggValues, " ", aggValuesSize);
+        safestrcat(aggValues, separator, aggValuesSize);
      }
      safestrcat(aggValues, valueString, aggValuesSize);
    }
@@ -377,12 +509,12 @@ static unsigned int getAggregate(char*        objectName,
             identifier[0] = 0x00;   // Cut number off from statName.
 
             if(aggNames[0] != 0x00) {
-               safestrcat(aggNames, " ", aggNamesSize);
+               safestrcat(aggNames, separator, aggNamesSize);
             }
             safestrcat(aggNames, statName, aggNamesSize);
 
             if(aggValues[0] != 0x00) {
-               safestrcat(aggValues, " ", aggValuesSize);
+               safestrcat(aggValues, separator, aggValuesSize);
             }
             safestrcat(aggValues, &identifier[1], aggValuesSize);
          }
@@ -498,6 +630,7 @@ static void handleScalar(const std::string& varNames,
                          const unsigned int run,
                          const bool         interactiveMode,
                          const bool         scalarSplittingMode,
+                         const char*        separator,
                          char*              objectName,
                          char*              statName,
                          const double       value)
@@ -530,7 +663,7 @@ static void handleScalar(const std::string& varNames,
    char scalarName[4096];
    char aggNames[MAX_NAME_SIZE];
    char aggValues[MAX_VALUES_SIZE];
-   getAggregate(objectName, statName,
+   getAggregate(objectName, statName, separator,
                 scalarName, sizeof(scalarName),
                 aggNames, sizeof(aggNames),
                 aggValues, sizeof(aggValues));
@@ -561,7 +694,8 @@ static bool handleScalarFile(const std::string& varNames,
                              const std::string& varValues,
                              const std::string& fileName,
                              const bool         interactiveMode,
-                             const bool         scalarSplitting)
+                             const bool         scalarSplitting,
+                             const char*        separator)
 {
    InputFile       inputFile;
    InputFileFormat inputFileFormat = IFF_Plain;
@@ -628,7 +762,7 @@ static bool handleScalarFile(const std::string& varNames,
          }
          removeScenarioName(objectName);
          handleScalar(varNames, varValues, run, interactiveMode, scalarSplitting,
-                      objectName, statName, value);
+                      separator, objectName, statName, value);
       }
       else if(buffer[0] == '#') {
       }
@@ -666,7 +800,7 @@ static bool handleScalarFile(const std::string& varNames,
                snprintf(statName,   sizeof(statName),   "%s", newStatName.c_str());
                snprintf(objectName, sizeof(objectName), "%s", statisticObjectName);
                handleScalar(varNames, varValues, run, interactiveMode, scalarSplitting,
-                           objectName, statName, value);
+                            separator, objectName, statName, value);
             }
          }
          else {
@@ -764,6 +898,7 @@ static void dumpScalars(const std::string& simulationsDirectory,
    unsigned long long totalLines         = 0;
    unsigned int       totalFiles         = 0;
    unsigned long long lineNumber         = 0;
+   bool               hasAggregates      = false;
    OutputFile         outputFile;
 
    // simpleRedBlackTreePrint(&StatisticsStorage, stdout);
@@ -798,15 +933,26 @@ static void dumpScalars(const std::string& simulationsDirectory,
                                   compressionLevel) == false) {
             exit(1);
          }
-         lineNumber = 1;
+         lineNumber    = 1;
+         hasAggregates = (scalarNode->AggNames[0] != 0x00);
 
          // ====== Write table header =======================================
-         if(outputFile.printf("RunNo%sValueNo%sSplit%s%s%s%s%s%s\n",
-                              separator, separator, separator,
-                              scalarNode->AggNames, separator,
-                              varNames.c_str(),     separator,
-                              scalarNode->ScalarName) == false) {
-            exit(1);
+         if(hasAggregates) {
+            if(outputFile.printf("RunNo%sValueNo%sSplit%s%s%s%s%s%s\n",
+                                 separator, separator, separator,
+                                 scalarNode->AggNames, separator,
+                                 varNames.c_str(),     separator,
+                                 scalarNode->ScalarName) == false) {
+               exit(1);
+            }
+         }
+         else {
+            if(outputFile.printf("RunNo%sValueNo%sSplit%s%s%s%s\n",
+                                 separator, separator, separator,
+                                 varNames.c_str(),     separator,
+                                 scalarNode->ScalarName) == false) {
+               exit(1);
+            }
          }
          lastStatisticsName = scalarNode->ScalarName;
       }
@@ -821,14 +967,26 @@ static void dumpScalars(const std::string& simulationsDirectory,
                exit(1);
             }
          }
-         if(outputFile.printf("%u%s%u%s\"%s\"%s%s%s%s%s%lf\n",
-                              (unsigned int)scalarNode->Run, separator,
-                              (unsigned int)valueNumber,     separator,
-                              scalarNode->SplitName,         separator,
-                              scalarNode->AggValues,         separator,
-                              scalarNode->VarValues,         separator,
-                              *valueIterator) == false) {
-            exit(1);
+         if(hasAggregates) {
+            if(outputFile.printf("%u%s%u%s\"%s\"%s%s%s%s%s%lf\n",
+                                 (unsigned int)scalarNode->Run, separator,
+                                 (unsigned int)valueNumber,     separator,
+                                 scalarNode->SplitName,         separator,
+                                 scalarNode->AggValues,         separator,
+                                 scalarNode->VarValues,         separator,
+                                 *valueIterator) == false) {
+               exit(1);
+            }
+         }
+         else {
+            if(outputFile.printf("%u%s%u%s\"%s\"%s%s%s%lf\n",
+                                 (unsigned int)scalarNode->Run, separator,
+                                 (unsigned int)valueNumber,     separator,
+                                 scalarNode->SplitName,         separator,
+                                 scalarNode->VarValues,         separator,
+                                 *valueIterator) == false) {
+               exit(1);
+            }
          }
          valueNumber++;
          lineNumber++;
@@ -999,8 +1157,7 @@ int main(int argc, char** argv)
    }
 
    if(optind < argc) {
-      varNames = argv[optind++];
-      if(!checkColumns(varNames)) {
+      if(!formatColumns(argv[optind++], separator, varNames, false)) {
          std::cerr << "ERROR: Invalid quotation in variable names string!\n";
          exit(1);
       }
@@ -1041,6 +1198,10 @@ int main(int argc, char** argv)
          command[length - 1] = 0x00;
          length--;
       }
+      if( (length > 0) && (command[length - 1] == '\r') ) {
+         command[length - 1] = 0x00;
+         length--;
+      }
 
       if(length == 0) {
          if(interactiveMode) {
@@ -1051,13 +1212,7 @@ int main(int argc, char** argv)
       }
 
       if(!(strncmp(command, "--values=", 9))) {
-         varValues = &command[9];
-         if( (varValues.size() >= 2)    &&
-             (varValues.front() == '"') &&
-             (varValues.back() == '"') ) {
-            varValues = varValues.substr(1, varValues.size() - 2);
-         }
-         if(!checkColumns(varValues)) {
+         if(!formatColumns(&command[9], separator, varValues, true)) {
             std::cerr << "ERROR: Invalid quotation in variable values string!\n";
             exit(1);
          }
@@ -1069,7 +1224,8 @@ int main(int argc, char** argv)
          }
          if(!handleScalarFile(varNames, varValues,
                               simulationsDirectory + "/" + &command[8],
-                              interactiveMode, scalarSplittingMode)) {
+                              interactiveMode, scalarSplittingMode,
+                              separator)) {
             scalarFileError = true;
             if(logFileName != "") {
                std::cerr << " => see logfile " << logFileName << "\n";
@@ -1084,13 +1240,7 @@ int main(int argc, char** argv)
          statusFileName = "";
       }
       else if(!(strncmp(command, "--varnames=", 11))) {
-         varNames = &command[11];
-         if( (varNames.size() >= 2)    &&
-             (varNames.front() == '"') &&
-             (varNames.back() == '"') ) {
-            varNames = varNames.substr(1, varNames.size() - 2);
-         }
-         if(!checkColumns(varNames)) {
+         if(!formatColumns(&command[11], separator, varNames, true)) {
             std::cerr << "ERROR: Invalid quotation in variable names string!\n";
             exit(1);
          }

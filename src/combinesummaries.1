@@ -57,9 +57,9 @@
 is a combination tool for CSV/GNU R data files: it creates a single data table from multiple input files. CombineSummaries supports on\-the\-fly BZip2 compression. After startup, the program accepts the following commands from standard input (*not* as command\-line arguments!):
 .Bl -tag -width indent
 .It Fl \-varnames=variables
-A space\-separated list of output variable names to be added to the output data tables.
+A space\-separated (or separator\-separated) list of output variable names to be added to the output data tables. Names containing spaces must be enclosed in double quotes. In the output table, columns are separated by the configured separator (see Fl s , default: tabulator).
 .It Fl \-values=values
-Sets the values of the output variables for the next input file to the provided space\-separated values. One value for each variable has to be provided.
+Sets the values of the output variables for the next input file to the provided space\-separated (or separator\-separated) values. Values containing spaces must be enclosed in double quotes. One value for each variable has to be provided.
 .It Fl \-input=filename
 Process the given input file.
 .It Fl \-simulationsdirectory=directory
@@ -73,7 +73,7 @@ The following arguments may be provided:
 .It Ar output\_file
 The name of the output file to be created.
 .It Op Ar variable\_names
-A space\-separated list of output variable names to be added to the output data tables.
+A space\-separated (or separator\-separated) list of output variable names to be added to the output data tables. Names containing spaces must be enclosed in double quotes.
 .It Fl c Ar level | Fl \-compress Ar level
 Sets the BZip2 compression level; 1=fastest (lowest), 9=highest (default).
 .It Fl s Ar separator | Fl \-separator Ar separator
@@ -98,16 +98,16 @@ tool exits with 0 on success, and >0 in case of an error.
 .Sh EXAMPLES
 Consider two data tables:
 .Pa v1.data.bz2
-(created with ParameterY=Alpha) and
+(created with ParameterX=Alpha, ParameterY="Test 1") and
 .Pa v2.data.bz2
-(created with ParameterY=Beta).
+(created with ParameterX=Beta, ParameterY="Test 2").
 The output data table should be written to
 .Pa output.data.bz2 .
 .br
-( echo \-e "\-\-values=\e\[dq]Alpha\e\[dq]\et\e\[dq]Test 1\e\[dq]" && \\
-  echo "\-\-input=v1.data.bz2"               && \\
-  echo \-e "\-\-values=\e\[dq]Beta\e\[dq]\et\e\[dq]Test 2\e\[dq]"  && \\
-  echo "\-\-input=v2.data.bz2" ) | combinesummaries output.data.bz2 $'ParameterX\etParameterY'
+( echo '\-\-values="Alpha" "Test 1"' && \\
+  echo '\-\-input=v1.data.bz2'      && \\
+  echo '\-\-values="Beta" "Test 2"'  && \\
+  echo '\-\-input=v2.data.bz2' ) | combinesummaries output.data.bz2 "ParameterX ParameterY"
 .\" ###### See also #########################################################
 .Sh SEE ALSO
 .Xr createsummary 1 ,
