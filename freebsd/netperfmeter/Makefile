@@ -1,5 +1,5 @@
 PORTNAME=	netperfmeter
-DISTVERSION=	2.0.17
+DISTVERSION=	2.0.18
 CATEGORIES=	benchmarks
 MASTER_SITES=	https://www.nntb.no/~dreibh/netperfmeter/download/
 

@@ -55,6 +55,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <sstream>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #if !defined(HAVE_SCTP)
@@ -270,6 +271,39 @@ static void usage(const char* program, const int exitCode)
    std::exit(exitCode);
 }
 // ------ END-OF-USAGE-BLOCK ------
+
+
+#if defined(HAVE_QUIC)
+// ###### Check whether a TLS file exists and is readable ###################
+static void checkReadableTLSFile(const char* optionName, const char* fileName)
+{
+   if(fileName != nullptr) {
+      FILE* fh = fopen(fileName, "rb");
+      if(fh == nullptr) {
+         // TRANSLATORS: Error message when a TLS file (--tls-ca, --tls-cert, --tls-key) cannot be opened for reading. Placeholders: {} 1: option name, 2: file path, 3: strerror() message.
+         std::cerr << formatText(gettext("ERROR: Unable to read {} file \"{}\": {}!"),
+                                 optionName, fileName, strerror(errno)) << "\n";
+         std::exit(1);
+      }
+      struct stat st;
+      if(fstat(fileno(fh), &st) < 0) {
+         const int savedErrno = errno;
+         fclose(fh);
+         // TRANSLATORS: Error message when stat() fails on a TLS file. Placeholders: {} 1: option name, 2: file path, 3: strerror() message.
+         std::cerr << formatText(gettext("ERROR: Unable to stat {} file \"{}\": {}!"),
+                                 optionName, fileName, strerror(savedErrno)) << "\n";
+         std::exit(1);
+      }
+      fclose(fh);
+      if(S_ISDIR(st.st_mode)) {
+         // TRANSLATORS: Error message when a directory is passed instead of a TLS file. Placeholders: {} 1: option name, 2: path, 3: strerror(EISDIR).
+         std::cerr << formatText(gettext("ERROR: Invalid {} file \"{}\": {}!"),
+                                 optionName, fileName, strerror(EISDIR)) << "\n";
+         std::exit(1);
+      }
+   }
+}
+#endif
 
 
 // ###### Handle global command-line parameter ##############################
@@ -658,6 +692,9 @@ static bool handleGlobalParameters(int argc, char** argv)
       std::cerr << gettext("ERROR: Both --tls-cert and --tls-key must be specified together!") << "\n";
       exit(1);
    }
+   checkReadableTLSFile("--tls-ca",   gQUICCA);
+   checkReadableTLSFile("--tls-cert", gQUICCertificate);
+   checkReadableTLSFile("--tls-key",  gQUICKey);
 #endif
 
    return true;

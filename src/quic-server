@@ -1,16 +1,25 @@
-#!/bin/sh -eux
+#!/bin/sh -eu
 
 DIRECTORY="quic-setup"
-FQDN="$(hostname -f)"
-if [ ! -e "$DIRECTORY/TestCA/$FQDN/$FQDN.key" ] || \
-   [ ! -e "$DIRECTORY/TestCA/$FQDN/$FQDN.crt" ] || \
+if [ ! $# -eq 2 ] ; then
+   echo >&2 "Usage: $0 server_port server_fqdn"
+   echo >&2 "Example: $0 9000 server.domain.example"
+   exit 1
+fi
+SERVER="$1"
+SERVER_FQDN="$2"
+
+if [ ! -e "$DIRECTORY/TestCA/$SERVER_FQDN/$SERVER_FQDN.key" ] || \
+   [ ! -e "$DIRECTORY/TestCA/$SERVER_FQDN/$SERVER_FQDN.crt" ] || \
    [ ! -e "$DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt" ] ; then
    echo >&2 "ERROR: TLS files are missing. Check quic-setup/make-test-certificates!"
    exit 1
 fi
 
 make netperfmeter
-SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log ./netperfmeter 9000 \
-   -tls-key  "$DIRECTORY/TestCA/$FQDN/$FQDN.key" \
-   -tls-cert "$DIRECTORY/TestCA/$FQDN/$FQDN.crt" \
-   -tls-ca   "$DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt"
+
+set -x
+SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log ./netperfmeter "$SERVER" \
+   --tls-key  "$DIRECTORY/TestCA/$SERVER_FQDN/$SERVER_FQDN.key" \
+   --tls-cert "$DIRECTORY/TestCA/$SERVER_FQDN/$SERVER_FQDN.crt" \
+   --tls-ca   "$DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt"
