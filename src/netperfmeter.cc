@@ -46,6 +46,7 @@
 #include <netinet/tcp.h>
 #include <poll.h>
 #include <signal.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #if !defined(HAVE_SCTP)
@@ -236,6 +237,36 @@ static void usage(const char* program, const int exitCode)
    exit(exitCode);
 }
 // ------ END-OF-USAGE-BLOCK ------
+
+
+#if defined(HAVE_QUIC)
+// ###### Check whether a TLS file exists and is readable ###################
+static void checkReadableTLSFile(const char* optionName, const char* fileName)
+{
+   if(fileName != nullptr) {
+      FILE* fh = fopen(fileName, "rb");
+      if(fh == nullptr) {
+         std::cerr << format("ERROR: Unable to read %s file \"%s\": %s!",
+                             optionName, fileName, strerror(errno)) << "\n";
+         exit(1);
+      }
+      struct stat st;
+      if(fstat(fileno(fh), &st) < 0) {
+         const int savedErrno = errno;
+         fclose(fh);
+         std::cerr << format("ERROR: Unable to stat %s file \"%s\": %s!",
+                             optionName, fileName, strerror(savedErrno)) << "\n";
+         exit(1);
+      }
+      fclose(fh);
+      if(S_ISDIR(st.st_mode)) {
+         std::cerr << format("ERROR: Invalid %s file \"%s\": %s!",
+                             optionName, fileName, strerror(EISDIR)) << "\n";
+         exit(1);
+      }
+   }
+}
+#endif
 
 
 // ###### Handle global command-line parameter ##############################
@@ -604,6 +635,9 @@ static bool handleGlobalParameters(int argc, char** argv)
       std::cerr << "ERROR: Both --tls-cert and --tls-key must be specified together!" << "\n";
       exit(1);
    }
+   checkReadableTLSFile("--tls-ca",   gQUICCA);
+   checkReadableTLSFile("--tls-cert", gQUICCertificate);
+   checkReadableTLSFile("--tls-key",  gQUICKey);
    const bool hasPassiveQUIC = gPassiveControlQUIC && (gQUICCertificate != nullptr) && (gQUICKey != nullptr);
 #else
    const bool hasPassiveQUIC = false;
