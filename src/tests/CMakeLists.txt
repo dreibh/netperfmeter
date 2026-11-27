@@ -187,6 +187,15 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
    IF(SPEC MATCHES "onoff")
       LIST(APPEND TEST_LABELS "onoff")
    ENDIF()
+   IF(SPEC MATCHES "tc=")
+      LIST(APPEND TEST_LABELS "qos;tc")
+   ENDIF()
+   IF(SPEC MATCHES "fl=")
+      LIST(APPEND TEST_LABELS "qos;flowlabel")
+   ENDIF()
+   IF(SPEC MATCHES "hb(interval|pathmaxrtx|assocmaxrtx)=")
+      LIST(APPEND TEST_LABELS "heartbeats")
+   ENDIF()
    FOREACH(ARG ${EXTRA_TEST_ARGS})
       IF(ARG MATCHES "^--no-(.*)")
          LIST(APPEND TEST_LABELS "no-${CMAKE_MATCH_1}")
@@ -196,6 +205,10 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
          LIST(APPEND TEST_LABELS "control-mptcp")
       ELSEIF(ARG STREQUAL "--control-over-quic")
          LIST(APPEND TEST_LABELS "control-quic")
+      ELSEIF(ARG STREQUAL "-Q" OR ARG STREQUAL "--control-tc")
+         LIST(APPEND TEST_LABELS "qos;tc")
+      ELSEIF(ARG STREQUAL "-F" OR ARG STREQUAL "--control-fl")
+         LIST(APPEND TEST_LABELS "qos;flowlabel")
       ENDIF()
    ENDFOREACH()
 
@@ -326,7 +339,19 @@ ADD_NETPERFMETER_FAIL_TEST(fail_no_args)
 
 # Unknown or malformed options must exit with code 1
 ADD_NETPERFMETER_FAIL_TEST(fail_invalid_option    --non-existent-option)
-ADD_NETPERFMETER_FAIL_TEST(fail_invalid_short_opt -Q)
+ADD_NETPERFMETER_FAIL_TEST(fail_invalid_short_opt -U)
+
+# Invalid control Traffic Class (-Q / --control-tc) and IPv6 Flow Label (-F / --control-fl)
+ADD_NETPERFMETER_FAIL_TEST(fail_control_tc_missing_arg      9000 -Q)
+ADD_NETPERFMETER_FAIL_TEST(fail_control_tc_invalid_name     9000 --control-tc INVALID_DSCP)
+ADD_NETPERFMETER_FAIL_TEST(fail_control_tc_out_of_range     9000 -Q 256)
+ADD_NETPERFMETER_FAIL_TEST(fail_control_tc_negative         9000 -Q -1)
+ADD_NETPERFMETER_FAIL_TEST(fail_control_tc_invalid_hex      9000 --control-tc 0x100)
+ADD_NETPERFMETER_FAIL_TEST(fail_control_fl_missing_arg      9000 -F)
+ADD_NETPERFMETER_FAIL_TEST(fail_control_fl_invalid_name     9000 --control-fl bogus)
+ADD_NETPERFMETER_FAIL_TEST(fail_control_fl_out_of_range     9000 -F 1048576)
+ADD_NETPERFMETER_FAIL_TEST(fail_control_fl_hex_out_of_range 9000 --control-fl 0x100000)
+ADD_NETPERFMETER_FAIL_TEST(fail_control_fl_negative         9000 -F -1)
 
 # Active mode without any flow specification must exit with code 1
 ADD_NETPERFMETER_FAIL_TEST(fail_active_no_flows 127.0.0.1:9000)
@@ -364,12 +389,29 @@ ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_nodelay         127.0.0.1:9000 
 ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_debug           127.0.0.1:9000 -tcp const10:const1000:const10:const1000:debug=invalid)
 ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_error_on_abort  127.0.0.1:9000 -tcp const10:const1000:const10:const1000:error_on_abort=invalid)
 ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_cc_too_long             127.0.0.1:9000 -tcp const10:const1000:const10:const1000:cc=abcdefghijklmnopqrstuvwxyz0123456789)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_tc_name         127.0.0.1:9000 -tcp const10:const1000:const10:const1000:tc=INVALID)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_tc_range        127.0.0.1:9000 -tcp const10:const1000:const10:const1000:tc=256)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_tc_hex          127.0.0.1:9000 -tcp const10:const1000:const10:const1000:tc=0x100)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_fl_name         127.0.0.1:9000 -tcp const10:const1000:const10:const1000:fl=invalid)
+ADD_NETPERFMETER_FAIL_TEST(fail_flowspec_invalid_fl_range        127.0.0.1:9000 -tcp const10:const1000:const10:const1000:fl=0x100000)
+
+IF (HAVE_SCTP_FOR_TESTS)
+   # Conflicting socket-level TC, Flow Label, or heartbeat settings across SCTP streams must exit with code 1
+   ADD_NETPERFMETER_FAIL_TEST(fail_sctp_multistream_tc_mismatch 127.0.0.1:9000 -sctp default:tc=EF default:tc=AF21)
+   ADD_NETPERFMETER_FAIL_TEST(fail_sctp_multistream_fl_mismatch [::1]:9000     -sctp default:fl=0x12345 default:fl=auto)
+   ADD_NETPERFMETER_FAIL_TEST(fail_sctp_multistream_hb_mismatch 127.0.0.1:9000 -sctp default:hbinterval=5000 default:hbinterval=10000)
+ENDIF()
 
 IF (HAVE_QUIC_FOR_TESTS)
-   # Mismatched TLS private key / certificate options and unsupported QUIC CC must exit with code 1
-   ADD_NETPERFMETER_FAIL_TEST(fail_tls_key_without_cert 9000 --tls-key nonexistent.key)
-   ADD_NETPERFMETER_FAIL_TEST(fail_tls_cert_without_key 9000 --tls-cert nonexistent.crt)
-   ADD_NETPERFMETER_FAIL_TEST(fail_quic_invalid_cc      127.0.0.1:9000 -quic default:cc=bbr)
+   # Mismatched/unreadable TLS files, unsupported QUIC CC, and conflicting QUIC stream settings must exit with code 1
+   ADD_NETPERFMETER_FAIL_TEST(fail_tls_key_without_cert           9000 --tls-key nonexistent.key)
+   ADD_NETPERFMETER_FAIL_TEST(fail_tls_cert_without_key           9000 --tls-cert nonexistent.crt)
+   ADD_NETPERFMETER_FAIL_TEST(fail_tls_nonexistent_cert_and_key   9000 --tls-cert nonexistent_cert_xyz.crt --tls-key nonexistent_key_xyz.key)
+   ADD_NETPERFMETER_FAIL_TEST(fail_tls_nonexistent_ca             9000 --tls-ca nonexistent_ca_xyz.crt)
+   ADD_NETPERFMETER_FAIL_TEST(fail_tls_dir_as_ca                  9000 --tls-ca ${CMAKE_CURRENT_SOURCE_DIR})
+   ADD_NETPERFMETER_FAIL_TEST(fail_quic_invalid_cc                127.0.0.1:9000 -quic default:cc=bbr)
+   ADD_NETPERFMETER_FAIL_TEST(fail_quic_multistream_tc_mismatch   127.0.0.1:9000 -quic default:tc=EF default:tc=AF21)
+   ADD_NETPERFMETER_FAIL_TEST(fail_quic_multistream_hb_mismatch   127.0.0.1:9000 -quic default:hbinterval=5000 default:hbinterval=0)
 ENDIF()
 
 
@@ -644,6 +686,57 @@ ADD_NETPERFMETER_FLOW_TEST(flow_tcp_logfile_redirect
    127.0.0.1 tcp const10:const1000:const10:const1000 plain 2 --verify-logfile)
 ADD_NETPERFMETER_FLOW_TEST(flow_tcp_logappend_redirect
    127.0.0.1 tcp const10:const1000:const10:const1000 plain 2 --verify-logappend)
+
+# ====== 9. Traffic Class (DSCP/TOS), IPv6 Flow Label & Per-Flow Keep-Alives =
+# Per-flow Traffic Class (DSCP name, hex/decimal with ECN-bit masking) and control TC/FL
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_tc_dscp_ef_ipv4
+   127.0.0.1 tcp const10:const1000:const10:const1000:tc=EF plain 2
+   --expect-config "FLOW0_TRAFFIC_CLASS=\"0xb8\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_tc_dscp_af21_ipv6
+   ::1 tcp const10:const1000:const10:const1000:tc=AF21 plain 2
+   --expect-config "FLOW0_TRAFFIC_CLASS_NAME=\"AF21\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_tc_ecn_bits_masked_ipv4
+   127.0.0.1 tcp const10:const1000:const10:const1000:tc=186 plain 2
+   --expect-config "FLOW0_TRAFFIC_CLASS=\"0xb8\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_control_tc_and_fl_ipv6
+   ::1 tcp const10:const1000:const10:const1000:tc=AF31:fl=auto plain 2
+   -Q CS6 -F auto --server-arg -Q --server-arg CS6
+   --expect-config "CONTROL_TRAFFIC_CLASS=\"0xc0\"")
+
+# IPv6 Flow Label modes (explicit 20-bit label, explicit 0, reflect)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_fl_explicit_ipv6
+   ::1 tcp const10:const1000:const10:const1000:fl=0x12345 plain 2
+   --expect-config "FLOW0_FLOW_LABEL=\"0x12345\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_fl_zero_ipv6
+   ::1 tcp const10:const1000:const10:const1000:fl=0 plain 2
+   --expect-config "FLOW0_FLOW_LABEL=\"0x00000\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_fl_reflect_ipv6
+   ::1 tcp const10:const1000:const10:const1000:fl=reflect plain 2
+   --expect-config "FLOW0_FLOW_LABEL=\"reflect\"")
+
+# Per-flow TCP keep-alive enabled and explicitly disabled (hbinterval=0)
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_perflow_keepalive_ipv4
+   127.0.0.1 tcp const10:const1000:const10:const1000:hbinterval=5000:hbpathmaxrtx=4 plain 2
+   --expect-config "FLOW0_HBINTERVAL=\"5000\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_tcp_perflow_keepalive_disabled_ipv4
+   127.0.0.1 tcp const10:const1000:const10:const1000:hbinterval=0 plain 2
+   --expect-config "FLOW0_HBINTERVAL=\"0\"")
+
+# Single and concurrent UDP flows with distinct Traffic Classes and Flow Labels (passive sendmsg() cmsg)
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_tc_dscp_ef_ipv4
+   127.0.0.1 udp const10:const1000:const10:const1000:tc=EF plain 2
+   --expect-config "FLOW0_TRAFFIC_CLASS=\"0xb8\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_udp_tc_and_fl_ipv6
+   ::1 udp const10:const1000:const10:const1000:tc=AF41:fl=0x00100 plain 2
+   --expect-config "FLOW0_FLOW_LABEL=\"0x00100\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_different_tc_ipv4
+   127.0.0.1 udp const10:const1000:const10:const1000:tc=EF plain 3
+   -udp const10:const1000:const10:const1000:tc=AF11
+   --expect-config "FLOW1_TRAFFIC_CLASS=\"0x28\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_udp_different_tc_fl_ipv6
+   ::1 udp const10:const1000:const10:const1000:tc=EF:fl=0x00100 plain 3
+   -udp const10:const1000:const10:const1000:tc=AF21:fl=0x00200
+   --expect-config "FLOW1_FLOW_LABEL=\"0x00200\"")
 
 
 #############################################################################
@@ -1348,6 +1441,14 @@ ADD_NETPERFMETER_FLOW_TEST(flow_udp_ctrl_mptcp_bidi_ipv4
 ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_cmt_alias_ipv4
    127.0.0.1 tcp   const10:const1000:const10:const1000:cmt=mptcp plain 2)
 
+# Traffic Class, IPv6 Flow Label, and per-flow keep-alive (enabled and disabled)
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_tc_and_keepalive_ipv4
+   127.0.0.1 mptcp const10:const1000:const10:const1000:tc=AF21:hbinterval=5000:hbpathmaxrtx=3 plain 2
+   --expect-config "FLOW0_TRAFFIC_CLASS=\"0x48\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_tc_fl_keepalive_disabled_ipv6
+   ::1       mptcp const10:const1000:const10:const1000:tc=CS4:fl=auto:hbinterval=0 plain 2
+   --expect-config "FLOW0_HBINTERVAL=\"0\"")
+
 # ====== 5. Compression Formats & Output Suppression ========================
 ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_format_bz2 127.0.0.1 mptcp const10:const1000:const10:const1000 bz2)
 ADD_NETPERFMETER_FLOW_TEST(flow_mptcp_no_scalar  127.0.0.1 mptcp const10:const1000:const10:const1000 plain 2 --no-scalar)
@@ -1959,6 +2060,19 @@ ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_fragmented
    127.0.0.1 sctp const10:const2000:const10:const2000:maxmsgsize=500 plain 3
    --stream const10:const2000:const10:const2000:maxmsgsize=500)
 
+# Traffic Class, IPv6 Flow Label, and per-flow SCTP heartbeats (enabled, disabled, multi-stream matching)
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_tc_and_heartbeats_ipv4
+   127.0.0.1 sctp const10:const1000:const10:const1000:tc=EF:hbinterval=5000:hbpathmaxrtx=3:hbassocmaxrtx=6 plain 2
+   --control-over-sctp -Q CS6 --server-arg -Q --server-arg CS6
+   --expect-config "FLOW0_HBINTERVAL=\"5000\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_tc_fl_hb_disabled_ipv6
+   ::1       sctp const10:const1000:const10:const1000:tc=AF31:fl=0x12345:hbinterval=0 plain 2
+   --expect-config "FLOW0_HBINTERVAL=\"0\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_sctp_multistream_shared_tc_hb
+   127.0.0.1 sctp const10:const1000:const10:const1000:tc=AF21:hbinterval=5000:hbpathmaxrtx=3:hbassocmaxrtx=6 plain 3
+   --stream const10:const500:const10:const500:tc=AF21:hbinterval=5000:hbpathmaxrtx=3:hbassocmaxrtx=6
+   --expect-config "FLOW1_TRAFFIC_CLASS=\"0x48\"")
+
 
 # ===========================================================================
 # 50 REALISTIC SCTP APPLICATION DISTRIBUTION PROFILES (Profiles 101 - 150)
@@ -2289,6 +2403,19 @@ ADD_NETPERFMETER_FLOW_TEST(flow_quic_multistream_staggered_onoff
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_multistream_2streams_ctrl_quic
    127.0.0.1 quic const10:const1000:const10:const1000 plain 3
    --stream const10:const500:const10:const500 --control-over-quic)
+
+# Traffic Class, IPv6 Flow Label, and per-flow QUIC idle timeout (enabled, disabled, multi-stream matching)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_tc_and_idle_timeout_ipv4
+   127.0.0.1 quic const10:const1000:const10:const1000:tc=AF41:hbinterval=5000:hbassocmaxrtx=4 plain 3
+   --control-over-quic -Q CS6 --server-arg -Q --server-arg CS6
+   --expect-config "FLOW0_TRAFFIC_CLASS=\"0x88\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_tc_fl_hb_disabled_ipv6
+   ::1       quic const10:const1000:const10:const1000:tc=EF:fl=auto:hbinterval=0 plain 3
+   --expect-config "FLOW0_HBINTERVAL=\"0\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_multistream_shared_tc_hb
+   127.0.0.1 quic const10:const1000:const10:const1000:tc=AF21:hbinterval=5000:hbassocmaxrtx=4 plain 3
+   --stream const10:const500:const10:const500:tc=AF21:hbinterval=5000:hbassocmaxrtx=4
+   --expect-config "FLOW1_TRAFFIC_CLASS=\"0x48\"")
 
 
 # ====== 6. Heterogeneous Cross-Traffic Concurrency =========================
@@ -2634,6 +2761,12 @@ ADD_NETPERFMETER_FLOW_TEST(flow_dccp_ccid3
 ADD_NETPERFMETER_FLOW_TEST(flow_dccp_local_bind_ipv4
    127.0.0.1 dccp const10:const1000:const10:const1000 plain 2
    -L 127.0.0.1 --server-arg -L --server-arg 127.0.0.1)
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_tc_ef_ipv4
+   127.0.0.1 dccp const10:const1000:const10:const1000:tc=EF plain 2
+   --expect-config "FLOW0_TRAFFIC_CLASS=\"0xb8\"")
+ADD_NETPERFMETER_FLOW_TEST(flow_dccp_tc_fl_ipv6
+   ::1       dccp const10:const1000:const10:const1000:tc=AF31:fl=auto plain 2
+   --expect-config "FLOW0_TRAFFIC_CLASS_NAME=\"AF31\"")
 
 IF (HAVE_SCTP_FOR_TESTS)
    ADD_NETPERFMETER_FLOW_TEST(flow_dccp_ctrl_sctp_bidi_ipv4
