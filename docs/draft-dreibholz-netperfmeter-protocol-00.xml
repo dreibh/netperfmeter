@@ -34,7 +34,7 @@
     <uri>https://www.simula.no/people/dreibh</uri>
    </address>
   </author>
-  <date day="13" month="November" year="2026" />
+  <date day="27" month="November" year="2026" />
   <area>Transport</area>
   <workgroup>Network Working Group</workgroup>
   <keyword>Internet-Draft</keyword>
@@ -90,8 +90,10 @@
    <t>
     NPMP supports bidirectional saturated flows (bulk transfers), non-saturated
     flows (configurable constant or randomized frame rates and sizes to mimic
-    interactive and multimedia traffic), on/off traffic patterns, and partial
-    reliability / unordered delivery options.
+    interactive and multimedia traffic), on/off traffic patterns, partial
+    reliability / unordered delivery options, per-flow IP Traffic Class (DSCP)
+    and IPv6 Flow Label markings, and per-flow heartbeat / keep-alive
+    configuration.
    </t>
    <section toc="default">
     <name>Terminology</name>
@@ -280,8 +282,10 @@
       each data connection, it transmits a NETPERFMETER_IDENTIFY_FLOW message
       containing a unique 64-bit magic number, Measurement ID, Flow ID, and
       Stream ID. The Passive Node binds the new socket/stream to the configured
-      flow state and confirms via NETPERFMETER_ACKNOWLEDGE on the Control
-      Channel.
+      flow state, applies socket-level flow parameters (such as buffer sizes,
+      congestion control, Traffic Class, IPv6 Flow Label, and heartbeat /
+      keep-alive parameters), and confirms via NETPERFMETER_ACKNOWLEDGE on the
+      Control Channel.
      </li>
      <li>
       Measurement Phase: The Active Node issues a NETPERFMETER_START message.
@@ -376,9 +380,12 @@
    <section toc="default">
     <name>NETPERFMETER_ADD_FLOW Message</name>
     <t>
-     Configures a new flow on the peer. It specifies transport options,
-     buffer sizes, congestion control, and random parameter arrays for frame
-     rate, frame size, and on/off events.
+     Configures a new flow on the peer. The fixed portion of the message is
+     194 octets long, followed by zero or more 36-octet on/off event records.
+     It specifies transport options, buffer sizes, congestion control, IP
+     Traffic Class (DSCP), IPv6 Flow Label, per-flow heartbeat / keep-alive
+     settings, and random parameter arrays for frame rate, frame size, and
+     on/off events.
     </t>
     <artwork name="" type="" align="left" alt=""><![CDATA[
  0                   1                   2                   3
@@ -412,36 +419,112 @@
 +                  FrameSize [4 x IEEE 64-bit]                  +
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-| FrameRateRng  | FrameSizeRng  |          MaxMsgSize           |
+| FrameRateRng  | FrameSizeRng  |      RcvBufferSize (high)     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                         RcvBufferSize                         |
+|      RcvBufferSize (low)      |      SndBufferSize (high)     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                         SndBufferSize                         |
+|      SndBufferSize (low)      |          MaxMsgSize           |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|      CMT      |     CCID      |          NDiffPorts           |
+|      CMT      |     CCID      |       TrafficClassSpec        |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                      PathMgr (16 octets)                      |
+|                         FlowLabelSpec                         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                 CongestionControl (16 octets)                 |
+|                                                               |
++                     Padding1 (12 octets)                      +
+|                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                     Scheduler (16 octets)                     |
+|                                                               |
++                 CongestionControl (16 octets)                 +
+|                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|    HBMagic    |    HBFlags    |           Padding2            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                          HBInterval                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         HBPathMaxRtx                          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         HBAssocMaxRtx                         |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |          OnOffEvents          |    NetPerfMeterOnOffEvent...  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
     ]]></artwork>
     <t>Notable flags and fields include:</t>
     <ul spacing="normal">
-     <li>Flags: Bit 0: Debug mode; Bit 1: NoDelay (disable Nagle); Bit 2: Repeat on/off events.</li>
-     <li>Protocol: Transport protocol number (IPPROTO_TCP, IPPROTO_UDP, IPPROTO_SCTP, IPPROTO_DCCP, IPPROTO_MPTCP, or IPPROTO_QUIC). Note: encoded in little-endian format for historical compatibility.</li>
-     <li>OrderedMode: Scaled 32-bit probability [0.0, 1.0] for ordered delivery.</li>
-     <li>ReliableMode: Scaled 32-bit probability [0.0, 1.0] for reliable delivery.</li>
-     <li>RetransmissionTrials: Number of trials, or timeout in milliseconds if Bit 31 is set.</li>
+     <li>Flags (8 bits): Bit 0 (NPMAFF_DEBUG): Debug mode; Bit 1 (NPMAFF_NODELAY): NoDelay (disable Nagle); Bit 2 (NPMAFF_REPEATONOFF): Repeat on/off events.</li>
+     <li>Protocol (16 bits): Transport protocol number (IPPROTO_TCP, IPPROTO_UDP, IPPROTO_SCTP, IPPROTO_DCCP, IPPROTO_MPTCP, or IPPROTO_QUIC). Note: encoded in little-endian format for historical compatibility.</li>
+     <li>OrderedMode (32 bits): Scaled 32-bit probability [0.0, 1.0] for ordered delivery.</li>
+     <li>ReliableMode (32 bits): Scaled 32-bit probability [0.0, 1.0] for reliable delivery.</li>
+     <li>RetransmissionTrials (32 bits): Number of trials, or timeout in milliseconds if Bit 31 (NPMAF_RTX_TRIALS_IN_MILLISECONDS) is set (value 0x7fffffff denotes protocol default).</li>
      <li>FrameRate / FrameSize: 4 network 64-bit floating point numbers defining distribution parameters.</li>
-     <li>FrameRateRng / FrameSizeRng: Random number generator identifier (Constant=0, Uniform=1, Exponential=2, Pareto=3, Normal=4, TruncNormal=5).</li>
-     <li>CMT: Concurrent Multipath Transfer mode (0=Off, 1=CMT, 2=CMT/RPv1, 3=CMT/RPv2, 4=MPTCP-like).</li>
-     <li>CCID: DCCP Congestion Control Identifier (e.g. 2 or 3).</li>
-     <li>OnOffEvents: Count of trailing NetPerfMeterOnOffEvent records (each 36 octets).</li>
-     <li>NDiffPorts, PathMgr, Scheduler: Obsolete configuration fields retained for wire compatibility with legacy Linux kernel MPTCP implementations.</li>
+     <li>FrameRateRng / FrameSizeRng (8 bits each): Random number generator identifier (Constant=0, Uniform=1, Exponential=2, Pareto=3, Normal=4, TruncNormal=5).</li>
+     <li>RcvBufferSize / SndBufferSize (32 bits each): Socket receive and send buffer sizes in octets.</li>
+     <li>MaxMsgSize (16 bits): Maximum message size in octets into which frames are segmented.</li>
+     <li>CMT (8 bits): Concurrent Multipath Transfer mode (0=Off, 1=CMT, 2=CMT/RPv1, 3=CMT/RPv2, 4=MPTCP-like).</li>
+     <li>CCID (8 bits): DCCP Congestion Control Identifier (e.g. 2 or 3).</li>
+     <li>
+      TrafficClassSpec (16 bits): Per-flow IP Traffic Class / Type of Service
+      specification (replaces the obsolete NDiffPorts field while preserving
+      the 194-octet fixed message length). A value of 0x0000 indicates that
+      the operating system default is used. When
+      (TrafficClassSpec &amp; 0xff00) == 0xff00, the lower octet encodes an
+      explicit Traffic Class byte for IP_TOS (IPv4) or IPV6_TCLASS (IPv6) as
+      (TrafficClassSpec &amp; 0x00fc). The upper 6 bits carry the DSCP
+      <xref target="RFC2474" /> and the lower 2 bits <bcp14>MUST</bcp14> be
+      zeroed so that Explicit Congestion Notification (ECN)
+      <xref target="RFC3168" /> remains controlled by the transport layer.
+      Because legacy implementations transmitted 0x0000 or small integer
+      subflow counts in this field, the 0xff00 sentinel guarantees backwards
+      compatibility. On the Passive Node, connectionless UDP flows sharing a
+      single listener socket <bcp14>SHOULD</bcp14> apply the Traffic Class per
+      datagram via sendmsg() ancillary data so concurrent UDP flows can use
+      distinct markings. Flows sharing an SCTP association or QUIC connection
+      <bcp14>MUST</bcp14> specify identical Traffic Class settings.
+     </li>
+     <li>
+      <t>
+       FlowLabelSpec (32 bits): Per-flow 20-bit IPv6 Flow Label specification
+       <xref target="RFC6437" /> (occupies the first 4 octets of the obsolete
+       16-octet PathMgr field). A value of 0x00000000 indicates the operating
+       system default. When Bit 31 (0x80000000, NPMAF_FL_VALID) is set, the
+       field is active (avoiding collisions with 7-bit ASCII legacy PathMgr
+       strings):
+      </t>
+      <ul spacing="compact">
+       <li>Bit 30 (0x40000000, NPMAF_FL_AUTO): Enable automatic OS IPv6 Flow Label generation (e.g., IPV6_AUTOFLOWLABEL).</li>
+       <li>Bit 29 (0x20000000, NPMAF_FL_REFLECT): Request IPv6 Flow Label reflection where supported by the operating system.</li>
+       <li>Bits 30 and 29 both clear: Explicit 20-bit Flow Label in bits 0..19 (FlowLabelSpec &amp; 0x000fffff). An explicit value of 0 requests disabling automatic flow label generation.</li>
+      </ul>
+      <t>
+       Flows sharing an SCTP association or QUIC connection <bcp14>MUST</bcp14>
+       specify identical Flow Label settings.
+      </t>
+     </li>
+     <li>Padding1 (12 octets): Reserved (replaces the remaining 12 octets of the obsolete PathMgr field); <bcp14>MUST</bcp14> be set to 0 on transmission and ignored on reception.</li>
+     <li>CongestionControl (16 octets): Null-padded ASCII congestion control algorithm name (e.g., "default", "cubic", "reno").</li>
+     <li>
+      <t>
+       HBMagic (8 bits), HBFlags (8 bits), Padding2 (16 bits), HBInterval
+       (32 bits), HBPathMaxRtx (32 bits), HBAssocMaxRtx (32 bits): Per-flow
+       heartbeat, keep-alive, and idle-timeout configuration (replaces the
+       obsolete 16-octet Scheduler field). HBMagic <bcp14>MUST</bcp14> be set
+       to 0xff (NPMAF_HB_MAGIC) when any heartbeat parameter is encoded, and
+       0x00 otherwise (preventing collisions with 7-bit ASCII legacy Scheduler
+       strings). Padding2 <bcp14>MUST</bcp14> be set to 0. HBFlags is a
+       bitmask indicating which fields are present:
+      </t>
+      <ul spacing="compact">
+       <li>Bit 0 (0x01, NPMAF_HBF_INTERVAL): HBInterval is valid (milliseconds, 0..86400000). A value of 0 explicitly disables SCTP heartbeats (SPP_HB_DISABLE), TCP/MPTCP keep-alives (SO_KEEPALIVE=0), and QUIC idle timeout. Non-zero values enable heartbeats/keep-alives (rounded to whole seconds, minimum 1 s, for TCP/MPTCP).</li>
+       <li>Bit 1 (0x02, NPMAF_HBF_PATHMAXRTX): HBPathMaxRtx is valid (trial count, 1..1000000; sets SCTP spp_pathmaxrxt or TCP/MPTCP TCP_KEEPCNT).</li>
+       <li>Bit 2 (0x04, NPMAF_HBF_ASSOCMAXRTX): HBAssocMaxRtx is valid (trial count, 1..1000000; sets SCTP sasoc_asocmaxrxt, clamped to 65535, and multiplies HBInterval for QUIC max_idle_timeout).</li>
+      </ul>
+      <t>
+       Parameters whose flag bit is clear (or when HBMagic != 0xff) leave the
+       operating system or protocol default unchanged. Flows sharing an SCTP
+       association or QUIC connection <bcp14>MUST</bcp14> specify identical
+       heartbeat / keep-alive settings.
+      </t>
+     </li>
+     <li>OnOffEvents (16 bits): Count of trailing NetPerfMeterOnOffEvent records (each 36 octets).</li>
     </ul>
    </section>
    <section toc="default">
@@ -756,9 +839,12 @@ J = J + (1/16) * (|diff| - J)
    <name>Normative References</name>
    <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.0768.xml" />
    <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2119.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.2474.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3168.xml" />
    <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3550.xml" />
    <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.3758.xml" />
    <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.4340.xml" />
+   <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.6437.xml" />
    <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.7301.xml" />
    <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8174.xml" />
    <xi:include href="https://bib.ietf.org/public/rfc/bibxml/reference.RFC.8684.xml" />
