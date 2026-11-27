@@ -326,6 +326,77 @@ perl -e '
     exit 0;
 ' "${OUT_EDGE}"
 
+# ====== 5b. Space-separated, quoted multi-word & plot-netperfmeter-results legacy double-quoted values
+OUT_NORM="${TMP_DIR}/combined_norm.data"
+CMD_NORM="${TMP_DIR}/cmd_norm.txt"
+cat << EOF > "${CMD_NORM}"
+--simulationsdirectory=${SIM_DIR}
+--varnames=ParameterX ParameterY
+--values="Alpha" "Test 1"
+--input=part1.data
+--values="Beta" "Test 2"
+--input=part2.data
+EOF
+
+run_expect_ok "${CMD_NORM}" "${TMP_DIR}/norm.out" "${TMP_DIR}/norm.err" -q "${OUT_NORM}"
+
+perl -e '
+    use strict;
+    use warnings;
+
+    my ($path) = @ARGV;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    my @lines = <$fh>;
+    close($fh);
+    chomp @lines;
+
+    my @expected = (
+        "ParameterX\tParameterY\tRunNo\tThroughput",
+        "\"Alpha\"\t\"Test 1\"\t1\t100.5",
+        "\"Alpha\"\t\"Test 1\"\t2\t200.0",
+        "\"Beta\"\t\"Test 2\"\t1\t300.25",
+        "\"Beta\"\t\"Test 2\"\t2\t400.75",
+    );
+    if (@lines != @expected) {
+        warn "FAIL: Expected " . scalar(@expected) . " lines in $path, got " . scalar(@lines) . "\n";
+        exit 1;
+    }
+    for my $i (0 .. $#expected) {
+        if ($lines[$i] ne $expected[$i]) {
+            warn "FAIL: Normalized line " . ($i + 1) . " mismatch. Expected \x27$expected[$i]\x27, got \x27$lines[$i]\x27\n";
+            exit 1;
+        }
+    }
+    exit 0;
+' "${OUT_NORM}"
+
+# Also test plot-netperfmeter-results outer-wrapped double-quoted syntax (--values=""Active Instance"\t1")
+OUT_PLOT_SYNTAX="${TMP_DIR}/combined_plot_syntax.data"
+CMD_PLOT_SYNTAX="${TMP_DIR}/cmd_plot_syntax.txt"
+printf -- '--simulationsdirectory=%s\n--values=""Active Instance"\t1"\n--input=part1.data\n--values="""\t0"\n--input=part2.data\n' \
+    "${SIM_DIR}" > "${CMD_PLOT_SYNTAX}"
+run_expect_ok "${CMD_PLOT_SYNTAX}" "${TMP_DIR}/plotsyn.out" "${TMP_DIR}/plotsyn.err" \
+    -q "${OUT_PLOT_SYNTAX}" "NodeName IsActive"
+
+perl -e '
+    use strict;
+    use warnings;
+
+    my ($path) = @ARGV;
+    open(my $fh, "<", $path) or die "Cannot open $path: $!\n";
+    my @lines = <$fh>;
+    close($fh);
+    chomp @lines;
+
+    if ($lines[0] ne "NodeName\tIsActive\tRunNo\tThroughput" ||
+        $lines[1] ne "\"Active Instance\"\t1\t1\t100.5" ||
+        $lines[3] ne "\"\"\t0\t1\t300.25") {
+        warn "FAIL: Legacy plot-netperfmeter-results syntax failed:\n" . join("\n", @lines) . "\n";
+        exit 1;
+    }
+    exit 0;
+' "${OUT_PLOT_SYNTAX}"
+
 # ====== 6. Compression formats round-trip (.gz, .bz2, .xz, .zst) ===========
 for _ext in gz bz2 xz zst; do
     _out_comp="${TMP_DIR}/combined.data.${_ext}"

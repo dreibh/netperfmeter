@@ -176,29 +176,158 @@ static inline bool parseDouble(std::string_view sv, T& value)
 }
 
 
-// ###### Check columns for proper quotation ================================
-static bool checkColumns(std::string_view values)
+// ###### Tokenize column list respecting double quotes & escapes ###########
+static bool tryTokenizeColumns(std::string_view          input,
+                               std::string_view          separator,
+                               std::vector<std::string>& tokens)
 {
-   bool         inQuotation    = false;
-   unsigned int quotationMarks = 0;
-   for(size_t i = 0; i < values.size(); i++) {
-      switch(values[i]) {
-         case '\\':
+   tokens.clear();
+   const bool hasCustomSep = (!separator.empty()) &&
+                             (separator != " ") &&
+                             (separator != "\t");
+
+   auto isWhitespace = [](const char c) -> bool {
+      return (c == ' ') || (c == '\t');
+   };
+
+   auto atSeparator = [&](const size_t pos) -> bool {
+      return hasCustomSep && input.substr(pos).starts_with(separator);
+   };
+
+   auto atDelimiter = [&](const size_t pos) -> bool {
+      return (pos < input.size()) && (isWhitespace(input[pos]) || atSeparator(pos));
+   };
+
+   size_t i = 0;
+   while(i < input.size()) {
+      while(i < input.size()) {
+         if(isWhitespace(input[i])) {
             i++;
+         }
+         else if(atSeparator(i)) {
+            i += separator.size();
+         }
+         else {
             break;
-         case '"':
-            inQuotation = !inQuotation;
-            quotationMarks++;
-            break;
+         }
+      }
+      if(i >= input.size()) {
+         break;
+      }
+
+      if(input[i] == '"') {
+         const size_t start = i;
+         i++;
+         bool closed = false;
+         while(i < input.size()) {
+            if(input[i] == '\\') {
+               if(i + 1 >= input.size()) {
+                  return false;
+               }
+               i += 2;
+            }
+            else if(input[i] == '"') {
+               i++;
+               closed = true;
+               break;
+            }
+            else {
+               i++;
+            }
+         }
+         if(!closed) {
+            return false;
+         }
+         if((i < input.size()) && !atDelimiter(i)) {
+            return false;
+         }
+         tokens.emplace_back(input.substr(start, i - start));
+      }
+      else {
+         const size_t start = i;
+         while((i < input.size()) && !atDelimiter(i)) {
+            if(input[i] == '\\') {
+               if(i + 1 >= input.size()) {
+                  i++;
+                  break;
+               }
+               i += 2;
+            }
+            else if(input[i] == '"') {
+               return false;
+            }
+            else {
+               i++;
+            }
+         }
+         tokens.emplace_back(input.substr(start, i - start));
       }
    }
-   return ((quotationMarks & 1) == 0);
+
+   return true;
+}
+
+
+// ###### Validate and normalize column list to output separator ############
+static bool formatColumns(std::string_view input,
+                          std::string_view separator,
+                          std::string&     output,
+                          const bool       allowOuterUnwrap)
+{
+   std::vector<std::string> tokens;
+   const bool parsedDirectly = tryTokenizeColumns(input, separator, tokens);
+
+   if(!parsedDirectly) {
+      // Handle legacy outer-wrapped strings such as --values=""Active Instance"\t1"
+      if(allowOuterUnwrap && (input.size() >= 2) &&
+         (input.front() == '"') && (input.back() == '"')) {
+         if(!tryTokenizeColumns(input.substr(1, input.size() - 2), separator, tokens)) {
+            return false;
+         }
+      }
+      else {
+         return false;
+      }
+   }
+   else if(allowOuterUnwrap && (tokens.size() == 1) &&
+           (input.size() >= 2) && (input.front() == '"') && (input.back() == '"') &&
+           (tokens[0].size() == input.size())) {
+      // Unwrap a single outer-quoted wrapper around a separator-delimited list
+      // (e.g. --varnames="Protocol\tRate" or --values="TCP;10") or a single
+      // unspaced token (e.g. --values="host1.example"), while keeping a single
+      // quoted value containing spaces (e.g. --values="Test 1") intact.
+      const std::string_view inner = input.substr(1, input.size() - 2);
+      const bool hasNonSpaceSep =
+         (inner.find('\t') != std::string_view::npos) ||
+         ((!separator.empty()) && (separator != " ") &&
+          (inner.find(separator) != std::string_view::npos));
+      const bool hasSpace = (inner.find(' ') != std::string_view::npos);
+      if(hasNonSpaceSep) {
+         std::vector<std::string> innerTokens;
+         if(tryTokenizeColumns(inner, separator, innerTokens) && !innerTokens.empty()) {
+            tokens = std::move(innerTokens);
+         }
+      }
+      else if(!hasSpace && (inner.find('"') == std::string_view::npos) && !inner.empty()) {
+         tokens[0] = std::string(inner);
+      }
+   }
+
+   output.clear();
+   for(size_t i = 0; i < tokens.size(); i++) {
+      if(i > 0) {
+         output += separator;
+      }
+      output += tokens[i];
+   }
+   return true;
 }
 
 
 // ###### Get aggregate data ================================================
 static unsigned int getAggregate(std::string_view objectName,
                                  std::string_view statName,
+                                 std::string_view separator,
                                  std::string&     scalarName,
                                  std::string&     aggNames,
                                  std::string&     aggValues,
@@ -218,7 +347,7 @@ static unsigned int getAggregate(std::string_view objectName,
    else {
       segment = objectName.substr(lastDot + 1);
       levels  = getAggregate(objectName.substr(0, lastDot), statName,
-                             scalarName, aggNames, aggValues, false);
+                             separator, scalarName, aggNames, aggValues, false);
    }
 
    const auto lastNonDigit = segment.find_last_not_of("0123456789");
@@ -241,7 +370,7 @@ static unsigned int getAggregate(std::string_view objectName,
 
    if(hasDigits) {
       if(!aggNames.empty()) {
-         aggNames += ' ';
+         aggNames += separator;
       }
       if(!scalarName.empty()) {
          aggNames += scalarName;
@@ -250,7 +379,7 @@ static unsigned int getAggregate(std::string_view objectName,
       aggNames += aggregate;
 
       if(!aggValues.empty()) {
-         aggValues += ' ';
+         aggValues += separator;
       }
       unsigned long val = 0;
       std::from_chars(numPart.data(), numPart.data() + numPart.size(), val);
@@ -273,12 +402,12 @@ static unsigned int getAggregate(std::string_view objectName,
 
          if(allDigits) {
             if(!aggNames.empty()) {
-               aggNames += ' ';
+               aggNames += separator;
             }
             aggNames += statBase;
 
             if(!aggValues.empty()) {
-               aggValues += ' ';
+               aggValues += separator;
             }
             aggValues += idPart;
 
@@ -372,6 +501,7 @@ static void handleScalar(const std::string& varValues,
                          const unsigned int run,
                          const bool         interactiveMode,
                          const bool         scalarSplittingMode,
+                         std::string_view   separator,
                          std::string&       objectName,
                          std::string&       statName,
                          const double       value)
@@ -394,7 +524,7 @@ static void handleScalar(const std::string& varValues,
    std::string scalarName;
    std::string aggNames;
    std::string aggValues;
-   getAggregate(objectName, statName, scalarName, aggNames, aggValues);
+   getAggregate(objectName, statName, separator, scalarName, aggNames, aggValues);
 
    const bool isSkipped = std::ranges::any_of(SkipList, [&](std::string_view prefix) {
       return std::string_view(scalarName).starts_with(prefix);
@@ -415,7 +545,8 @@ static void handleScalar(const std::string& varValues,
 static bool handleScalarFile(const std::string& varValues,
                              const std::string& fileName,
                              const bool         interactiveMode,
-                             const bool         scalarSplitting)
+                             const bool         scalarSplitting,
+                             std::string_view   separator)
 {
    InputFile inputFile;
    try {
@@ -483,7 +614,7 @@ static bool handleScalarFile(const std::string& varValues,
 
             removeScenarioName(objectName);
             handleScalar(varValues, run, interactiveMode, scalarSplitting,
-                         objectName, statName, value);
+                         separator, objectName, statName, value);
          }
          else if(line.starts_with('#')) {
             // Comment line
@@ -526,7 +657,7 @@ static bool handleScalarFile(const std::string& varValues,
 
                   std::string objCopy = statisticObjectName;
                   handleScalar(varValues, run, interactiveMode, scalarSplitting,
-                               objCopy, newStatName, value);
+                               separator, objCopy, newStatName, value);
                }
             }
             else {
@@ -631,6 +762,7 @@ static void dumpScalars(const std::string& resultsDirectory,
    unsigned int       totalFiles = 0;
    unsigned long long lineNumber = 0;
    OutputFile         outputFile;
+   bool               hasAggregates = false;
 
    for(const auto& [key, data] : StatisticsStorage) {
       if(lastStatisticsName != key.scalarName) {
@@ -651,13 +783,22 @@ static void dumpScalars(const std::string& resultsDirectory,
          }
 
          outputFile.initialize(fileName, outputFormat, compressionLevel);
-         lineNumber = 1;
+         lineNumber    = 1;
+         hasAggregates = !data.aggNames.empty();
 
-         outputFile.printf("RunNo%sValueNo%sSplit%s%s%s%s%s%s\n",
-                           separator, separator, separator,
-                           data.aggNames.c_str(), separator,
-                           varNames.c_str(),      separator,
-                           key.scalarName.c_str());
+         if(hasAggregates) {
+            outputFile.printf("RunNo%sValueNo%sSplit%s%s%s%s%s%s\n",
+                              separator, separator, separator,
+                              data.aggNames.c_str(), separator,
+                              varNames.c_str(),      separator,
+                              key.scalarName.c_str());
+         }
+         else {
+            outputFile.printf("RunNo%sValueNo%sSplit%s%s%s%s\n",
+                              separator, separator, separator,
+                              varNames.c_str(),      separator,
+                              key.scalarName.c_str());
+         }
          lastStatisticsName = key.scalarName;
       }
 
@@ -666,13 +807,23 @@ static void dumpScalars(const std::string& resultsDirectory,
          if(addLineNumbers) {
             outputFile.printf("%llu%s", lineNumber, separator);
          }
-         outputFile.printf("%u%s%u%s\"%s\"%s%s%s%s%s%lf\n",
-                           static_cast<unsigned int>(key.run), separator,
-                           static_cast<unsigned int>(valueNumber), separator,
-                           key.splitName.c_str(), separator,
-                           key.aggValues.c_str(), separator,
-                           key.varValues.c_str(), separator,
-                           val);
+         if(hasAggregates) {
+            outputFile.printf("%u%s%u%s\"%s\"%s%s%s%s%s%lf\n",
+                              static_cast<unsigned int>(key.run), separator,
+                              static_cast<unsigned int>(valueNumber), separator,
+                              key.splitName.c_str(), separator,
+                              key.aggValues.c_str(), separator,
+                              key.varValues.c_str(), separator,
+                              val);
+         }
+         else {
+            outputFile.printf("%u%s%u%s\"%s\"%s%s%s%lf\n",
+                              static_cast<unsigned int>(key.run), separator,
+                              static_cast<unsigned int>(valueNumber), separator,
+                              key.splitName.c_str(), separator,
+                              key.varValues.c_str(), separator,
+                              val);
+         }
          valueNumber++;
          lineNumber++;
       }
@@ -915,8 +1066,7 @@ int main(int argc, char** argv)
    }
 
    if(optind < argc) {
-      varNames = argv[optind++];
-      if(!checkColumns(varNames)) {
+      if(!formatColumns(argv[optind++], separator, varNames, false)) {
          // TRANSLATORS: Error message when variable_names contains unbalanced quotation marks.
          std::cerr << gettext("ERROR: Invalid quotation in variable names string!") << "\n";
          std::exit(1);
@@ -988,11 +1138,7 @@ int main(int argc, char** argv)
       }
 
       if(line.starts_with("--values=")) {
-         varValues = line.substr(9);
-         if(varValues.size() >= 2 && varValues.front() == '"' && varValues.back() == '"') {
-            varValues = varValues.substr(1, varValues.size() - 2);
-         }
-         if(!checkColumns(varValues)) {
+         if(!formatColumns(std::string_view(line).substr(9), separator, varValues, true)) {
             // TRANSLATORS: Error message when --values contains unbalanced quotation marks.
             std::cerr << gettext("ERROR: Invalid quotation in variable values string!") << "\n";
             std::exit(1);
@@ -1006,7 +1152,8 @@ int main(int argc, char** argv)
          }
          const std::string inputFilePath = simulationsDirectory + "/" + std::string(line.substr(8));
          if(!handleScalarFile(varValues, inputFilePath,
-                              interactiveMode, scalarSplittingMode)) {
+                              interactiveMode, scalarSplittingMode,
+                              separator)) {
             scalarFileError = true;
             if(!logFileName.empty()) {
                // TRANSLATORS: Reference to the simulation log file after a scalar file error. {} is the log file path.
@@ -1024,11 +1171,7 @@ int main(int argc, char** argv)
          statusFileName.clear();
       }
       else if(line.starts_with("--varnames=")) {
-         varNames = line.substr(11);
-         if(varNames.size() >= 2 && varNames.front() == '"' && varNames.back() == '"') {
-            varNames = varNames.substr(1, varNames.size() - 2);
-         }
-         if(!checkColumns(varNames)) {
+         if(!formatColumns(std::string_view(line).substr(11), separator, varNames, true)) {
             // TRANSLATORS: Error message when variable_names contains unbalanced quotation marks.
             std::cerr << gettext("ERROR: Invalid quotation in variable names string!") << "\n";
             std::exit(1);

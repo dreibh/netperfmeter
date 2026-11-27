@@ -39,6 +39,7 @@
 #include <iostream>
 #include <string>
 #include <string_view>
+#include <vector>
 #include <getopt.h>
 
 #if !defined(_WIN32)
@@ -79,23 +80,151 @@ static inline std::string formatText(const std::string_view fmt, const Args&... 
 #include "propertyformatter.h"
 
 
-// ###### Check columns for proper quotation ################################
-static bool checkColumns(std::string_view values)
+// ###### Tokenize column list respecting double quotes & escapes ###########
+static bool tryTokenizeColumns(std::string_view          input,
+                               std::string_view          separator,
+                               std::vector<std::string>& tokens)
 {
-   bool         inQuotation    = false;
-   unsigned int quotationMarks = 0;
-   for(size_t i = 0; i < values.size(); i++) {
-      switch(values[i]) {
-         case '\\':
+   tokens.clear();
+   const bool hasCustomSep = (!separator.empty()) &&
+                             (separator != " ") &&
+                             (separator != "\t");
+
+   auto isWhitespace = [](const char c) -> bool {
+      return (c == ' ') || (c == '\t');
+   };
+
+   auto atSeparator = [&](const size_t pos) -> bool {
+      return hasCustomSep && input.substr(pos).starts_with(separator);
+   };
+
+   auto atDelimiter = [&](const size_t pos) -> bool {
+      return (pos < input.size()) && (isWhitespace(input[pos]) || atSeparator(pos));
+   };
+
+   size_t i = 0;
+   while(i < input.size()) {
+      while(i < input.size()) {
+         if(isWhitespace(input[i])) {
             i++;
+         }
+         else if(atSeparator(i)) {
+            i += separator.size();
+         }
+         else {
             break;
-         case '"':
-            inQuotation = !inQuotation;
-            quotationMarks++;
-            break;
+         }
+      }
+      if(i >= input.size()) {
+         break;
+      }
+
+      if(input[i] == '"') {
+         const size_t start = i;
+         i++;
+         bool closed = false;
+         while(i < input.size()) {
+            if(input[i] == '\\') {
+               if(i + 1 >= input.size()) {
+                  return false;
+               }
+               i += 2;
+            }
+            else if(input[i] == '"') {
+               i++;
+               closed = true;
+               break;
+            }
+            else {
+               i++;
+            }
+         }
+         if(!closed) {
+            return false;
+         }
+         if((i < input.size()) && !atDelimiter(i)) {
+            return false;
+         }
+         tokens.emplace_back(input.substr(start, i - start));
+      }
+      else {
+         const size_t start = i;
+         while((i < input.size()) && !atDelimiter(i)) {
+            if(input[i] == '\\') {
+               if(i + 1 >= input.size()) {
+                  i++;
+                  break;
+               }
+               i += 2;
+            }
+            else if(input[i] == '"') {
+               return false;
+            }
+            else {
+               i++;
+            }
+         }
+         tokens.emplace_back(input.substr(start, i - start));
       }
    }
-   return ((quotationMarks & 1) == 0);
+
+   return true;
+}
+
+
+// ###### Validate and normalize column list to output separator ############
+static bool formatColumns(std::string_view input,
+                          std::string_view separator,
+                          std::string&     output,
+                          const bool       allowOuterUnwrap)
+{
+   std::vector<std::string> tokens;
+   const bool parsedDirectly = tryTokenizeColumns(input, separator, tokens);
+
+   if(!parsedDirectly) {
+      // Handle legacy outer-wrapped strings such as --values=""Active Instance"\t1"
+      if(allowOuterUnwrap && (input.size() >= 2) &&
+         (input.front() == '"') && (input.back() == '"')) {
+         if(!tryTokenizeColumns(input.substr(1, input.size() - 2), separator, tokens)) {
+            return false;
+         }
+      }
+      else {
+         return false;
+      }
+   }
+   else if(allowOuterUnwrap && (tokens.size() == 1) &&
+           (input.size() >= 2) && (input.front() == '"') && (input.back() == '"') &&
+           (tokens[0].size() == input.size())) {
+      // Unwrap a single outer-quoted wrapper around a separator-delimited list
+      // (e.g. --varnames="Protocol\tRate" or --values="TCP;10") or a single
+      // unspaced token (e.g. --values="host1.example"), while keeping a single
+      // quoted value containing spaces (e.g. --values="Test 1") intact.
+      const std::string_view inner = input.substr(1, input.size() - 2);
+      const bool hasNonSpaceSep =
+         (inner.find('\t') != std::string_view::npos) ||
+         ((!separator.empty()) && (separator != " ") &&
+          (inner.find(separator) != std::string_view::npos));
+      const bool hasSpace = (inner.find(' ') != std::string_view::npos);
+      if(hasNonSpaceSep) {
+         std::vector<std::string> innerTokens;
+         if(tryTokenizeColumns(inner, separator, innerTokens) && !innerTokens.empty()) {
+            tokens = std::move(innerTokens);
+         }
+      }
+      else if(!hasSpace && (inner.find('"') == std::string_view::npos) && !inner.empty()) {
+         tokens[0] = std::string(inner);
+      }
+   }
+
+   output.clear();
+   for(size_t i = 0; i < tokens.size(); i++) {
+      if(i > 0) {
+         output += separator;
+      }
+      output += tokens[i];
+   }
+   return true;
 }
 
 
@@ -342,8 +471,7 @@ int main(int argc, char** argv)
    const std::string outputFileName(argv[optind++]);
    std::string       varNames;
    if(optind < argc) {
-      varNames = argv[optind++];
-      if(!checkColumns(varNames)) {
+      if(!formatColumns(argv[optind++], separator, varNames, false)) {
          // TRANSLATORS: Error message when variable_names contains unbalanced quotation marks.
          std::cerr << gettext("ERROR: Invalid quotation in variable names string!") << "\n";
          std::exit(1);
@@ -443,11 +571,7 @@ int main(int argc, char** argv)
          }
 
          if(line.starts_with("--values=")) {
-            varValues = line.substr(9);
-            if(varValues.size() >= 2 && varValues.front() == '"' && varValues.back() == '"') {
-               varValues = varValues.substr(1, varValues.size() - 2);
-            }
-            if(!checkColumns(varValues)) {
+            if(!formatColumns(std::string_view(line).substr(9), separator, varValues, true)) {
                // TRANSLATORS: Error message when --values contains unbalanced quotation marks.
                std::cerr << gettext("ERROR: Invalid quotation in variable values string!") << "\n";
                std::exit(1);
@@ -467,11 +591,7 @@ int main(int argc, char** argv)
             varValues.clear();
          }
          else if(line.starts_with("--varnames=")) {
-            varNames = line.substr(11);
-            if(varNames.size() >= 2 && varNames.front() == '"' && varNames.back() == '"') {
-               varNames = varNames.substr(1, varNames.size() - 2);
-            }
-            if(!checkColumns(varNames)) {
+            if(!formatColumns(std::string_view(line).substr(11), separator, varNames, true)) {
                // TRANSLATORS: Error message when variable_names contains unbalanced quotation marks.
                std::cerr << gettext("ERROR: Invalid quotation in variable names string!") << "\n";
                std::exit(1);

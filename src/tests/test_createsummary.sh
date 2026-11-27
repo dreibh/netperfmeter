@@ -334,13 +334,13 @@ perl -e '
         warn "FAIL: Expected 4 lines in Sent:Received.data, got " . scalar(@sr) . "\n";
         exit 1;
     }
-    if ($sr[0] ne "RunNo\tValueNo\tSplit\track rack.node\tExperiment\track.node.app-Sent:Received") {
+    if ($sr[0] ne "RunNo\tValueNo\tSplit\track\track.node\tExperiment\track.node.app-Sent:Received") {
         warn "FAIL: Unexpected multi-level aggregate header: \x27$sr[0]\x27\n";
         exit 1;
     }
-    if ($sr[1] ne "1\t1\t\"\"\t1 2\tExpA\t10.500000" ||
-        $sr[2] ne "1\t2\t\"\"\t1 2\tExpA\t20.500000" ||
-        $sr[3] ne "2\t1\t\"\"\t1 2\tExpA\t30.500000") {
+    if ($sr[1] ne "1\t1\t\"\"\t1\t2\tExpA\t10.500000" ||
+        $sr[2] ne "1\t2\t\"\"\t1\t2\tExpA\t20.500000" ||
+        $sr[3] ne "2\t1\t\"\"\t1\t2\tExpA\t30.500000") {
         warn "FAIL: Unexpected multi-run / multi-value rows in Sent:Received.data:\n" . join("\n", @sr) . "\n";
         exit 1;
     }
@@ -355,12 +355,12 @@ perl -e '
         warn "FAIL: Expected 3 lines in queueLength.data, got " . scalar(@ql) . "\n";
         exit 1;
     }
-    if ($ql[0] ne "RunNo\tValueNo\tSplit\track rack.node queueLength\tExperiment\track.node.app-queueLength") {
+    if ($ql[0] ne "RunNo\tValueNo\tSplit\track\track.node\tqueueLength\tExperiment\track.node.app-queueLength") {
         warn "FAIL: Unexpected #id aggregate header: \x27$ql[0]\x27\n";
         exit 1;
     }
-    if ($ql[1] ne "1\t1\t\"\"\t1 2 3\tExpA\t7.000000" ||
-        $ql[2] ne "2\t1\t\"\"\t1 2 5\tExpA\t9.000000") {
+    if ($ql[1] ne "1\t1\t\"\"\t1\t2\t3\tExpA\t7.000000" ||
+        $ql[2] ne "2\t1\t\"\"\t1\t2\t5\tExpA\t9.000000") {
         warn "FAIL: Unexpected #id aggregate rows:\n" . join("\n", @ql) . "\n";
         exit 1;
     }
@@ -372,14 +372,79 @@ perl -e '
     chomp @fm;
 
     if (@fm != 3 ||
-        $fm[1] ne "1\t1\t\"4\"\t1 2\tExpA\t55.000000" ||
-        $fm[2] ne "2\t1\t\"4\"\t1 2\tExpA\t66.000000") {
+        $fm[1] ne "1\t1\t\"4\"\t1\t2\tExpA\t55.000000" ||
+        $fm[2] ne "2\t1\t\"4\"\t1\t2\tExpA\t66.000000") {
         warn "FAIL: --splitall via stdin failed:\n" . join("\n", @fm) . "\n";
         exit 1;
     }
 
     exit 0;
 ' "${RES_COMPLEX}"
+
+# ====== 3b. Space-separated & quoted --varnames/--values normalized to TAB (and no-aggregate scalar)
+SCA_NOAGG="${SIM_DIR}/noagg.sca"
+cat << 'EOF' > "${SCA_NOAGG}"
+version 2
+run General-0-20261127-12:00:00-4001
+scalar netPerfMeter.active.total "Transmitted Bytes" 54321
+scalar netPerfMeter.active.flow[0] "Received Bit Rate" 123456.5
+EOF
+
+RES_SPACE="${TMP_DIR}/results_space"
+mkdir -p "${RES_SPACE}"
+CMD_SPACE="${TMP_DIR}/cmd_space.txt"
+cat << EOF > "${CMD_SPACE}"
+--simulationsdirectory=${SIM_DIR}
+--resultsdirectory=${RES_SPACE}
+--varnames=Var1 Var2 "Var 3"
+--values=Alpha "Test 1" 100
+--input=noagg.sca
+--values="Beta" "Test 2" 200
+--input=noagg.sca
+EOF
+
+run_expect_ok "${CMD_SPACE}" "${TMP_DIR}/space.out" "${TMP_DIR}/space.err" -b -F plain -q
+
+perl -e '
+    use strict;
+    use warnings;
+
+    my ($dir) = @ARGV;
+
+    open(my $fh1, "<", "$dir/active.flow-ReceivedBitRate.data") or die "Cannot open active.flow-ReceivedBitRate.data: $!\n";
+    my @f = <$fh1>;
+    close($fh1);
+    chomp @f;
+
+    if ($f[0] ne "RunNo\tValueNo\tSplit\tactive.flow\tVar1\tVar2\t\"Var 3\"\tactive.flow-ReceivedBitRate") {
+        warn "FAIL: Unexpected normalized header: \x27$f[0]\x27\n";
+        exit 1;
+    }
+    # ScalarKey orders by varValues (double-quote precedes A), so "Beta" precedes Alpha
+    if ($f[1] ne "1\t1\t\"\"\t0\t\"Beta\"\t\"Test 2\"\t200\t123456.500000" ||
+        $f[2] ne "1\t1\t\"\"\t0\tAlpha\t\"Test 1\"\t100\t123456.500000") {
+        warn "FAIL: Unexpected normalized rows:\n" . join("\n", @f) . "\n";
+        exit 1;
+    }
+
+    # active.total has no aggregate index -> no empty column between Split and Var1
+    open(my $fh2, "<", "$dir/active.total-TransmittedBytes.data") or die "Cannot open active.total-TransmittedBytes.data: $!\n";
+    my @t = <$fh2>;
+    close($fh2);
+    chomp @t;
+
+    if ($t[0] ne "RunNo\tValueNo\tSplit\tVar1\tVar2\t\"Var 3\"\tactive.total-TransmittedBytes") {
+        warn "FAIL: Unexpected no-aggregate header: \x27$t[0]\x27\n";
+        exit 1;
+    }
+    if ($t[1] ne "1\t1\t\"\"\t\"Beta\"\t\"Test 2\"\t200\t54321.000000" ||
+        $t[2] ne "1\t1\t\"\"\tAlpha\t\"Test 1\"\t100\t54321.000000") {
+        warn "FAIL: Unexpected no-aggregate rows:\n" . join("\n", @t) . "\n";
+        exit 1;
+    }
+
+    exit 0;
+' "${RES_SPACE}"
 
 # ====== 4. Compression formats round-trip (.bz2, .gz, .xz, .zst) & compressed inputs
 for _pair in "bz2:.bz2:bzip2" "gz:.gz:gzip" "xz:.xz:xz" "zst:.zst:zstd"; do

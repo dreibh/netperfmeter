@@ -66,9 +66,9 @@ supports on\-the\-fly compression with BZip2, GZip, XZ, and Zstandard. The forma
 .Pq Em not as command\-line arguments! :
 .Bl -tag -width indent
 .It Cm \-\-varnames= Ns Ar variables
-A space\-separated list of output variable names to be added to the output data tables.
+A space\-separated (or separator\-separated) list of output variable names to be added to the output data tables. Names containing spaces must be enclosed in double quotes. In the output tables, columns are separated by the configured separator (see Fl s , default: tabulator).
 .It Cm \-\-values= Ns Ar values
-Sets the values of the output variables for the next scalar file to the provided space\-separated values. One value for each variable has to be provided.
+Sets the values of the output variables for the next scalar file to the provided space\-separated (or separator\-separated) values. Values containing spaces must be enclosed in double quotes. One value for each variable has to be provided.
 .It Cm \-\-input= Ns Ar filename
 Process the given scalar file.
 .It Cm \-\-logfile= Ns Ar name
@@ -92,7 +92,7 @@ Ignore scalar file errors (that is, missing input files) instead of aborting.
 The following arguments and options may be provided:
 .Bl -tag -width indent
 .It Ar variable_names
-A space\-separated list of output variable names to be added to the output data tables.
+A space\-separated (or separator\-separated) list of output variable names to be added to the output data tables. Names containing spaces must be enclosed in double quotes.
 .It Fl b | Fl \-batch
 Run in batch mode: suppresses
 .Dq Ready>
@@ -154,7 +154,7 @@ using Zstandard compression (level 5):
   echo "\-\-values=One"              && \\
   echo "\-\-input=test1.sca.bz2"     && \\
   echo "\-\-values=Two"              && \\
-  echo "\-\-input=test2.sca.bz2" ) | createsummary "ParameterX" \-\-batch \-\-format zstd \-\-compress 5
+  echo "\-\-input=test2.sca.bz2" ) | createsummary \-\-batch \-\-format zstd \-\-compress 5 "ParameterX"
 .Ed
 .Pp
 Print command\-line help:

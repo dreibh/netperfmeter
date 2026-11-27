@@ -62,9 +62,9 @@ supports on\-the\-fly compression with BZip2, GZip, XZ, and Zstandard. The forma
 .Pq Em not as command\-line arguments! :
 .Bl -tag -width indent
 .It Cm \-\-varnames= Ns Ar variables
-A space\-separated list of output variable names to be added to the output data tables.
+A space\-separated (or separator\-separated) list of output variable names to be added to the output data tables. Names containing spaces must be enclosed in double quotes. In the output table, columns are separated by the configured separator (see Fl s , default: tabulator).
 .It Cm \-\-values= Ns Ar values
-Sets the values of the output variables for the next input file to the provided space\-separated values. One value for each variable has to be provided.
+Sets the values of the output variables for the next input file to the provided space\-separated (or separator\-separated) values. Values containing spaces must be enclosed in double quotes. One value for each variable has to be provided.
 .It Cm \-\-input= Ns Ar filename
 Process the given input file.
 .It Cm \-\-simulationsdirectory= Ns Ar directory
@@ -78,7 +78,7 @@ The following arguments and options may be provided:
 .It Ar output_file
 The name of the output file to be created. The compression format is detected automatically from the file extension (e.g. .bz2, .gz, .xz, or .zst).
 .It Ar variable_names
-A space\-separated list of output variable names to be added to the output data tables.
+A space\-separated (or separator\-separated) list of output variable names to be added to the output data tables. Names containing spaces must be enclosed in double quotes.
 .It Fl b | Fl \-batch
 Runs in batch mode: suppresses
 .Dq Ready>
@@ -111,17 +111,17 @@ tool exits with 0 on success, and >0 in case of an error.
 .Sh EXAMPLES
 Consider two data tables:
 .Pa v1.data.bz2
-(created with ParameterY=Alpha) and
+(created with ParameterX=Alpha, ParameterY="Test 1") and
 .Pa v2.data.bz2
-(created with ParameterY=Beta).
+(created with ParameterX=Beta, ParameterY="Test 2").
 The output data table should be written to
 .Pa output.data.zst
 using Zstandard compression with compression level 5:
 .Bd -literal
-( echo \-e "\-\-values=\e\[dq]Alpha\e\[dq]\et\e\[dq]Test 1\e\[dq]" && \\
-  echo "\-\-input=v1.data.bz2"               && \\
-  echo \-e "\-\-values=\e\[dq]Beta\e\[dq]\et\e\[dq]Test 2\e\[dq]"  && \\
-  echo "\-\-input=v2.data.bz2" ) | combinesummaries \-\-compress 5 output.data.zst $'ParameterX\etParameterY'
+( echo '\-\-values="Alpha" "Test 1"' && \\
+  echo '\-\-input=v1.data.bz2'      && \\
+  echo '\-\-values="Beta" "Test 2"'  && \\
+  echo '\-\-input=v2.data.bz2' ) | combinesummaries \-\-compress 5 output.data.zst "ParameterX ParameterY"
 .Ed
 .Pp
 Print command\-line help:
