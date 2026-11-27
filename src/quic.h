@@ -57,6 +57,7 @@ struct QuicTlsConfig
 int quicServerHandshake(int sd, const QuicTlsConfig& config);
 int quicClientHandshake(int sd, const QuicTlsConfig& config);
 
+bool configureQuicIdleTimeout(int sd, uint64_t idleTimeoutMs, bool allowZero = false);
 bool configureQuicControlSocket(int sd, unsigned int idleTimeoutMs);
 void quicRegisterControlSocket(int sd, bool isClient);
 void quicDeregisterControlSocket(int sd);

@@ -220,6 +220,35 @@ void FlowTrafficSpec::print(PropertyFormatter& formatter, const size_t level) co
                     formatText(gettext("#{}"), static_cast<unsigned int>(CCID)));
    }
 #endif
+   // TRANSLATORS: IP Traffic Class / Type of Service (DSCP) setting label.
+   formatter.add(level, gettext("Traffic Class"), formatTrafficClass(TrafficClass));
+   // TRANSLATORS: IPv6 Flow Label setting label.
+   formatter.add(level, gettext("Flow Label"), formatFlowLabel(FlowLabel));
+
+   if(HBInterval.has_value() || HBPathMaxRtx.has_value() || HBAssocMaxRtx.has_value()) {
+      std::string hbIntervalStr;
+      if(!HBInterval.has_value()) {
+         // TRANSLATORS: Value label indicating OS/protocol default setting.
+         hbIntervalStr = gettext("default");
+      }
+      else if(*HBInterval == 0) {
+         // TRANSLATORS: Value label indicating a feature is explicitly disabled.
+         hbIntervalStr = gettext("disabled");
+      }
+      else {
+         // TRANSLATORS: Heartbeat interval value in milliseconds. Placeholder: {} is duration in ms.
+         hbIntervalStr = formatText(gettext("{} ms"), *HBInterval);
+      }
+      const std::string hbPathStr =
+         HBPathMaxRtx.has_value() ? std::to_string(*HBPathMaxRtx) : std::string(gettext("default"));
+      const std::string hbAssocStr =
+         HBAssocMaxRtx.has_value() ? std::to_string(*HBAssocMaxRtx) : std::string(gettext("default"));
+      // TRANSLATORS: Parameter label for per-flow heartbeat / keep-alive settings.
+      formatter.add(level, gettext("Heartbeats"),
+                    // TRANSLATORS: Heartbeat parameters summary. Placeholders: {} 1: path max retransmissions, 2: association max retransmissions, 3: interval.
+                    formatText(gettext("{} per path / {} per association / {}"),
+                               hbPathStr, hbAssocStr, hbIntervalStr));
+   }
 }
 
 

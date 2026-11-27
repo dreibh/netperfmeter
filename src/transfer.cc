@@ -33,9 +33,12 @@
 #include "tools.h"
 
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <sys/socket.h>
+#include <sys/uio.h>
 
 
 #define MAXIMUM_MESSAGE_SIZE static_cast<size_t>(65536)
@@ -143,10 +146,84 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
    }
    else if(flow->getTrafficSpec().Protocol == IPPROTO_UDP) {
       if(flow->isRemoteAddressValid()) {
-         sent = ext_sendto(sd,
-                           outputBuffer, bytesToSend, 0,
-                           flow->getRemoteAddress(),
-                           getSocklen(flow->getRemoteAddress()));
+         const FlowTrafficSpec& spec = flow->getTrafficSpec();
+         const bool useSendMsg =
+            spec.TrafficClass.has_value() ||
+            (spec.FlowLabel.Mode == FlowLabelMode::Explicit);
+         if(useSendMsg) {
+            sockaddr_union dst;
+            memset(&dst, 0, sizeof(dst));
+            const size_t dstLen = getSocklen(flow->getRemoteAddress());
+            memcpy(&dst, flow->getRemoteAddress(), dstLen);
+
+            const bool isNativeIPv6 =
+               (dst.sa.sa_family == AF_INET6) && (!IN6_IS_ADDR_V4MAPPED(&dst.in6.sin6_addr));
+            if(isNativeIPv6 && (spec.FlowLabel.Mode == FlowLabelMode::Explicit)) {
+               dst.in6.sin6_flowinfo = htobe32(spec.FlowLabel.Label & 0x000fffffU);
+            }
+
+            struct iovec iov;
+            iov.iov_base = outputBuffer;
+            iov.iov_len  = bytesToSend;
+
+            struct msghdr msg;
+            memset(&msg, 0, sizeof(msg));
+            msg.msg_name    = &dst;
+            msg.msg_namelen = static_cast<socklen_t>(dstLen);
+            msg.msg_iov     = &iov;
+            msg.msg_iovlen  = 1;
+
+            alignas(struct cmsghdr) char cmsgBuf[CMSG_SPACE(sizeof(int))];
+            memset(cmsgBuf, 0, sizeof(cmsgBuf));
+            if(spec.TrafficClass.has_value()) {
+               const uint8_t tcByte = static_cast<uint8_t>(*spec.TrafficClass & 0xfcU);
+               if(isNativeIPv6) {
+#if defined(IPV6_TCLASS)
+                  msg.msg_control    = cmsgBuf;
+                  msg.msg_controllen = CMSG_SPACE(sizeof(int));
+                  struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
+                  cmsg->cmsg_level = IPPROTO_IPV6;
+                  cmsg->cmsg_type  = IPV6_TCLASS;
+                  cmsg->cmsg_len   = CMSG_LEN(sizeof(int));
+                  const int tclass = static_cast<int>(tcByte);
+                  memcpy(CMSG_DATA(cmsg), &tclass, sizeof(tclass));
+#endif
+               }
+               else {
+#if defined(IP_TOS)
+                  msg.msg_control    = cmsgBuf;
+                  msg.msg_controllen = CMSG_SPACE(sizeof(uint8_t));
+                  struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
+                  cmsg->cmsg_level = IPPROTO_IP;
+                  cmsg->cmsg_type  = IP_TOS;
+                  cmsg->cmsg_len   = CMSG_LEN(sizeof(uint8_t));
+                  memcpy(CMSG_DATA(cmsg), &tcByte, sizeof(tcByte));
+#endif
+               }
+            }
+
+            sent = ext_sendmsg(sd, &msg, 0);
+            if((sent < 0) && ((errno == EINVAL) || (errno == ENOPROTOOPT)) && (msg.msg_controllen > 0)) {
+               static bool warnedCmsgUnsupported = false;
+               if(!warnedCmsgUnsupported) {
+                  warnedCmsgUnsupported = true;
+                  LOG_WARNING
+                  // TRANSLATORS: Warning when per-packet UDP Traffic Class cmsg is rejected by the OS. Placeholder: {} is strerror() message.
+                  stdlog << formatText(gettext("Per-packet UDP Traffic Class via sendmsg() is unsupported on this OS ({}); falling back to plain send!"),
+                                       strerror(errno)) << "\n";
+                  LOG_END
+               }
+               msg.msg_control    = nullptr;
+               msg.msg_controllen = 0;
+               sent = ext_sendmsg(sd, &msg, 0);
+            }
+         }
+         else {
+            sent = ext_sendto(sd,
+                              outputBuffer, bytesToSend, 0,
+                              flow->getRemoteAddress(),
+                              getSocklen(flow->getRemoteAddress()));
+         }
       }
       else {
          sent = ext_send(sd,

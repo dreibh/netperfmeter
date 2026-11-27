@@ -37,6 +37,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -101,6 +102,13 @@ class FlowTrafficSpec
    uint8_t                 CMT                      { 0x00 };
    uint8_t                 CCID                     { 0x00 };
    std::string             CongestionControl        { "default" };
+
+   std::optional<uint8_t>  TrafficClass             { std::nullopt };
+   FlowLabelSetting        FlowLabel                {};
+
+   std::optional<uint32_t> HBInterval               { std::nullopt };   // ms (0 = disable)
+   std::optional<uint32_t> HBPathMaxRtx             { std::nullopt };   // trials
+   std::optional<uint32_t> HBAssocMaxRtx            { std::nullopt };   // trials
 
    bool                    Debug                    { false };
    bool                    NoDelay                  { false };

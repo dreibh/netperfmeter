@@ -33,6 +33,7 @@
 #include <atomic>
 #include <cassert>
 #include <cctype>
+#include <cerrno>
 #include <cmath>
 #include <cstdarg>
 #include <cstdio>
@@ -502,6 +503,218 @@ const char* getProtocolName(const int protocol)
       default:
          // TRANSLATORS: Fallback text when an unknown transport protocol number is passed.
          return gettext("unknown?!");
+   }
+}
+
+
+// ###### Parse Traffic Class / DSCP specification ##########################
+bool parseTrafficClass(const char* str,
+                       uint8_t&    trafficClass,
+                       bool&       ecnBitsCleared)
+{
+   ecnBitsCleared = false;
+   if((str == nullptr) || (str[0] == '\0')) {
+      return false;
+   }
+
+   struct DscpEntry
+   {
+      const char* Name;
+      uint8_t     Value;
+   };
+   static constexpr DscpEntry dscpTable[] = {
+      { "BE",   0x00 }, { "DF",   0x00 }, { "CS0",  0x00 },
+      { "LE",   0x04 },
+      { "CS1",  0x20 }, { "AF11", 0x28 }, { "AF12", 0x30 }, { "AF13", 0x38 },
+      { "CS2",  0x40 }, { "AF21", 0x48 }, { "AF22", 0x50 }, { "AF23", 0x58 },
+      { "CS3",  0x60 }, { "AF31", 0x68 }, { "AF32", 0x70 }, { "AF33", 0x78 },
+      { "CS4",  0x80 }, { "AF41", 0x88 }, { "AF42", 0x90 }, { "AF43", 0x98 },
+      { "CS5",  0xa0 }, { "VA",   0xb0 }, { "EF",   0xb8 },
+      { "CS6",  0xc0 },
+      { "CS7",  0xe0 }
+   };
+
+   std::string upper(str);
+   for(char& c : upper) {
+      c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+   }
+   for(const auto& entry : dscpTable) {
+      if(upper == entry.Name) {
+         trafficClass = entry.Value;
+         return true;
+      }
+   }
+
+   // Numeric value: 0x00..0xff (hex) or 0..255 (decimal)
+   if((str[0] == '-') || (str[0] == '+') || std::isspace(static_cast<unsigned char>(str[0]))) {
+      return false;
+   }
+   const int base = ((str[0] == '0') && ((str[1] == 'x') || (str[1] == 'X'))) ? 16 : 10;
+   if((base == 16) && (str[2] == '\0')) {
+      return false;
+   }
+   char* endPtr = nullptr;
+   errno = 0;
+   const unsigned long value = std::strtoul(str, &endPtr, base);
+   if((errno != 0) || (endPtr == str) || (*endPtr != '\0') || (value > 0xffUL)) {
+      return false;
+   }
+   if((value & 0x03UL) != 0) {
+      ecnBitsCleared = true;
+   }
+   trafficClass = static_cast<uint8_t>(value & 0xfcUL);
+   return true;
+}
+
+
+// ###### Get standard DSCP name for Traffic Class byte #####################
+const char* getTrafficClassName(const uint8_t trafficClass)
+{
+   switch(trafficClass & 0xfcU) {
+      case 0x00: return "BE";
+      case 0x04: return "LE";
+      case 0x20: return "CS1";
+      case 0x28: return "AF11";
+      case 0x30: return "AF12";
+      case 0x38: return "AF13";
+      case 0x40: return "CS2";
+      case 0x48: return "AF21";
+      case 0x50: return "AF22";
+      case 0x58: return "AF23";
+      case 0x60: return "CS3";
+      case 0x68: return "AF31";
+      case 0x70: return "AF32";
+      case 0x78: return "AF33";
+      case 0x80: return "CS4";
+      case 0x88: return "AF41";
+      case 0x90: return "AF42";
+      case 0x98: return "AF43";
+      case 0xa0: return "CS5";
+      case 0xb0: return "VA";
+      case 0xb8: return "EF";
+      case 0xc0: return "CS6";
+      case 0xe0: return "CS7";
+      default:   return nullptr;
+   }
+}
+
+
+// ###### Format Traffic Class for display ##################################
+std::string formatTrafficClass(const std::optional<uint8_t>& trafficClass)
+{
+   if(!trafficClass.has_value()) {
+      // TRANSLATORS: Value label indicating OS/protocol default setting.
+      return gettext("default");
+   }
+   const uint8_t tc   = static_cast<uint8_t>(*trafficClass & 0xfcU);
+   const char*   name = getTrafficClassName(tc);
+   if(name != nullptr) {
+      return std::format("0x{:02x} ({})", static_cast<unsigned int>(tc), name);
+   }
+   return std::format("0x{:02x}", static_cast<unsigned int>(tc));
+}
+
+
+// ###### Format Traffic Class value for config file ########################
+std::string formatTrafficClassConfig(const std::optional<uint8_t>& trafficClass)
+{
+   if(!trafficClass.has_value()) {
+      return "default";
+   }
+   return std::format("0x{:02x}", static_cast<unsigned int>(*trafficClass & 0xfcU));
+}
+
+
+// ###### Format Traffic Class DSCP name for config file ####################
+std::string formatTrafficClassNameConfig(const std::optional<uint8_t>& trafficClass)
+{
+   if(!trafficClass.has_value()) {
+      return "default";
+   }
+   const uint8_t tc   = static_cast<uint8_t>(*trafficClass & 0xfcU);
+   const char*   name = getTrafficClassName(tc);
+   if(name != nullptr) {
+      return name;
+   }
+   return std::format("0x{:02x}", static_cast<unsigned int>(tc));
+}
+
+
+// ###### Parse IPv6 Flow Label specification ###############################
+bool parseFlowLabel(const char*       str,
+                    FlowLabelSetting& flowLabel)
+{
+   if((str == nullptr) || (str[0] == '\0')) {
+      return false;
+   }
+   std::string lower(str);
+   for(char& c : lower) {
+      c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+   }
+   if(lower == "default") {
+      flowLabel.Mode  = FlowLabelMode::Default;
+      flowLabel.Label = 0;
+      return true;
+   }
+   if(lower == "auto") {
+      flowLabel.Mode  = FlowLabelMode::Auto;
+      flowLabel.Label = 0;
+      return true;
+   }
+   if(lower == "reflect") {
+      flowLabel.Mode  = FlowLabelMode::Reflect;
+      flowLabel.Label = 0;
+      return true;
+   }
+
+   if((str[0] == '-') || (str[0] == '+') || std::isspace(static_cast<unsigned char>(str[0]))) {
+      return false;
+   }
+   const int base = ((str[0] == '0') && ((str[1] == 'x') || (str[1] == 'X'))) ? 16 : 10;
+   if((base == 16) && (str[2] == '\0')) {
+      return false;
+   }
+   char* endPtr = nullptr;
+   errno = 0;
+   const unsigned long value = std::strtoul(str, &endPtr, base);
+   if((errno != 0) || (endPtr == str) || (*endPtr != '\0') || (value > 0x000fffffUL)) {
+      return false;
+   }
+   flowLabel.Mode  = FlowLabelMode::Explicit;
+   flowLabel.Label = static_cast<uint32_t>(value);
+   return true;
+}
+
+
+// ###### Format IPv6 Flow Label for display ################################
+std::string formatFlowLabel(const FlowLabelSetting& flowLabel)
+{
+   switch(flowLabel.Mode) {
+      case FlowLabelMode::Default:
+         // TRANSLATORS: Value label indicating OS/protocol default setting.
+         return gettext("default");
+      case FlowLabelMode::Auto:
+         return "auto";
+      case FlowLabelMode::Reflect:
+         return "reflect";
+      case FlowLabelMode::Explicit:
+         return std::format("0x{:05x}", flowLabel.Label & 0x000fffffU);
+      default:
+         // TRANSLATORS: Fallback text when an unknown value is encountered.
+         return gettext("unknown?!");
+   }
+}
+
+
+// ###### Format IPv6 Flow Label for config file ############################
+std::string formatFlowLabelConfig(const FlowLabelSetting& flowLabel)
+{
+   switch(flowLabel.Mode) {
+      case FlowLabelMode::Default:  return "default";
+      case FlowLabelMode::Auto:     return "auto";
+      case FlowLabelMode::Reflect:  return "reflect";
+      case FlowLabelMode::Explicit: return std::format("0x{:05x}", flowLabel.Label & 0x000fffffU);
+      default:                      return "default";
    }
 }
 

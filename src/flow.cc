@@ -31,15 +31,21 @@
 #include "flow.h"
 #include "control.h"
 #include "loglevel.h"
+#include "quic.h"
 #include "transfer.h"
 #include "tools.h"
 
+#include <algorithm>
+#include <cerrno>
 #include <chrono>
 #include <cinttypes>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <netinet/tcp.h>
+#if defined(__linux__)
+#include <linux/in6.h>
+#endif
 #include <signal.h>
 #include <sstream>
 #include <thread>
@@ -60,6 +66,9 @@ Flow::Flow(const uint64_t         measurementID,
    OriginalSocketDescriptor = false;
    ControlSocketDescriptor  = controlSocketDescriptor;
    RemoteAddressIsValid     = false;
+   HasFlowLabelLease        = false;
+   memset(&FlowLabelLeaseAddr, 0, sizeof(FlowLabelLeaseAddr));
+   FlowLabelLeaseValue      = 0;
 
    InputStatus              = WaitingForStartup;
    OutputStatus             = WaitingForStartup;
@@ -92,6 +101,10 @@ Flow::~Flow()
       VectorFile.finish(true);
    }
    catch(...) {
+   }
+   if(HasFlowLabelLease && (SocketDescriptor >= 0)) {
+      releaseFlowLabel(SocketDescriptor, FlowLabelLeaseAddr, FlowLabelLeaseValue);
+      HasFlowLabelLease = false;
    }
    if((SocketDescriptor >= 0) && (OriginalSocketDescriptor)) {
       if(DeleteWhenFinished) {
@@ -538,13 +551,476 @@ void Flow::run()
 }
 
 
+// ###### Set IP_TOS / IPV6_TCLASS on socket ################################
+bool setTrafficClass(const int sd, const uint8_t trafficClass)
+{
+   sockaddr_union localAddr;
+   socklen_t      localAddrLen = sizeof(localAddr);
+   memset(&localAddr, 0, sizeof(localAddr));
+   if(ext_getsockname(sd, &localAddr.sa, &localAddrLen) < 0) {
+      LOG_ERROR
+      // TRANSLATORS: Error message when getsockname() fails while setting Traffic Class. Placeholders: {} 1: socket fd, 2: strerror() message.
+      stdlog << formatText(gettext("Unable to determine address family of socket {}: {}!"),
+                           sd, strerror(errno)) << "\n";
+      LOG_END
+      return false;
+   }
+
+   const int tc = static_cast<int>(trafficClass & 0xfcU);
+   if(localAddr.sa.sa_family == AF_INET) {
+#if defined(IP_TOS)
+      if(ext_setsockopt(sd, IPPROTO_IP, IP_TOS, &tc, sizeof(tc)) < 0) {
+         LOG_ERROR
+         // TRANSLATORS: Error message when setsockopt(IP_TOS) fails. Placeholders: {:02x} 1: hex TC value, {} 2: socket fd, 3: strerror() message.
+         stdlog << formatText(gettext("Unable to configure Traffic Class 0x{:02x} (IP_TOS option) on socket {}: {}!"),
+                              static_cast<unsigned int>(tc), sd, strerror(errno)) << "\n";
+         LOG_END
+         return false;
+      }
+#else
+      LOG_WARNING
+      // TRANSLATORS: Warning when IP_TOS socket option is not available on the OS.
+      stdlog << gettext("IP_TOS socket option is not supported on this platform!") << "\n";
+      LOG_END
+#endif
+   }
+   else if(localAddr.sa.sa_family == AF_INET6) {
+#if defined(IPV6_TCLASS)
+      if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_TCLASS, &tc, sizeof(tc)) < 0) {
+         LOG_ERROR
+         // TRANSLATORS: Error message when setsockopt(IPV6_TCLASS) fails. Placeholders: {:02x} 1: hex TC value, {} 2: socket fd, 3: strerror() message.
+         stdlog << formatText(gettext("Unable to configure Traffic Class 0x{:02x} (IPV6_TCLASS option) on socket {}: {}!"),
+                              static_cast<unsigned int>(tc), sd, strerror(errno)) << "\n";
+         LOG_END
+         return false;
+      }
+#else
+      LOG_WARNING
+      // TRANSLATORS: Warning when IPV6_TCLASS socket option is not available on the OS.
+      stdlog << gettext("IPV6_TCLASS socket option is not supported on this platform!") << "\n";
+      LOG_END
+#endif
+      // On dual-stack AF_INET6 sockets (IPV6_V6ONLY == 0), also attempt IP_TOS
+      // for IPv4-mapped peers (Linux supports it; BSDs return ENOPROTOOPT/EINVAL).
+#if defined(IP_TOS) && defined(IPV6_V6ONLY)
+      int       v6only    = 1;
+      socklen_t v6onlyLen = sizeof(v6only);
+      if((ext_getsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, &v6onlyLen) == 0) && (v6only == 0)) {
+         if(ext_setsockopt(sd, IPPROTO_IP, IP_TOS, &tc, sizeof(tc)) < 0) {
+            if((errno != ENOPROTOOPT) && (errno != EINVAL) && (errno != EAFNOSUPPORT)) {
+               LOG_WARNING
+               // TRANSLATORS: Warning when setting IP_TOS on a dual-stack IPv6 socket fails. Placeholders: {:02x} 1: hex TC value, {} 2: socket fd, 3: strerror() message.
+               stdlog << formatText(gettext("Unable to configure IPv4 Traffic Class 0x{:02x} (IP_TOS option) on dual-stack socket {}: {}!"),
+                                    static_cast<unsigned int>(tc), sd, strerror(errno)) << "\n";
+               LOG_END
+            }
+         }
+      }
+#endif
+   }
+   return true;
+}
+
+
+// ###### Configure IPv6 Flow Label on socket ###############################
+bool setFlowLabel(const int               sd,
+                  const struct sockaddr*  peerAddress,
+                  const FlowLabelSetting& flowLabel,
+                  const bool              isAcceptedConnection,
+                  bool&                   leaseAcquired,
+                  struct in6_addr&        leaseAddr,
+                  uint32_t&               leaseValue)
+{
+   leaseAcquired = false;
+   if(!flowLabel.isSet()) {
+      return true;
+   }
+
+   sockaddr_union localAddr;
+   socklen_t      localAddrLen = sizeof(localAddr);
+   memset(&localAddr, 0, sizeof(localAddr));
+   if((ext_getsockname(sd, &localAddr.sa, &localAddrLen) < 0) ||
+      (localAddr.sa.sa_family != AF_INET6)) {
+      LOG_WARNING
+      // TRANSLATORS: Warning when IPv6 Flow Label is requested on a non-IPv6 socket. Placeholder: {} is socket fd.
+      stdlog << formatText(gettext("IPv6 Flow Label ignored on non-IPv6 socket {}!"), sd) << "\n";
+      LOG_END
+      return true;
+   }
+   if((peerAddress != nullptr) &&
+      ((peerAddress->sa_family != AF_INET6) ||
+       IN6_IS_ADDR_V4MAPPED(&reinterpret_cast<const struct sockaddr_in6*>(peerAddress)->sin6_addr))) {
+      LOG_WARNING
+      // TRANSLATORS: Warning when IPv6 Flow Label is requested for an IPv4 or IPv4-mapped peer. Placeholder: {} is socket fd.
+      stdlog << formatText(gettext("IPv6 Flow Label ignored for IPv4 peer on socket {}!"), sd) << "\n";
+      LOG_END
+      return true;
+   }
+
+#if defined(__linux__) && defined(IPV6_FLOWLABEL_MGR) && defined(IPV6_FLOWINFO_SEND)
+   if(flowLabel.Mode == FlowLabelMode::Auto) {
+#if defined(IPV6_AUTOFLOWLABEL)
+      const int enable = 1;
+      if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_AUTOFLOWLABEL, &enable, sizeof(enable)) < 0) {
+         LOG_WARNING
+         // TRANSLATORS: Warning when enabling IPV6_AUTOFLOWLABEL fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to enable IPV6_AUTOFLOWLABEL on socket {}: {}!"),
+                              sd, strerror(errno)) << "\n";
+         LOG_END
+      }
+#else
+      LOG_WARNING
+      // TRANSLATORS: Warning when IPV6_AUTOFLOWLABEL is unsupported on the OS.
+      stdlog << gettext("IPV6_AUTOFLOWLABEL is not supported on this platform!") << "\n";
+      LOG_END
+#endif
+      return true;
+   }
+
+   if(flowLabel.Mode == FlowLabelMode::Reflect) {
+#if defined(IPV6_FL_F_REFLECT)
+      if(peerAddress != nullptr) {
+         struct in6_flowlabel_req freq;
+         memset(&freq, 0, sizeof(freq));
+         freq.flr_dst    = reinterpret_cast<const struct sockaddr_in6*>(peerAddress)->sin6_addr;
+         freq.flr_action = IPV6_FL_A_GET;
+         freq.flr_flags  = IPV6_FL_F_CREATE | IPV6_FL_F_REFLECT;
+         freq.flr_share  = IPV6_FL_S_ANY;
+         if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_FLOWLABEL_MGR, &freq, sizeof(freq)) < 0) {
+            LOG_WARNING
+            // TRANSLATORS: Warning when enabling IPv6 Flow Label reflection fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to enable IPv6 Flow Label reflection on socket {}: {}!"),
+                                 sd, strerror(errno)) << "\n";
+            LOG_END
+         }
+         else {
+            const int enable = 1;
+            ext_setsockopt(sd, IPPROTO_IPV6, IPV6_FLOWINFO_SEND, &enable, sizeof(enable));
+         }
+      }
+#else
+      LOG_WARNING
+      // TRANSLATORS: Warning when IPv6 Flow Label reflection is unsupported on the OS.
+      stdlog << gettext("IPv6 Flow Label reflection is not supported on this platform!") << "\n";
+      LOG_END
+#endif
+      return true;
+   }
+
+   // Explicit 20-bit Flow Label:
+   if(flowLabel.Label == 0) {
+#if defined(IPV6_AUTOFLOWLABEL)
+      const int disable = 0;
+      if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_AUTOFLOWLABEL, &disable, sizeof(disable)) < 0) {
+         LOG_WARNING
+         // TRANSLATORS: Warning when disabling IPV6_AUTOFLOWLABEL fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to disable IPV6_AUTOFLOWLABEL on socket {}: {}!"),
+                              sd, strerror(errno)) << "\n";
+         LOG_END
+      }
+#endif
+      return true;
+   }
+
+   if(isAcceptedConnection) {
+      // On Linux, post-accept() connection-oriented sockets cannot set a custom
+      // sin6_flowinfo (passive UDP uses sendmsg() with isAcceptedConnection = false).
+      LOG_WARNING
+      // TRANSLATORS: Warning when a custom IPv6 Flow Label cannot be applied to an accepted connection socket. Placeholders: {:05x} 1: hex label, {} 2: socket fd.
+      stdlog << formatText(gettext("Custom IPv6 Flow Label 0x{:05x} cannot be applied to accepted connection socket {} on this OS!"),
+                           flowLabel.Label & 0x000fffffU, sd) << "\n";
+      LOG_END
+      return true;
+   }
+
+   if(peerAddress == nullptr) {
+      return true;
+   }
+
+   const int enableSend = 1;
+   if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_FLOWINFO_SEND, &enableSend, sizeof(enableSend)) < 0) {
+      LOG_WARNING
+      // TRANSLATORS: Warning when enabling IPV6_FLOWINFO_SEND fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+      stdlog << formatText(gettext("Unable to enable IPV6_FLOWINFO_SEND on socket {}: {}!"),
+                           sd, strerror(errno)) << "\n";
+      LOG_END
+      return true;
+   }
+
+   struct in6_flowlabel_req freq;
+   memset(&freq, 0, sizeof(freq));
+   freq.flr_dst    = reinterpret_cast<const struct sockaddr_in6*>(peerAddress)->sin6_addr;
+   freq.flr_label  = htobe32(flowLabel.Label & 0x000fffffU);
+   freq.flr_action = IPV6_FL_A_GET;
+   freq.flr_flags  = IPV6_FL_F_CREATE;
+   freq.flr_share  = IPV6_FL_S_ANY;
+   if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_FLOWLABEL_MGR, &freq, sizeof(freq)) < 0) {
+      LOG_WARNING
+      // TRANSLATORS: Warning when acquiring an IPv6 Flow Label via IPV6_FLOWLABEL_MGR fails. Placeholders: {:05x} 1: hex label, {} 2: socket fd, 3: strerror() message.
+      stdlog << formatText(gettext("Unable to acquire IPv6 Flow Label 0x{:05x} (IPV6_FLOWLABEL_MGR) on socket {}: {}!"),
+                           flowLabel.Label & 0x000fffffU, sd, strerror(errno)) << "\n";
+      LOG_END
+      return true;
+   }
+   leaseAcquired = true;
+   leaseAddr     = freq.flr_dst;
+   leaseValue    = flowLabel.Label & 0x000fffffU;
+#else
+   (void)isAcceptedConnection;
+   (void)leaseAddr;
+   (void)leaseValue;
+   LOG_WARNING
+   // TRANSLATORS: Warning when IPv6 Flow Label configuration is unsupported on the OS. Placeholder: {} is socket fd.
+   stdlog << formatText(gettext("IPv6 Flow Label configuration is not supported on this platform (socket {})!"), sd) << "\n";
+   LOG_END
+#endif
+   return true;
+}
+
+
+// ###### Release Linux IPv6 Flow Label lease ###############################
+void releaseFlowLabel(const int sd, const struct in6_addr& leaseAddr, const uint32_t leaseValue)
+{
+#if defined(__linux__) && defined(IPV6_FLOWLABEL_MGR)
+   struct in6_flowlabel_req freq;
+   memset(&freq, 0, sizeof(freq));
+   freq.flr_dst    = leaseAddr;
+   freq.flr_label  = htobe32(leaseValue & 0x000fffffU);
+   freq.flr_action = IPV6_FL_A_PUT;
+   ext_setsockopt(sd, IPPROTO_IPV6, IPV6_FLOWLABEL_MGR, &freq, sizeof(freq));
+#else
+   (void)sd;
+   (void)leaseAddr;
+   (void)leaseValue;
+#endif
+}
+
+
+// ###### Configure TCP / MPTCP keep-alive options ##########################
+bool configureTCPKeepAlive(const int                      sd,
+                           const bool                     isMPTCP,
+                           const std::optional<uint32_t>& hbInterval,
+                           const std::optional<uint32_t>& hbPathMaxRtx)
+{
+   (void)isMPTCP;
+   if(!hbInterval.has_value() && !hbPathMaxRtx.has_value()) {
+      return true;
+   }
+
+   if(hbInterval.has_value() && (*hbInterval == 0)) {
+      const int keepAliveOption = 0;
+      if(ext_setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE,
+                        reinterpret_cast<const char*>(&keepAliveOption), sizeof(keepAliveOption)) < 0) {
+         LOG_ERROR
+         // TRANSLATORS: Error disabling SO_KEEPALIVE on TCP socket. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to disable SO_KEEPALIVE on TCP socket {}: {}!"),
+                              sd, strerror(errno)) << "\n";
+         LOG_END
+         return false;
+      }
+      return true;
+   }
+
+   const int keepAliveOption = 1;
+   if(ext_setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE,
+                     reinterpret_cast<const char*>(&keepAliveOption), sizeof(keepAliveOption)) < 0) {
+      LOG_ERROR
+      // TRANSLATORS: Error enabling SO_KEEPALIVE on TCP socket. Placeholders: {} 1: socket fd, 2: strerror() message.
+      stdlog << formatText(gettext("Unable to set SO_KEEPALIVE on TCP socket {}: {}!"),
+                           sd, strerror(errno)) << "\n";
+      LOG_END
+      return false;
+   }
+
+   if(hbInterval.has_value()) {
+      if((*hbInterval < 1000) || ((*hbInterval % 1000) != 0)) {
+         LOG_WARNING
+         // TRANSLATORS: Warning when TCP keep-alive interval in milliseconds is rounded to seconds. Placeholders: {} 1: milliseconds, 2: socket fd.
+         stdlog << formatText(gettext("TCP keep-alive uses whole seconds; rounding {} ms on socket {}!"),
+                              *hbInterval, sd) << "\n";
+         LOG_END
+      }
+      const int intervalSec = std::max(1, static_cast<int>(*hbInterval / 1000));
+#if defined(TCP_KEEPIDLE) && !defined(__GNU__)
+      if(ext_setsockopt(sd, IPPROTO_TCP, TCP_KEEPIDLE,
+                        reinterpret_cast<const char*>(&intervalSec), sizeof(intervalSec)) < 0) {
+         if((!isMPTCP) || ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
+            LOG_ERROR
+            // TRANSLATORS: Error setting TCP keepalive idle time. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to set TCP_KEEPIDLE on TCP socket {}: {}!"),
+                                 sd, strerror(errno)) << "\n";
+            LOG_END
+            return false;
+         }
+         LOG_WARNING
+         // TRANSLATORS: Warning setting TCP keepalive idle time on MPTCP socket. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_KEEPIDLE on MPTCP socket {}: {}!"),
+                              sd, strerror(errno)) << "\n";
+         LOG_END
+      }
+#else
+#warning No TCP_KEEPIDLE option available!
+#endif
+#if defined(TCP_KEEPINTVL) && !defined(__GNU__)
+      if(ext_setsockopt(sd, IPPROTO_TCP, TCP_KEEPINTVL,
+                        reinterpret_cast<const char*>(&intervalSec), sizeof(intervalSec)) < 0) {
+         if((!isMPTCP) || ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
+            LOG_ERROR
+            // TRANSLATORS: Error setting TCP keepalive probe interval. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to set TCP_KEEPINTVL on TCP socket {}: {}!"),
+                                 sd, strerror(errno)) << "\n";
+            LOG_END
+            return false;
+         }
+         LOG_WARNING
+         // TRANSLATORS: Warning setting TCP keepalive probe interval on MPTCP socket. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_KEEPINTVL on MPTCP socket {}: {}!"),
+                              sd, strerror(errno)) << "\n";
+         LOG_END
+      }
+#else
+#warning No TCP_KEEPINTVL option available!
+#endif
+   }
+
+   if(hbPathMaxRtx.has_value()) {
+#if defined(TCP_KEEPCNT) && !defined(__GNU__)
+      const int keepCountOption = static_cast<int>(*hbPathMaxRtx);
+      if(ext_setsockopt(sd, IPPROTO_TCP, TCP_KEEPCNT,
+                        reinterpret_cast<const char*>(&keepCountOption), sizeof(keepCountOption)) < 0) {
+         if((!isMPTCP) || ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
+            LOG_ERROR
+            // TRANSLATORS: Error setting TCP keepalive probe count. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to set TCP_KEEPCNT on TCP socket {}: {}!"),
+                                 sd, strerror(errno)) << "\n";
+            LOG_END
+            return false;
+         }
+         LOG_WARNING
+         // TRANSLATORS: Warning setting TCP keepalive probe count on MPTCP socket. Placeholders: {} 1: socket fd, 2: strerror() message.
+         stdlog << formatText(gettext("Unable to set TCP_KEEPCNT on MPTCP socket {}: {}!"),
+                              sd, strerror(errno)) << "\n";
+         LOG_END
+      }
+#else
+#warning No TCP_KEEPCNT option available!
+#endif
+   }
+   return true;
+}
+
+
+#if defined(HAVE_SCTP)
+// ###### Configure SCTP heartbeat and retransmission parameters ############
+bool configureSCTPHeartbeats(const int                      sd,
+                             const sctp_assoc_t             assocID,
+                             const sockaddr_union*          peerAddress,
+                             const std::optional<uint32_t>& hbInterval,
+                             const std::optional<uint32_t>& hbPathMaxRtx,
+                             const std::optional<uint32_t>& hbAssocMaxRtx)
+{
+   if(hbInterval.has_value() || hbPathMaxRtx.has_value()) {
+      struct sctp_paddrparams params;
+      memset(&params, 0, sizeof(params));
+      params.spp_assoc_id = assocID;
+      if((peerAddress != nullptr) &&
+         ((peerAddress->sa.sa_family == AF_INET) || (peerAddress->sa.sa_family == AF_INET6))) {
+         if(assocID == SCTP_FUTURE_ASSOC) {
+            params.spp_address.ss_family = peerAddress->sa.sa_family;
+         }
+         else {
+            memcpy(&params.spp_address, peerAddress, getSocklen(&peerAddress->sa));
+         }
+      }
+      else {
+         params.spp_address.ss_family = checkIPv6() ? AF_INET6 : AF_INET;
+      }
+
+      if(hbInterval.has_value()) {
+         if(*hbInterval == 0) {
+#if defined(SPP_HB_DISABLE)
+            params.spp_flags |= SPP_HB_DISABLE;
+#endif
+         }
+         else {
+#if defined(SPP_HB_ENABLE)
+            params.spp_flags |= SPP_HB_ENABLE;
+#endif
+            params.spp_hbinterval = *hbInterval;
+         }
+      }
+      if(hbPathMaxRtx.has_value()) {
+         params.spp_pathmaxrxt = static_cast<uint16_t>(std::min<uint32_t>(*hbPathMaxRtx, 65535U));
+      }
+
+      if(ext_setsockopt(sd, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &params, sizeof(params)) < 0) {
+         bool retryOk = false;
+         if(assocID != SCTP_FUTURE_ASSOC) {
+            const sa_family_t fam = params.spp_address.ss_family;
+            memset(&params.spp_address, 0, sizeof(params.spp_address));
+            params.spp_address.ss_family = fam;
+            params.spp_assoc_id          = 0;
+            retryOk = (ext_setsockopt(sd, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &params, sizeof(params)) == 0);
+         }
+         if(!retryOk) {
+            LOG_WARNING
+            // TRANSLATORS: Warning configuring SCTP heartbeats via SCTP_PEER_ADDR_PARAMS. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to configure heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP socket {}: {}!"),
+                                 sd, strerror(errno)) << "\n";
+            LOG_END
+         }
+      }
+   }
+
+   if(hbAssocMaxRtx.has_value()) {
+      sctp_assocparams assocparams;
+      memset(&assocparams, 0, sizeof(assocparams));
+      assocparams.sasoc_assoc_id   = assocID;
+      assocparams.sasoc_asocmaxrxt = static_cast<uint16_t>(std::min<uint32_t>(*hbAssocMaxRtx, 65535U));
+      if(ext_setsockopt(sd, IPPROTO_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
+         bool retryOk = false;
+         if(assocID != SCTP_FUTURE_ASSOC) {
+            assocparams.sasoc_assoc_id = 0;
+            retryOk = (ext_setsockopt(sd, IPPROTO_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) == 0);
+         }
+         if(!retryOk) {
+            LOG_WARNING
+            // TRANSLATORS: Warning configuring SCTP association retransmission max. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP socket {}: {}!"),
+                                 sd, strerror(errno)) << "\n";
+            LOG_END
+         }
+      }
+   }
+   return true;
+}
+#endif
+
+
 // ###### Configure socket parameters #######################################
-bool Flow::configureSocket(const int socketDescriptor)
+bool Flow::configureSocket(const int             socketDescriptor,
+                           const sockaddr_union* remoteAddress)
 {
    if(!setBufferSizes(socketDescriptor,
                       static_cast<int>(TrafficSpec.SndBufferSize),
                       static_cast<int>(TrafficSpec.RcvBufferSize))) {
       return false;
+   }
+
+   const bool isPassiveUDP = (TrafficSpec.Protocol == IPPROTO_UDP) && isAcceptedIncomingFlow();
+   if(TrafficSpec.TrafficClass.has_value() && (!isPassiveUDP)) {
+      if(!setTrafficClass(socketDescriptor, *TrafficSpec.TrafficClass)) {
+         return false;
+      }
+   }
+   if(TrafficSpec.FlowLabel.isSet()) {
+      const sockaddr_union* peerAddr = (remoteAddress != nullptr) ? remoteAddress :
+                                       (RemoteAddressIsValid ? &RemoteAddress : nullptr);
+      setFlowLabel(socketDescriptor,
+                   (peerAddr != nullptr) ? &peerAddr->sa : nullptr,
+                   TrafficSpec.FlowLabel,
+                   isAcceptedIncomingFlow() && (!isPassiveUDP),
+                   HasFlowLabelLease, FlowLabelLeaseAddr, FlowLabelLeaseValue);
    }
 #if defined(HAVE_MPTCP)
    if((TrafficSpec.Protocol == IPPROTO_TCP) || (TrafficSpec.Protocol == IPPROTO_MPTCP)) {
@@ -581,6 +1057,24 @@ bool Flow::configureSocket(const int socketDescriptor)
          LOG_END
          return false;
 #endif
+      }
+
+      const bool isMPTCP =
+#if defined(HAVE_MPTCP)
+         (TrafficSpec.Protocol == IPPROTO_MPTCP);
+#else
+         false;
+#endif
+      if(!configureTCPKeepAlive(socketDescriptor, isMPTCP,
+                                TrafficSpec.HBInterval, TrafficSpec.HBPathMaxRtx)) {
+         return false;
+      }
+      if(TrafficSpec.HBAssocMaxRtx.has_value()) {
+         LOG_WARNING
+         // TRANSLATORS: Warning when hbassocmaxrtx is set on TCP/MPTCP where only path keep-alive count applies. Placeholder: {} is socket fd.
+         stdlog << formatText(gettext("hbassocmaxrtx is not applicable to TCP/MPTCP socket {}!"),
+                              socketDescriptor) << "\n";
+         LOG_END
       }
    }
 #if defined(HAVE_SCTP)
@@ -620,6 +1114,14 @@ bool Flow::configureSocket(const int socketDescriptor)
          return false;
       }
 #endif
+      if(TrafficSpec.HBInterval.has_value() || TrafficSpec.HBPathMaxRtx.has_value() || TrafficSpec.HBAssocMaxRtx.has_value()) {
+         const sockaddr_union* peerAddr = (remoteAddress != nullptr) ? remoteAddress :
+                                          (RemoteAddressIsValid ? &RemoteAddress : nullptr);
+         configureSCTPHeartbeats(socketDescriptor,
+                                 isAcceptedIncomingFlow() ? SCTP_CURRENT_ASSOC : SCTP_FUTURE_ASSOC,
+                                 peerAddr,
+                                 TrafficSpec.HBInterval, TrafficSpec.HBPathMaxRtx, TrafficSpec.HBAssocMaxRtx);
+      }
    }
 #endif
 #if defined(HAVE_DCCP)
@@ -687,8 +1189,33 @@ bool Flow::configureSocket(const int socketDescriptor)
                               socketDescriptor, strerror(errno)) << "\n";
          LOG_END
       }
+      if(TrafficSpec.HBInterval.has_value() || TrafficSpec.HBAssocMaxRtx.has_value()) {
+         const bool disableIdle = TrafficSpec.HBInterval.has_value() && (*TrafficSpec.HBInterval == 0);
+         const uint64_t idleTimeoutMs = disableIdle ? 0ULL :
+            (static_cast<uint64_t>(TrafficSpec.HBInterval.value_or(15000U)) *
+             static_cast<uint64_t>(TrafficSpec.HBAssocMaxRtx.value_or(6U)));
+         if(!configureQuicIdleTimeout(socketDescriptor, idleTimeoutMs, disableIdle)) {
+            LOG_WARNING
+            // TRANSLATORS: Warning when configuring QUIC idle timeout fails. Placeholders: {} 1: socket fd, 2: strerror() message.
+            stdlog << formatText(gettext("Unable to configure QUIC idle timeout on QUIC socket {}: {}!"),
+                                 socketDescriptor, strerror(errno)) << "\n";
+            LOG_END
+         }
+      }
    }
 #endif
+
+   if(((TrafficSpec.Protocol == IPPROTO_UDP)
+#if defined(HAVE_DCCP)
+       || (TrafficSpec.Protocol == IPPROTO_DCCP)
+#endif
+      ) && (TrafficSpec.HBInterval.has_value() || TrafficSpec.HBPathMaxRtx.has_value() || TrafficSpec.HBAssocMaxRtx.has_value())) {
+      LOG_WARNING
+      // TRANSLATORS: Warning when heartbeat/keep-alive options are requested on a protocol that does not support them. Placeholders: {} 1: protocol name, 2: socket fd.
+      stdlog << formatText(gettext("Heartbeat/keep-alive options are not supported for {} socket {}!"),
+                           getProtocolName(TrafficSpec.Protocol), socketDescriptor) << "\n";
+      LOG_END
+   }
 
    return true;
 }

@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd November 14, 2026
+.Dd November 27, 2026
 .Dt NetPerfMeter 1
 .Os netperfmeter
 .\" ###### Name #############################################################
@@ -52,6 +52,10 @@
 .Op Fl J Ar certificate\_file | Fl \-tls\-cert Ar certificate\_file
 .br
 .Op Fl I Ar ca\_certificate\_file | Fl \-tls\-ca Ar ca\_certificate\_file
+.br
+.Op Fl Q Ar traffic\_class | Fl \-control\:\-tc Ar traffic\_class
+.br
+.Op Fl F Ar flow\_label | Fl \-control\:\-fl Ar flow\_label
 .br
 .Op Fl \-control\:\-hbinterval Ar milliseconds
 .br
@@ -88,6 +92,10 @@
 .Op Fl I Ar ca\_certificate\_file | Fl \-tls\-ca Ar ca\_certificate\_file
 .br
 .Op Fl H Ar hostname | Fl \-tls\-hostname Ar hostname
+.br
+.Op Fl Q Ar traffic\_class | Fl \-control\:\-tc Ar traffic\_class
+.br
+.Op Fl F Ar flow\_label | Fl \-control\:\-fl Ar flow\_label
 .br
 .Op Fl \-control\:\-hbinterval Ar milliseconds
 .br
@@ -205,12 +213,23 @@ On the passive side, this option is optional: when specified, the passive side r
 .It Fl H Ar hostname | Fl \-tls\-hostname Ar hostname
 Specifies the TLS certificate hostname for QUIC authentication. It is used by the active side.
 The hostname must match the remote (i.e. passive side's) hostname, as provided by the passive side's TLS certificate, to allow for hostname verification. As alternative, it is possible to add the IP addresses into the X.509 SubjectAltName of its certificate.
+.It Fl Q Ar traffic\_class | Fl \-control\:\-tc Ar traffic\_class
+Sets the IP Traffic Class / Type of Service (IP\_TOS for IPv4, IPV6\_TCLASS for IPv6) for the control connection.
+Accepts a standard DSCP name (BE/DF/CS0, LE, CS1\-CS7, AF11\-AF13, AF21\-AF23, AF31\-AF33, AF41\-AF43, VA, EF; case\-insensitive) or an 8\-bit numeric value in decimal (0\-255) or hexadecimal (0x00\-0xff).
+The lower 2 bits (ECN) are always cleared to 0 so ECN remains controlled by the transport stack; a warning is printed if non\-zero ECN bits are supplied.
+Default: OS default.
+.It Fl F Ar flow\_label | Fl \-control\:\-fl Ar flow\_label
+Sets the 20\-bit IPv6 Flow Label for the control connection (Linux IPv6 sockets only).
+Accepts a 20\-bit numeric value in decimal (0\-1048575) or hexadecimal (0x00000\-0xfffff), or one of the keywords "default" (keep OS default), "auto" (enable IPV6\_AUTOFLOWLABEL), or "reflect" (request flow label reflection via IPV6\_FL\_F\_REFLECT).
+Specifying 0 disables IPV6\_AUTOFLOWLABEL.
+Note: On Linux, custom flow labels cannot be set post\-accept() on accepted connection\-oriented passive sockets.
+Default: default.
 .It Fl \-control\:\-hbinterval Ar milliseconds
-Sets the heartbeat interval (in ms) for the control connection. Minimum: 1000; Maximum: 86400000 (1 day); Default: 15000.
+Sets the heartbeat / keep\-alive interval (in ms) for the control connection. Setting 0 disables SCTP heartbeats (SPP\_HB\_DISABLE), TCP/MPTCP keep\-alives (SO\_KEEPALIVE=0), and the QUIC idle timeout. For TCP/MPTCP, non\-zero values are rounded to whole seconds (minimum 1 s). Range: 0\-86400000 (1 day); Default: 15000.
 .It Fl \-control\:\-hbpathmaxrtx Ar count
-Sets the per-path heartbeat retransmission limit for the control connection. Minimum: 1; Maximum: 1000000; Default: 3.
+Sets the per\-path heartbeat retransmission limit (SCTP) or TCP\_KEEPCNT probe count (TCP/MPTCP) for the control connection. Minimum: 1; Maximum: 1000000; Default: 3.
 .It Fl \-control\:\-hbassocmaxrtx Ar count
-Sets the per-association heartbeat retransmission limit for the control connection (for SCTP, and used to derive the idle timeout for QUIC). Minimum: 1; Maximum: 1000000; Default: 6.
+Sets the per\-association heartbeat retransmission limit for the control connection (for SCTP, and used to derive the idle timeout for QUIC). Minimum: 1; Maximum: 1000000; Default: 6.
 .It Fl 6 | Fl \-v6only
 Use sockets with IPv6 only (by setting IPV6\_V6ONLY socket option).
 .It Fl \-display
@@ -226,7 +245,7 @@ Add all specified flows the given number of times. That is, given a count of 5, 
 .It Fl T Ar seconds | Fl \-runtime Ar seconds
 Specifies the measurement runtime in seconds. After the given time span, NetPerfMeter will finish the measurement.
 .It Fl C Ar configuration\_file | Fl \-config Ar configuration\_file
-Specifies the name of the configuration file to write. The configuration file will contain the used flow parameters.
+Specifies the name of the configuration file to write. The configuration file will contain the used global control and per\-flow parameters (including Traffic Class, IPv6 Flow Label, and heartbeat settings).
 .It Fl S Ar scalar\_file\_pattern | Fl \-scalar Ar scalar\_file\_pattern
 Specifies the name pattern of the scalar files to write. If the suffix of this name is .bz2, the file will be BZip2-compressed on the fly. The scalar name is automatically extended to name the flow scalar files by adding -<active|passive>-<flow\_id>-<stream\_id> before the suffix.
 For example for scalar.vec.bz2, the name of the scalar file for flow 5, stream 2 on the active node will be scalar-active-00000005-0002.vec.bz2.
@@ -338,10 +357,36 @@ Set debug mode for flow (default: off). Note: this is for debugging and testing 
 .It v6only
 Use socket with IPv6 only (by setting IPV6\_V6ONLY socket option).
 .It cc=name
-Set congestion control name (TCP and MPTCP for Linux only).
+Set congestion control name (TCP and MPTCP for Linux only; QUIC supports "reno" and "cubic").
 .It cmt=off | cmt | cmtrpv1 | cmtrpv2 | like\-mptcp | mptcp\-like | mptcp
 Configures usage of Concurrent Multipath Transfer (CMT): off (turned off; default), cmt (independent paths), cmtrpv1 (CMT/RPv1), cmtrpv2 (CMT/RPv2), mptcp/like\-mptcp/mptcp\-like (MPTCP), 0\-255 (custom value).
 Currently only supported by CMT\-SCTP on FreeBSD systems and MPTCP on Linux systems. Note: CMT for MPTCP always uses MPTCP congestion control.
+.It tc=Traffic Class
+Sets the IP Traffic Class / Type of Service (IP\_TOS for IPv4, IPV6\_TCLASS for IPv6) for the flow and signals it to the passive side.
+Accepts a standard DSCP name (BE/DF/CS0, LE, CS1\-CS7, AF11\-AF13, AF21\-AF23, AF31\-AF33, AF41\-AF43, VA, EF; case\-insensitive) or an 8\-bit numeric value in decimal (0\-255) or hexadecimal (0x00\-0xff).
+The lower 2 bits (ECN) are cleared to 0 (with a warning if non\-zero bits are supplied).
+On the passive side, UDP flows apply the Traffic Class per packet via sendmsg() ancillary data so concurrent UDP flows can use different Traffic Classes.
+Flows sharing the same SCTP association or QUIC connection must use identical tc settings.
+.It fl=Flow Label
+Sets the 20\-bit IPv6 Flow Label for the flow and signals it to the passive side (Linux IPv6 sockets only).
+Accepts a 20\-bit numeric value (0\-1048575 or 0x00000\-0xfffff), "default" (keep OS default), "auto" (enable IPV6\_AUTOFLOWLABEL), or "reflect" (request reflection via IPV6\_FL\_F\_REFLECT).
+Specifying 0 disables IPV6\_AUTOFLOWLABEL.
+On the passive side, custom flow labels are supported per flow for UDP via sendmsg(); accepted connection\-oriented sockets log a warning when custom flow labels are unsupported by the OS.
+Flows sharing the same SCTP association or QUIC connection must use identical fl settings.
+.It hbinterval=Milliseconds
+Sets the per\-flow heartbeat / keep\-alive interval in milliseconds (0\-86400000) and signals it to the passive side.
+Setting 0 explicitly disables SCTP heartbeats (SPP\_HB\_DISABLE), TCP/MPTCP keep\-alives (SO\_KEEPALIVE=0), and QUIC idle timeout.
+Omitting this option leaves the OS/protocol default unchanged.
+For TCP/MPTCP, non\-zero values are rounded to whole seconds (minimum 1 s).
+Flows sharing the same SCTP association or QUIC connection must use identical heartbeat settings.
+.It hbpathmaxrtx=Count
+Sets the per\-flow per\-path heartbeat retransmission limit (SCTP) or TCP\_KEEPCNT probe count (TCP/MPTCP) and signals it to the passive side.
+Range: 1\-1000000. Omitting this option leaves the OS/protocol default unchanged.
+Flows sharing the same SCTP association or QUIC connection must use identical heartbeat settings.
+.It hbassocmaxrtx=Count
+Sets the per\-flow per\-association retransmission limit (SCTP) and idle\-timeout multiplier (QUIC) and signals it to the passive side.
+Range: 1\-1000000 (clamped to 65535 for SCTP). Omitting this option leaves the OS/protocol default unchanged. Not applicable to TCP/MPTCP.
+Flows sharing the same SCTP association or QUIC connection must use identical heartbeat settings.
 .El
 .El
 .It Fl h | Fl \-help
@@ -378,6 +423,8 @@ Start in active mode, i.e. establish connection to 172.31.33.2, port 9000. The c
 SCTP traffic with some variation.
 .It netperfmeter 172.31.33.2:9000 \-udp const0:\:const0:\:const25:\:const2500:\:onoff=+pareto0.166667,\:1.5,\:+pareto0.166667,\:1.5,\:repeat
 Some on-off background traffic with Pareto distribution.
+.It netperfmeter [2001:db8::1]:9000 \-Q CS6 \-F 0x12345 \-udp default:tc=EF:fl=0x00100 \-tcp default:tc=AF21:hbinterval=5000:hbpathmaxrtx=4
+Start in active mode over IPv6 with DSCP CS6 and IPv6 Flow Label 0x12345 on the control channel, a UDP flow marked EF with Flow Label 0x00100, and a TCP flow marked AF21 with 5 s keep\-alives and 4 probe retransmissions.
 .It netperfmeter 9000 \-tls\-key my\-server.key \-tls\-cert my\-server.crt \-tls\-ca my\-ca.crt
 Start in passive mode, with mutual TLS (mTLS) setup for QUIC (omitting \-tls\-ca disables client certificate verification and uses server-only TLS authentication).
 See

@@ -146,6 +146,11 @@ static const char*      gConfigName            = "";
 static unsigned int     gControlHBInterval     = 15000;   // ms
 static unsigned int     gControlHBPathMaxRtx   = 3;       // trials
 static unsigned int     gControlHBAssocMaxRtx  = 6;       // trials
+static std::optional<uint8_t> gControlTrafficClass   = std::nullopt;
+static FlowLabelSetting       gControlFlowLabel      = {};
+static bool                   gControlHasFlowLabel   = false;
+static struct in6_addr        gControlFlowLabelAddr  = {};
+static uint32_t               gControlFlowLabelValue = 0;
 
 struct AssocSpec
 {
@@ -211,6 +216,8 @@ static void usage(const char* program, const int exitCode)
                    ENTRY(OPT("-K") " " ARG("key_file") PIPE OPT("--tls-key") " " ARG("key_file"))
                    ENTRY(OPT("-J") " " ARG("certificate_file") PIPE OPT("--tls-cert") " " ARG("certificate_file"))
                    ENTRY(OPT("-I") " " ARG("ca_certificate_file") PIPE OPT("--tls-ca") " " ARG("ca_certificate_file"))
+                   ENTRY(OPT("-Q") " " ARG("traffic_class") PIPE OPT("--control-tc") " " ARG("traffic_class"))
+                   ENTRY(OPT("-F") " " ARG("flow_label") PIPE OPT("--control-fl") " " ARG("flow_label"))
                    ENTRY(OPT("--control-hbinterval") " " ARG("milliseconds"))
                    ENTRY(OPT("--control-hbpathmaxrtx") " " ARG("count"))
                    ENTRY(OPT("--control-hbassocmaxrtx") " " ARG("count"))
@@ -231,6 +238,8 @@ static void usage(const char* program, const int exitCode)
                    ENTRY(OPT("-J") " " ARG("certificate_file") PIPE OPT("--tls-cert") " " ARG("certificate_file"))
                    ENTRY(OPT("-I") " " ARG("ca_certificate_file") PIPE OPT("--tls-ca") " " ARG("ca_certificate_file"))
                    ENTRY(OPT("-H") " " ARG("hostname") PIPE OPT("--tls-hostname") " " ARG("hostname"))
+                   ENTRY(OPT("-Q") " " ARG("traffic_class") PIPE OPT("--control-tc") " " ARG("traffic_class"))
+                   ENTRY(OPT("-F") " " ARG("flow_label") PIPE OPT("--control-fl") " " ARG("flow_label"))
                    ENTRY(OPT("--control-hbinterval") " " ARG("milliseconds"))
                    ENTRY(OPT("--control-hbpathmaxrtx") " " ARG("count"))
                    ENTRY(OPT("--control-hbassocmaxrtx") " " ARG("count"))
@@ -356,6 +365,8 @@ static bool handleGlobalParameters(int argc, char** argv)
       { "sctp",                          required_argument, 0, 's'    },
       { "quic",                          required_argument, 0, 'k'    },
 
+      { "control-tc",                    required_argument, 0, 'Q'    },
+      { "control-fl",                    required_argument, 0, 'F'    },
       { "control-hbinterval",            required_argument, 0, 0x4000 },
       { "control-hbpathmaxrtx",          required_argument, 0, 0x4001 },
       { "control-hbassocmaxrtx",         required_argument, 0, 0x4002 },
@@ -374,7 +385,7 @@ static bool handleGlobalParameters(int argc, char** argv)
 
    int      option;
    int      longIndex;
-   while( (option = getopt_long_only(effectiveArgc, argv, "xXyYwWzZL:l:6T:o:i:N:C:S:V:A:P:K:J:I:H:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
+   while( (option = getopt_long_only(effectiveArgc, argv, "xXyYwWzZL:l:6T:o:i:N:C:S:V:A:P:K:J:I:H:Q:F:t:m:u:d:s:k:B:b:q!hv", long_options, &longIndex)) != -1 ) {
       switch(option) {
          case 'x':
 #if defined(HAVE_SCTP)
@@ -643,6 +654,30 @@ static bool handleGlobalParameters(int argc, char** argv)
          case '!':
             gLogLevel = LOGLEVEL_TRACE;
           break;
+         case 'Q':
+            {
+               uint8_t tc             = 0;
+               bool    ecnBitsCleared = false;
+               if(!parseTrafficClass(optarg, tc, ecnBitsCleared)) {
+                  // TRANSLATORS: Error message for invalid Traffic Class / DSCP value in --control-tc. {} is the user input.
+                  std::cerr << formatText(gettext("ERROR: Invalid Traffic Class \"{}\" for --control-tc!"), optarg) << "\n";
+                  exit(1);
+               }
+               if(ecnBitsCleared) {
+                  // TRANSLATORS: Warning when non-zero ECN bits are cleared in --control-tc. Placeholders: {} 1: user input, {:02x} 2: masked hex TC value.
+                  std::cerr << formatText(gettext("WARNING: Lower 2 ECN bits cleared in --control-tc \"{}\" (using 0x{:02x})!"),
+                                          optarg, static_cast<unsigned int>(tc)) << "\n";
+               }
+               gControlTrafficClass = tc;
+            }
+          break;
+         case 'F':
+            if(!parseFlowLabel(optarg, gControlFlowLabel)) {
+               // TRANSLATORS: Error message for invalid IPv6 Flow Label in --control-fl. {} is the user input.
+               std::cerr << formatText(gettext("ERROR: Invalid IPv6 Flow Label \"{}\" for --control-fl!"), optarg) << "\n";
+               exit(1);
+            }
+          break;
          case 0x4000:
             gControlHBInterval = std::min((unsigned int)atoi(optarg), 86400000U);
           break;
@@ -765,12 +800,19 @@ static void printGlobalParameters()
       // TRANSLATORS: Parameter label for local IP addresses bound for control connections.
       formatter.add(1, gettext("Local Control Address(es)"),
                     formatAddressList(gLocalControlAddressArray, gLocalControlAddresses));
+      // TRANSLATORS: Parameter label for control channel Traffic Class (DSCP).
+      formatter.add(1, gettext("Control Traffic Class"), formatTrafficClass(gControlTrafficClass));
+      // TRANSLATORS: Parameter label for control channel IPv6 Flow Label.
+      formatter.add(1, gettext("Control Flow Label"), formatFlowLabel(gControlFlowLabel));
+      const std::string controlHBIntervalStr = (gControlHBInterval == 0) ?
+         std::string(gettext("disabled")) :
+         formatText(gettext("{} ms"), gControlHBInterval);
       formatter.add(1,
                     /* TRANSLATORS: Parameter label for control channel heartbeat parameters. */
                     gettext("Control Heartbeats"),
-                    /* TRANSLATORS: Control heartbeat parameters value. Placeholders: {} 1: path max retransmissions, 2: association max retransmissions, 3: interval in ms. */
-                    formatText(gettext("{} per path / {} per association / {} ms"),
-                               gControlHBPathMaxRtx, gControlHBAssocMaxRtx, gControlHBInterval));
+                    /* TRANSLATORS: Control heartbeat parameters value. Placeholders: {} 1: path max retransmissions, 2: association max retransmissions, 3: interval. */
+                    formatText(gettext("{} per path / {} per association / {}"),
+                               gControlHBPathMaxRtx, gControlHBAssocMaxRtx, controlHBIntervalStr));
       stdlog << formatter;
    }
    LOG_END
@@ -1071,6 +1113,55 @@ static const char* parseTrafficSpecOption(const char*      parameters,
       trafficSpec.CongestionControl = std::string((const char*)&congestionControl);
       n = 3 + strlen((const char*)&congestionControl);
    }
+   else if(strncmp(parameters, "tc=", 3) == 0) {
+      char   tcStr[64];
+      size_t i = 0;
+      while((i < sizeof(tcStr) - 1) && (parameters[3 + i] != ':') && (parameters[3 + i] != 0x00)) {
+         tcStr[i] = parameters[3 + i];
+         i++;
+      }
+      tcStr[i] = 0x00;
+      uint8_t tc             = 0;
+      bool    ecnBitsCleared = false;
+      if(((parameters[3 + i] != ':') && (parameters[3 + i] != 0x00)) ||
+         (!parseTrafficClass(tcStr, tc, ecnBitsCleared))) {
+         // TRANSLATORS: Error message when flow Traffic Class (tc=) setting is invalid. {} is the input value.
+         std::cerr << formatText(gettext("ERROR: Invalid \"tc\" setting: {}!"), tcStr) << "\n";
+         exit(1);
+      }
+      if(ecnBitsCleared) {
+         // TRANSLATORS: Warning when non-zero ECN bits are cleared in tc= option. Placeholders: {} 1: input value, {:02x} 2: masked hex TC value.
+         std::cerr << formatText(gettext("WARNING: Lower 2 ECN bits cleared in \"tc={}\" (using 0x{:02x})!"),
+                                 tcStr, static_cast<unsigned int>(tc)) << "\n";
+      }
+      trafficSpec.TrafficClass = tc;
+      n = 3 + static_cast<int>(i);
+   }
+   else if(strncmp(parameters, "fl=", 3) == 0) {
+      char   flStr[64];
+      size_t i = 0;
+      while((i < sizeof(flStr) - 1) && (parameters[3 + i] != ':') && (parameters[3 + i] != 0x00)) {
+         flStr[i] = parameters[3 + i];
+         i++;
+      }
+      flStr[i] = 0x00;
+      if(((parameters[3 + i] != ':') && (parameters[3 + i] != 0x00)) ||
+         (!parseFlowLabel(flStr, trafficSpec.FlowLabel))) {
+         // TRANSLATORS: Error message when flow IPv6 Flow Label (fl=) setting is invalid. {} is the input value.
+         std::cerr << formatText(gettext("ERROR: Invalid \"fl\" setting: {}!"), flStr) << "\n";
+         exit(1);
+      }
+      n = 3 + static_cast<int>(i);
+   }
+   else if(sscanf(parameters, "hbinterval=%u%n", &intValue, &n) == 1) {
+      trafficSpec.HBInterval = std::min<uint32_t>(intValue, 86400000U);
+   }
+   else if(sscanf(parameters, "hbpathmaxrtx=%u%n", &intValue, &n) == 1) {
+      trafficSpec.HBPathMaxRtx = std::max<uint32_t>(1U, std::min<uint32_t>(intValue, 1000000U));
+   }
+   else if(sscanf(parameters, "hbassocmaxrtx=%u%n", &intValue, &n) == 1) {
+      trafficSpec.HBAssocMaxRtx = std::max<uint32_t>(1U, std::min<uint32_t>(intValue, 1000000U));
+   }
    else {
       // TRANSLATORS: Error message when an unrecognized flow option is encountered. {} is the option string.
       std::cerr << formatText(gettext("ERROR: Invalid option \"{}\"!"), parameters) << "\n";
@@ -1172,6 +1263,35 @@ static Flow* createFlow(Flow*                  previousFlow,
    }
 #endif
    // -----------------------------------------------------------------------
+
+   // ====== Check consistency on multi-stream sockets (SCTP, QUIC) =========
+   if(previousFlow != nullptr) {
+      const FlowTrafficSpec& prevSpec = previousFlow->getTrafficSpec();
+      if(trafficSpec.TrafficClass != prevSpec.TrafficClass) {
+         // TRANSLATORS: Error when flows sharing the same SCTP/QUIC socket specify different Traffic Class settings. Placeholders: {} 1: new TC, 2: previous TC, 3: protocol name.
+         std::cerr << formatText(gettext("ERROR: Different Traffic Class settings ({} vs. {}) on flows sharing the same {} socket!"),
+                                 formatTrafficClass(trafficSpec.TrafficClass),
+                                 formatTrafficClass(prevSpec.TrafficClass),
+                                 getProtocolName(trafficSpec.Protocol)) << "\n";
+         exit(1);
+      }
+      if(trafficSpec.FlowLabel != prevSpec.FlowLabel) {
+         // TRANSLATORS: Error when flows sharing the same SCTP/QUIC socket specify different IPv6 Flow Label settings. Placeholders: {} 1: new label, 2: previous label, 3: protocol name.
+         std::cerr << formatText(gettext("ERROR: Different Flow Label settings ({} vs. {}) on flows sharing the same {} socket!"),
+                                 formatFlowLabel(trafficSpec.FlowLabel),
+                                 formatFlowLabel(prevSpec.FlowLabel),
+                                 getProtocolName(trafficSpec.Protocol)) << "\n";
+         exit(1);
+      }
+      if((trafficSpec.HBInterval != prevSpec.HBInterval) ||
+         (trafficSpec.HBPathMaxRtx != prevSpec.HBPathMaxRtx) ||
+         (trafficSpec.HBAssocMaxRtx != prevSpec.HBAssocMaxRtx)) {
+         // TRANSLATORS: Error when flows sharing the same SCTP/QUIC socket specify different heartbeat settings. Placeholder: {} is protocol name.
+         std::cerr << formatText(gettext("ERROR: Different heartbeat/keep-alive settings on flows sharing the same {} socket!"),
+                                 getProtocolName(trafficSpec.Protocol)) << "\n";
+         exit(1);
+      }
+   }
 
    // ====== Create new flow ================================================
    if(FlowManager::getFlowManager()->findFlow(measurementID, flowID, streamID) != nullptr) {
@@ -1323,8 +1443,13 @@ static Flow* createFlow(Flow*                  previousFlow,
       }
 #endif
 
-      if(flow->configureSocket(socketDescriptor) == false) {
+      if(flow->configureSocket(socketDescriptor, &destinationAddress) == false) {
          exit(1);
+      }
+      if((trafficSpec.FlowLabel.Mode == FlowLabelMode::Explicit) &&
+         (destinationAddress.sa.sa_family == AF_INET6) &&
+         (!IN6_IS_ADDR_V4MAPPED(&destinationAddress.in6.sin6_addr))) {
+         destinationAddress.in6.sin6_flowinfo = htobe32(trafficSpec.FlowLabel.Label & 0x000fffffU);
       }
       if(ext_connect(socketDescriptor, &destinationAddress.sa, getSocklen(&destinationAddress.sa)) < 0) {
          // TRANSLATORS: Error message on connect() failure. Placeholders: {} 1: protocol name, 2: socket fd, 3: strerror() message.
@@ -1387,86 +1512,33 @@ static bool configureTCPControlSocket(const int sd, const bool isMPTCP = false)
       return false;
    }
 
-   const int keepAliveOption = 1;
-   if(ext_setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE,
-                     reinterpret_cast<const char*>(&keepAliveOption), sizeof(keepAliveOption)) < 0) {
-      LOG_ERROR
-      // TRANSLATORS: Error enabling SO_KEEPALIVE on TCP control socket. Placeholders: {} 1: socket fd, 2: strerror() message.
-      stdlog << formatText(gettext("Unable to set SO_KEEPALIVE on TCP control socket {}: {}!"),
-                           sd, strerror(errno)) << "\n";
-      LOG_END
-      return false;
-   }
+   return configureTCPKeepAlive(sd, isMPTCP,
+                                std::optional<uint32_t>(gControlHBInterval),
+                                std::optional<uint32_t>(gControlHBPathMaxRtx));
+}
 
-#if defined(TCP_KEEPIDLE) && !defined(__GNU__)
-   const int keepIdleOption = std::max(1, static_cast<int>(gControlHBInterval / 1000));   // in s
-   if(ext_setsockopt(sd, IPPROTO_TCP, TCP_KEEPIDLE,
-                     reinterpret_cast<const char*>(&keepIdleOption), sizeof(keepIdleOption)) < 0) {
-      if((!isMPTCP) ||
-         ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
-         LOG_ERROR
-         // TRANSLATORS: Error setting TCP keepalive idle time. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to set TCP_KEEPIDLE on TCP control socket {}: {}!"),
-                              sd, strerror(errno)) << "\n";
-         LOG_END
+
+// ###### Apply control Traffic Class / Flow Label to socket ################
+static bool applyControlQoS(const int             sd,
+                            const sockaddr_union* peerAddress,
+                            const bool            isAcceptedConnection,
+                            bool&                 leaseAcquired,
+                            struct in6_addr&      leaseAddr,
+                            uint32_t&             leaseValue)
+{
+   leaseAcquired = false;
+   if(gControlTrafficClass.has_value()) {
+      if(!setTrafficClass(sd, *gControlTrafficClass)) {
          return false;
       }
-      LOG_WARNING
-      // TRANSLATORS: Warning setting TCP keepalive idle time on MPTCP control socket. Placeholders: {} 1: socket fd, 2: strerror() message.
-      stdlog << formatText(gettext("Unable to set TCP_KEEPIDLE on MPTCP control socket {}: {}!"),
-                           sd, strerror(errno)) << "\n";
-      LOG_END
    }
-#else
-#warning No TCP_KEEPIDLE option available!
-#endif
-
-#if defined(TCP_KEEPINTVL) && !defined(__GNU__)
-   const int keepIntervalOption = std::max(1, static_cast<int>(gControlHBInterval / 1000));   // in s
-   if(ext_setsockopt(sd, IPPROTO_TCP, TCP_KEEPINTVL,
-                     reinterpret_cast<const char*>(&keepIntervalOption), sizeof(keepIntervalOption)) < 0) {
-      if((!isMPTCP) ||
-         ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
-         LOG_ERROR
-         // TRANSLATORS: Error setting TCP keepalive probe interval. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to set TCP_KEEPINTVL on TCP control socket {}: {}!"),
-                              sd, strerror(errno)) << "\n";
-         LOG_END
-         return false;
-      }
-      LOG_WARNING
-      // TRANSLATORS: Warning setting TCP keepalive probe interval on MPTCP control socket. Placeholders: {} 1: socket fd, 2: strerror() message.
-      stdlog << formatText(gettext("Unable to set TCP_KEEPINTVL on MPTCP control socket {}: {}!"),
-                           sd, strerror(errno)) << "\n";
-      LOG_END
+   if(gControlFlowLabel.isSet()) {
+      setFlowLabel(sd,
+                   (peerAddress != nullptr) ? &peerAddress->sa : nullptr,
+                   gControlFlowLabel,
+                   isAcceptedConnection,
+                   leaseAcquired, leaseAddr, leaseValue);
    }
-#else
-#warning No TCP_KEEPINTVL option available!
-#endif
-
-#if defined(TCP_KEEPCNT) && !defined(__GNU__)
-   const int keepCountOption = static_cast<int>(gControlHBPathMaxRtx);
-   if(ext_setsockopt(sd, IPPROTO_TCP, TCP_KEEPCNT,
-                     reinterpret_cast<const char*>(&keepCountOption), sizeof(keepCountOption)) < 0) {
-      if((!isMPTCP) ||
-         ((errno != ENOENT) && (errno != ENOPROTOOPT) && (errno != EOPNOTSUPP))) {
-         LOG_ERROR
-         // TRANSLATORS: Error setting TCP keepalive probe count. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to set TCP_KEEPCNT on TCP control socket {}: {}!"),
-                              sd, strerror(errno)) << "\n";
-         LOG_END
-         return false;
-      }
-      LOG_WARNING
-      // TRANSLATORS: Warning setting TCP keepalive probe count on MPTCP control socket. Placeholders: {} 1: socket fd, 2: strerror() message.
-      stdlog << formatText(gettext("Unable to set TCP_KEEPCNT on MPTCP control socket {}: {}!"),
-                           sd, strerror(errno)) << "\n";
-      LOG_END
-   }
-#else
-#warning No TCP_KEEPCNT option available!
-#endif
-
    return true;
 }
 
@@ -1567,7 +1639,10 @@ static bool mainLoop(const bool     isActiveMode,
          if(fds[controlID].revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
-               const int newSD = ext_accept(gControlSocket, nullptr, 0);
+               sockaddr_union peerAddr;
+               socklen_t      peerAddrLen = sizeof(peerAddr);
+               memset(&peerAddr, 0, sizeof(peerAddr));
+               const int newSD = ext_accept(gControlSocket, &peerAddr.sa, &peerAddrLen);
                if(newSD >= 0) {
                   LOG_TRACE
                   // TRANSLATORS: Log message on incoming SCTP control connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
@@ -1586,6 +1661,10 @@ static bool mainLoop(const bool     isActiveMode,
                      LOG_END
                   }
 #endif
+                  bool            dummyLease = false;
+                  struct in6_addr dummyAddr  = {};
+                  uint32_t        dummyVal   = 0;
+                  applyControlQoS(newSD, (peerAddrLen > 0) ? &peerAddr : nullptr, true, dummyLease, dummyAddr, dummyVal);
                   gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
                }
                else {
@@ -1597,13 +1676,20 @@ static bool mainLoop(const bool     isActiveMode,
             }
             else if( (isActiveMode == false) &&
                      (fds[controlID].fd == gControlSocketTCP) ) {
-               const int newSD = ext_accept(gControlSocketTCP, nullptr, 0);
+               sockaddr_union peerAddr;
+               socklen_t      peerAddrLen = sizeof(peerAddr);
+               memset(&peerAddr, 0, sizeof(peerAddr));
+               const int newSD = ext_accept(gControlSocketTCP, &peerAddr.sa, &peerAddrLen);
                if(newSD >= 0) {
                   LOG_TRACE
                   // TRANSLATORS: Log message on incoming TCP control connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
                   stdlog << formatText(gettext("Accept on TCP control socket {} -> new control connection {}"), gControlSocketTCP, newSD) << "\n";
                   LOG_END
-                  if(configureTCPControlSocket(newSD
+                  bool            dummyLease = false;
+                  struct in6_addr dummyAddr  = {};
+                  uint32_t        dummyVal   = 0;
+                  if(applyControlQoS(newSD, (peerAddrLen > 0) ? &peerAddr : nullptr, true, dummyLease, dummyAddr, dummyVal) &&
+                     configureTCPControlSocket(newSD
 #if defined(HAVE_MPTCP)
                                                , static_cast<bool>(gPassiveControlMPTCP)
 #endif
@@ -1624,13 +1710,20 @@ static bool mainLoop(const bool     isActiveMode,
 #if defined(__OpenBSD__)
             else if( (isActiveMode == false) &&
                      (fds[controlID].fd == gControlSocketTCP6) ) {
-               const int newSD = ext_accept(gControlSocketTCP6, nullptr, 0);
+               sockaddr_union peerAddr;
+               socklen_t      peerAddrLen = sizeof(peerAddr);
+               memset(&peerAddr, 0, sizeof(peerAddr));
+               const int newSD = ext_accept(gControlSocketTCP6, &peerAddr.sa, &peerAddrLen);
                if(newSD >= 0) {
                   LOG_TRACE
                   // TRANSLATORS: Log message on incoming TCP6 control connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
                   stdlog << formatText(gettext("Accept on TCP6 control socket {} -> new control connection {}"), gControlSocketTCP6, newSD) << "\n";
                   LOG_END
-                  if(configureTCPControlSocket(newSD
+                  bool            dummyLease = false;
+                  struct in6_addr dummyAddr  = {};
+                  uint32_t        dummyVal   = 0;
+                  if(applyControlQoS(newSD, (peerAddrLen > 0) ? &peerAddr : nullptr, true, dummyLease, dummyAddr, dummyVal) &&
+                     configureTCPControlSocket(newSD
 #if defined(HAVE_MPTCP)
                                                , static_cast<bool>(gPassiveControlMPTCP)
 #endif
@@ -1652,7 +1745,10 @@ static bool mainLoop(const bool     isActiveMode,
 #if defined(HAVE_QUIC)
             else if( (isActiveMode == false) &&
                      (fds[controlID].fd == gControlSocketQUIC) ) {
-               const int newSD = ext_accept(gControlSocketQUIC, nullptr, 0);
+               sockaddr_union peerAddr;
+               socklen_t      peerAddrLen = sizeof(peerAddr);
+               memset(&peerAddr, 0, sizeof(peerAddr));
+               const int newSD = ext_accept(gControlSocketQUIC, &peerAddr.sa, &peerAddrLen);
                if(newSD >= 0) {
                   LOG_TRACE
                   // TRANSLATORS: Log message on incoming QUIC control connection. Placeholders: {} 1: listening socket fd, 2: accepted socket fd.
@@ -1672,6 +1768,10 @@ static bool mainLoop(const bool     isActiveMode,
                      tlsConfig.sessionKey       = sessionKey;
                      tlsConfig.sessionKeyLength = sessionKeyLength;
 
+                     bool            dummyLease = false;
+                     struct in6_addr dummyAddr  = {};
+                     uint32_t        dummyVal   = 0;
+                     applyControlQoS(newSD, (peerAddrLen > 0) ? &peerAddr : nullptr, true, dummyLease, dummyAddr, dummyVal);
                      if(quicServerHandshake(newSD, tlsConfig) == 0) {
                         quicRegisterControlSocket(newSD, false);
                         gMessageReader.registerSocket(IPPROTO_QUIC, newSD);
@@ -1903,34 +2003,15 @@ static void passiveMode(const uint16_t localPort)
             }
          }
 
-         // ------ Set default peer parameters ---------------------------------
-         struct sctp_paddrparams params;
-         memset(&params, 0, sizeof(params));
-         params.spp_assoc_id          = SCTP_FUTURE_ASSOC;
-         params.spp_address.ss_family = checkIPv6() ? AF_INET6 : AF_INET;
-#if defined(SPP_HB_ENABLE)
-         params.spp_flags             = SPP_HB_ENABLE;
-#endif
-         params.spp_hbinterval        = gControlHBInterval;
-         params.spp_pathmaxrxt        = gControlHBPathMaxRtx;
-         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
-                           &params, sizeof(params)) < 0) {
-            LOG_WARNING
-            // TRANSLATORS: Error enabling SCTP heartbeats. Placeholders: {} 1: socket fd, 2: strerror() message.
-            stdlog << formatText(gettext("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket {}: {}!"), gControlSocket, strerror(errno)) << "\n";
-            LOG_END
+         if(gControlTrafficClass.has_value()) {
+            setTrafficClass(gControlSocket, *gControlTrafficClass);
          }
 
-         sctp_assocparams assocparams;
-         memset(&assocparams, 0, sizeof(assocparams));
-         assocparams.sasoc_assoc_id   = SCTP_FUTURE_ASSOC;
-         assocparams.sasoc_asocmaxrxt = gControlHBAssocMaxRtx;
-         if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
-            LOG_WARNING
-            // TRANSLATORS: Warning configuring SCTP association retransmission max. Placeholders: {} 1: socket fd, 2: strerror() message.
-            stdlog << formatText(gettext("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket {}: {}!"), gControlSocket, strerror(errno)) << "\n";
-            LOG_END
-         }
+         // ------ Set default peer parameters ---------------------------------
+         configureSCTPHeartbeats(gControlSocket, SCTP_FUTURE_ASSOC, nullptr,
+                                 std::optional<uint32_t>(gControlHBInterval),
+                                 std::optional<uint32_t>(gControlHBPathMaxRtx),
+                                 std::optional<uint32_t>(gControlHBAssocMaxRtx));
 
          const int noDelayOption = 1;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_NODELAY,
@@ -2010,6 +2091,9 @@ static void passiveMode(const uint16_t localPort)
          LOG_END_FATAL
       }
 
+      if(gControlTrafficClass.has_value()) {
+         setTrafficClass(gControlSocketTCP, *gControlTrafficClass);
+      }
       gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
 
 #if defined(__OpenBSD__)
@@ -2031,6 +2115,9 @@ static void passiveMode(const uint16_t localPort)
             stdlog << formatText(gettext("Unable to create and bind TCP6 control socket on port {}: {}!"),
                                  localPort + 1, strerror(errno)) << "\n";
             LOG_END_FATAL
+         }
+         if(gControlTrafficClass.has_value()) {
+            setTrafficClass(gControlSocketTCP6, *gControlTrafficClass);
          }
          gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP6);
       }
@@ -2054,6 +2141,9 @@ static void passiveMode(const uint16_t localPort)
                stdlog << formatText(gettext("Unable to configure QUIC ALPN (QUIC_SOCKOPT_ALPN option) on QUIC control socket {}: {}!"),
                                     gControlSocketQUIC, strerror(errno)) << "\n";
                LOG_END_FATAL
+            }
+            if(gControlTrafficClass.has_value()) {
+               setTrafficClass(gControlSocketQUIC, *gControlTrafficClass);
             }
             configureQuicControlSocket(gControlSocketQUIC, gControlHBInterval * gControlHBAssocMaxRtx);
             if(ext_listen(gControlSocketQUIC, 100) < 0) {
@@ -2679,6 +2769,17 @@ static void activeMode(const char* remoteEndpoint)
       configureQuicControlSocket(gControlSocket, gControlHBInterval * gControlHBAssocMaxRtx);
    }
 #endif
+   if(!applyControlQoS(gControlSocket, &controlAddress, false,
+                       gControlHasFlowLabel, gControlFlowLabelAddr, gControlFlowLabelValue)) {
+      ext_close(gControlSocket);
+      finishLogging();
+      std::exit(1);
+   }
+   if((gControlFlowLabel.Mode == FlowLabelMode::Explicit) &&
+      (controlAddress.sa.sa_family == AF_INET6) &&
+      (!IN6_IS_ADDR_V4MAPPED(&controlAddress.in6.sin6_addr))) {
+      controlAddress.in6.sin6_flowinfo = htobe32(gControlFlowLabel.Label & 0x000fffffU);
+   }
    if(ext_connect(gControlSocket, &controlAddress.sa, getSocklen(&controlAddress.sa)) < 0) {
       LOG_FATAL
       // TRANSLATORS: Fatal error when connecting to remote control endpoint. {} is strerror() message.
@@ -2725,34 +2826,10 @@ static void activeMode(const char* remoteEndpoint)
 #endif
 #if defined(HAVE_SCTP)
    if(gActiveControlProtocol == IPPROTO_SCTP) {
-      sctp_paddrparams paddrparams;
-      memset(&paddrparams, 0, sizeof(paddrparams));
-      paddrparams.spp_assoc_id          = SCTP_FUTURE_ASSOC;
-      paddrparams.spp_address.ss_family = controlAddress.sa.sa_family;
-#if defined(SPP_HB_ENABLE)
-      paddrparams.spp_flags             = SPP_HB_ENABLE;
-#endif
-      paddrparams.spp_hbinterval        = gControlHBInterval;
-      paddrparams.spp_pathmaxrxt        = gControlHBPathMaxRtx;
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddrparams, sizeof(paddrparams)) < 0) {
-         LOG_WARNING
-         // TRANSLATORS: Error enabling SCTP heartbeats. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to enable heartbeats (SCTP_PEER_ADDR_PARAMS option) on SCTP control socket {}: {}!"),
-                          gControlSocket, strerror(errno)) << "\n";
-         LOG_END
-      }
-
-      sctp_assocparams assocparams;
-      memset(&assocparams, 0, sizeof(assocparams));
-      assocparams.sasoc_assoc_id   = SCTP_FUTURE_ASSOC;
-      assocparams.sasoc_asocmaxrxt = gControlHBAssocMaxRtx;
-      if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_ASSOCINFO, &assocparams, sizeof(assocparams)) < 0) {
-         LOG_WARNING
-         // TRANSLATORS: Warning configuring SCTP association retransmission max. Placeholders: {} 1: socket fd, 2: strerror() message.
-         stdlog << formatText(gettext("Unable to configure retransmissions (SCTP_ASSOCINFO option) on SCTP control socket {}: {}!"),
-                          gControlSocket, strerror(errno)) << "\n";
-         LOG_END
-      }
+      configureSCTPHeartbeats(gControlSocket, SCTP_CURRENT_ASSOC, &controlAddress,
+                              std::optional<uint32_t>(gControlHBInterval),
+                              std::optional<uint32_t>(gControlHBPathMaxRtx),
+                              std::optional<uint32_t>(gControlHBAssocMaxRtx));
    }
    else
 #endif
@@ -2816,7 +2893,10 @@ static void activeMode(const char* remoteEndpoint)
                                 gActiveNodeName, gPassiveNodeName,
                                 gConfigName,
                                 gVectorNamePattern, gVectorFileFormat,
-                                gScalarNamePattern, gScalarFileFormat)) {
+                                gScalarNamePattern, gScalarFileFormat,
+                                gControlTrafficClass, gControlFlowLabel,
+                                gControlHBInterval, gControlHBPathMaxRtx,
+                                gControlHBAssocMaxRtx)) {
       LOG_FATAL
       // TRANSLATORS: Fatal error when sending START command to passive peer over control channel.
       stdlog << gettext("ERROR: Unable to start measurement!") << "\n";
@@ -2863,6 +2943,10 @@ static void activeMode(const char* remoteEndpoint)
    }
 #endif
    if(gControlSocket >= 0) {
+      if(gControlHasFlowLabel) {
+         releaseFlowLabel(gControlSocket, gControlFlowLabelAddr, gControlFlowLabelValue);
+         gControlHasFlowLabel = false;
+      }
       gMessageReader.deregisterSocket(gControlSocket);
       ext_close(gControlSocket);
       gControlSocket = -1;

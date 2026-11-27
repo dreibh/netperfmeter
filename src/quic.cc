@@ -299,10 +299,10 @@ int quicClientHandshake(const int sd, const QuicTlsConfig& config)
 }
 
 
-// ###### Configure QUIC control socket parameters ##########################
-bool configureQuicControlSocket(const int sd, const unsigned int idleTimeoutMs)
+// ###### Configure QUIC idle timeout parameter #############################
+bool configureQuicIdleTimeout(const int sd, const uint64_t idleTimeoutMs, const bool allowZero)
 {
-   if(idleTimeoutMs > 0) {
+   if((idleTimeoutMs > 0) || allowZero) {
       quic_transport_param param;
       socklen_t            paramLength = sizeof(param);
       std::memset(&param, 0, sizeof(param));
@@ -310,12 +310,19 @@ bool configureQuicControlSocket(const int sd, const unsigned int idleTimeoutMs)
       if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_TRANSPORT_PARAM, &param, &paramLength) < 0) {
          return false;
       }
-      param.max_idle_timeout = static_cast<uint64_t>(idleTimeoutMs) * 1000ULL;
+      param.max_idle_timeout = idleTimeoutMs * 1000ULL;
       if(ext_setsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_TRANSPORT_PARAM, &param, paramLength) < 0) {
          return false;
       }
    }
    return true;
+}
+
+
+// ###### Configure QUIC control socket parameters ##########################
+bool configureQuicControlSocket(const int sd, const unsigned int idleTimeoutMs)
+{
+   return configureQuicIdleTimeout(sd, static_cast<uint64_t>(idleTimeoutMs), true);
 }
 
 

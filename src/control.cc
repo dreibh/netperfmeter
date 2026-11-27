@@ -270,10 +270,44 @@ bool performNetPerfMeterAddFlow(MessageReader*   messageReader,
    strncpy((char*)&addFlowMsg->CongestionControl, flow->getTrafficSpec().CongestionControl.c_str(),
            std::min(sizeof(addFlowMsg->CongestionControl), flow->getTrafficSpec().CongestionControl.size()));
 
-   // Obsolete fields (used for Linux MPTCP development version):
-   memset((char*)&addFlowMsg->PathMgr,   0, sizeof(addFlowMsg->PathMgr));
-   memset((char*)&addFlowMsg->Scheduler, 0, sizeof(addFlowMsg->Scheduler));
-   addFlowMsg->NDiffPorts = htobe16(0);
+   const FlowTrafficSpec& spec = flow->getTrafficSpec();
+   if(spec.TrafficClass.has_value()) {
+      addFlowMsg->TrafficClassSpec =
+         htobe16(static_cast<uint16_t>(NPMAF_TC_VALID_MASK | (*spec.TrafficClass & NPMAF_TC_VALUE_MASK)));
+   }
+   else {
+      addFlowMsg->TrafficClassSpec = htobe16(NPMAF_TC_NOT_SET);
+   }
+
+   uint32_t flSpec = NPMAF_FL_NOT_SET;
+   switch(spec.FlowLabel.Mode) {
+      case FlowLabelMode::Explicit:
+         flSpec = NPMAF_FL_VALID | (spec.FlowLabel.Label & NPMAF_FL_VALUE_MASK);
+         break;
+      case FlowLabelMode::Auto:
+         flSpec = NPMAF_FL_VALID | NPMAF_FL_AUTO;
+         break;
+      case FlowLabelMode::Reflect:
+         flSpec = NPMAF_FL_VALID | NPMAF_FL_REFLECT;
+         break;
+      case FlowLabelMode::Default:
+      default:
+         flSpec = NPMAF_FL_NOT_SET;
+         break;
+   }
+   addFlowMsg->FlowLabelSpec = htobe32(flSpec);
+   memset(addFlowMsg->Padding1, 0, sizeof(addFlowMsg->Padding1));
+
+   uint8_t hbFlags = 0x00;
+   if(spec.HBInterval.has_value())    { hbFlags |= NPMAF_HBF_INTERVAL; }
+   if(spec.HBPathMaxRtx.has_value())  { hbFlags |= NPMAF_HBF_PATHMAXRTX; }
+   if(spec.HBAssocMaxRtx.has_value()) { hbFlags |= NPMAF_HBF_ASSOCMAXRTX; }
+   addFlowMsg->HBMagic       = (hbFlags != 0) ? NPMAF_HB_MAGIC : 0x00;
+   addFlowMsg->HBFlags       = hbFlags;
+   addFlowMsg->Padding2      = 0x0000;
+   addFlowMsg->HBInterval    = htobe32(spec.HBInterval.value_or(0));
+   addFlowMsg->HBPathMaxRtx  = htobe32(spec.HBPathMaxRtx.value_or(0));
+   addFlowMsg->HBAssocMaxRtx = htobe32(spec.HBAssocMaxRtx.value_or(0));
 
    LOG_TRACE
    stdlog << std::format("<R1 sd={}>\n", controlSocket);
@@ -398,16 +432,21 @@ bool performNetPerfMeterIdentifyFlow(MessageReader*   messageReader,
 
 
 // ###### Start measurement #################################################
-bool performNetPerfMeterStart(MessageReader*   messageReader,
-                              int              controlSocket,
-                              const uint64_t   measurementID,
-                              const char*      activeNodeName,
-                              const char*      passiveNodeName,
-                              const char*      configName,
-                              const char*      vectorNamePattern,
-                              const FileFormat vectorFileFormat,
-                              const char*      scalarNamePattern,
-                              const FileFormat scalarFileFormat)
+bool performNetPerfMeterStart(MessageReader*                messageReader,
+                              int                           controlSocket,
+                              const uint64_t                measurementID,
+                              const char*                   activeNodeName,
+                              const char*                   passiveNodeName,
+                              const char*                   configName,
+                              const char*                   vectorNamePattern,
+                              const FileFormat              vectorFileFormat,
+                              const char*                   scalarNamePattern,
+                              const FileFormat              scalarFileFormat,
+                              const std::optional<uint8_t>& controlTrafficClass,
+                              const FlowLabelSetting&       controlFlowLabel,
+                              const unsigned int            controlHBInterval,
+                              const unsigned int            controlHBPathMaxRtx,
+                              const unsigned int            controlHBAssocMaxRtx)
 {
    // ====== Write config file ==============================================
    FILE* configFile = nullptr;
@@ -433,8 +472,17 @@ bool performNetPerfMeterStart(MessageReader*   messageReader,
                            Flow::getNodeOutputName(scalarNamePattern, "passive").c_str());
       fprintf(configFile, "VECTOR_ACTIVE_NODE=\"%s\"\n",
                            Flow::getNodeOutputName(vectorNamePattern, "active").c_str());
-      fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s\"\n\n",
+      fprintf(configFile, "VECTOR_PASSIVE_NODE=\"%s\"\n",
                            Flow::getNodeOutputName(vectorNamePattern, "passive").c_str());
+      fprintf(configFile, "CONTROL_TRAFFIC_CLASS=\"%s\"\n",
+                           formatTrafficClassConfig(controlTrafficClass).c_str());
+      fprintf(configFile, "CONTROL_TRAFFIC_CLASS_NAME=\"%s\"\n",
+                           formatTrafficClassNameConfig(controlTrafficClass).c_str());
+      fprintf(configFile, "CONTROL_FLOW_LABEL=\"%s\"\n",
+                           formatFlowLabelConfig(controlFlowLabel).c_str());
+      fprintf(configFile, "CONTROL_HBINTERVAL=%u\n",     controlHBInterval);
+      fprintf(configFile, "CONTROL_HBPATHMAXRTX=%u\n",   controlHBPathMaxRtx);
+      fprintf(configFile, "CONTROL_HBASSOCMAXRTX=%u\n\n", controlHBAssocMaxRtx);
 
       for(std::vector<Flow*>::iterator iterator = FlowManager::getFlowManager()->getFlowSet().begin();
          iterator != FlowManager::getFlowManager()->getFlowSet().end();
@@ -465,6 +513,15 @@ bool performNetPerfMeterStart(MessageReader*   messageReader,
          fprintf(configFile, "FLOW%u_NODELAY=\"%s\"\n",                      flow->getFlowID(), (flow->getTrafficSpec().NoDelay == true) ? "on" : "off");
          fprintf(configFile, "FLOW%u_DEBUG=\"%s\"\n",                        flow->getFlowID(), (flow->getTrafficSpec().Debug == true) ? "on" : "off");
          fprintf(configFile, "FLOW%u_CC=\"%s\"\n",                           flow->getFlowID(), flow->getTrafficSpec().CongestionControl.c_str());
+         fprintf(configFile, "FLOW%u_TRAFFIC_CLASS=\"%s\"\n",                flow->getFlowID(), formatTrafficClassConfig(flow->getTrafficSpec().TrafficClass).c_str());
+         fprintf(configFile, "FLOW%u_TRAFFIC_CLASS_NAME=\"%s\"\n",           flow->getFlowID(), formatTrafficClassNameConfig(flow->getTrafficSpec().TrafficClass).c_str());
+         fprintf(configFile, "FLOW%u_FLOW_LABEL=\"%s\"\n",                   flow->getFlowID(), formatFlowLabelConfig(flow->getTrafficSpec().FlowLabel).c_str());
+         fprintf(configFile, "FLOW%u_HBINTERVAL=\"%s\"\n",                   flow->getFlowID(),
+                              flow->getTrafficSpec().HBInterval.has_value() ? std::to_string(*flow->getTrafficSpec().HBInterval).c_str() : "default");
+         fprintf(configFile, "FLOW%u_HBPATHMAXRTX=\"%s\"\n",                 flow->getFlowID(),
+                              flow->getTrafficSpec().HBPathMaxRtx.has_value() ? std::to_string(*flow->getTrafficSpec().HBPathMaxRtx).c_str() : "default");
+         fprintf(configFile, "FLOW%u_HBASSOCMAXRTX=\"%s\"\n",                flow->getFlowID(),
+                              flow->getTrafficSpec().HBAssocMaxRtx.has_value() ? std::to_string(*flow->getTrafficSpec().HBAssocMaxRtx).c_str() : "default");
          fprintf(configFile, "FLOW%u_VECTOR_ACTIVE_NODE=\"%s\"\n",           flow->getFlowID(),
                               Flow::getNodeOutputName(vectorNamePattern, "active",
                                  std::format("-{:08x}-{:04x}", flow->getFlowID(), flow->getStreamID())).c_str());
@@ -969,6 +1026,39 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
       congestionControl[sizeof(addFlowMsg->CongestionControl)] = 0x00;
       trafficSpec.CongestionControl = std::string(congestionControl);
 
+      const uint16_t tcSpec = be16toh(addFlowMsg->TrafficClassSpec);
+      if((tcSpec & NPMAF_TC_VALID_MASK) == NPMAF_TC_VALID_MASK) {
+         trafficSpec.TrafficClass = static_cast<uint8_t>(tcSpec & NPMAF_TC_VALUE_MASK);
+      }
+
+      const uint32_t flSpec = be32toh(addFlowMsg->FlowLabelSpec);
+      if((flSpec & NPMAF_FL_VALID) != 0) {
+         if((flSpec & NPMAF_FL_AUTO) != 0) {
+            trafficSpec.FlowLabel.Mode  = FlowLabelMode::Auto;
+            trafficSpec.FlowLabel.Label = 0;
+         }
+         else if((flSpec & NPMAF_FL_REFLECT) != 0) {
+            trafficSpec.FlowLabel.Mode  = FlowLabelMode::Reflect;
+            trafficSpec.FlowLabel.Label = 0;
+         }
+         else {
+            trafficSpec.FlowLabel.Mode  = FlowLabelMode::Explicit;
+            trafficSpec.FlowLabel.Label = flSpec & NPMAF_FL_VALUE_MASK;
+         }
+      }
+
+      if(addFlowMsg->HBMagic == NPMAF_HB_MAGIC) {
+         if((addFlowMsg->HBFlags & NPMAF_HBF_INTERVAL) != 0) {
+            trafficSpec.HBInterval = std::min<uint32_t>(be32toh(addFlowMsg->HBInterval), 86400000U);
+         }
+         if((addFlowMsg->HBFlags & NPMAF_HBF_PATHMAXRTX) != 0) {
+            trafficSpec.HBPathMaxRtx = std::max<uint32_t>(1U, std::min<uint32_t>(be32toh(addFlowMsg->HBPathMaxRtx), 1000000U));
+         }
+         if((addFlowMsg->HBFlags & NPMAF_HBF_ASSOCMAXRTX) != 0) {
+            trafficSpec.HBAssocMaxRtx = std::max<uint32_t>(1U, std::min<uint32_t>(be32toh(addFlowMsg->HBAssocMaxRtx), 1000000U));
+         }
+      }
+
       Flow* flow = new Flow(be64toh(addFlowMsg->MeasurementID), be32toh(addFlowMsg->FlowID),
                             be16toh(addFlowMsg->StreamID), trafficSpec,
                             controlSocket);
@@ -1296,7 +1386,7 @@ bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
       if(!isAlreadyInitialised) {
          flow->lock();
          const int  controlSocketDescriptor = flow->getControlSocketDescriptor();
-         const bool socketConfigured        = flow->configureSocket(sd);
+         const bool socketConfigured        = flow->configureSocket(sd, from);
          flow->unlock();
          sendNetPerfMeterAcknowledge(controlSocketDescriptor,
                                      be64toh(identifyMsg->MeasurementID),

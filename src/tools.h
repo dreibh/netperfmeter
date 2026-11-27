@@ -43,6 +43,7 @@
 #include <format>
 #include <iostream>
 #include <netinet/in.h>
+#include <optional>
 #include <poll.h>
 #include <string>
 #include <string_view>
@@ -88,6 +89,9 @@
 #if defined(HAVE_SCTP)
 #if !defined(SCTP_FUTURE_ASSOC)
 #define SCTP_FUTURE_ASSOC 0
+#endif
+#if !defined(SCTP_CURRENT_ASSOC)
+#define SCTP_CURRENT_ASSOC 0
 #endif
 #if !defined(SCTP_UNORDERED) && defined(MSG_UNORDERED)
 #define SCTP_UNORDERED MSG_UNORDERED
@@ -243,6 +247,39 @@ void printAddress(std::ostream&          os,
                   const bool             hideScope = false);
 
 [[nodiscard]] const char* getProtocolName(const int protocol);
+
+enum class FlowLabelMode : uint8_t
+{
+   Default  = 0,
+   Explicit = 1,
+   Auto     = 2,
+   Reflect  = 3
+};
+
+struct FlowLabelSetting
+{
+   FlowLabelMode Mode  { FlowLabelMode::Default };
+   uint32_t      Label { 0 };
+
+   constexpr bool operator==(const FlowLabelSetting&) const noexcept = default;
+   [[nodiscard]] constexpr bool isSet() const noexcept {
+      return Mode != FlowLabelMode::Default;
+   }
+};
+
+[[nodiscard]] bool parseTrafficClass(const char* str,
+                                     uint8_t&    trafficClass,
+                                     bool&       ecnBitsCleared);
+[[nodiscard]] const char* getTrafficClassName(const uint8_t trafficClass);
+[[nodiscard]] std::string formatTrafficClass(const std::optional<uint8_t>& trafficClass);
+[[nodiscard]] std::string formatTrafficClassConfig(const std::optional<uint8_t>& trafficClass);
+[[nodiscard]] std::string formatTrafficClassNameConfig(const std::optional<uint8_t>& trafficClass);
+
+[[nodiscard]] bool parseFlowLabel(const char*       str,
+                                  FlowLabelSetting& flowLabel);
+[[nodiscard]] std::string formatFlowLabel(const FlowLabelSetting& flowLabel);
+[[nodiscard]] std::string formatFlowLabelConfig(const FlowLabelSetting& flowLabel);
+
 [[nodiscard]] uint16_t getPort(const struct sockaddr* address);
 bool setPort(struct sockaddr* address, uint16_t port);
 #if defined(HAVE_SCTP)

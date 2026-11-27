@@ -194,7 +194,8 @@ class Flow : public Thread
    void print(std::ostream& os, const bool printStatistics = false);
    void resetStatistics();
 
-   bool configureSocket(const int socketDescriptor);
+   bool configureSocket(const int             socketDescriptor,
+                        const sockaddr_union* remoteAddress = nullptr);
 
    bool activate();
    void deactivate(const bool asyncStop = false);
@@ -224,6 +225,9 @@ class Flow : public Thread
    int                ControlSocketDescriptor;
    sockaddr_union     RemoteAddress;
    bool               RemoteAddressIsValid;
+   bool               HasFlowLabelLease;
+   struct in6_addr    FlowLabelLeaseAddr;
+   uint32_t           FlowLabelLeaseValue;
 
 
    // ====== Timing =========================================================
@@ -253,5 +257,27 @@ class Flow : public Thread
    double             Jitter;   // Current jitter value
    Defragmenter       MyDefragmenter;
 };
+
+bool setTrafficClass(int sd, uint8_t trafficClass);
+bool setFlowLabel(int                     sd,
+                  const struct sockaddr*  peerAddress,
+                  const FlowLabelSetting& flowLabel,
+                  bool                    isAcceptedConnection,
+                  bool&                   leaseAcquired,
+                  struct in6_addr&        leaseAddr,
+                  uint32_t&               leaseValue);
+void releaseFlowLabel(int sd, const struct in6_addr& leaseAddr, uint32_t leaseValue);
+bool configureTCPKeepAlive(int                            sd,
+                           bool                           isMPTCP,
+                           const std::optional<uint32_t>& hbInterval,
+                           const std::optional<uint32_t>& hbPathMaxRtx);
+#if defined(HAVE_SCTP)
+bool configureSCTPHeartbeats(int                            sd,
+                             sctp_assoc_t                   assocID,
+                             const sockaddr_union*          peerAddress,
+                             const std::optional<uint32_t>& hbInterval,
+                             const std::optional<uint32_t>& hbPathMaxRtx,
+                             const std::optional<uint32_t>& hbAssocMaxRtx);
+#endif
 
 #endif // FLOW_H

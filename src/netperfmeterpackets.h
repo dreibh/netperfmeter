@@ -127,9 +127,7 @@ struct NPM_PACKED NetPerfMeterOnOffEvent
 
 // ====== Add Flow Message ==================================================
 inline constexpr size_t NETPERFMETER_DESCRIPTION_SIZE = 32;
-inline constexpr size_t NETPERFMETER_PATHMGR_LENGTH   = 16;
 inline constexpr size_t NETPERFMETER_CC_LENGTH        = 16;
-inline constexpr size_t NETPERFMETER_SCHEDULER_LENGTH = 16;
 
 inline constexpr uint8_t NPMAFF_DEBUG       = (1 << 0);
 inline constexpr uint8_t NPMAFF_NODELAY     = (1 << 1);
@@ -138,6 +136,36 @@ inline constexpr uint8_t NPMAFF_REPEATONOFF = (1 << 2);
 // RetransmissionTrials in milliseconds (highest bit of 32-bit value set)
 inline constexpr uint32_t NPMAF_RTX_TRIALS_IN_MILLISECONDS = (1U << 31);   // Use ms instead of number of trials
 inline constexpr uint32_t NPMAF_RTX_DEFAULT                = 0x7fffffffU;  // Use protocol default
+
+// TrafficClassSpec wire encoding (big-endian uint16_t):
+// - 0x0000: unset (use OS default)
+// - (val & 0xff00) == 0xff00: explicit Traffic Class / TOS in (val & 0x00fc),
+//   leaving the lower 2 bits zero so ECN remains controlled by the transport stack.
+inline constexpr uint16_t NPMAF_TC_NOT_SET    = 0x0000U;
+inline constexpr uint16_t NPMAF_TC_VALID_MASK = 0xff00U;
+inline constexpr uint16_t NPMAF_TC_VALUE_MASK = 0x00fcU;
+
+// FlowLabelSpec wire encoding (big-endian uint32_t):
+// - 0x00000000: unset (use OS default)
+// - Bit 31 (NPMAF_FL_VALID) must be set when present (avoids collision with
+//   7-bit ASCII legacy PathMgr strings):
+//   - NPMAF_FL_VALID | (label & 0x000fffff): explicit 20-bit IPv6 Flow Label
+//   - NPMAF_FL_VALID | NPMAF_FL_AUTO:        enable automatic IPv6 Flow Label
+//   - NPMAF_FL_VALID | NPMAF_FL_REFLECT:     request Flow Label reflection
+inline constexpr uint32_t NPMAF_FL_NOT_SET    = 0x00000000U;
+inline constexpr uint32_t NPMAF_FL_VALID      = (1U << 31);
+inline constexpr uint32_t NPMAF_FL_AUTO       = (1U << 30);
+inline constexpr uint32_t NPMAF_FL_REFLECT    = (1U << 29);
+inline constexpr uint32_t NPMAF_FL_VALUE_MASK = 0x000fffffU;
+
+// Per-flow heartbeat / keep-alive wire encoding (replaces obsolete Scheduler[16]):
+// - HBMagic == 0xff indicates the HB* fields are valid (avoids collision with
+//   7-bit ASCII legacy Scheduler strings).
+// - HBFlags bitmask selects which parameters are explicitly configured.
+inline constexpr uint8_t NPMAF_HB_MAGIC        = 0xffU;
+inline constexpr uint8_t NPMAF_HBF_INTERVAL    = (1U << 0);
+inline constexpr uint8_t NPMAF_HBF_PATHMAXRTX  = (1U << 1);
+inline constexpr uint8_t NPMAF_HBF_ASSOCMAXRTX = (1U << 2);
 
 inline constexpr uint8_t NPAF_PRIMARY_PATH = 0x00;
 inline constexpr uint8_t NPAF_CMT          = 0x01;
@@ -172,10 +200,16 @@ struct NPM_PACKED NetPerfMeterAddFlowMessage
    uint8_t                CMT;
    uint8_t                CCID;
 
-   uint16_t               NDiffPorts;                                 // obsolete!
-   char                   PathMgr[NETPERFMETER_PATHMGR_LENGTH];       // obsolete!
+   uint16_t               TrafficClassSpec;
+   uint32_t               FlowLabelSpec;
+   uint8_t                Padding1[12];
    char                   CongestionControl[NETPERFMETER_CC_LENGTH];
-   char                   Scheduler[NETPERFMETER_SCHEDULER_LENGTH];   // obsolete!
+   uint8_t                HBMagic;
+   uint8_t                HBFlags;
+   uint16_t               Padding2;
+   uint32_t               HBInterval;
+   uint32_t               HBPathMaxRtx;
+   uint32_t               HBAssocMaxRtx;
 
    uint16_t               OnOffEvents;
    NetPerfMeterOnOffEvent OnOffEvent[];

@@ -57,57 +57,102 @@ _netperfmeter()
       cword="${COMP_CWORD}"
    fi
 
+   local dscpNames="BE DF CS0 LE CS1 AF11 AF12 AF13 CS2 AF21 AF22 AF23 CS3 AF31 AF32 AF33 CS4 AF41 AF42 AF43 CS5 VA EF CS6 CS7"
+   local flowLabelKeywords="default auto reflect"
+
    # echo "cur=${cur} prev=${prev} words=${words[@]} cword=${cword}"
    # echo ""
 
    # ====== Parameters ======================================================
    local flowSpec=0
    if [ "${cword}" -gt 1 ] ; then
-      if [ "${prev}" == "--tcp" ]   || \
-         [ "${prev}" == "--mptcp" ] || \
-         [ "${prev}" == "--udp" ]   || \
-         [ "${prev}" == "--dccp" ]  || \
-         [ "${prev}" == "--sctp" ]  || \
-         [ "${prev}" == "--quic" ] ; then
+      if [ "${prev}" == "-t" ]      || [ "${prev}" == "--tcp" ]   || \
+         [ "${prev}" == "-m" ]      || [ "${prev}" == "--mptcp" ] || \
+         [ "${prev}" == "-u" ]      || [ "${prev}" == "--udp" ]   || \
+         [ "${prev}" == "-d" ]      || [ "${prev}" == "--dccp" ]  || \
+         [ "${prev}" == "-s" ]      || [ "${prev}" == "--sctp" ]  || \
+         [ "${prev}" == "-k" ]      || [ "${prev}" == "--quic" ] ; then
          flowSpec=1
-      elif [[ "${prev}" =~ ^(const|exp|pareto|uniform) ]] ; then
+      elif [[ "${prev}" =~ ^(const|default|exp|normal|pareto|truncnormal|uniform) ]] ; then
          flowSpec=1
       fi
 
       if [ "${flowSpec}" -eq 1 ] ; then
          case "${cur}" in
             # ====== Flowspec ==================================================
-            const*   | \
-            exp*     | \
-            pareto*  | \
+            const*       | \
+            default:*    | \
+            exp*         | \
+            normal*      | \
+            pareto*      | \
+            truncnormal* | \
             uniform*)
                # shellcheck disable=SC2155,SC2001
                local base="$(echo "${cur}" | sed -e 's/:[^:]*$/:/')"
                # shellcheck disable=SC2155,SC2001
                local blocks="$(echo "${base}" | tr -cd ":" | wc -c)"
 
-               if [ "${blocks}" -lt 4 ] ; then
-                  if [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)([0-9]+)$ ]] ; then
+               if [[ "${cur}" != default:* ]] && [ "${blocks}" -lt 4 ] ; then
+                  if [[ "${cur}" =~ (^|:)(const|exp|normal|pareto|truncnormal|uniform)([0-9]+)$ ]] ; then
                      mapfile -t COMPREPLY < <(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}, ${cur}:" -- "${cur}")
                      compopt -o nospace
                      return
-                  elif [[ "${cur}" =~ (^|:)(const|exp|pareto|uniform)$ ]] ; then
+                  elif [[ "${cur}" =~ (^|:)(const|exp|normal|pareto|truncnormal|uniform)$ ]] ; then
                      mapfile -t COMPREPLY < <(compgen -W "${cur}0 ${cur}1 ${cur}2 ${cur}3 ${cur}4 ${cur}5 ${cur}6 ${cur}7 ${cur}8 ${cur}9 ${cur}," -- "${cur}")
                      compopt -o nospace
                      return
                   else
-                     mapfile -t COMPREPLY < <(compgen -W "${base}const ${base}exp ${base}pareto ${base}uniform" -- "${cur}" )
+                     mapfile -t COMPREPLY < <(compgen -W "${base}const ${base}exp ${base}normal ${base}pareto ${base}truncnormal ${base}uniform" -- "${cur}" )
                      compopt -o nospace
                      return
                   fi
                else
+                  local optTail="${cur##*:}"
+                  case "${optTail}" in
+                     tc=*)
+                        local tcCandidates=""
+                        local dscp
+                        for dscp in ${dscpNames} ; do
+                           tcCandidates+=" ${base}tc=${dscp}"
+                        done
+                        mapfile -t COMPREPLY < <(compgen -W "${tcCandidates}" -- "${cur}")
+                        compopt -o nospace
+                        return
+                        ;;
+                     fl=*)
+                        local flCandidates=""
+                        local fl
+                        for fl in ${flowLabelKeywords} ; do
+                           flCandidates+=" ${base}fl=${fl}"
+                        done
+                        mapfile -t COMPREPLY < <(compgen -W "${flCandidates}" -- "${cur}")
+                        compopt -o nospace
+                        return
+                        ;;
+                     debug=* | error_on_abort=* | nodelay=*)
+                        local optName="${optTail%%=*}"
+                        mapfile -t COMPREPLY < <(compgen -W "${base}${optName}=on ${base}${optName}=off" -- "${cur}")
+                        compopt -o nospace
+                        return
+                        ;;
+                     cmt=*)
+                        mapfile -t COMPREPLY < <(compgen -W "${base}cmt=off ${base}cmt=cmt ${base}cmt=cmtrpv1 ${base}cmt=cmtrpv2 ${base}cmt=mptcp ${base}cmt=like-mptcp" -- "${cur}")
+                        compopt -o nospace
+                        return
+                        ;;
+                  esac
                   mapfile -t COMPREPLY < <(compgen -W "
    ${base}cc=
+   ${base}ccid=
    ${base}cmt=
    ${base}debug=
    ${base}defragtimeout=
    ${base}description=
    ${base}error_on_abort=
+   ${base}fl=
+   ${base}hbassocmaxrtx=
+   ${base}hbinterval=
+   ${base}hbpathmaxrtx=
    ${base}id=
    ${base}maxmsgsize=
    ${base}nodelay=
@@ -118,6 +163,7 @@ _netperfmeter()
    ${base}rtx_timeout=
    ${base}rtx_trials=
    ${base}sndbuf=
+   ${base}tc=
    ${base}unordered=
    ${base}unreliable=
    ${base}v6only
@@ -135,17 +181,28 @@ _netperfmeter()
          -P | --passivenodename   | \
          -o | --sndbuf            | \
          -i | --rcvbuf            | \
+         -N | --count             | \
          -T | --runtime           | \
          --control-hbinterval     | \
          --control-hbpathmaxrtx   | \
          --control-hbassocmaxrtx)
             return
             ;;
+         # ====== Traffic Class / DSCP ======================================
+         -Q | --control-tc)
+            mapfile -t COMPREPLY < <(compgen -W "${dscpNames}" -- "${cur}")
+            return
+            ;;
+         # ====== IPv6 Flow Label ===========================================
+         -F | --control-fl)
+            mapfile -t COMPREPLY < <(compgen -W "${flowLabelKeywords}" -- "${cur}")
+            return
+            ;;
          # ====== Local address =============================================
          -L | --local | \
          -l | --control-local)
             # Suggest local IP addresses:
-            # NOTE: For IPv6, ":" must bave been removed from COMP_WORDBREAKS
+            # NOTE: For IPv6, ":" must have been removed from COMP_WORDBREAKS
             #       See comment above!
             local addresses
             if [ -x  /usr/sbin/ip ] ; then
@@ -227,6 +284,10 @@ _netperfmeter()
 --tls-ca
 -H
 --tls-hostname
+-Q
+--control-tc
+-F
+--control-fl
 --control-hbinterval
 --control-hbpathmaxrtx
 --control-hbassocmaxrtx
@@ -278,7 +339,7 @@ _netperfmeter()
 --version
 "
       else
-         opts="const exp pareto uniform"
+         opts="const default: exp normal pareto truncnormal uniform"
       fi
 
    # ------ Passive side ----------------------------------------------------
@@ -310,6 +371,10 @@ _netperfmeter()
 --tls-cert
 -I
 --tls-ca
+-Q
+--control-tc
+-F
+--control-fl
 --control-hbinterval
 --control-hbpathmaxrtx
 --control-hbassocmaxrtx
