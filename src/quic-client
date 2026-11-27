@@ -1,18 +1,33 @@
 #!/bin/sh -eu
 
 DIRECTORY="quic-setup"
-if [ $# -gt 0 ] ; then
-   FQDN="$1"
-else
-   FQDN="$(hostname -f)"
+if [ ! $# -eq 3 ] ; then
+   echo >&2 "Usage: $0 server_ip:server_port server_fqdn client_fqdn"
+   echo >&2 "Example: $0 [::1]:9000 server.domain.example client.domain.example"
+   exit 1
 fi
+SERVER="$1"
+SERVER_FQDN="$2"
+CLIENT_FQDN="$3"
 if [ ! -e "$DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt" ] ; then
    echo >&2 "ERROR: TLS files are missing. Check quic-setup/make-test-certificates!"
    exit 1
 fi
 
+if [ ! -e "$DIRECTORY/TestCA/$CLIENT_FQDN/$CLIENT_FQDN.key" ] || \
+   [ ! -e "$DIRECTORY/TestCA/$CLIENT_FQDN/$CLIENT_FQDN.crt" ] || \
+   [ ! -e "$DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt" ] ; then
+   echo >&2 "ERROR: TLS files are missing. Check quic-setup/make-test-certificates!"
+   exit 1
+fi
+
 make netperfmeter
-SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log ./netperfmeter "$FQDN":9000 \
-   -tls-hostname "$FQDN" \
-   -tls-ca       "$DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt" \
-   -quic const10:const128:const25:const1200
+
+set -x
+SSLKEYLOGFILE=/home/$USER/keylog/sslkeylog.log ./netperfmeter "$SERVER" \
+   --control-over-quic \
+   --tls-hostname "$SERVER_FQDN" \
+   --tls-key      "$DIRECTORY/TestCA/$CLIENT_FQDN/$CLIENT_FQDN.key" \
+   --tls-cert     "$DIRECTORY/TestCA/$CLIENT_FQDN/$CLIENT_FQDN.crt" \
+   --tls-ca       "$DIRECTORY/TestCA/TestLevel1/certs/TestLevel1.crt" \
+   --quic const2:const128:const2:const1200
