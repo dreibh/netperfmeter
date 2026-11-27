@@ -83,11 +83,12 @@ Flow::~Flow()
    FlowManager::getFlowManager()->removeFlow(this);
    deactivate();
    VectorFile.finish(true);
-   if((SocketDescriptor >= 0) && (OriginalSocketDescriptor)) {
-      if(DeleteWhenFinished) {
-         FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
+   if(SocketDescriptor >= 0) {
+      FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
+      if((OriginalSocketDescriptor) && (DeleteWhenFinished)) {
          ext_close(SocketDescriptor);
       }
+      SocketDescriptor = -1;
    }
 }
 
@@ -333,9 +334,6 @@ void Flow::deactivate(const bool asyncStop)
       stop();
       if(!asyncStop) {
          waitForFinish();
-         if(!socketStillShared) {
-            FlowManager::getFlowManager()->getMessageReader()->deregisterSocket(SocketDescriptor);
-         }
       }
    }
 }

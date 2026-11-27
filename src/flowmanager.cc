@@ -1034,34 +1034,45 @@ void FlowManager::run()
                         false;
 
                   if(!dataOkay) {
-                     // Close the broken connection!
+                     // Close the broken connection and detach all flows sharing it!
                      const int brokenSD = FlowSet[i]->SocketDescriptor;
-                     LOG_WARNING
-                     stdlog << format("Closing disconnected socket %d!",
-                                      brokenSD) << "\n";
-                     LOG_END
-                     const bool deregisteredFromReader =
-                        Reader.deregisterSocket(brokenSD);
-                     if( (protocol != IPPROTO_SCTP)
-#if defined(HAVE_QUIC)
-                         && (protocol != IPPROTO_QUIC)
-#endif
-                       ) {
-                        // Only SCTP and QUIC have streams. For other protocols
-                        // there is just one flow using this socket. Then, it
-                        // cannot be referenced any more.
-                        assure(deregisteredFromReader);
-                     }
-                     if(deregisteredFromReader) {
-                        ext_close(brokenSD);
-                        FlowSet[i]->SocketDescriptor = -1;
-                        FlowSet[i]->OutputStatus     = Flow::Off;
-                        FlowSet[i]->stop();
-                        if((!FlowSet[i]->isAcceptedIncomingFlow()) &&
-                           (FlowSet[i]->getTrafficSpec().ErrorOnAbort)) {
-                           sendBreak(true);
+                     FlowSet[i]->unlock();
+                     if(brokenSD >= 0) {
+                        LOG_WARNING
+                        stdlog << format("Closing disconnected socket %d!",
+                                         brokenSD) << "\n";
+                        LOG_END
+                        bool deregisteredFromReader = false;
+                        for(unsigned int j = 0; j < FlowSet.size(); j++) {
+                           FlowSet[j]->lock();
+                           if(FlowSet[j]->SocketDescriptor == brokenSD) {
+                              if(Reader.deregisterSocket(brokenSD)) {
+                                 deregisteredFromReader = true;
+                              }
+                              FlowSet[j]->SocketDescriptor = -1;
+                              FlowSet[j]->InputStatus      = Flow::Off;
+                              FlowSet[j]->OutputStatus     = Flow::Off;
+                              FlowSet[j]->PollFDEntry      = nullptr;
+                              FlowSet[j]->stop();
+                              if((!FlowSet[j]->isAcceptedIncomingFlow()) &&
+                                 (FlowSet[j]->getTrafficSpec().ErrorOnAbort)) {
+                                 sendBreak(true);
+                              }
+                           }
+                           FlowSet[j]->unlock();
+                        }
+                        if(deregisteredFromReader) {
+                           ext_close(brokenSD);
+                        }
+                        else {
+                           std::map<int, UnidentifiedSocket*>::iterator found =
+                              UnidentifiedSockets.find(brokenSD);
+                           assure(found != UnidentifiedSockets.end());
+                           found->second->ToBeRemoved = true;
+                           found->second->ToBeClosed  = true;
                         }
                      }
+                     continue;
                   }
                }
             }
