@@ -1524,11 +1524,12 @@ static bool applyControlQoS(const int             sd,
                             const bool            isAcceptedConnection,
                             bool&                 leaseAcquired,
                             struct in6_addr&      leaseAddr,
-                            uint32_t&             leaseValue)
+                            uint32_t&             leaseValue,
+                            const bool            isMPTCP = false)
 {
    leaseAcquired = false;
    if(gControlTrafficClass.has_value()) {
-      if(!setTrafficClass(sd, *gControlTrafficClass)) {
+      if(!setTrafficClass(sd, *gControlTrafficClass, isMPTCP)) {
          return false;
       }
    }
@@ -1688,12 +1689,14 @@ static bool mainLoop(const bool     isActiveMode,
                   bool            dummyLease = false;
                   struct in6_addr dummyAddr  = {};
                   uint32_t        dummyVal   = 0;
-                  if(applyControlQoS(newSD, (peerAddrLen > 0) ? &peerAddr : nullptr, true, dummyLease, dummyAddr, dummyVal) &&
-                     configureTCPControlSocket(newSD
+                  const bool isMPTCPControl =
 #if defined(HAVE_MPTCP)
-                                               , static_cast<bool>(gPassiveControlMPTCP)
+                     static_cast<bool>(gPassiveControlMPTCP);
+#else
+                     false;
 #endif
-                                              )) {
+                  if(applyControlQoS(newSD, (peerAddrLen > 0) ? &peerAddr : nullptr, true, dummyLease, dummyAddr, dummyVal, isMPTCPControl) &&
+                     configureTCPControlSocket(newSD, isMPTCPControl)) {
                      gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                   }
                   else {
@@ -1722,12 +1725,14 @@ static bool mainLoop(const bool     isActiveMode,
                   bool            dummyLease = false;
                   struct in6_addr dummyAddr  = {};
                   uint32_t        dummyVal   = 0;
-                  if(applyControlQoS(newSD, (peerAddrLen > 0) ? &peerAddr : nullptr, true, dummyLease, dummyAddr, dummyVal) &&
-                     configureTCPControlSocket(newSD
+                  const bool isMPTCPControl =
 #if defined(HAVE_MPTCP)
-                                               , static_cast<bool>(gPassiveControlMPTCP)
+                     static_cast<bool>(gPassiveControlMPTCP);
+#else
+                     false;
 #endif
-                                              )) {
+                  if(applyControlQoS(newSD, (peerAddrLen > 0) ? &peerAddr : nullptr, true, dummyLease, dummyAddr, dummyVal, isMPTCPControl) &&
+                     configureTCPControlSocket(newSD, isMPTCPControl)) {
                      gMessageReader.registerSocket(IPPROTO_TCP, newSD);
                   }
                   else {
@@ -2092,7 +2097,11 @@ static void passiveMode(const uint16_t localPort)
       }
 
       if(gControlTrafficClass.has_value()) {
-         setTrafficClass(gControlSocketTCP, *gControlTrafficClass);
+         setTrafficClass(gControlSocketTCP, *gControlTrafficClass
+#if defined(HAVE_MPTCP)
+                         , static_cast<bool>(gPassiveControlMPTCP)
+#endif
+                        );
       }
       gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP);
 
@@ -2117,7 +2126,11 @@ static void passiveMode(const uint16_t localPort)
             LOG_END_FATAL
          }
          if(gControlTrafficClass.has_value()) {
-            setTrafficClass(gControlSocketTCP6, *gControlTrafficClass);
+            setTrafficClass(gControlSocketTCP6, *gControlTrafficClass
+#if defined(HAVE_MPTCP)
+                            , static_cast<bool>(gPassiveControlMPTCP)
+#endif
+                           );
          }
          gMessageReader.registerSocket(IPPROTO_TCP, gControlSocketTCP6);
       }
@@ -2770,7 +2783,11 @@ static void activeMode(const char* remoteEndpoint)
    }
 #endif
    if(!applyControlQoS(gControlSocket, &controlAddress, false,
-                       gControlHasFlowLabel, gControlFlowLabelAddr, gControlFlowLabelValue)) {
+                       gControlHasFlowLabel, gControlFlowLabelAddr, gControlFlowLabelValue
+#if defined(HAVE_MPTCP)
+                       , (gActiveControlProtocol == IPPROTO_MPTCP)
+#endif
+                      )) {
       ext_close(gControlSocket);
       finishLogging();
       std::exit(1);

@@ -258,7 +258,7 @@ class Flow : public Thread
    Defragmenter       MyDefragmenter;
 };
 
-bool setTrafficClass(int sd, uint8_t trafficClass);
+bool setTrafficClass(int sd, uint8_t trafficClass, bool isMPTCP = false);
 bool setFlowLabel(int                     sd,
                   const struct sockaddr*  peerAddress,
                   const FlowLabelSetting& flowLabel,

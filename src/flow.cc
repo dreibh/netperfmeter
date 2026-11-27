@@ -552,8 +552,9 @@ void Flow::run()
 
 
 // ###### Set IP_TOS / IPV6_TCLASS on socket ################################
-bool setTrafficClass(const int sd, const uint8_t trafficClass)
+bool setTrafficClass(const int sd, const uint8_t trafficClass, const bool isMPTCP)
 {
+   (void)isMPTCP;
    sockaddr_union localAddr;
    socklen_t      localAddrLen = sizeof(localAddr);
    memset(&localAddr, 0, sizeof(localAddr));
@@ -566,10 +567,32 @@ bool setTrafficClass(const int sd, const uint8_t trafficClass)
       return false;
    }
 
-   const int tc = static_cast<int>(trafficClass & 0xfcU);
-   if(localAddr.sa.sa_family == AF_INET) {
+   const int  tc           = static_cast<int>(trafficClass & 0xfcU);
+   const bool isIPv4Mapped = (localAddr.sa.sa_family == AF_INET6) &&
+                             IN6_IS_ADDR_V4MAPPED(&localAddr.in6.sin6_addr);
+   if((localAddr.sa.sa_family == AF_INET) || isIPv4Mapped) {
 #if defined(IP_TOS)
       if(ext_setsockopt(sd, IPPROTO_IP, IP_TOS, &tc, sizeof(tc)) < 0) {
+         if(isIPv4Mapped && ((errno == ENOPROTOOPT) || (errno == EINVAL) || (errno == EAFNOSUPPORT))) {
+#if defined(IPV6_TCLASS)
+            if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_TCLASS, &tc, sizeof(tc)) < 0) {
+               LOG_WARNING
+               // TRANSLATORS: Warning when setting Traffic Class on an IPv4-mapped IPv6 socket fails. Placeholders: {:02x} 1: hex TC value, {} 2: socket fd, 3: strerror() message.
+               stdlog << formatText(gettext("Unable to configure Traffic Class 0x{:02x} (IPV6_TCLASS option) on socket {}: {}!"),
+                                    static_cast<unsigned int>(tc), sd, strerror(errno)) << "\n";
+               LOG_END
+            }
+#endif
+            return true;
+         }
+         if(isMPTCP && ((errno == ENOENT) || (errno == ENOPROTOOPT) || (errno == EOPNOTSUPP))) {
+            LOG_WARNING
+            // TRANSLATORS: Warning when setsockopt(IP_TOS) is unsupported on MPTCP socket. Placeholders: {:02x} 1: hex TC value, {} 2: socket fd, 3: strerror() message.
+            stdlog << formatText(gettext("Unable to configure Traffic Class 0x{:02x} (IP_TOS option) on MPTCP socket {}: {}!"),
+                                 static_cast<unsigned int>(tc), sd, strerror(errno)) << "\n";
+            LOG_END
+            return true;
+         }
          LOG_ERROR
          // TRANSLATORS: Error message when setsockopt(IP_TOS) fails. Placeholders: {:02x} 1: hex TC value, {} 2: socket fd, 3: strerror() message.
          stdlog << formatText(gettext("Unable to configure Traffic Class 0x{:02x} (IP_TOS option) on socket {}: {}!"),
@@ -587,12 +610,21 @@ bool setTrafficClass(const int sd, const uint8_t trafficClass)
    else if(localAddr.sa.sa_family == AF_INET6) {
 #if defined(IPV6_TCLASS)
       if(ext_setsockopt(sd, IPPROTO_IPV6, IPV6_TCLASS, &tc, sizeof(tc)) < 0) {
-         LOG_ERROR
-         // TRANSLATORS: Error message when setsockopt(IPV6_TCLASS) fails. Placeholders: {:02x} 1: hex TC value, {} 2: socket fd, 3: strerror() message.
-         stdlog << formatText(gettext("Unable to configure Traffic Class 0x{:02x} (IPV6_TCLASS option) on socket {}: {}!"),
-                              static_cast<unsigned int>(tc), sd, strerror(errno)) << "\n";
-         LOG_END
-         return false;
+         if(isMPTCP && ((errno == ENOENT) || (errno == ENOPROTOOPT) || (errno == EOPNOTSUPP))) {
+            LOG_WARNING
+            // TRANSLATORS: Warning when setsockopt(IPV6_TCLASS) is unsupported on MPTCP socket. Placeholders: {:02x} 1: hex TC value, {} 2: socket fd, 3: strerror() message.
+            stdlog << formatText(gettext("Unable to configure Traffic Class 0x{:02x} (IPV6_TCLASS option) on MPTCP socket {}: {}!"),
+                                 static_cast<unsigned int>(tc), sd, strerror(errno)) << "\n";
+            LOG_END
+         }
+         else {
+            LOG_ERROR
+            // TRANSLATORS: Error message when setsockopt(IPV6_TCLASS) fails. Placeholders: {:02x} 1: hex TC value, {} 2: socket fd, 3: strerror() message.
+            stdlog << formatText(gettext("Unable to configure Traffic Class 0x{:02x} (IPV6_TCLASS option) on socket {}: {}!"),
+                                 static_cast<unsigned int>(tc), sd, strerror(errno)) << "\n";
+            LOG_END
+            return false;
+         }
       }
 #else
       LOG_WARNING
@@ -607,7 +639,7 @@ bool setTrafficClass(const int sd, const uint8_t trafficClass)
       socklen_t v6onlyLen = sizeof(v6only);
       if((ext_getsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &v6only, &v6onlyLen) == 0) && (v6only == 0)) {
          if(ext_setsockopt(sd, IPPROTO_IP, IP_TOS, &tc, sizeof(tc)) < 0) {
-            if((errno != ENOPROTOOPT) && (errno != EINVAL) && (errno != EAFNOSUPPORT)) {
+            if((errno != ENOPROTOOPT) && (errno != EINVAL) && (errno != EAFNOSUPPORT) && (errno != EOPNOTSUPP)) {
                LOG_WARNING
                // TRANSLATORS: Warning when setting IP_TOS on a dual-stack IPv6 socket fails. Placeholders: {:02x} 1: hex TC value, {} 2: socket fd, 3: strerror() message.
                stdlog << formatText(gettext("Unable to configure IPv4 Traffic Class 0x{:02x} (IP_TOS option) on dual-stack socket {}: {}!"),
@@ -1008,8 +1040,14 @@ bool Flow::configureSocket(const int             socketDescriptor,
    }
 
    const bool isPassiveUDP = (TrafficSpec.Protocol == IPPROTO_UDP) && isAcceptedIncomingFlow();
+   const bool isMPTCPSocket =
+#if defined(HAVE_MPTCP)
+      (TrafficSpec.Protocol == IPPROTO_MPTCP);
+#else
+      false;
+#endif
    if(TrafficSpec.TrafficClass.has_value() && (!isPassiveUDP)) {
-      if(!setTrafficClass(socketDescriptor, *TrafficSpec.TrafficClass)) {
+      if(!setTrafficClass(socketDescriptor, *TrafficSpec.TrafficClass, isMPTCPSocket)) {
          return false;
       }
    }
