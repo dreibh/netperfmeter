@@ -347,14 +347,13 @@ static void usage(const char* program, const int exitCode)
    // TRANSLATORS: Command-line syntax message prefix:
    // "Usage: <program> [options]".
    std::cerr << HEADER(gettext("Usage:")) << "\n"
-             << CMD(program) << " "
-                ARG("output_file") "\n"
+             << CMD(program) << "\n"
                    ENTRY(OPT("-b") PIPE OPT("--batch") PIPE OPT("-i") PIPE OPT("--interactive"))
                    ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
                    ENTRY(OPT("-s") " " ARG("separator") PIPE OPT("--separator") " " ARG("separator"))
                    ENTRY(OPT("-l") PIPE OPT("--line-numbers") PIPE OPT("-n") PIPE OPT("--no-line-numbers"))
                    ENTRY(OPT("-q") PIPE OPT("--quiet"))
-                   ENTRY(ARG("variable_names"))
+                   "\t" ARG("output_file") " " SYN("[") ARG("variable_names") SYN("]") "\n"
              << CMD(program) << "\n"
                    ENTRY(OPT("-h") PIPE OPT("--help"))
              << CMD(program) << "\n"

@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <clocale>
 #include <cstddef>
 #include <cstdio>
@@ -42,7 +43,6 @@
 #include <string_view>
 #include <vector>
 #include <getopt.h>
-#include <unistd.h>
 
 #if defined(ENABLE_NLS)
 #include <libintl.h>
@@ -91,13 +91,126 @@ struct VectorMetadata
 };
 
 
+// ###### Parse OMNeT++ vector definition line ##############################
+// Format: vector <id> <object> <"quoted name"|unquoted_name> ETV
+static bool parseVectorDefinition(std::string_view line,
+                                  unsigned int&    vectorID,
+                                  std::string&     objectName,
+                                  std::string&     vectorName)
+{
+   if(!line.starts_with("vector ") && !line.starts_with("vector\t")) {
+      return false;
+   }
+   line.remove_prefix(7);
+
+   auto skipWS = [&]() {
+      while(!line.empty() && ((line.front() == ' ') || (line.front() == '\t'))) {
+         line.remove_prefix(1);
+      }
+   };
+
+   // 1. Vector ID (unsigned integer)
+   skipWS();
+   if(line.empty()) {
+      return false;
+   }
+   size_t idEnd = 0;
+   while((idEnd < line.size()) && (line[idEnd] != ' ') && (line[idEnd] != '\t')) {
+      idEnd++;
+   }
+   unsigned int parsedID = 0;
+   const auto [ptr, ec] = std::from_chars(line.data(), line.data() + idEnd, parsedID);
+   if((ec != std::errc{}) || (ptr != line.data() + idEnd)) {
+      return false;
+   }
+   line.remove_prefix(idEnd);
+
+   // 2. Object name (quoted or unquoted token)
+   skipWS();
+   if(line.empty()) {
+      return false;
+   }
+   if(line.front() == '"') {
+      line.remove_prefix(1);
+      const size_t closeQuote = line.find('"');
+      if(closeQuote == std::string_view::npos) {
+         return false;
+      }
+      objectName.assign(line.substr(0, closeQuote));
+      line.remove_prefix(closeQuote + 1);
+      if(!line.empty() && (line.front() != ' ') && (line.front() != '\t')) {
+         return false;
+      }
+   }
+   else {
+      size_t objEnd = 0;
+      while((objEnd < line.size()) && (line[objEnd] != ' ') && (line[objEnd] != '\t')) {
+         objEnd++;
+      }
+      objectName.assign(line.substr(0, objEnd));
+      line.remove_prefix(objEnd);
+   }
+   if(objectName.empty()) {
+      return false;
+   }
+
+   // 3. Vector name (quoted or unquoted) followed by "ETV"
+   skipWS();
+   while(!line.empty() && ((line.back() == ' ') || (line.back() == '\t'))) {
+      line.remove_suffix(1);
+   }
+   if(line.empty()) {
+      return false;
+   }
+
+   if(line.front() == '"') {
+      line.remove_prefix(1);
+      const size_t closeQuote = line.find('"');
+      if(closeQuote == std::string_view::npos) {
+         return false;
+      }
+      vectorName.assign(line.substr(0, closeQuote));
+      line.remove_prefix(closeQuote + 1);
+      if(line.empty() || ((line.front() != ' ') && (line.front() != '\t'))) {
+         return false;
+      }
+      skipWS();
+      if(line != "ETV") {
+         return false;
+      }
+   }
+   else {
+      // Unquoted vector name must end with whitespace + "ETV"
+      if((line.size() < 4) || !line.ends_with("ETV")) {
+         return false;
+      }
+      const char beforeETV = line[line.size() - 4];
+      if((beforeETV != ' ') && (beforeETV != '\t')) {
+         return false;
+      }
+      line.remove_suffix(3);
+      while(!line.empty() && ((line.back() == ' ') || (line.back() == '\t'))) {
+         line.remove_suffix(1);
+      }
+      if(line.empty() || (line.find('"') != std::string_view::npos)) {
+         return false;
+      }
+      vectorName.assign(line);
+   }
+
+   vectorID = parsedID;
+   return true;
+}
+
+
 // ###### Read and process data file ########################################
 static unsigned long long extractVectors(InputFile&               inputFile,
                                          OutputFile&              outputFile,
                                          const bool               defaultVectorSplittingMode,
                                          std::vector<VectorInfo>& vectorsToExtract,
                                          const bool               addLineNumbers,
-                                         const char*              separator)
+                                         const char*              separator,
+                                         const bool               quietMode)
 {
    std::map<unsigned int, VectorMetadata> vectorMap;
    unsigned long long                     outputLine  = 0;
@@ -147,8 +260,9 @@ static unsigned long long extractVectors(InputFile&               inputFile,
          double       simTime  = 0.0;
          double       value    = 0.0;
          int          n        = 0;
-         if(std::sscanf(inBuffer, "%u %u %lf %lf%n",
-                        &vectorID, &event, &simTime, &value, &n) == 4) {
+         if((std::sscanf(inBuffer, "%u %u %lf %lf%n",
+                         &vectorID, &event, &simTime, &value, &n) == 4) &&
+            (std::string_view(inBuffer + n).find_first_not_of(" \t") == std::string_view::npos)) {
             const auto found = vectorMap.find(vectorID);
             if(found != vectorMap.end()) {
                if(addLineNumbers) {
@@ -175,13 +289,12 @@ static unsigned long long extractVectors(InputFile&               inputFile,
          }
 
          // ====== Handle vector definition =================================
-         else if(std::strncmp(inBuffer, "vector ", 7) == 0) {
-            char objectName[1024];
-            char vectorName[1024];
-            if((std::sscanf(inBuffer, "vector %u %1022s \"%1022[^\"]\" ETV",
-                            &vectorID, objectName, vectorName) == 3) ||
-               (std::sscanf(inBuffer, "vector %u %1022s %1022[^\"] ETV",
-                            &vectorID, objectName, vectorName) == 3)) {
+         else if((std::strncmp(inBuffer, "vector ", 7) == 0) ||
+                 (std::strncmp(inBuffer, "vector\t", 7) == 0)) {
+            std::string objectName;
+            std::string vectorName;
+            if(parseVectorDefinition(std::string_view(inBuffer, len),
+                                     vectorID, objectName, vectorName)) {
                bool includeVector = vectorsToExtract.empty();
                bool splitMode     = defaultVectorSplittingMode;
 
@@ -198,34 +311,37 @@ static unsigned long long extractVectors(InputFile&               inputFile,
                }
 
                if(includeVector) {
-                  std::string vName(vectorName);
                   std::string splitName;
                   if(splitMode) {
-                     const auto lastSpace = vName.rfind(' ');
+                     const auto lastSpace = vectorName.rfind(' ');
                      if(lastSpace != std::string::npos) {
-                        splitName = vName.substr(lastSpace + 1);
-                        vName.erase(lastSpace);
+                        splitName = vectorName.substr(lastSpace + 1);
+                        vectorName.erase(lastSpace);
                      }
-                     // TRANSLATORS: Status message when adding a vector with split parameter. Placeholders: {} 1: vector name, 2: split parameter, 3: object name.
-                     std::cout << formatText(gettext("Adding vector \"{}\", split \"{}\" of object {} ..."),
-                                             vName, splitName, objectName) << "\n";
+                     if(!quietMode) {
+                        // TRANSLATORS: Status message when adding a vector with split parameter. Placeholders: {} 1: vector name, 2: split parameter, 3: object name.
+                        std::cout << formatText(gettext("Adding vector \"{}\", split \"{}\" of object {} ..."),
+                                                vectorName, splitName, objectName) << "\n";
+                     }
                   }
                   else {
-                     // TRANSLATORS: Status message when adding a vector without split parameter. Placeholders: {} 1: vector name, 2: object name.
-                     std::cout << formatText(gettext("Adding vector \"{}\" of object {} ..."),
-                                             vName, objectName) << "\n";
+                     if(!quietMode) {
+                        // TRANSLATORS: Status message when adding a vector without split parameter. Placeholders: {} 1: vector name, 2: object name.
+                        std::cout << formatText(gettext("Adding vector \"{}\" of object {} ..."),
+                                                vectorName, objectName) << "\n";
+                     }
                   }
 
                   vectorMap.emplace(vectorID, VectorMetadata {
-                     .name   = std::move(vName),
+                     .name   = std::move(vectorName),
                      .split  = std::move(splitName),
-                     .object = std::string(objectName)
+                     .object = std::move(objectName)
                   });
                }
             }
             else {
                // TRANSLATORS: Error message when a vector definition line cannot be parsed. {} is the line number.
-               std::cerr << formatText(gettext("ERROR: Unexpected vector definition on input file {}!"),
+               std::cerr << formatText(gettext("ERROR: Unexpected vector definition on input line {}!"),
                                        inputFile.getLine()) << "\n";
                std::exit(1);
             }
@@ -289,13 +405,13 @@ static void usage(const char* program, const int exitCode)
    // TRANSLATORS: Command-line syntax message prefix:
    // "Usage: <program> [options]".
    std::cerr << HEADER(gettext("Usage:")) << "\n"
-             << CMD(program) << " "
-                ARG("input_file") " " ARG("output_file") "\n"
+             << CMD(program) << "\n"
                    ENTRY(OPT("-c") " " ARG("level") PIPE OPT("--compress") " " ARG("level"))
                    ENTRY(OPT("-s") " " ARG("separator") PIPE OPT("--separator") " " ARG("separator"))
                    ENTRY(OPT("-l") PIPE OPT("--line-numbers") PIPE OPT("-n") PIPE OPT("--no-line-numbers"))
                    ENTRY(OPT("-p") PIPE OPT("--split") PIPE OPT("-a") PIPE OPT("--no-split"))
                    ENTRY(OPT("-q") PIPE OPT("--quiet"))
+                   "\t" ARG("input_file") " " ARG("output_file") "\n"
                    ENTRY(ARG("[!]vector_name_prefix") " " SYN("[") "..." SYN("]"))
              << CMD(program) << "\n"
                    ENTRY(OPT("-h") PIPE OPT("--help"))
@@ -460,6 +576,15 @@ int main(int argc, char** argv)
                     // TRANSLATORS: Status label for selected output compression level.
                     gettext("Compression Level"),
                     std::to_string(compressionLevel));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for output column separator.
+                    gettext("Separator"),
+                    std::format("\"{}\"", separator));
+      formatter.add(1,
+                    // TRANSLATORS: Status label for output line numbering.
+                    gettext("Line Numbers"),
+                    addLineNumbers ? /* TRANSLATORS: Boolean state label when an option is enabled. */  gettext("on")
+                                   : /* TRANSLATORS: Boolean state label when an option is disabled. */ gettext("off"));
       std::cout << formatter << "\n";
    }
 
@@ -492,7 +617,7 @@ int main(int argc, char** argv)
 
       const unsigned long long lines = extractVectors(inputFile, outputFile,
                                                       vectorSplittingMode, vectorsToExtract,
-                                                      addLineNumbers, separator);
+                                                      addLineNumbers, separator, quietMode);
 
       inputFile.finish();
 

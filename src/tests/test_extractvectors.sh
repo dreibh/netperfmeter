@@ -121,7 +121,7 @@ perl -e '
         "vector 0 net.client[0].sctp \"Slow Start Threshold 2:Total\" ETV",
         "vector 1 net.client[0].sctp \"Congestion Window 2:Total\" ETV",
         "vector 2 net.server[0].sctp \"Congestion Window 4:Total\" ETV",
-        "vector 3 net.client[0].app \"SingleWordVector\" ETV",
+        "vector 3 net.client[0].app SingleWordVector ETV",
         "0\t174\t0.003672\t10000000",
         "1\t174\t0.003672\t4380",
         "2\t238\t0.003913\t3000",
@@ -142,6 +142,16 @@ run_expect_ok "${TMP_DIR}/all.out" "${TMP_DIR}/all.err" "${SAMPLE_VEC}" "${OUT_A
 
 if ! grep -q "Wrote 6 lines" "${TMP_DIR}/all.out"; then
     echo "FAIL: Expected 'Wrote 6 lines' summary on stdout." >&2
+    cat "${TMP_DIR}/all.out" >&2
+    exit 1
+fi
+if ! grep -q "Separator" "${TMP_DIR}/all.out" || ! grep -q "Line Numbers" "${TMP_DIR}/all.out"; then
+    echo "FAIL: Expected 'Separator' and 'Line Numbers' in startup banner:" >&2
+    cat "${TMP_DIR}/all.out" >&2
+    exit 1
+fi
+if ! grep -q 'Adding vector "SingleWordVector" of object net.client\[0\].app' "${TMP_DIR}/all.out"; then
+    echo "FAIL: Expected unquoted SingleWordVector status line (without trailing ETV):" >&2
     cat "${TMP_DIR}/all.out" >&2
     exit 1
 fi
@@ -198,14 +208,8 @@ run_expect_ok "${TMP_DIR}/filt.out" "${TMP_DIR}/filt.err" \
     "${SAMPLE_VEC}" "${OUT_FILTERED}" \
     "!Congestion Window" "SingleWordVector"
 
-if grep -Eq "^(ExtractVectors |Wrote )" "${TMP_DIR}/filt.out"; then
-    echo "FAIL: --quiet did not suppress banner/summary lines on stdout:" >&2
-    cat "${TMP_DIR}/filt.out" >&2
-    exit 1
-fi
-
-if ! grep -q 'Adding vector "Congestion Window", split "2:Total"' "${TMP_DIR}/filt.out"; then
-    echo "FAIL: Expected 'Adding vector' status line on stdout:" >&2
+if [ -s "${TMP_DIR}/filt.out" ]; then
+    echo "FAIL: Expected empty stdout when --quiet is specified:" >&2
     cat "${TMP_DIR}/filt.out" >&2
     exit 1
 fi
@@ -328,8 +332,8 @@ if ! "${EXTRACTVECTORS}" -q "${SAMPLE_VEC}" "${WARN_OUT}" "Congestion Window" "N
     echo "FAIL: Expected exit status 0 when 1 of 2 prefixes matched." >&2
     exit 1
 fi
-if grep -Eq "^(ExtractVectors |Wrote )" "${TMP_DIR}/warn.stdout"; then
-    echo "FAIL: -q did not suppress banner/summary lines on stdout." >&2
+if [ -s "${TMP_DIR}/warn.stdout" ]; then
+    echo "FAIL: Expected empty stdout when -q is specified:" >&2
     cat "${TMP_DIR}/warn.stdout" >&2
     exit 1
 fi
@@ -367,11 +371,16 @@ printf "version 3\n" >"${BAD_VER_VEC}"
 run_expect_fail "ERROR: Got unknown version number 3 \\(expected 2\\)" \
     -q "${BAD_VER_VEC}" "${TMP_DIR}/bad_ver_out.data"
 
-# Malformed vector definition line
+# Malformed vector definition lines (bad syntax and invalid/missing ETV column mode)
 BAD_DEF_VEC="${TMP_DIR}/bad_def.vec"
 printf "version 2\nvector malformed_entry\n" >"${BAD_DEF_VEC}"
-run_expect_fail "ERROR: Unexpected vector definition on input file 2!" \
+run_expect_fail "ERROR: Unexpected vector definition on input line 2!" \
     -q "${BAD_DEF_VEC}" "${TMP_DIR}/bad_def_out.data"
+
+BAD_ETV_VEC="${TMP_DIR}/bad_etv.vec"
+printf "version 2\nvector 0 net.node \"Foo\" TV\n" >"${BAD_ETV_VEC}"
+run_expect_fail "ERROR: Unexpected vector definition on input line 2!" \
+    -q "${BAD_ETV_VEC}" "${TMP_DIR}/bad_etv_out.data"
 
 echo "PASS: extractvectors test passed."
 exit 0

@@ -26,7 +26,7 @@
 .\" Homepage: https://www.nntb.no/~dreibh/netperfmeter/
 .\"
 .\" ###### Setup ############################################################
-.Dd October 23, 2026
+.Dd November 27, 2026
 .Dt extractvectors 1
 .Os extractvectors
 .\" ###### Name #############################################################
@@ -36,8 +36,6 @@
 .\" ###### Synopsis #########################################################
 .Sh SYNOPSIS
 .Nm extractvectors
-.Ar input_file output_file
-.br
 .Op Fl c Ar level | Fl \-compress Ar level
 .br
 .Op Fl s Ar separator | Fl \-separator Ar separator
@@ -48,6 +46,7 @@
 .br
 .Op Fl q | Fl \-quiet
 .br
+.Ar input_file output_file
 .Op Ar [!]vector_name_prefix Op Ar ...
 .Nm extractvectors
 .Op Fl h | Fl \-help
@@ -79,7 +78,7 @@ Add line numbers into the output table files, as usual for GNU R.
 .It Fl n | Fl \-no\-line\-numbers
 Do not add line numbers into the output table files, as usual for CSV (default).
 .It Fl p | Fl \-split
-Try to split the vector name ending in a number into the name part as well as the number. A vector output table is then generated for the name part, with the corresponding number in table column "Split". Example: Vectors "Throughput 1", ..., "Throughput 9" will be written into output table as vector column "Throughput", the number will be in table column "Split".
+Split the vector name at its last space into the name part and a trailing parameter. The name part is written into table column "Vector", and the trailing parameter into table column "Split". Examples: "Throughput 1" is split into Vector "Throughput" and Split "1"; "Congestion Window 2:Total" is split into Vector "Congestion Window" and Split "2:Total".
 \-\-split is a global option and applies to all vector name prefixes provided. To use vector name splitting for just a single prefix, prepend the prefix with "!".
 .It Fl a | Fl \-no\-split
 Turns vector splitting off (default).
@@ -101,7 +100,7 @@ Consider an OMNeT++ vector file containing the vectors
 "Slow Start Threshold <assoc>:<path>" and
 "Congestion Window <assoc>:<path>",
 contained with a lot of other vectors in the vector file
-.Pa results.vec.bz2.
+.Pa results.vec.bz2 .
 ExtractVectors can be used to extract all vectors beginning with "Slow Start Threshold" or "Congestion Window" into a Zstandard\-compressed data
 table
 .Pa results.data.zst
