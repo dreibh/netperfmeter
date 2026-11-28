@@ -244,10 +244,14 @@ wait_for_client_started() {
 
 # ====== Start Server =======================================================
 SERVER_CONTROL_ARGS="-control-over-tcp"
+SERVER_EXTRA_ARGS=""
 case "${SCENARIO}" in
     *mptcp*|*5clients*) SERVER_CONTROL_ARGS="-control-over-tcp -control-over-mptcp" ;;
 esac
-"${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} ${SERVER_TLS_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
+case "${SCENARIO}" in
+    *after_sigkill*) SERVER_EXTRA_ARGS="--loglevel 4 --control-hbinterval 500 --control-hbassocmaxrtx 3" ;;
+esac
+"${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} ${SERVER_TLS_ARGS} ${SERVER_EXTRA_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
 SERVER_PID=$!
 
 if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" 5; then
@@ -674,6 +678,40 @@ case "${SCENARIO}" in
         fi
         ;;
 
+    # 20b. Abrupt SIGKILL of 3-stream QUIC client over QUIC control followed by clean 3-stream QUIC session
+    sequential_multistream_quic_ctrl_quic_after_sigkill)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-quic ${CLIENT_TLS_ARGS} \
+            --control-hbinterval 500 --control-hbassocmaxrtx 3 --runtime 15 \
+            --quic const10:const1000:const10:const1000:hbinterval=500:hbassocmaxrtx=3 \
+                   const10:const500:const10:const500:hbinterval=500:hbassocmaxrtx=3 \
+                   const10:const500:const10:const500:hbinterval=500:hbassocmaxrtx=3 \
+            >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        wait_for_client_started "${TMP_DIR}/client1.log" "${CLIENT1_PID}"
+        sleep 1
+        kill -9 "${CLIENT1_PID}" 2>/dev/null || true
+        wait "${CLIENT1_PID}" 2>/dev/null || true
+        CLIENT1_PID=""
+        sleep 3
+        verify_server_alive "after client1 SIGKILL (QUIC control + 3-stream QUIC)"
+
+        _prefix="${TMP_DIR}/gen2"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-quic ${CLIENT_TLS_ARGS} \
+            --control-hbinterval 500 --control-hbassocmaxrtx 3 --runtime 2 \
+            --config "${_prefix}.config" \
+            --scalar "${_prefix}.sca" \
+            --vector "${_prefix}.vec" \
+            --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        if [ "${CLIENT2_RC}" -eq 0 ]; then
+            verify_server_alive "after client2 (QUIC control + 3-stream QUIC)"
+            verify_generation_outputs "2" "" 3
+        fi
+        ;;
+
     # 21. Staggered overlap + sequential fd reuse on 3-stream SCTP
     staggered_overlap_multistream_sctp)
         "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-sctp --runtime 6 \
@@ -900,6 +938,15 @@ if [ -n "${SERVER_PID}" ]; then
         echo "FAIL: Assertion failure or crash detected in server log." >&2
         cat "${TMP_DIR}/server.log" >&2
         exit 1
+    fi
+
+    if [ -s "${TMP_DIR}/server.log" ]; then
+        _eoi_cnt=$(perl -ne '$c++ if /End of input for /; END { print $c+0 }' "${TMP_DIR}/server.log")
+        if [ "${_eoi_cnt}" -gt 32 ]; then
+            echo "FAIL: Poll-loop spin detected in server log (${_eoi_cnt} 'End of input' messages)!" >&2
+            head -n 60 "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
     fi
 fi
 

@@ -76,8 +76,13 @@ ADD_NETPERFMETER_FLOW_TEST(flow_sctp_saturated_large_frames
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_saturated_jumbo_frames
    127.0.0.1 sctp const0:const65536:const0:const65536:maxmsgsize=1000 plain 3)
 
-# Saturated SCTP multi-stream: Stream 0 (16 KB frames) and Stream 1 (32 KB frames)
+# Saturated SCTP multi-stream (1 association, 2 streams: 16 KB and 32 KB frames)
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_saturated_multistream
+   127.0.0.1 sctp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3
+   --stream const0:const32000:const0:const32000:maxmsgsize=1400)
+
+# Concurrent saturated SCTP associations: Association 0 (16 KB frames) and Association 1 (32 KB frames)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_2associations_saturated
    127.0.0.1 sctp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3
    -sctp const0:const32000:const0:const32000:maxmsgsize=1400)
 
@@ -111,5 +116,19 @@ ADD_NETPERFMETER_FLOW_TEST(flow_quic_saturated_ctrl_quic
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2connections_saturated
    127.0.0.1 quic const0:const16000:const0:const16000:maxmsgsize=1400 plain 3
    -quic const0:const32000:const0:const32000:maxmsgsize=1400)
+
+# Saturated multi-stream QUIC (1 connection, 2 streams: 16 KB @ 1400 B and 32 KB @ 1000 B)
+# Stresses MessageReader per-stream TLV reassembly and coalesced frame draining
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_multistream_2streams_saturated
+   127.0.0.1 quic const0:const16000:const0:const16000:maxmsgsize=1400 plain 3
+   --stream const0:const32000:const0:const32000:maxmsgsize=1000)
+
+# Saturated 4-stream QUIC with control channel over QUIC
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_multistream_4streams_saturated_ctrl_quic
+   127.0.0.1 quic const0:const16000:const0:const16000:maxmsgsize=1400 plain 4
+   --stream const0:const16000:const0:const16000:maxmsgsize=1000
+   --stream const0:const32000:const0:const0:maxmsgsize=1400
+   --stream const0:const0:const0:const32000:maxmsgsize=1400
+   --control-over-quic)
 
 ENDIF()

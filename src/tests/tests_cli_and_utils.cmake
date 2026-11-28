@@ -124,8 +124,10 @@ IF (HAVE_QUIC_FOR_TESTS)
    ADD_NETPERFMETER_FAIL_TEST(fail_tls_nonexistent_ca             9000 --tls-ca nonexistent_ca_xyz.crt)
    ADD_NETPERFMETER_FAIL_TEST(fail_tls_dir_as_ca                  9000 --tls-ca ${CMAKE_CURRENT_SOURCE_DIR})
    ADD_NETPERFMETER_FAIL_TEST(fail_quic_invalid_cc                127.0.0.1:9000 -quic default:cc=bbr)
-   ADD_NETPERFMETER_FAIL_TEST(fail_quic_multistream_tc_mismatch   127.0.0.1:9000 -quic default:tc=EF default:tc=AF21)
-   ADD_NETPERFMETER_FAIL_TEST(fail_quic_multistream_hb_mismatch   127.0.0.1:9000 -quic default:hbinterval=5000 default:hbinterval=0)
+   ADD_NETPERFMETER_FAIL_TEST(fail_quic_multistream_tc_mismatch      127.0.0.1:9000 -quic default:tc=EF default:tc=AF21)
+   ADD_NETPERFMETER_FAIL_TEST(fail_quic_multistream_fl_mismatch      [::1]:9000     -quic default:fl=0x12345 default:fl=auto)
+   ADD_NETPERFMETER_FAIL_TEST(fail_quic_multistream_hb_mismatch      127.0.0.1:9000 -quic default:hbinterval=5000 default:hbinterval=0)
+   ADD_NETPERFMETER_FAIL_TEST(fail_quic_multistream_hbassoc_mismatch 127.0.0.1:9000 -quic default:hbassocmaxrtx=4 default:hbassocmaxrtx=8)
 ENDIF()
 
 

@@ -159,6 +159,10 @@ IF (HAVE_QUIC_FOR_TESTS)
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_quic_multistream_after_sigkill
       127.0.0.1 sequential_multistream_quic_after_sigkill)
 
+   # Mid-transfer SIGKILL on 3-stream QUIC client over QUIC control followed by clean 3-stream QUIC session
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_quic_ctrl_quic_multistream_after_sigkill
+      127.0.0.1 sequential_multistream_quic_ctrl_quic_after_sigkill)
+
    # Staggered overlap + immediate fd reuse across 3-stream QUIC clients
    ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_staggered_overlap_multistream_quic
       127.0.0.1 staggered_overlap_multistream_quic)
@@ -187,14 +191,36 @@ ADD_NETPERFMETER_EDGE_CASE_TEST(edge_active_sigint_graceful_stop
 ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_tcp_abort
    127.0.0.1 control_tcp_abort)
 
+# Mid-measurement TCP data EOF while control stays open (verifies no poll-loop spin under --loglevel 4)
+ADD_NETPERFMETER_EDGE_CASE_TEST(edge_tcp_data_eof_no_spin
+   127.0.0.1 tcp_data_eof_no_spin)
+
 IF (HAVE_SCTP_FOR_TESTS)
    ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_heartbeat_timeout
       127.0.0.1 control_heartbeat_timeout)
+
+   # Mid-measurement 3-stream SCTP data EOF while control stays open (verifies all streams stop polling)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_multistream_sctp_data_eof_no_spin
+      127.0.0.1 multistream_sctp_data_eof_no_spin)
 ENDIF()
 
 IF (HAVE_QUIC_FOR_TESTS)
    ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_quic_abort
       127.0.0.1 control_quic_abort)
+
+   # Silent UDP blackhole mid-measurement triggers QUIC max_idle_timeout on both client and server
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_quic_keepalive_timeout
+      127.0.0.1 control_quic_keepalive_timeout)
+
+   # Mid-measurement 3-stream QUIC data blackhole timeout while TCP control stays open (no poll spin)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_multistream_quic_data_eof_no_spin
+      127.0.0.1 multistream_quic_data_eof_no_spin)
+ENDIF()
+
+IF (HAVE_SCTP_FOR_TESTS AND HAVE_QUIC_FOR_TESTS)
+   # NorNet regression: 3 multi-stream SCTP associations + QUIC control killed mid-run under --loglevel 4
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_nornet_quic_ctrl_sctp_multistream_abort
+      127.0.0.1 nornet_quic_ctrl_sctp_multistream_abort)
 ENDIF()
 
 # 4. Passive control-protocol disable flags (-Y, -X, -W, -Z)
