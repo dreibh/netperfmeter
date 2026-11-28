@@ -490,7 +490,16 @@ void FlowManager::removeAllMeasurements(const int controlSocket)
       }
    }
 
-   // 2. Remove and delete all flows belonging to this control socket or its measurements:
+   // 2. Deactivate all matching flows asynchronously first so shared multi-stream
+   //    sockets call ext_shutdown() before any thread blocks in waitForFinish():
+   for(auto* flow : FlowSet) {
+      if( (flow->getControlSocketDescriptor() == controlSocket) ||
+          (findMeasurement(controlSocket, flow->getMeasurementID()) != nullptr) ) {
+         flow->deactivate(true);
+      }
+   }
+
+   // 3. Remove and delete all flows belonging to this control socket or its measurements:
    std::vector<Flow*>::iterator flowIterator = FlowSet.begin();
    while(flowIterator != FlowSet.end()) {
       Flow* flow = *flowIterator;

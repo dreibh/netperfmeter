@@ -327,27 +327,34 @@ bool configureQuicKeepAlive(const int      sd,
                             const uint64_t hbAssocMaxRtx,
                             const bool     setIdleTimeout)
 {
+   const uint64_t effectiveHbMs = (hbIntervalMs == 0) ? 0ULL :
+                                     std::max<uint64_t>(hbIntervalMs, 5000ULL);
+   if((hbIntervalMs > 0) && (hbIntervalMs < 5000ULL)) {
+      LOG_WARNING
+      // TRANSLATORS: Warning when QUIC keep-alive interval is clamped up to 5000 ms (QUIC_MIN_PROBE_TIMEOUT). Placeholders: {} 1: milliseconds, 2: socket fd.
+      stdlog << formatText(gettext("QUIC keep-alive minimum probe interval is 5000 ms; clamping {} ms on socket {}!"),
+                           hbIntervalMs, sd) << "\n";
+      LOG_END
+   }
+
+   bool        configOk         = false;
    quic_config quicConfig;
    socklen_t   quicConfigLength = sizeof(quicConfig);
    std::memset(&quicConfig, 0, sizeof(quicConfig));
-   if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) < 0) {
-      return false;
-   }
-   const uint64_t probeIntervalUs = hbIntervalMs * 1000ULL;
-   quicConfig.keepalive_probe_interval = static_cast<uint32_t>(
-      std::min<uint64_t>(probeIntervalUs, UINT32_MAX));
-   if(ext_setsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
-      return false;
+   if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) == 0) {
+      const uint64_t probeIntervalUs = effectiveHbMs * 1000ULL;
+      quicConfig.keepalive_probe_interval = static_cast<uint32_t>(
+         std::min<uint64_t>(probeIntervalUs, UINT32_MAX));
+      configOk = (ext_setsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) == 0);
    }
 
+   bool idleOk = true;
    if(setIdleTimeout) {
-      const uint64_t idleTimeoutMs = (hbIntervalMs == 0) ? 0ULL :
-         (hbIntervalMs * hbAssocMaxRtx);
-      if(!configureQuicIdleTimeout(sd, idleTimeoutMs, true)) {
-         return false;
-      }
+      const uint64_t idleTimeoutMs = (effectiveHbMs == 0) ? 0ULL :
+         (effectiveHbMs * hbAssocMaxRtx);
+      idleOk = configureQuicIdleTimeout(sd, idleTimeoutMs, true);
    }
-   return true;
+   return configOk && idleOk;
 }
 
 

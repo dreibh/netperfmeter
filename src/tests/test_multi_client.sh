@@ -249,7 +249,7 @@ case "${SCENARIO}" in
     *mptcp*|*5clients*) SERVER_CONTROL_ARGS="-control-over-tcp -control-over-mptcp" ;;
 esac
 case "${SCENARIO}" in
-    *after_sigkill*) SERVER_EXTRA_ARGS="--loglevel 4 --control-hbinterval 500 --control-hbassocmaxrtx 3" ;;
+    *after_sigkill*) SERVER_EXTRA_ARGS="--loglevel 1 --control-hbinterval 5000 --control-hbassocmaxrtx 1" ;;
 esac
 "${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} ${SERVER_TLS_ARGS} ${SERVER_EXTRA_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
 SERVER_PID=$!
@@ -681,10 +681,10 @@ case "${SCENARIO}" in
     # 20b. Abrupt SIGKILL of 3-stream QUIC client over QUIC control followed by clean 3-stream QUIC session
     sequential_multistream_quic_ctrl_quic_after_sigkill)
         "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-quic ${CLIENT_TLS_ARGS} \
-            --control-hbinterval 500 --control-hbassocmaxrtx 3 --runtime 15 \
-            --quic const10:const1000:const10:const1000:hbinterval=500:hbassocmaxrtx=3 \
-                   const10:const500:const10:const500:hbinterval=500:hbassocmaxrtx=3 \
-                   const10:const500:const10:const500:hbinterval=500:hbassocmaxrtx=3 \
+            --control-hbinterval 5000 --control-hbassocmaxrtx 1 --runtime 15 \
+            --quic const10:const1000:const10:const1000:hbinterval=5000:hbassocmaxrtx=1 \
+                   const10:const500:const10:const500:hbinterval=5000:hbassocmaxrtx=1 \
+                   const10:const500:const10:const500:hbinterval=5000:hbassocmaxrtx=1 \
             >"${TMP_DIR}/client1.log" 2>&1 &
         CLIENT1_PID=$!
         wait_for_client_started "${TMP_DIR}/client1.log" "${CLIENT1_PID}"
@@ -692,12 +692,12 @@ case "${SCENARIO}" in
         kill -9 "${CLIENT1_PID}" 2>/dev/null || true
         wait "${CLIENT1_PID}" 2>/dev/null || true
         CLIENT1_PID=""
-        sleep 3
+        sleep 6
         verify_server_alive "after client1 SIGKILL (QUIC control + 3-stream QUIC)"
 
         _prefix="${TMP_DIR}/gen2"
         "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-quic ${CLIENT_TLS_ARGS} \
-            --control-hbinterval 500 --control-hbassocmaxrtx 3 --runtime 2 \
+            --control-hbinterval 5000 --control-hbassocmaxrtx 2 --runtime 2 \
             --config "${_prefix}.config" \
             --scalar "${_prefix}.sca" \
             --vector "${_prefix}.vec" \

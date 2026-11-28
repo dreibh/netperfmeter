@@ -224,38 +224,38 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2connections_ctrl_quic
    127.0.0.1 quic const10:const1000:const10:const1000 plain 3
    -quic const10:const500:const10:const500 --control-over-quic)
 
-# QUIC PING keep-alive probes keep an idle QUIC control channel alive well past max_idle_timeout
-# (hbinterval=500ms, hbassocmaxrtx=3 -> max_idle_timeout=1.5s, runtime=5s > 3x max_idle_timeout)
+# QUIC PING keep-alive probes keep an idle QUIC control channel alive past max_idle_timeout
+# (hbinterval=5000ms, hbassocmaxrtx=2 -> max_idle_timeout=10s, runtime=13s > 10s)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_ctrl_keepalive_survives_idle_ipv4
-   127.0.0.1 udp const10:const500:const10:const500 plain 5
+   127.0.0.1 udp const10:const500:const10:const500 plain 13
    --control-over-quic
-   --control-hbinterval 500 --control-hbassocmaxrtx 3
-   --server-arg --control-hbinterval --server-arg 500
-   --server-arg --control-hbassocmaxrtx --server-arg 3
-   --expect-config "CONTROL_HBINTERVAL=500")
+   --control-hbinterval 5000 --control-hbassocmaxrtx 2
+   --server-arg --control-hbinterval --server-arg 5000
+   --server-arg --control-hbassocmaxrtx --server-arg 2
+   --expect-config "CONTROL_HBINTERVAL=5000")
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_ctrl_keepalive_survives_idle_ipv6
-   ::1 udp const10:const500:const10:const500 plain 5
+   ::1 udp const10:const500:const10:const500 plain 13
    --control-over-quic
-   --control-hbinterval 500 --control-hbassocmaxrtx 3
-   --server-arg --control-hbinterval --server-arg 500
-   --server-arg --control-hbassocmaxrtx --server-arg 3)
+   --control-hbinterval 5000 --control-hbassocmaxrtx 2
+   --server-arg --control-hbinterval --server-arg 5000
+   --server-arg --control-hbassocmaxrtx --server-arg 2)
 
 # QUIC PING keep-alive probes keep silent On-Off QUIC data flows alive past max_idle_timeout
-# (0..3s silent > 1.5s max_idle_timeout, then 3..5s active; also verifies passive max_idle_timeout=0 negotiation)
+# (0..12s silent > 10s max_idle_timeout, then 12..15s active; also verifies passive max_idle_timeout=0 negotiation)
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_data_keepalive_survives_onoff_silence_ipv4
-   127.0.0.1 quic const20:const1000:const0:const0:onoff=3:hbinterval=500:hbassocmaxrtx=3 plain 5
-   --expect-config "FLOW0_HBINTERVAL=\"500\"")
+   127.0.0.1 quic const20:const1000:const0:const0:onoff=12:hbinterval=5000:hbassocmaxrtx=2 plain 15
+   --expect-config "FLOW0_HBINTERVAL=\"5000\"")
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_data_keepalive_survives_onoff_silence_ipv6
-   ::1 quic const20:const1000:const0:const0:onoff=3:hbinterval=500:hbassocmaxrtx=3 plain 5)
+   ::1 quic const20:const1000:const0:const0:onoff=12:hbinterval=5000:hbassocmaxrtx=2 plain 15)
 
 # Multi-stream QUIC data + QUIC control both surviving silent intervals past max_idle_timeout
 ADD_NETPERFMETER_FLOW_TEST(flow_quic_multistream_keepalive_survives_onoff_silence
-   127.0.0.1 quic const20:const1000:const0:const0:onoff=3:hbinterval=500:hbassocmaxrtx=3 plain 5
-   --stream const20:const500:const0:const0:onoff=3:hbinterval=500:hbassocmaxrtx=3
+   127.0.0.1 quic const20:const1000:const0:const0:onoff=12:hbinterval=5000:hbassocmaxrtx=2 plain 15
+   --stream const20:const500:const0:const0:onoff=12:hbinterval=5000:hbassocmaxrtx=2
    --control-over-quic
-   --control-hbinterval 500 --control-hbassocmaxrtx 3
-   --server-arg --control-hbinterval --server-arg 500
-   --server-arg --control-hbassocmaxrtx --server-arg 3)
+   --control-hbinterval 5000 --control-hbassocmaxrtx 2
+   --server-arg --control-hbinterval --server-arg 5000
+   --server-arg --control-hbassocmaxrtx --server-arg 2)
 
 IF (HAVE_SCTP_FOR_TESTS)
    # Control channel using QUIC with SCTP data flow
@@ -263,22 +263,22 @@ IF (HAVE_SCTP_FOR_TESTS)
       127.0.0.1 sctp const10:const1000:const10:const1000 plain 3 --control-over-quic)
 
    # Multi-association, multi-stream QoS SCTP (3 associations x 3 streams = 9 flows) over QUIC control
-   # running > 3x max_idle_timeout (1.5s vs 5s runtime) with --loglevel 4 on server
+   # running past 10s max_idle_timeout (13s runtime) with --loglevel 1 (DEBUG) on server
    ADD_NETPERFMETER_FLOW_TEST(flow_sctp_3assocs_9flows_ctrl_quic_keepalive
-      127.0.0.1 sctp const10:const200:const10:const200:tc=BE plain 5
-      --stream const10:const500:const10:const500:onoff=2,4:tc=BE
+      127.0.0.1 sctp const10:const200:const10:const200:tc=BE plain 13
+      --stream const10:const500:const10:const500:onoff=2,11:tc=BE
       --stream const0:const0:const10:const1543:maxmsgsize=1400:tc=BE
       -sctp const10:const200:const10:const200:tc=AF21
-      --stream const10:const500:const10:const500:onoff=2,4:tc=AF21
+      --stream const10:const500:const10:const500:onoff=2,11:tc=AF21
       --stream const0:const0:const10:const1543:maxmsgsize=1400:tc=AF21
       -sctp const10:const200:const10:const200:tc=EF
-      --stream const10:const500:const10:const500:onoff=2,4:tc=EF
+      --stream const10:const500:const10:const500:onoff=2,11:tc=EF
       --stream const0:const0:const10:const1543:maxmsgsize=1400:tc=EF
       --control-over-quic
-      --control-hbinterval 500 --control-hbassocmaxrtx 3
-      --server-arg --loglevel --server-arg 4
-      --server-arg --control-hbinterval --server-arg 500
-      --server-arg --control-hbassocmaxrtx --server-arg 3)
+      --control-hbinterval 5000 --control-hbassocmaxrtx 2
+      --server-arg --loglevel --server-arg 1
+      --server-arg --control-hbinterval --server-arg 5000
+      --server-arg --control-hbassocmaxrtx --server-arg 2)
 ENDIF()
 
 IF (HAVE_MPTCP_FOR_TESTS)

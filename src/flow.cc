@@ -324,8 +324,9 @@ void Flow::deactivate(const bool asyncStop)
       OutputStatus = Off;
       PollFDEntry  = nullptr;   // Poll FD entry is now invalid!
       unlock();
+      stop();
 
-      // Check whether another flow is still sharing this socket descriptor:
+      // Check whether another active flow is still sharing this socket descriptor:
       bool socketStillShared = false;
       switch(TrafficSpec.Protocol) {
          case IPPROTO_TCP:
@@ -342,7 +343,10 @@ void Flow::deactivate(const bool asyncStop)
             FlowManager* flowManager = FlowManager::getFlowManager();
             flowManager->lock();
             for(const auto* otherFlow : flowManager->getFlowSet()) {
-               if((otherFlow != this) && (otherFlow->getSocketDescriptor() == SocketDescriptor)) {
+               if((otherFlow != this) &&
+                  (otherFlow->getSocketDescriptor() == SocketDescriptor) &&
+                  (!otherFlow->isStopping()) &&
+                  ((otherFlow->getInputStatus() != Off) || (otherFlow->getOutputStatus() != Off))) {
                   socketStillShared = true;
                   break;
                }
@@ -365,8 +369,6 @@ void Flow::deactivate(const bool asyncStop)
             ext_shutdown(SocketDescriptor, isTCPOrMPTCP ? SHUT_WR : SHUT_RDWR);
          }
       }
-
-      stop();
       if(!asyncStop) {
          waitForFinish();
       }
@@ -1218,8 +1220,17 @@ bool Flow::configureSocket(const int             socketDescriptor,
          LOG_END
          return false;
       }
-      const uint64_t hbIntervalMs  = TrafficSpec.HBInterval.value_or(15000U);
-      const uint64_t hbAssocMaxRtx = TrafficSpec.HBAssocMaxRtx.value_or(6U);
+      const uint64_t rawHbIntervalMs = TrafficSpec.HBInterval.value_or(15000U);
+      const uint64_t hbIntervalMs    = (rawHbIntervalMs == 0) ? 0ULL :
+                                          std::max<uint64_t>(rawHbIntervalMs, 5000ULL);
+      const uint64_t hbAssocMaxRtx   = TrafficSpec.HBAssocMaxRtx.value_or(6U);
+      if((rawHbIntervalMs > 0) && (rawHbIntervalMs < 5000ULL)) {
+         LOG_WARNING
+         // TRANSLATORS: Warning when QUIC keep-alive interval is clamped up to 5000 ms (QUIC_MIN_PROBE_TIMEOUT). Placeholders: {} 1: milliseconds, 2: socket fd.
+         stdlog << formatText(gettext("QUIC keep-alive minimum probe interval is 5000 ms; clamping {} ms on socket {}!"),
+                              rawHbIntervalMs, socketDescriptor) << "\n";
+         LOG_END
+      }
       quicConfig.keepalive_probe_interval = static_cast<uint32_t>(
          std::min<uint64_t>(hbIntervalMs * 1000ULL, UINT32_MAX));
       if(ext_setsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
