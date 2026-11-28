@@ -71,7 +71,9 @@ class FlowManager : public Thread
 
    void configureDisplay(const bool on);
 
-   void addUnidentifiedSocket(const int protocol, const int socketDescriptor);
+   void addUnidentifiedSocket(const int             protocol,
+                              const int             socketDescriptor,
+                              const sockaddr_union* remoteAddress = nullptr);
    void removeUnidentifiedSocket(const int  socketDescriptor,
                                  const bool closeSocket = true);
    Flow* identifySocket(const uint64_t         measurementID,
@@ -114,6 +116,9 @@ class FlowManager : public Thread
    Flow* findFlow(const int socketDescriptor,
                   uint16_t  streamID);
    Flow* findFlow(const struct sockaddr* from);
+   bool endOfInputForSocket(const int socketDescriptor,
+                            bool&     isAcceptedIncoming,
+                            uint32_t& firstFlowID);
 
 
    bool addMeasurement(const int controlSocket, Measurement* measurement);
@@ -158,11 +163,13 @@ class FlowManager : public Thread
    CPUStatus                          CPUDisplayStats;  // For displaying only
 
    struct UnidentifiedSocket {
-      int     SocketDescriptor;
-      int     Protocol;
-      pollfd* PollFDEntry;
-      bool    ToBeRemoved;
-      bool    ToBeClosed;
+      int            SocketDescriptor;
+      int            Protocol;
+      pollfd*        PollFDEntry;
+      bool           ToBeRemoved;
+      bool           ToBeClosed;
+      sockaddr_union RemoteAddress;
+      bool           RemoteAddressIsValid;
    };
    std::map<int, UnidentifiedSocket*> UnidentifiedSockets;
 };

@@ -175,6 +175,14 @@ stop_and_check_server() {
             cat "${TMP_DIR}/server.log" >&2
             exit 1
         fi
+        if [ -s "${TMP_DIR}/server.log" ]; then
+            _eoi_cnt=$(perl -ne '$c++ if /End of input for /; END { print $c+0 }' "${TMP_DIR}/server.log")
+            if [ "${_eoi_cnt}" -gt 24 ]; then
+                echo "FAIL: Poll-loop spin detected in server log (${_eoi_cnt} 'End of input' messages)!" >&2
+                head -n 60 "${TMP_DIR}/server.log" >&2
+                exit 1
+            fi
+        fi
     fi
 }
 
@@ -812,6 +820,755 @@ case "${SCENARIO}" in
         check_clean_client_failure "${CLIENT_RC}"
 
         stop_and_check_server
+        ;;
+
+    # 5a. Mid-measurement TCP data EOF while control channel stays open (--loglevel 1 poll-spin check)
+    tcp_data_eof_no_spin)
+        "${NETPERFMETER}" "${PORT}" -control-over-tcp -no-control-over-sctp -no-control-over-quic \
+            --loglevel 1 \
+            >"${TMP_DIR}/server.log" 2>&1 &
+        SERVER_PID=$!
+
+        if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+        if ! wait_for_listener "${ADDRESS}" "${PORT}" "tcp" 5; then
+            exit 1
+        fi
+
+        PROXY_BASE_PORT=$((PORT + 4))
+        PROXY_CTRL_PORT=$((PROXY_BASE_PORT + 1))
+
+        # Relay TCP control throughout the entire 3s run, but close the TCP data
+        # relay after 0.7s so the server sees data EOF for >2s while control stays up.
+        perl -MIO::Socket::IP -MIO::Select -MTime::HiRes=time -e '
+            use strict;
+            use warnings;
+
+            my ($host, $data_lport, $data_tport, $ctrl_lport, $ctrl_tport) = @ARGV;
+
+            my $ctrl_srv = IO::Socket::IP->new(
+                LocalHost => $host, LocalPort => $ctrl_lport,
+                Proto => "tcp", Listen => 5, ReuseAddr => 1
+            ) or die "ctrl listen: $!";
+            my $data_srv = IO::Socket::IP->new(
+                LocalHost => $host, LocalPort => $data_lport,
+                Proto => "tcp", Listen => 5, ReuseAddr => 1
+            ) or die "data listen: $!";
+
+            $ctrl_srv->blocking(0);
+            $data_srv->blocking(0);
+
+            my $sel = IO::Select->new($ctrl_srv, $data_srv);
+            my (%peer, %is_data);
+            my $drop_data_at;
+
+            while (1) {
+                my @ready = $sel->can_read(0.1);
+                my $now = time();
+                if (defined($drop_data_at) && $now >= $drop_data_at) {
+                    for my $fh (keys %is_data) {
+                        my $s = $is_data{$fh};
+                        next unless $s;
+                        $sel->remove($s);
+                        delete $peer{$s};
+                        close($s);
+                    }
+                    %is_data = ();
+                    $drop_data_at = undef;
+                }
+
+                for my $fh (@ready) {
+                    if ($fh == $ctrl_srv || ($data_srv && $fh == $data_srv)) {
+                        my $is_d = ($data_srv && $fh == $data_srv) ? 1 : 0;
+                        my $cli = $fh->accept();
+                        next unless $cli;
+                        my $dst = IO::Socket::IP->new(
+                            PeerHost => $host,
+                            PeerPort => ($is_d ? $data_tport : $ctrl_tport),
+                            Proto    => "tcp"
+                        );
+                        if (!$dst) { close($cli); next; }
+                        $cli->blocking(0);
+                        $dst->blocking(0);
+                        $peer{$cli} = $dst;
+                        $peer{$dst} = $cli;
+                        if ($is_d) {
+                            $is_data{$cli} = $cli;
+                            $is_data{$dst} = $dst;
+                            $drop_data_at = $now + 0.7 unless defined $drop_data_at;
+                        }
+                        $sel->add($cli, $dst);
+                    }
+                    elsif (exists $peer{$fh}) {
+                        my $dst = $peer{$fh};
+                        my $buf = "";
+                        my $n = sysread($fh, $buf, 65536);
+                        if (!defined($n) || $n <= 0) {
+                            $sel->remove($fh, $dst);
+                            delete $peer{$fh}; delete $peer{$dst};
+                            delete $is_data{$fh}; delete $is_data{$dst};
+                            close($fh); close($dst);
+                            next;
+                        }
+                        my $off = 0;
+                        while ($off < length($buf)) {
+                            my $w = syswrite($dst, $buf, length($buf) - $off, $off);
+                            last unless defined $w;
+                            $off += $w;
+                        }
+                    }
+                }
+            }
+        ' "${ADDRESS}" "${PROXY_BASE_PORT}" "${PORT}" "${PROXY_CTRL_PORT}" "${CONTROL_PORT}" \
+            >"${TMP_DIR}/relay.log" 2>&1 &
+        RELAY_PID=$!
+
+        if ! wait_for_listener "${ADDRESS}" "${PROXY_CTRL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+
+        CLIENT_RC=0
+        "${NETPERFMETER}" "${TARGET}:${PROXY_BASE_PORT}" -control-over-tcp -runtime=3 \
+            -scalar="${TMP_DIR}/eof.sca" \
+            -tcp const20:const500:const20:const500:error_on_abort=off \
+            >"${TMP_DIR}/client.log" 2>&1 || CLIENT_RC=$?
+
+        if [ "${CLIENT_RC}" -ne 0 ]; then
+            echo "FAIL: Client failed with error_on_abort=off after TCP data EOF (rc=${CLIENT_RC})." >&2
+            cat "${TMP_DIR}/client.log" >&2
+            exit 1
+        fi
+
+        stop_and_check_server
+        ;;
+
+    # 5b. Mid-measurement 3-stream SCTP data EOF while control stays open (poll-spin regression)
+    multistream_sctp_data_eof_no_spin)
+        # Bind SCTP data on 127.0.0.1:PORT and TCP control on [::1]:(PORT+1) so a
+        # delayed-close TCP proxy on 127.0.0.1:(PORT+1) can hold the server's control
+        # socket open for 2.0s after the 3-stream SCTP client is killed mid-transfer.
+        "${NETPERFMETER}" "${PORT}" -control-over-tcp -no-control-over-sctp -no-control-over-quic \
+            -L 127.0.0.1 -l ::1 --loglevel 1 \
+            >"${TMP_DIR}/server.log" 2>&1 &
+        SERVER_PID=$!
+
+        if ! wait_for_listener "::1" "${CONTROL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+        if ! wait_for_listener "127.0.0.1" "${PORT}" "sctp" 5; then
+            exit 1
+        fi
+
+        perl -MIO::Socket::IP -MIO::Select -MTime::HiRes=time -e '
+            use strict;
+            use warnings;
+
+            my ($ctrl_port) = @ARGV;
+            my $ctrl_srv = IO::Socket::IP->new(
+                LocalHost => "127.0.0.1", LocalPort => $ctrl_port,
+                Proto => "tcp", Listen => 5, ReuseAddr => 1
+            ) or die "ctrl listen: $!";
+            $ctrl_srv->blocking(0);
+
+            my $sel = IO::Select->new($ctrl_srv);
+            my (%cli_to_srv, %srv_to_cli, @delayed_close);
+
+            while (1) {
+                my @ready = $sel->can_read(0.1);
+                my $now = time();
+                @delayed_close = grep {
+                    my ($srv_sock, $close_at) = @$_;
+                    if ($now >= $close_at) {
+                        $sel->remove($srv_sock);
+                        close($srv_sock);
+                        0;
+                    } else { 1; }
+                } @delayed_close;
+
+                for my $fh (@ready) {
+                    if ($fh == $ctrl_srv) {
+                        my $cli = $ctrl_srv->accept();
+                        next unless $cli;
+                        my $srv = IO::Socket::IP->new(
+                            PeerHost => "::1", PeerPort => $ctrl_port, Proto => "tcp", GetAddrInfoFlags => 0
+                        );
+                        if (!$srv) { close($cli); next; }
+                        $cli->blocking(0);
+                        $srv->blocking(0);
+                        $cli_to_srv{$cli} = $srv;
+                        $srv_to_cli{$srv} = $cli;
+                        $sel->add($cli, $srv);
+                    }
+                    elsif (exists $cli_to_srv{$fh}) {
+                        my $srv = $cli_to_srv{$fh};
+                        my $buf = "";
+                        my $n = sysread($fh, $buf, 65536);
+                        if (!defined($n) || $n <= 0) {
+                            # Hold server control connection open for 2.0s while 3-stream SCTP socket is at EOF!
+                            $sel->remove($fh);
+                            delete $cli_to_srv{$fh};
+                            delete $srv_to_cli{$srv};
+                            close($fh);
+                            push @delayed_close, [$srv, $now + 2.0];
+                            next;
+                        }
+                        my $off = 0;
+                        while ($off < length($buf)) {
+                            my $w = syswrite($srv, $buf, length($buf) - $off, $off);
+                            last unless defined $w;
+                            $off += $w;
+                        }
+                    }
+                    elsif (exists $srv_to_cli{$fh}) {
+                        my $cli = $srv_to_cli{$fh};
+                        my $buf = "";
+                        my $n = sysread($fh, $buf, 65536);
+                        if (!defined($n) || $n <= 0) {
+                            $sel->remove($fh, $cli);
+                            delete $srv_to_cli{$fh};
+                            delete $cli_to_srv{$cli};
+                            close($fh); close($cli);
+                            next;
+                        }
+                        my $off = 0;
+                        while ($off < length($buf)) {
+                            my $w = syswrite($cli, $buf, length($buf) - $off, $off);
+                            last unless defined $w;
+                            $off += $w;
+                        }
+                    }
+                }
+            }
+        ' "${CONTROL_PORT}" >"${TMP_DIR}/relay.log" 2>&1 &
+        RELAY_PID=$!
+
+        if ! wait_for_listener "127.0.0.1" "${CONTROL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+
+        "${NETPERFMETER}" "127.0.0.1:${PORT}" -control-over-tcp -runtime=15 \
+            -sctp const10:const1000:const10:const1000 \
+                  const10:const500:const10:const500 \
+                  const10:const500:const10:const500 \
+            >"${TMP_DIR}/client.log" 2>&1 &
+        CLIENT_PID=$!
+
+        _waited=0
+        while [ "${_waited}" -lt 5 ]; do
+            if [ -s "${TMP_DIR}/client.log" ] && grep -q "Starting measurement" "${TMP_DIR}/client.log"; then
+                break
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+        sleep 1
+
+        # Abruptly kill client: kernel immediately shuts down the 3-stream SCTP association
+        # while the TCP control proxy holds the server's control socket open for 2.0s!
+        kill -9 "${CLIENT_PID}" 2>/dev/null || true
+        wait "${CLIENT_PID}" 2>/dev/null || true
+        CLIENT_PID=""
+        sleep 3
+
+        # Verify server survived with zero poll-loop spin, and can serve a second 2-stream SCTP run
+        "${NETPERFMETER}" "127.0.0.1:${PORT}" -control-over-tcp -runtime=2 \
+            -scalar="${TMP_DIR}/post_eof.sca" \
+            -sctp const10:const500:const10:const500 const10:const500:const10:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1
+
+        if [ ! -s "${TMP_DIR}/post_eof-passive.sca" ]; then
+            echo "FAIL: Subsequent 2-stream SCTP run failed after multi-stream EOF." >&2
+            cat "${TMP_DIR}/client2.log" >&2
+            exit 1
+        fi
+
+        stop_and_check_server
+        ;;
+
+    # 5c. Silent UDP blackhole mid-measurement triggers QUIC control max_idle_timeout
+    control_quic_keepalive_timeout)
+        generate_ca_and_certs "qbh"
+
+        "${NETPERFMETER}" "${PORT}" -no-control-over-tcp -no-control-over-sctp -control-over-quic \
+            --loglevel 1 \
+            --control-hbinterval 5000 --control-hbassocmaxrtx 1 \
+            --tls-key "${TMP_DIR}/qbh_srv.key" \
+            --tls-cert "${TMP_DIR}/qbh_srv.crt" \
+            --tls-ca "${TMP_DIR}/qbh_ca.crt" \
+            >"${TMP_DIR}/server.log" 2>&1 &
+        SERVER_PID=$!
+
+        if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" "quic" 5; then
+            exit 1
+        fi
+
+        PROXY_BASE_PORT=$((PORT + 4))
+        PROXY_CTRL_PORT=$((PROXY_BASE_PORT + 1))
+
+        # Forward UDP packets for QUIC control (PORT+5 <-> PORT+1) and UDP data (PORT+4 <-> PORT)
+        # for 1.2s after first control packet, then silently blackhole all UDP packets
+        # (keeping sockets open so no ICMP Port Unreachable is sent).
+        perl -MIO::Socket::IP -MIO::Select -MTime::HiRes=time -e '
+            use strict;
+            use warnings;
+
+            my ($host, $data_lport, $data_tport, $ctrl_lport, $ctrl_tport, $ready_file) = @ARGV;
+
+            my $ctrl_listen = IO::Socket::IP->new(
+                LocalHost => $host, LocalPort => $ctrl_lport, Proto => "udp", ReuseAddr => 1
+            ) or die "udp ctrl listen: $!";
+            my $data_listen = IO::Socket::IP->new(
+                LocalHost => $host, LocalPort => $data_lport, Proto => "udp", ReuseAddr => 1
+            ) or die "udp data listen: $!";
+
+            $ctrl_listen->blocking(0);
+            $data_listen->blocking(0);
+
+            if (open(my $rf, ">", $ready_file)) { print $rf "ok\n"; close($rf); }
+
+            my $sel = IO::Select->new($ctrl_listen, $data_listen);
+            my (%cli_to_up, %up_to_cli, %up_is_ctrl);
+            my $blackhole_at;
+
+            while (1) {
+                my @ready = $sel->can_read(0.1);
+                my $now = time();
+                my $blackhole = (defined($blackhole_at) && $now >= $blackhole_at) ? 1 : 0;
+
+                for my $fh (@ready) {
+                    my $buf = "";
+                    my $sender = recv($fh, $buf, 65536, 0);
+                    next unless defined $sender;
+                    next if $blackhole;
+
+                    if ($fh == $ctrl_listen || $fh == $data_listen) {
+                        my $is_c = ($fh == $ctrl_listen) ? 1 : 0;
+                        my $key = ($is_c ? "C:" : "D:") . $sender;
+                        my $up = $cli_to_up{$key};
+                        if (!$up) {
+                            $up = IO::Socket::IP->new(
+                                PeerHost => $host,
+                                PeerPort => ($is_c ? $ctrl_tport : $data_tport),
+                                Proto    => "udp"
+                            ) or next;
+                            $up->blocking(0);
+                            $cli_to_up{$key} = $up;
+                            $up_to_cli{$up}  = [$fh, $sender];
+                            $up_is_ctrl{$up} = $is_c;
+                            $sel->add($up);
+                        }
+                        if ($is_c && !defined($blackhole_at)) {
+                            $blackhole_at = $now + 1.2;
+                        }
+                        send($up, $buf, 0);
+                    }
+                    elsif (exists $up_to_cli{$fh}) {
+                        my ($listen_sock, $cli_addr) = @{$up_to_cli{$fh}};
+                        send($listen_sock, $buf, 0, $cli_addr);
+                    }
+                }
+            }
+        ' "${ADDRESS}" "${PROXY_BASE_PORT}" "${PORT}" "${PROXY_CTRL_PORT}" "${CONTROL_PORT}" "${TMP_DIR}/udp_proxy.ready" \
+            >"${TMP_DIR}/relay.log" 2>&1 &
+        RELAY_PID=$!
+
+        _w=0
+        while [ ! -f "${TMP_DIR}/udp_proxy.ready" ] && [ "${_w}" -lt 50 ]; do
+            perl -e 'select(undef, undef, undef, 0.1);'
+            _w=$((_w + 1))
+        done
+
+        # max_idle_timeout = 400ms * 3 = 1.2s; client (-runtime=20) must abort well before 20s!
+        "${NETPERFMETER}" "${TARGET}:${PROXY_BASE_PORT}" -control-over-quic \
+            --control-hbinterval 5000 --control-hbassocmaxrtx 1 \
+            --tls-hostname localhost \
+            --tls-ca "${TMP_DIR}/qbh_ca.crt" \
+            --tls-key "${TMP_DIR}/qbh_cli.key" \
+            --tls-cert "${TMP_DIR}/qbh_cli.crt" \
+            -runtime=25 -udp const10:const500:const0:const0 \
+            >"${TMP_DIR}/client.log" 2>&1 &
+        CLIENT_PID=$!
+
+        _waited=0
+        while kill -0 "${CLIENT_PID}" 2>/dev/null; do
+            if [ "${_waited}" -ge 15 ]; then
+                echo "FAIL: Active client did not time out on blackholed QUIC control connection within 15s." >&2
+                cat "${TMP_DIR}/client.log" >&2
+                exit 1
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+
+        CLIENT_RC=0
+        wait "${CLIENT_PID}" || CLIENT_RC=$?
+        CLIENT_PID=""
+        check_clean_client_failure "${CLIENT_RC}"
+
+        # Allow passive server's 1.2s QUIC idle timeout to fire as well, then verify a fresh direct run
+        sleep 2
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-quic \
+            --control-hbinterval 5000 --control-hbassocmaxrtx 2 \
+            --tls-hostname localhost \
+            --tls-ca "${TMP_DIR}/qbh_ca.crt" \
+            --tls-key "${TMP_DIR}/qbh_cli.key" \
+            --tls-cert "${TMP_DIR}/qbh_cli.crt" \
+            -runtime=2 -scalar="${TMP_DIR}/qbh_post.sca" \
+            -udp const10:const500:const10:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1
+
+        if [ ! -s "${TMP_DIR}/qbh_post-passive.sca" ]; then
+            echo "FAIL: Server failed to handle fresh QUIC control session after blackhole timeout." >&2
+            cat "${TMP_DIR}/client2.log" >&2
+            exit 1
+        fi
+
+        stop_and_check_server
+        ;;
+
+    # 5d. Mid-measurement 3-stream QUIC data disconnect while TCP control stays open (no poll spin)
+    multistream_quic_data_eof_no_spin)
+        generate_ca_and_certs "qdeof"
+
+        # Bind QUIC data on 127.0.0.1:(PORT-1) and TCP control on [::1]:(PORT+1) so a
+        # delayed-close TCP proxy on 127.0.0.1:(PORT+1) holds the server's control socket
+        # open for 2.0s after the 3-stream QUIC client terminates mid-transfer.
+        "${NETPERFMETER}" "${PORT}" -control-over-tcp -no-control-over-sctp -no-control-over-quic \
+            -L 127.0.0.1 -l ::1 --loglevel 1 \
+            --tls-key "${TMP_DIR}/qdeof_srv.key" \
+            --tls-cert "${TMP_DIR}/qdeof_srv.crt" \
+            --tls-ca "${TMP_DIR}/qdeof_ca.crt" \
+            >"${TMP_DIR}/server.log" 2>&1 &
+        SERVER_PID=$!
+
+        if ! wait_for_listener "::1" "${CONTROL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+
+        perl -MIO::Socket::IP -MIO::Select -MTime::HiRes=time -e '
+            use strict;
+            use warnings;
+
+            my ($ctrl_port) = @ARGV;
+            my $ctrl_srv = IO::Socket::IP->new(
+                LocalHost => "127.0.0.1", LocalPort => $ctrl_port,
+                Proto => "tcp", Listen => 5, ReuseAddr => 1
+            ) or die "ctrl listen: $!";
+            $ctrl_srv->blocking(0);
+
+            my $sel = IO::Select->new($ctrl_srv);
+            my (%cli_to_srv, %srv_to_cli, @delayed_close);
+
+            while (1) {
+                my @ready = $sel->can_read(0.1);
+                my $now = time();
+                @delayed_close = grep {
+                    my ($srv_sock, $close_at) = @$_;
+                    if ($now >= $close_at) {
+                        $sel->remove($srv_sock);
+                        close($srv_sock);
+                        0;
+                    } else { 1; }
+                } @delayed_close;
+
+                for my $fh (@ready) {
+                    if ($fh == $ctrl_srv) {
+                        my $cli = $ctrl_srv->accept();
+                        next unless $cli;
+                        my $srv = IO::Socket::IP->new(
+                            PeerHost => "::1", PeerPort => $ctrl_port, Proto => "tcp", GetAddrInfoFlags => 0
+                        );
+                        if (!$srv) { close($cli); next; }
+                        $cli->blocking(0);
+                        $srv->blocking(0);
+                        $cli_to_srv{$cli} = $srv;
+                        $srv_to_cli{$srv} = $cli;
+                        $sel->add($cli, $srv);
+                    }
+                    elsif (exists $cli_to_srv{$fh}) {
+                        my $srv = $cli_to_srv{$fh};
+                        my $buf = "";
+                        my $n = sysread($fh, $buf, 65536);
+                        if (!defined($n) || $n <= 0) {
+                            $sel->remove($fh);
+                            delete $cli_to_srv{$fh};
+                            delete $srv_to_cli{$srv};
+                            close($fh);
+                            push @delayed_close, [$srv, $now + 2.0];
+                            next;
+                        }
+                        my $off = 0;
+                        while ($off < length($buf)) {
+                            my $w = syswrite($srv, $buf, length($buf) - $off, $off);
+                            last unless defined $w;
+                            $off += $w;
+                        }
+                    }
+                    elsif (exists $srv_to_cli{$fh}) {
+                        my $cli = $srv_to_cli{$fh};
+                        my $buf = "";
+                        my $n = sysread($fh, $buf, 65536);
+                        if (!defined($n) || $n <= 0) {
+                            $sel->remove($fh, $cli);
+                            delete $srv_to_cli{$fh};
+                            delete $cli_to_srv{$cli};
+                            close($fh); close($cli);
+                            next;
+                        }
+                        my $off = 0;
+                        while ($off < length($buf)) {
+                            my $w = syswrite($cli, $buf, length($buf) - $off, $off);
+                            last unless defined $w;
+                            $off += $w;
+                        }
+                    }
+                }
+            }
+        ' "${CONTROL_PORT}" >"${TMP_DIR}/relay.log" 2>&1 &
+        RELAY_PID=$!
+
+        if ! wait_for_listener "127.0.0.1" "${CONTROL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+
+        "${NETPERFMETER}" "127.0.0.1:${PORT}" -control-over-tcp \
+            --tls-hostname localhost \
+            --tls-ca "${TMP_DIR}/qdeof_ca.crt" \
+            --tls-key "${TMP_DIR}/qdeof_cli.key" \
+            --tls-cert "${TMP_DIR}/qdeof_cli.crt" \
+            -runtime=15 \
+            -quic const15:const500:const15:const500 \
+                  const15:const500:const15:const500 \
+                  const15:const500:const15:const500 \
+            >"${TMP_DIR}/client.log" 2>&1 &
+        CLIENT_PID=$!
+
+        _waited=0
+        while [ "${_waited}" -lt 5 ]; do
+            if [ -s "${TMP_DIR}/client.log" ] && grep -q "Starting measurement" "${TMP_DIR}/client.log"; then
+                break
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+        sleep 1
+
+        # Kill client: kernel QUIC socket teardown sends CONNECTION_CLOSE while TCP control stays open 2s
+        kill -9 "${CLIENT_PID}" 2>/dev/null || true
+        wait "${CLIENT_PID}" 2>/dev/null || true
+        CLIENT_PID=""
+        sleep 3
+
+        "${NETPERFMETER}" "127.0.0.1:${PORT}" -control-over-tcp \
+            --tls-hostname localhost \
+            --tls-ca "${TMP_DIR}/qdeof_ca.crt" \
+            --tls-key "${TMP_DIR}/qdeof_cli.key" \
+            --tls-cert "${TMP_DIR}/qdeof_cli.crt" \
+            -runtime=2 -scalar="${TMP_DIR}/qdeof.sca" \
+            -quic const10:const500:const10:const500 const10:const500:const10:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1
+
+        if [ ! -s "${TMP_DIR}/qdeof-passive.sca" ]; then
+            echo "FAIL: Subsequent 2-stream QUIC run failed after 3-stream QUIC disconnect." >&2
+            cat "${TMP_DIR}/client2.log" >&2
+            exit 1
+        fi
+
+        stop_and_check_server
+        ;;
+
+    # 5e. NorNet regression: 3 multi-stream SCTP associations (9 flows) + QUIC control killed mid-run
+    nornet_quic_ctrl_sctp_multistream_abort)
+        generate_ca_and_certs "nornet"
+
+        "${NETPERFMETER}" "${PORT}" -no-control-over-tcp -no-control-over-sctp -control-over-quic \
+            --loglevel 1 \
+            --control-hbinterval 5000 --control-hbassocmaxrtx 1 \
+            --tls-key "${TMP_DIR}/nornet_srv.key" \
+            --tls-cert "${TMP_DIR}/nornet_srv.crt" \
+            --tls-ca "${TMP_DIR}/nornet_ca.crt" \
+            >"${TMP_DIR}/server.log" 2>&1 &
+        SERVER_PID=$!
+
+        if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" "quic" 5; then
+            exit 1
+        fi
+        if ! wait_for_listener "${ADDRESS}" "${PORT}" "sctp" 5; then
+            exit 1
+        fi
+
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-quic \
+            --control-hbinterval 5000 --control-hbassocmaxrtx 1 \
+            --tls-hostname localhost \
+            --tls-ca "${TMP_DIR}/nornet_ca.crt" \
+            --tls-key "${TMP_DIR}/nornet_cli.key" \
+            --tls-cert "${TMP_DIR}/nornet_cli.crt" \
+            -runtime=30 \
+            --sctp const10:const200:const10:const200 \
+                   const10:const500:const10:const500 \
+                   const0:const0:const10:const1543:maxmsgsize=1400 \
+            --sctp const10:const200:const10:const200 \
+                   const10:const500:const10:const500 \
+                   const0:const0:const10:const1543:maxmsgsize=1400 \
+            --sctp const10:const200:const10:const200 \
+                   const10:const500:const10:const500 \
+                   const0:const0:const10:const1543:maxmsgsize=1400 \
+            >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT_PID=$!
+
+        _waited=0
+        while [ "${_waited}" -lt 6 ]; do
+            if [ -s "${TMP_DIR}/client1.log" ] && grep -q "Starting measurement" "${TMP_DIR}/client1.log"; then
+                break
+            fi
+            sleep 1
+            _waited=$((_waited + 1))
+        done
+        sleep 1
+
+        # Kill client 1 abruptly: SCTP sockets close immediately while QUIC control
+        # remains open on the server until max_idle_timeout (1.5s) expires.
+        kill -9 "${CLIENT_PID}" 2>/dev/null || true
+        wait "${CLIENT_PID}" 2>/dev/null || true
+        CLIENT_PID=""
+        sleep 6
+
+        # Verify server stayed alive without poll-loop spin and handles a fresh run cleanly
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-quic \
+            --control-hbinterval 5000 --control-hbassocmaxrtx 2 \
+            --tls-hostname localhost \
+            --tls-ca "${TMP_DIR}/nornet_ca.crt" \
+            --tls-key "${TMP_DIR}/nornet_cli.key" \
+            --tls-cert "${TMP_DIR}/nornet_cli.crt" \
+            -runtime=2 -scalar="${TMP_DIR}/nornet2.sca" -vector="${TMP_DIR}/nornet2.vec" \
+            --sctp const10:const500:const10:const500 const10:const500:const10:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1
+
+        if [ ! -s "${TMP_DIR}/nornet2-passive.sca" ] || [ ! -s "${TMP_DIR}/nornet2-passive.vec" ]; then
+            echo "FAIL: Follow-up run after NorNet abort scenario did not produce passive outputs." >&2
+            cat "${TMP_DIR}/client2.log" >&2
+            exit 1
+        fi
+
+        stop_and_check_server
+        ;;
+
+    # 5f. Port-scan / unidentified incoming connection logging (protocol name + remote IP:port)
+    port_scan_peer_logging)
+        "${NETPERFMETER}" "${PORT}" -control-over-tcp -no-control-over-sctp -no-control-over-quic \
+            >"${TMP_DIR}/server.log" 2>&1 &
+        SERVER_PID=$!
+
+        if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+        if ! wait_for_listener "${ADDRESS}" "${PORT}" "tcp" 5; then
+            exit 1
+        fi
+
+        # Probe 1: TCP connect + immediate FIN close on data PORT
+        FIN_PORT=$(perl -MIO::Socket::IP -e '
+            my ($h, $p) = @ARGV;
+            my $s = IO::Socket::IP->new(PeerHost => $h, PeerPort => $p, Proto => "tcp", GetAddrInfoFlags => 0) or die $!;
+            my $lp = $s->sockport();
+            close($s);
+            print $lp;
+        ' "${ADDRESS}" "${PORT}")
+
+        # Probe 2: TCP connect + SO_LINGER={1,0} RST abort on data PORT
+        RST_PORT=$(perl -MIO::Socket::IP -MSocket=SOL_SOCKET,SO_LINGER -e '
+            my ($h, $p) = @ARGV;
+            my $s = IO::Socket::IP->new(PeerHost => $h, PeerPort => $p, Proto => "tcp", GetAddrInfoFlags => 0) or die $!;
+            my $lp = $s->sockport();
+            setsockopt($s, SOL_SOCKET, SO_LINGER, pack("ii", 1, 0));
+            close($s);
+            print $lp;
+        ' "${ADDRESS}" "${PORT}")
+
+        # Probe 3: HTTP banner on TCP data PORT (triggers TLV / EOF warning + shutdown)
+        HTTP_DATA_PORT=$(perl -MIO::Socket::IP -e '
+            my ($h, $p) = @ARGV;
+            my $s = IO::Socket::IP->new(PeerHost => $h, PeerPort => $p, Proto => "tcp", GetAddrInfoFlags => 0) or die $!;
+            my $lp = $s->sockport();
+            syswrite($s, "GET / HTTP/1.0\r\n\r\n");
+            close($s);
+            print $lp;
+        ' "${ADDRESS}" "${PORT}")
+
+        # Probe 4: Stray UDP scanner payload on UDP data PORT
+        UDP_SCAN_PORT=$(perl -MIO::Socket::IP -e '
+            my ($h, $p) = @ARGV;
+            my $s = IO::Socket::IP->new(PeerHost => $h, PeerPort => $p, Proto => "udp", GetAddrInfoFlags => 0) or die $!;
+            my $lp = $s->sockport();
+            send($s, "NMAP_UDP_PROBE_PAYLOAD", 0);
+            close($s);
+            print $lp;
+        ' "${ADDRESS}" "${PORT}")
+
+        # Probe 5: HTTP banner on TCP control PORT+1 (triggers truncated/unrecognized control warning)
+        HTTP_CTRL_PORT=$(perl -MIO::Socket::IP -e '
+            my ($h, $p) = @ARGV;
+            my $s = IO::Socket::IP->new(PeerHost => $h, PeerPort => $p, Proto => "tcp", GetAddrInfoFlags => 0) or die $!;
+            my $lp = $s->sockport();
+            syswrite($s, "GET / HTTP/1.0\r\n\r\n");
+            close($s);
+            print $lp;
+        ' "${ADDRESS}" "${CONTROL_PORT}")
+
+        sleep 1
+
+        # Verify server remained healthy by running a normal TCP+UDP measurement
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=1 \
+            -scalar="${TMP_DIR}/scan_ok.sca" \
+            -tcp const10:const500:const10:const500 \
+            -udp const10:const500:const10:const500 \
+            >"${TMP_DIR}/client.log" 2>&1
+
+        if [ ! -s "${TMP_DIR}/scan_ok-passive.sca" ]; then
+            echo "FAIL: Server failed normal measurement after port-scan probes." >&2
+            cat "${TMP_DIR}/client.log" >&2
+            exit 1
+        fi
+
+        stop_and_check_server
+
+        # Validate protocol names and remote IP:port (127.0.0.1 or [::ffff:127.0.0.1] for IPv4; [::1] for IPv6)
+        case "${ADDRESS}" in
+            *:*) _addr_rx='\[::1\]' ;;
+            *)   _addr_rx='(\[::ffff:127\.0\.0\.1\]|127\.0\.0\.1)' ;;
+        esac
+
+        if ! grep -Eq "End of input for unidentified flow on TCP socket [0-9]+ from ${_addr_rx}:${FIN_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing expected 'End of input ... on TCP socket ... from ...:${FIN_PORT}!' in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
+        if ! grep -Eq "Shutdown of still unidentified incoming connection on TCP socket [0-9]+ from ${_addr_rx}:${FIN_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing expected 'Shutdown of still unidentified incoming connection on TCP socket ... from ...:${FIN_PORT}!' in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
+        if ! grep -Eq "Shutdown of still unidentified incoming connection on TCP socket [0-9]+ from ${_addr_rx}:${RST_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing cached peer address on TCP RST scan (port ${RST_PORT}) in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
+        if ! grep -Eq "on TCP socket [0-9]+ from ${_addr_rx}:${HTTP_DATA_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing TCP data HTTP banner warning (port ${HTTP_DATA_PORT}) in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
+        if ! grep -Eq "Received garbage on UDP socket [0-9]+ from ${_addr_rx}:${UDP_SCAN_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing UDP probe garbage warning (port ${UDP_SCAN_PORT}) in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
+        if ! grep -Eq "on TCP socket [0-9]+ from ${_addr_rx}:${HTTP_CTRL_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing TCP control HTTP banner warning (port ${HTTP_CTRL_PORT}) in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
         ;;
 
     *)

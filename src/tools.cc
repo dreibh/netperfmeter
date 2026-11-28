@@ -496,14 +496,61 @@ void printAddress(std::ostream&          os,
                   const bool             port,
                   const bool             hideScope)
 {
-   static char str[160];
+   char str[160];
 
-   if(address2string(address, str, sizeof(str), port, hideScope)) {
+   if((address != nullptr) && address2string(address, str, sizeof(str), port, hideScope)) {
       os << str;
    }
    else {
       os << "(invalid!)";
    }
+}
+
+
+// ###### Format socket address as std::string ##############################
+std::string formatAddress(const struct sockaddr* address,
+                          const bool             port,
+                          const bool             hideScope)
+{
+   if(address == nullptr) {
+      return "(unspecified)";
+   }
+   char str[160];
+   if(address2string(address, str, sizeof(str), port, hideScope)) {
+      return std::string(str);
+   }
+   return "(invalid!)";
+}
+
+
+// ###### Resolve peer endpoint string (primary -> fallback -> getpeername) #
+std::string resolvePeerAddress(const int              sd,
+                               const struct sockaddr* primaryAddr,
+                               const struct sockaddr* fallbackAddr)
+{
+   char str[160];
+   if((primaryAddr != nullptr) &&
+      ((primaryAddr->sa_family == AF_INET) || (primaryAddr->sa_family == AF_INET6)) &&
+      address2string(primaryAddr, str, sizeof(str), true, false)) {
+      return std::string(str);
+   }
+   if((fallbackAddr != nullptr) &&
+      ((fallbackAddr->sa_family == AF_INET) || (fallbackAddr->sa_family == AF_INET6)) &&
+      address2string(fallbackAddr, str, sizeof(str), true, false)) {
+      return std::string(str);
+   }
+   if(sd >= 0) {
+      sockaddr_union peer;
+      socklen_t      peerLen = sizeof(peer);
+      memset(&peer, 0, sizeof(peer));
+      if((ext_getpeername(sd, &peer.sa, &peerLen) == 0) &&
+         (peerLen > 0) &&
+         ((peer.sa.sa_family == AF_INET) || (peer.sa.sa_family == AF_INET6)) &&
+         address2string(&peer.sa, str, sizeof(str), true, false)) {
+         return std::string(str);
+      }
+   }
+   return "(unknown)";
 }
 
 
@@ -854,13 +901,13 @@ network_double_t doubleToNetwork(const double d)
 {
    struct IeeeDouble ieee;
 
-   if(isnan(d)) {
+   if(std::isnan(d)) {
       // NaN
       ieee.s = 0;
       ieee.e = DBL_EXP_MAX + DBL_EXP_BIAS;
       ieee.f1 = 1;
       ieee.f2 = 1;
-   } else if(isinf(d)) {
+   } else if(std::isinf(d)) {
       // +/- infinity
       ieee.s = (d < 0);
       ieee.e = DBL_EXP_MAX + DBL_EXP_BIAS;

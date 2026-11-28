@@ -651,22 +651,24 @@ bool awaitNetPerfMeterAcknowledge(MessageReader* messageReader,
                                   const int      timeout)
 {
    // ====== Wait until there is something to read or a timeout =============
-   struct pollfd pfd;
-   pfd.fd      = controlSocket;
-   pfd.events  = POLLIN;
-   pfd.revents = 0;
-   const int result = ext_poll(&pfd, 1, timeout);
-   if(result < 1) {
-      LOG_TRACE
-      stdlog << "<timeout>" << "\n";
-      LOG_END
-      return false;
-   }
-   if(!(pfd.revents & (POLLIN|POLLERR))) {
-      LOG_TRACE
-      stdlog << "<no answer>" << "\n";
-      LOG_END
-      return false;
+   if(!messageReader->hasReadyMessage(controlSocket)) {
+      struct pollfd pfd;
+      pfd.fd      = controlSocket;
+      pfd.events  = POLLIN;
+      pfd.revents = 0;
+      const int result = ext_poll(&pfd, 1, timeout);
+      if(result < 1) {
+         LOG_TRACE
+         stdlog << "<timeout>" << "\n";
+         LOG_END
+         return false;
+      }
+      if((pfd.revents & (POLLERR|POLLNVAL)) || !(pfd.revents & POLLIN)) {
+         LOG_TRACE
+         stdlog << "<no answer>" << "\n";
+         LOG_END
+         return false;
+      }
    }
 
    // ====== Read NETPERFMETER_ACKNOWLEDGE message ==========================
@@ -798,10 +800,12 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
                                       const NetPerfMeterAddFlowMessage* addFlowMsg,
                                       const size_t                      received)
 {
+   const char* ctrlProto = getProtocolName(messageReader->getSocketProtocol(controlSocket));
    if(received < sizeof(NetPerfMeterAddFlowMessage)) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket);
       LOG_WARNING
-      stdlog << format("Received malformed NETPERFMETER_ADD_FLOW control message on socket %d!",
-                       controlSocket) << "\n";
+      stdlog << format("Received malformed NETPERFMETER_ADD_FLOW control message on %s socket %d from %s!",
+                       ctrlProto, controlSocket, peerStr.c_str()) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -811,9 +815,10 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    const uint16_t streamID        = be16toh(addFlowMsg->StreamID);
    const size_t   startStopEvents = be16toh(addFlowMsg->OnOffEvents);
    if(received < sizeof(NetPerfMeterAddFlowMessage) + (startStopEvents * sizeof(NetPerfMeterOnOffEvent))) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket);
       LOG_WARNING
-      stdlog << format("Too few start/stop entries in NETPERFMETER_ADD_FLOW control message on socket %d!",
-                       controlSocket) << "\n";
+      stdlog << format("Too few start/stop entries in NETPERFMETER_ADD_FLOW control message on %s socket %d from %s!",
+                       ctrlProto, controlSocket, peerStr.c_str()) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -892,9 +897,11 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
                                          const size_t                         received)
 {
    if(received < sizeof(NetPerfMeterRemoveFlowMessage)) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket);
       LOG_WARNING
-      stdlog << format("Received malformed NETPERFMETER_REMOVE_FLOW control message on socket %d!",
-                       controlSocket) << "\n";
+      stdlog << format("Received malformed NETPERFMETER_REMOVE_FLOW control message on %s socket %d from %s!",
+                       getProtocolName(messageReader->getSocketProtocol(controlSocket)),
+                       controlSocket, peerStr.c_str()) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -934,9 +941,11 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
                                     const size_t                    received)
 {
    if(received < sizeof(NetPerfMeterStartMessage)) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket);
       LOG_WARNING
-      stdlog << format("Received malformed NETPERFMETER_START control message on socket %d!",
-                       controlSocket) << "\n";
+      stdlog << format("Received malformed NETPERFMETER_START control message on %s socket %d from %s!",
+                       getProtocolName(messageReader->getSocketProtocol(controlSocket)),
+                       controlSocket, peerStr.c_str()) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -982,9 +991,11 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
                                    const size_t                   received)
 {
    if(received < sizeof(NetPerfMeterStopMessage)) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket);
       LOG_WARNING
-      stdlog << format("Received malformed NETPERFMETER_STOP control message on socket %d!",
-                       controlSocket) << "\n";
+      stdlog << format("Received malformed NETPERFMETER_STOP control message on %s socket %d from %s!",
+                       getProtocolName(messageReader->getSocketProtocol(controlSocket)),
+                       controlSocket, peerStr.c_str()) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -1063,6 +1074,8 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
    int             flags   = 0;
 #endif
 
+   const char* ctrlProto = getProtocolName(messageReader->getSocketProtocol(controlSocket));
+
    // ====== Read message (or fragment) =====================================
    const ssize_t received =
       messageReader->receiveMessage(controlSocket, &inputBuffer, sizeof(inputBuffer),
@@ -1071,12 +1084,26 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       return true;   // Partial read -> wait for next fragment.
    }
    else if(received < (ssize_t)sizeof(NetPerfMeterHeader)) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket, &from.sa);
       if(received < 0) {
          LOG_WARNING
-         stdlog << format("Control connection is broken on socket %d!",
-                          controlSocket) << "\n";
+         stdlog << format("Control connection is broken on %s socket %d from %s!",
+                          ctrlProto, controlSocket, peerStr.c_str()) << "\n";
          LOG_END
          ext_shutdown(controlSocket, SHUT_RDWR);
+      }
+      else if((received > 0) || messageReader->hasPartialMessage(controlSocket)) {
+         LOG_WARNING
+         stdlog << format("Truncated or unrecognized control message on %s socket %d from %s!",
+                          ctrlProto, controlSocket, peerStr.c_str()) << "\n";
+         LOG_END
+         ext_shutdown(controlSocket, SHUT_RDWR);
+      }
+      else {
+         LOG_DEBUG
+         stdlog << format("End of input on %s control socket %d from %s.",
+                          ctrlProto, controlSocket, peerStr.c_str()) << "\n";
+         LOG_END
       }
       // Clean up all flows and measurements belonging to this disconnected client:
       handleControlAssocShutdown(controlSocket);
@@ -1090,6 +1117,19 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       if( (notification->sn_header.sn_type == SCTP_ASSOC_CHANGE) &&
           ((notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) ||
            (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP)) ) {
+         const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket, &from.sa);
+         if(notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) {
+            LOG_WARNING
+            stdlog << format("Control connection is broken on %s socket %d from %s!",
+                             ctrlProto, controlSocket, peerStr.c_str()) << "\n";
+            LOG_END
+         }
+         else {
+            LOG_DEBUG
+            stdlog << format("End of input on %s control socket %d from %s.",
+                             ctrlProto, controlSocket, peerStr.c_str()) << "\n";
+            LOG_END
+         }
          handleControlAssocShutdown(controlSocket);
          return false;
       }
@@ -1100,9 +1140,12 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
 #endif
       const NetPerfMeterHeader* header = (const NetPerfMeterHeader*)&inputBuffer;
       if(be16toh(header->Length) != received) {
+         const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket, &from.sa);
          LOG_WARNING
-         stdlog << format("Received malformed control message on socket %d: expected length %u, but received length %u!",
-                          controlSocket, (unsigned int)be16toh(header->Length), (unsigned int)received) << "\n";
+         stdlog << format("Received malformed control message on %s socket %d from %s: expected length %u, but received length %u!",
+                          ctrlProto, controlSocket, peerStr.c_str(),
+                          (unsigned int)be16toh(header->Length),
+                          (unsigned int)received) << "\n";
          LOG_END
          ext_shutdown(controlSocket, SHUT_RDWR);
          return false;
@@ -1125,13 +1168,16 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
             return handleNetPerfMeterStop(
                       messageReader, controlSocket,
                       (const NetPerfMeterStopMessage*)&inputBuffer, (size_t)received);
-         default:
+         default: {
+            const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket, &from.sa);
             LOG_WARNING
-            stdlog << format("Received invalid control message of type $%02x on socket %d!",
-                             (unsigned int)header->Type, controlSocket) << "\n";
+            stdlog << format("Received invalid control message of type $%02x on %s socket %d from %s!",
+                             (unsigned int)header->Type,
+                             ctrlProto, controlSocket, peerStr.c_str()) << "\n";
             LOG_END
             ext_shutdown(controlSocket, SHUT_RDWR);
             return false;
+         }
       }
 #if defined(HAVE_SCTP)
    }
@@ -1176,9 +1222,12 @@ bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
    }
    else {
       // No known flow -> no association to send response to!
+      MessageReader*    mr      = FlowManager::getFlowManager()->getMessageReader();
+      const int         proto   = mr->getSocketProtocol(sd);
+      const std::string peerStr = mr->formatSocketEndpoint(sd, (from != nullptr) ? &from->sa : nullptr);
       LOG_WARNING
-      stdlog << format("NETPERFMETER_IDENTIFY_FLOW message for unknown flow on socket %d!",
-                       sd) << "\n";
+      stdlog << format("NETPERFMETER_IDENTIFY_FLOW message for unknown flow on %s socket %d from %s!",
+                       getProtocolName(proto), sd, peerStr.c_str()) << "\n";
       LOG_END
       return false;
    }

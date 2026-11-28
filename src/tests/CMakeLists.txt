@@ -196,6 +196,8 @@ FUNCTION(ADD_NETPERFMETER_FLOW_TEST TEST_NAME ADDRESS PROTOCOL SPEC FORMAT)
          LIST(APPEND TEST_LABELS "control-mptcp")
       ELSEIF(ARG STREQUAL "--control-over-quic")
          LIST(APPEND TEST_LABELS "control-quic")
+      ELSEIF(ARG STREQUAL "--control-hbinterval" OR ARG STREQUAL "--control-hbpathmaxrtx" OR ARG STREQUAL "--control-hbassocmaxrtx")
+         LIST(APPEND TEST_LABELS "heartbeats")
       ENDIF()
    ENDFOREACH()
 
@@ -230,12 +232,41 @@ FUNCTION(ADD_NETPERFMETER_MULTI_CLIENT_TEST TEST_NAME ADDRESS SCENARIO)
    ELSE()
       LIST(APPEND TEST_LABELS "ipv4")
    ENDIF()
+   IF(SCENARIO MATCHES "sequential")
+      LIST(APPEND TEST_LABELS "sequential-reuse")
+   ENDIF()
+   IF(SCENARIO MATCHES "multistream")
+      LIST(APPEND TEST_LABELS "multistream")
+   ENDIF()
+   IF(SCENARIO MATCHES "sctp")
+      LIST(APPEND TEST_LABELS "sctp")
+   ENDIF()
+   IF(SCENARIO MATCHES "quic")
+      LIST(APPEND TEST_LABELS "quic")
+   ENDIF()
+   IF(SCENARIO MATCHES "ctrl_quic")
+      LIST(APPEND TEST_LABELS "control-quic")
+   ENDIF()
+   IF(SCENARIO MATCHES "mptcp")
+      LIST(APPEND TEST_LABELS "mptcp")
+   ENDIF()
+   IF(SCENARIO MATCHES "udp")
+      LIST(APPEND TEST_LABELS "udp")
+   ENDIF()
+   IF(SCENARIO MATCHES "sigkill")
+      LIST(APPEND TEST_LABELS "abort-regression")
+   ENDIF()
+
+   SET(TEST_TIMEOUT 60)
+   IF(SCENARIO MATCHES "sequential|staggered")
+      SET(TEST_TIMEOUT 90)
+   ENDIF()
 
    SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
       ENVIRONMENT "LC_ALL=C.UTF-8;TEXTDOMAINDIR=${TEST_LOCALE_DIR}"
-      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:;Avbrutt;Aborted;assure"
+      FAIL_REGULAR_EXPRESSION "INTERNAL ERROR;ERROR:;FAIL:;Avbrutt;Aborted;assure;MessageReader already has a state"
       LABELS "${TEST_LABELS}"
-      TIMEOUT 60
+      TIMEOUT ${TEST_TIMEOUT}
    )
 ENDFUNCTION()
 
@@ -287,6 +318,18 @@ FUNCTION(ADD_NETPERFMETER_EDGE_CASE_TEST TEST_NAME ADDRESS SCENARIO)
       LIST(APPEND TEST_LABELS "ipv6")
    ELSE()
       LIST(APPEND TEST_LABELS "ipv4")
+   ENDIF()
+   IF(SCENARIO MATCHES "sctp")
+      LIST(APPEND TEST_LABELS "sctp")
+   ENDIF()
+   IF(SCENARIO MATCHES "quic")
+      LIST(APPEND TEST_LABELS "quic")
+   ENDIF()
+   IF(SCENARIO MATCHES "multistream")
+      LIST(APPEND TEST_LABELS "multistream")
+   ENDIF()
+   IF(SCENARIO MATCHES "keepalive|heartbeat")
+      LIST(APPEND TEST_LABELS "heartbeats")
    ENDIF()
 
    SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES
@@ -2366,10 +2409,52 @@ ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2connections_ctrl_quic
    127.0.0.1 quic const10:const1000:const10:const1000 plain 3
    -quic const10:const500:const10:const500 --control-over-quic)
 
+# QUIC PING keep-alive probes keep an idle QUIC control channel alive past max_idle_timeout
+# (hbinterval=5000ms, hbassocmaxrtx=2 -> max_idle_timeout=10s, runtime=13s > 10s)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_ctrl_keepalive_survives_idle_ipv4
+   127.0.0.1 udp const10:const500:const10:const500 plain 13
+   --control-over-quic
+   --control-hbinterval 5000 --control-hbassocmaxrtx 2
+   --server-arg --control-hbinterval --server-arg 5000
+   --server-arg --control-hbassocmaxrtx --server-arg 2)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_ctrl_keepalive_survives_idle_ipv6
+   ::1 udp const10:const500:const10:const500 plain 13
+   --control-over-quic
+   --control-hbinterval 5000 --control-hbassocmaxrtx 2
+   --server-arg --control-hbinterval --server-arg 5000
+   --server-arg --control-hbassocmaxrtx --server-arg 2)
+
+# Multi-stream QUIC data + QUIC control surviving 12s On-Off silence past 10s control max_idle_timeout
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_multistream_keepalive_survives_onoff_silence
+   127.0.0.1 quic const20:const1000:const0:const0:onoff=12 plain 15
+   --stream const20:const500:const0:const0:onoff=12
+   --control-over-quic
+   --control-hbinterval 5000 --control-hbassocmaxrtx 2
+   --server-arg --control-hbinterval --server-arg 5000
+   --server-arg --control-hbassocmaxrtx --server-arg 2)
+
 IF (HAVE_SCTP_FOR_TESTS)
    # Control channel using QUIC with SCTP data flow
    ADD_NETPERFMETER_FLOW_TEST(flow_sctp_ctrl_quic_bidi_ipv4
       127.0.0.1 sctp const10:const1000:const10:const1000 plain 3 --control-over-quic)
+
+   # Multi-association, multi-stream SCTP (3 associations x 3 streams = 9 flows) over QUIC control
+   # running past 10s max_idle_timeout (13s runtime) with --loglevel 1 (DEBUG) on server
+   ADD_NETPERFMETER_FLOW_TEST(flow_sctp_3assocs_9flows_ctrl_quic_keepalive
+      127.0.0.1 sctp const10:const200:const10:const200 plain 13
+      --stream const10:const500:const10:const500:onoff=2,11
+      --stream const0:const0:const10:const1543:maxmsgsize=1400
+      -sctp const10:const200:const10:const200
+      --stream const10:const500:const10:const500:onoff=2,11
+      --stream const0:const0:const10:const1543:maxmsgsize=1400
+      -sctp const10:const200:const10:const200
+      --stream const10:const500:const10:const500:onoff=2,11
+      --stream const0:const0:const10:const1543:maxmsgsize=1400
+      --control-over-quic
+      --control-hbinterval 5000 --control-hbassocmaxrtx 2
+      --server-arg --loglevel --server-arg 1
+      --server-arg --control-hbinterval --server-arg 5000
+      --server-arg --control-hbassocmaxrtx --server-arg 2)
 ENDIF()
 
 IF (HAVE_MPTCP_FOR_TESTS)
@@ -2971,8 +3056,13 @@ ADD_NETPERFMETER_FLOW_TEST(flow_sctp_saturated_large_frames
 ADD_NETPERFMETER_FLOW_TEST(flow_sctp_saturated_jumbo_frames
    127.0.0.1 sctp const0:const65536:const0:const65536:maxmsgsize=1000 plain 3)
 
-# Saturated SCTP multi-stream: Stream 0 (16 KB frames) and Stream 1 (32 KB frames)
+# Saturated SCTP multi-stream (1 association, 2 streams: 16 KB and 32 KB frames)
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_saturated_multistream
+   127.0.0.1 sctp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3
+   --stream const0:const32000:const0:const32000:maxmsgsize=1400)
+
+# Concurrent saturated SCTP associations: Association 0 (16 KB frames) and Association 1 (32 KB frames)
+ADD_NETPERFMETER_FLOW_TEST(flow_multi_sctp_2associations_saturated
    127.0.0.1 sctp const0:const16000:const0:const16000:maxmsgsize=1400 plain 3
    -sctp const0:const32000:const0:const32000:maxmsgsize=1400)
 
@@ -3006,6 +3096,19 @@ ADD_NETPERFMETER_FLOW_TEST(flow_quic_saturated_ctrl_quic
 ADD_NETPERFMETER_FLOW_TEST(flow_multi_quic_2connections_saturated
    127.0.0.1 quic const0:const16000:const0:const16000:maxmsgsize=1400 plain 3
    -quic const0:const32000:const0:const32000:maxmsgsize=1400)
+
+# Saturated multi-stream QUIC (1 connection, 2 streams: 16 KB @ 1400 B and 32 KB @ 1000 B)
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_multistream_2streams_saturated
+   127.0.0.1 quic const0:const16000:const0:const16000:maxmsgsize=1400 plain 3
+   --stream const0:const32000:const0:const32000:maxmsgsize=1000)
+
+# Saturated 4-stream QUIC with control channel over QUIC
+ADD_NETPERFMETER_FLOW_TEST(flow_quic_multistream_4streams_saturated_ctrl_quic
+   127.0.0.1 quic const0:const16000:const0:const16000:maxmsgsize=1400 plain 4
+   --stream const0:const16000:const0:const16000:maxmsgsize=1000
+   --stream const0:const32000:const0:const0:maxmsgsize=1400
+   --stream const0:const0:const0:const32000:maxmsgsize=1400
+   --control-over-quic)
 
 ENDIF()
 
@@ -3095,6 +3198,49 @@ IF (HAVE_MPTCP_FOR_TESTS AND HAVE_SCTP_FOR_TESTS AND HAVE_QUIC_FOR_TESTS)
       127.0.0.1 concurrent_5clients_all_protocols)
 ENDIF()
 
+# 11. Sequential Multi-Stream & Multi-Flow FD Reuse Regression Tests
+ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_multiflow_udp_ipv4
+   127.0.0.1 sequential_multiflow_udp_qos)
+ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_multiflow_udp_ipv6
+   ::1 sequential_multiflow_udp_qos)
+
+IF (HAVE_SCTP_FOR_TESTS)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_multistream_sctp_ipv4
+      127.0.0.1 sequential_multistream_sctp)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_multistream_sctp_ipv6
+      ::1 sequential_multistream_sctp)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_multi_assoc_sctp
+      127.0.0.1 sequential_multi_assoc_multistream_sctp)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sctp_multistream_after_sigkill
+      127.0.0.1 sequential_multistream_sctp_after_sigkill)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_staggered_overlap_multistream_sctp
+      127.0.0.1 staggered_overlap_multistream_sctp)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_mixed_protocol_multistream
+      127.0.0.1 sequential_mixed_protocol_multistream)
+ENDIF()
+
+IF (HAVE_QUIC_FOR_TESTS)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_multistream_quic_ipv4
+      127.0.0.1 sequential_multistream_quic)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_multistream_quic_ipv6
+      ::1 sequential_multistream_quic)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_multistream_quic_ctrl_quic
+      127.0.0.1 sequential_multistream_quic_ctrl_quic)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_multi_assoc_quic
+      127.0.0.1 sequential_multi_assoc_multistream_quic)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_quic_multistream_after_sigkill
+      127.0.0.1 sequential_multistream_quic_after_sigkill)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_quic_ctrl_quic_multistream_after_sigkill
+      127.0.0.1 sequential_multistream_quic_ctrl_quic_after_sigkill)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_staggered_overlap_multistream_quic
+      127.0.0.1 staggered_overlap_multistream_quic)
+ENDIF()
+
+IF (HAVE_SCTP_FOR_TESTS AND HAVE_QUIC_FOR_TESTS)
+   ADD_NETPERFMETER_MULTI_CLIENT_TEST(session_reuse_sequential_mixed_protocol_all
+      127.0.0.1 sequential_mixed_protocol_all)
+ENDIF()
+
 
 #############################################################################
 #### PROTOCOL & RUNTIME EDGE CASE TESTS                                  ####
@@ -3108,18 +3254,35 @@ ADD_NETPERFMETER_EDGE_CASE_TEST(edge_passive_runtime_expiration
 ADD_NETPERFMETER_EDGE_CASE_TEST(edge_active_sigint_graceful_stop
    127.0.0.1 active_sigint_graceful_stop)
 
-# 3. Control-channel mid-measurement abort / dead-peer timeout tests
+# 3. Control-channel mid-measurement abort / dead-peer timeout & poll-spin tests
 ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_tcp_abort
    127.0.0.1 control_tcp_abort)
+ADD_NETPERFMETER_EDGE_CASE_TEST(edge_tcp_data_eof_no_spin
+   127.0.0.1 tcp_data_eof_no_spin)
+ADD_NETPERFMETER_EDGE_CASE_TEST(edge_port_scan_peer_logging_ipv4
+   127.0.0.1 port_scan_peer_logging)
+ADD_NETPERFMETER_EDGE_CASE_TEST(edge_port_scan_peer_logging_ipv6
+   ::1 port_scan_peer_logging)
 
 IF (HAVE_SCTP_FOR_TESTS)
    ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_heartbeat_timeout
       127.0.0.1 control_heartbeat_timeout)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_multistream_sctp_data_eof_no_spin
+      127.0.0.1 multistream_sctp_data_eof_no_spin)
 ENDIF()
 
 IF (HAVE_QUIC_FOR_TESTS)
    ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_quic_abort
       127.0.0.1 control_quic_abort)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_quic_keepalive_timeout
+      127.0.0.1 control_quic_keepalive_timeout)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_multistream_quic_data_eof_no_spin
+      127.0.0.1 multistream_quic_data_eof_no_spin)
+ENDIF()
+
+IF (HAVE_SCTP_FOR_TESTS AND HAVE_QUIC_FOR_TESTS)
+   ADD_NETPERFMETER_EDGE_CASE_TEST(edge_nornet_quic_ctrl_sctp_multistream_abort
+      127.0.0.1 nornet_quic_ctrl_sctp_multistream_abort)
 ENDIF()
 
 # 4. Passive control-protocol disable flags (-Y, -X, -W, -Z)

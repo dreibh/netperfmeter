@@ -1297,7 +1297,7 @@ static bool configureTCPControlSocket(const int sd, const bool isMPTCP = false)
       LOG_END
       return false;
    }
-   const int keepAliveOption = 1;
+   const int keepAliveOption = (gControlHBInterval > 0) ? 1 : 0;
    if(ext_setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE,
                      (const char*)&keepAliveOption, sizeof(keepAliveOption)) < 0) {
       LOG_ERROR
@@ -1305,6 +1305,9 @@ static bool configureTCPControlSocket(const int sd, const bool isMPTCP = false)
                        sd, strerror(errno)) << "\n";
       LOG_END
       return false;
+   }
+   if(gControlHBInterval == 0) {
+      return true;
    }
 #if defined(TCP_KEEPIDLE) && !defined(__GNU__)
    const int keepIdleOption = std::max(1, (int)gControlHBInterval / 1000);   // in s
@@ -1437,16 +1440,21 @@ static bool mainLoop(const bool               isActiveMode,
    addToPollFDs((pollfd*)&fds, gQUICSocket,    n, &quicID);
 #endif
    int    controlFDSet[gMessageReader.size()];
-   size_t controlFDs = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
-   const int controlIDMin = (int)n;
+   size_t controlFDs         = gMessageReader.getAllSDs((int*)&controlFDSet, sizeof(controlFDSet) / sizeof(int));
+   bool   hasBufferedControl = false;
+   const int controlIDMin    = (int)n;
    for(size_t i = 0; i < controlFDs; i++) {
       addToPollFDs((pollfd*)&fds, controlFDSet[i], n, nullptr);
+      if(gMessageReader.hasReadyMessage(controlFDSet[i])) {
+         hasBufferedControl = true;
+      }
    }
    const int controlIDMax = (int)n - 1;
 
 
    // ====== Use poll() to wait for events ==================================
-   const int timeout = pollTimeout(now, 2,
+   const int timeout = hasBufferedControl ? 0 :
+                       pollTimeout(now, 2,
                                    stopAt,
                                    now + 1000000);
 
@@ -1457,19 +1465,25 @@ static bool mainLoop(const bool               isActiveMode,
 
    // ====== Handle socket events ===========================================
    now = getMicroTime();   // Get current time.
-   if(result > 0) {
+   if((result > 0) || hasBufferedControl) {
 
       // ====== Incoming control message ====================================
       int controlID;
       for(controlID = controlIDMin; controlID <= controlIDMax; controlID++) {
-         if(fds[controlID].revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) {
+         const bool hasBuffered = gMessageReader.hasReadyMessage(fds[controlID].fd);
+         if((fds[controlID].revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) || hasBuffered) {
             if( (isActiveMode == false) &&
                 (fds[controlID].fd == gControlSocket) ) {
-               const int newSD = ext_accept(gControlSocket, nullptr, 0);
+               sockaddr_union peerAddr;
+               socklen_t      peerAddrLen = sizeof(peerAddr);
+               memset(&peerAddr, 0, sizeof(peerAddr));
+               const int newSD = ext_accept(gControlSocket, &peerAddr.sa, &peerAddrLen);
                if(newSD >= 0) {
+                  const std::string peerStr =
+                     resolvePeerAddress(newSD, (peerAddrLen > 0) ? &peerAddr.sa : nullptr);
                   LOG_TRACE
-                  stdlog << format("Accept on SCTP control socket %d -> new control connection %d",
-                                   gControlSocket, newSD) << "\n";
+                  stdlog << format("Accept on SCTP control socket %d -> new control connection %d from %s",
+                                   gControlSocket, newSD, peerStr.c_str()) << "\n";
                   LOG_END
 #if defined(HAVE_SCTP)
                   sctp_sndrcvinfo sinfo;
@@ -1483,7 +1497,8 @@ static bool mainLoop(const bool               isActiveMode,
                      LOG_END
                   }
 #endif
-                  gMessageReader.registerSocket(IPPROTO_SCTP, newSD);
+                  gMessageReader.registerSocket(IPPROTO_SCTP, newSD, true, 65535,
+                                                (peerAddrLen > 0) ? &peerAddr : nullptr);
                }
                else {
                   LOG_ERROR
@@ -1494,18 +1509,29 @@ static bool mainLoop(const bool               isActiveMode,
             }
             else if( (isActiveMode == false) &&
                      (fds[controlID].fd == gControlSocketTCP) ) {
-               const int newSD = ext_accept(gControlSocketTCP, nullptr, 0);
+               sockaddr_union peerAddr;
+               socklen_t      peerAddrLen = sizeof(peerAddr);
+               memset(&peerAddr, 0, sizeof(peerAddr));
+               const int newSD = ext_accept(gControlSocketTCP, &peerAddr.sa, &peerAddrLen);
                if(newSD >= 0) {
+                  const std::string peerStr =
+                     resolvePeerAddress(newSD, (peerAddrLen > 0) ? &peerAddr.sa : nullptr);
                   LOG_TRACE
-                  stdlog << format("Accept on TCP control socket %d -> new control connection %d",
-                                   gControlSocketTCP, newSD) << "\n";
+                  stdlog << format("Accept on TCP control socket %d -> new control connection %d from %s",
+                                   gControlSocketTCP, newSD, peerStr.c_str()) << "\n";
                   LOG_END
+                  const int ctrlProto =
+#if defined(HAVE_MPTCP)
+                     gPassiveControlMPTCP ? IPPROTO_MPTCP :
+#endif
+                     IPPROTO_TCP;
                   if(configureTCPControlSocket(newSD
 #if defined(HAVE_MPTCP)
                                                , gPassiveControlMPTCP
 #endif
                                               )) {
-                     gMessageReader.registerSocket(IPPROTO_TCP, newSD);
+                     gMessageReader.registerSocket(ctrlProto, newSD, true, 65535,
+                                                   (peerAddrLen > 0) ? &peerAddr : nullptr);
                   }
                   else {
                      ext_close(newSD);
@@ -1521,18 +1547,29 @@ static bool mainLoop(const bool               isActiveMode,
 #if defined(__OpenBSD__)
             else if( (isActiveMode == false) &&
                      (fds[controlID].fd == gControlSocketTCP6) ) {
-               const int newSD = ext_accept(gControlSocketTCP6, nullptr, 0);
+               sockaddr_union peerAddr;
+               socklen_t      peerAddrLen = sizeof(peerAddr);
+               memset(&peerAddr, 0, sizeof(peerAddr));
+               const int newSD = ext_accept(gControlSocketTCP6, &peerAddr.sa, &peerAddrLen);
                if(newSD >= 0) {
+                  const std::string peerStr =
+                     resolvePeerAddress(newSD, (peerAddrLen > 0) ? &peerAddr.sa : nullptr);
                   LOG_TRACE
-                  stdlog << format("Accept on TCP6 control socket %d -> new control connection %d",
-                                   gControlSocketTCP6, newSD) << "\n";
+                  stdlog << format("Accept on TCP6 control socket %d -> new control connection %d from %s",
+                                   gControlSocketTCP6, newSD, peerStr.c_str()) << "\n";
                   LOG_END
+                  const int ctrlProto =
+#if defined(HAVE_MPTCP)
+                     gPassiveControlMPTCP ? IPPROTO_MPTCP :
+#endif
+                     IPPROTO_TCP;
                   if(configureTCPControlSocket(newSD
 #if defined(HAVE_MPTCP)
                                                , gPassiveControlMPTCP
 #endif
                                               )) {
-                     gMessageReader.registerSocket(IPPROTO_TCP, newSD);
+                     gMessageReader.registerSocket(ctrlProto, newSD, true, 65535,
+                                                   (peerAddrLen > 0) ? &peerAddr : nullptr);
                   }
                   else {
                      ext_close(newSD);
@@ -1549,11 +1586,16 @@ static bool mainLoop(const bool               isActiveMode,
 #if defined(HAVE_QUIC)
             else if( (isActiveMode == false) &&
                      (fds[controlID].fd == gControlSocketQUIC) ) {
-               const int newSD = ext_accept(gControlSocketQUIC, nullptr, 0);
+               sockaddr_union peerAddr;
+               socklen_t      peerAddrLen = sizeof(peerAddr);
+               memset(&peerAddr, 0, sizeof(peerAddr));
+               const int newSD = ext_accept(gControlSocketQUIC, &peerAddr.sa, &peerAddrLen);
                if(newSD >= 0) {
+                  const std::string peerStr =
+                     resolvePeerAddress(newSD, (peerAddrLen > 0) ? &peerAddr.sa : nullptr);
                   LOG_TRACE
-                  stdlog << format("Accept on QUIC control socket %d -> new control connection %d",
-                                   gControlSocketQUIC, newSD) << "\n";
+                  stdlog << format("Accept on QUIC control socket %d -> new control connection %d from %s",
+                                   gControlSocketQUIC, newSD, peerStr.c_str()) << "\n";
                   LOG_END
 
                   uint8_t      sessionKey[64];
@@ -1561,13 +1603,19 @@ static bool mainLoop(const bool               isActiveMode,
                   if(ext_getsockopt(newSD,
                                     SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
                                     &sessionKey, &sessionKeyLength) == 0) {
+                     configureQuicControlSocket(newSD, gControlHBInterval, gControlHBAssocMaxRtx);
                      if(quicServerHandshake(newSD, ALPN_NETPERFMETER_CONTROL,
                                             gQUICCA, gQUICCertificate, gQUICKey,
                                             sessionKey, sessionKeyLength) == 0) {
                         quicRegisterControlSocket(newSD, false);
-                        gMessageReader.registerSocket(IPPROTO_QUIC, newSD);
+                        gMessageReader.registerSocket(IPPROTO_QUIC, newSD, true, 65535,
+                                                      (peerAddrLen > 0) ? &peerAddr : nullptr);
                      }
                      else {
+                        LOG_WARNING
+                        stdlog << format("QUIC handshake failed on incoming QUIC control socket %d from %s!",
+                                         newSD, peerStr.c_str()) << "\n";
+                        LOG_END
                         ext_close(newSD);
                      }
                   }
@@ -1598,13 +1646,16 @@ static bool mainLoop(const bool               isActiveMode,
                }
 #endif
                const bool socketBroken =
-                  (soError != 0) ||
-                  (fds[controlID].revents & (POLLERR|POLLNVAL)) ||
-                  ((fds[controlID].revents & POLLHUP) && !(fds[controlID].revents & POLLIN));
-               const bool controlOkay =
-                  (!socketBroken) ?
-                     handleNetPerfMeterControlMessage(&gMessageReader, fds[controlID].fd) :
-                     false;
+                  (!hasBuffered) &&
+                  ((soError != 0) ||
+                   (fds[controlID].revents & (POLLERR|POLLNVAL)) ||
+                   ((fds[controlID].revents & POLLHUP) && !(fds[controlID].revents & POLLIN)));
+               bool controlOkay = !socketBroken;
+               if(controlOkay) {
+                  do {
+                     controlOkay = handleNetPerfMeterControlMessage(&gMessageReader, fds[controlID].fd);
+                  } while(controlOkay && gMessageReader.hasReadyMessage(fds[controlID].fd));
+               }
 
                if(!controlOkay) {
                   if(isActiveMode) {
@@ -1628,36 +1679,54 @@ static bool mainLoop(const bool               isActiveMode,
 
       // ====== Incoming data message =======================================
       if( (tcpID >= 0) && (fds[tcpID].revents & (POLLIN|POLLERR)) ) {
-         const int newSD = ext_accept(gTCPSocket, nullptr, 0);
+         sockaddr_union peerAddr;
+         socklen_t      peerAddrLen = sizeof(peerAddr);
+         memset(&peerAddr, 0, sizeof(peerAddr));
+         const int newSD = ext_accept(gTCPSocket, &peerAddr.sa, &peerAddrLen);
          if(newSD >= 0) {
+            const std::string peerStr =
+               resolvePeerAddress(newSD, (peerAddrLen > 0) ? &peerAddr.sa : nullptr);
             LOG_TRACE
-            stdlog << format("Accept on TCP data socket %d -> new TCP data connection %d",
-                             gTCPSocket, newSD) << "\n";
+            stdlog << format("Accept on TCP data socket %d -> new TCP data connection %d from %s",
+                             gTCPSocket, newSD, peerStr.c_str()) << "\n";
             LOG_END
-            FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
+            FlowManager::getFlowManager()->addUnidentifiedSocket(
+               IPPROTO_TCP, newSD, (peerAddrLen > 0) ? &peerAddr : nullptr);
          }
       }
 #if defined(__OpenBSD__)
       if( (tcp6ID >= 0) && (fds[tcp6ID].revents & (POLLIN|POLLERR)) ) {
-         const int newSD = ext_accept(gTCP6Socket, nullptr, 0);
+         sockaddr_union peerAddr;
+         socklen_t      peerAddrLen = sizeof(peerAddr);
+         memset(&peerAddr, 0, sizeof(peerAddr));
+         const int newSD = ext_accept(gTCP6Socket, &peerAddr.sa, &peerAddrLen);
          if(newSD >= 0) {
+            const std::string peerStr =
+               resolvePeerAddress(newSD, (peerAddrLen > 0) ? &peerAddr.sa : nullptr);
             LOG_TRACE
-            stdlog << format("Accept on TCP6 data socket %d -> new TCP6 data connection %d",
-                             gTCP6Socket, newSD) << "\n";
+            stdlog << format("Accept on TCP6 data socket %d -> new TCP6 data connection %d from %s",
+                             gTCP6Socket, newSD, peerStr.c_str()) << "\n";
             LOG_END
-            FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_TCP, newSD);
+            FlowManager::getFlowManager()->addUnidentifiedSocket(
+               IPPROTO_TCP, newSD, (peerAddrLen > 0) ? &peerAddr : nullptr);
          }
       }
 #endif
 #if defined(HAVE_MPTCP)
       if( (mptcpID >= 0) && (fds[mptcpID].revents & (POLLIN|POLLERR)) ) {
-         const int newSD = ext_accept(gMPTCPSocket, nullptr, 0);
+         sockaddr_union peerAddr;
+         socklen_t      peerAddrLen = sizeof(peerAddr);
+         memset(&peerAddr, 0, sizeof(peerAddr));
+         const int newSD = ext_accept(gMPTCPSocket, &peerAddr.sa, &peerAddrLen);
          if(newSD >= 0) {
+            const std::string peerStr =
+               resolvePeerAddress(newSD, (peerAddrLen > 0) ? &peerAddr.sa : nullptr);
             LOG_TRACE
-            stdlog << format("Accept on MPTCP data socket %d -> new MPTCP data connection %d",
-                             gMPTCPSocket, newSD) << "\n";
+            stdlog << format("Accept on MPTCP data socket %d -> new MPTCP data connection %d from %s",
+                             gMPTCPSocket, newSD, peerStr.c_str()) << "\n";
             LOG_END
-            FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_MPTCP, newSD);
+            FlowManager::getFlowManager()->addUnidentifiedSocket(
+               IPPROTO_MPTCP, newSD, (peerAddrLen > 0) ? &peerAddr : nullptr);
          }
       }
 #endif
@@ -1675,35 +1744,52 @@ static bool mainLoop(const bool               isActiveMode,
 #endif
 #if defined(HAVE_SCTP)
       if( (sctpID >= 0) && (fds[sctpID].revents & (POLLIN|POLLERR)) ) {
-         const int newSD = ext_accept(gSCTPSocket, nullptr, 0);
+         sockaddr_union peerAddr;
+         socklen_t      peerAddrLen = sizeof(peerAddr);
+         memset(&peerAddr, 0, sizeof(peerAddr));
+         const int newSD = ext_accept(gSCTPSocket, &peerAddr.sa, &peerAddrLen);
          if(newSD >= 0) {
+            const std::string peerStr =
+               resolvePeerAddress(newSD, (peerAddrLen > 0) ? &peerAddr.sa : nullptr);
             LOG_TRACE
-            stdlog << format("Accept on SCTP data socket %d -> new SCTP data connection %d",
-                             gSCTPSocket, newSD) << "\n";
+            stdlog << format("Accept on SCTP data socket %d -> new SCTP data connection %d from %s",
+                             gSCTPSocket, newSD, peerStr.c_str()) << "\n";
             LOG_END
-            FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_SCTP, newSD);
+            FlowManager::getFlowManager()->addUnidentifiedSocket(
+               IPPROTO_SCTP, newSD, (peerAddrLen > 0) ? &peerAddr : nullptr);
          }
       }
 #endif
 #if defined(HAVE_DCCP)
       if( (dccpID >= 0) && (fds[dccpID].revents & (POLLIN|POLLERR)) ) {
-         const int newSD = ext_accept(gDCCPSocket, nullptr, 0);
+         sockaddr_union peerAddr;
+         socklen_t      peerAddrLen = sizeof(peerAddr);
+         memset(&peerAddr, 0, sizeof(peerAddr));
+         const int newSD = ext_accept(gDCCPSocket, &peerAddr.sa, &peerAddrLen);
          if(newSD >= 0) {
+            const std::string peerStr =
+               resolvePeerAddress(newSD, (peerAddrLen > 0) ? &peerAddr.sa : nullptr);
             LOG_TRACE
-            stdlog << format("Accept on DCCP data socket %d -> new DCCP data connection %d",
-                             gDCCPSocket, newSD) << "\n";
+            stdlog << format("Accept on DCCP data socket %d -> new DCCP data connection %d from %s",
+                             gDCCPSocket, newSD, peerStr.c_str()) << "\n";
             LOG_END
-            FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_DCCP, newSD);
+            FlowManager::getFlowManager()->addUnidentifiedSocket(
+               IPPROTO_DCCP, newSD, (peerAddrLen > 0) ? &peerAddr : nullptr);
          }
       }
 #endif
 #if defined(HAVE_QUIC)
       if( (quicID >= 0) && (fds[quicID].revents & (POLLIN|POLLERR)) ) {
-         const int newSD = ext_accept(gQUICSocket, nullptr, 0);
+         sockaddr_union peerAddr;
+         socklen_t      peerAddrLen = sizeof(peerAddr);
+         memset(&peerAddr, 0, sizeof(peerAddr));
+         const int newSD = ext_accept(gQUICSocket, &peerAddr.sa, &peerAddrLen);
          if(newSD >= 0) {
+            const std::string peerStr =
+               resolvePeerAddress(newSD, (peerAddrLen > 0) ? &peerAddr.sa : nullptr);
             LOG_TRACE
-            stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d",
-                             gQUICSocket, newSD) << "\n";
+            stdlog << format("Accept on QUIC data socket %d -> new QUIC data connection %d from %s",
+                             gQUICSocket, newSD, peerStr.c_str()) << "\n";
             LOG_END
             LOG_TRACE
             stdlog << "server handshake <sd=" << newSD
@@ -1718,12 +1804,18 @@ static bool mainLoop(const bool               isActiveMode,
             if(ext_getsockopt(newSD,
                               SOL_QUIC, QUIC_SOCKOPT_SESSION_TICKET,
                               &sessionKey, &sessionKeyLength) == 0) {
+               configureQuicKeepAlive(newSD, 15000ULL, 0ULL, true);
                if(quicServerHandshake(newSD, ALPN_NETPERFMETER_DATA,
                                       gQUICCA, gQUICCertificate, gQUICKey,
                                       sessionKey, sessionKeyLength) == 0) {
-                  FlowManager::getFlowManager()->addUnidentifiedSocket(IPPROTO_QUIC, newSD);
+                  FlowManager::getFlowManager()->addUnidentifiedSocket(
+                     IPPROTO_QUIC, newSD, (peerAddrLen > 0) ? &peerAddr : nullptr);
                }
                else {
+                  LOG_WARNING
+                  stdlog << format("QUIC handshake failed on incoming QUIC data socket %d from %s!",
+                                   newSD, peerStr.c_str()) << "\n";
+                  LOG_END
                   ext_close(newSD);
                }
             }
@@ -1788,8 +1880,7 @@ static void passiveMode(const uint16_t localPort)
                              gControlSocketQUIC, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
-         const unsigned int idleTimeoutMs = gControlHBInterval * gControlHBAssocMaxRtx;
-         if(!configureQuicControlSocket(gControlSocketQUIC, idleTimeoutMs)) {
+         if(!configureQuicControlSocket(gControlSocketQUIC, gControlHBInterval, gControlHBAssocMaxRtx)) {
             LOG_WARNING
             stdlog << format("Unable to configure idle timeout on QUIC control socket %d: %s!",
                              gControlSocketQUIC, strerror(errno)) << "\n";
@@ -1834,10 +1925,17 @@ static void passiveMode(const uint16_t localPort)
          memset(&params, 0, sizeof(params));
          params.spp_assoc_id          = SCTP_FUTURE_ASSOC;
          params.spp_address.ss_family = checkIPv6() ? AF_INET6 : AF_INET;
-#if defined(SPP_HB_ENABLE)
-         params.spp_flags             = SPP_HB_ENABLE;
+         if(gControlHBInterval == 0) {
+#if defined(SPP_HB_DISABLE)
+            params.spp_flags          = SPP_HB_DISABLE;
 #endif
-         params.spp_hbinterval        = gControlHBInterval;
+         }
+         else {
+#if defined(SPP_HB_ENABLE)
+            params.spp_flags          = SPP_HB_ENABLE;
+#endif
+            params.spp_hbinterval     = gControlHBInterval;
+         }
          params.spp_pathmaxrxt        = gControlHBPathMaxRtx;
          if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS,
                            &params, sizeof(params)) < 0) {
@@ -2137,6 +2235,7 @@ static void passiveMode(const uint16_t localPort)
                              gQUICSocket, strerror(errno)) << "\n";
             LOG_END_FATAL
          }
+         configureQuicKeepAlive(gQUICSocket, 15000ULL, 0ULL, true);
          if(ext_listen(gQUICSocket, 100) < 0) {
             LOG_FATAL
             stdlog << format("Unable to enable listening on QUIC socket %d: %s!",
@@ -2482,8 +2581,7 @@ static void activeMode(const char* remoteEndpoint)
 #endif
 #if defined(HAVE_QUIC)
    if(gActiveControlProtocol == IPPROTO_QUIC) {
-      const unsigned int idleTimeoutMs = gControlHBInterval * gControlHBAssocMaxRtx;
-      if(!configureQuicControlSocket(gControlSocket, idleTimeoutMs)) {
+      if(!configureQuicControlSocket(gControlSocket, gControlHBInterval, gControlHBAssocMaxRtx)) {
          LOG_WARNING
          stdlog << format("Unable to configure idle timeout on QUIC control socket %d: %s!",
                           gControlSocket, strerror(errno)) << "\n";
@@ -2533,10 +2631,17 @@ static void activeMode(const char* remoteEndpoint)
       memset(&paddrparams, 0, sizeof(paddrparams));
       paddrparams.spp_assoc_id          = SCTP_FUTURE_ASSOC;
       paddrparams.spp_address.ss_family = controlAddress.sa.sa_family;
-#if defined(SPP_HB_ENABLE)
-      paddrparams.spp_flags             = SPP_HB_ENABLE;
+      if(gControlHBInterval == 0) {
+#if defined(SPP_HB_DISABLE)
+         paddrparams.spp_flags          = SPP_HB_DISABLE;
 #endif
-      paddrparams.spp_hbinterval        = gControlHBInterval;
+      }
+      else {
+#if defined(SPP_HB_ENABLE)
+         paddrparams.spp_flags          = SPP_HB_ENABLE;
+#endif
+         paddrparams.spp_hbinterval     = gControlHBInterval;
+      }
       paddrparams.spp_pathmaxrxt        = gControlHBPathMaxRtx;
       if(ext_setsockopt(gControlSocket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &paddrparams, sizeof(paddrparams)) < 0) {
          LOG_WARNING
@@ -2579,7 +2684,7 @@ static void activeMode(const char* remoteEndpoint)
    LOG_TRACE
    stdlog << "<okay; sd=" << gControlSocket << ">\n";
    LOG_END
-   gMessageReader.registerSocket(gActiveControlProtocol, gControlSocket);
+   gMessageReader.registerSocket(gActiveControlProtocol, gControlSocket, true, 65535, &controlAddress);
 
 
    // ====== Handle command-line parameters =================================

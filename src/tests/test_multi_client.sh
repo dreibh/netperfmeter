@@ -131,7 +131,7 @@ SERVER_TLS_ARGS=""
 CLIENT_TLS_ARGS=""
 
 case "${SCENARIO}" in
-    *quic*|*all_protocols*|*5clients*)
+    *quic*|*all_protocols*|*5clients*|*mixed_protocol_all*)
         CA_KEY="${TMP_DIR}/test_ca.key"
         CA_CRT="${TMP_DIR}/test_ca.crt"
         SRV_KEY="${TMP_DIR}/test_server.key"
@@ -180,12 +180,78 @@ EOF
         ;;
 esac
 
+# ====== Verification Helpers ===============================================
+verify_server_alive() {
+    _stage="$1"
+    if [ -n "${SERVER_PID}" ] && ! kill -0 "${SERVER_PID}" 2>/dev/null; then
+        echo "FAIL: Passive server died during ${_stage}!" >&2
+        if [ -s "${TMP_DIR}/server.log" ]; then
+            cat "${TMP_DIR}/server.log" >&2
+        fi
+        exit 1
+    fi
+}
+
+verify_generation_outputs() {
+    _gen="$1"
+    _ext="$2"
+    _num_flows="$3"
+    _prefix="${TMP_DIR}/gen${_gen}"
+
+    if [ ! -s "${_prefix}.config" ]; then
+        echo "FAIL: Generation ${_gen} missing config file ${_prefix}.config." >&2
+        exit 1
+    fi
+    for _side in active passive; do
+        if [ ! -s "${_prefix}-${_side}.sca${_ext}" ]; then
+            echo "FAIL: Generation ${_gen} missing ${_side} scalar file." >&2
+            exit 1
+        fi
+        if [ ! -s "${_prefix}-${_side}.vec${_ext}" ]; then
+            echo "FAIL: Generation ${_gen} missing ${_side} vector file." >&2
+            exit 1
+        fi
+    done
+
+    _vec_count=$(find "${TMP_DIR}" -maxdepth 1 -name "gen${_gen}-passive-*-*.vec${_ext}" -size +0c | wc -l)
+    if [ "${_vec_count}" -lt "${_num_flows}" ]; then
+        echo "FAIL: Generation ${_gen} expected at least ${_num_flows} non-empty passive per-flow vector files, found ${_vec_count}." >&2
+        ls -la "${TMP_DIR}" >&2
+        exit 1
+    fi
+}
+
+wait_for_client_started() {
+    _log="$1"
+    _pid="$2"
+    _waited=0
+    while [ "${_waited}" -lt 8 ]; do
+        if ! kill -0 "${_pid}" 2>/dev/null; then
+            echo "FAIL: Client exited prematurely before starting measurement." >&2
+            if [ -s "${_log}" ]; then
+                cat "${_log}" >&2
+            fi
+            exit 1
+        fi
+        if [ -s "${_log}" ] && grep -q "Starting measurement" "${_log}"; then
+            return 0
+        fi
+        sleep 1
+        _waited=$((_waited + 1))
+    done
+    return 0
+}
+
 # ====== Start Server =======================================================
 SERVER_CONTROL_ARGS="-control-over-tcp"
+SERVER_EXTRA_ARGS=""
 case "${SCENARIO}" in
     *mptcp*|*5clients*) SERVER_CONTROL_ARGS="-control-over-tcp -control-over-mptcp" ;;
 esac
-"${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} ${SERVER_TLS_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
+case "${SCENARIO}" in
+    *after_sigkill*) SERVER_EXTRA_ARGS="--loglevel 1 --control-hbinterval 5000 --control-hbassocmaxrtx 1" ;;
+esac
+"${NETPERFMETER}" "${PORT}" ${SERVER_CONTROL_ARGS} ${SERVER_TLS_ARGS} ${SERVER_EXTRA_ARGS} >"${TMP_DIR}/server.log" 2>&1 &
 SERVER_PID=$!
 
 if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" 5; then
@@ -440,6 +506,397 @@ case "${SCENARIO}" in
         CLIENT5_PID=""
         ;;
 
+    # 14. Sequential 3-stream SCTP reuse (3 generations, SCTP control, bz2 outputs)
+    sequential_multistream_sctp)
+        for _gen in 1 2 3; do
+            _prefix="${TMP_DIR}/gen${_gen}"
+            "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-sctp --runtime 1 \
+                --config "${_prefix}.config" \
+                --scalar "${_prefix}.sca.bz2" \
+                --vector "${_prefix}.vec.bz2" \
+                --sctp const5:const1000:const5:const1000 const5:const1000:const5:const1000 const5:const1000:const5:const1000 \
+                >"${TMP_DIR}/client${_gen}.log" 2>&1 &
+            eval "CLIENT${_gen}_PID=\$!"
+            eval "wait \"\${CLIENT${_gen}_PID}\" || CLIENT${_gen}_RC=\$?"
+            eval "CLIENT${_gen}_PID=\"\""
+            eval "_rc=\$CLIENT${_gen}_RC"
+            if [ "${_rc}" -ne 0 ]; then
+                break
+            fi
+            verify_server_alive "sequential_multistream_sctp gen ${_gen}"
+            verify_generation_outputs "${_gen}" ".bz2" 3
+        done
+        ;;
+
+    # 15. Sequential 3-stream QUIC reuse (3 generations, TCP control)
+    sequential_multistream_quic)
+        for _gen in 1 2 3; do
+            _prefix="${TMP_DIR}/gen${_gen}"
+            "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} --runtime 2 \
+                --config "${_prefix}.config" \
+                --scalar "${_prefix}.sca" \
+                --vector "${_prefix}.vec" \
+                --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+                >"${TMP_DIR}/client${_gen}.log" 2>&1 &
+            eval "CLIENT${_gen}_PID=\$!"
+            eval "wait \"\${CLIENT${_gen}_PID}\" || CLIENT${_gen}_RC=\$?"
+            eval "CLIENT${_gen}_PID=\"\""
+            eval "_rc=\$CLIENT${_gen}_RC"
+            if [ "${_rc}" -ne 0 ]; then
+                break
+            fi
+            verify_server_alive "sequential_multistream_quic gen ${_gen}"
+            verify_generation_outputs "${_gen}" "" 3
+        done
+        ;;
+
+    # 16. Sequential 3-stream QUIC reuse over QUIC control channel (3 generations)
+    sequential_multistream_quic_ctrl_quic)
+        for _gen in 1 2 3; do
+            _prefix="${TMP_DIR}/gen${_gen}"
+            "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-quic ${CLIENT_TLS_ARGS} --runtime 2 \
+                --config "${_prefix}.config" \
+                --scalar "${_prefix}.sca" \
+                --vector "${_prefix}.vec" \
+                --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+                >"${TMP_DIR}/client${_gen}.log" 2>&1 &
+            eval "CLIENT${_gen}_PID=\$!"
+            eval "wait \"\${CLIENT${_gen}_PID}\" || CLIENT${_gen}_RC=\$?"
+            eval "CLIENT${_gen}_PID=\"\""
+            eval "_rc=\$CLIENT${_gen}_RC"
+            if [ "${_rc}" -ne 0 ]; then
+                break
+            fi
+            verify_server_alive "sequential_multistream_quic_ctrl_quic gen ${_gen}"
+            verify_generation_outputs "${_gen}" "" 3
+        done
+        ;;
+
+    # 17. Multiple multi-stream SCTP associations per client in sequence (2 gens x 2 assocs x 3 streams)
+    sequential_multi_assoc_multistream_sctp)
+        for _gen in 1 2; do
+            _prefix="${TMP_DIR}/gen${_gen}"
+            "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-sctp --runtime 2 \
+                --config "${_prefix}.config" \
+                --scalar "${_prefix}.sca" \
+                --vector "${_prefix}.vec" \
+                --sctp const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+                --sctp const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+                >"${TMP_DIR}/client${_gen}.log" 2>&1 &
+            eval "CLIENT${_gen}_PID=\$!"
+            eval "wait \"\${CLIENT${_gen}_PID}\" || CLIENT${_gen}_RC=\$?"
+            eval "CLIENT${_gen}_PID=\"\""
+            eval "_rc=\$CLIENT${_gen}_RC"
+            if [ "${_rc}" -ne 0 ]; then
+                break
+            fi
+            verify_server_alive "sequential_multi_assoc_multistream_sctp gen ${_gen}"
+            verify_generation_outputs "${_gen}" "" 6
+        done
+        ;;
+
+    # 18. Multiple multi-stream QUIC connections per client in sequence (2 gens x 2 conns x 3 streams)
+    sequential_multi_assoc_multistream_quic)
+        for _gen in 1 2; do
+            _prefix="${TMP_DIR}/gen${_gen}"
+            "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} --runtime 2 \
+                --config "${_prefix}.config" \
+                --scalar "${_prefix}.sca" \
+                --vector "${_prefix}.vec" \
+                --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+                --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+                >"${TMP_DIR}/client${_gen}.log" 2>&1 &
+            eval "CLIENT${_gen}_PID=\$!"
+            eval "wait \"\${CLIENT${_gen}_PID}\" || CLIENT${_gen}_RC=\$?"
+            eval "CLIENT${_gen}_PID=\"\""
+            eval "_rc=\$CLIENT${_gen}_RC"
+            if [ "${_rc}" -ne 0 ]; then
+                break
+            fi
+            verify_server_alive "sequential_multi_assoc_multistream_quic gen ${_gen}"
+            verify_generation_outputs "${_gen}" "" 6
+        done
+        ;;
+
+    # 19. Abrupt SIGKILL of 3-stream SCTP client mid-transfer followed by clean 3-stream SCTP session
+    sequential_multistream_sctp_after_sigkill)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-sctp --runtime 10 \
+            --sctp const10:const1000:const10:const1000 const10:const500:const10:const500 const10:const500:const10:const500 \
+            >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        wait_for_client_started "${TMP_DIR}/client1.log" "${CLIENT1_PID}"
+        sleep 1
+        kill -9 "${CLIENT1_PID}" 2>/dev/null || true
+        wait "${CLIENT1_PID}" 2>/dev/null || true
+        CLIENT1_PID=""
+        sleep 1
+        verify_server_alive "after client1 SIGKILL (SCTP)"
+
+        _prefix="${TMP_DIR}/gen2"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-sctp --runtime 2 \
+            --config "${_prefix}.config" \
+            --scalar "${_prefix}.sca" \
+            --vector "${_prefix}.vec" \
+            --sctp const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        if [ "${CLIENT2_RC}" -eq 0 ]; then
+            verify_server_alive "after client2 (SCTP)"
+            verify_generation_outputs "2" "" 3
+        fi
+        ;;
+
+    # 20. Abrupt SIGKILL of 3-stream QUIC client mid-transfer followed by clean 3-stream QUIC session
+    sequential_multistream_quic_after_sigkill)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} --runtime 10 \
+            --quic const10:const1000:const10:const1000 const10:const500:const10:const500 const10:const500:const10:const500 \
+            >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        wait_for_client_started "${TMP_DIR}/client1.log" "${CLIENT1_PID}"
+        sleep 1
+        kill -9 "${CLIENT1_PID}" 2>/dev/null || true
+        wait "${CLIENT1_PID}" 2>/dev/null || true
+        CLIENT1_PID=""
+        sleep 1
+        verify_server_alive "after client1 SIGKILL (QUIC)"
+
+        _prefix="${TMP_DIR}/gen2"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} --runtime 2 \
+            --config "${_prefix}.config" \
+            --scalar "${_prefix}.sca" \
+            --vector "${_prefix}.vec" \
+            --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        if [ "${CLIENT2_RC}" -eq 0 ]; then
+            verify_server_alive "after client2 (QUIC)"
+            verify_generation_outputs "2" "" 3
+        fi
+        ;;
+
+    # 20b. Abrupt SIGKILL of 3-stream QUIC client over QUIC control followed by clean 3-stream QUIC session
+    sequential_multistream_quic_ctrl_quic_after_sigkill)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-quic ${CLIENT_TLS_ARGS} \
+            --control-hbinterval 5000 --control-hbassocmaxrtx 1 --runtime 15 \
+            --quic const10:const1000:const10:const1000 \
+                   const10:const500:const10:const500 \
+                   const10:const500:const10:const500 \
+            >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        wait_for_client_started "${TMP_DIR}/client1.log" "${CLIENT1_PID}"
+        sleep 1
+        kill -9 "${CLIENT1_PID}" 2>/dev/null || true
+        wait "${CLIENT1_PID}" 2>/dev/null || true
+        CLIENT1_PID=""
+        sleep 6
+        verify_server_alive "after client1 SIGKILL (QUIC control + 3-stream QUIC)"
+
+        _prefix="${TMP_DIR}/gen2"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-quic ${CLIENT_TLS_ARGS} \
+            --control-hbinterval 5000 --control-hbassocmaxrtx 2 --runtime 2 \
+            --config "${_prefix}.config" \
+            --scalar "${_prefix}.sca" \
+            --vector "${_prefix}.vec" \
+            --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        if [ "${CLIENT2_RC}" -eq 0 ]; then
+            verify_server_alive "after client2 (QUIC control + 3-stream QUIC)"
+            verify_generation_outputs "2" "" 3
+        fi
+        ;;
+
+    # 21. Staggered overlap + sequential fd reuse on 3-stream SCTP
+    staggered_overlap_multistream_sctp)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-sctp --runtime 6 \
+            --sctp const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        sleep 1
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-sctp --runtime 1 \
+            --sctp const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        verify_server_alive "staggered_overlap_multistream_sctp after client2"
+
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-sctp --runtime 1 \
+            --sctp const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client3.log" 2>&1 &
+        CLIENT3_PID=$!
+        wait "${CLIENT3_PID}" || CLIENT3_RC=$?
+        CLIENT3_PID=""
+        wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
+        ;;
+
+    # 22. Staggered overlap + sequential fd reuse on 3-stream QUIC
+    staggered_overlap_multistream_quic)
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} --runtime 6 \
+            --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        sleep 1
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} --runtime 1 \
+            --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        verify_server_alive "staggered_overlap_multistream_quic after client2"
+
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp ${CLIENT_TLS_ARGS} --runtime 1 \
+            --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client3.log" 2>&1 &
+        CLIENT3_PID=$!
+        wait "${CLIENT3_PID}" || CLIENT3_RC=$?
+        CLIENT3_PID=""
+        wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
+        ;;
+
+    # 23. Sequential 3-flow UDP reuse with distinct per-flow Traffic Class (and IPv6 Flow Labels)
+    sequential_multiflow_udp_qos)
+        case "${ADDRESS}" in
+            *:*)
+                _f1="const5:const1000:const5:const1000"
+                _f2="const5:const500:const5:const500"
+                _f3="const5:const500:const5:const500"
+                ;;
+            *)
+                _f1="const5:const1000:const5:const1000"
+                _f2="const5:const500:const5:const500"
+                _f3="const5:const500:const5:const500"
+                ;;
+        esac
+        for _gen in 1 2 3; do
+            _prefix="${TMP_DIR}/gen${_gen}"
+            "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp --runtime 2 \
+                --config "${_prefix}.config" \
+                --scalar "${_prefix}.sca" \
+                --vector "${_prefix}.vec" \
+                --udp "${_f1}" --udp "${_f2}" --udp "${_f3}" \
+                >"${TMP_DIR}/client${_gen}.log" 2>&1 &
+            eval "CLIENT${_gen}_PID=\$!"
+            eval "wait \"\${CLIENT${_gen}_PID}\" || CLIENT${_gen}_RC=\$?"
+            eval "CLIENT${_gen}_PID=\"\""
+            eval "_rc=\$CLIENT${_gen}_RC"
+            if [ "${_rc}" -ne 0 ]; then
+                break
+            fi
+            verify_server_alive "sequential_multiflow_udp_qos gen ${_gen}"
+            verify_generation_outputs "${_gen}" "" 3
+        done
+        ;;
+
+    # 24. Alternating mixed-protocol sequential generations (SCTP -> TCP+2xUDP -> 4-stream SCTP)
+    sequential_mixed_protocol_multistream)
+        _prefix="${TMP_DIR}/gen1"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-sctp --runtime 1 \
+            --config "${_prefix}.config" --scalar "${_prefix}.sca" --vector "${_prefix}.vec" \
+            --sctp const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
+        if [ "${CLIENT1_RC}" -eq 0 ]; then
+            verify_server_alive "mixed gen 1"
+            verify_generation_outputs "1" "" 3
+        fi
+
+        _prefix="${TMP_DIR}/gen2"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp --runtime 1 \
+            --config "${_prefix}.config" --scalar "${_prefix}.sca" --vector "${_prefix}.vec" \
+            --tcp const5:const1000:const5:const1000 \
+            --udp const5:const500:const5:const500 \
+            --udp const5:const500:const5:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        if [ "${CLIENT2_RC}" -eq 0 ]; then
+            verify_server_alive "mixed gen 2"
+            verify_generation_outputs "2" "" 3
+        fi
+
+        _prefix="${TMP_DIR}/gen3"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp --runtime 1 \
+            --config "${_prefix}.config" --scalar "${_prefix}.sca" --vector "${_prefix}.vec" \
+            --sctp const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client3.log" 2>&1 &
+        CLIENT3_PID=$!
+        wait "${CLIENT3_PID}" || CLIENT3_RC=$?
+        CLIENT3_PID=""
+        if [ "${CLIENT3_RC}" -eq 0 ]; then
+            verify_server_alive "mixed gen 3"
+            verify_generation_outputs "3" "" 4
+        fi
+        ;;
+
+    # 25. Alternating mixed-protocol sequential generations including QUIC
+    sequential_mixed_protocol_all)
+        _prefix="${TMP_DIR}/gen1"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-sctp --runtime 1 \
+            --config "${_prefix}.config" --scalar "${_prefix}.sca" --vector "${_prefix}.vec" \
+            --sctp const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client1.log" 2>&1 &
+        CLIENT1_PID=$!
+        wait "${CLIENT1_PID}" || CLIENT1_RC=$?
+        CLIENT1_PID=""
+        if [ "${CLIENT1_RC}" -eq 0 ]; then
+            verify_server_alive "mixed_all gen 1"
+            verify_generation_outputs "1" "" 3
+        fi
+
+        _prefix="${TMP_DIR}/gen2"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp --runtime 1 \
+            --config "${_prefix}.config" --scalar "${_prefix}.sca" --vector "${_prefix}.vec" \
+            --tcp const5:const1000:const5:const1000 \
+            --udp const5:const500:const5:const500 \
+            --udp const5:const500:const5:const500 \
+            >"${TMP_DIR}/client2.log" 2>&1 &
+        CLIENT2_PID=$!
+        wait "${CLIENT2_PID}" || CLIENT2_RC=$?
+        CLIENT2_PID=""
+        if [ "${CLIENT2_RC}" -eq 0 ]; then
+            verify_server_alive "mixed_all gen 2"
+            verify_generation_outputs "2" "" 3
+        fi
+
+        _prefix="${TMP_DIR}/gen3"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" --control-over-quic ${CLIENT_TLS_ARGS} --runtime 2 \
+            --config "${_prefix}.config" --scalar "${_prefix}.sca" --vector "${_prefix}.vec" \
+            --quic const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client3.log" 2>&1 &
+        CLIENT3_PID=$!
+        wait "${CLIENT3_PID}" || CLIENT3_RC=$?
+        CLIENT3_PID=""
+        if [ "${CLIENT3_RC}" -eq 0 ]; then
+            verify_server_alive "mixed_all gen 3"
+            verify_generation_outputs "3" "" 3
+        fi
+
+        _prefix="${TMP_DIR}/gen4"
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp --runtime 1 \
+            --config "${_prefix}.config" --scalar "${_prefix}.sca" --vector "${_prefix}.vec" \
+            --sctp const5:const1000:const5:const1000 const5:const500:const5:const500 const5:const500:const5:const500 const5:const500:const5:const500 \
+            >"${TMP_DIR}/client4.log" 2>&1 &
+        CLIENT4_PID=$!
+        wait "${CLIENT4_PID}" || CLIENT4_RC=$?
+        CLIENT4_PID=""
+        if [ "${CLIENT4_RC}" -eq 0 ]; then
+            verify_server_alive "mixed_all gen 4"
+            verify_generation_outputs "4" "" 4
+        fi
+        ;;
+
     *)
         echo "FAIL: Unknown scenario '${SCENARIO}'" >&2
         exit 1
@@ -477,10 +934,19 @@ if [ -n "${SERVER_PID}" ]; then
         exit 1
     fi
 
-    if [ -s "${TMP_DIR}/server.log" ] && grep -qE "failed in|FATAL ERROR|Aborted|Avbrutt" "${TMP_DIR}/server.log"; then
+    if [ -s "${TMP_DIR}/server.log" ] && grep -qE "failed in|FATAL ERROR|terminate called|(^|[^* ])Aborted|Avbrutt|SIGABRT|Segmentation fault|assure|MessageReader already has a state" "${TMP_DIR}/server.log"; then
         echo "FAIL: Assertion failure or crash detected in server log." >&2
         cat "${TMP_DIR}/server.log" >&2
         exit 1
+    fi
+
+    if [ -s "${TMP_DIR}/server.log" ]; then
+        _eoi_cnt=$(perl -ne '$c++ if /End of input for /; END { print $c+0 }' "${TMP_DIR}/server.log")
+        if [ "${_eoi_cnt}" -gt 32 ]; then
+            echo "FAIL: Poll-loop spin detected in server log (${_eoi_cnt} 'End of input' messages)!" >&2
+            head -n 60 "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
     fi
 fi
 

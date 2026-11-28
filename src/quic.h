@@ -42,7 +42,14 @@
 #define ALPN_NETPERFMETER_CONTROL "netperfmeter/control"
 #endif
 
-bool configureQuicControlSocket(const int sd, const unsigned int idleTimeoutMs);
+bool configureQuicIdleTimeout(const int sd, const uint64_t idleTimeoutMs, const bool allowZero = false);
+bool configureQuicKeepAlive(const int      sd,
+                            const uint64_t hbIntervalMs,
+                            const uint64_t hbAssocMaxRtx,
+                            const bool     setIdleTimeout = true);
+bool configureQuicControlSocket(const int          sd,
+                                const unsigned int hbIntervalMs,
+                                const unsigned int hbAssocMaxRtx);
 
 int quicServerHandshake(int          sd,
                         const char*  alpns,

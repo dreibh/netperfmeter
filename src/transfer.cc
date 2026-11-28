@@ -203,11 +203,19 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
        (flow->getTrafficSpec().ErrorOnAbort) &&
        (flow->getOutputStatus() == Flow::On) &&
        (!flow->isStopping()) ) {
+      const int savedErrno = errno;
+      const std::string peerStr =
+         FlowManager::getFlowManager()->getMessageReader()->formatSocketEndpoint(
+            sd, flow->isRemoteAddressValid() ? flow->getRemoteAddress() : nullptr);
       LOG_ERROR
-      stdlog << format("Flow #%u on socket %d has been aborted: %s!",
-                       flow->getFlowID(), sd,
-                       strerror(errno)) << "\n";
+      stdlog << format("Flow #%u on %s socket %d to %s has been aborted: %s!",
+                       flow->getFlowID(),
+                       getProtocolName(flow->getTrafficSpec().Protocol),
+                       sd,
+                       peerStr.c_str(),
+                       strerror(savedErrno)) << "\n";
       LOG_END
+      errno = savedErrno;
       flow->stop();
       sendBreak(true);
    }
@@ -295,10 +303,43 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
       return true;   // Partial read -> wait for next fragment.
    }
 
+   MessageReader* messageReader = FlowManager::getFlowManager()->getMessageReader();
+
    // ====== Handle data ====================================================
    if(received > 0) {
 #if defined(HAVE_SCTP)
-      if(!(flags & MSG_NOTIFICATION)) {
+      if(flags & MSG_NOTIFICATION) {
+         const sctp_notification* notification = (const sctp_notification*)&inputBuffer;
+         if((notification->sn_header.sn_type == SCTP_ASSOC_CHANGE) &&
+            ((notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) ||
+             (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP))) {
+            const std::string peerStr   = messageReader->formatSocketEndpoint(sd, &from.sa);
+            bool     isAcceptedIncoming = false;
+            uint32_t firstFlowID        = 0;
+            if(FlowManager::getFlowManager()->endOfInputForSocket(sd, isAcceptedIncoming, firstFlowID)) {
+               if(!isAcceptedIncoming || (notification->sn_assoc_change.sac_state == SCTP_COMM_LOST)) {
+                  LOG_WARNING
+                  stdlog << format("End of input for flow #%u on %s socket %d from %s!",
+                                   firstFlowID, getProtocolName(protocol), sd, peerStr.c_str()) << "\n";
+                  LOG_END
+               }
+               else {
+                  LOG_DEBUG
+                  stdlog << format("End of input for flow #%u on %s socket %d from %s!",
+                                   firstFlowID, getProtocolName(protocol), sd, peerStr.c_str()) << "\n";
+                  LOG_END
+               }
+               return isAcceptedIncoming &&
+                      (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP);
+            }
+            LOG_WARNING
+            stdlog << format("End of input for unidentified flow on %s socket %d from %s!",
+                             getProtocolName(protocol), sd, peerStr.c_str()) << "\n";
+            LOG_END
+            return false;
+         }
+      }
+      else {
 #endif
          const NetPerfMeterDataMessage*     dataMsg     =
             (const NetPerfMeterDataMessage*)&inputBuffer;
@@ -312,8 +353,10 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             const bool identifyOkay =
                handleNetPerfMeterIdentify(identifyMsg, sd, &from);
             if(!identifyOkay) {
+               const std::string peerStr = messageReader->formatSocketEndpoint(sd, &from.sa);
                LOG_WARNING
-               stdlog << format("Failed handling NETPERFMETER_IDENTIFY on socket %d!", sd) << "\n";
+               stdlog << format("Failed handling NETPERFMETER_IDENTIFY on %s socket %d from %s!",
+                                getProtocolName(protocol), sd, peerStr.c_str()) << "\n";
                LOG_END
                if(protocol != IPPROTO_UDP) {
                   ext_shutdown(sd, SHUT_RDWR);
@@ -341,13 +384,13 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             }
             else if(protocol == IPPROTO_SCTP) {
                // Flow ID = SCTP stream ID:
-               flow = FlowManager::getFlowManager()->findFlow(sd, (uint32_t)streamID);
+               flow = FlowManager::getFlowManager()->findFlow(sd, (uint16_t)streamID);
             }
 #if defined(HAVE_QUIC)
             else if(protocol == IPPROTO_QUIC) {
                // Flow ID = QUIC stream ID (remove 2 last bits):
-               const uint32_t flowID = (uint32_t)(streamID >> 2);
-               flow = FlowManager::getFlowManager()->findFlow(sd, flowID);
+               const uint16_t flowStreamID = (uint16_t)(streamID >> 2);
+               flow = FlowManager::getFlowManager()->findFlow(sd, flowStreamID);
             }
 #endif
             else {
@@ -360,8 +403,10 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
                updateStatistics(flow, now, dataMsg, (size_t)received);
             }
             else {
+               const std::string peerStr = messageReader->formatSocketEndpoint(sd, &from.sa);
                LOG_WARNING
-               stdlog << format("Received NETPERFMETER_DATA for unknown flow on socket %d!", sd) << "\n";
+               stdlog << format("Received NETPERFMETER_DATA for unknown flow on %s socket %d from %s!",
+                                getProtocolName(protocol), sd, peerStr.c_str()) << "\n";
                LOG_END
                if(protocol != IPPROTO_UDP) {
                   ext_shutdown(sd, SHUT_RDWR);
@@ -370,8 +415,10 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             }
          }
          else {
+            const std::string peerStr = messageReader->formatSocketEndpoint(sd, &from.sa);
             LOG_WARNING
-            stdlog << format("Received garbage on socket %d!", sd) << "\n";
+            stdlog << format("Received garbage on %s socket %d from %s!",
+                             getProtocolName(protocol), sd, peerStr.c_str()) << "\n";
             LOG_END
             if(protocol != IPPROTO_UDP) {
                ext_shutdown(sd, SHUT_RDWR);
@@ -383,33 +430,34 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 #endif
    }
 
-   // ====== Handle error ===================================================
+   // ====== Handle EOF or error ============================================
    else {
-      Flow* flow = FlowManager::getFlowManager()->findFlow(sd, 0);
-      if(flow) {
-         flow->lock();
-         if(!flow->isAcceptedIncomingFlow()) {
-            // The outgoing flow on the active side is closed:
+      const std::string peerStr   = messageReader->formatSocketEndpoint(sd, &from.sa);
+      bool     isAcceptedIncoming = false;
+      uint32_t firstFlowID        = 0;
+      if(FlowManager::getFlowManager()->endOfInputForSocket(sd, isAcceptedIncoming, firstFlowID)) {
+         if(!isAcceptedIncoming || (received < 0)) {
+            // The outgoing flow on the active side is closed, or a socket/stream error occurred:
             LOG_WARNING
-            stdlog << format("End of input for flow #%u on socket %d!",
-                             flow->getFlowID(), sd) << "\n";
+            stdlog << format("End of input for flow #%u on %s socket %d from %s!",
+                             firstFlowID, getProtocolName(protocol), sd, peerStr.c_str()) << "\n";
             LOG_END
          }
          else {
             // This is probably just the regular connection shutdown:
             LOG_DEBUG
-            stdlog << format("End of input for flow #%u on socket %d!",
-                             flow->getFlowID(), sd) << "\n";
+            stdlog << format("End of input for flow #%u on %s socket %d from %s!",
+                             firstFlowID, getProtocolName(protocol), sd, peerStr.c_str()) << "\n";
             LOG_END
          }
-         flow->unlock();
-         flow->endOfInput();
-         return flow->isAcceptedIncomingFlow();   // No error for incoming flow!
+         // Only clean EOF (received == 0) on an accepted incoming flow is non-fatal;
+         // socket/stream errors (received < 0) or active-side EOF must close the socket!
+         return isAcceptedIncoming && (received == 0);
       }
       else {
          LOG_WARNING
-         stdlog << format("End of input for unidentified flow on socket %d!",
-                          sd) << "\n";
+         stdlog << format("End of input for unidentified flow on %s socket %d from %s!",
+                          getProtocolName(protocol), sd, peerStr.c_str()) << "\n";
          LOG_END
       }
       if(protocol != IPPROTO_UDP) {

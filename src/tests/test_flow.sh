@@ -58,6 +58,7 @@ EXTRA_CONN_ARGS=""
 
 ALL_FLOW_PROTOS="${PROTOCOL}"
 ALL_FLOW_SPECS="${SPEC}"
+LAST_CONN_PROTO="${PROTOCOL}"
 
 # Automatic retry budget for stochastic specs
 case "${SPEC}" in
@@ -93,9 +94,9 @@ if [ "$#" -ge 7 ]; then
                 GENERAL_EXTRA_ARGS="${GENERAL_EXTRA_ARGS} $1"
                 ;;
             --stream|-stream)
-                # Additional stream within the current association/connection
+                # Additional stream within the most recently opened association/connection
                 _spec="$2"
-                ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};${PROTOCOL}"
+                ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};${LAST_CONN_PROTO}"
                 ALL_FLOW_SPECS="${ALL_FLOW_SPECS};${_spec}"
                 EXPECTED_FLOWS=$((EXPECTED_FLOWS + 1))
                 case "${_spec}" in
@@ -103,7 +104,11 @@ if [ "$#" -ge 7 ]; then
                         MAX_RETRIES=5
                         ;;
                 esac
-                STREAM_ARGS="${STREAM_ARGS} ${_spec}"
+                if [ -z "${EXTRA_CONN_ARGS}" ]; then
+                    STREAM_ARGS="${STREAM_ARGS} ${_spec}"
+                else
+                    EXTRA_CONN_ARGS="${EXTRA_CONN_ARGS} ${_spec}"
+                fi
                 shift
                 ;;
             -tcp|-mptcp|-udp|-dccp|-sctp|-quic|--tcp|--mptcp|--udp|--dccp|--sctp|--quic|-t|-m|-u|-d|-s|-k)
@@ -116,6 +121,7 @@ if [ "$#" -ge 7 ]; then
                     -s|-sctp|--sctp)   _proto="sctp"  ;;
                     -k|-quic|--quic)   _proto="quic"  ;;
                 esac
+                LAST_CONN_PROTO="${_proto}"
                 _spec="$2"
                 ALL_FLOW_PROTOS="${ALL_FLOW_PROTOS};${_proto}"
                 ALL_FLOW_SPECS="${ALL_FLOW_SPECS};${_spec}"
@@ -1079,6 +1085,16 @@ run_attempt() {
                 echo "--- Server Log ---" >&2
                 cat "${TMP_DIR}/server.log" >&2
                 return 1
+            fi
+
+            # Fail if poll-loop spin flooded 'End of input' messages into server.log
+            if [ -s "${TMP_DIR}/server.log" ]; then
+                _eoi_cnt=$(perl -ne '$c++ if /End of input for /; END { print $c+0 }' "${TMP_DIR}/server.log")
+                if [ "${_eoi_cnt}" -gt 32 ]; then
+                    echo "FAIL: Poll-loop spin detected in server log (${_eoi_cnt} 'End of input' messages)!" >&2
+                    head -n 60 "${TMP_DIR}/server.log" >&2
+                    return 1
+                fi
             fi
         fi
         return 0

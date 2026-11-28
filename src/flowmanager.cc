@@ -253,7 +253,7 @@ Flow* FlowManager::findFlow(const int      socketDescriptor,
 }
 
 
-// ###### Find Flow by source address #######################################
+// ###### Find UDP Flow by source address ###################################
 Flow* FlowManager::findFlow(const struct sockaddr* from)
 {
    Flow* found = nullptr;
@@ -262,11 +262,47 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end(); iterator++) {
       Flow* flow = *iterator;
-      if( (flow->RemoteAddressIsValid) &&
+      if( (flow->TrafficSpec.Protocol == IPPROTO_UDP) &&
+          (flow->RemoteAddressIsValid) &&
           (addresscmp(from, &flow->RemoteAddress.sa, true) == 0) ) {
          found = flow;
          break;
       }
+   }
+   unlock();
+
+   return found;
+}
+
+
+// ###### Mark end of input on all flows sharing a socket descriptor ########
+bool FlowManager::endOfInputForSocket(const int socketDescriptor,
+                                      bool&     isAcceptedIncoming,
+                                      uint32_t& firstFlowID)
+{
+   bool found         = false;
+   bool foundStream0  = false;
+   isAcceptedIncoming = false;
+   firstFlowID        = 0;
+
+   lock();
+   for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
+       iterator != FlowSet.end(); ++iterator) {
+      Flow* flow = *iterator;
+      flow->lock();
+      if(flow->SocketDescriptor == socketDescriptor) {
+         if(!found || (!foundStream0 && (flow->StreamID == 0))) {
+            isAcceptedIncoming = flow->isAcceptedIncomingFlow();
+            firstFlowID        = flow->FlowID;
+            found              = true;
+            if(flow->StreamID == 0) {
+               foundStream0 = true;
+            }
+         }
+         flow->InputStatus = Flow::Off;
+         flow->PollFDEntry = nullptr;
+      }
+      flow->unlock();
    }
    unlock();
 
@@ -423,7 +459,17 @@ void FlowManager::removeAllMeasurements(const int controlSocket)
       }
    }
 
-   // 2. Remove and delete all flows belonging to this control socket or its measurements:
+   // 2. Deactivate all matching flows asynchronously first so shared multi-stream
+   //    sockets call ext_shutdown() before any thread blocks in waitForFinish():
+   for(std::vector<Flow*>::iterator it = FlowSet.begin(); it != FlowSet.end(); ++it) {
+      Flow* flow = *it;
+      if( (flow->getControlSocketDescriptor() == controlSocket) ||
+          (findMeasurement(controlSocket, flow->getMeasurementID()) != nullptr) ) {
+         flow->deactivate(true);
+      }
+   }
+
+   // 3. Remove and delete all flows belonging to this control socket or its measurements:
    std::vector<Flow*>::iterator flowIterator = FlowSet.begin();
    while(flowIterator != FlowSet.end()) {
       Flow* flow = *flowIterator;
@@ -469,22 +515,33 @@ void FlowManager::printMeasurements(std::ostream& os)
 
 
 // ###### Add socket to flow manager ########################################
-void FlowManager::addUnidentifiedSocket(const int protocol,
-                                        const int socketDescriptor)
+void FlowManager::addUnidentifiedSocket(const int             protocol,
+                                        const int             socketDescriptor,
+                                        const sockaddr_union* remoteAddress)
 {
    if(!isRunning()) {
       start();
    }
 
    UnidentifiedSocket* us = new UnidentifiedSocket;
-   us->SocketDescriptor = socketDescriptor;
-   us->Protocol         = protocol;
-   us->PollFDEntry      = nullptr;
-   us->ToBeRemoved      = false;
-   us->ToBeClosed       = false;
+   us->SocketDescriptor     = socketDescriptor;
+   us->Protocol             = protocol;
+   us->PollFDEntry          = nullptr;
+   us->ToBeRemoved          = false;
+   us->ToBeClosed           = false;
+   us->RemoteAddressIsValid = false;
+   memset(&us->RemoteAddress, 0, sizeof(us->RemoteAddress));
+   if((remoteAddress != nullptr) &&
+      ((remoteAddress->sa.sa_family == AF_INET) || (remoteAddress->sa.sa_family == AF_INET6))) {
+      us->RemoteAddress        = *remoteAddress;
+      us->RemoteAddressIsValid = true;
+   }
 
    lock();
-   Reader.registerSocket(protocol, socketDescriptor);
+   Reader.registerSocket(protocol, socketDescriptor, true, 65535, remoteAddress);
+   if((!us->RemoteAddressIsValid) && (protocol != IPPROTO_UDP)) {
+      us->RemoteAddressIsValid = Reader.getRemoteAddress(socketDescriptor, us->RemoteAddress);
+   }
    UnidentifiedSockets.insert(std::pair<int, UnidentifiedSocket*>(socketDescriptor, us));
    wakeup();
    unlock();
@@ -500,12 +557,16 @@ void FlowManager::removeUnidentifiedSocket(const int  socketDescriptor,
       UnidentifiedSockets.find(socketDescriptor);
    if(found != UnidentifiedSockets.end()) {
       UnidentifiedSocket* us = found->second;
-      assure(us->ToBeRemoved == false);
-      // Mark socket for removal. The actual remove cannot be done here,
-      // since this function may be called in the loop iterating over the
-      // UnidentifiedSockets. Removing would invalidate the iterator!
-      us->ToBeRemoved = true;
-      us->ToBeClosed  = closeSocket;
+      // Mark socket for removal idempotently (multiple IDENTIFY_FLOW streams
+      // may arrive before run() purges UnidentifiedSockets). Once handed off
+      // to a Flow (closeSocket == false), never mark ToBeClosed = true.
+      if(!us->ToBeRemoved) {
+         us->ToBeRemoved = true;
+         us->ToBeClosed  = closeSocket;
+      }
+      else if(!closeSocket) {
+         us->ToBeClosed = false;
+      }
    }
    wakeup();
    unlock();
@@ -528,9 +589,18 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
          flow->lock();
          flow->setSocketDescriptor(socketDescriptor, false,
                                    (flow->getTrafficSpec().Protocol != IPPROTO_UDP));
-         flow->RemoteAddress        = *from;
-         flow->RemoteAddressIsValid = (from->sa.sa_family != AF_UNSPEC);
-         const int protocol         = flow->getTrafficSpec().Protocol;
+         const int protocol = flow->getTrafficSpec().Protocol;
+         if((from != nullptr) && (from->sa.sa_family != AF_UNSPEC)) {
+            flow->RemoteAddress        = *from;
+            flow->RemoteAddressIsValid = true;
+         }
+         else if(protocol != IPPROTO_UDP) {
+            flow->RemoteAddressIsValid = Reader.getRemoteAddress(socketDescriptor, flow->RemoteAddress);
+         }
+         else {
+            memset(&flow->RemoteAddress, 0, sizeof(flow->RemoteAddress));
+            flow->RemoteAddressIsValid = false;
+         }
          flow->unlock();
          if(protocol != IPPROTO_UDP) {
             // Socket is now managed in a Flow!
@@ -910,9 +980,29 @@ void FlowManager::run()
       // ====== Collect PollFDs for poll() ==================================
       lock();
 
+      // ------ Purge any unidentified sockets already marked for removal ---
+      {
+         std::map<int, UnidentifiedSocket*>::iterator udIt = UnidentifiedSockets.begin();
+         while(udIt != UnidentifiedSockets.end()) {
+            UnidentifiedSocket* ud = udIt->second;
+            if(ud->ToBeRemoved) {
+               udIt = UnidentifiedSockets.erase(udIt);
+               const bool deregisteredFromReader =
+                  Reader.deregisterSocket(ud->SocketDescriptor);
+               if(ud->ToBeClosed && deregisteredFromReader) {
+                  ext_close(ud->SocketDescriptor);
+               }
+               delete ud;
+               continue;
+            }
+            udIt++;
+         }
+      }
+
       // Allocate space for flows + unidentified sockets + 1 wakeup pipe
       pollfd       pollFDs[FlowSet.size() + UnidentifiedSockets.size() + 1];
-      unsigned int n = 0;
+      unsigned int n                   = 0;
+      bool         hasBufferedMessages = false;
 
       // ------ Register Wakeup Pipe ----------------------------------------
       pollfd* wakeupPollFD = nullptr;
@@ -945,6 +1035,9 @@ void FlowManager::run()
                   pollFDs[n].events  = POLLIN;
                   pollFDs[n].revents = 0;
                   FlowSet[i]->PollFDEntry = &pollFDs[n];
+                  if(Reader.hasReadyMessage(FlowSet[i]->SocketDescriptor)) {
+                     hasBufferedMessages = true;
+                  }
                   n++;
                }
             }
@@ -963,6 +1056,9 @@ void FlowManager::run()
             pollFDs[n].events  = POLLIN;
             pollFDs[n].revents = 0;
             ud->PollFDEntry    = &pollFDs[n];
+            if(Reader.hasReadyMessage(ud->SocketDescriptor)) {
+               hasBufferedMessages = true;
+            }
             n++;
          }
       }
@@ -973,7 +1069,10 @@ void FlowManager::run()
       // ====== Wait for events =============================================
       unsigned long long now = getMicroTime();
       int timeout = -1;
-      if(nextEvent != ~0ULL) {
+      if(hasBufferedMessages) {
+         timeout = 0;
+      }
+      else if(nextEvent != ~0ULL) {
          timeout = pollTimeout(now, 2, nextEvent, nextEvent);
       }
 
@@ -990,9 +1089,9 @@ void FlowManager::run()
       lock();
 
       now = getMicroTime();
-      if(result > 0) {
+      if((result > 0) || hasBufferedMessages) {
          // ------ Drain wakeup pipe ----------------------------------------
-         if(wakeupPollFD && (wakeupPollFD->revents & (POLLIN|POLLERR))) {
+         if((result > 0) && wakeupPollFD && (wakeupPollFD->revents & (POLLIN|POLLERR))) {
             char buffer[64];
             while(read(WakeupPipe[0], buffer, sizeof(buffer)) > 0) {
                // Drained
@@ -1004,10 +1103,13 @@ void FlowManager::run()
             FlowSet[i]->lock();
             const pollfd* entry = FlowSet[i]->PollFDEntry;
             if(entry) {
+               const bool hasBuffered = Reader.hasReadyMessage(entry->fd);
 
                // ====== Handle data message ================================
-               if(entry->revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) {
-                  const int protocol = FlowSet[i]->getTrafficSpec().Protocol;
+               if((entry->revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) || hasBuffered) {
+                  const int  protocol     = FlowSet[i]->getTrafficSpec().Protocol;
+                  const bool isActiveFlow = !FlowSet[i]->isAcceptedIncomingFlow();
+                  const int  polledSD     = entry->fd;
 #if defined(DEBUG_POLL)
                   std::cerr << "\tPOLLIN: flow " << FlowSet[i]->SocketDescriptor
                             << " protocol " << FlowSet[i]->getTrafficSpec().Protocol << "\n";
@@ -1016,33 +1118,51 @@ void FlowManager::run()
 #if defined(__NetBSD__) && defined(HAVE_SCTP)
                   if(protocol == IPPROTO_SCTP) {
                      socklen_t soErrorLen = sizeof(soError);
-                     if(ext_getsockopt(entry->fd, SOL_SOCKET, SO_ERROR,
+                     if(ext_getsockopt(polledSD, SOL_SOCKET, SO_ERROR,
                                        &soError, &soErrorLen) < 0) {
                         soError = errno;
                      }
                   }
 #endif
                   const bool socketBroken =
-                     (soError != 0) ||
-                     (entry->revents & (POLLERR|POLLNVAL)) ||
-                     ((entry->revents & POLLHUP) && !(entry->revents & POLLIN));
+                     (!hasBuffered) &&
+                     ((soError != 0) ||
+                      (entry->revents & (POLLERR|POLLNVAL)) ||
+                      ((entry->revents & POLLHUP) && !(entry->revents & POLLIN)));
                   // NOTE: FlowSet[i] may not be the actual Flow!
-                  //       It may be another stream of the same SCTP assoc!
-                  const bool dataOkay =
-                     (!socketBroken) ?
-                        handleNetPerfMeterData(true, now, protocol, entry->fd) :
-                        false;
+                  //       It may be another stream of the same SCTP/QUIC assoc!
+                  bool dataOkay = !socketBroken;
+                  if(dataOkay) {
+                     do {
+                        dataOkay = handleNetPerfMeterData(isActiveFlow, now, protocol, polledSD);
+                     } while(dataOkay &&
+                             (FlowSet[i]->InputStatus != Flow::Off) &&
+                             Reader.hasReadyMessage(polledSD));
+                  }
 
                   if(!dataOkay) {
                      // Close the broken connection and detach all flows sharing it!
                      const int brokenSD = FlowSet[i]->SocketDescriptor;
                      FlowSet[i]->unlock();
                      if(brokenSD >= 0) {
+                        const std::string peerStr = Reader.formatSocketEndpoint(brokenSD);
                         LOG_WARNING
-                        stdlog << format("Closing disconnected socket %d!",
-                                         brokenSD) << "\n";
+                        stdlog << format("Closing disconnected %s socket %d from %s!",
+                                         getProtocolName(protocol),
+                                         brokenSD,
+                                         peerStr.c_str()) << "\n";
                         LOG_END
                         bool deregisteredFromReader = false;
+                        std::map<int, UnidentifiedSocket*>::iterator udFound =
+                           UnidentifiedSockets.find(brokenSD);
+                        if(udFound != UnidentifiedSockets.end()) {
+                           UnidentifiedSocket* ud = udFound->second;
+                           UnidentifiedSockets.erase(udFound);
+                           if(Reader.deregisterSocket(brokenSD)) {
+                              deregisteredFromReader = true;
+                           }
+                           delete ud;
+                        }
                         for(unsigned int j = 0; j < FlowSet.size(); j++) {
                            FlowSet[j]->lock();
                            if(FlowSet[j]->SocketDescriptor == brokenSD) {
@@ -1061,15 +1181,9 @@ void FlowManager::run()
                            }
                            FlowSet[j]->unlock();
                         }
+                        assure(deregisteredFromReader);
                         if(deregisteredFromReader) {
                            ext_close(brokenSD);
-                        }
-                        else {
-                           std::map<int, UnidentifiedSocket*>::iterator found =
-                              UnidentifiedSockets.find(brokenSD);
-                           assure(found != UnidentifiedSockets.end());
-                           found->second->ToBeRemoved = true;
-                           found->second->ToBeClosed  = true;
                         }
                      }
                      continue;
@@ -1088,10 +1202,11 @@ void FlowManager::run()
             if(ud->Protocol != IPPROTO_UDP) {
                const pollfd* entry = ud->PollFDEntry;
                if(entry) {
+                  const bool hasBuffered = Reader.hasReadyMessage(ud->SocketDescriptor);
 
                   // ====== Handle data message =============================
                   if( (ud->ToBeRemoved == false) &&
-                      (entry->revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) ) {
+                      ((entry->revents & (POLLIN|POLLERR|POLLHUP|POLLNVAL)) || hasBuffered) ) {
 #if defined(DEBUG_POLL)
                      std::cerr << "\tPOLLIN: unidentified " << ud->SocketDescriptor
                                  << " protocol " << ud->Protocol << "\n";
@@ -1107,19 +1222,30 @@ void FlowManager::run()
                      }
 #endif
                      const bool socketBroken =
-                        (soError != 0) ||
-                        (entry->revents & (POLLERR|POLLNVAL)) ||
-                        ((entry->revents & POLLHUP) && !(entry->revents & POLLIN));
-                     const bool dataOkay =
-                        (!socketBroken) ?
-                           handleNetPerfMeterData(true, now, ud->Protocol, ud->SocketDescriptor) :
-                           false;
+                        (!hasBuffered) &&
+                        ((soError != 0) ||
+                         (entry->revents & (POLLERR|POLLNVAL)) ||
+                         ((entry->revents & POLLHUP) && !(entry->revents & POLLIN)));
+                     bool dataOkay = !socketBroken;
+                     if(dataOkay) {
+                        do {
+                           dataOkay = handleNetPerfMeterData(false, now, ud->Protocol, ud->SocketDescriptor);
+                        } while(dataOkay &&
+                                !ud->ToBeRemoved &&
+                                Reader.hasReadyMessage(ud->SocketDescriptor));
+                     }
 
                      if(!dataOkay) {
                         // Incoming connection has already been closed -> remove it!
+                        const std::string peerStr =
+                           Reader.formatSocketEndpoint(
+                              ud->SocketDescriptor,
+                              ud->RemoteAddressIsValid ? &ud->RemoteAddress.sa : nullptr);
                         LOG_WARNING
-                        stdlog << format("Shutdown of still unidentified incoming connection on socket %d!",
-                                         ud->SocketDescriptor) << "\n";
+                        stdlog << format("Shutdown of still unidentified incoming connection on %s socket %d from %s!",
+                                         getProtocolName(ud->Protocol),
+                                         ud->SocketDescriptor,
+                                         peerStr.c_str()) << "\n";
                         LOG_END
                         ud->ToBeRemoved = true;   // Mark for removal
                         ud->ToBeClosed  = true;
@@ -1130,13 +1256,12 @@ void FlowManager::run()
                   if(ud->ToBeRemoved == true) {
                      // Remove the socket marked by removeUnidentifiedSocket(),
                      // or by ud->ToBeRemoved = true above:
-                     // However, since we are in an interation loop, we
+                     // However, since we are in an iteration loop, we
                      // must ensure that the iterator remains valid!
                      iterator = UnidentifiedSockets.erase(iterator);
                      const bool deregisteredFromReader =
                         Reader.deregisterSocket(ud->SocketDescriptor);
-                     if(ud->ToBeClosed) {
-                        assure(deregisteredFromReader);
+                     if(ud->ToBeClosed && deregisteredFromReader) {
                         ext_close(ud->SocketDescriptor);
                      }
                      delete ud;

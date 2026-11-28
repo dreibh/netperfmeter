@@ -31,6 +31,7 @@
 #include "flow.h"
 #include "control.h"
 #include "loglevel.h"
+#include "quic.h"
 #include "transfer.h"
 
 #include <cstring>
@@ -289,8 +290,9 @@ void Flow::deactivate(const bool asyncStop)
       OutputStatus = Off;
       PollFDEntry  = nullptr;   // Poll FD entry is now invalid!
       unlock();
+      stop();
 
-      // Check whether another flow is still sharing this socket descriptor:
+      // Check whether another active flow is still sharing this socket descriptor:
       bool socketStillShared = false;
       switch(TrafficSpec.Protocol) {
          case IPPROTO_TCP:
@@ -306,8 +308,13 @@ void Flow::deactivate(const bool asyncStop)
          default:
             FlowManager* flowManager = FlowManager::getFlowManager();
             flowManager->lock();
-            for(const auto* otherFlow : flowManager->getFlowSet()) {
-               if((otherFlow != this) && (otherFlow->getSocketDescriptor() == SocketDescriptor)) {
+            for(std::vector<Flow*>::iterator it = flowManager->getFlowSet().begin();
+                it != flowManager->getFlowSet().end(); ++it) {
+               Flow* otherFlow = *it;
+               if((otherFlow != this) &&
+                  (otherFlow->getSocketDescriptor() == SocketDescriptor) &&
+                  (!otherFlow->isStopping()) &&
+                  ((otherFlow->getInputStatus() != Off) || (otherFlow->getOutputStatus() != Off))) {
                   socketStillShared = true;
                   break;
                }
@@ -330,8 +337,6 @@ void Flow::deactivate(const bool asyncStop)
             ext_shutdown(SocketDescriptor, isTCPOrMPTCP ? SHUT_WR : SHUT_RDWR);
          }
       }
-
-      stop();
       if(!asyncStop) {
          waitForFinish();
       }
@@ -648,12 +653,19 @@ bool Flow::configureSocket(const int socketDescriptor)
             LOG_END
             return false;
          }
+         quicConfig.keepalive_probe_interval = 15000000U;   // 15 s default QUIC PING keep-alive
          if(ext_setsockopt(socketDescriptor, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) < 0) {
-            // NOTE: QUIC_SOCKOPT_CONFIG can only be set before connect()/listen();
-            //       accepted passive sockets are already established and return EINVAL.
             if(errno != EINVAL) {
                LOG_WARNING
                stdlog << format("Unable to set configuration (QUIC_SOCKOPT_CONFIG option) on QUIC socket %d: %s!",
+                                socketDescriptor, strerror(errno)) << "\n";
+               LOG_END
+            }
+         }
+         if(!isAcceptedIncomingFlow()) {
+            if(!configureQuicIdleTimeout(socketDescriptor, 15000ULL * 6ULL, true)) {
+               LOG_WARNING
+               stdlog << format("Unable to configure QUIC idle timeout on QUIC socket %d: %s!",
                                 socketDescriptor, strerror(errno)) << "\n";
                LOG_END
             }

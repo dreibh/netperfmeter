@@ -32,6 +32,8 @@
 #include "mutex.h"
 #include "tools.h"
 
+#include <algorithm>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -43,10 +45,10 @@ static Mutex               gQuicControlMutex;
 static std::map<int, bool> gQuicControlSockets;
 
 
-// ###### Configure QUIC control socket parameters ##########################
-bool configureQuicControlSocket(const int sd, const unsigned int idleTimeoutMs)
+// ###### Configure QUIC idle timeout parameter #############################
+bool configureQuicIdleTimeout(const int sd, const uint64_t idleTimeoutMs, const bool allowZero)
 {
-   if(idleTimeoutMs > 0) {
+   if((idleTimeoutMs > 0) || allowZero) {
       quic_transport_param param;
       socklen_t            paramLength = sizeof(param);
       memset(&param, 0, sizeof(param));
@@ -54,12 +56,60 @@ bool configureQuicControlSocket(const int sd, const unsigned int idleTimeoutMs)
       if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_TRANSPORT_PARAM, &param, &paramLength) < 0) {
          return false;
       }
-      param.max_idle_timeout = (uint64_t)idleTimeoutMs * 1000ULL;
+      param.max_idle_timeout = idleTimeoutMs * 1000ULL;
       if(ext_setsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_TRANSPORT_PARAM, &param, paramLength) < 0) {
          return false;
       }
    }
    return true;
+}
+
+
+// ###### Configure QUIC keepalive probe interval & max_idle_timeout ########
+bool configureQuicKeepAlive(const int      sd,
+                            const uint64_t hbIntervalMs,
+                            const uint64_t hbAssocMaxRtx,
+                            const bool     setIdleTimeout)
+{
+   const uint64_t effectiveHbMs = (hbIntervalMs == 0) ? 0ULL :
+                                     std::max<uint64_t>(hbIntervalMs, 5000ULL);
+   if((hbIntervalMs > 0) && (hbIntervalMs < 5000ULL)) {
+      LOG_WARNING
+      stdlog << format("QUIC keep-alive minimum probe interval is 5000 ms; clamping %llu ms on socket %d!",
+                       (unsigned long long)hbIntervalMs, sd) << "\n";
+      LOG_END
+   }
+
+   bool        configOk         = false;
+   quic_config quicConfig;
+   socklen_t   quicConfigLength = sizeof(quicConfig);
+   memset(&quicConfig, 0, sizeof(quicConfig));
+   if(ext_getsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, &quicConfigLength) == 0) {
+      const uint64_t probeIntervalUs = effectiveHbMs * 1000ULL;
+      quicConfig.keepalive_probe_interval =
+         (uint32_t)std::min<uint64_t>(probeIntervalUs, (uint64_t)UINT32_MAX);
+      configOk = (ext_setsockopt(sd, SOL_QUIC, QUIC_SOCKOPT_CONFIG, &quicConfig, quicConfigLength) == 0);
+   }
+
+   bool idleOk = true;
+   if(setIdleTimeout) {
+      const uint64_t idleTimeoutMs = (effectiveHbMs == 0) ? 0ULL :
+         (effectiveHbMs * hbAssocMaxRtx);
+      idleOk = configureQuicIdleTimeout(sd, idleTimeoutMs, true);
+   }
+   return configOk && idleOk;
+}
+
+
+// ###### Configure QUIC control socket parameters ##########################
+bool configureQuicControlSocket(const int          sd,
+                                const unsigned int hbIntervalMs,
+                                const unsigned int hbAssocMaxRtx)
+{
+   return configureQuicKeepAlive(sd,
+                                 (uint64_t)hbIntervalMs,
+                                 (uint64_t)hbAssocMaxRtx,
+                                 true);
 }
 
 

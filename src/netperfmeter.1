@@ -206,7 +206,7 @@ On the passive side, this option is optional: when specified, the passive side r
 Specifies the TLS certificate hostname for QUIC authentication. It is used by the active side.
 The hostname must match the remote (i.e. passive side's) hostname, as provided by the passive side's TLS certificate, to allow for hostname verification. As alternative, it is possible to add the IP addresses into the X.509 SubjectAltName of its certificate.
 .It Fl \-control\:\-hbinterval Ar milliseconds
-Sets the heartbeat interval (in ms) for the control connection. Minimum: 1000; Maximum: 86400000 (1 day); Default: 15000.
+Sets the heartbeat / keep-alive interval (in ms) for the control connection (SCTP heartbeats, TCP/MPTCP keep-alives, and QUIC PING keep-alive probes). Setting 0 disables SCTP heartbeats (SPP\_HB\_DISABLE), TCP/MPTCP keep-alives (SO\_KEEPALIVE=0), and QUIC keep-alive probes and idle timeout. For TCP/MPTCP, non-zero values are rounded to whole seconds (minimum 1 s); for QUIC, non-zero values below 5000 ms are clamped to 5000 ms. Range: 0-86400000 (1 day); Default: 15000.
 .It Fl \-control\:\-hbpathmaxrtx Ar count
 Sets the per-path heartbeat retransmission limit for the control connection. Minimum: 1; Maximum: 1000000; Default: 3.
 .It Fl \-control\:\-hbassocmaxrtx Ar count
