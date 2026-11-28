@@ -245,6 +245,12 @@ void printAddress(std::ostream&          os,
                   const struct sockaddr* address,
                   const bool             port      = true,
                   const bool             hideScope = false);
+[[nodiscard]] std::string formatAddress(const struct sockaddr* address,
+                                        const bool             port      = true,
+                                        const bool             hideScope = false);
+[[nodiscard]] std::string resolvePeerAddress(const int              sd,
+                                             const struct sockaddr* primaryAddr  = nullptr,
+                                             const struct sockaddr* fallbackAddr = nullptr);
 
 [[nodiscard]] const char* getProtocolName(const int protocol);
 

@@ -258,7 +258,7 @@ Flow* FlowManager::findFlow(const int      socketDescriptor,
 }
 
 
-// ###### Find Flow by source address #######################################
+// ###### Find UDP Flow by source address ###################################
 Flow* FlowManager::findFlow(const struct sockaddr* from)
 {
    Flow* found = nullptr;
@@ -267,7 +267,8 @@ Flow* FlowManager::findFlow(const struct sockaddr* from)
    for(std::vector<Flow*>::iterator iterator = FlowSet.begin();
        iterator != FlowSet.end(); iterator++) {
       Flow* flow = *iterator;
-      if( (flow->RemoteAddressIsValid) &&
+      if( (flow->TrafficSpec.Protocol == IPPROTO_UDP) &&
+          (flow->RemoteAddressIsValid) &&
           (addresscmp(from, &flow->RemoteAddress.sa, true) == 0) ) {
          found = flow;
          break;
@@ -543,22 +544,33 @@ void FlowManager::printMeasurements(std::ostream& os)
 
 
 // ###### Add socket to flow manager ########################################
-void FlowManager::addUnidentifiedSocket(const int protocol,
-                                        const int socketDescriptor)
+void FlowManager::addUnidentifiedSocket(const int             protocol,
+                                        const int             socketDescriptor,
+                                        const sockaddr_union* remoteAddress)
 {
    if(!isRunning()) {
       start();
    }
 
    UnidentifiedSocket* us = new UnidentifiedSocket;
-   us->SocketDescriptor = socketDescriptor;
-   us->Protocol         = protocol;
-   us->PollFDEntry      = nullptr;
-   us->ToBeRemoved      = false;
-   us->ToBeClosed       = false;
+   us->SocketDescriptor     = socketDescriptor;
+   us->Protocol             = protocol;
+   us->PollFDEntry          = nullptr;
+   us->ToBeRemoved          = false;
+   us->ToBeClosed           = false;
+   us->RemoteAddressIsValid = false;
+   memset(&us->RemoteAddress, 0, sizeof(us->RemoteAddress));
+   if((remoteAddress != nullptr) &&
+      ((remoteAddress->sa.sa_family == AF_INET) || (remoteAddress->sa.sa_family == AF_INET6))) {
+      us->RemoteAddress        = *remoteAddress;
+      us->RemoteAddressIsValid = true;
+   }
 
    lock();
-   Reader.registerSocket(protocol, socketDescriptor);
+   Reader.registerSocket(protocol, socketDescriptor, true, 65535, remoteAddress);
+   if((!us->RemoteAddressIsValid) && (protocol != IPPROTO_UDP)) {
+      us->RemoteAddressIsValid = Reader.getRemoteAddress(socketDescriptor, us->RemoteAddress);
+   }
    UnidentifiedSockets.insert(std::pair<int, UnidentifiedSocket*>(socketDescriptor, us));
    wakeup();
    unlock();
@@ -606,9 +618,18 @@ Flow* FlowManager::identifySocket(const uint64_t         measurementID,
          flow->lock();
          flow->setSocketDescriptor(socketDescriptor, false,
                                    (flow->getTrafficSpec().Protocol != IPPROTO_UDP));
-         flow->RemoteAddress        = *from;
-         flow->RemoteAddressIsValid = (from->sa.sa_family != AF_UNSPEC);
-         const int protocol         = flow->getTrafficSpec().Protocol;
+         const int protocol = flow->getTrafficSpec().Protocol;
+         if((from != nullptr) && (from->sa.sa_family != AF_UNSPEC)) {
+            flow->RemoteAddress        = *from;
+            flow->RemoteAddressIsValid = true;
+         }
+         else if(protocol != IPPROTO_UDP) {
+            flow->RemoteAddressIsValid = Reader.getRemoteAddress(socketDescriptor, flow->RemoteAddress);
+         }
+         else {
+            memset(&flow->RemoteAddress, 0, sizeof(flow->RemoteAddress));
+            flow->RemoteAddressIsValid = false;
+         }
          flow->unlock();
          if(protocol != IPPROTO_UDP) {
             // Socket is now managed in a Flow!
@@ -1188,10 +1209,13 @@ void FlowManager::run()
                      const int brokenSD = FlowSet[i]->SocketDescriptor;
                      FlowSet[i]->unlock();
                      if(brokenSD >= 0) {
+                        const std::string peerStr = Reader.formatSocketEndpoint(brokenSD);
                         LOG_WARNING
-                        // TRANSLATORS: Warning message when closing a broken socket. Placeholder: {} is socket descriptor.
-                        stdlog << formatText(gettext("Closing disconnected socket {}!"),
-                                             brokenSD) << "\n";
+                        // TRANSLATORS: Warning message when closing a broken socket. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+                        stdlog << formatText(gettext("Closing disconnected {} socket {} from {}!"),
+                                             getProtocolName(protocol),
+                                             brokenSD,
+                                             peerStr) << "\n";
                         LOG_END
                         bool deregisteredFromReader = false;
                         std::map<int, UnidentifiedSocket*>::iterator udFound =
@@ -1279,10 +1303,16 @@ void FlowManager::run()
                      }
                      if(!dataOkay) {
                         // Incoming connection has already been closed -> remove it!
+                        const std::string peerStr =
+                           Reader.formatSocketEndpoint(
+                              ud->SocketDescriptor,
+                              ud->RemoteAddressIsValid ? &ud->RemoteAddress.sa : nullptr);
                         LOG_WARNING
-                        // TRANSLATORS: Warning message when closing an unidentified incoming socket that failed handshake. Placeholder: {} is socket descriptor.
-                        stdlog << formatText(gettext("Shutdown of still unidentified incoming connection on socket {}!"),
-                                             ud->SocketDescriptor) << "\n";
+                        // TRANSLATORS: Warning message when closing an unidentified incoming socket that failed handshake. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+                        stdlog << formatText(gettext("Shutdown of still unidentified incoming connection on {} socket {} from {}!"),
+                                             getProtocolName(ud->Protocol),
+                                             ud->SocketDescriptor,
+                                             peerStr) << "\n";
                         LOG_END
                         ud->ToBeRemoved = true;   // Mark for removal
                         ud->ToBeClosed  = true;

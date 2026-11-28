@@ -949,11 +949,13 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
                                       const NetPerfMeterAddFlowMessage* addFlowMsg,
                                       const size_t                      received)
 {
+   const char* ctrlProto = getProtocolName(messageReader->getSocketProtocol(controlSocket));
    if(received < sizeof(NetPerfMeterAddFlowMessage)) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket);
       LOG_WARNING
-      // TRANSLATORS: Warning message when incoming ADD_FLOW control message is too short. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Received malformed NETPERFMETER_ADD_FLOW control message on socket {}!"),
-                           controlSocket) << "\n";
+      // TRANSLATORS: Warning message when incoming ADD_FLOW control message is too short. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+      stdlog << formatText(gettext("Received malformed NETPERFMETER_ADD_FLOW control message on {} socket {} from {}!"),
+                           ctrlProto, controlSocket, peerStr) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -963,10 +965,11 @@ static bool handleNetPerfMeterAddFlow(MessageReader*                    messageR
    const uint16_t streamID        = be16toh(addFlowMsg->StreamID);
    const size_t   startStopEvents = be16toh(addFlowMsg->OnOffEvents);
    if(received < sizeof(NetPerfMeterAddFlowMessage) + (startStopEvents * sizeof(NetPerfMeterOnOffEvent))) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket);
       LOG_WARNING
-      // TRANSLATORS: Warning message when ADD_FLOW control message has fewer on/off entries than specified. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Too few start/stop entries in NETPERFMETER_ADD_FLOW control message on socket {}!"),
-                           controlSocket) << "\n";
+      // TRANSLATORS: Warning message when ADD_FLOW control message has fewer on/off entries than specified. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+      stdlog << formatText(gettext("Too few start/stop entries in NETPERFMETER_ADD_FLOW control message on {} socket {} from {}!"),
+                           ctrlProto, controlSocket, peerStr) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -1079,10 +1082,12 @@ static bool handleNetPerfMeterRemoveFlow(MessageReader*                       me
                                          const size_t                         received)
 {
    if(received < sizeof(NetPerfMeterRemoveFlowMessage)) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket);
       LOG_WARNING
-      // TRANSLATORS: Warning message when incoming REMOVE_FLOW control message is too short. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Received malformed NETPERFMETER_REMOVE_FLOW control message on socket {}!"),
-                           controlSocket) << "\n";
+      // TRANSLATORS: Warning message when incoming REMOVE_FLOW control message is too short. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+      stdlog << formatText(gettext("Received malformed NETPERFMETER_REMOVE_FLOW control message on {} socket {} from {}!"),
+                           getProtocolName(messageReader->getSocketProtocol(controlSocket)),
+                           controlSocket, peerStr) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -1134,10 +1139,12 @@ static bool handleNetPerfMeterStart(MessageReader*                  messageReade
                                     const size_t                    received)
 {
    if(received < sizeof(NetPerfMeterStartMessage)) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket);
       LOG_WARNING
-      // TRANSLATORS: Warning message when incoming START control message is too short. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Received malformed NETPERFMETER_START control message on socket {}!"),
-                           controlSocket) << "\n";
+      // TRANSLATORS: Warning message when incoming START control message is too short. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+      stdlog << formatText(gettext("Received malformed NETPERFMETER_START control message on {} socket {} from {}!"),
+                           getProtocolName(messageReader->getSocketProtocol(controlSocket)),
+                           controlSocket, peerStr) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -1197,10 +1204,12 @@ static bool handleNetPerfMeterStop(MessageReader*                 messageReader,
                                    const size_t                   received)
 {
    if(received < sizeof(NetPerfMeterStopMessage)) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket);
       LOG_WARNING
-      // TRANSLATORS: Warning message when incoming STOP control message is too short. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("Received malformed NETPERFMETER_STOP control message on socket {}!"),
-                           controlSocket) << "\n";
+      // TRANSLATORS: Warning message when incoming STOP control message is too short. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+      stdlog << formatText(gettext("Received malformed NETPERFMETER_STOP control message on {} socket {} from {}!"),
+                           getProtocolName(messageReader->getSocketProtocol(controlSocket)),
+                           controlSocket, peerStr) << "\n";
       LOG_END
       ext_shutdown(controlSocket, SHUT_RDWR);
       return false;
@@ -1294,6 +1303,8 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
    int             flags   = 0;
 #endif
 
+   const char* ctrlProto = getProtocolName(messageReader->getSocketProtocol(controlSocket));
+
    // ====== Read message (or fragment) =====================================
    const ssize_t received =
       messageReader->receiveMessage(controlSocket, &inputBuffer, sizeof(inputBuffer),
@@ -1302,13 +1313,29 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       return true;   // Partial read -> wait for next fragment.
    }
    else if(received < (ssize_t)sizeof(NetPerfMeterHeader)) {
+      const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket, &from.sa);
       if(received < 0) {
          LOG_WARNING
-         // TRANSLATORS: Warning message when control connection socket encounters read error. Placeholder: {} is socket descriptor.
-         stdlog << formatText(gettext("Control connection is broken on socket {}!"),
-                              controlSocket) << "\n";
+         // TRANSLATORS: Warning message when control connection socket encounters read error. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+         stdlog << formatText(gettext("Control connection is broken on {} socket {} from {}!"),
+                              ctrlProto, controlSocket, peerStr) << "\n";
          LOG_END
          ext_shutdown(controlSocket, SHUT_RDWR);
+      }
+      else if((received > 0) || messageReader->hasPartialMessage(controlSocket)) {
+         LOG_WARNING
+         // TRANSLATORS: Warning when a remote peer sends an incomplete or non-TLV payload on a control socket and disconnects. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+         stdlog << formatText(gettext("Truncated or unrecognized control message on {} socket {} from {}!"),
+                              ctrlProto, controlSocket, peerStr) << "\n";
+         LOG_END
+         ext_shutdown(controlSocket, SHUT_RDWR);
+      }
+      else {
+         LOG_DEBUG
+         // TRANSLATORS: Debug message when a remote control connection closes cleanly at EOF. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+         stdlog << formatText(gettext("End of input on {} control socket {} from {}."),
+                              ctrlProto, controlSocket, peerStr) << "\n";
+         LOG_END
       }
       // Clean up all flows and measurements belonging to this disconnected client:
       handleControlAssocShutdown(controlSocket);
@@ -1322,6 +1349,21 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
       if( (notification->sn_header.sn_type == SCTP_ASSOC_CHANGE) &&
           ((notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) ||
            (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP)) ) {
+         const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket, &from.sa);
+         if(notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) {
+            LOG_WARNING
+            // TRANSLATORS: Warning message when control connection socket encounters read error. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+            stdlog << formatText(gettext("Control connection is broken on {} socket {} from {}!"),
+                                 ctrlProto, controlSocket, peerStr) << "\n";
+            LOG_END
+         }
+         else {
+            LOG_DEBUG
+            // TRANSLATORS: Debug message when a remote control connection closes cleanly at EOF. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+            stdlog << formatText(gettext("End of input on {} control socket {} from {}."),
+                                 ctrlProto, controlSocket, peerStr) << "\n";
+            LOG_END
+         }
          handleControlAssocShutdown(controlSocket);
          return false;
       }
@@ -1332,10 +1374,13 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
 #endif
       const NetPerfMeterHeader* header = (const NetPerfMeterHeader*)&inputBuffer;
       if(be16toh(header->Length) != received) {
+         const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket, &from.sa);
          LOG_WARNING
-         // TRANSLATORS: Warning message when control message length does not match payload length received. Placeholders: {} 1: socket descriptor, 2: expected length, 3: received length.
-         stdlog << formatText(gettext("Received malformed control message on socket {}: expected length {}, but received length {}!"),
-                              controlSocket, static_cast<unsigned int>(be16toh(header->Length)), static_cast<unsigned int>(received)) << "\n";
+         // TRANSLATORS: Warning message when control message length does not match payload length received. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint, 4: expected length, 5: received length.
+         stdlog << formatText(gettext("Received malformed control message on {} socket {} from {}: expected length {}, but received length {}!"),
+                              ctrlProto, controlSocket, peerStr,
+                              static_cast<unsigned int>(be16toh(header->Length)),
+                              static_cast<unsigned int>(received)) << "\n";
          LOG_END
          ext_shutdown(controlSocket, SHUT_RDWR);
          return false;
@@ -1358,14 +1403,17 @@ bool handleNetPerfMeterControlMessage(MessageReader* messageReader,
             return handleNetPerfMeterStop(
                       messageReader, controlSocket,
                       (const NetPerfMeterStopMessage*)&inputBuffer, (size_t)received);
-         default:
+         default: {
+            const std::string peerStr = messageReader->formatSocketEndpoint(controlSocket, &from.sa);
             LOG_WARNING
-            // TRANSLATORS: Warning message when unrecognized control message type is received. Placeholders: {:02x} 1: hex message type, {} 2: socket descriptor.
-            stdlog << formatText(gettext("Received invalid control message of type ${:02x} on socket {}!"),
-                                 static_cast<unsigned int>(header->Type), controlSocket) << "\n";
+            // TRANSLATORS: Warning message when unrecognized control message type is received. Placeholders: {:02x} 1: hex message type, {} 2: protocol name, 3: socket descriptor, 4: remote endpoint.
+            stdlog << formatText(gettext("Received invalid control message of type ${:02x} on {} socket {} from {}!"),
+                                 static_cast<unsigned int>(header->Type),
+                                 ctrlProto, controlSocket, peerStr) << "\n";
             LOG_END
             ext_shutdown(controlSocket, SHUT_RDWR);
             return false;
+         }
       }
 #if defined(HAVE_SCTP)
    }
@@ -1401,10 +1449,13 @@ bool handleNetPerfMeterIdentify(const NetPerfMeterIdentifyMessage* identifyMsg,
    }
    else {
       // No known flow -> no association to send response to!
+      MessageReader*    mr      = FlowManager::getFlowManager()->getMessageReader();
+      const int         proto   = mr->getSocketProtocol(sd);
+      const std::string peerStr = mr->formatSocketEndpoint(sd, (from != nullptr) ? &from->sa : nullptr);
       LOG_WARNING
-      // TRANSLATORS: Warning message when IDENTIFY_FLOW message references an unknown flow. Placeholder: {} is socket descriptor.
-      stdlog << formatText(gettext("NETPERFMETER_IDENTIFY_FLOW message for unknown flow on socket {}!"),
-                           sd) << "\n";
+      // TRANSLATORS: Warning message when IDENTIFY_FLOW message references an unknown flow. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+      stdlog << formatText(gettext("NETPERFMETER_IDENTIFY_FLOW message for unknown flow on {} socket {} from {}!"),
+                           getProtocolName(proto), sd, peerStr) << "\n";
       LOG_END
       return false;
    }

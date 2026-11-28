@@ -115,19 +115,29 @@ ssize_t MessageReader::extractBufferedStreamMessage(Socket*      socket,
          const auto*  header  = reinterpret_cast<const TLVHeader*>(sb.Data.data() + sb.ReadOffset);
          const size_t msgSize = be16toh(header->Length);
          if(msgSize < sizeof(TLVHeader)) {
+            const std::string peerStr =
+               resolvePeerAddress(socket->SocketDescriptor,
+                                  socket->RemoteAddressIsValid ? &socket->RemoteAddress.sa : nullptr);
             LOG_WARNING
-            // TRANSLATORS: Warning when message length is smaller than TLV header size. Placeholder: {} is socket descriptor.
-            stdlog << formatText(gettext("Message size < TLV size in message from socket {}!"),
-                                 socket->SocketDescriptor) << "\n";
+            // TRANSLATORS: Warning when message length is smaller than TLV header size. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+            stdlog << formatText(gettext("Message size < TLV size in message on {} socket {} from {}!"),
+                                 getProtocolName(socket->Protocol),
+                                 socket->SocketDescriptor,
+                                 peerStr) << "\n";
             LOG_END
             sb.StreamError = true;
             return MRRM_STREAM_ERROR;
          }
          if(msgSize > socket->MessageBufferSize) {
+            const std::string peerStr =
+               resolvePeerAddress(socket->SocketDescriptor,
+                                  socket->RemoteAddressIsValid ? &socket->RemoteAddress.sa : nullptr);
             LOG_WARNING
-            // TRANSLATORS: Warning when message size exceeds the internal buffer capacity. Placeholder: {} is socket descriptor.
-            stdlog << formatText(gettext("Message too large to fit buffer for message from socket {}!"),
-                                 socket->SocketDescriptor) << "\n";
+            // TRANSLATORS: Warning when message size exceeds the internal buffer capacity. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+            stdlog << formatText(gettext("Message too large to fit buffer for message on {} socket {} from {}!"),
+                                 getProtocolName(socket->Protocol),
+                                 socket->SocketDescriptor,
+                                 peerStr) << "\n";
             LOG_END
             sb.StreamError = true;
             return MRRM_STREAM_ERROR;
@@ -135,10 +145,16 @@ ssize_t MessageReader::extractBufferedStreamMessage(Socket*      socket,
 
          if(avail >= msgSize) {
             if(msgSize > bufferSize) {
+               const std::string peerStr =
+                  resolvePeerAddress(socket->SocketDescriptor,
+                                     socket->RemoteAddressIsValid ? &socket->RemoteAddress.sa : nullptr);
                LOG_WARNING
-               // TRANSLATORS: Warning when destination buffer is smaller than received message size. Placeholders: {} 1: destination buffer size, 2: message size, 3: socket descriptor.
-               stdlog << formatText(gettext("Buffer size is too small (buffer {}, message {}) for message from socket {}!"),
-                                    bufferSize, msgSize, socket->SocketDescriptor) << "\n";
+               // TRANSLATORS: Warning when destination buffer is smaller than received message size. Placeholders: {} 1: destination buffer size, 2: message size, 3: protocol name, 4: socket descriptor, 5: remote endpoint.
+               stdlog << formatText(gettext("Buffer size is too small (buffer {}, message {}) for message on {} socket {} from {}!"),
+                                    bufferSize, msgSize,
+                                    getProtocolName(socket->Protocol),
+                                    socket->SocketDescriptor,
+                                    peerStr) << "\n";
                LOG_END
                sb.StreamError = true;
                return MRRM_STREAM_ERROR;
@@ -192,11 +208,62 @@ bool MessageReader::hasReadyMessage(const int sd) const
 }
 
 
+// ###### Check whether an incomplete TLV message is buffered on socket #####
+bool MessageReader::hasPartialMessage(const int sd) const
+{
+   std::lock_guard<std::recursive_mutex> guard(SocketMapMutex);
+   const std::map<int, Socket*>::const_iterator found = SocketMap.find(sd);
+   if(found == SocketMap.end()) {
+      return false;
+   }
+   const Socket* socket = found->second;
+   if(socket->BytesRead > 0) {
+      return true;
+   }
+   for(const auto& [sid, sb] : socket->StreamBuffers) {
+      (void)sid;
+      if(sb.Data.size() > sb.ReadOffset) {
+         return true;
+      }
+   }
+   return false;
+}
+
+
+// ###### Query cached remote address of a registered socket ################
+bool MessageReader::getRemoteAddress(const int sd, sockaddr_union& remoteAddress) const
+{
+   std::lock_guard<std::recursive_mutex> guard(SocketMapMutex);
+   const std::map<int, Socket*>::const_iterator found = SocketMap.find(sd);
+   if((found != SocketMap.end()) && found->second->RemoteAddressIsValid) {
+      remoteAddress = found->second->RemoteAddress;
+      return true;
+   }
+   memset(&remoteAddress, 0, sizeof(remoteAddress));
+   return false;
+}
+
+
+// ###### Format peer endpoint for a registered socket ######################
+std::string MessageReader::formatSocketEndpoint(const int              sd,
+                                                const struct sockaddr* from) const
+{
+   std::lock_guard<std::recursive_mutex> guard(SocketMapMutex);
+   const struct sockaddr* cachedAddr = nullptr;
+   const std::map<int, Socket*>::const_iterator found = SocketMap.find(sd);
+   if((found != SocketMap.end()) && found->second->RemoteAddressIsValid) {
+      cachedAddr = &found->second->RemoteAddress.sa;
+   }
+   return resolvePeerAddress(sd, from, cachedAddr);
+}
+
+
 // ###### Register a socket #################################################
-bool MessageReader::registerSocket(const int    protocol,
-                                   const int    sd,
-                                   const bool   mustBeNew,
-                                   const size_t maxMessageSize)
+bool MessageReader::registerSocket(const int             protocol,
+                                   const int             sd,
+                                   const bool            mustBeNew,
+                                   const size_t          maxMessageSize,
+                                   const sockaddr_union* remoteAddress)
 {
    std::lock_guard<std::recursive_mutex> guard(SocketMapMutex);
    Socket*                          socket;
@@ -208,14 +275,16 @@ bool MessageReader::registerSocket(const int    protocol,
       assure(socket != nullptr);
       socket->MessageBuffer = new char[maxMessageSize];
       assure(socket->MessageBuffer != nullptr);
-      socket->MessageBufferSize = maxMessageSize;
-      socket->MessageSize       = 0;
-      socket->BytesRead         = 0;
-      socket->Status            = Socket::MRS_WaitingForHeader;
-      socket->Protocol          = protocol;
-      socket->SocketDescriptor  = sd;
-      socket->UseCount          = 1;
-      socket->LastStreamID      = -1;
+      socket->MessageBufferSize    = maxMessageSize;
+      socket->MessageSize          = 0;
+      socket->BytesRead            = 0;
+      socket->Status               = Socket::MRS_WaitingForHeader;
+      socket->Protocol             = protocol;
+      socket->SocketDescriptor     = sd;
+      socket->UseCount             = 1;
+      socket->LastStreamID         = -1;
+      socket->RemoteAddressIsValid = false;
+      memset(&socket->RemoteAddress, 0, sizeof(socket->RemoteAddress));
       SocketMap.insert(std::pair<int, Socket*>(sd, socket));
    }
    else {
@@ -229,6 +298,23 @@ bool MessageReader::registerSocket(const int    protocol,
       }
       socket = found->second;
       socket->UseCount++;
+   }
+
+   if((remoteAddress != nullptr) &&
+      ((remoteAddress->sa.sa_family == AF_INET) || (remoteAddress->sa.sa_family == AF_INET6))) {
+      socket->RemoteAddress        = *remoteAddress;
+      socket->RemoteAddressIsValid = true;
+   }
+   else if((!socket->RemoteAddressIsValid) && (protocol != IPPROTO_UDP) && (sd >= 0)) {
+      sockaddr_union peer;
+      socklen_t      peerLen = sizeof(peer);
+      memset(&peer, 0, sizeof(peer));
+      if((ext_getpeername(sd, &peer.sa, &peerLen) == 0) &&
+         (peerLen > 0) &&
+         ((peer.sa.sa_family == AF_INET) || (peer.sa.sa_family == AF_INET6))) {
+         socket->RemoteAddress        = peer;
+         socket->RemoteAddressIsValid = true;
+      }
    }
 #if defined(DEBUG_SOCKETS)
    printf("RegisterSocket: UseCount[sd=%d,proto=%d]=%u\n",
@@ -436,6 +522,13 @@ ssize_t MessageReader::receiveMessage(const int  sd,
 
       // ====== Handle received data ========================================
       if(received > 0) {
+         if((!socket->RemoteAddressIsValid) &&
+            (socket->Protocol != IPPROTO_UDP) &&
+            (from != nullptr) &&
+            ((from->sa_family == AF_INET) || (from->sa_family == AF_INET6))) {
+            memcpy(&socket->RemoteAddress, from, getSocklen(from));
+            socket->RemoteAddressIsValid = true;
+         }
          socket->BytesRead += static_cast<size_t>(received);
          // ====== Handle message header ====================================
          if(socket->Status == Socket::MRS_WaitingForHeader) {
@@ -466,19 +559,29 @@ ssize_t MessageReader::receiveMessage(const int  sd,
 #endif
                   socket->MessageSize = be16toh(header->Length);
                   if(socket->MessageSize < sizeof(TLVHeader)) {
+                     const std::string peerStr =
+                        resolvePeerAddress(socket->SocketDescriptor, from,
+                                           socket->RemoteAddressIsValid ? &socket->RemoteAddress.sa : nullptr);
                      LOG_WARNING
-                     // TRANSLATORS: Warning when message length is smaller than TLV header size. Placeholder: {} is socket descriptor.
-                     stdlog << formatText(gettext("Message size < TLV size in message from socket {}!"),
-                                          socket->SocketDescriptor) << "\n";
+                     // TRANSLATORS: Warning when message length is smaller than TLV header size. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+                     stdlog << formatText(gettext("Message size < TLV size in message on {} socket {} from {}!"),
+                                          getProtocolName(socket->Protocol),
+                                          socket->SocketDescriptor,
+                                          peerStr) << "\n";
                      LOG_END
                      socket->Status = Socket::MRS_StreamError;
                      return MRRM_STREAM_ERROR;
                   }
                   else if(socket->MessageSize > socket->MessageBufferSize) {
+                     const std::string peerStr =
+                        resolvePeerAddress(socket->SocketDescriptor, from,
+                                           socket->RemoteAddressIsValid ? &socket->RemoteAddress.sa : nullptr);
                      LOG_WARNING
-                     // TRANSLATORS: Warning when message size exceeds the internal buffer capacity. Placeholder: {} is socket descriptor.
-                     stdlog << formatText(gettext("Message too large to fit buffer for message from socket {}!"),
-                                          socket->SocketDescriptor) << "\n";
+                     // TRANSLATORS: Warning when message size exceeds the internal buffer capacity. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+                     stdlog << formatText(gettext("Message too large to fit buffer for message on {} socket {} from {}!"),
+                                          getProtocolName(socket->Protocol),
+                                          socket->SocketDescriptor,
+                                          peerStr) << "\n";
                      LOG_END
                      socket->Status = Socket::MRS_StreamError;
                      return MRRM_STREAM_ERROR;
@@ -513,12 +616,17 @@ ssize_t MessageReader::receiveMessage(const int  sd,
                if(socket->Protocol == IPPROTO_SCTP) {
                   if(*msgFlags & MSG_EOR) {   // end of SCTP message
                      if(!(*msgFlags & MSG_NOTIFICATION)) {   // data message
+                        const std::string peerStr =
+                           resolvePeerAddress(socket->SocketDescriptor, from,
+                                              socket->RemoteAddressIsValid ? &socket->RemoteAddress.sa : nullptr);
                         LOG_WARNING
-                        // TRANSLATORS: Warning when SCTP message end occurs before TLV payload completes. Placeholders: {} 1: bytes read, 2: expected bytes, 3: socket descriptor.
-                        stdlog << formatText(gettext("SCTP message end before TLV message end (read {}, expected {}) for message from socket {}!"),
+                        // TRANSLATORS: Warning when SCTP message end occurs before TLV payload completes. Placeholders: {} 1: bytes read, 2: expected bytes, 3: protocol name, 4: socket descriptor, 5: remote endpoint.
+                        stdlog << formatText(gettext("SCTP message end before TLV message end (read {}, expected {}) for message on {} socket {} from {}!"),
                                              static_cast<unsigned int>(socket->BytesRead),
                                              static_cast<unsigned int>(socket->MessageSize),
-                                             socket->SocketDescriptor) << "\n";
+                                             getProtocolName(socket->Protocol),
+                                             socket->SocketDescriptor,
+                                             peerStr) << "\n";
                         LOG_END
                         socket->Status = Socket::MRS_StreamError;
                         return MRRM_STREAM_ERROR;
@@ -544,30 +652,46 @@ ssize_t MessageReader::receiveMessage(const int  sd,
             if((socket->Protocol == IPPROTO_SCTP) &&
                (!(*msgFlags & MSG_NOTIFICATION)) &&
                (socket->BytesRead > socket->MessageSize)) {
+               const std::string peerStr =
+                  resolvePeerAddress(socket->SocketDescriptor, from,
+                                     socket->RemoteAddressIsValid ? &socket->RemoteAddress.sa : nullptr);
                LOG_WARNING
-               // TRANSLATORS: Warning when TLV message boundary does not align with SCTP message boundary. Placeholder: {} is socket descriptor.
-               stdlog << formatText(gettext("TLV message end does not match with SCTP message end in message from socket {}!"),
-                                    socket->SocketDescriptor) << "\n";
+               // TRANSLATORS: Warning when TLV message boundary does not align with SCTP message boundary. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+               stdlog << formatText(gettext("TLV message end does not match with SCTP message end in message on {} socket {} from {}!"),
+                                    getProtocolName(socket->Protocol),
+                                    socket->SocketDescriptor,
+                                    peerStr) << "\n";
                LOG_END
                socket->Status = Socket::MRS_StreamError;
                return MRRM_STREAM_ERROR;
             }
 #endif
             if(socket->MessageSize > bufferSize) {
+               const std::string peerStr =
+                  resolvePeerAddress(socket->SocketDescriptor, from,
+                                     socket->RemoteAddressIsValid ? &socket->RemoteAddress.sa : nullptr);
                LOG_WARNING
-               // TRANSLATORS: Warning when destination buffer is smaller than received message size. Placeholders: {} 1: destination buffer size, 2: message size, 3: socket descriptor.
-               stdlog << formatText(gettext("Buffer size is too small (buffer {}, message {}) for message from socket {}!"),
-                                    bufferSize, socket->MessageSize, socket->SocketDescriptor) << "\n";
+               // TRANSLATORS: Warning when destination buffer is smaller than received message size. Placeholders: {} 1: destination buffer size, 2: message size, 3: protocol name, 4: socket descriptor, 5: remote endpoint.
+               stdlog << formatText(gettext("Buffer size is too small (buffer {}, message {}) for message on {} socket {} from {}!"),
+                                    bufferSize, socket->MessageSize,
+                                    getProtocolName(socket->Protocol),
+                                    socket->SocketDescriptor,
+                                    peerStr) << "\n";
                LOG_END
                socket->Status = Socket::MRS_StreamError;
                return MRRM_STREAM_ERROR;
             }
 #if defined(HAVE_SCTP)
             if((socket->Protocol == IPPROTO_SCTP) && (!(*msgFlags & MSG_EOR))) {
+               const std::string peerStr =
+                  resolvePeerAddress(socket->SocketDescriptor, from,
+                                     socket->RemoteAddressIsValid ? &socket->RemoteAddress.sa : nullptr);
                LOG_WARNING
-               // TRANSLATORS: Warning when TLV message boundary does not align with SCTP message boundary. Placeholder: {} is socket descriptor.
-               stdlog << formatText(gettext("TLV message end does not match with SCTP message end in message from socket {}!"),
-                                    socket->SocketDescriptor) << "\n";
+               // TRANSLATORS: Warning when TLV message boundary does not align with SCTP message boundary. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+               stdlog << formatText(gettext("TLV message end does not match with SCTP message end in message on {} socket {} from {}!"),
+                                    getProtocolName(socket->Protocol),
+                                    socket->SocketDescriptor,
+                                    peerStr) << "\n";
                LOG_END
                socket->Status = Socket::MRS_StreamError;
                return MRRM_STREAM_ERROR;

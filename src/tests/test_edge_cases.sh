@@ -632,8 +632,8 @@ case "${SCENARIO}" in
 
         _waited=0
         while kill -0 "${CLIENT_PID}" 2>/dev/null; do
-            if [ "${_waited}" -ge 15 ]; then
-                echo "FAIL: Active client did not abort on lost QUIC control connection within 15s." >&2
+            if [ "${_waited}" -ge 10 ]; then
+                echo "FAIL: Active client did not abort on lost QUIC control connection within 10s." >&2
                 cat "${TMP_DIR}/client.log" >&2
                 exit 1
             fi
@@ -1436,6 +1436,123 @@ case "${SCENARIO}" in
         fi
 
         stop_and_check_server
+        ;;
+
+    # 5f. Port-scan / unidentified incoming connection logging (protocol name + remote IP:port)
+    port_scan_peer_logging)
+        "${NETPERFMETER}" "${PORT}" -control-over-tcp -no-control-over-sctp -no-control-over-quic \
+            >"${TMP_DIR}/server.log" 2>&1 &
+        SERVER_PID=$!
+
+        if ! wait_for_listener "${ADDRESS}" "${CONTROL_PORT}" "tcp" 5; then
+            exit 1
+        fi
+        if ! wait_for_listener "${ADDRESS}" "${PORT}" "tcp" 5; then
+            exit 1
+        fi
+
+        # Probe 1: TCP connect + immediate FIN close on data PORT
+        FIN_PORT=$(perl -MIO::Socket::IP -e '
+            my ($h, $p) = @ARGV;
+            my $s = IO::Socket::IP->new(PeerHost => $h, PeerPort => $p, Proto => "tcp", GetAddrInfoFlags => 0) or die $!;
+            my $lp = $s->sockport();
+            close($s);
+            print $lp;
+        ' "${ADDRESS}" "${PORT}")
+
+        # Probe 2: TCP connect + SO_LINGER={1,0} RST abort on data PORT
+        RST_PORT=$(perl -MIO::Socket::IP -MSocket=SOL_SOCKET,SO_LINGER -e '
+            my ($h, $p) = @ARGV;
+            my $s = IO::Socket::IP->new(PeerHost => $h, PeerPort => $p, Proto => "tcp", GetAddrInfoFlags => 0) or die $!;
+            my $lp = $s->sockport();
+            setsockopt($s, SOL_SOCKET, SO_LINGER, pack("ii", 1, 0));
+            close($s);
+            print $lp;
+        ' "${ADDRESS}" "${PORT}")
+
+        # Probe 3: HTTP banner on TCP data PORT (triggers TLV / EOF warning + shutdown)
+        HTTP_DATA_PORT=$(perl -MIO::Socket::IP -e '
+            my ($h, $p) = @ARGV;
+            my $s = IO::Socket::IP->new(PeerHost => $h, PeerPort => $p, Proto => "tcp", GetAddrInfoFlags => 0) or die $!;
+            my $lp = $s->sockport();
+            syswrite($s, "GET / HTTP/1.0\r\n\r\n");
+            close($s);
+            print $lp;
+        ' "${ADDRESS}" "${PORT}")
+
+        # Probe 4: Stray UDP scanner payload on UDP data PORT
+        UDP_SCAN_PORT=$(perl -MIO::Socket::IP -e '
+            my ($h, $p) = @ARGV;
+            my $s = IO::Socket::IP->new(PeerHost => $h, PeerPort => $p, Proto => "udp", GetAddrInfoFlags => 0) or die $!;
+            my $lp = $s->sockport();
+            send($s, "NMAP_UDP_PROBE_PAYLOAD", 0);
+            close($s);
+            print $lp;
+        ' "${ADDRESS}" "${PORT}")
+
+        # Probe 5: HTTP banner on TCP control PORT+1 (triggers truncated/unrecognized control warning)
+        HTTP_CTRL_PORT=$(perl -MIO::Socket::IP -e '
+            my ($h, $p) = @ARGV;
+            my $s = IO::Socket::IP->new(PeerHost => $h, PeerPort => $p, Proto => "tcp", GetAddrInfoFlags => 0) or die $!;
+            my $lp = $s->sockport();
+            syswrite($s, "GET / HTTP/1.0\r\n\r\n");
+            close($s);
+            print $lp;
+        ' "${ADDRESS}" "${CONTROL_PORT}")
+
+        sleep 1
+
+        # Verify server remained healthy by running a normal TCP+UDP measurement
+        "${NETPERFMETER}" "${TARGET}:${PORT}" -control-over-tcp -runtime=1 \
+            -scalar="${TMP_DIR}/scan_ok.sca" \
+            -tcp const10:const500:const10:const500 \
+            -udp const10:const500:const10:const500 \
+            >"${TMP_DIR}/client.log" 2>&1
+
+        if [ ! -s "${TMP_DIR}/scan_ok-passive.sca" ]; then
+            echo "FAIL: Server failed normal measurement after port-scan probes." >&2
+            cat "${TMP_DIR}/client.log" >&2
+            exit 1
+        fi
+
+        stop_and_check_server
+
+        # Validate protocol names and remote IP:port (127.0.0.1 or [::ffff:127.0.0.1] for IPv4; [::1] for IPv6)
+        case "${ADDRESS}" in
+            *:*) _addr_rx='\[::1\]' ;;
+            *)   _addr_rx='(\[::ffff:127\.0\.0\.1\]|127\.0\.0\.1)' ;;
+        esac
+
+        if ! grep -Eq "End of input for unidentified flow on TCP socket [0-9]+ from ${_addr_rx}:${FIN_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing expected 'End of input ... on TCP socket ... from ...:${FIN_PORT}!' in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
+        if ! grep -Eq "Shutdown of still unidentified incoming connection on TCP socket [0-9]+ from ${_addr_rx}:${FIN_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing expected 'Shutdown of still unidentified incoming connection on TCP socket ... from ...:${FIN_PORT}!' in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
+        if ! grep -Eq "Shutdown of still unidentified incoming connection on TCP socket [0-9]+ from ${_addr_rx}:${RST_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing cached peer address on TCP RST scan (port ${RST_PORT}) in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
+        if ! grep -Eq "on TCP socket [0-9]+ from ${_addr_rx}:${HTTP_DATA_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing TCP data HTTP banner warning (port ${HTTP_DATA_PORT}) in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
+        if ! grep -Eq "Received garbage on UDP socket [0-9]+ from ${_addr_rx}:${UDP_SCAN_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing UDP probe garbage warning (port ${UDP_SCAN_PORT}) in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
+        if ! grep -Eq "on TCP socket [0-9]+ from ${_addr_rx}:${HTTP_CTRL_PORT}!" "${TMP_DIR}/server.log"; then
+            echo "FAIL: Missing TCP control HTTP banner warning (port ${HTTP_CTRL_PORT}) in server.log:" >&2
+            cat "${TMP_DIR}/server.log" >&2
+            exit 1
+        fi
         ;;
 
     *)

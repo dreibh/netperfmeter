@@ -32,9 +32,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "tools.h"
+
 #include <ext_socket.h>
 #include <map>
 #include <mutex>
+#include <string>
 #include <sys/types.h>
 #include <vector>
 
@@ -51,11 +54,15 @@ class MessageReader
    MessageReader();
    ~MessageReader();
 
-   bool registerSocket(const int    protocol,
-                       const int    sd,
-                       const bool   mustBeNew      = true,
-                       const size_t maxMessageSize = 65535);
+   bool registerSocket(const int             protocol,
+                       const int             sd,
+                       const bool            mustBeNew      = true,
+                       const size_t          maxMessageSize = 65535,
+                       const sockaddr_union* remoteAddress  = nullptr);
    bool deregisterSocket(const int sd);
+   bool getRemoteAddress(const int sd, sockaddr_union& remoteAddress) const;
+   std::string formatSocketEndpoint(const int              sd,
+                                    const struct sockaddr* from = nullptr) const;
 
    ssize_t receiveMessage(const int  sd,
                           void*      buffer,
@@ -66,6 +73,7 @@ class MessageReader
                           int*       msgFlags = nullptr);
    size_t getAllSDs(int* sds, const size_t maxEntries);
    bool hasReadyMessage(const int sd) const;
+   bool hasPartialMessage(const int sd) const;
 
    inline size_t size() const {
       std::lock_guard<std::recursive_mutex> guard(SocketMapMutex);
@@ -107,7 +115,9 @@ class MessageReader
       size_t                        MessageSize;
       size_t                        BytesRead;
       std::map<int64_t, StreamBuffer> StreamBuffers;
-      int64_t                       LastStreamID = -1;
+      int64_t                       LastStreamID         = -1;
+      sockaddr_union                RemoteAddress        = {};
+      bool                          RemoteAddressIsValid = false;
    };
 
    static bool isStreamBufferReady(const StreamBuffer& sb,

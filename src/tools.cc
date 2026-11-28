@@ -474,13 +474,63 @@ void printAddress(std::ostream&          os,
                   const bool             hideScope)
 {
    char str[160];
-   if(address2string(address, str, sizeof(str), port, hideScope)) {
+   if((address != nullptr) && address2string(address, str, sizeof(str), port, hideScope)) {
       os << str;
    }
    else {
       // TRANSLATORS: Fallback text when formatting a network address fails.
       os << gettext("(invalid!)");
    }
+}
+
+
+// ###### Format socket address as std::string ##############################
+std::string formatAddress(const struct sockaddr* address,
+                          const bool             port,
+                          const bool             hideScope)
+{
+   if(address == nullptr) {
+      // TRANSLATORS: Representation for an uninitialized or unspecified network address.
+      return gettext("(unspecified)");
+   }
+   char str[160];
+   if(address2string(address, str, sizeof(str), port, hideScope)) {
+      return std::string(str);
+   }
+   // TRANSLATORS: Fallback text when formatting a network address fails.
+   return gettext("(invalid!)");
+}
+
+
+// ###### Resolve peer endpoint string (primary -> fallback -> getpeername) #
+std::string resolvePeerAddress(const int              sd,
+                               const struct sockaddr* primaryAddr,
+                               const struct sockaddr* fallbackAddr)
+{
+   char str[160];
+   if((primaryAddr != nullptr) &&
+      ((primaryAddr->sa_family == AF_INET) || (primaryAddr->sa_family == AF_INET6)) &&
+      address2string(primaryAddr, str, sizeof(str), true, false)) {
+      return std::string(str);
+   }
+   if((fallbackAddr != nullptr) &&
+      ((fallbackAddr->sa_family == AF_INET) || (fallbackAddr->sa_family == AF_INET6)) &&
+      address2string(fallbackAddr, str, sizeof(str), true, false)) {
+      return std::string(str);
+   }
+   if(sd >= 0) {
+      sockaddr_union peer;
+      socklen_t      peerLen = sizeof(peer);
+      memset(&peer, 0, sizeof(peer));
+      if((ext_getpeername(sd, &peer.sa, &peerLen) == 0) &&
+         (peerLen > 0) &&
+         ((peer.sa.sa_family == AF_INET) || (peer.sa.sa_family == AF_INET6)) &&
+         address2string(&peer.sa, str, sizeof(str), true, false)) {
+         return std::string(str);
+      }
+   }
+   // TRANSLATORS: Fallback text when a remote peer socket address cannot be determined.
+   return gettext("(unknown)");
 }
 
 

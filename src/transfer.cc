@@ -284,12 +284,20 @@ static ssize_t sendNetPerfMeterData(Flow*                    flow,
        (flow->getTrafficSpec().ErrorOnAbort) &&
        (flow->getOutputStatus() == Flow::On) &&
        (!flow->isStopping()) ) {
+      const int savedErrno = errno;
+      const std::string peerStr =
+         FlowManager::getFlowManager()->getMessageReader()->formatSocketEndpoint(
+            sd, flow->isRemoteAddressValid() ? flow->getRemoteAddress() : nullptr);
       LOG_ERROR
-      // TRANSLATORS: Error message when a data flow is unexpectedly terminated. Placeholders: {} 1: flow ID, 2: socket descriptor, 3: strerror() message.
-      stdlog << formatText(gettext("Flow #{} on socket {} has been aborted: {}!"),
-                           flow->getFlowID(), sd,
-                           strerror(errno)) << "\n";
+      // TRANSLATORS: Error message when a data flow is unexpectedly terminated. Placeholders: {} 1: flow ID, 2: protocol name, 3: socket descriptor, 4: remote endpoint, 5: strerror() message.
+      stdlog << formatText(gettext("Flow #{} on {} socket {} to {} has been aborted: {}!"),
+                           flow->getFlowID(),
+                           getProtocolName(flow->getTrafficSpec().Protocol),
+                           sd,
+                           peerStr,
+                           strerror(savedErrno)) << "\n";
       LOG_END
+      errno = savedErrno;
       flow->stop();
       sendBreak(true);
    }
@@ -380,6 +388,8 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
       return true;   // Partial read -> wait for next fragment.
    }
 
+   MessageReader* messageReader = FlowManager::getFlowManager()->getMessageReader();
+
    // ====== Handle data ====================================================
    if(received > 0) {
 #if defined(HAVE_SCTP)
@@ -388,26 +398,32 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
          if((notification->sn_header.sn_type == SCTP_ASSOC_CHANGE) &&
             ((notification->sn_assoc_change.sac_state == SCTP_COMM_LOST) ||
              (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP))) {
+            const std::string peerStr   = messageReader->formatSocketEndpoint(sd, &from.sa);
             bool     isAcceptedIncoming = false;
             uint32_t firstFlowID        = 0;
             if(FlowManager::getFlowManager()->endOfInputForSocket(sd, isAcceptedIncoming, firstFlowID)) {
                if(!isAcceptedIncoming || (notification->sn_assoc_change.sac_state == SCTP_COMM_LOST)) {
                   LOG_WARNING
-                  // TRANSLATORS: Warning message when end of input is reached for an active flow. Placeholders: {} 1: flow ID, 2: socket descriptor.
-                  stdlog << formatText(gettext("End of input for flow #{} on socket {}!"),
-                                       firstFlowID, sd) << "\n";
+                  // TRANSLATORS: Warning message when end of input is reached for an active flow. Placeholders: {} 1: flow ID, 2: protocol name, 3: socket descriptor, 4: remote endpoint.
+                  stdlog << formatText(gettext("End of input for flow #{} on {} socket {} from {}!"),
+                                       firstFlowID, getProtocolName(protocol), sd, peerStr) << "\n";
                   LOG_END
                }
                else {
                   LOG_DEBUG
-                  // TRANSLATORS: Debug message when regular end of input is reached for an accepted incoming flow. Placeholders: {} 1: flow ID, 2: socket descriptor.
-                  stdlog << formatText(gettext("End of input for flow #{} on socket {}!"),
-                                       firstFlowID, sd) << "\n";
+                  // TRANSLATORS: Debug message when regular end of input is reached for an accepted incoming flow. Placeholders: {} 1: flow ID, 2: protocol name, 3: socket descriptor, 4: remote endpoint.
+                  stdlog << formatText(gettext("End of input for flow #{} on {} socket {} from {}!"),
+                                       firstFlowID, getProtocolName(protocol), sd, peerStr) << "\n";
                   LOG_END
                }
                return isAcceptedIncoming &&
                       (notification->sn_assoc_change.sac_state == SCTP_SHUTDOWN_COMP);
             }
+            LOG_WARNING
+            // TRANSLATORS: Warning message when end of input is reached on an unidentified socket. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+            stdlog << formatText(gettext("End of input for unidentified flow on {} socket {} from {}!"),
+                                 getProtocolName(protocol), sd, peerStr) << "\n";
+            LOG_END
             return false;
          }
       }
@@ -423,9 +439,11 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             const bool identifyOkay =
                handleNetPerfMeterIdentify(identifyMsg, sd, &from);
             if(!identifyOkay) {
+               const std::string peerStr = messageReader->formatSocketEndpoint(sd, &from.sa);
                LOG_WARNING
-               // TRANSLATORS: Warning message when handling flow identification fails. Placeholder: {} is socket descriptor.
-               stdlog << formatText(gettext("Failed handling NETPERFMETER_IDENTIFY on socket {}!"), sd) << "\n";
+               // TRANSLATORS: Warning message when handling flow identification fails. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+               stdlog << formatText(gettext("Failed handling NETPERFMETER_IDENTIFY on {} socket {} from {}!"),
+                                    getProtocolName(protocol), sd, peerStr) << "\n";
                LOG_END
                if(protocol != IPPROTO_UDP) {
                   ext_shutdown(sd, SHUT_RDWR);
@@ -475,9 +493,11 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
                                 dataMsg, static_cast<size_t>(received));
             }
             else {
+               const std::string peerStr = messageReader->formatSocketEndpoint(sd, &from.sa);
                LOG_WARNING
-               // TRANSLATORS: Warning message when data message is received for an unknown flow. Placeholder: {} is socket descriptor.
-               stdlog << formatText(gettext("Received NETPERFMETER_DATA for unknown flow on socket {}!"), sd) << "\n";
+               // TRANSLATORS: Warning message when data message is received for an unknown flow. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+               stdlog << formatText(gettext("Received NETPERFMETER_DATA for unknown flow on {} socket {} from {}!"),
+                                    getProtocolName(protocol), sd, peerStr) << "\n";
                LOG_END
                if(protocol != IPPROTO_UDP) {
                   ext_shutdown(sd, SHUT_RDWR);
@@ -486,9 +506,11 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
             }
          }
          else {
+            const std::string peerStr = messageReader->formatSocketEndpoint(sd, &from.sa);
             LOG_WARNING
-            // TRANSLATORS: Warning message when an unrecognized packet is received on a data socket. Placeholder: {} is socket descriptor.
-            stdlog << formatText(gettext("Received garbage on socket {}!"), sd) << "\n";
+            // TRANSLATORS: Warning message when an unrecognized packet is received on a data socket. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+            stdlog << formatText(gettext("Received garbage on {} socket {} from {}!"),
+                                 getProtocolName(protocol), sd, peerStr) << "\n";
             LOG_END
             if(protocol != IPPROTO_UDP) {
                ext_shutdown(sd, SHUT_RDWR);
@@ -502,23 +524,24 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
 
    // ====== Handle EOF or error ============================================
    else {
+      const std::string peerStr   = messageReader->formatSocketEndpoint(sd, &from.sa);
       bool     isAcceptedIncoming = false;
       uint32_t firstFlowID        = 0;
       if(FlowManager::getFlowManager()->endOfInputForSocket(sd, isAcceptedIncoming, firstFlowID)) {
          if(!isAcceptedIncoming || (received < 0)) {
             // The outgoing flow on the active side is closed, or a socket/stream error occurred:
             LOG_WARNING
-            // TRANSLATORS: Warning message when end of input is reached for an active flow. Placeholders: {} 1: flow ID, 2: socket descriptor.
-            stdlog << formatText(gettext("End of input for flow #{} on socket {}!"),
-                                 firstFlowID, sd) << "\n";
+            // TRANSLATORS: Warning message when end of input is reached for an active flow. Placeholders: {} 1: flow ID, 2: protocol name, 3: socket descriptor, 4: remote endpoint.
+            stdlog << formatText(gettext("End of input for flow #{} on {} socket {} from {}!"),
+                                 firstFlowID, getProtocolName(protocol), sd, peerStr) << "\n";
             LOG_END
          }
          else {
             // This is probably just the regular connection shutdown:
             LOG_DEBUG
-            // TRANSLATORS: Debug message when regular end of input is reached for an accepted incoming flow. Placeholders: {} 1: flow ID, 2: socket descriptor.
-            stdlog << formatText(gettext("End of input for flow #{} on socket {}!"),
-                                 firstFlowID, sd) << "\n";
+            // TRANSLATORS: Debug message when regular end of input is reached for an accepted incoming flow. Placeholders: {} 1: flow ID, 2: protocol name, 3: socket descriptor, 4: remote endpoint.
+            stdlog << formatText(gettext("End of input for flow #{} on {} socket {} from {}!"),
+                                 firstFlowID, getProtocolName(protocol), sd, peerStr) << "\n";
             LOG_END
          }
          // Only clean EOF (received == 0) on an accepted incoming flow is non-fatal;
@@ -527,9 +550,9 @@ bool handleNetPerfMeterData(const bool               isActiveMode,
       }
       else {
          LOG_WARNING
-         // TRANSLATORS: Warning message when end of input is reached on an unidentified socket. Placeholder: {} is socket descriptor.
-         stdlog << formatText(gettext("End of input for unidentified flow on socket {}!"),
-                              sd) << "\n";
+         // TRANSLATORS: Warning message when end of input is reached on an unidentified socket. Placeholders: {} 1: protocol name, 2: socket descriptor, 3: remote endpoint.
+         stdlog << formatText(gettext("End of input for unidentified flow on {} socket {} from {}!"),
+                              getProtocolName(protocol), sd, peerStr) << "\n";
          LOG_END
       }
       if(protocol != IPPROTO_UDP) {

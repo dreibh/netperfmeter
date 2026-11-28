@@ -191,9 +191,15 @@ ADD_NETPERFMETER_EDGE_CASE_TEST(edge_active_sigint_graceful_stop
 ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_tcp_abort
    127.0.0.1 control_tcp_abort)
 
-# Mid-measurement TCP data EOF while control stays open (verifies no poll-loop spin under --loglevel 4)
+# Mid-measurement TCP data EOF while control stays open (verifies no poll-loop spin under --loglevel 1)
 ADD_NETPERFMETER_EDGE_CASE_TEST(edge_tcp_data_eof_no_spin
    127.0.0.1 tcp_data_eof_no_spin)
+
+# Port-scan / unidentified-connection logging: verifies protocol name + remote IP:port (incl. dual-stack ::ffff:)
+ADD_NETPERFMETER_EDGE_CASE_TEST(edge_port_scan_peer_logging_ipv4
+   127.0.0.1 port_scan_peer_logging)
+ADD_NETPERFMETER_EDGE_CASE_TEST(edge_port_scan_peer_logging_ipv6
+   ::1 port_scan_peer_logging)
 
 IF (HAVE_SCTP_FOR_TESTS)
    ADD_NETPERFMETER_EDGE_CASE_TEST(edge_control_heartbeat_timeout
